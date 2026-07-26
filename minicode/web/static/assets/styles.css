@@ -1,63 +1,65 @@
 :root {
   color-scheme: dark;
 
-  /* Surfaces */
-  --surface-page: #0e1013;
-  --surface-nav: #0b0d10;
-  --surface-main: #0e1013;
-  --surface-dock: #0b0d10;
-  --surface-elevated: #15181e;
-  --surface-overlay: #1a1e26;
-  --surface-hover: #1a1e26;
-  --surface-selected: #1d2333;
-  --surface-muted: #12151b;
+  /* Surfaces — soft blue-slate, one notch brighter than near-black */
+  --surface-page: #171d2b;
+  --surface-nav: #121725;
+  --surface-main: #171d2b;
+  --surface-dock: #121725;
+  --surface-elevated: #1f2739;
+  --surface-overlay: #273043;
+  --surface-hover: #252e42;
+  --surface-selected: #2b3552;
+  --surface-muted: #1b2333;
 
   /* Agent Observatory rail */
-  --rail-text: #e8eaf0;
-  --rail-muted: #848b9c;
-  --rail-hover: #14171d;
-  --rail-selected: #1b2030;
-  --rail-border: #1e222c;
-  --rail-accent: #8b95f6;
+  --rail-text: #eef1f8;
+  --rail-muted: #8f97ac;
+  --rail-hover: #1b2232;
+  --rail-selected: #262f48;
+  --rail-border: #242c3f;
+  --rail-accent: #97a3ff;
 
   /* Text */
-  --text-primary: #e8eaf0;
-  --text-secondary: #a5abbb;
-  --text-muted: #798093;
-  --text-disabled: #545b6b;
+  --text-primary: #eef1f8;
+  --text-secondary: #b7bece;
+  --text-muted: #8d95aa;
+  --text-disabled: #626b81;
   --text-inverse: #ffffff;
 
   /* Borders */
-  --border-subtle: #1f232e;
-  --border-standard: #292e3c;
-  --border-strong: #3d4456;
-  --border-focus: #8b95f6;
+  --border-subtle: #262e41;
+  --border-standard: #333d57;
+  --border-strong: #4a5671;
+  --border-focus: #97a3ff;
 
   /* Semantic state */
-  --state-live: #4cc38a;
-  --state-live-surface: rgba(76, 195, 138, .12);
-  --state-warning: #f0b429;
-  --state-warning-surface: rgba(240, 180, 41, .1);
-  --state-unavailable: #7c8496;
-  --state-unavailable-surface: rgba(124, 132, 150, .12);
-  --state-danger: #f2555a;
-  --state-danger-surface: rgba(242, 85, 90, .12);
-  --state-info: #8b95f6;
-  --state-info-surface: rgba(139, 149, 246, .12);
+  --state-live: #56d9a0;
+  --state-live-surface: rgba(86, 217, 160, .14);
+  --state-warning: #f5c565;
+  --state-warning-surface: rgba(245, 197, 101, .12);
+  --state-unavailable: #8d95aa;
+  --state-unavailable-surface: rgba(141, 149, 170, .12);
+  --state-danger: #ff8087;
+  --state-danger-surface: rgba(255, 128, 135, .14);
+  --state-info: #97a3ff;
+  --state-info-surface: rgba(151, 163, 255, .15);
 
   /* Solid action colors (saturated fills with white text) */
-  --accent-solid: #5e6ad2;
-  --accent-solid-hover: #6a76e0;
-  --danger-solid: #e5484d;
+  --accent-solid: #6577e8;
+  --accent-solid-hover: #7486f2;
+  --danger-solid: #e5545c;
 
   /* Brand and page accents */
-  --brand-gradient: linear-gradient(135deg, #6a76e8, #9b6ef3);
-  --brand-glow: 0 0 12px rgba(139, 149, 246, .35);
-  --page-glow: radial-gradient(720px 340px at 24% -8%, rgba(94, 106, 210, .07), transparent 70%);
+  --brand-gradient: linear-gradient(135deg, #7d8dfa, #b98af7);
+  --brand-glow: 0 0 14px rgba(151, 163, 255, .45);
+  --page-glow:
+    radial-gradient(900px 420px at 18% -12%, rgba(101, 119, 232, .14), transparent 65%),
+    radial-gradient(700px 380px at 92% -14%, rgba(185, 138, 247, .09), transparent 60%);
 
   /* Readable text on saturated state fills */
-  --text-on-live: #0a140f;
-  --text-on-warning: #14110a;
+  --text-on-live: #0b1a13;
+  --text-on-warning: #1a1408;
 
   /* Typography */
   --font-display: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
@@ -89,21 +91,24 @@
   --space-12: 3rem;
 
   /* Shape */
-  --radius-xs: 3px;
-  --radius-sm: 5px;
-  --radius-md: 8px;
-  --radius-overlay: 10px;
+  --radius-xs: 4px;
+  --radius-sm: 7px;
+  --radius-md: 10px;
+  --radius-overlay: 14px;
   --radius-pill: 999px;
 
   /* Elevation */
-  --shadow-overlay: 0 16px 40px rgba(0, 0, 0, .45);
-  --shadow-dialog: 0 24px 70px rgba(0, 0, 0, .6);
-  --shadow-float: 0 6px 18px rgba(0, 0, 0, .4);
+  --shadow-overlay: 0 16px 44px rgba(9, 12, 24, .5);
+  --shadow-dialog: 0 24px 70px rgba(9, 12, 24, .62);
+  --shadow-float: 0 6px 20px rgba(9, 12, 24, .45);
+  --shadow-card: 0 8px 24px rgba(9, 12, 24, .35);
 
   /* Motion */
-  --duration-fast: 100ms;
-  --duration-base: 160ms;
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 340ms;
   --ease-standard: cubic-bezier(.2, .7, .2, 1);
+  --ease-out-soft: cubic-bezier(.22, .9, .3, 1);
 
   /* Layout and stacking */
   --layout-nav-width: 216px;
@@ -2294,3 +2299,173 @@ body.dock-closed #dock-reopen { display: block; }
   .source-state i { animation: none; }
   *, .deletion-dialog, .deletion-backdrop { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }
+
+/* ---------------------------------------------------------------------------
+   Motion & liveliness layer
+   Entrance animations, hover lifts, live-state pulses, and softened radii.
+   All colors flow through tokens; prefers-reduced-motion (above) disables
+   every animation and transition with !important.
+--------------------------------------------------------------------------- */
+
+@keyframes view-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes dot-ripple {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 45%, transparent); }
+  70% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+@keyframes soft-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .55; }
+}
+
+@keyframes accent-bar-in {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+/* View content slides in on navigation and live refresh. */
+#view > * { animation: view-enter var(--duration-slow) var(--ease-out-soft) both; }
+#view > *:nth-child(2) { animation-delay: 45ms; }
+#view > *:nth-child(3) { animation-delay: 90ms; }
+#view > *:nth-child(4) { animation-delay: 135ms; }
+#view > *:nth-child(n + 5) { animation-delay: 180ms; }
+
+/* Staggered card entrances inside grids and stacks. */
+.tiles > .tile,
+.stack > *,
+.pillar-grid > *,
+.tier-grid > .tier-card,
+.usage-grid > .usage-bucket,
+.source-grid > .source-card {
+  animation: view-enter var(--duration-slow) var(--ease-out-soft) both;
+}
+.tiles > .tile:nth-child(2), .stack > *:nth-child(2), .pillar-grid > *:nth-child(2),
+.tier-grid > .tier-card:nth-child(2), .usage-grid > .usage-bucket:nth-child(2),
+.source-grid > .source-card:nth-child(2) { animation-delay: 40ms; }
+.tiles > .tile:nth-child(3), .stack > *:nth-child(3), .pillar-grid > *:nth-child(3),
+.tier-grid > .tier-card:nth-child(3), .usage-grid > .usage-bucket:nth-child(3),
+.source-grid > .source-card:nth-child(3) { animation-delay: 80ms; }
+.tiles > .tile:nth-child(4), .stack > *:nth-child(4), .pillar-grid > *:nth-child(4),
+.tier-grid > .tier-card:nth-child(4), .usage-grid > .usage-bucket:nth-child(4),
+.source-grid > .source-card:nth-child(4) { animation-delay: 120ms; }
+.tiles > .tile:nth-child(5), .stack > *:nth-child(5) { animation-delay: 160ms; }
+.tiles > .tile:nth-child(6), .stack > *:nth-child(6) { animation-delay: 200ms; }
+.tiles > .tile:nth-child(n + 7), .stack > *:nth-child(n + 7) { animation-delay: 240ms; }
+
+.chat-message { animation: view-enter var(--duration-base) var(--ease-out-soft) both; }
+
+/* Softened, consistent corner radius for legacy hardcoded components. */
+.card, .tile, .run-card, .run-row, .session-row, .table-wrap, .tool-card,
+.method-card, .funnel-stage, .usage-bucket, .source-card, .memory-list,
+.catalog-filter, .cost-breakdown, .observation-breakdown, .data-health-store,
+.runtime-selected-run, .runtime-stages > div, .overview-status {
+  border-radius: var(--radius-md);
+}
+
+/* Hover lift for cards and rows. */
+.card, .tile, .run-row, .session-row, .tool-card, .method-card, .tier-card,
+.funnel-stage, .usage-bucket, .source-card, .connection-fact, .flow-box,
+.data-health-store, .observatory-ledger-row, .runtime-run-selector button {
+  transition:
+    transform var(--duration-base) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard),
+    background var(--duration-base) var(--ease-standard),
+    color var(--duration-base) var(--ease-standard);
+}
+.card:hover, .tile:hover, .tool-card:hover, .method-card:hover,
+.usage-bucket:hover, .source-card:hover, .data-health-store:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border-subtle));
+  box-shadow: var(--shadow-card);
+}
+.tier-card:hover, .funnel-stage:hover, .flow-box:hover { transform: translateY(-2px); }
+.run-row:hover, .session-row:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
+}
+
+/* Buttons: smooth hover plus a tactile press. */
+.snapshot-button, .load-more, .session-actions button, .chat-bar button,
+.scope-filters button, .memory-approval-actions button,
+.permission-actions button, .permission-error button, .dock-head button,
+.memory-delete-button, .session-delete-button, .deletion-close,
+.deletion-secondary, .deletion-destructive, #nav-toggle, #nav-reopen,
+#dock-reopen {
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+.snapshot-button:active, .load-more:active, .session-actions button:active,
+.chat-bar button:active:not(:disabled), .scope-filters button:active,
+.memory-approval-actions button:active, .permission-actions button:active,
+.deletion-destructive:active, .deletion-secondary:active {
+  transform: scale(.96);
+}
+#dock-reopen:hover { box-shadow: var(--shadow-float), var(--brand-glow); }
+
+/* Navigation micro-interactions. */
+#nav > a { transition:
+    color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+#nav > a:hover { transform: translateX(2px); }
+#nav > a.on::before { animation: accent-bar-in var(--duration-base) var(--ease-out-soft); transform-origin: center; }
+.nav-icon { transition: transform var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard); }
+#nav > a:hover .nav-icon { transform: scale(1.18); color: var(--rail-text); }
+
+/* Live-state pulses. */
+.live-refresh-status.live::before,
+.live-refresh-status.realtime::before,
+.source-state.live::before {
+  border-radius: 50%;
+  animation: dot-ripple 2.4s var(--ease-standard) infinite;
+}
+.status-marker { animation: soft-breathe 3.2s ease-in-out infinite; }
+.pill.running, .pill.starting { animation: soft-breathe 1.6s ease-in-out infinite; }
+
+/* Progress and meters ease toward new values with a gradient fill. */
+.working-meter i, .progress i, .gate-bar div:last-child, .pressure-bar .used {
+  background: linear-gradient(90deg, var(--accent-solid), var(--accent));
+  transition: width .5s var(--ease-out-soft);
+}
+
+/* Table rows respond to the pointer. */
+.table-wrap tr:hover td { background: color-mix(in srgb, var(--surface-hover) 55%, transparent); }
+.table-wrap td { transition: background var(--duration-fast) var(--ease-standard); }
+
+/* Subtabs and pills ease between states. */
+.subtab, .pill { transition:
+    color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
+}
+
+/* Page title carries a soft accent gradient. */
+h1 {
+  background: linear-gradient(120deg, var(--text-primary) 45%, color-mix(in srgb, var(--accent) 62%, var(--text-primary)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Slim, rounded scrollbars that match the surface language. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--border-standard);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); background-clip: padding-box; }

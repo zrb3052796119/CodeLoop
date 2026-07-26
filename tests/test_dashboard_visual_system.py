@@ -414,5 +414,5 @@ def test_shell_theme_metadata_matches_the_dark_surface() -> None:
     html = _html()
     match = re.search(r'<meta name="theme-color" content="(#[0-9a-fA-F]{6})"', html)
     assert match
-    assert match.group(1).lower() == "#0e1013"
+    assert match.group(1).lower() == "#171d2b"
     assert '<meta name="color-scheme" content="dark"' in html
