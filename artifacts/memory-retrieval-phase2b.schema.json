@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minicode.local/schemas/memory-retrieval-phase2b-v1.json",
+  "title": "MiniCode Retrieval Phase 2B evaluation artifact",
+  "type": "object",
+  "required": [
+    "schema_version", "evaluator_version", "synthetic_data",
+    "acceptance_passed", "phase2a_80_case", "holdout", "performance",
+    "io", "remote_call_count", "determinism", "integrity", "limitations"
+  ],
+  "properties": {
+    "schema_version": {"const": "memory-retrieval-phase2b-v1"},
+    "evaluator_version": {"type": "string", "minLength": 1},
+    "synthetic_data": {"const": true},
+    "acceptance_passed": {"type": "boolean"},
+    "phase2a_80_case": {
+      "type": "object",
+      "required": ["case_count", "metrics", "gates", "remaining_must_exclude_violations"],
+      "properties": {
+        "case_count": {"const": 80},
+        "metrics": {"$ref": "#/$defs/phase2aMetrics"},
+        "gates": {"$ref": "#/$defs/gates"},
+        "remaining_must_exclude_violations": {"type": "array"}
+      }
+    },
+    "holdout": {
+      "type": "object",
+      "required": ["case_count", "metrics", "gates", "per_category_metrics", "cases"],
+      "properties": {
+        "case_count": {"type": "integer", "minimum": 30},
+        "metrics": {"$ref": "#/$defs/holdoutMetrics"},
+        "gates": {"$ref": "#/$defs/gates"},
+        "per_category_metrics": {"type": "object", "minProperties": 11},
+        "cases": {"type": "array", "minItems": 30}
+      }
+    },
+    "performance": {
+      "type": "object",
+      "required": [
+        "consolidator", "current_canonical_p95_ms", "gates", "complexity",
+        "enforcementMode", "strictPassed", "deterministicPassed",
+        "enforcementPassed", "deterministicGates", "wallClockGates",
+        "observations"
+      ],
+      "properties": {
+        "consolidator": {
+          "type": "object",
+          "required": ["100", "500", "1000"]
+        },
+        "current_canonical_p95_ms": {"type": "number", "minimum": 0},
+        "gates": {"$ref": "#/$defs/gates"},
+        "complexity": {"type": "string"},
+        "enforcementMode": {"enum": ["advisory", "strict"]},
+        "strictPassed": {"type": "boolean"},
+        "deterministicPassed": {"type": "boolean"},
+        "enforcementPassed": {"type": "boolean"},
+        "deterministicGates": {"$ref": "#/$defs/gates"},
+        "wallClockGates": {"$ref": "#/$defs/gates"},
+        "observations": {
+          "type": "object",
+          "required": [
+            "canonicalLatencyMs", "consolidator", "holdoutPeakMemoryBytes"
+          ],
+          "properties": {
+            "canonicalLatencyMs": {
+              "type": "object",
+              "required": ["p50_ms", "p95_ms"],
+              "properties": {
+                "p50_ms": {"type": "number", "minimum": 0},
+                "p95_ms": {"type": "number", "minimum": 0}
+              }
+            },
+            "consolidator": {
+              "type": "object",
+              "required": ["100", "500", "1000"]
+            },
+            "holdoutPeakMemoryBytes": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "io": {"type": "object"},
+    "remote_call_count": {"const": 0},
+    "determinism": {"type": "object"},
+    "integrity": {
+      "type": "object",
+      "required": ["gates", "formal_tree_before", "formal_tree_after"],
+      "properties": {
+        "gates": {"$ref": "#/$defs/gates"},
+        "formal_tree_before": {"$ref": "#/$defs/treeSummary"},
+        "formal_tree_after": {"$ref": "#/$defs/treeSummary"}
+      }
+    },
+    "limitations": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+  },
+  "$defs": {
+    "rate": {"type": "number", "minimum": 0, "maximum": 1},
+    "gates": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"type": "boolean"}
+    },
+    "phase2aMetrics": {
+      "type": "object",
+      "required": [
+        "precision_at_1", "recall_at_5", "primary_hit_rate",
+        "rendered_precision", "must_exclude_violation_rate",
+        "negative_false_injection_rate", "duplicate_rendered_rate"
+      ],
+      "properties": {
+        "precision_at_1": {"$ref": "#/$defs/rate"},
+        "recall_at_5": {"$ref": "#/$defs/rate"},
+        "primary_hit_rate": {"$ref": "#/$defs/rate"},
+        "rendered_precision": {"$ref": "#/$defs/rate"},
+        "must_exclude_violation_rate": {"$ref": "#/$defs/rate"},
+        "negative_false_injection_rate": {"$ref": "#/$defs/rate"},
+        "duplicate_rendered_rate": {"$ref": "#/$defs/rate"}
+      }
+    },
+    "holdoutMetrics": {
+      "type": "object",
+      "required": [
+        "retrieval_candidate_recall", "post_gate_recall",
+        "post_consolidation_precision", "post_consolidation_recall",
+        "rendered_precision", "rendered_recall", "primary_hit_rate",
+        "must_exclude_violation_rate", "duplicate_render_rate",
+        "unresolved_conflict_unsafe_render_rate", "incorrect_suppression_rate",
+        "complementary_secondary_retention_rate", "reason_code_accuracy"
+      ],
+      "properties": {
+        "retrieval_candidate_recall": {"$ref": "#/$defs/rate"},
+        "post_gate_recall": {"$ref": "#/$defs/rate"},
+        "post_consolidation_precision": {"$ref": "#/$defs/rate"},
+        "post_consolidation_recall": {"$ref": "#/$defs/rate"},
+        "rendered_precision": {"$ref": "#/$defs/rate"},
+        "rendered_recall": {"$ref": "#/$defs/rate"},
+        "primary_hit_rate": {"$ref": "#/$defs/rate"},
+        "must_exclude_violation_rate": {"$ref": "#/$defs/rate"},
+        "duplicate_render_rate": {"$ref": "#/$defs/rate"},
+        "unresolved_conflict_unsafe_render_rate": {"$ref": "#/$defs/rate"},
+        "incorrect_suppression_rate": {"$ref": "#/$defs/rate"},
+        "complementary_secondary_retention_rate": {"$ref": "#/$defs/rate"},
+        "reason_code_accuracy": {"$ref": "#/$defs/rate"}
+      }
+    },
+    "treeSummary": {
+      "type": "object",
+      "required": ["file_count", "total_size", "manifest_sha256", "mtime_min_ns", "mtime_max_ns"],
+      "properties": {
+        "file_count": {"type": "integer", "minimum": 0},
+        "total_size": {"type": "integer", "minimum": 0},
+        "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "mtime_min_ns": {"type": ["integer", "null"]},
+        "mtime_max_ns": {"type": ["integer", "null"]}
+      }
+    }
+  }
+}

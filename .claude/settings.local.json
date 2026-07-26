@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python *)",
+      "Bash(node --check minicode/web/static/assets/app.js)",
+      "Bash(node --check minicode/web/static/assets/cost-format.js)",
+      "Bash(command -v pyright)",
+      "Bash(command -v mypy)",
+      "Bash(python3 -c \"import minicode; print\\(minicode.__file__\\)\")",
+      "Bash(grep -n \"function render\\\\|const render\\\\|function view\\\\|=> {$\" app.js)",
+      "Read(//Users/zhourunbo/code/coding agent/**)",
+      "Bash(grep -v '^\\\\$')"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "sequential-thinking"
+  ]
+}

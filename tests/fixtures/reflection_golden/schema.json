@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minicode.local/schemas/reflection-golden-v1.json",
+  "title": "MiniCode Reflection Golden Dataset",
+  "type": "object",
+  "required": ["schema_version", "cases"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "cases": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/case"}
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "event": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "event_id": {"type": "string", "minLength": 1},
+        "call_id": {"type": "string"},
+        "type": {"type": "string", "minLength": 1},
+        "tool_name": {"type": "string"},
+        "status": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "evidenceItem": {
+      "type": "object",
+      "properties": {
+        "evidence_ids": {"type": "array", "items": {"type": "string"}},
+        "source_event_ids": {"type": "array", "items": {"type": "string"}},
+        "required_terms": {"type": "array", "items": {"type": "string"}},
+        "forbidden_terms": {"type": "array", "items": {"type": "string"}},
+        "epistemic_status": {"enum": ["confirmed", "inferred", "unknown"]}
+      },
+      "additionalProperties": true
+    },
+    "libraryEvidence": {
+      "allOf": [
+        {"$ref": "#/$defs/evidenceItem"},
+        {
+          "type": "object",
+          "required": ["name", "status", "evidence_ids"],
+          "properties": {
+            "name": {"type": "string", "minLength": 1},
+            "status": {"enum": ["confirmed", "weak_mention", "not_dependency"]},
+            "evidence_ids": {"type": "array", "items": {"type": "string"}}
+          }
+        }
+      ]
+    },
+    "expectedEvidence": {
+      "type": "object",
+      "required": [
+        "files_read", "files_changed", "tools", "libraries", "errors",
+        "recoveries", "decisions", "verification", "outcome"
+      ],
+      "properties": {
+        "files_read": {"type": "array", "items": {"type": "string"}},
+        "files_changed": {"type": "array", "items": {"type": "string"}},
+        "tools": {"type": "array", "items": {"type": "string"}},
+        "libraries": {"type": "array", "items": {"$ref": "#/$defs/libraryEvidence"}},
+        "errors": {"type": "array", "items": {"$ref": "#/$defs/evidenceItem"}},
+        "recoveries": {"type": "array", "items": {"$ref": "#/$defs/evidenceItem"}},
+        "decisions": {"type": "array", "items": {"$ref": "#/$defs/evidenceItem"}},
+        "verification": {"type": "array", "items": {"$ref": "#/$defs/evidenceItem"}},
+        "outcome": {"enum": ["success", "failed", "unknown"]}
+      },
+      "additionalProperties": false
+    },
+    "claim": {
+      "allOf": [
+        {"$ref": "#/$defs/evidenceItem"},
+        {
+          "type": "object",
+          "required": [
+            "claim_id", "claim_type", "semantic_key", "evidence_ids",
+            "epistemic_status", "required_terms", "forbidden_terms"
+          ]
+        }
+      ]
+    },
+    "case": {
+      "type": "object",
+      "required": [
+        "schema_version", "case_id", "category", "description",
+        "task_description", "trace", "expected_evidence", "expected_value",
+        "expected_claims", "forbidden_claims", "notes"
+      ],
+      "properties": {
+        "schema_version": {"const": 1},
+        "case_id": {"type": "string", "minLength": 1},
+        "category": {"type": "string", "minLength": 1},
+        "description": {"type": "string", "minLength": 1},
+        "task_description": {"type": "string"},
+        "trace": {"type": "array", "items": {"$ref": "#/$defs/event"}},
+        "expected_evidence": {"$ref": "#/$defs/expectedEvidence"},
+        "expected_value": {
+          "type": "object",
+          "required": ["should_write_memory", "reasons"],
+          "properties": {
+            "should_write_memory": {"type": "boolean"},
+            "reasons": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            }
+          },
+          "additionalProperties": false
+        },
+        "expected_claims": {"type": "array", "items": {"$ref": "#/$defs/claim"}},
+        "validation_probe_claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "claim_id", "claim_type", "semantic_key", "statement",
+              "evidence_ids", "epistemic_status"
+            ],
+            "properties": {
+              "claim_id": {"type": "string", "minLength": 1},
+              "claim_type": {
+                "enum": [
+                  "constraint", "dependency", "error_pattern", "root_cause",
+                  "recovery", "decision", "correction", "verification_rule",
+                  "warning"
+                ]
+              },
+              "semantic_key": {"type": "string", "minLength": 1},
+              "statement": {"type": "string"},
+              "evidence_ids": {"type": "array", "items": {"type": "string"}},
+              "epistemic_status": {"enum": ["confirmed", "inferred", "unknown"]},
+              "applies_when": {"type": "string"},
+              "limitations": {"type": "array", "items": {"type": "string"}},
+              "verification_ids": {"type": "array", "items": {"type": "string"}},
+              "related_error_ids": {"type": "array", "items": {"type": "string"}},
+              "related_recovery_ids": {"type": "array", "items": {"type": "string"}}
+            },
+            "additionalProperties": false
+          }
+        },
+        "forbidden_claims": {"type": "array", "items": {"$ref": "#/$defs/evidenceItem"}},
+        "notes": {"type": "string"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "addedFiles": {
+    "minicode/run_journal.py": {
+      "reasonCode": "lifecycle_observer_dependency"
+    },
+    "minicode/run_lifecycle.py": {
+      "reasonCode": "lifecycle_observer_dependency"
+    }
+  },
+  "allowedChangesFromParent": {
+    "minicode/headless.py": {
+      "reasonCode": "lifecycle_observer_entrypoint"
+    },
+    "minicode/main.py": {
+      "reasonCode": "lifecycle_observer_entrypoint"
+    },
+    "minicode/tui/input_handler.py": {
+      "reasonCode": "lifecycle_observer_entrypoint"
+    }
+  },
+  "baselineId": "memory-retrieval-production-v2",
+  "files": {
+    "minicode/agent_loop.py": "a9980e6df7e9f3bb9858ea3b1907e6e6eb02e5fe7a90d533bf8096a741981d5e",
+    "minicode/context_compactor.py": "f05bd72a46be720bfa9b50e42e4824825b5e532c1b8885ae6db1ab7a316b4bec",
+    "minicode/headless.py": "cd9fa4310bc0c336f91eddafa186a8b8cb784de698be492bd7217c04c02de176",
+    "minicode/main.py": "6882aa1ef572de8bb756464329528c6e3fcf01f21ed80fe8238c28f04bbfd03c",
+    "minicode/memory.py": "2706a3e684c84fc830a7c553b907f45a06899c6a0d091a5c366c1dfbd3741108",
+    "minicode/memory_candidate_consolidation.py": "a2f44bd09a8594819f740f001c819458962fb00181206cf16a5f529b3169c6e4",
+    "minicode/memory_injector.py": "059d2812f0fa92e2d4db2ee3463b5843c6c84194b83ed11da1de0ebd921721ee",
+    "minicode/memory_pipeline.py": "a71062f86268010245ce1e924d65be8314bcc07d2afe142e5797726f957c35a1",
+    "minicode/memory_retrieval.py": "33b27c4e5ea32321d6ba776918da374b91ea04b7358649fc8e0167b56c576376",
+    "minicode/run_journal.py": "20f41213996c853e178bacd114d0e99f4ec94a3a626d8be691324aa74b9144c1",
+    "minicode/run_lifecycle.py": "ed9c01236e00f6493f7d07ee4af5eaf120889dc6718d7e83922b5854348365e3",
+    "minicode/tui/input_handler.py": "622df25f921c7acabfcf0ffb00aad4ec10ac3d02f581b9be3e97eeb9b03b9553"
+  },
+  "parentBaselineId": "memory-retrieval-production-v1",
+  "reason": "Batch 3B-1 lifecycle-only RunJournal instrumentation",
+  "schemaVersion": 1
+}

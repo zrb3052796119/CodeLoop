@@ -1,0 +1,464 @@
+{
+  "schema_version": "1.0",
+  "document_type": "cases",
+  "synthetic_data": true,
+  "reference_time": 1736942400,
+  "cases": [
+    {
+      "case_id": "sg-pos-correction-01",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "correction_supersession_rephrasing",
+      "query": "Use the newer retention rule for successful task artifacts.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-correction-01",
+          "scope": "user",
+          "category": "semantic-rule",
+          "content": "Correction: successful artifacts are kept for twelve hours; the earlier immediate-cleanup instruction is superseded.",
+          "tags": [
+            "retention-correction",
+            "superseded-cleanup"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "correction_id": "c01",
+            "supersedes": "synthetic-old-cleanup"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户 correction c01 明确取代旧清理规则。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-correction-01"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "correction_supersession",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "medium",
+      "normalized_token_overlap": 0.125,
+      "why_semantically_relevant": "当前请求明确采用 newer rule，适用后来确认的十二小时保留 correction。",
+      "why_lexical_retrieval_may_fail": "查询没有十二小时、immediate cleanup 或 superseded 细节。",
+      "miss_impact": "成功产物可能被过早删除。",
+      "memory_kind": "correction",
+      "annotation_evidence": "合成用户 correction c01 明确取代旧清理规则。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-negation-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-correction-02",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "correction_supersession_rephrasing",
+      "query": "Follow the revised policy for local preview exposure.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-correction-02",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "Correction: preview servers bind to loopback by default; the former LAN-visible default is obsolete.",
+          "tags": [
+            "preview-correction",
+            "loopback-default"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "correction_id": "c02",
+            "supersedes": "synthetic-old-lan-default"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成本地 correction c02 经绑定测试确认。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-correction-02"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "correction_supersession",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "low",
+      "normalized_token_overlap": 0.066667,
+      "why_semantically_relevant": "revised policy 对应后来确认的 loopback 默认规则，旧 LAN 行为已失效。",
+      "why_lexical_retrieval_may_fail": "查询未出现 loopback、LAN-visible 或 obsolete。",
+      "miss_impact": "预览服务可能再次暴露到局域网。",
+      "memory_kind": "correction",
+      "annotation_evidence": "合成本地 correction c02 经绑定测试确认。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-direction-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-correction-03",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "correction_supersession_rephrasing",
+      "query": "按我后来确认的方式展示测试结果。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-correction-03",
+          "scope": "user",
+          "category": "semantic-rule",
+          "content": "Correction: the user wants failed and passed counts together, replacing the prior failures-only summary.",
+          "tags": [
+            "test-counts",
+            "summary-correction"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "correction_id": "c03",
+            "supersedes": "synthetic-old-failures-only"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户 correction c03 明确替换旧摘要格式。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-correction-03"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "correction_supersession_rephrasing",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "“后来确认”指向 active correction，测试结果应同时显示成功和失败计数。",
+      "why_lexical_retrieval_may_fail": "中文请求没有英文 counts、failures-only 或 replacing。",
+      "miss_impact": "报告会缺少总体通过情况。",
+      "memory_kind": "correction",
+      "annotation_evidence": "合成用户 correction c03 明确替换旧摘要格式。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-negation-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-correction-04",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "correction_supersession_rephrasing",
+      "query": "使用当前有效的重试上限，不要沿用旧值。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-correction-04",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "更正：项目写请求最多重试两次，早期的五次规则已经废止。",
+          "tags": [
+            "重试更正",
+            "写请求上限"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "correction_id": "c04",
+            "supersedes": "synthetic-old-five-retries"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成项目 correction c04 由重试测试确认。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-correction-04"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "correction_supersession_rephrasing",
+      "query_language": "zh",
+      "memory_language": "zh",
+      "lexical_overlap_class": "low",
+      "normalized_token_overlap": 0.028571,
+      "why_semantically_relevant": "当前有效上限是 correction 中的两次，旧五次规则明确废止。",
+      "why_lexical_retrieval_may_fail": "查询没有给出次数或写请求术语，依赖 correction 关系判断。",
+      "miss_impact": "过多重试会放大写入副作用。",
+      "memory_kind": "correction",
+      "annotation_evidence": "合成项目 correction c04 由重试测试确认。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-negation-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-correction-05",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "correction_supersession_rephrasing",
+      "query": "Apply the latest rule for checkpoint cleanup after recovery.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-correction-05",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "更正：恢复完成后保留最近两个检查点，旧的全部删除策略不再适用。",
+          "tags": [
+            "检查点更正",
+            "恢复保留"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "correction_id": "c05",
+            "supersedes": "synthetic-old-delete-all"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成本地恢复 correction c05 经回滚测试确认。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-correction-05"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "correction_supersession",
+      "query_language": "en",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "latest rule 对应保留两个检查点的本地更正，旧全删策略已失效。",
+      "why_lexical_retrieval_may_fail": "英文请求与中文 correction 内容没有共享高信息词元。",
+      "miss_impact": "恢复后可能失去回滚检查点。",
+      "memory_kind": "correction",
+      "annotation_evidence": "合成本地恢复 correction c05 经回滚测试确认。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-negation-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-correction-06",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "correction_supersession_rephrasing",
+      "query": "这次按新的交互约定处理可逆选择。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-correction-06",
+          "scope": "user",
+          "category": "semantic-rule",
+          "content": "Correction: the user no longer wants confirmation for reversible choices; only irreversible decisions require a prompt.",
+          "tags": [
+            "interaction-correction",
+            "reversible-choice"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "correction_id": "c06",
+            "supersedes": "synthetic-old-confirm-all"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户 correction c06 明确替换旧逐项确认习惯。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-correction-06"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "correction_supersession",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "新的交互约定是可逆选择无需确认，仅不可逆决定询问。",
+      "why_lexical_retrieval_may_fail": "中文概括没有英文 no longer、confirmation 或 irreversible decisions 的直接词元。",
+      "miss_impact": "代理会继续对每个可逆细节打断用户。",
+      "memory_kind": "correction",
+      "annotation_evidence": "合成用户 correction c06 明确替换旧逐项确认习惯。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-negation-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    }
+  ]
+}

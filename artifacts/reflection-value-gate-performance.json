@@ -1,0 +1,99 @@
+{
+  "benchmark": "ReflectionValueGate deterministic end path",
+  "complexity_observation": "Evidence and claims are indexed once; validation work is proportional to claims plus referenced evidence IDs.",
+  "normal_100_to_10_time_ratio": 9.919,
+  "normal_100_under_10ms": true,
+  "results": [
+    {
+      "iterations": 11,
+      "label": "normal_1_claims",
+      "median_ms": 0.067,
+      "outcome": {
+        "accepted": 1,
+        "generated": 1,
+        "rejected": 0,
+        "valid": 1
+      },
+      "p95_ms": 0.072,
+      "peak_kib": 8.0
+    },
+    {
+      "iterations": 11,
+      "label": "normal_10_claims",
+      "median_ms": 0.505,
+      "outcome": {
+        "accepted": 1,
+        "generated": 10,
+        "rejected": 0,
+        "valid": 10
+      },
+      "p95_ms": 0.531,
+      "peak_kib": 28.1
+    },
+    {
+      "iterations": 11,
+      "label": "normal_100_claims",
+      "median_ms": 5.009,
+      "outcome": {
+        "accepted": 1,
+        "generated": 100,
+        "rejected": 0,
+        "valid": 100
+      },
+      "p95_ms": 5.262,
+      "peak_kib": 184.8
+    },
+    {
+      "iterations": 11,
+      "label": "duplicate_semantic_key_100",
+      "median_ms": 0.912,
+      "outcome": {
+        "accepted": 1,
+        "generated": 100,
+        "rejected": 0,
+        "valid": 1
+      },
+      "p95_ms": 0.932,
+      "peak_kib": 47.0
+    },
+    {
+      "iterations": 11,
+      "label": "invalid_evidence_reference_100",
+      "median_ms": 3.644,
+      "outcome": {
+        "accepted": 0,
+        "generated": 100,
+        "rejected": 100,
+        "valid": 0
+      },
+      "p95_ms": 3.99,
+      "peak_kib": 136.3
+    },
+    {
+      "iterations": 11,
+      "label": "extreme_text_100k",
+      "median_ms": 12.603,
+      "outcome": {
+        "accepted": 0,
+        "generated": 1,
+        "rejected": 1,
+        "valid": 0
+      },
+      "p95_ms": 12.803,
+      "peak_kib": 392.2
+    },
+    {
+      "iterations": 11,
+      "label": "cyclic_metadata",
+      "median_ms": 0.054,
+      "outcome": {
+        "accepted": 1,
+        "generated": 1,
+        "rejected": 0,
+        "valid": 1
+      },
+      "p95_ms": 0.059,
+      "peak_kib": 7.4
+    }
+  ]
+}

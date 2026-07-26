@@ -1,0 +1,99 @@
+{
+  "addedFiles": {
+    "minicode/file_review.py": {
+      "reasonCode": "gateway_permission_approval_authority"
+    },
+    "minicode/permission_approval.py": {
+      "reasonCode": "gateway_permission_approval_authority"
+    },
+    "minicode/permission_event_contract.py": {
+      "reasonCode": "gateway_permission_approval_authority"
+    },
+    "minicode/permissions.py": {
+      "reasonCode": "gateway_permission_approval_authority"
+    },
+    "minicode/tools/run_command.py": {
+      "reasonCode": "gateway_permission_approval_authority"
+    },
+    "minicode/web/permission_http.py": {
+      "reasonCode": "gateway_permission_approval_authority"
+    },
+    "minicode/workspace.py": {
+      "reasonCode": "gateway_permission_approval_authority"
+    }
+  },
+  "allowedChangesFromParent": {
+    "minicode/agent_loop.py": {
+      "reasonCode": "gateway_permission_approval_authority"
+    },
+    "minicode/agent_runtime.py": {
+      "reasonCode": "gateway_permission_approval_authority"
+    },
+    "minicode/conversation.py": {
+      "reasonCode": "gateway_permission_approval_authority"
+    },
+    "minicode/gateway.py": {
+      "reasonCode": "gateway_permission_approval_authority"
+    },
+    "minicode/run_journal.py": {
+      "reasonCode": "gateway_permission_approval_authority"
+    },
+    "minicode/web/http.py": {
+      "reasonCode": "gateway_permission_approval_authority"
+    },
+    "minicode/web/read_model.py": {
+      "reasonCode": "gateway_permission_approval_authority"
+    }
+  },
+  "baselineId": "memory-retrieval-production-v22",
+  "files": {
+    "minicode/agent_loop.py": "6f8ac7a63fd528d02cfa985b3e917ace59687a43c913de6df970baa36911d8f1",
+    "minicode/agent_runtime.py": "174d2b0de970b39a01dd780af2c7e351583a9b8695ef7c7fdc2fbf03ad2cde28",
+    "minicode/context_compactor.py": "f05bd72a46be720bfa9b50e42e4824825b5e532c1b8885ae6db1ab7a316b4bec",
+    "minicode/conversation.py": "4fa64b90a387d4fa2e170698cfe20ddf8d76f4518a80b234793d2b1ea74a9438",
+    "minicode/conversation_presentation.py": "54be4609427fb704545c910a06a30af8d8814b312253fc822050f8a8d6e40838",
+    "minicode/conversation_turn_store.py": "258561657a8495ae2e03f7390dcc06f95839f05a79a705e33427eadcc502f3f4",
+    "minicode/file_review.py": "0031ffcfa310144e34b0ac74ed8fa179391a16107e3c11381e977b52a3ba8eb6",
+    "minicode/gateway.py": "ea4ad06be8b3fdd3876c4c76d0b28f55a30959362263dfcb42a4dceaf9f41d91",
+    "minicode/headless.py": "91bd8ef030a5bdd05f5d80c618596b4f600e31de5c39fffe242d108fc9899688",
+    "minicode/main.py": "678dec824b3ddc05ace5af45db9743c20baa13fdf3eedcf7e7fcadc1756a7bc4",
+    "minicode/mcp.py": "e39f2e44d2a4c06f2e53114f5664df4d9bf2b10435cc3917cb95c2f50f35d077",
+    "minicode/mcp_current_state.py": "063fed4b7e4a8ed117be46482fa1aeb876cb3fcffc24fb69073ce3a96553cbcc",
+    "minicode/mcp_event_contract.py": "583dc481a8e2d1ff30b9b3d6cf091a7c06bed91e14d7580f4399967745a25daa",
+    "minicode/mcp_observation.py": "d822098ee1f4f61a127f740806cdaa6f8d1a7cbeeb6e3f8cbe227948142fd0b8",
+    "minicode/memory.py": "2706a3e684c84fc830a7c553b907f45a06899c6a0d091a5c366c1dfbd3741108",
+    "minicode/memory_candidate_consolidation.py": "a2f44bd09a8594819f740f001c819458962fb00181206cf16a5f529b3169c6e4",
+    "minicode/memory_injector.py": "059d2812f0fa92e2d4db2ee3463b5843c6c84194b83ed11da1de0ebd921721ee",
+    "minicode/memory_pipeline.py": "a71062f86268010245ce1e924d65be8314bcc07d2afe142e5797726f957c35a1",
+    "minicode/memory_retrieval.py": "33b27c4e5ea32321d6ba776918da374b91ea04b7358649fc8e0167b56c576376",
+    "minicode/permission_approval.py": "1d84beb9a9f58a191d11cee4da7a29b1db491ec7def7534bb6682b314bdd508d",
+    "minicode/permission_event_contract.py": "a6c6883e4a9b7f0ec19fb3fcbf100c92f0484468f2417cb1eb7c1fab956e3881",
+    "minicode/permissions.py": "707e51cc32959f1a50297932bf2a2d01a4881af21752127a4f03c820fa8bbc45",
+    "minicode/pricing.py": "ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0",
+    "minicode/run_events.py": "ba356751ac152115779260284272b36274c92cf73923aed0bfa104bde1c471c4",
+    "minicode/run_journal.py": "600a223907401bdc6a58d0730d4fea944b826102aeed5a16cbabe3ec6f6c9ae6",
+    "minicode/run_lifecycle.py": "a6f6ea2416fbd848829df6d8ee4fe4ce2e8b4026e3104d2debd9c019ed27391e",
+    "minicode/session.py": "b0f4f7946a8206e30cc454bc25f48eda8a8ba8fd3817c353b067d7418aef3ee7",
+    "minicode/tooling.py": "267bead40137dfb0133b4dae797830b0150deb9ac744f7bd66b5d6cfbe7a0d88",
+    "minicode/tools/__init__.py": "7ae5a05d64801ac5faee5f1d2547a7c6d3f8cdbe9c6f6a041a64351bb9a1ae0d",
+    "minicode/tools/run_command.py": "12ebf232262d1ef47727f1390a8e7fcb295ed9657fce8a719cce6fa1674ae122",
+    "minicode/tools/task.py": "65ee3fd9f60b0c18fa31d2062d9e1e08c949f9ca2a5ea4b1d402d80ad0095ef7",
+    "minicode/tui/input_handler.py": "f826956da80bc6d3e0f0b04f6af519fd9a9876fa4224bfcbf497e9d94590069b",
+    "minicode/turn_cancellation.py": "1423a75023c835b211a0f2dd0e85c1e98d5fcec6910c2435c2f48b2d74daf37f",
+    "minicode/web/change_feed.py": "743a7510ecb1eb76fa3f85f297e2be9aa066e748581f8d84b2df9e03f1c03e1d",
+    "minicode/web/chat_http.py": "4f7a8e2cea644516944281dca43539ca43347024187cfa28ed12203dfd6c58ac",
+    "minicode/web/chat_stream.py": "ecd790c6f3a02358ddb6c279230e65a1935e598af477cabda490a34b71d0b927",
+    "minicode/web/event_stream.py": "b954308bc6bf8013b323c877aa31bb068197ea84eceaacced6991c3a1cbec3e8",
+    "minicode/web/http.py": "afae1c14689b5c4d8fd3bd26a0bd1fbbbe917ef5d7cc0f46ef3746e636aa7e80",
+    "minicode/web/permission_http.py": "bfa2f062135a77652b7911d80db547f39db6e7237c840906e2f1dc30533944dc",
+    "minicode/web/read_model.py": "2ea92f1b08f230ef64e814c6091f6eadc7a6a8783087d5f98198582a2ace2786",
+    "minicode/web/static/assets/app.js": "88c5ca1eed348cd84453681c05224c6512fc0d2b66e0786295020c6c490ddfe9",
+    "minicode/web/static/assets/styles.css": "49f8a84f9bf2b8f6beae21a4b3fd4fde0dc260d3f26c44e54d558cd57b9e6d16",
+    "minicode/web/static/index.html": "a5ea78536ba8af424bcb655eaeddea0d8b64e071623a5b3665f014a2855d1fdd",
+    "minicode/working_memory.py": "a3a44415ec418116c14300746cbb4cae3a14a181bc634c87a2600753ecc256e5",
+    "minicode/workspace.py": "8e163fab604fa17309f2741c4eed202ec9c8b919e5179db39168a0e468ff17f4"
+  },
+  "parentBaselineId": "memory-retrieval-production-v21",
+  "reason": "Batch 8A-1 Gateway permission approval authority and safe HTTP contract",
+  "schemaVersion": 1
+}

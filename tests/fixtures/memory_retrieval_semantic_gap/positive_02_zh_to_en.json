@@ -1,0 +1,446 @@
+{
+  "schema_version": "1.0",
+  "document_type": "cases",
+  "synthetic_data": true,
+  "reference_time": 1736942400,
+  "cases": [
+    {
+      "case_id": "sg-pos-zhen-01",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "chinese_to_english",
+      "query": "支付回调偶尔会被处理两次。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-zhen-01",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "Provider events are consumed through an idempotent receipt keyed by delivery identifier.",
+          "tags": [
+            "provider-receipt",
+            "delivery-id"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "callback-replay-test"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-zhen-01"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "cross_language_equivalence",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "An idempotent provider receipt prevents repeated callback delivery from applying twice.",
+      "why_lexical_retrieval_may_fail": "Chinese symptom wording has no shared tokens with the English delivery contract.",
+      "miss_impact": "Repeated provider events can duplicate state changes.",
+      "memory_kind": "constraint",
+      "annotation_evidence": "Synthetic replay test verifies one receipt per delivery identifier.",
+      "safety_lifecycle_expectation": "Approved active project constraint is injectable.",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-zhen-02",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "chinese_to_english",
+      "query": "后台任务重启后又从头开始跑。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-zhen-02",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "Workers resume from the last durable checkpoint recorded after a committed batch.",
+          "tags": [
+            "durable-checkpoint",
+            "committed-batch"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "worker-restart-drill"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-zhen-02"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "cross_language_equivalence",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "Durable batch checkpoints are the established continuation mechanism after worker restart.",
+      "why_lexical_retrieval_may_fail": "The Chinese restart symptom does not name the English checkpoint mechanism.",
+      "miss_impact": "Large jobs repeat completed work.",
+      "memory_kind": "recovery",
+      "annotation_evidence": "Synthetic restart drill verified continuation after the committed batch.",
+      "safety_lifecycle_expectation": "Approved active local recovery is injectable.",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-zhen-03",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "chinese_to_english",
+      "query": "命令行回复不要写大段背景。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-zhen-03",
+          "scope": "user",
+          "category": "preference",
+          "content": "The user prefers compact CLI answers focused on the decision and immediate action.",
+          "tags": [
+            "compact-cli",
+            "decision-first"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "explicit-user-choice"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-zhen-03"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "cross_language_equivalence",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "Compact decision-focused CLI output satisfies the request to omit long background.",
+      "why_lexical_retrieval_may_fail": "The Chinese wording cannot match the English preference lexically.",
+      "miss_impact": "Terminal answers become unnecessarily verbose.",
+      "memory_kind": "preference",
+      "annotation_evidence": "Synthetic explicit preference applies to CLI responses.",
+      "safety_lifecycle_expectation": "Approved active USER preference is injectable.",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-zhen-04",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "chinese_to_english",
+      "query": "用户切换组织后仍然看到上一个组织的数据。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-zhen-04",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "Cached account records are partitioned by tenant identity and principal identity together.",
+          "tags": [
+            "tenant-partition",
+            "principal-key"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "tenant-isolation-test"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-zhen-04"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "cross_language_equivalence",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "Tenant and principal partitioning prevents records from a previous organization being reused.",
+      "why_lexical_retrieval_may_fail": "The Chinese visibility symptom omits the English cache partition terminology.",
+      "miss_impact": "Cross-organization data can be displayed.",
+      "memory_kind": "constraint",
+      "annotation_evidence": "Synthetic isolation test establishes the compound cache key.",
+      "safety_lifecycle_expectation": "Approved active project constraint is injectable.",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-object-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-zhen-05",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "chinese_to_english",
+      "query": "偶尔出现已经成功的消息又被发送一次。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-zhen-05",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "The outbox marks a delivery complete in the same transaction as the business mutation.",
+          "tags": [
+            "transactional-outbox",
+            "delivery-complete"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "delivery-replay-test"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-zhen-05"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "cross_language_equivalence",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "Transactional completion prevents an already applied outbox delivery from being replayed.",
+      "why_lexical_retrieval_may_fail": "The Chinese duplicate symptom does not mention outbox transaction semantics.",
+      "miss_impact": "Customers can receive duplicate notifications.",
+      "memory_kind": "stable_fact",
+      "annotation_evidence": "Synthetic replay test verifies atomic outbox completion.",
+      "safety_lifecycle_expectation": "Approved active local fact is injectable.",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-zhen-06",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "chinese_to_english",
+      "query": "不要在回答里重复解释我已经确认过的选择。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-zhen-06",
+          "scope": "user",
+          "category": "preference",
+          "content": "Once a choice is explicit, the user wants only its consequence and next action.",
+          "tags": [
+            "explicit-choice",
+            "next-action"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "explicit-user-choice"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-zhen-06"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "cross_language_equivalence",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "Reporting consequences and next actions avoids re-explaining an explicit decision.",
+      "why_lexical_retrieval_may_fail": "The Chinese request and English preference share no lexical vocabulary.",
+      "miss_impact": "The response repeats settled discussion.",
+      "memory_kind": "preference",
+      "annotation_evidence": "Synthetic explicit user preference governs confirmed choices.",
+      "safety_lifecycle_expectation": "Approved active USER preference is injectable.",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    }
+  ]
+}

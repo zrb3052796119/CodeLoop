@@ -1,0 +1,70 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+
+# MiniCode specific
+.mini-code/
+minicode_session/
+# Project-local / session runtime state (never versioned by design);
+# .mini-code-memory/ is shared project memory and stays tracked.
+.mini-code-memory-local/
+.mini-code-session-memory/
+
+# Node
+node_modules/
+
+# Tooling caches
+.ruff_cache/
+.mypy_cache/
+
+# Scratch output
+session-log.txt
+out.txt

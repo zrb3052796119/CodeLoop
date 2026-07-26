@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "dataset_id": "reflection_llm_replay",
+  "synthetic_data": true,
+  "response_capture_allowed": false,
+  "reviewed_for_version_control": true
+}

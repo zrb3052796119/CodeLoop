@@ -1,0 +1,482 @@
+{
+  "schema_version": "1.0",
+  "document_type": "cases",
+  "synthetic_data": true,
+  "reference_time": 1736942400,
+  "cases": [
+    {
+      "case_id": "sg-pos-context-01",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "multi_clause_contextual_relevance",
+      "query": "While changing the invoice worker, preserve recovery after a crash between charging and recording completion.",
+      "current_files": [
+        "billing/invoice_worker.py"
+      ],
+      "active_domains": [
+        "billing"
+      ],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-context-01",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "The billing workflow writes a durable operation receipt before marking a charge attempt complete.",
+          "tags": [
+            "operation-receipt",
+            "charge-completion"
+          ],
+          "domains": [
+            "billing"
+          ],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成计费崩溃测试确认收据写入顺序。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-context-01"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "multi_clause_context",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "只有结合 invoice worker、崩溃窗口和完成记录，才能确定 durable receipt 约束适用。",
+      "why_lexical_retrieval_may_fail": "单独的 crash 或 worker 词过于宽泛，正确关系依赖多子句任务语义。",
+      "miss_impact": "收费可能重复或无法审计。",
+      "memory_kind": "constraint",
+      "annotation_evidence": "合成计费崩溃测试确认收据写入顺序。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-domain-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-context-02",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "multi_clause_contextual_relevance",
+      "query": "In the local watcher, handle atomic editor saves without reporting two changes for one document.",
+      "current_files": [
+        "dev/watch_bridge.py"
+      ],
+      "active_domains": [
+        "file-events"
+      ],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-context-02",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "The development event bridge collapses a temporary-file rename followed by close-write into one logical edit.",
+          "tags": [
+            "event-collapse",
+            "atomic-save"
+          ],
+          "domains": [
+            "file-events"
+          ],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成原子保存事件序列验证逻辑合并。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-context-02"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "multi_clause_context",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "low",
+      "normalized_token_overlap": 0.041667,
+      "why_semantically_relevant": "local watcher、atomic save 和双事件共同定位到事件桥的合并规则。",
+      "why_lexical_retrieval_may_fail": "任一单词都可指向多种文件事件，组合语义才区分正确记忆。",
+      "miss_impact": "一次保存会触发重复构建。",
+      "memory_kind": "recovery",
+      "annotation_evidence": "合成原子保存事件序列验证逻辑合并。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-context-03",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "multi_clause_contextual_relevance",
+      "query": "这次只改认证回调，并保持我要求的最小化变更范围。",
+      "current_files": [
+        "auth/callback.py"
+      ],
+      "active_domains": [
+        "authentication"
+      ],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-context-03",
+          "scope": "user",
+          "category": "preference",
+          "content": "For this user, authentication fixes may touch adjacent files only when a failing verification proves the dependency.",
+          "tags": [
+            "bounded-auth-change",
+            "verification-evidence"
+          ],
+          "domains": [
+            "authentication"
+          ],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户对认证任务范围的显式约定。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-context-03"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "multi_clause_context",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "认证回调、最小范围和依赖证据三个条件共同触发该 USER 约束。",
+      "why_lexical_retrieval_may_fail": "“只改”本身不足以定位认证专属规则，中英文组合表达也降低词法重叠。",
+      "miss_impact": "修改范围可能无证据地扩散。",
+      "memory_kind": "preference",
+      "annotation_evidence": "合成用户对认证任务范围的显式约定。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-context-04",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "multi_clause_contextual_relevance",
+      "query": "更新导出清单时，要兼容旧检查点，并避免断电留下半份索引。",
+      "current_files": [
+        "export/manifest_index.py"
+      ],
+      "active_domains": [
+        "export-recovery"
+      ],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-context-04",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "导出索引通过新文件加版本尾标写入，再用原子替换发布；读取器接受前一版尾标。",
+          "tags": [
+            "版本尾标",
+            "原子替换"
+          ],
+          "domains": [
+            "export-recovery"
+          ],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成断电和前版兼容测试确认写入协议。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-context-04"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "multi_clause_context",
+      "query_language": "zh",
+      "memory_language": "zh",
+      "lexical_overlap_class": "low",
+      "normalized_token_overlap": 0.04,
+      "why_semantically_relevant": "旧检查点兼容、断电和半份索引共同要求版本尾标与原子替换策略。",
+      "why_lexical_retrieval_may_fail": "单看导出或索引无法判断，需联合恢复和兼容条件。",
+      "miss_impact": "断电后索引可能损坏且旧检查点无法读取。",
+      "memory_kind": "constraint",
+      "annotation_evidence": "合成断电和前版兼容测试确认写入协议。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-domain-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-context-05",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "multi_clause_contextual_relevance",
+      "query": "For the local preview token, rotate credentials without disconnecting requests already in flight.",
+      "current_files": [
+        "preview/session_auth.py"
+      ],
+      "active_domains": [
+        "local-preview"
+      ],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-context-05",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "开发代理在一个宽限窗口内同时接受当前会话凭据和紧邻的前一代凭据。",
+          "tags": [
+            "双代凭据",
+            "宽限窗口"
+          ],
+          "domains": [
+            "local-preview"
+          ],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成凭据轮换并发测试确认双代窗口。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-context-05"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "multi_clause_context",
+      "query_language": "en",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "local preview token、轮换与在途请求三项条件定位到双代宽限窗口。",
+      "why_lexical_retrieval_may_fail": "英文任务与中文记忆跨语言，且单个 token/rotate 不能表达在途连续性。",
+      "miss_impact": "轮换瞬间会中断正在处理的请求。",
+      "memory_kind": "configuration",
+      "annotation_evidence": "合成凭据轮换并发测试确认双代窗口。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-library-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-context-06",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "multi_clause_contextual_relevance",
+      "query": "请修复报告生成器，但不要把本地调试日志放进我最终看到的摘要。",
+      "current_files": [
+        "report/summary_builder.py"
+      ],
+      "active_domains": [
+        "reporting"
+      ],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-context-06",
+          "scope": "user",
+          "category": "preference",
+          "content": "For this user, final reports may cite diagnostic outcomes but must omit raw local trace payloads.",
+          "tags": [
+            "final-report",
+            "omit-raw-trace"
+          ],
+          "domains": [
+            "reporting"
+          ],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户最终报告数据边界确认。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-context-06"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "multi_clause_context",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "报告生成、最终摘要和本地调试日志组合后，USER 的 trace 省略约束明确适用。",
+      "why_lexical_retrieval_may_fail": "查询和英文记忆跨语言，单独的 report 或 local 都不够区分。",
+      "miss_impact": "最终答复可能泄露冗长或敏感的本地诊断内容。",
+      "memory_kind": "preference",
+      "annotation_evidence": "合成用户最终报告数据边界确认。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-attack-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    }
+  ]
+}

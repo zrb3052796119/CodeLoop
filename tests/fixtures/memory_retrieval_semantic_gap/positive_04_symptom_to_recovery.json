@@ -1,0 +1,446 @@
+{
+  "schema_version": "1.0",
+  "document_type": "cases",
+  "synthetic_data": true,
+  "reference_time": 1736942400,
+  "cases": [
+    {
+      "case_id": "sg-pos-recovery-01",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "symptom_to_recovery",
+      "query": "Requests pause for several seconds after the database leader changes.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-recovery-01",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "Discard pooled sockets that belong to the previous server generation before retrying work.",
+          "tags": [
+            "pool-generation",
+            "failover"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成故障转移测试确认清理旧世代连接后恢复。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-recovery-01"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "symptom_to_recovery",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "旧世代连接会在主节点切换后持续阻塞，丢弃这些连接是已验证恢复动作。",
+      "why_lexical_retrieval_may_fail": "查询只描述停顿和主节点变化，没有出现连接池、套接字或世代术语。",
+      "miss_impact": "请求会持续卡顿并扩大故障恢复时间。",
+      "memory_kind": "recovery",
+      "annotation_evidence": "合成故障转移测试确认清理旧世代连接后恢复。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-recovery-02",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "symptom_to_recovery",
+      "query": "The command exits cleanly, but the next invocation says the workspace is occupied.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-recovery-02",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "Release the process lease when both its owner PID and recorded boot token are stale.",
+          "tags": [
+            "process-lease",
+            "boot-token"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成进程重启场景验证双条件租约回收。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-recovery-02"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "symptom_to_recovery",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "干净退出后仍报告占用说明租约残留，PID 与启动令牌共同失效是安全清理条件。",
+      "why_lexical_retrieval_may_fail": "症状没有复述 process lease、PID 或 boot token。",
+      "miss_impact": "后续命令会被错误阻塞。",
+      "memory_kind": "recovery",
+      "annotation_evidence": "合成进程重启场景验证双条件租约回收。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-recovery-03",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "symptom_to_recovery",
+      "query": "我只改了一个接口，生成的补丁却总带上无关文件。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-recovery-03",
+          "scope": "user",
+          "category": "semantic-rule",
+          "content": "Before presenting a patch, rebuild the change set from paths explicitly requested or required by compilation.",
+          "tags": [
+            "bounded-change-set",
+            "patch-review"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户工作流确认展示补丁前收窄路径集合。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-recovery-03"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "symptom_to_recovery",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "按显式路径和编译依赖重建变更集能够排除任务外修改，直接解决补丁夹带问题。",
+      "why_lexical_retrieval_may_fail": "中文症状没有出现英文 change set、path 或 compilation 表达。",
+      "miss_impact": "用户可能误提交无关修改。",
+      "memory_kind": "recovery",
+      "annotation_evidence": "合成用户工作流确认展示补丁前收窄路径集合。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-recovery-04",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "symptom_to_recovery",
+      "query": "上传到一半断网，恢复连接后进度又回到开头。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-recovery-04",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "服务端每确认一个分片就持久化连续偏移，重连时从最后确认点继续。",
+          "tags": [
+            "分片确认点",
+            "连续偏移"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成断网恢复测试验证服务端确认点。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-recovery-04"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "symptom_to_recovery",
+      "query_language": "zh",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "持久化确认偏移提供断网重连后的恢复位置，避免上传重新开始。",
+      "why_lexical_retrieval_may_fail": "查询只有用户可见现象，没有出现分片确认点或连续偏移。",
+      "miss_impact": "大文件会反复传输并浪费带宽。",
+      "memory_kind": "recovery",
+      "annotation_evidence": "合成断网恢复测试验证服务端确认点。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-recovery-05",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "symptom_to_recovery",
+      "query": "After a worker restart, completed notifications are sent one more time.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-recovery-05",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "恢复消费者时先读取持久化投递账本，已确认的消息不得再次发布。",
+          "tags": [
+            "投递账本",
+            "恢复消费者"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成消费者重启测试确认账本先于重新发布读取。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-recovery-05"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "symptom_to_recovery",
+      "query_language": "en",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "持久化投递账本可识别重启前已完成通知，是重复发送的直接恢复措施。",
+      "why_lexical_retrieval_may_fail": "英文症状与中文投递账本表达没有明显词元交集。",
+      "miss_impact": "外部接收方会处理重复通知。",
+      "memory_kind": "recovery",
+      "annotation_evidence": "合成消费者重启测试确认账本先于重新发布读取。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-direction-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-recovery-06",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "symptom_to_recovery",
+      "query": "测试进程偶尔不退出，只剩一个空闲线程。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-recovery-06",
+          "scope": "user",
+          "category": "semantic-rule",
+          "content": "When the suite reaches teardown, cancel the idle event-stream heartbeat before joining worker threads.",
+          "tags": [
+            "heartbeat-cancel",
+            "test-teardown"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成测试退出场景验证取消心跳后进程终止。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-recovery-06"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "symptom_to_recovery",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "空闲心跳会保持线程存活，teardown 先取消它是已确认的退出恢复步骤。",
+      "why_lexical_retrieval_may_fail": "查询未出现 event-stream heartbeat、teardown 或 join 术语。",
+      "miss_impact": "测试任务会永久占用执行槽位。",
+      "memory_kind": "recovery",
+      "annotation_evidence": "合成测试退出场景验证取消心跳后进程终止。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-verified-recovery-011",
+      "category": "recovery_and_verification",
+      "description": "A linked repair and passed targeted test is durable",
+      "task_description": "Fix and verify the parser",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "run_command", "error_type": "AssertionError", "message": "Parser returned the wrong token"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "related_error_call_ids": ["call-1"], "action": "Corrected token normalization", "files_changed": ["src/parser.py"]},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_call", "tool_name": "run_command", "command": "pytest tests/test_parser.py -q"},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "7 passed"},
+        {"event_id": "event-5", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": ["src/parser.py"], "tools": ["edit_file", "run_command"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "error_type": "AssertionError", "required_terms": ["wrong token"], "source_event_ids": ["event-1"]}], "recoveries": [{"recovery_id": "recovery-1", "required_terms": ["token normalization"], "evidence_ids": ["event-2"], "epistemic_status": "confirmed"}], "decisions": [], "verification": [{"verification_id": "verify-1", "required_terms": ["7 passed"], "evidence_ids": ["event-3", "event-4"]}], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["confirmed_error_recovery_verified", "verified_solution"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "recovery", "semantic_key": "parser_token_normalization", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "required_terms": ["wrong token", "token normalization"], "forbidden_terms": [], "requires_applies_when": true, "requires_limitations": true}],
+      "forbidden_claims": [{"required_terms": ["probably fixed"]}],
+      "notes": "The targeted verification limitation must remain explicit."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-user-correction-012",
+      "category": "decisions_and_constraints",
+      "description": "An explicit user correction is durable",
+      "task_description": "Correct the cache behavior",
+      "trace": [
+        {"event_id": "event-1", "type": "user_correction", "content": "The cache is per project, not global across users."},
+        {"event_id": "event-2", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": [], "libraries": [], "errors": [], "recoveries": [], "decisions": [{"decision_id": "decision-1", "required_terms": ["per project", "not global"], "evidence_ids": ["event-1"], "epistemic_status": "confirmed"}], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["user_correction"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "correction", "semantic_key": "project_cache_scope", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "required_terms": ["per project", "not global"], "forbidden_terms": []}],
+      "forbidden_claims": [],
+      "notes": "User correction is a direct durable signal without confidence gating."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-old-memory-disproved-013",
+      "category": "decisions_and_constraints",
+      "description": "A user correction can explicitly disprove old memory",
+      "task_description": "Correct stale deletion memory",
+      "trace": [
+        {"event_id": "event-1", "type": "user_correction", "content": "The old memory is wrong: deleting an entry leaves the tag index stale."},
+        {"event_id": "event-2", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": [], "libraries": [], "errors": [], "recoveries": [], "decisions": [{"decision_id": "decision-1", "required_terms": ["old memory", "wrong", "tag index"], "evidence_ids": ["event-1"], "epistemic_status": "confirmed"}], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["user_correction", "old_memory_disproved"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "correction", "semantic_key": "old_delete_memory_disproved", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "required_terms": ["old memory", "wrong", "tag index"], "forbidden_terms": []}],
+      "forbidden_claims": [{"required_terms": ["automatically delete old memory"]}],
+      "notes": "The corrected memory is superseded semantically, not auto-deleted."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-project-constraint-014",
+      "category": "decisions_and_constraints",
+      "description": "A stable explicit project constraint is durable",
+      "task_description": "Refactor the parser",
+      "trace": [
+        {"event_id": "event-1", "type": "user_constraint", "content": "Do not change the public parse API or its return type."},
+        {"event_id": "event-2", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": [], "libraries": [], "errors": [], "recoveries": [], "decisions": [{"decision_id": "decision-1", "required_terms": ["public parse api", "return type"], "evidence_ids": ["event-1"], "epistemic_status": "confirmed"}], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["stable_project_constraint"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "constraint", "semantic_key": "preserve_parse_api", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "required_terms": ["public parse", "return type"], "forbidden_terms": ["may change"]}],
+      "forbidden_claims": [],
+      "notes": "Temporary execution steps are excluded; this is an explicit stable constraint."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-confirmed-dependency-015",
+      "category": "library_detection",
+      "description": "Manifest dependencies form a durable project claim",
+      "task_description": "Inspect project dependencies",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "read_file", "input": {"path": "requirements.txt"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "read_file", "status": "success", "files": ["requirements.txt"], "output_summary": "fastapi==0.115\nuvicorn==0.31"},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["requirements.txt"], "files_changed": [], "tools": ["read_file"], "libraries": [{"name": "fastapi", "status": "confirmed", "evidence_ids": ["event-2"]}, {"name": "uvicorn", "status": "confirmed", "evidence_ids": ["event-2"]}], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["confirmed_dependency"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "dependency", "semantic_key": "fastapi_uvicorn_dependencies", "evidence_ids": ["event-2"], "epistemic_status": "confirmed", "required_terms": ["fastapi", "uvicorn"], "forbidden_terms": []}],
+      "forbidden_claims": [],
+      "notes": "Only confirmed LibraryEvidence is promoted."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-weak-dependency-016",
+      "category": "library_detection",
+      "description": "A prose library mention is not a dependency claim",
+      "task_description": "Discuss framework options",
+      "trace": [
+        {"event_id": "event-1", "type": "assistant_step", "content": "Django may be worth considering for a future service."},
+        {"event_id": "event-2", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": [], "libraries": [{"name": "django", "status": "weak_mention", "evidence_ids": ["event-1"]}], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["weak_dependency_mention"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["confirmed dependency", "django"]}],
+      "notes": "Weak mentions remain evidence diagnostics only."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-technical-decision-017",
+      "category": "decisions_and_constraints",
+      "description": "An explicit technical choice with applicability is durable",
+      "task_description": "Make permission cache updates consistent",
+      "trace": [
+        {"event_id": "event-1", "type": "assistant_step", "content": "I choose write-through updates for the permission cache because readers must observe committed changes immediately."},
+        {"event_id": "event-2", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": [], "libraries": [], "errors": [], "recoveries": [], "decisions": [{"decision_id": "decision-1", "required_terms": ["write-through", "permission cache"], "evidence_ids": ["event-1"], "epistemic_status": "confirmed"}], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["key_technical_decision"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "decision", "semantic_key": "permission_cache_write_through", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "required_terms": ["write-through", "permission cache"], "forbidden_terms": [], "requires_applies_when": true}],
+      "forbidden_claims": [],
+      "notes": "The rationale is retained separately from certainty."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-routine-step-not-decision-018",
+      "category": "decisions_and_constraints",
+      "description": "A routine execution step is not a technical decision",
+      "task_description": "Inspect the parser",
+      "trace": [
+        {"event_id": "event-1", "type": "assistant_step", "content": "I will read the parser and start by listing its tests."},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_call", "tool_name": "read_file", "input": {"path": "src/parser.py"}},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["src/parser.py"], "files_changed": [], "tools": ["read_file"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_operation_no_decision"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["key technical decision"]}],
+      "notes": "Planning verbs do not automatically imply durable decisions."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-inferred-root-cause-019",
+      "category": "error_deduplication",
+      "description": "An unverified causal explanation remains inferred",
+      "task_description": "Diagnose a stale cache lookup",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "run_command", "error_type": "CacheError", "message": "Cache lookup returned a stale value"},
+        {"event_id": "event-2", "type": "assistant_step", "content": "The cache race caused the stale lookup failure."},
+        {"event_id": "event-3", "type": "task_result", "status": "failed"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "error_type": "CacheError", "required_terms": ["stale value"], "source_event_ids": ["event-1"]}], "recoveries": [], "decisions": [{"decision_id": "decision-1", "required_terms": ["cache race", "caused"], "evidence_ids": ["event-2"], "epistemic_status": "inferred"}], "verification": [], "outcome": "failed"},
+      "expected_value": {"should_write_memory": false, "reasons": ["unsupported_root_cause"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["confirmed root cause"]}],
+      "notes": "The valid inferred candidate is diagnostic but not persistable."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-confirmed-root-cause-020",
+      "category": "recovery_and_verification",
+      "description": "Root cause confirmation requires the complete chain",
+      "task_description": "Repair stale memory indexes",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "delete_memory", "error_type": "IndexError", "message": "Deleted entry remained in the tag index"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "related_error_call_ids": ["call-1"], "action": "Rebuilt all indexes after deletion", "files_changed": ["minicode/memory.py"]},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_call", "tool_name": "run_command", "command": "pytest tests/test_memory.py -q"},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "memory index tests: 9 passed"},
+        {"event_id": "event-5", "type": "assistant_step", "content": "The stale tag index caused delete lookup failures; rebuilding all indexes fixes it."},
+        {"event_id": "event-6", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": ["minicode/memory.py"], "tools": ["delete_memory", "edit_file", "run_command"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "error_type": "IndexError", "required_terms": ["tag index"], "source_event_ids": ["event-1"]}], "recoveries": [{"recovery_id": "recovery-1", "required_terms": ["rebuilt all indexes"], "evidence_ids": ["event-2"], "epistemic_status": "confirmed"}], "decisions": [{"decision_id": "decision-1", "required_terms": ["stale tag index", "caused"], "evidence_ids": ["event-5"], "epistemic_status": "confirmed"}], "verification": [{"verification_id": "verify-1", "required_terms": ["9 passed"], "evidence_ids": ["event-3", "event-4"]}], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["confirmed_error_recovery_verified"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "root_cause", "semantic_key": "stale_tag_index_root_cause", "evidence_ids": ["event-1", "event-2", "event-3", "event-4", "event-5"], "epistemic_status": "confirmed", "required_terms": ["stale tag index", "caused"], "forbidden_terms": [], "requires_applies_when": true, "requires_limitations": true}],
+      "forbidden_claims": [{"required_terms": ["probably"]}],
+      "notes": "The confirmed claim cites error, causal decision, recovery, and successful verification."
+    }
+  ]
+}

@@ -1,0 +1,446 @@
+{
+  "schema_version": "1.0",
+  "document_type": "cases",
+  "synthetic_data": true,
+  "reference_time": 1736942400,
+  "cases": [
+    {
+      "case_id": "sg-pos-root-01",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "symptom_to_root_cause",
+      "query": "Freshly uploaded avatars sometimes display an older image for several minutes.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-root-01",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "Confirmed root cause: the image response omitted a content revision from its edge-cache key.",
+          "tags": [
+            "cache-key",
+            "content-revision"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成缓存回归测试和键检查确认修订号缺失。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-root-01"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "symptom_to_root_cause",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "low",
+      "normalized_token_overlap": 0.052632,
+      "why_semantically_relevant": "缓存键缺少内容修订号会让新上传图片命中旧对象，能够完整解释延迟更新。",
+      "why_lexical_retrieval_may_fail": "查询没有出现 edge cache、cache key 或 revision。",
+      "miss_impact": "修复可能误落在上传链路而保留真正缓存缺陷。",
+      "memory_kind": "root_cause",
+      "annotation_evidence": "合成缓存回归测试和键检查确认修订号缺失。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-root-02",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "symptom_to_root_cause",
+      "query": "Only the first command after laptop sleep fails to reach the local daemon.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-root-02",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "Confirmed root cause: the development socket path points at a runtime directory recreated after wake.",
+          "tags": [
+            "runtime-directory",
+            "socket-path"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成睡眠唤醒测试和路径 inode 检查确认根因。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-root-02"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "symptom_to_root_cause",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "low",
+      "normalized_token_overlap": 0.047619,
+      "why_semantically_relevant": "休眠唤醒后运行目录重建使旧 socket 路径失效，符合仅首次连接失败的现象。",
+      "why_lexical_retrieval_may_fail": "症状没有 runtime directory、socket path 或 recreated。",
+      "miss_impact": "会把问题错误归因于守护进程启动时序。",
+      "memory_kind": "root_cause",
+      "annotation_evidence": "合成睡眠唤醒测试和路径 inode 检查确认根因。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-root-03",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "symptom_to_root_cause",
+      "query": "在我的终端里，长命令的最后几个字符会被提示符盖住。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-root-03",
+          "scope": "user",
+          "category": "semantic-rule",
+          "content": "Confirmed user-environment cause: the configured prompt width counts ANSI color bytes as visible columns.",
+          "tags": [
+            "ansi-width",
+            "prompt-columns"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成终端宽度探针确认颜色字节计数偏差。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-root-03"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "symptom_to_root_cause",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "ANSI 字节被算作可见列会高估提示符宽度，直接导致输入尾部覆盖。",
+      "why_lexical_retrieval_may_fail": "中文现象与英文 ANSI、visible columns 没有共享高信息词元。",
+      "miss_impact": "调整终端尺寸无法消除宽度计算错误。",
+      "memory_kind": "root_cause",
+      "annotation_evidence": "合成终端宽度探针确认颜色字节计数偏差。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-object-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-root-04",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "symptom_to_root_cause",
+      "query": "批处理任务越跑越慢，但 CPU 和数据库负载都很低。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-root-04",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "已确认根因是每个批次都创建新的遥测 exporter，后台刷新线程持续累积。",
+          "tags": [
+            "exporter泄漏",
+            "刷新线程"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成批处理剖析记录确认 exporter 数量随批次增长。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-root-04"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "symptom_to_root_cause",
+      "query_language": "zh",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "exporter 重复创建造成线程累积，可解释低 CPU 与数据库负载下的渐进变慢。",
+      "why_lexical_retrieval_may_fail": "查询没有出现遥测 exporter、刷新线程或重复创建。",
+      "miss_impact": "优化数据库不会改善长期退化。",
+      "memory_kind": "root_cause",
+      "annotation_evidence": "合成批处理剖析记录确认 exporter 数量随批次增长。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-root-05",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "symptom_to_root_cause",
+      "query": "A file watcher reports the same edit twice only inside containers.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-root-05",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "已确认根因是容器挂载层同时转发 close-write 与 rename 两种宿主事件。",
+          "tags": [
+            "挂载事件",
+            "双重转发"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成容器事件跟踪确认一笔保存对应两类宿主事件。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-root-05"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "symptom_to_root_cause",
+      "query_language": "en",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "挂载层对同一次保存转发两种事件，可解释容器内的双重通知。",
+      "why_lexical_retrieval_may_fail": "英文症状没有中文挂载层及宿主事件术语。",
+      "miss_impact": "仅在应用层去重会掩盖平台事件来源。",
+      "memory_kind": "root_cause",
+      "annotation_evidence": "合成容器事件跟踪确认一笔保存对应两类宿主事件。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-root-06",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "symptom_to_root_cause",
+      "query": "我要求只输出 JSON，但工具结果前面偶尔多出解释文字。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-root-06",
+          "scope": "user",
+          "category": "semantic-rule",
+          "content": "Confirmed preference-path cause: the response formatter applies the prose preamble before it checks structured-only mode.",
+          "tags": [
+            "structured-only",
+            "formatter-order"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成结构化输出测试确认检查顺序。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-root-06"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "symptom_to_root_cause",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "格式化器先写前言再检查结构化模式，会稳定产生 JSON 前的解释文字。",
+      "why_lexical_retrieval_may_fail": "中文输出症状没有英文 formatter、preamble 或 structured-only。",
+      "miss_impact": "继续收紧解析器不能阻止上游多余文本。",
+      "memory_kind": "root_cause",
+      "annotation_evidence": "合成结构化输出测试确认检查顺序。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-direction-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    }
+  ]
+}

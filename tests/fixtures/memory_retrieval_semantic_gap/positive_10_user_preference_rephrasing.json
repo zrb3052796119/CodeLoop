@@ -1,0 +1,446 @@
+{
+  "schema_version": "1.0",
+  "document_type": "cases",
+  "synthetic_data": true,
+  "reference_time": 1736942400,
+  "cases": [
+    {
+      "case_id": "sg-pos-preference-01",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "user_preference_rephrasing",
+      "query": "Implement the fix and report only the evidence needed to review it.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-preference-01",
+          "scope": "user",
+          "category": "preference",
+          "content": "The user prefers concise engineering conclusions that retain changed paths and verification results.",
+          "tags": [
+            "review-evidence",
+            "concise-engineering"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户显式确认的工程报告偏好。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-preference-01"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "preference_rephrasing",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "当前请求的精简审阅口径与稳定偏好中的结论、路径和验证信息完全一致。",
+      "why_lexical_retrieval_may_fail": "查询使用 evidence/review，记忆使用 conclusions/paths/verification，直接 token 交集很弱。",
+      "miss_impact": "答复可能冗长或遗漏关键验证证据。",
+      "memory_kind": "preference",
+      "annotation_evidence": "合成用户显式确认的工程报告偏好。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-preference-02",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "user_preference_rephrasing",
+      "query": "不要停在方案里，把能验证的改动直接落地。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-preference-02",
+          "scope": "user",
+          "category": "preference",
+          "content": "For reversible coding work, the user wants implementation and tests in the same task instead of a proposal-only response.",
+          "tags": [
+            "implement-and-test",
+            "reversible-work"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户明确选择的执行方式。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-preference-02"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "preference_rephrasing",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "请求直接落地与 USER 对可逆编码任务实施加测试的偏好一致。",
+      "why_lexical_retrieval_may_fail": "中英文表达不同，且 proposal-only 与停在方案没有共享词元。",
+      "miss_impact": "代理可能只给设计而不完成代码和测试。",
+      "memory_kind": "preference",
+      "annotation_evidence": "合成用户明确选择的执行方式。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-preference-03",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "user_preference_rephrasing",
+      "query": "When showing failures, give me the decisive lines rather than the entire terminal log.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-preference-03",
+          "scope": "user",
+          "category": "preference",
+          "content": "用户希望故障汇报保留关键错误与结论，不整段粘贴命令输出。",
+          "tags": [
+            "关键错误",
+            "故障汇报"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户故障报告偏好确认。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-preference-03"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "preference_rephrasing",
+      "query_language": "en",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "保留决定性错误行而非完整日志正是该 USER 故障汇报偏好。",
+      "why_lexical_retrieval_may_fail": "英文请求与中文记忆没有共享词元。",
+      "miss_impact": "输出会被大量无关日志淹没。",
+      "memory_kind": "preference",
+      "annotation_evidence": "合成用户故障报告偏好确认。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-preference-04",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "user_preference_rephrasing",
+      "query": "涉及不可逆的数据操作时先让我确认。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-preference-04",
+          "scope": "user",
+          "category": "preference",
+          "content": "The user requires explicit approval before destructive or irreversible data changes.",
+          "tags": [
+            "explicit-approval",
+            "irreversible-data"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户明确声明的审批要求。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-preference-04"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "preference_rephrasing",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "不可逆数据操作属于稳定的显式审批边界。",
+      "why_lexical_retrieval_may_fail": "中文请求与英文 destructive/approval 表达缺少直接词元。",
+      "miss_impact": "代理可能未经授权修改或删除数据。",
+      "memory_kind": "preference",
+      "annotation_evidence": "合成用户明确声明的审批要求。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-direction-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-preference-05",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "user_preference_rephrasing",
+      "query": "Keep the response focused on behavior, risks, and test evidence.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-preference-05",
+          "scope": "user",
+          "category": "preference",
+          "content": "用户审阅代码时优先关注行为回归、风险和缺失测试，不需要泛泛的风格评价。",
+          "tags": [
+            "行为回归",
+            "测试证据"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户代码审阅优先级确认。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-preference-05"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "preference_rephrasing",
+      "query_language": "en",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "当前要求的行为、风险和测试证据与既有代码审阅偏好一致。",
+      "why_lexical_retrieval_may_fail": "英文 focused/evidence 与中文行为回归/缺失测试不直接匹配。",
+      "miss_impact": "审阅可能偏向无关风格问题。",
+      "memory_kind": "preference",
+      "annotation_evidence": "合成用户代码审阅优先级确认。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-preference-06",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "user_preference_rephrasing",
+      "query": "这次不要用远程服务，所有验证都在本机完成。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-preference-06",
+          "scope": "user",
+          "category": "preference",
+          "content": "For diagnostic evaluations, this user prefers offline execution with zero external model calls.",
+          "tags": [
+            "offline-evaluation",
+            "zero-remote"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户离线评测偏好确认。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-preference-06"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "preference_rephrasing",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "本机完成且不用远程服务等价于 USER 对诊断评测的离线零调用偏好。",
+      "why_lexical_retrieval_may_fail": "中文本机/远程与英文 offline/external model 没有共享词元。",
+      "miss_impact": "测试可能产生网络依赖、费用或数据外发。",
+      "memory_kind": "preference",
+      "annotation_evidence": "合成用户离线评测偏好确认。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-domain-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    }
+  ]
+}

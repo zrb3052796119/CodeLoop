@@ -1,0 +1,51 @@
+{
+  "benchmark": "Optional reflection LLM local overhead",
+  "eligibility_under_1ms": true,
+  "provider_latency_excluded": true,
+  "resource_limits": {
+    "max_claims": 8,
+    "max_input_bytes": 24576,
+    "max_output_bytes": 32768,
+    "max_output_tokens": 1200,
+    "timeout_seconds": 15.0
+  },
+  "results": [
+    {
+      "iterations": 5000,
+      "label": "eligibility_gate",
+      "median_ms": 0.0008,
+      "p95_ms": 0.0009,
+      "peak_kib": 1.1
+    },
+    {
+      "iterations": 1000,
+      "label": "allowlisted_envelope",
+      "median_ms": 0.1233,
+      "p95_ms": 0.1381,
+      "peak_kib": 11.0
+    },
+    {
+      "iterations": 1000,
+      "label": "rule_synthesis_validation_value",
+      "median_ms": 0.0612,
+      "p95_ms": 0.0682,
+      "peak_kib": 7.9
+    },
+    {
+      "iterations": 2000,
+      "label": "validator_value_only",
+      "median_ms": 0.0006,
+      "p95_ms": 0.0007,
+      "peak_kib": 1.0
+    },
+    {
+      "iterations": 500,
+      "label": "scripted_llm_parse_validation_value",
+      "median_ms": 0.2232,
+      "p95_ms": 0.2382,
+      "peak_kib": 15.3
+    }
+  ],
+  "rule_path_under_1ms": true,
+  "scripted_provider_reported_latency_ms": 4.0
+}

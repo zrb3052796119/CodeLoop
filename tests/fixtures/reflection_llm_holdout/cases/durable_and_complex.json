@@ -1,0 +1,321 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "case_id": "holdout-cross-decision-001",
+      "category": "cross_event_decision",
+      "task_description": "Choose cache consistency behavior",
+      "trace": [
+        {"event_id": "event-1", "type": "assistant_step", "content": "I choose write-through updates for permission cache."},
+        {"event_id": "event-2", "type": "assistant_step", "content": "I choose invalidation on tenant boundary changes."},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "decision", "semantic_key": "permission_cache_consistency_policy", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "required_terms": ["write-through updates", "tenant boundary changes"], "forbidden_terms": []}
+      ],
+      "forbidden_claims": [],
+      "should_write_memory": true,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "decision", "semantic_key": "permission_cache_consistency_policy", "statement": "I choose write-through updates for permission cache. I choose invalidation on tenant boundary changes.", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "applies_when": "When permission cache consistency crosses tenant boundaries.", "limitations": [], "verification_ids": [], "related_error_ids": [], "related_recovery_ids": []}
+      ]},
+      "notes": "One reusable policy requires combining two explicit decisions; the rule synthesizer emits them separately."
+    },
+    {
+      "case_id": "holdout-multilingual-decision-002",
+      "category": "multilingual",
+      "task_description": "确定事件发布策略",
+      "trace": [
+        {"event_id": "event-1", "type": "assistant_step", "content": "选择 transactional outbox 记录提交后的事件。"},
+        {"event_id": "event-2", "type": "assistant_step", "content": "I choose idempotency keys for consumer retries."},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "decision", "semantic_key": "outbox_idempotent_delivery", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "required_terms": ["transactional outbox", "idempotency keys"], "forbidden_terms": []}
+      ],
+      "forbidden_claims": [],
+      "should_write_memory": true,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "decision", "semantic_key": "outbox_idempotent_delivery", "statement": "选择 transactional outbox 记录提交后的事件。 I choose idempotency keys for consumer retries.", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "applies_when": "当事件发布需要处理 consumer retries 时。", "limitations": [], "verification_ids": [], "related_error_ids": [], "related_recovery_ids": []}
+      ]},
+      "notes": "Chinese-English cross-event synthesis."
+    },
+    {
+      "case_id": "holdout-indirect-correction-003",
+      "category": "multilingual",
+      "task_description": "Correct retry ownership",
+      "trace": [
+        {"event_id": "event-1", "type": "user_correction", "content": "重试并不是 gateway 负责；owner is the worker queue."},
+        {"event_id": "event-2", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "correction", "semantic_key": "retry_owner_worker_queue", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "required_terms": ["gateway", "worker queue"], "forbidden_terms": []}
+      ],
+      "forbidden_claims": [],
+      "should_write_memory": true,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "correction", "semantic_key": "retry_owner_worker_queue", "statement": "重试并不是 gateway 负责；owner is the worker queue.", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "applies_when": "When assigning retry ownership.", "limitations": [], "verification_ids": [], "related_error_ids": [], "related_recovery_ids": []}
+      ]},
+      "notes": "Indirect bilingual user correction."
+    },
+    {
+      "case_id": "holdout-old-plan-disproved-004",
+      "category": "cross_event_decision",
+      "task_description": "Replace stale pagination guidance",
+      "trace": [
+        {"event_id": "event-1", "type": "user_correction", "content": "The old memory is stale: offset pagination duplicates rows during concurrent inserts."},
+        {"event_id": "event-2", "type": "assistant_step", "content": "I choose cursor pagination for the activity feed."},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "correction", "semantic_key": "activity_feed_cursor_pagination", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "required_terms": ["offset pagination duplicates rows", "cursor pagination"], "forbidden_terms": []}
+      ],
+      "forbidden_claims": [],
+      "should_write_memory": true,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "correction", "semantic_key": "activity_feed_cursor_pagination", "statement": "The old memory is stale: offset pagination duplicates rows during concurrent inserts. I choose cursor pagination for the activity feed.", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "applies_when": "When paginating an activity feed with concurrent inserts.", "limitations": [], "verification_ids": [], "related_error_ids": [], "related_recovery_ids": []}
+      ]},
+      "notes": "Combines disproved guidance with its replacement."
+    },
+    {
+      "case_id": "holdout-project-constraint-005",
+      "category": "cross_event_decision",
+      "task_description": "Preserve compatibility while changing storage",
+      "trace": [
+        {"event_id": "event-1", "type": "user_constraint", "content": "The serialized event schema must remain backward compatible."},
+        {"event_id": "event-2", "type": "assistant_step", "content": "I choose additive fields with defaults for the migration."},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "constraint", "semantic_key": "event_schema_additive_compatibility", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "required_terms": ["backward compatible", "additive fields"], "forbidden_terms": []}
+      ],
+      "forbidden_claims": [],
+      "should_write_memory": true,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "constraint", "semantic_key": "event_schema_additive_compatibility", "statement": "The serialized event schema must remain backward compatible. I choose additive fields with defaults for the migration.", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "applies_when": "When migrating the serialized event schema.", "limitations": [], "verification_ids": [], "related_error_ids": [], "related_recovery_ids": []}
+      ]},
+      "notes": "A constraint is made actionable by a separate technical decision."
+    },
+    {
+      "case_id": "holdout-unfamiliar-dependency-006",
+      "category": "unfamiliar_dependency",
+      "task_description": "Inspect serialization dependencies",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "peek_manifest", "input": {"path": "requirements.txt"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "peek_manifest", "status": "success", "files": ["requirements.txt"], "output_summary": "orjson==3.10.6\nmsgspec==0.18.6"},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "dependency", "semantic_key": "orjson_msgspec_dependencies", "evidence_ids": ["event-2"], "epistemic_status": "confirmed", "required_terms": ["orjson", "msgspec"], "forbidden_terms": []}
+      ],
+      "forbidden_claims": [],
+      "should_write_memory": true,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "dependency", "semantic_key": "orjson_msgspec_dependencies", "statement": "Confirmed project dependencies: orjson, msgspec.", "evidence_ids": ["event-2"], "epistemic_status": "confirmed", "applies_when": "When changing project serialization.", "limitations": [], "verification_ids": [], "related_error_ids": [], "related_recovery_ids": []}
+      ]},
+      "notes": "Unknown tool and libraries are grounded by a manifest result."
+    },
+    {
+      "case_id": "holdout-verified-recovery-007",
+      "category": "causal_paraphrase",
+      "task_description": "Repair lease renewal",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "lease_probe", "error_type": "LeaseExpiredError", "message": "Renewal used a stale fencing token"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "patch_file", "related_error_call_ids": ["call-1"], "action": "Refresh the fencing token before renewal", "files_changed": ["src/lease.py"]},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_call", "tool_name": "verify_lease", "command": "pytest tests/test_lease.py -q"},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "verify_lease", "status": "success", "output_summary": "lease renewal targeted tests: 6 passed"},
+        {"event_id": "event-5", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "recovery", "semantic_key": "lease_refresh_fencing_token", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "required_terms": ["stale fencing token", "refresh the fencing token"], "forbidden_terms": []}
+      ],
+      "forbidden_claims": [{"required_terms": ["root cause"]}],
+      "should_write_memory": true,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "recovery", "semantic_key": "lease_refresh_fencing_token", "statement": "After Renewal used a stale fencing token, the recovery action was: Refresh the fencing token before renewal.", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "applies_when": "When lease renewal reports a stale fencing token.", "limitations": ["Verified by targeted lease renewal tests only."], "verification_ids": ["verify-000001"], "related_error_ids": ["error-000001"], "related_recovery_ids": ["recovery-000001"]}
+      ]},
+      "notes": "Verified recovery without claiming a root cause."
+    },
+    {
+      "case_id": "holdout-partial-recovery-008",
+      "category": "partial_recovery",
+      "task_description": "Retry failed shard upload",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "shard_uploader", "error_type": "UploadTimeout", "message": "Shard seven timed out after commit"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "retry_shard", "related_error_call_ids": ["call-1"], "action": "Retry shard seven with the existing commit id", "epistemic_status": "inferred"},
+        {"event_id": "event-3", "type": "task_result", "status": "unknown"}
+      ],
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["confirmed", "retry shard seven"]}],
+      "should_write_memory": false,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "recovery", "semantic_key": "shard_retry_unverified", "statement": "After Shard seven timed out after commit, the recovery action was: Retry shard seven with the existing commit id.", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "inferred", "applies_when": "When a committed shard upload times out.", "limitations": ["No successful verification is present."], "verification_ids": [], "related_error_ids": ["error-000001"], "related_recovery_ids": ["recovery-000001"]}
+      ]},
+      "notes": "A plausible but unverified recovery must remain non-persistable."
+    },
+    {
+      "case_id": "holdout-multiple-errors-one-fix-009",
+      "category": "partial_recovery",
+      "task_description": "Repair batch import",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "batch_import", "error_type": "SchemaMismatch", "message": "Column account_id was missing"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "error", "tool_name": "batch_import", "error_type": "QuotaExceeded", "message": "Tenant daily quota was exhausted"},
+        {"event_id": "event-3", "call_id": "call-3", "type": "recovery", "tool_name": "patch_mapper", "related_error_call_ids": ["call-1"], "action": "Map legacy account column to account_id"},
+        {"event_id": "event-4", "call_id": "call-4", "type": "tool_call", "tool_name": "schema_check", "command": "pytest tests/test_import_schema.py -q"},
+        {"event_id": "event-5", "call_id": "call-4", "type": "tool_result", "tool_name": "schema_check", "status": "success", "output_summary": "schema targeted tests: 4 passed"},
+        {"event_id": "event-6", "type": "task_result", "status": "failed"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "recovery", "semantic_key": "legacy_account_column_mapping", "evidence_ids": ["event-1", "event-3", "event-4", "event-5"], "epistemic_status": "confirmed", "required_terms": ["account_id was missing", "map legacy account column"], "forbidden_terms": []},
+        {"claim_id": "expected-2", "claim_type": "error_pattern", "semantic_key": "tenant_quota_exhausted", "evidence_ids": ["event-2"], "epistemic_status": "confirmed", "required_terms": ["tenant daily quota was exhausted"], "forbidden_terms": []}
+      ],
+      "forbidden_claims": [{"required_terms": ["all batch import failures fixed"]}],
+      "should_write_memory": true,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "recovery", "semantic_key": "legacy_account_column_mapping", "statement": "After Column account_id was missing, the recovery action was: Map legacy account column to account_id.", "evidence_ids": ["event-1", "event-3", "event-4", "event-5"], "epistemic_status": "confirmed", "applies_when": "When legacy imports omit account_id.", "limitations": ["Only the schema failure was verified."], "verification_ids": ["verify-000001"], "related_error_ids": ["error-000001"], "related_recovery_ids": ["recovery-000001"]},
+        {"claim_type": "error_pattern", "semantic_key": "tenant_quota_exhausted", "statement": "Observed error pattern for batch_import / QuotaExceeded: Tenant daily quota was exhausted", "evidence_ids": ["event-2"], "epistemic_status": "confirmed", "applies_when": "When batch_import reports QuotaExceeded.", "limitations": [], "verification_ids": [], "related_error_ids": ["error-000002"], "related_recovery_ids": []}
+      ]},
+      "notes": "Only one of two failures was repaired; both facts remain distinct."
+    },
+    {
+      "case_id": "holdout-one-recovery-two-verifications-010",
+      "category": "causal_paraphrase",
+      "task_description": "Fix decimal settlement rounding",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "settlement_test", "error_type": "RoundingError", "message": "Half-even settlement rounded upward"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "edit_decimal", "related_error_call_ids": ["call-1"], "action": "Apply decimal ROUND_HALF_EVEN at the settlement boundary"},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_call", "tool_name": "verify_decimal", "command": "pytest tests/test_rounding.py -q"},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "verify_decimal", "status": "success", "output_summary": "rounding targeted tests: 8 passed"},
+        {"event_id": "event-5", "call_id": "call-4", "type": "tool_call", "tool_name": "verify_settlement", "command": "pytest tests/test_settlement.py -q"},
+        {"event_id": "event-6", "call_id": "call-4", "type": "tool_result", "tool_name": "verify_settlement", "status": "success", "output_summary": "settlement targeted tests: 12 passed"},
+        {"event_id": "event-7", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "recovery", "semantic_key": "settlement_half_even_rounding", "evidence_ids": ["event-1", "event-2", "event-3", "event-4", "event-5", "event-6"], "epistemic_status": "confirmed", "required_terms": ["half-even settlement rounded upward", "round_half_even"], "forbidden_terms": []}
+      ],
+      "forbidden_claims": [],
+      "should_write_memory": true,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "recovery", "semantic_key": "settlement_half_even_rounding", "statement": "After Half-even settlement rounded upward, the recovery action was: Apply decimal ROUND_HALF_EVEN at the settlement boundary.", "evidence_ids": ["event-1", "event-2", "event-3", "event-4", "event-5", "event-6"], "epistemic_status": "confirmed", "applies_when": "When settlement values require half-even rounding.", "limitations": ["Verified by rounding and settlement test scopes."], "verification_ids": ["verify-000001", "verify-000002"], "related_error_ids": ["error-000001"], "related_recovery_ids": ["recovery-000001"]}
+      ]},
+      "notes": "One recovery supported by two verification records."
+    },
+    {
+      "case_id": "holdout-confirmed-root-cause-011",
+      "category": "causal_paraphrase",
+      "task_description": "Repair duplicate webhook delivery",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "webhook_probe", "error_type": "DuplicateDelivery", "message": "The same event was delivered twice"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "patch_dispatch", "related_error_call_ids": ["call-1"], "action": "Persist the idempotency key before dispatch"},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_call", "tool_name": "webhook_verify", "command": "pytest tests/test_webhook_idempotency.py -q"},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "webhook_verify", "status": "success", "output_summary": "webhook targeted tests: 10 passed"},
+        {"event_id": "event-5", "type": "assistant_step", "content": "Writing the idempotency key after dispatch caused the duplicate delivery."},
+        {"event_id": "event-6", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "root_cause", "semantic_key": "webhook_idempotency_order", "evidence_ids": ["event-1", "event-2", "event-3", "event-4", "event-5"], "epistemic_status": "confirmed", "required_terms": ["idempotency key after dispatch", "caused"], "forbidden_terms": []}
+      ],
+      "forbidden_claims": [],
+      "should_write_memory": true,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "root_cause", "semantic_key": "webhook_idempotency_order", "statement": "Writing the idempotency key after dispatch caused the duplicate delivery.", "evidence_ids": ["event-1", "event-2", "event-3", "event-4", "event-5"], "epistemic_status": "confirmed", "applies_when": "When webhook delivery is retried around dispatch.", "limitations": ["Confirmed by the targeted webhook idempotency tests."], "verification_ids": ["verify-000001"], "related_error_ids": ["error-000001"], "related_recovery_ids": ["recovery-000001"]}
+      ]},
+      "notes": "Complete error, recovery, verification, and causal-decision chain."
+    },
+    {
+      "case_id": "holdout-stable-verification-rule-012",
+      "category": "cross_event_decision",
+      "task_description": "Define migration verification",
+      "trace": [
+        {"event_id": "event-1", "type": "user_constraint", "content": "Every ledger migration must run compatibility tests before release."},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_call", "tool_name": "ledger_check", "command": "pytest tests/test_ledger_compatibility.py -q"},
+        {"event_id": "event-3", "call_id": "call-1", "type": "tool_result", "tool_name": "ledger_check", "status": "success", "output_summary": "compatibility tests: 18 passed"},
+        {"event_id": "event-4", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "verification_rule", "semantic_key": "ledger_migration_compatibility_gate", "evidence_ids": ["event-1", "event-2", "event-3"], "epistemic_status": "confirmed", "required_terms": ["ledger migration", "compatibility tests"], "forbidden_terms": []}
+      ],
+      "forbidden_claims": [],
+      "should_write_memory": true,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "verification_rule", "semantic_key": "ledger_migration_compatibility_gate", "statement": "Every ledger migration must run compatibility tests before release.", "evidence_ids": ["event-1", "event-2", "event-3"], "epistemic_status": "confirmed", "applies_when": "Before releasing a ledger migration.", "limitations": [], "verification_ids": ["verify-000001"], "related_error_ids": [], "related_recovery_ids": []}
+      ]},
+      "notes": "A green test is durable only because an explicit stable rule requires it."
+    },
+    {
+      "case_id": "holdout-three-event-policy-013",
+      "category": "cross_event_decision",
+      "task_description": "Choose export delivery guarantees",
+      "trace": [
+        {"event_id": "event-1", "type": "assistant_step", "content": "I choose immutable export snapshots."},
+        {"event_id": "event-2", "type": "assistant_step", "content": "I choose signed download URLs with ten-minute expiry."},
+        {"event_id": "event-3", "type": "assistant_step", "content": "I choose checksum verification before marking delivery complete."},
+        {"event_id": "event-4", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "decision", "semantic_key": "export_delivery_policy", "evidence_ids": ["event-1", "event-2", "event-3"], "epistemic_status": "confirmed", "required_terms": ["immutable export snapshots", "ten-minute expiry", "checksum verification"], "forbidden_terms": []}
+      ],
+      "forbidden_claims": [],
+      "should_write_memory": true,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "decision", "semantic_key": "export_delivery_policy", "statement": "I choose immutable export snapshots. I choose signed download URLs with ten-minute expiry. I choose checksum verification before marking delivery complete.", "evidence_ids": ["event-1", "event-2", "event-3"], "epistemic_status": "confirmed", "applies_when": "When delivering generated exports.", "limitations": [], "verification_ids": [], "related_error_ids": [], "related_recovery_ids": []}
+      ]},
+      "notes": "Three explicit events form one coherent delivery policy."
+    },
+    {
+      "case_id": "holdout-correction-with-policy-014",
+      "category": "cross_event_decision",
+      "task_description": "Correct session revocation behavior",
+      "trace": [
+        {"event_id": "event-1", "type": "user_correction", "content": "Revocation is per device, not per user account."},
+        {"event_id": "event-2", "type": "assistant_step", "content": "I choose device-scoped session version counters."},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "correction", "semantic_key": "device_scoped_revocation", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "required_terms": ["per device", "device-scoped session version counters"], "forbidden_terms": []}
+      ],
+      "forbidden_claims": [],
+      "should_write_memory": true,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "correction", "semantic_key": "device_scoped_revocation", "statement": "Revocation is per device, not per user account. I choose device-scoped session version counters.", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "applies_when": "When revoking active sessions.", "limitations": [], "verification_ids": [], "related_error_ids": [], "related_recovery_ids": []}
+      ]},
+      "notes": "Correction plus its implementation policy."
+    },
+    {
+      "case_id": "holdout-limited-fix-scope-015",
+      "category": "partial_recovery",
+      "task_description": "Repair timezone parsing",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "tz_parser", "error_type": "OffsetParseError", "message": "Parser rejected a negative UTC offset"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "patch_tz", "related_error_call_ids": ["call-1"], "action": "Accept signed hour offsets in ISO timestamps"},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_call", "tool_name": "tz_verify", "command": "pytest tests/test_timezone_negative_offsets.py -q"},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "tz_verify", "status": "success", "output_summary": "negative offset targeted tests: 5 passed"},
+        {"event_id": "event-5", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "recovery", "semantic_key": "iso_negative_offset_parsing", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "required_terms": ["negative utc offset", "signed hour offsets"], "forbidden_terms": []}
+      ],
+      "forbidden_claims": [{"required_terms": ["all timezone formats"]}],
+      "should_write_memory": true,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "recovery", "semantic_key": "iso_negative_offset_parsing", "statement": "After Parser rejected a negative UTC offset, the recovery action was: Accept signed hour offsets in ISO timestamps.", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "applies_when": "When ISO timestamps contain negative UTC hour offsets.", "limitations": ["Only negative hour offsets were covered by targeted tests."], "verification_ids": ["verify-000001"], "related_error_ids": ["error-000001"], "related_recovery_ids": ["recovery-000001"]}
+      ]},
+      "notes": "Useful repair with an intentionally narrow scope."
+    },
+    {
+      "case_id": "holdout-unfamiliar-tool-error-016",
+      "category": "unfamiliar_dependency",
+      "task_description": "Diagnose snapshot compaction",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "chronicle_compactor", "error_type": "SegmentGap", "message": "Segment 44 started after a missing sequence"},
+        {"event_id": "event-2", "type": "task_result", "status": "failed"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "error_pattern", "semantic_key": "chronicle_segment_gap", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "required_terms": ["segment 44", "missing sequence"], "forbidden_terms": []}
+      ],
+      "forbidden_claims": [],
+      "should_write_memory": true,
+      "llm_script": {"kind": "candidate", "claims": []},
+      "notes": "Unknown tool names remain usable error evidence; no LLM call is justified without a relation to synthesize."
+    }
+  ]
+}

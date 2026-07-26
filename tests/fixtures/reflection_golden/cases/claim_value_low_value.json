@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-routine-read-001",
+      "category": "low_value_tasks",
+      "description": "A routine source read has no durable claim",
+      "task_description": "Read the application module",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "read_file", "input": {"path": "src/app.py"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "read_file", "status": "success", "files": ["src/app.py"]},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["src/app.py"], "files_changed": [], "tools": ["read_file"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_read_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["task completed successfully"]}],
+      "notes": "Low-value read-only tasks must not persist."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-routine-search-002",
+      "category": "low_value_tasks",
+      "description": "A routine symbol search has no durable claim",
+      "task_description": "Search for parser references",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "search_files", "input": {"query": "parse_token"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "search_files", "status": "success", "output_summary": "3 matches"},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["search_files"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_search_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "Search counts are execution facts, not memory assets."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-routine-list-003",
+      "category": "low_value_tasks",
+      "description": "A directory listing has no durable claim",
+      "task_description": "List the source directory",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "list_directory", "input": {"path": "src"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "list_directory", "status": "success", "output_summary": "12 entries"},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["list_directory"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_directory_listing"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "Directory contents alone are not a reusable reflection."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-routine-format-004",
+      "category": "low_value_tasks",
+      "description": "Formatting one file has no durable claim",
+      "task_description": "Format the service module",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "format_file", "input": {"path": "src/service.py"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "format_file", "status": "success", "changed_files": ["src/service.py"], "output_summary": "formatted"},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["src/service.py"], "files_changed": ["src/service.py"], "tools": ["format_file"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_format_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "A successful formatter run is not a stable project rule."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-green-test-no-repair-005",
+      "category": "low_value_tasks",
+      "description": "Green tests without a repair are verification only",
+      "task_description": "Run the auth tests",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "run_command", "command": "pytest tests/test_auth.py -q"},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "8 passed"},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [{"verification_id": "verify-1", "required_terms": ["8 passed"], "evidence_ids": ["event-1", "event-2"]}], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_verification_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["verified solution"]}],
+      "notes": "A passing test does not imply that a reusable fix occurred."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-success-only-006",
+      "category": "low_value_tasks",
+      "description": "Terminal success alone is not memory",
+      "task_description": "Complete the task",
+      "trace": [{"event_id": "event-1", "type": "task_result", "status": "success"}],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": [], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["task_success_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["chosen approach"]}],
+      "notes": "Generic success must not generate a lesson."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-tool-count-only-007",
+      "category": "low_value_tasks",
+      "description": "A tool invocation count has no durable meaning",
+      "task_description": "Inspect a payload",
+      "trace": [{"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "inspect_payload"}],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["inspect_payload"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "unknown"},
+      "expected_value": {"should_write_memory": false, "reasons": ["tool_count_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["unique tool"]}],
+      "notes": "Tool statistics stay observational."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-suggestion-only-008",
+      "category": "recovery_and_verification",
+      "description": "A retry suggestion is not an executed recovery",
+      "task_description": "Handle a failed command",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "run_command", "error_type": "ToolError", "message": "Operation failed"},
+        {"event_id": "event-2", "call_id": "call-1", "type": "recovery_suggestion", "suggestion": "Retry with a smaller command"},
+        {"event_id": "event-3", "type": "task_result", "status": "failed"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "error_type": "ToolError", "required_terms": ["operation failed"], "source_event_ids": ["event-1"]}], "recoveries": [], "decisions": [], "verification": [], "outcome": "failed"},
+      "expected_value": {"should_write_memory": false, "reasons": ["recovery_suggestion_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["retry", "succeeded"]}],
+      "notes": "Suggestions cannot be promoted to verified recovery claims."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-specific-error-pattern-009",
+      "category": "error_deduplication",
+      "description": "A specific unresolved configuration error is reusable",
+      "task_description": "Load runtime configuration",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "read_file", "error_type": "FileNotFoundError", "message": "Missing config file config/runtime.toml"},
+        {"event_id": "event-2", "type": "task_result", "status": "failed"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["read_file"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "error_type": "FileNotFoundError", "required_terms": ["missing config file", "runtime.toml"], "source_event_ids": ["event-1"]}], "recoveries": [], "decisions": [], "verification": [], "outcome": "failed"},
+      "expected_value": {"should_write_memory": true, "reasons": ["reusable_error_pattern"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "error_pattern", "semantic_key": "missing_runtime_config", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "required_terms": ["missing config file", "runtime.toml"], "forbidden_terms": [], "requires_applies_when": true, "requires_limitations": true}],
+      "forbidden_claims": [{"required_terms": ["root cause"]}],
+      "notes": "The error signal is specific even though no fix is known."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "claim-value-unverified-recovery-010",
+      "category": "recovery_and_verification",
+      "description": "An unverified recovery remains inferred and non-durable",
+      "task_description": "Patch the service after a context mismatch",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "edit_file", "error_type": "PatchError", "message": "Context mismatch in src/service.py"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "related_error_call_ids": ["call-1"], "action": "Re-read src/service.py and applied a narrower patch", "files_changed": ["src/service.py"]},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": ["src/service.py"], "tools": ["edit_file"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "error_type": "PatchError", "required_terms": ["context mismatch", "service.py"], "source_event_ids": ["event-1"]}], "recoveries": [{"recovery_id": "recovery-1", "required_terms": ["narrower patch"], "evidence_ids": ["event-2"], "epistemic_status": "confirmed"}], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["unverified_recovery"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["verified"]}],
+      "notes": "The candidate is valid as inferred diagnosis but receives no durable signal."
+    }
+  ]
+}

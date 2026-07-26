@@ -1,0 +1,1545 @@
+{
+  "schema_version": "1.0",
+  "document_type": "background",
+  "synthetic_data": true,
+  "reference_time": 1748826000,
+  "pool_id": "phase3b-independent-pressure-v1",
+  "memories": [
+    {
+      "id": "p3b-bg-001",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "Calendar exports preserve weekday labels when locale settings change.",
+      "tags": [
+        "background-001"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-002",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The image cropper keeps transparent padding around catalog thumbnails.",
+      "tags": [
+        "background-002"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-003",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A weather widget rounds wind speed only in the presentation layer.",
+      "tags": [
+        "background-003"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-004",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "Survey drafts store unanswered optional questions as null values.",
+      "tags": [
+        "background-004"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-005",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The map renderer batches adjacent road labels before rasterization.",
+      "tags": [
+        "background-005"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-006",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "Audio previews stop after thirty seconds in the media library.",
+      "tags": [
+        "background-006"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-007",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "Recipe imports normalize tablespoon abbreviations during parsing.",
+      "tags": [
+        "background-007"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-008",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The classroom roster sorts learners by display name and enrollment date.",
+      "tags": [
+        "background-008"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-009",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A print preview uses the document paper size selected by the operator.",
+      "tags": [
+        "background-009"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-010",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "Photo albums retain original capture timestamps during reordering.",
+      "tags": [
+        "background-010"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-011",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The typography panel exposes line height as a unitless decimal.",
+      "tags": [
+        "background-011"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-012",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "Inventory reports group discontinued colors below active variants.",
+      "tags": [
+        "background-012"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-013",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A transit timetable highlights the final service of each evening.",
+      "tags": [
+        "background-013"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-014",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The drawing canvas snaps guide lines to whole pixel coordinates.",
+      "tags": [
+        "background-014"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-015",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "Podcast chapters use media offsets rather than wall-clock times.",
+      "tags": [
+        "background-015"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-016",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A bookshelf import preserves edition notes as optional annotations.",
+      "tags": [
+        "background-016"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-017",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The plant monitor averages soil readings over a five minute window.",
+      "tags": [
+        "background-017"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-018",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "Conference badges truncate organization names after forty characters.",
+      "tags": [
+        "background-018"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-019",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A music playlist keeps manual ordering when new tracks are appended.",
+      "tags": [
+        "background-019"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-020",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The warehouse label printer uses a fixed barcode quiet zone.",
+      "tags": [
+        "background-020"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-021",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A travel itinerary stores train platforms separately from station names.",
+      "tags": [
+        "background-021"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-022",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The color picker converts pasted values into lowercase hexadecimal form.",
+      "tags": [
+        "background-022"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-023",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A quiz timer pauses while the browser tab is not visible.",
+      "tags": [
+        "background-023"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-024",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The meal planner treats pantry quantities as advisory estimates.",
+      "tags": [
+        "background-024"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-025",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A chart legend follows the series order supplied by the dataset.",
+      "tags": [
+        "background-025"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-026",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The address formatter places postal codes according to country rules.",
+      "tags": [
+        "background-026"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-027",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A document outline omits headings marked as decorative.",
+      "tags": [
+        "background-027"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-028",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The video scrubber requests preview frames at ten second intervals.",
+      "tags": [
+        "background-028"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-029",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A museum catalog records restoration dates independently from acquisition.",
+      "tags": [
+        "background-029"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-030",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The calculator displays trailing zeros only in accounting mode.",
+      "tags": [
+        "background-030"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-031",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A garden schedule shifts watering reminders after recorded rainfall.",
+      "tags": [
+        "background-031"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-032",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The language selector lists recently used locales before alphabetical entries.",
+      "tags": [
+        "background-032"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-033",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A shipping label keeps apartment numbers on the street address line.",
+      "tags": [
+        "background-033"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-034",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The seating planner reserves accessible spaces before general assignment.",
+      "tags": [
+        "background-034"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-035",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A markdown preview preserves literal spaces inside fenced examples.",
+      "tags": [
+        "background-035"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-036",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The icon browser indexes symbols by both family and visual weight.",
+      "tags": [
+        "background-036"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-037",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A donation receipt prints the legal entity name from organization settings.",
+      "tags": [
+        "background-037"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-038",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The route planner avoids toll roads only when the traveler selects that option.",
+      "tags": [
+        "background-038"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-039",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A reading tracker counts partially completed chapters toward progress.",
+      "tags": [
+        "background-039"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-040",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The invoice theme places payment terms below the itemized table.",
+      "tags": [
+        "background-040"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-041",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A cinema schedule separates dubbed and subtitled screenings.",
+      "tags": [
+        "background-041"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-042",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The form designer aligns labels according to the chosen layout direction.",
+      "tags": [
+        "background-042"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-043",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A fitness summary excludes warm-up intervals from peak pace.",
+      "tags": [
+        "background-043"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-044",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The annotation toolbar remembers the last selected highlight color.",
+      "tags": [
+        "background-044"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-045",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A parcel tracker displays customs events in local port time.",
+      "tags": [
+        "background-045"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-046",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The floor plan editor locks structural walls during furniture placement.",
+      "tags": [
+        "background-046"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-047",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A vocabulary deck postpones mastered cards for seven days.",
+      "tags": [
+        "background-047"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-048",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The receipt scanner retains the source image after text extraction.",
+      "tags": [
+        "background-048"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-049",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A ticket dashboard groups events by venue before start time.",
+      "tags": [
+        "background-049"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-050",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The photo printer warns when source resolution is below output quality.",
+      "tags": [
+        "background-050"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-051",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A nutrition label rounds serving values using regulatory rules.",
+      "tags": [
+        "background-051"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-052",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The catalog search treats manufacturer codes as exact identifiers.",
+      "tags": [
+        "background-052"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-053",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A booking calendar displays unavailable dates without selectable controls.",
+      "tags": [
+        "background-053"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-054",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The diagram editor routes connectors around pinned nodes.",
+      "tags": [
+        "background-054"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-055",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A journal export orders attachments after their referring paragraph.",
+      "tags": [
+        "background-055"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-056",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The subtitle editor stores cue boundaries in milliseconds.",
+      "tags": [
+        "background-056"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-057",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A loyalty statement separates earned points from promotional bonuses.",
+      "tags": [
+        "background-057"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-058",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The archive viewer loads document thumbnails only when visible.",
+      "tags": [
+        "background-058"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-059",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A classroom poll hides aggregate answers until voting closes.",
+      "tags": [
+        "background-059"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-060",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The package label includes handling symbols beside the destination block.",
+      "tags": [
+        "background-060"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-061",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A hiking log calculates elevation gain from smoothed altitude samples.",
+      "tags": [
+        "background-061"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-062",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The expense form requires a currency for every monetary line.",
+      "tags": [
+        "background-062"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-063",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "A gallery slideshow skips hidden photographs without changing album order.",
+      "tags": [
+        "background-063"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    },
+    {
+      "id": "p3b-bg-064",
+      "scope": "project",
+      "category": "background-fact",
+      "content": "The timetable editor validates that arrival follows departure.",
+      "tags": [
+        "background-064"
+      ],
+      "domains": [],
+      "tier": "long_term",
+      "lifecycle_status": "active",
+      "safety_status": "safe",
+      "approval_status": "approved",
+      "curator_locked": false,
+      "created_at": 1748736000,
+      "updated_at": 1748822400,
+      "usefulness_score": 0.0,
+      "source": "phase3b_holdout_fixture",
+      "metadata": {},
+      "provenance": {
+        "kind": "synthetic_verified",
+        "evidence": "Synthetic fixed holdout pressure entry."
+      }
+    }
+  ]
+}

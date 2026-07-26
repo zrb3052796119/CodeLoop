@@ -1,0 +1,482 @@
+{
+  "schema_version": "1.0",
+  "document_type": "cases",
+  "synthetic_data": true,
+  "reference_time": 1736942400,
+  "cases": [
+    {
+      "case_id": "sg-pos-rename-01",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "file_module_rename",
+      "query": "Update the request retry policy in transport/recovery.py.",
+      "current_files": [
+        "transport/recovery.py"
+      ],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-rename-01",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "The retry policy formerly lived in net/backoff.py; migration r17 moved that module without changing ownership.",
+          "tags": [
+            "module-migration",
+            "retry-policy"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "renamed_from": "net/backoff.py",
+            "renamed_to": "transport/recovery.py",
+            "migration_id": "r17"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成迁移清单 r17 验证模块移动。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-rename-01"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "file_module_rename",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "medium",
+      "normalized_token_overlap": 0.166667,
+      "why_semantically_relevant": "可靠迁移记录把新路径 transport/recovery.py 与旧模块 net/backoff.py 关联为同一策略所有者。",
+      "why_lexical_retrieval_may_fail": "查询只出现新路径，memory content 主要记录旧路径；相关性依赖迁移 provenance。",
+      "miss_impact": "可能绕过项目已有的退避约束。",
+      "memory_kind": "stable_fact",
+      "annotation_evidence": "合成迁移清单 r17 验证模块移动。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-rename-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-rename-02",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "file_module_rename",
+      "query": "Fix stale lock cleanup in runtime/lease_store.py.",
+      "current_files": [
+        "runtime/lease_store.py"
+      ],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-rename-02",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "Local lease persistence was implemented in state/process_guard.py before workspace migration l04.",
+          "tags": [
+            "lease-store",
+            "local-migration"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "renamed_from": "state/process_guard.py",
+            "renamed_to": "runtime/lease_store.py",
+            "migration_id": "l04"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成本地迁移记录 l04 确认职责连续。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-rename-02"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "file_module_rename",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "medium",
+      "normalized_token_overlap": 0.111111,
+      "why_semantically_relevant": "迁移 l04 明确新旧文件承载同一租约持久化职责。",
+      "why_lexical_retrieval_may_fail": "查询和 content 分别只使用新旧路径，普通 basename 匹配不足。",
+      "miss_impact": "修复可能遗漏旧实现沉淀的清理规则。",
+      "memory_kind": "stable_fact",
+      "annotation_evidence": "合成本地迁移记录 l04 确认职责连续。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-rename-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-rename-03",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "file_module_rename",
+      "query": "用户配置现在由 preferences/output_policy.py 处理。",
+      "current_files": [
+        "preferences/output_policy.py"
+      ],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-rename-03",
+          "scope": "user",
+          "category": "preference",
+          "content": "The user-facing response rules were stored in profile/answer_style.py before migration u09.",
+          "tags": [
+            "user-policy-migration",
+            "response-rules"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "renamed_from": "profile/answer_style.py",
+            "renamed_to": "preferences/output_policy.py",
+            "migration_id": "u09"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户配置迁移 u09 确认新旧模块关系。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-rename-03"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "file_module_rename",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "low",
+      "normalized_token_overlap": 0.043478,
+      "why_semantically_relevant": "USER 迁移记录 u09 将旧回答风格模块映射到当前输出策略模块。",
+      "why_lexical_retrieval_may_fail": "中文新路径与英文旧路径内容没有明显语义词元重叠。",
+      "miss_impact": "可能忽略已经确认的用户输出规则。",
+      "memory_kind": "preference",
+      "annotation_evidence": "合成用户配置迁移 u09 确认新旧模块关系。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-rename-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-rename-04",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "file_module_rename",
+      "query": "在 pipeline/checkpoint_writer.py 中补充崩溃恢复。",
+      "current_files": [
+        "pipeline/checkpoint_writer.py"
+      ],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-rename-04",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "崩溃检查点原先由 jobs/durable_cursor.py 管理，迁移 p22 保留了相同的数据格式。",
+          "tags": [
+            "检查点迁移",
+            "格式兼容"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "renamed_from": "jobs/durable_cursor.py",
+            "renamed_to": "pipeline/checkpoint_writer.py",
+            "migration_id": "p22"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成迁移 p22 与格式兼容测试确认关系。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-rename-04"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "file_module_rename",
+      "query_language": "zh",
+      "memory_language": "zh",
+      "lexical_overlap_class": "low",
+      "normalized_token_overlap": 0.064516,
+      "why_semantically_relevant": "迁移 p22 证明新 checkpoint_writer 与旧 durable_cursor 管理相同格式和职责。",
+      "why_lexical_retrieval_may_fail": "查询只给出新文件，记忆正文只给旧文件和迁移编号。",
+      "miss_impact": "修改可能破坏向后兼容的检查点格式。",
+      "memory_kind": "constraint",
+      "annotation_evidence": "合成迁移 p22 与格式兼容测试确认关系。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-rename-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-rename-05",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "file_module_rename",
+      "query": "Change the preview binding logic in devserver/listener.py.",
+      "current_files": [
+        "devserver/listener.py"
+      ],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-rename-05",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "开发服务器监听逻辑曾位于 tools/serve_socket.py，本地迁移 d31 后由新组件接管。",
+          "tags": [
+            "监听迁移",
+            "本地组件"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "renamed_from": "tools/serve_socket.py",
+            "renamed_to": "devserver/listener.py",
+            "migration_id": "d31"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成本地迁移清单 d31 确认组件接管。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-rename-05"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "file_module_rename",
+      "query_language": "en",
+      "memory_language": "zh",
+      "lexical_overlap_class": "low",
+      "normalized_token_overlap": 0.032258,
+      "why_semantically_relevant": "d31 是可靠的本地迁移 provenance，连接新 listener 和旧 serve_socket 规则。",
+      "why_lexical_retrieval_may_fail": "英文新路径与中文旧模块说明缺少共享词元。",
+      "miss_impact": "可能丢失旧监听边界的本地经验。",
+      "memory_kind": "stable_fact",
+      "annotation_evidence": "合成本地迁移清单 d31 确认组件接管。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-rename-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-rename-06",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "file_module_rename",
+      "query": "调整现在的 settings/review_contract.py。",
+      "current_files": [
+        "settings/review_contract.py"
+      ],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-rename-06",
+          "scope": "user",
+          "category": "preference",
+          "content": "The user's review defaults were previously stored in account/change_report.py and moved by migration u14.",
+          "tags": [
+            "review-contract",
+            "user-migration"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "renamed_from": "account/change_report.py",
+            "renamed_to": "settings/review_contract.py",
+            "migration_id": "u14"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成 USER 配置迁移 u14 确认路径关系。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-rename-06"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "file_module_rename",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "medium",
+      "normalized_token_overlap": 0.1,
+      "why_semantically_relevant": "u14 将旧 USER 审阅默认配置明确迁移到当前 review_contract。",
+      "why_lexical_retrieval_may_fail": "查询仅含新模块，英文记忆只描述旧模块。",
+      "miss_impact": "用户的既有审阅要求可能被当作不存在。",
+      "memory_kind": "preference",
+      "annotation_evidence": "合成 USER 配置迁移 u14 确认路径关系。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-rename-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    }
+  ]
+}

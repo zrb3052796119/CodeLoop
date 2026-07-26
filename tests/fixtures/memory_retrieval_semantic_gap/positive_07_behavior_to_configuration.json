@@ -1,0 +1,460 @@
+{
+  "schema_version": "1.0",
+  "document_type": "cases",
+  "synthetic_data": true,
+  "reference_time": 1736942400,
+  "cases": [
+    {
+      "case_id": "sg-pos-config-01",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "behavior_to_configuration",
+      "query": "Idle workers disappear before the next burst arrives.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-config-01",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "Set worker_retention_seconds above the expected quiet interval so warm workers remain available.",
+          "tags": [
+            "worker-retention",
+            "warm-capacity"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "config_key": "worker_retention_seconds"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成空闲窗口测试确认该配置控制回收。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-config-01"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "behavior_to_configuration",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "low",
+      "normalized_token_overlap": 0.052632,
+      "why_semantically_relevant": "worker_retention_seconds 直接控制空闲 worker 的保留期，适用于突发间隔。",
+      "why_lexical_retrieval_may_fail": "查询只描述 worker 消失，没有配置字段名或 retention 表达。",
+      "miss_impact": "扩容器会持续冷启动 worker。",
+      "memory_kind": "configuration",
+      "annotation_evidence": "合成空闲窗口测试确认该配置控制回收。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-library-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-config-02",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "behavior_to_configuration",
+      "query": "The local preview binds to every network interface.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-config-02",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "Development previews use loopback_only=true unless an explicit sharing session is active.",
+          "tags": [
+            "loopback-only",
+            "preview-binding"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "config_key": "loopback_only"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成绑定地址检查确认默认配置。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-config-02"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "behavior_to_configuration",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "loopback_only 决定预览服务是否只监听本机，是暴露范围的直接配置。",
+      "why_lexical_retrieval_may_fail": "行为描述没有 loopback_only 或 sharing session。",
+      "miss_impact": "本地预览可能意外暴露到局域网。",
+      "memory_kind": "configuration",
+      "annotation_evidence": "合成绑定地址检查确认默认配置。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-library-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-config-03",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "behavior_to_configuration",
+      "query": "在我的会话里，工具输出总被截得太短。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-config-03",
+          "scope": "user",
+          "category": "semantic-rule",
+          "content": "This user profile sets tool_output_soft_limit to 24000 characters for diagnostic tasks.",
+          "tags": [
+            "tool-output-limit",
+            "diagnostic-profile"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "config_key": "tool_output_soft_limit",
+            "value": 24000
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户诊断配置记录确认软限制值。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-config-03"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "behavior_to_configuration",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "USER 配置中的软限制直接决定诊断工具输出裁剪长度。",
+      "why_lexical_retrieval_may_fail": "中文现象没有英文 tool_output_soft_limit 字段。",
+      "miss_impact": "关键错误上下文会在展示前被截断。",
+      "memory_kind": "configuration",
+      "annotation_evidence": "合成用户诊断配置记录确认软限制值。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-config-04",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "behavior_to_configuration",
+      "query": "新建的任务没有自动清理已经成功的临时产物。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-config-04",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "cleanup_on_success 必须在任务运行配置中显式启用，失败产物仍按保留策略处理。",
+          "tags": [
+            "成功清理",
+            "失败保留"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "config_key": "cleanup_on_success"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成任务完成测试确认开关语义。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-config-04"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "behavior_to_configuration",
+      "query_language": "zh",
+      "memory_language": "zh",
+      "lexical_overlap_class": "low",
+      "normalized_token_overlap": 0.046512,
+      "why_semantically_relevant": "cleanup_on_success 是成功任务临时产物自动清理的开关，且不影响失败保留策略。",
+      "why_lexical_retrieval_may_fail": "查询没有配置键名，只描述默认行为。",
+      "miss_impact": "磁盘占用会随成功任务持续增长。",
+      "memory_kind": "configuration",
+      "annotation_evidence": "合成任务完成测试确认开关语义。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-library-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-config-05",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "behavior_to_configuration",
+      "query": "New local sessions keep restoring tabs from yesterday.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-config-05",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "将 restore_workspace_state 设为 false，可使新会话从空白工作区启动。",
+          "tags": [
+            "工作区恢复",
+            "空白启动"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "config_key": "restore_workspace_state"
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成会话重启测试确认该设置。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-config-05"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "behavior_to_configuration",
+      "query_language": "en",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "restore_workspace_state 控制新会话是否恢复先前标签页，正好对应昨日状态复现。",
+      "why_lexical_retrieval_may_fail": "英文现象与中文配置说明缺少共享术语。",
+      "miss_impact": "用户会持续进入陈旧工作上下文。",
+      "memory_kind": "configuration",
+      "annotation_evidence": "合成会话重启测试确认该设置。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-library-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-config-06",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "behavior_to_configuration",
+      "query": "我希望命令执行失败后保留完整的本地现场。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-config-06",
+          "scope": "user",
+          "category": "semantic-rule",
+          "content": "For this user, preserve_failed_workspace is enabled so cleanup skips failed command sandboxes.",
+          "tags": [
+            "failed-workspace",
+            "preserve-sandbox"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {
+            "config_key": "preserve_failed_workspace",
+            "value": true
+          },
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户故障调查设置确认保留行为。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-config-06"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "behavior_to_configuration",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "该 USER 配置使失败沙箱跳过清理，满足保留现场的要求。",
+      "why_lexical_retrieval_may_fail": "中文要求没有英文 preserve_failed_workspace 配置键。",
+      "miss_impact": "失败证据会在诊断前被删除。",
+      "memory_kind": "configuration",
+      "annotation_evidence": "合成用户故障调查设置确认保留行为。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    }
+  ]
+}

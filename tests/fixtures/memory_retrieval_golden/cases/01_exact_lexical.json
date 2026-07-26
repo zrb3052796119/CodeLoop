@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "synthetic_data": true,
+  "reference_time": 1736942400,
+  "cases": [
+    {
+      "case_id": "mr-exact-01", "category": "exact_lexical",
+      "task_description": "Fix the pytest timeout in tests/test_cache.py", "current_files": ["tests/test_cache.py"], "active_domains": ["testing"],
+      "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id":"mr-exact-01-primary","scope":"project","category":"testing","content":"The pytest timeout in tests/test_cache.py is fixed by using the deterministic fake clock fixture.","tags":["pytest","timeout","test_cache.py"],"domains":["testing"],"tier":"long_term","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.4,"usage_count":3,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":3,"related_to":[]},
+        {"id":"mr-exact-01-noise","scope":"user","category":"convention","content":"Use compact headings in release notes.","tags":["docs"],"domains":["documentation"],"tier":"short_term","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.1,"usage_count":1,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":0,"related_to":[]}
+      ],
+      "must_include_ids":["mr-exact-01-primary"],"may_include_ids":[],"must_exclude_ids":["mr-exact-01-noise"],"primary_id":"mr-exact-01-primary","expected_no_injection":false,
+      "rationale":"The primary entry contains the exact test file, framework, and timeout failure." 
+    },
+    {
+      "case_id":"mr-exact-02","category":"exact_lexical","task_description":"Review the payment architecture decision","current_files":["src/payment/service.py"],"active_domains":["backend"],"context_usage":0.3,"max_memories":5,"max_tokens":500,
+      "memories":[
+        {"id":"mr-exact-02-primary","scope":"project","category":"architecture","content":"Payment architecture decision: keep idempotency at the service boundary.","tags":["payment","architecture"],"domains":["backend"],"tier":"long_term","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.2,"usage_count":2,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":3,"related_to":[]},
+        {"id":"mr-exact-02-noise","scope":"local","category":"testing","content":"Snapshot tests cover the profile avatar widget.","tags":["avatar"],"domains":["frontend"],"tier":"working","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.0,"usage_count":0,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":0,"related_to":[]}
+      ],"must_include_ids":["mr-exact-02-primary"],"may_include_ids":[],"must_exclude_ids":["mr-exact-02-noise"],"primary_id":"mr-exact-02-primary","expected_no_injection":false,"rationale":"Exact category and payment terms identify the architecture decision." 
+    },
+    {
+      "case_id":"mr-exact-03","category":"exact_lexical","task_description":"Repair the docker deploy healthcheck","current_files":["deploy/Dockerfile"],"active_domains":["devops"],"context_usage":0.5,"max_memories":5,"max_tokens":500,
+      "memories":[
+        {"id":"mr-exact-03-primary","scope":"local","category":"deployment","content":"Docker deploy healthcheck must call /ready after the application port opens.","tags":["docker","deploy","healthcheck"],"domains":["devops"],"tier":"short_term","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.3,"usage_count":4,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":3,"related_to":[]},
+        {"id":"mr-exact-03-noise","scope":"project","category":"database","content":"SQLite fixtures use an in-memory connection.","tags":["sqlite"],"domains":["database"],"tier":"short_term","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.0,"usage_count":0,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":0,"related_to":[]}
+      ],"must_include_ids":["mr-exact-03-primary"],"may_include_ids":[],"must_exclude_ids":["mr-exact-03-noise"],"primary_id":"mr-exact-03-primary","expected_no_injection":false,"rationale":"The primary matches all three exact operational terms." 
+    },
+    {
+      "case_id":"mr-exact-04","category":"exact_lexical","task_description":"Update auth_service.py token validation","current_files":["src/auth_service.py"],"active_domains":["backend","security"],"context_usage":0.4,"max_memories":5,"max_tokens":500,
+      "memories":[
+        {"id":"mr-exact-04-primary","scope":"project","category":"security","content":"auth_service.py token validation rejects expired audience claims before database access.","tags":["auth_service.py","token","validation"],"domains":["backend","security"],"tier":"long_term","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.5,"usage_count":6,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":3,"related_to":[]},
+        {"id":"mr-exact-04-noise","scope":"user","category":"style","content":"Prefer trailing commas in multiline literals.","tags":["format"],"domains":["python"],"tier":"short_term","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.2,"usage_count":2,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":0,"related_to":[]}
+      ],"must_include_ids":["mr-exact-04-primary"],"may_include_ids":[],"must_exclude_ids":["mr-exact-04-noise"],"primary_id":"mr-exact-04-primary","expected_no_injection":false,"rationale":"The filename and token-validation phrase are exact." 
+    },
+    {
+      "case_id":"mr-exact-05","category":"exact_lexical","task_description":"Optimize the database migration lock","current_files":["db/migrations/042_add_index.sql"],"active_domains":["database"],"context_usage":0.2,"max_memories":5,"max_tokens":500,
+      "memories":[
+        {"id":"mr-exact-05-primary","scope":"project","category":"database","content":"Database migration lock time is reduced by creating the index concurrently.","tags":["migration","lock","index"],"domains":["database"],"tier":"long_term","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.3,"usage_count":3,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":3,"related_to":[]},
+        {"id":"mr-exact-05-noise","scope":"local","category":"frontend","content":"The modal closes when Escape is pressed.","tags":["modal"],"domains":["frontend"],"tier":"working","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.0,"usage_count":0,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":0,"related_to":[]}
+      ],"must_include_ids":["mr-exact-05-primary"],"may_include_ids":[],"must_exclude_ids":["mr-exact-05-noise"],"primary_id":"mr-exact-05-primary","expected_no_injection":false,"rationale":"Exact database, migration, and lock terms ground the primary." 
+    },
+    {
+      "case_id":"mr-exact-06","category":"exact_lexical","task_description":"Load config from settings.toml","current_files":["settings.toml"],"active_domains":["configuration"],"context_usage":0.3,"max_memories":5,"max_tokens":500,
+      "memories":[
+        {"id":"mr-exact-06-primary","scope":"local","category":"configuration","content":"settings.toml config values are loaded before environment-specific overrides.","tags":["settings.toml","config"],"domains":["configuration"],"tier":"short_term","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.2,"usage_count":1,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":3,"related_to":[]},
+        {"id":"mr-exact-06-noise","scope":"user","category":"testing","content":"Run browser tests at a fixed viewport.","tags":["browser"],"domains":["testing"],"tier":"short_term","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.1,"usage_count":1,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":0,"related_to":[]}
+      ],"must_include_ids":["mr-exact-06-primary"],"may_include_ids":[],"must_exclude_ids":["mr-exact-06-noise"],"primary_id":"mr-exact-06-primary","expected_no_injection":false,"rationale":"The exact filename and config keyword identify the entry." 
+    },
+    {
+      "case_id":"mr-exact-07","category":"exact_lexical","task_description":"Add CSRF protection to the checkout form","current_files":["web/checkout_form.py"],"active_domains":["security","frontend"],"context_usage":0.4,"max_memories":5,"max_tokens":500,
+      "memories":[
+        {"id":"mr-exact-07-primary","scope":"project","category":"security","content":"CSRF protection for the checkout form uses a per-session token and same-site cookie.","tags":["csrf","checkout","form"],"domains":["security","frontend"],"tier":"long_term","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.4,"usage_count":5,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":3,"related_to":[]},
+        {"id":"mr-exact-07-noise","scope":"user","category":"performance","content":"Batch image resizing jobs by source bucket.","tags":["images"],"domains":["backend"],"tier":"short_term","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.2,"usage_count":2,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":0,"related_to":[]}
+      ],"must_include_ids":["mr-exact-07-primary"],"may_include_ids":[],"must_exclude_ids":["mr-exact-07-noise"],"primary_id":"mr-exact-07-primary","expected_no_injection":false,"rationale":"The security mechanism and form name are exact matches." 
+    },
+    {
+      "case_id":"mr-exact-08","category":"exact_lexical","task_description":"Fix the N+1 query in order history","current_files":["src/orders/history.py"],"active_domains":["backend","database"],"context_usage":0.5,"max_memories":5,"max_tokens":500,
+      "memories":[
+        {"id":"mr-exact-08-primary","scope":"project","category":"performance","content":"The N+1 query in order history is removed by preloading line items in one database query.","tags":["n+1","order","query"],"domains":["backend","database"],"tier":"long_term","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.5,"usage_count":7,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":3,"related_to":[]},
+        {"id":"mr-exact-08-noise","scope":"local","category":"documentation","content":"API examples use fictional account numbers.","tags":["docs"],"domains":["documentation"],"tier":"working","lifecycle_status":"active","safety_status":"safe","approval_status":"approved","curator_locked":false,"usefulness_score":0.0,"usage_count":0,"created_at":1736856000,"updated_at":1736938800,"graded_relevance":0,"related_to":[]}
+      ],"must_include_ids":["mr-exact-08-primary"],"may_include_ids":[],"must_exclude_ids":["mr-exact-08-noise"],"primary_id":"mr-exact-08-primary","expected_no_injection":false,"rationale":"The primary exactly names the N+1 order-history query." 
+    }
+  ]
+}

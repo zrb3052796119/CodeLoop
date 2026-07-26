@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "schema_version": 1,
+      "case_id": "path-explicit-read-change-001",
+      "category": "path_extraction",
+      "description": "Explicit read and changed file fields have different roles",
+      "task_description": "Update the auth configuration",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "read_file", "input": {"path": "src/auth.py"}, "files": ["src/auth.py"]},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "read_file", "status": "success", "files": ["src/auth.py"]},
+        {"event_id": "event-3", "call_id": "call-2", "type": "tool_call", "tool_name": "edit_file", "input": {"file_path": "src/config.py"}, "changed_files": ["src/config.py"]},
+        {"event_id": "event-4", "call_id": "call-2", "type": "tool_result", "tool_name": "edit_file", "status": "success", "changed_files": ["src/config.py"]},
+        {"event_id": "event-5", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["src/auth.py"], "files_changed": ["src/config.py"], "tools": ["read_file", "edit_file"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_file_operation"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "Generic files output must not erase read/change roles."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "path-command-is-not-file-002",
+      "category": "path_extraction",
+      "description": "A command containing a test path is not itself a file path",
+      "task_description": "运行认证模块的定向测试",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "run_command", "input": {"command": "pytest tests/test_auth.py -q"}, "command": "pytest tests/test_auth.py -q", "referenced_files": ["tests/test_auth.py"]},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "1 passed"},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [{"verification_id": "verify-1", "tool_name": "run_command", "result": "passed", "scope": "targeted", "required_terms": ["1 passed"], "evidence_ids": ["event-1", "event-2"]}], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_verification_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["pytest tests/test_auth.py -q", "file"]}],
+      "notes": "Stable reproduction for recursive input.command path extraction."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "path-url-windows-003",
+      "category": "path_extraction",
+      "description": "Windows paths are files while URLs and prose path examples are not",
+      "task_description": "Inspect the Windows configuration",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "read_file", "path": "C:\\Program Files\\MiniCode\\config.toml"},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "read_file", "status": "success", "files": ["C:\\Program Files\\MiniCode\\config.toml"]},
+        {"event_id": "event-3", "type": "assistant_step", "content": "Documentation is at https://example.invalid/config.py and mentions src/example.py as prose."},
+        {"event_id": "event-4", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["C:/Program Files/MiniCode/config.toml"], "files_changed": [], "tools": ["read_file"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_read_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["https://example.invalid/config.py", "file"]}],
+      "notes": "Path normalization may change separators but not semantic role."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "path-space-unicode-relative-004",
+      "category": "path_extraction",
+      "description": "Relative Unicode paths with spaces remain one changed file",
+      "task_description": "更新中文设计文档",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "edit_file", "input": {"path": "docs/设计 说明.md"}, "changed_files": ["docs/设计 说明.md"]},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "edit_file", "status": "success", "changed_files": ["docs/设计 说明.md"]},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": ["docs/设计 说明.md"], "tools": ["edit_file"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_format_or_edit"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "Whitespace inside a path is meaningful and must not split the path."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "path-duplicate-nonstring-nested-005",
+      "category": "path_extraction",
+      "description": "Duplicate nested paths dedupe and non-string path values are ignored",
+      "task_description": "Search a nested source file",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "grep_files", "arguments": {"query": "token", "nested": {"files": ["src/deep.py", "src/deep.py"], "path": 42}}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "grep_files", "status": "success", "files": ["src/deep.py", "src/deep.py"]},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["src/deep.py"], "files_changed": [], "tools": ["grep_files"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_search_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "The golden label is deduplicated independently of engine behavior."
+    }
+  ]
+}

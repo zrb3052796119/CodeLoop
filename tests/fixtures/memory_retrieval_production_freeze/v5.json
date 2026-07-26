@@ -1,0 +1,39 @@
+{
+  "addedFiles": {},
+  "allowedChangesFromParent": {
+    "minicode/agent_loop.py": {
+      "reasonCode": "runtime_memory_observer"
+    },
+    "minicode/headless.py": {
+      "reasonCode": "skill_event_entrypoint"
+    },
+    "minicode/main.py": {
+      "reasonCode": "skill_event_entrypoint"
+    },
+    "minicode/run_events.py": {
+      "reasonCode": "runtime_event_projection"
+    },
+    "minicode/tui/input_handler.py": {
+      "reasonCode": "skill_event_entrypoint"
+    }
+  },
+  "baselineId": "memory-retrieval-production-v5",
+  "files": {
+    "minicode/agent_loop.py": "fe950a24167d5dd462ebe451d66f458fab69f761db4b63f6420cace869f71d46",
+    "minicode/context_compactor.py": "f05bd72a46be720bfa9b50e42e4824825b5e532c1b8885ae6db1ab7a316b4bec",
+    "minicode/headless.py": "f234cd32c571258d9099b712644b4df8fe0d055b31645a45efda32319715e2af",
+    "minicode/main.py": "678dec824b3ddc05ace5af45db9743c20baa13fdf3eedcf7e7fcadc1756a7bc4",
+    "minicode/memory.py": "2706a3e684c84fc830a7c553b907f45a06899c6a0d091a5c366c1dfbd3741108",
+    "minicode/memory_candidate_consolidation.py": "a2f44bd09a8594819f740f001c819458962fb00181206cf16a5f529b3169c6e4",
+    "minicode/memory_injector.py": "059d2812f0fa92e2d4db2ee3463b5843c6c84194b83ed11da1de0ebd921721ee",
+    "minicode/memory_pipeline.py": "a71062f86268010245ce1e924d65be8314bcc07d2afe142e5797726f957c35a1",
+    "minicode/memory_retrieval.py": "33b27c4e5ea32321d6ba776918da374b91ea04b7358649fc8e0167b56c576376",
+    "minicode/run_events.py": "3091862e4923932b33ec74acbef68a1498656a945edbf7dff3f6ce6d78d50f8d",
+    "minicode/run_journal.py": "20f41213996c853e178bacd114d0e99f4ec94a3a626d8be691324aa74b9144c1",
+    "minicode/run_lifecycle.py": "1a8103e0fc524fb6bcdc59f313fe5e236c1a86a9a9c548b73aeb4d185265cdf9",
+    "minicode/tui/input_handler.py": "f826956da80bc6d3e0f0b04f6af519fd9a9876fa4224bfcbf497e9d94590069b"
+  },
+  "parentBaselineId": "memory-retrieval-production-v4",
+  "reason": "Batch 3C-1 Skill routing and Memory result observability",
+  "schemaVersion": 1
+}

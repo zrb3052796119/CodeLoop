@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minicode.local/schemas/memory-retrieval-golden-v1.json",
+  "title": "MiniCode synthetic memory retrieval golden cases",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "synthetic_data", "reference_time", "cases"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "synthetic_data": {"const": true},
+    "reference_time": {"const": 1736942400},
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/case"}
+    }
+  },
+  "$defs": {
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id", "category", "task_description", "current_files",
+        "active_domains", "context_usage", "max_memories", "max_tokens",
+        "memories", "must_include_ids", "may_include_ids", "must_exclude_ids",
+        "primary_id", "expected_no_injection", "rationale"
+      ],
+      "properties": {
+        "case_id": {"type": "string", "pattern": "^mr-[a-z0-9-]+$"},
+        "category": {
+          "enum": [
+            "exact_lexical", "paraphrase_synonym", "multilingual",
+            "file_domain_context", "cross_scope_ranking", "lifecycle_safety",
+            "negative_no_match", "duplicate_conflict_budget",
+            "failure_recovery_correction", "entrypoint_consistency"
+          ]
+        },
+        "task_description": {"type": "string", "minLength": 1, "maxLength": 500},
+        "current_files": {"type": "array", "items": {"type": "string"}, "maxItems": 20},
+        "active_domains": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
+        "context_usage": {"type": "number", "minimum": 0, "maximum": 1},
+        "max_memories": {"type": "integer", "minimum": 1, "maximum": 20},
+        "max_tokens": {"type": "integer", "minimum": 16, "maximum": 8000},
+        "memories": {"type": "array", "minItems": 1, "maxItems": 24, "items": {"$ref": "#/$defs/memory"}},
+        "must_include_ids": {"$ref": "#/$defs/id_list"},
+        "may_include_ids": {"$ref": "#/$defs/id_list"},
+        "must_exclude_ids": {"$ref": "#/$defs/id_list"},
+        "primary_id": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
+        "expected_no_injection": {"type": "boolean"},
+        "rationale": {"type": "string", "minLength": 8}
+      }
+    },
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "scope", "category", "content", "tags", "domains", "tier",
+        "lifecycle_status", "safety_status", "approval_status", "curator_locked",
+        "usefulness_score", "usage_count", "created_at", "updated_at",
+        "graded_relevance", "related_to"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "scope": {"enum": ["user", "project", "local"]},
+        "category": {"type": "string", "minLength": 1, "maxLength": 80},
+        "content": {"type": "string", "minLength": 1, "maxLength": 12000},
+        "tags": {"type": "array", "items": {"type": "string"}, "maxItems": 12},
+        "domains": {"type": "array", "items": {"type": "string"}, "maxItems": 8},
+        "tier": {"enum": ["working", "short_term", "long_term", "archival"]},
+        "lifecycle_status": {"enum": ["active", "pending", "rejected", "deprecated", "invalid", "archived_duplicate"]},
+        "safety_status": {"enum": ["safe", "suspicious", "unsafe"]},
+        "approval_status": {"enum": ["approved", "pending", "rejected"]},
+        "curator_locked": {"type": "boolean"},
+        "usefulness_score": {"type": "number", "minimum": -1, "maximum": 1},
+        "usage_count": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "created_at": {"const": 1736856000},
+        "updated_at": {"const": 1736938800},
+        "graded_relevance": {"type": "integer", "minimum": 0, "maximum": 3},
+        "related_to": {"$ref": "#/$defs/id_list"}
+      }
+    },
+    "id": {"type": "string", "pattern": "^mr-[a-z0-9-]+$"},
+    "id_list": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/id"}
+    }
+  }
+}

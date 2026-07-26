@@ -1,0 +1,206 @@
+{
+  "scope": "project",
+  "last_updated": 1785082406.7973561,
+  "entries": [
+    {
+      "id": "project-1785082406796413000-b6ecf281",
+      "scope": "project",
+      "category": "task_context",
+      "content": "Task Context: 你可以网上搜索一下 小红是谁吗？\n\nClaim:\n  Type: error_pattern\n  Statement: Observed error pattern for web_search: error[search_unavailable]: Web search is unavailable. Providers: baidu=response_unrecognized, duckduckgo=timeout.\n\n[System note: Network error detected. The previous attempt failed due to connectivity issues. Please retry the same operation. If it fails again, consider checking your network connection or trying an alternative approach. (This is retry attempt 2)]\n  Evidence: event-000003\n  Applies when: When web_search reports error[search_unavailable]: Web search is unavailable. Providers: baidu=response_unrecognized, duckduckgo=timeout.\n\n[System note: Network error detected. The pre.\n  Limitations: Observed in one task trace; broader recurrence is not yet established.\n\nClaim:\n  Type: error_pattern\n  Statement: Observed error pattern for web_search / TimeoutError: error[search_unavailable]: Web search is unavailable. Providers: baidu=response_unrecognized, duckduckgo=timeout.\n  Evidence: event-000004\n  Applies when: When web_search reports TimeoutError.\n  Limitations: Observed in one task trace; broader recurrence is not yet established.",
+      "created_at": 1785082406.796439,
+      "updated_at": 1785082406.796439,
+      "tags": [
+        "self-reflection",
+        "success",
+        "web_search"
+      ],
+      "usage_count": 0,
+      "domains": [],
+      "tier": "short_term",
+      "last_accessed": 1785082406.7964401,
+      "related_to": [],
+      "metadata": {
+        "confidence": 0.5900000000000001,
+        "key_decisions": [],
+        "errors": [
+          "web_search: error[search_unavailable]: Web search is unavailable. Providers: baidu=response_unrecognized, duckduckgo=timeout.\n\n[System note: Network error detected. The previous attempt failed due to connectivity issues. Please retry the sa",
+          "web_search / TimeoutError: error[search_unavailable]: Web search is unavailable. Providers: baidu=response_unrecognized, duckduckgo=timeout."
+        ],
+        "improvements": [
+          "Observed in one task trace; broader recurrence is not yet established.",
+          "Observed in one task trace; broader recurrence is not yet established."
+        ],
+        "task_context": {
+          "tools": [
+            "web_search"
+          ],
+          "errors": [
+            "error[search_unavailable]: Web search is unavailable. Providers: baidu=response_unrecognized, duckduckgo=timeout.\n\n[System note: Network error detected. The previous attempt failed due to connectivity issues. Please retry the same operation. If it fails again, consider checking your network connection or trying an alternative approach. (This is retry attempt 2)]",
+            "TimeoutError: error[search_unavailable]: Web search is unavailable. Providers: baidu=response_unrecognized, duckduckgo=timeout."
+          ],
+          "project_state": "success",
+          "outcome": "success",
+          "had_errors": true,
+          "errors_recovered": false
+        },
+        "task_evidence": {
+          "files_read": [],
+          "files_changed": [],
+          "referenced_files": [],
+          "tool_calls": [
+            {
+              "tool_name": "web_search",
+              "call_id": "call_00_YMiwcAhy7dLzB88HACcN9381",
+              "call_event_id": "event-000002",
+              "result_event_ids": [
+                "event-000003",
+                "event-000004"
+              ],
+              "status": "failed"
+            }
+          ],
+          "libraries": [],
+          "errors": [
+            {
+              "error_id": "error-000001",
+              "call_id": "call_00_YMiwcAhy7dLzB88HACcN9381",
+              "tool_name": "web_search",
+              "error_type": null,
+              "message": "error[search_unavailable]: Web search is unavailable. Providers: baidu=response_unrecognized, duckduckgo=timeout.\n\n[System note: Network error detected. The previous attempt failed due to connectivity issues. Please retry the same operation. If it fails again, consider checking your network connection or trying an alternative approach. (This is retry attempt 2)]",
+              "source_event_ids": [
+                "event-000003"
+              ],
+              "epistemic_status": "confirmed"
+            },
+            {
+              "error_id": "error-000002",
+              "call_id": "call_00_YMiwcAhy7dLzB88HACcN9381",
+              "tool_name": "web_search",
+              "error_type": "TimeoutError",
+              "message": "error[search_unavailable]: Web search is unavailable. Providers: baidu=response_unrecognized, duckduckgo=timeout.",
+              "source_event_ids": [
+                "event-000004"
+              ],
+              "epistemic_status": "confirmed"
+            }
+          ],
+          "recoveries": [],
+          "recovery_suggestions": [
+            {
+              "suggestion_id": "suggestion-000001",
+              "related_error_ids": [
+                "error-000001",
+                "error-000002"
+              ],
+              "suggestion": "Network error detected. The previous attempt failed due to connectivity issues. Please retry the same operation. If it fails again, consider checking your network connection or trying an alternative approach. (This is retry attempt 2)",
+              "event_ids": [
+                "event-000005"
+              ]
+            }
+          ],
+          "decisions": [],
+          "verification": [],
+          "outcome": "success",
+          "had_errors": true
+        },
+        "structured_reflection": {
+          "claims": [
+            {
+              "claim_id": "claim-000001",
+              "claim_type": "error_pattern",
+              "semantic_key": "error_web_search_error_search_unavailable_web_search_is_unavailable_providers_baidu_response",
+              "statement": "Observed error pattern for web_search: error[search_unavailable]: Web search is unavailable. Providers: baidu=response_unrecognized, duckduckgo=timeout.\n\n[System note: Network error detected. The previous attempt failed due to connectivity issues. Please retry the same operation. If it fails again, consider checking your network connection or trying an alternative approach. (This is retry attempt 2)]",
+              "evidence_ids": [
+                "event-000003"
+              ],
+              "epistemic_status": "confirmed",
+              "applies_when": "When web_search reports error[search_unavailable]: Web search is unavailable. Providers: baidu=response_unrecognized, duckduckgo=timeout.\n\n[System note: Network error detected. The pre.",
+              "limitations": [
+                "Observed in one task trace; broader recurrence is not yet established."
+              ],
+              "verification_ids": [],
+              "related_error_ids": [
+                "error-000001"
+              ],
+              "related_recovery_ids": []
+            },
+            {
+              "claim_id": "claim-000002",
+              "claim_type": "error_pattern",
+              "semantic_key": "error_web_search_timeouterror_error_search_unavailable_web_search_is_unavailable_providers_baidu",
+              "statement": "Observed error pattern for web_search / TimeoutError: error[search_unavailable]: Web search is unavailable. Providers: baidu=response_unrecognized, duckduckgo=timeout.",
+              "evidence_ids": [
+                "event-000004"
+              ],
+              "epistemic_status": "confirmed",
+              "applies_when": "When web_search reports TimeoutError.",
+              "limitations": [
+                "Observed in one task trace; broader recurrence is not yet established."
+              ],
+              "verification_ids": [],
+              "related_error_ids": [
+                "error-000002"
+              ],
+              "related_recovery_ids": []
+            }
+          ],
+          "validation": {
+            "accepted": true,
+            "valid_claim_ids": [
+              "claim-000001",
+              "claim-000002"
+            ],
+            "rejected_claim_ids": [],
+            "issues": []
+          },
+          "value_decision": {
+            "accepted": true,
+            "reason_codes": [
+              "accepted_durable_reflection"
+            ],
+            "durable_signals": [
+              "reusable_error_pattern"
+            ],
+            "accepted_claim_ids": [
+              "claim-000001",
+              "claim-000002"
+            ],
+            "rejected_claim_ids": []
+          },
+          "candidate_diagnostics": []
+        }
+      },
+      "source": "reflection",
+      "provenance": {
+        "task": "你可以网上搜索一下 小红是谁吗？",
+        "trace_events": 7,
+        "success": true,
+        "confidence": 0.5900000000000001,
+        "value_reason_codes": [
+          "accepted_durable_reflection"
+        ],
+        "durable_signals": [
+          "reusable_error_pattern"
+        ]
+      },
+      "retrieval_count": 0,
+      "injection_count": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "last_used": 0.0,
+      "usefulness_score": 0.0,
+      "lifecycle_status": "active",
+      "tier_reason": "",
+      "deprecated_at": null,
+      "curator_locked": false,
+      "safety_status": "safe",
+      "safety_reason": "",
+      "approval_status": "pending",
+      "approval_content_hash": "d1f7c968b90d94b8c4ed7318b22949d0d1e57206bc7fba204112f1caea753a18",
+      "approval_reason": "automatic memory requires user review",
+      "approval_actor": "safety_gate",
+      "approval_decided_at": 1785082406.7964532,
+      "approval_policy": "user_review_required"
+    }
+  ]
+}

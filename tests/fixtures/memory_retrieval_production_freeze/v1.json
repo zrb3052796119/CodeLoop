@@ -1,0 +1,20 @@
+{
+  "addedFiles": {},
+  "allowedChangesFromParent": {},
+  "baselineId": "memory-retrieval-production-v1",
+  "files": {
+    "minicode/agent_loop.py": "a9980e6df7e9f3bb9858ea3b1907e6e6eb02e5fe7a90d533bf8096a741981d5e",
+    "minicode/context_compactor.py": "f05bd72a46be720bfa9b50e42e4824825b5e532c1b8885ae6db1ab7a316b4bec",
+    "minicode/headless.py": "de48f0f28eb4772fe6267695418eee6a30dc674f1cb95bd39823d8f73ef099c8",
+    "minicode/main.py": "04e73b50e60aeea48cc2f35cccb4dc660400a06178d50a7feec4856b686f229a",
+    "minicode/memory.py": "2706a3e684c84fc830a7c553b907f45a06899c6a0d091a5c366c1dfbd3741108",
+    "minicode/memory_candidate_consolidation.py": "a2f44bd09a8594819f740f001c819458962fb00181206cf16a5f529b3169c6e4",
+    "minicode/memory_injector.py": "059d2812f0fa92e2d4db2ee3463b5843c6c84194b83ed11da1de0ebd921721ee",
+    "minicode/memory_pipeline.py": "a71062f86268010245ce1e924d65be8314bcc07d2afe142e5797726f957c35a1",
+    "minicode/memory_retrieval.py": "33b27c4e5ea32321d6ba776918da374b91ea04b7358649fc8e0167b56c576376",
+    "minicode/tui/input_handler.py": "b075996ec3b661a488e688678c46e408a600546ce792eb9b9c2bf0da22f2c3e8"
+  },
+  "parentBaselineId": null,
+  "reason": "Retrieval Phase 3A production source freeze before Dashboard lifecycle observation",
+  "schemaVersion": 1
+}

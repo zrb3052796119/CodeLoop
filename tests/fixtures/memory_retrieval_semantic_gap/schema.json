@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minicode.local/schemas/memory-retrieval-semantic-gap-v1.json",
+  "title": "MiniCode semantic retrieval gap fixture",
+  "oneOf": [
+    {"$ref": "#/$defs/caseDocument"},
+    {"$ref": "#/$defs/backgroundDocument"},
+    {"$ref": "#/$defs/datasetManifest"}
+  ],
+  "$defs": {
+    "id": {"type": "string", "pattern": "^sg-[a-z0-9-]+$"},
+    "idList": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+    "stringList": {"type": "array", "uniqueItems": true, "items": {"type": "string", "maxLength": 160}},
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "scope", "category", "content", "tags", "domains", "tier",
+        "lifecycle_status", "safety_status", "approval_status", "curator_locked",
+        "usefulness_score", "created_at", "updated_at", "source", "metadata", "provenance"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "scope": {"enum": ["user", "project", "local"]},
+        "category": {"type": "string", "minLength": 1, "maxLength": 80},
+        "content": {"type": "string", "minLength": 8, "maxLength": 4000},
+        "tags": {"$ref": "#/$defs/stringList"},
+        "domains": {"$ref": "#/$defs/stringList"},
+        "tier": {"enum": ["working", "short_term", "long_term", "archival"]},
+        "lifecycle_status": {"enum": ["active", "deprecated", "rejected", "pending"]},
+        "safety_status": {"enum": ["safe", "suspicious", "unsafe"]},
+        "approval_status": {"enum": ["approved", "pending", "rejected"]},
+        "curator_locked": {"type": "boolean"},
+        "usefulness_score": {"type": "number", "minimum": -1, "maximum": 1},
+        "created_at": {"const": 1736856000},
+        "updated_at": {"const": 1736938800},
+        "source": {"const": "semantic_gap_fixture"},
+        "metadata": {"type": "object", "maxProperties": 16},
+        "provenance": {"type": "object", "maxProperties": 16}
+      }
+    },
+    "stageBehavior": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wide_candidate", "gate", "consolidation", "rendered"],
+      "properties": {
+        "wide_candidate": {"enum": ["required", "allowed", "forbidden"]},
+        "gate": {"enum": ["required", "reject", "not_applicable"]},
+        "consolidation": {"enum": ["retain", "suppress", "not_applicable"]},
+        "rendered": {"enum": ["required", "forbidden", "optional"]}
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id", "split", "polarity", "category", "query", "current_files",
+        "active_domains", "context_usage", "max_memories", "max_tokens", "background_pool_id",
+        "memories", "primary_entry_ids", "allowed_secondary_ids", "must_exclude_ids",
+        "expected_no_match", "expected_scope", "expected_stage_behavior",
+        "semantic_relation_type", "query_language", "memory_language",
+        "lexical_overlap_class", "normalized_token_overlap", "why_semantically_relevant",
+        "why_lexical_retrieval_may_fail", "miss_impact", "memory_kind",
+        "annotation_evidence", "safety_lifecycle_expectation", "query_is_sufficient",
+        "structured_metadata_complete", "hard_negative_control_case_ids",
+        "allow_wide_candidate", "must_gate_reject", "allow_consolidator", "allow_rendered"
+      ],
+      "properties": {
+        "case_id": {"$ref": "#/$defs/id"},
+        "split": {"enum": ["analysis", "sealed"]},
+        "polarity": {"enum": ["positive", "hard_negative"]},
+        "category": {"type": "string", "minLength": 3, "maxLength": 80},
+        "query": {"type": "string", "minLength": 8, "maxLength": 600},
+        "current_files": {"$ref": "#/$defs/stringList"},
+        "active_domains": {"$ref": "#/$defs/stringList"},
+        "context_usage": {"type": "number", "minimum": 0, "maximum": 1},
+        "max_memories": {"type": "integer", "minimum": 1, "maximum": 20},
+        "max_tokens": {"type": "integer", "minimum": 64, "maximum": 8000},
+        "background_pool_id": {"const": "semantic-pressure-v1"},
+        "memories": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"$ref": "#/$defs/memory"}},
+        "primary_entry_ids": {"$ref": "#/$defs/idList"},
+        "allowed_secondary_ids": {"$ref": "#/$defs/idList"},
+        "must_exclude_ids": {"$ref": "#/$defs/idList"},
+        "expected_no_match": {"type": "boolean"},
+        "expected_scope": {"oneOf": [{"enum": ["user", "project", "local"]}, {"type": "null"}]},
+        "expected_stage_behavior": {"$ref": "#/$defs/stageBehavior"},
+        "semantic_relation_type": {"type": "string", "minLength": 3, "maxLength": 80},
+        "query_language": {"enum": ["en", "zh"]},
+        "memory_language": {"enum": ["en", "zh"]},
+        "lexical_overlap_class": {"enum": ["zero", "low", "medium", "high"]},
+        "normalized_token_overlap": {"type": "number", "minimum": 0, "maximum": 1},
+        "why_semantically_relevant": {"type": "string", "minLength": 12, "maxLength": 600},
+        "why_lexical_retrieval_may_fail": {"type": "string", "minLength": 12, "maxLength": 600},
+        "miss_impact": {"type": "string", "minLength": 8, "maxLength": 400},
+        "memory_kind": {"enum": ["stable_fact", "constraint", "recovery", "root_cause", "configuration", "preference", "correction", "negative_control"]},
+        "annotation_evidence": {"type": "string", "minLength": 12, "maxLength": 600},
+        "safety_lifecycle_expectation": {"type": "string", "minLength": 8, "maxLength": 300},
+        "query_is_sufficient": {"type": "boolean"},
+        "structured_metadata_complete": {"type": "boolean"},
+        "hard_negative_control_case_ids": {"$ref": "#/$defs/idList"},
+        "allow_wide_candidate": {"type": "boolean"},
+        "must_gate_reject": {"type": "boolean"},
+        "allow_consolidator": {"type": "boolean"},
+        "allow_rendered": {"type": "boolean"}
+      }
+    },
+    "caseDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "document_type", "synthetic_data", "reference_time", "cases"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "document_type": {"const": "cases"},
+        "synthetic_data": {"const": true},
+        "reference_time": {"const": 1736942400},
+        "cases": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/case"}}
+      }
+    },
+    "backgroundDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "document_type", "synthetic_data", "reference_time", "pool_id", "memories"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "document_type": {"const": "background"},
+        "synthetic_data": {"const": true},
+        "reference_time": {"const": 1736942400},
+        "pool_id": {"const": "semantic-pressure-v1"},
+        "memories": {"type": "array", "minItems": 32, "maxItems": 32, "items": {"$ref": "#/$defs/memory"}}
+      }
+    },
+    "datasetManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "document_type", "dataset_id", "synthetic_data", "case_count", "positive_count", "hard_negative_count", "analysis_count", "sealed_count", "positive_categories", "negative_categories", "case_files", "background_file", "split_policy", "first_baseline_run"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "document_type": {"const": "manifest"},
+        "dataset_id": {"const": "memory-retrieval-semantic-gap-v1"},
+        "synthetic_data": {"const": true},
+        "case_count": {"const": 108},
+        "positive_count": {"const": 72},
+        "hard_negative_count": {"const": 36},
+        "analysis_count": {"const": 72},
+        "sealed_count": {"const": 36},
+        "positive_categories": {"type": "array", "minItems": 12, "maxItems": 12, "uniqueItems": true, "items": {"type": "string"}},
+        "negative_categories": {"type": "array", "minItems": 12, "maxItems": 12, "uniqueItems": true, "items": {"type": "string"}},
+        "case_files": {"type": "array", "minItems": 13, "uniqueItems": true, "items": {"type": "string"}},
+        "background_file": {"const": "background.json"},
+        "split_policy": {"type": "string", "minLength": 20},
+        "first_baseline_run": {"const": false}
+      }
+    }
+  }
+}

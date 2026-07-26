@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "schema_version": 1,
+      "case_id": "library-requirements-confirmed-001",
+      "category": "library_detection",
+      "description": "A pinned requirement is a confirmed dependency",
+      "task_description": "Inspect Python dependencies",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "read_file", "input": {"path": "requirements.txt"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "read_file", "status": "success", "files": ["requirements.txt"], "output_summary": "fastapi==0.115.0\nuvicorn==0.31.0"},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["requirements.txt"], "files_changed": [], "tools": ["read_file"], "libraries": [{"name": "fastapi", "status": "confirmed", "evidence_ids": ["event-2"]}, {"name": "uvicorn", "status": "confirmed", "evidence_ids": ["event-2"]}], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["stable_project_dependency"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "dependency", "semantic_key": "fastapi_uvicorn_dependencies", "evidence_ids": ["event-2"], "epistemic_status": "confirmed", "required_terms": ["fastapi", "uvicorn"], "forbidden_terms": []}],
+      "forbidden_claims": [],
+      "notes": "Dependency evidence comes from the file, not assistant prose."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "library-pyproject-confirmed-002",
+      "category": "library_detection",
+      "description": "Pyproject dependency and Python constraint are confirmed",
+      "task_description": "Read project metadata",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "read_file", "input": {"path": "pyproject.toml"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "read_file", "status": "success", "files": ["pyproject.toml"], "output_summary": "requires-python = >=3.11; dependencies = [pytest>=8]"},
+        {"event_id": "event-3", "type": "assistant_step", "content": "The project metadata was inspected."},
+        {"event_id": "event-4", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["pyproject.toml"], "files_changed": [], "tools": ["read_file"], "libraries": [{"name": "pytest", "status": "confirmed", "evidence_ids": ["event-2"]}], "errors": [], "recoveries": [], "decisions": [{"decision_id": "constraint-1", "semantic_key": "python_minimum_311", "evidence_ids": ["event-2"], "epistemic_status": "confirmed", "required_terms": ["python", "3.11"]}], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["stable_project_constraint"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "constraint", "semantic_key": "python_minimum_311", "evidence_ids": ["event-2"], "epistemic_status": "confirmed", "required_terms": ["python", "3.11"], "forbidden_terms": []}],
+      "forbidden_claims": [],
+      "notes": "Current output does not inspect file contents for dependencies or constraints."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "library-package-json-confirmed-003",
+      "category": "library_detection",
+      "description": "Package manifest entries are confirmed dependencies",
+      "task_description": "Inspect frontend dependencies",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "read_file", "input": {"path": "package.json"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "read_file", "status": "success", "files": ["package.json"], "structured_result": {"dependencies": {"react": "19.0.0", "zod": "4.0.0"}}},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["package.json"], "files_changed": [], "tools": ["read_file"], "libraries": [{"name": "react", "status": "confirmed", "evidence_ids": ["event-2"]}, {"name": "zod", "status": "confirmed", "evidence_ids": ["event-2"]}], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["stable_project_dependency"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "dependency", "semantic_key": "react_zod_dependencies", "evidence_ids": ["event-2"], "epistemic_status": "confirmed", "required_terms": ["react", "zod"], "forbidden_terms": []}],
+      "forbidden_claims": [],
+      "notes": "Structured tool output is stronger than a textual mention."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "library-import-distribution-alias-004",
+      "category": "library_detection",
+      "description": "Imports can confirm dependencies whose distribution names differ",
+      "task_description": "Inspect model imports",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "read_file", "input": {"path": "src/model.py"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "read_file", "status": "success", "files": ["src/model.py"], "output_summary": "from sklearn.model_selection import train_test_split"},
+        {"event_id": "event-3", "call_id": "call-2", "type": "tool_call", "tool_name": "read_file", "input": {"path": "web/App.tsx"}},
+        {"event_id": "event-4", "call_id": "call-2", "type": "tool_result", "tool_name": "read_file", "status": "success", "files": ["web/App.tsx"], "output_summary": "import React from 'react';"},
+        {"event_id": "event-5", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["src/model.py", "web/App.tsx"], "files_changed": [], "tools": ["read_file"], "libraries": [{"name": "scikit-learn", "import_name": "sklearn", "status": "confirmed", "evidence_ids": ["event-2"]}, {"name": "react", "status": "confirmed", "evidence_ids": ["event-4"]}], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["stable_project_dependency"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "Golden labels preserve import/distribution alias semantics."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "library-changing-gin-negative-005",
+      "category": "library_detection",
+      "description": "Substring, weak mention, and same-name local file are not dependencies",
+      "task_description": "Install the test dependency",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "run_command", "command": "python -m pip install pytest", "input": {"command": "python -m pip install pytest"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "run_command", "status": "success", "structured_result": {"installed": ["pytest"]}},
+        {"event_id": "event-3", "call_id": "call-2", "type": "tool_call", "tool_name": "read_file", "input": {"path": "src/react.py"}},
+        {"event_id": "event-4", "call_id": "call-2", "type": "tool_result", "tool_name": "read_file", "status": "success", "files": ["src/react.py"]},
+        {"event_id": "event-5", "type": "assistant_step", "content": "Changing src/react.py does not add gin; Django is only being considered."},
+        {"event_id": "event-6", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["src/react.py"], "files_changed": [], "tools": ["run_command", "read_file"], "libraries": [{"name": "pytest", "status": "confirmed", "evidence_ids": ["event-1", "event-2"]}, {"name": "django", "status": "weak_mention", "evidence_ids": ["event-5"]}, {"name": "gin", "status": "not_dependency", "evidence_ids": ["event-5"]}, {"name": "react", "status": "not_dependency", "evidence_ids": ["event-3", "event-4"]}], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["confirmed_dependency_install"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "dependency", "semantic_key": "pytest_installed", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "required_terms": ["pytest", "installed"], "forbidden_terms": ["gin"]}],
+      "forbidden_claims": [{"required_terms": ["gin", "dependency"]}, {"required_terms": ["django", "dependency"]}, {"required_terms": ["react", "dependency"]}],
+      "notes": "Stable reproduction for changing being classified as gin."
+    }
+  ]
+}

@@ -1,0 +1,5492 @@
+{
+  "capability_gaps": [
+    "file_access_role",
+    "dependency_certainty",
+    "error_call_id_association",
+    "verification_evidence",
+    "claim_evidence_references",
+    "epistemic_status"
+  ],
+  "case_count": 40,
+  "cases": [
+    {
+      "actual_evidence": {
+        "decisions": [
+          "I choose an optional response field instead of renaming the existing field, because older clients may still deserialize the old shape"
+        ],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "decision-compatible-strategy-inferred-003",
+      "category": "decisions_and_constraints",
+      "claims": {
+        "actual_claims": [
+          "I choose an optional response field instead of renaming the existing field, because older clients may still deserialize the old shape",
+          "Task completed successfully with the chosen approach."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.6666666666666666,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.5,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 1,
+        "unsupported_claims": 1
+      },
+      "conclusion_correct": false,
+      "confidence": 0.35,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 0.6666666666666666,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.5,
+          "true_positives": 1
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 2,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": false
+    },
+    {
+      "actual_evidence": {
+        "decisions": [
+          "I choose Python 3"
+        ],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "pyproject.toml"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "read_file"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "decision-config-python-version-002",
+      "category": "decisions_and_constraints",
+      "claims": {
+        "actual_claims": [
+          "I choose Python 3",
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): read_file."
+        ],
+        "claims_without_evidence_reference": 3,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 3,
+          "precision": 0.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 1,
+        "supported_claims": 0,
+        "unsupported_claims": 3
+      },
+      "conclusion_correct": false,
+      "confidence": 0.75,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 4,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 2,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [
+          "I will read the file and then format it"
+        ],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "src/module.py"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "format_file"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "decision-routine-step-best-practice-004",
+      "category": "decisions_and_constraints",
+      "claims": {
+        "actual_claims": [
+          "I will read the file and then format it",
+          "Task completed successfully with the chosen approach."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 1,
+      "low_value_false_write": true,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [
+          "The root cause is not yet known; the old memory says delete_entry updates every index"
+        ],
+        "errors": [
+          "run_command: deleted id still present in tag index"
+        ],
+        "files_changed": [],
+        "files_read": [
+          "minicode/memory.py"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [
+          "Rebuilt indexes after deleting the entry"
+        ],
+        "tools": [
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "decision-user-correction-old-memory-disproved-005",
+      "category": "decisions_and_constraints",
+      "claims": {
+        "actual_claims": [
+          "The root cause is not yet known; the old memory says delete_entry updates every index",
+          "Task completed successfully with the chosen approach.",
+          "Errors occurred with tool(s): run_command. Reuse the observed recovery pattern before retrying.",
+          "Error pattern: run_command: deleted id still present in tag index",
+          "Recovery action: Rebuilt indexes after deleting the entry"
+        ],
+        "claims_without_evidence_reference": 5,
+        "forbidden_claims": 1,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 2,
+          "false_positives": 5,
+          "precision": 0.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 2,
+        "supported_claims": 0,
+        "unsupported_claims": 5
+      },
+      "conclusion_correct": false,
+      "confidence": 0.8999999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 1,
+        "actual_unique_errors": 1,
+        "call_id_association_errors": 1,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 1,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 7,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 0.0,
+          "false_negatives": 2,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "files_changed": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "tools": {
+          "f1": 0.6666666666666666,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.5,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 7,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [
+          "I will preserve the public parse() API and return type"
+        ],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "decision-user-public-api-001",
+      "category": "decisions_and_constraints",
+      "claims": {
+        "actual_claims": [
+          "I will preserve the public parse() API and return type",
+          "Task completed successfully with the chosen approach."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.6666666666666666,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.5,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 1,
+        "unsupported_claims": 1
+      },
+      "conclusion_correct": false,
+      "confidence": 0.35,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 0,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": false
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "edge-assistant-only-missing-fields-004",
+      "category": "multilingual_and_edge_cases",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach."
+        ],
+        "claims_without_evidence_reference": 1,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 1
+      },
+      "conclusion_correct": false,
+      "confidence": 0.35,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 0,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": false
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [
+          "delete_entry / 索引错误: 删除后标签索引仍包含已删除条目"
+        ],
+        "files_changed": [],
+        "files_read": [
+          "minicode/memory.py"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [
+          "删除条目后统一重建全部索引"
+        ],
+        "tools": [
+          "delete_entry",
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "edge-chinese-error-recovery-001",
+      "category": "multilingual_and_edge_cases",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Errors occurred with tool(s): delete_entry. Reuse the observed recovery pattern before retrying.",
+          "Error pattern: delete_entry / 索引错误: 删除后标签索引仍包含已删除条目",
+          "Recovery action: 删除条目后统一重建全部索引"
+        ],
+        "claims_without_evidence_reference": 4,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.4,
+          "false_negatives": 0,
+          "false_positives": 3,
+          "precision": 0.25,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 1,
+        "unsupported_claims": 3
+      },
+      "conclusion_correct": false,
+      "confidence": 0.82,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 1,
+        "actual_unique_errors": 1,
+        "call_id_association_errors": 1,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 1,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 4,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "files_changed": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "tools": {
+          "f1": 0.8,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.6666666666666666,
+          "true_positives": 2
+        },
+        "verification": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 4,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [],
+        "libraries": [],
+        "outcome": "failed",
+        "recoveries": [],
+        "tools": [],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "edge-empty-trace-003",
+      "category": "multilingual_and_edge_cases",
+      "claims": {
+        "actual_claims": [
+          "Task encountered errors. Review error patterns for future avoidance."
+        ],
+        "claims_without_evidence_reference": 1,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 1
+      },
+      "conclusion_correct": false,
+      "confidence": 0.25,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 0,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 0,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": false
+    },
+    {
+      "actual_evidence": {
+        "decisions": [
+          "I choose write-through cache，因为用户权限更新必须立即对后续请求可见。"
+        ],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "edge-mixed-language-decision-002",
+      "category": "multilingual_and_edge_cases",
+      "claims": {
+        "actual_claims": [
+          "I choose write-through cache，因为用户权限更新必须立即对后续请求可见。",
+          "Task completed successfully with the chosen approach."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.6666666666666666,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.5,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 1,
+        "unsupported_claims": 1
+      },
+      "conclusion_correct": false,
+      "confidence": 0.35,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 1,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": false
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [
+          "run_command: 2 release tests failed",
+          "run_command / TestFailure: 2 release tests failed"
+        ],
+        "files_changed": [],
+        "files_read": [],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "edge-out-of-order-long-contradiction-005",
+      "category": "multilingual_and_edge_cases",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): run_command.",
+          "Errors occurred with tool(s): run_command. Reuse the observed recovery pattern before retrying.",
+          "Error pattern: run_command: 2 release tests failed",
+          "Error pattern: run_command / TestFailure: 2 release tests failed"
+        ],
+        "claims_without_evidence_reference": 5,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.33333333333333337,
+          "false_negatives": 0,
+          "false_positives": 4,
+          "precision": 0.2,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 1,
+        "unsupported_claims": 4
+      },
+      "conclusion_correct": false,
+      "confidence": 0.5900000000000001,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 2,
+        "actual_unique_errors": 1,
+        "call_id_association_errors": 1,
+        "duplicate_error_records": 1,
+        "expected_logical_errors": 1,
+        "merge_accuracy": 0.5
+      },
+      "event_count": 16,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 0.6666666666666666,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.5,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 3,
+      "low_value_false_write": false,
+      "outcome_correct": false,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [
+          "build / BuildError: 模块依赖循环，无法完成构建",
+          "build / PermissionError: Permission denied while writing dist/app.whl"
+        ],
+        "files_changed": [],
+        "files_read": [
+          "dist/app.whl"
+        ],
+        "libraries": [],
+        "outcome": "failed",
+        "recoveries": [],
+        "tools": [
+          "build"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "error-missing-call-empty-chinese-005",
+      "category": "error_deduplication",
+      "claims": {
+        "actual_claims": [
+          "Task encountered errors. Review error patterns for future avoidance.",
+          "Errors occurred with tool(s): build. Reuse the observed recovery pattern before retrying.",
+          "Error pattern: build / BuildError: 模块依赖循环，无法完成构建",
+          "Error pattern: build / PermissionError: Permission denied while writing dist/app.whl"
+        ],
+        "claims_without_evidence_reference": 4,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 4,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 4
+      },
+      "conclusion_correct": false,
+      "confidence": 0.5400000000000001,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 2,
+        "actual_unique_errors": 2,
+        "call_id_association_errors": 1,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 2,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 4,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 2
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 0,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [
+          "compile / SyntaxError: src/a.py line 10: invalid syntax",
+          "compile / SyntaxError: src/b.py line 10: invalid syntax"
+        ],
+        "files_changed": [],
+        "files_read": [
+          "src/a.py",
+          "src/b.py"
+        ],
+        "libraries": [],
+        "outcome": "failed",
+        "recoveries": [],
+        "tools": [
+          "compile"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "error-path-line-distinction-003",
+      "category": "error_deduplication",
+      "claims": {
+        "actual_claims": [
+          "Task encountered errors. Review error patterns for future avoidance.",
+          "Errors occurred with tool(s): compile. Reuse the observed recovery pattern before retrying.",
+          "Error pattern: compile / SyntaxError: src/a.py line 10: invalid syntax",
+          "Error pattern: compile / SyntaxError: src/b.py line 10: invalid syntax"
+        ],
+        "claims_without_evidence_reference": 4,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 4,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 4
+      },
+      "conclusion_correct": false,
+      "confidence": 0.5700000000000001,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 2,
+        "actual_unique_errors": 2,
+        "call_id_association_errors": 2,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 2,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 2
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 2
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 0,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [
+          "run_command: Expired token was accepted",
+          "run_command / AssertionError: Expired token was accepted"
+        ],
+        "files_changed": [],
+        "files_read": [
+          "pytest tests/test_auth.py -q"
+        ],
+        "libraries": [],
+        "outcome": "failed",
+        "recoveries": [],
+        "tools": [
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "error-same-call-two-sources-001",
+      "category": "error_deduplication",
+      "claims": {
+        "actual_claims": [
+          "Task encountered errors. Review error patterns for future avoidance.",
+          "Used 1 unique tool(s): run_command.",
+          "Errors occurred with tool(s): run_command. Reuse the observed recovery pattern before retrying.",
+          "Error pattern: run_command: Expired token was accepted",
+          "Error pattern: run_command / AssertionError: Expired token was accepted"
+        ],
+        "claims_without_evidence_reference": 5,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.33333333333333337,
+          "false_negatives": 0,
+          "false_positives": 4,
+          "precision": 0.2,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 1,
+        "unsupported_claims": 4
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6499999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 2,
+        "actual_unique_errors": 1,
+        "call_id_association_errors": 1,
+        "duplicate_error_records": 1,
+        "expected_logical_errors": 1,
+        "merge_accuracy": 0.5
+      },
+      "event_count": 4,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 0.6666666666666666,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.5,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 3,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [
+          "run_command: Connection timed out",
+          "run_command / TimeoutError: Connection timed out",
+          "run_command: Connection timed out",
+          "run_command / TimeoutError: Connection timed out"
+        ],
+        "files_changed": [],
+        "files_read": [],
+        "libraries": [],
+        "outcome": "failed",
+        "recoveries": [],
+        "tools": [
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "error-same-message-different-calls-002",
+      "category": "error_deduplication",
+      "claims": {
+        "actual_claims": [
+          "Task encountered errors. Review error patterns for future avoidance.",
+          "Used 1 unique tool(s): run_command.",
+          "Errors occurred with tool(s): run_command. Reuse the observed recovery pattern before retrying.",
+          "Error pattern: run_command: Connection timed out",
+          "Error pattern: run_command / TimeoutError: Connection timed out",
+          "Error pattern: run_command: Connection timed out"
+        ],
+        "claims_without_evidence_reference": 6,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.2857142857142857,
+          "false_negatives": 0,
+          "false_positives": 5,
+          "precision": 0.16666666666666666,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 1,
+        "unsupported_claims": 5
+      },
+      "conclusion_correct": false,
+      "confidence": 0.43000000000000005,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 4,
+        "actual_unique_errors": 1,
+        "call_id_association_errors": 2,
+        "duplicate_error_records": 3,
+        "expected_logical_errors": 2,
+        "merge_accuracy": 0.5
+      },
+      "event_count": 7,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 0.6666666666666666,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.5,
+          "recall": 1.0,
+          "true_positives": 2
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 3,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": false
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [
+          "run_command: KeyError: DATABASE_URL",
+          "run_command / KeyError: Traceback: config.py line 42 -> KeyError: DATABASE_URL"
+        ],
+        "files_changed": [],
+        "files_read": [
+          "config.py"
+        ],
+        "libraries": [],
+        "outcome": "failed",
+        "recoveries": [],
+        "tools": [
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "error-traceback-summary-one-004",
+      "category": "error_deduplication",
+      "claims": {
+        "actual_claims": [
+          "Task encountered errors. Review error patterns for future avoidance.",
+          "Errors occurred with tool(s): run_command. Reuse the observed recovery pattern before retrying.",
+          "Error pattern: run_command: KeyError: DATABASE_URL",
+          "Error pattern: run_command / KeyError: Traceback: config.py line 42 -> KeyError: DATABASE_URL"
+        ],
+        "claims_without_evidence_reference": 4,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.4,
+          "false_negatives": 0,
+          "false_positives": 3,
+          "precision": 0.25,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 1,
+        "unsupported_claims": 3
+      },
+      "conclusion_correct": false,
+      "confidence": 0.5700000000000001,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 2,
+        "actual_unique_errors": 2,
+        "call_id_association_errors": 1,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 1,
+        "merge_accuracy": 0.5
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 0.6666666666666666,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.5,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 1,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "src/react.py"
+        ],
+        "libraries": [
+          "django",
+          "gin",
+          "react"
+        ],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "read_file",
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "library-changing-gin-negative-005",
+      "category": "library_detection",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 2 unique tool(s): read_file, run_command."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 1,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.75,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 6,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 3,
+          "precision": 0.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 2
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 4,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "src/model.py",
+          "web/app.tsx"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "read_file"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "library-import-distribution-alias-004",
+      "category": "library_detection",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): read_file."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 5,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 2
+        },
+        "libraries": {
+          "f1": 0.0,
+          "false_negatives": 2,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 2,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "package.json"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "read_file"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "library-package-json-confirmed-003",
+      "category": "library_detection",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): read_file."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 1,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 0.0,
+          "false_negatives": 2,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 2,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "pyproject.toml"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "read_file"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "library-pyproject-confirmed-002",
+      "category": "library_detection",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): read_file."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 1,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 4,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 2,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "requirements.txt"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "read_file"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "library-requirements-confirmed-001",
+      "category": "library_detection",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): read_file."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 1,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 0.0,
+          "false_negatives": 2,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 2,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "ruff format src/service.py"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "low-value-format-repeat-synonym-005",
+      "category": "low_value_tasks",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): run_command."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 5,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 3,
+      "low_value_false_write": true,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "pytest tests/test_auth.py -q"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "low-value-green-test-no-fix-004",
+      "category": "low_value_tasks",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): run_command."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 2,
+      "low_value_false_write": true,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "list_files"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "low-value-list-directory-002",
+      "category": "low_value_tasks",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): list_files."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.51,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 0,
+      "low_value_false_write": true,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "src/auth.py"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "read_file"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "low-value-read-file-001",
+      "category": "low_value_tasks",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): read_file."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 0,
+      "low_value_false_write": true,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "src/auth.py"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "grep_files"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "low-value-symbol-search-003",
+      "category": "low_value_tasks",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): grep_files."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 0,
+      "low_value_false_write": true,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "pytest tests/test_auth.py -q"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "path-command-is-not-file-002",
+      "category": "path_extraction",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): run_command."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 2,
+      "low_value_false_write": true,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "src/deep.py"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "grep_files"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "path-duplicate-nonstring-nested-005",
+      "category": "path_extraction",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): grep_files."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 0,
+      "low_value_false_write": true,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "src/auth.py",
+          "src/config.py"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "edit_file",
+          "read_file"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "path-explicit-read-change-001",
+      "category": "path_extraction",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 2 unique tool(s): edit_file, read_file."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.75,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 5,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 0.6666666666666666,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.5,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 2
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 2,
+      "low_value_false_write": true,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "docs/设计 说明.md"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "edit_file"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "path-space-unicode-relative-004",
+      "category": "path_extraction",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): edit_file."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 2,
+      "low_value_false_write": true,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "c:/program files/minicode/config.toml"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "read_file"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "path-url-windows-003",
+      "category": "path_extraction",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): read_file."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 4,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 0,
+      "low_value_false_write": true,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "recovery-claimed-fixed-unrelated-test-004",
+      "category": "recovery_and_verification",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): run_command."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.51,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 4,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 1,
+      "low_value_false_write": true,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [
+          "I decided to move the expiry check before user lookup"
+        ],
+        "errors": [
+          "run_command: Expired token was accepted",
+          "run_command / AssertionError: Expired token was accepted"
+        ],
+        "files_changed": [],
+        "files_read": [
+          "src/auth.py"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [
+          "Moved the expiry check before user lookup"
+        ],
+        "tools": [
+          "edit_file",
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "recovery-edit-targeted-pass-001",
+      "category": "recovery_and_verification",
+      "claims": {
+        "actual_claims": [
+          "I decided to move the expiry check before user lookup",
+          "Task completed successfully with the chosen approach.",
+          "Used 2 unique tool(s): edit_file, run_command.",
+          "Errors occurred with tool(s): run_command. Reuse the observed recovery pattern before retrying.",
+          "Error pattern: run_command: Expired token was accepted",
+          "Error pattern: run_command / AssertionError: Expired token was accepted",
+          "Recovery action: Moved the expiry check before user lookup"
+        ],
+        "claims_without_evidence_reference": 7,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.25,
+          "false_negatives": 0,
+          "false_positives": 6,
+          "precision": 0.14285714285714285,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 1,
+        "unsupported_claims": 6
+      },
+      "conclusion_correct": false,
+      "confidence": 1.0,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 2,
+        "actual_unique_errors": 1,
+        "call_id_association_errors": 1,
+        "duplicate_error_records": 1,
+        "expected_logical_errors": 1,
+        "merge_accuracy": 0.5
+      },
+      "event_count": 8,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "errors": {
+          "f1": 0.6666666666666666,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.5,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "files_changed": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 2
+        },
+        "verification": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 4,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [
+          "delete_memory / IndexError: Deleted entry remained in tag index"
+        ],
+        "files_changed": [],
+        "files_read": [
+          "minicode/memory.py"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [
+          "Rebuilt all indexes after deletion"
+        ],
+        "tools": [
+          "delete_memory",
+          "pyright",
+          "ruff",
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "recovery-multiple-verification-levels-005",
+      "category": "recovery_and_verification",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Errors occurred with tool(s): delete_memory. Reuse the observed recovery pattern before retrying.",
+          "Error pattern: delete_memory / IndexError: Deleted entry remained in tag index",
+          "Recovery action: Rebuilt all indexes after deletion"
+        ],
+        "claims_without_evidence_reference": 4,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.4,
+          "false_negatives": 0,
+          "false_positives": 3,
+          "precision": 0.25,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 1,
+        "unsupported_claims": 3
+      },
+      "conclusion_correct": false,
+      "confidence": 0.82,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 1,
+        "actual_unique_errors": 1,
+        "call_id_association_errors": 1,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 1,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 7,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "files_changed": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "tools": {
+          "f1": 0.888888888888889,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.8,
+          "true_positives": 4
+        },
+        "verification": {
+          "f1": 0.0,
+          "false_negatives": 4,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 7,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [
+          "run_command / NetworkError: Package registry unavailable",
+          "run_command: Package registry unavailable"
+        ],
+        "files_changed": [],
+        "files_read": [],
+        "libraries": [],
+        "outcome": "failed",
+        "recoveries": [
+          "Retried with exponential backoff"
+        ],
+        "tools": [
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "recovery-retry-still-fails-002",
+      "category": "recovery_and_verification",
+      "claims": {
+        "actual_claims": [
+          "Task encountered errors. Review error patterns for future avoidance.",
+          "Errors occurred with tool(s): run_command. Reuse the observed recovery pattern before retrying.",
+          "Error pattern: run_command / NetworkError: Package registry unavailable",
+          "Error pattern: run_command: Package registry unavailable",
+          "Recovery action: Retried with exponential backoff"
+        ],
+        "claims_without_evidence_reference": 5,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.33333333333333337,
+          "false_negatives": 0,
+          "false_positives": 4,
+          "precision": 0.2,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 1,
+        "unsupported_claims": 4
+      },
+      "conclusion_correct": false,
+      "confidence": 0.53,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 2,
+        "actual_unique_errors": 1,
+        "call_id_association_errors": 2,
+        "duplicate_error_records": 1,
+        "expected_logical_errors": 2,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 4,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 2
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 1,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [
+          "patch_file / PatchError: Context mismatch in src/service.py"
+        ],
+        "files_changed": [],
+        "files_read": [
+          "src/service.py"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [
+          "Switched to edit_file after re-reading the current block"
+        ],
+        "tools": [
+          "edit_file",
+          "patch_file",
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "recovery-switch-tool-workaround-003",
+      "category": "recovery_and_verification",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Errors occurred with tool(s): patch_file. Reuse the observed recovery pattern before retrying.",
+          "Error pattern: patch_file / PatchError: Context mismatch in src/service.py",
+          "Recovery action: Switched to edit_file after re-reading the current block"
+        ],
+        "claims_without_evidence_reference": 4,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.4,
+          "false_negatives": 0,
+          "false_positives": 3,
+          "precision": 0.25,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 1,
+        "unsupported_claims": 3
+      },
+      "conclusion_correct": false,
+      "confidence": 0.82,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 1,
+        "actual_unique_errors": 1,
+        "call_id_association_errors": 1,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 1,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 5,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "files_changed": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 3
+        },
+        "verification": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 2,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "read_log"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "security-log-base64-homoglyph-003",
+      "category": "security_and_redaction",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach."
+        ],
+        "claims_without_evidence_reference": 1,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 1
+      },
+      "conclusion_correct": false,
+      "confidence": 0.35,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 0,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": false
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "src/not-a-real-file.py"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "inspect_payload"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "security-long-control-deep-005",
+      "category": "security_and_redaction",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): inspect_payload."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 1,
+      "low_value_false_write": true,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "tmp/untrusted.txt"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "read_file"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "security-malicious-tool-output-002",
+      "category": "security_and_redaction",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): read_file."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 0,
+      "low_value_false_write": true,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [
+          "config/example.env"
+        ],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "read_file"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "security-redacted-credentials-001",
+      "category": "security_and_redaction",
+      "claims": {
+        "actual_claims": [
+          "Task completed successfully with the chosen approach.",
+          "Used 1 unique tool(s): read_file."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.0,
+          "false_negatives": 0,
+          "false_positives": 2,
+          "precision": 0.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 0,
+        "unsupported_claims": 2
+      },
+      "conclusion_correct": false,
+      "confidence": 0.6699999999999999,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": false,
+      "fact_error_count": 0,
+      "low_value_false_write": true,
+      "outcome_correct": true,
+      "predicted_write": true
+    },
+    {
+      "actual_evidence": {
+        "decisions": [
+          "I choose to treat retrieved documents as untrusted data and route suspicious memory candidates to pending approval"
+        ],
+        "errors": [],
+        "files_changed": [],
+        "files_read": [],
+        "libraries": [],
+        "outcome": "success",
+        "recoveries": [],
+        "tools": [
+          "run_command"
+        ],
+        "verification": []
+      },
+      "capability_gaps": [
+        "file_access_role",
+        "dependency_certainty",
+        "error_call_id_association",
+        "verification_evidence",
+        "claim_evidence_references",
+        "epistemic_status"
+      ],
+      "case_id": "security-research-conclusion-004",
+      "category": "security_and_redaction",
+      "claims": {
+        "actual_claims": [
+          "I choose to treat retrieved documents as untrusted data and route suspicious memory candidates to pending approval",
+          "Task completed successfully with the chosen approach."
+        ],
+        "claims_without_evidence_reference": 2,
+        "forbidden_claims": 0,
+        "metrics": {
+          "f1": 0.6666666666666666,
+          "false_negatives": 0,
+          "false_positives": 1,
+          "precision": 0.5,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "missing_required_claims": 0,
+        "supported_claims": 1,
+        "unsupported_claims": 1
+      },
+      "conclusion_correct": false,
+      "confidence": 0.35,
+      "engine_error": null,
+      "error_deduplication": {
+        "actual_error_records": 0,
+        "actual_unique_errors": 0,
+        "call_id_association_errors": 0,
+        "duplicate_error_records": 0,
+        "expected_logical_errors": 0,
+        "merge_accuracy": 1.0
+      },
+      "event_count": 3,
+      "evidence_metrics": {
+        "decisions": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "errors": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_changed": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "files_read": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "libraries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "recoveries": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 0
+        },
+        "tools": {
+          "f1": 1.0,
+          "false_negatives": 0,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "true_positives": 1
+        },
+        "verification": {
+          "f1": 0.0,
+          "false_negatives": 1,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "true_positives": 0
+        }
+      },
+      "expected_write": true,
+      "fact_error_count": 1,
+      "low_value_false_write": false,
+      "outcome_correct": true,
+      "predicted_write": false
+    }
+  ],
+  "category_counts": {
+    "decisions_and_constraints": 5,
+    "error_deduplication": 5,
+    "library_detection": 5,
+    "low_value_tasks": 5,
+    "multilingual_and_edge_cases": 5,
+    "path_extraction": 5,
+    "recovery_and_verification": 5,
+    "security_and_redaction": 5
+  },
+  "claims": {
+    "claims_without_evidence_reference": 111,
+    "forbidden_claims": 1,
+    "missing_required_claims": 7,
+    "supported_claims": 13,
+    "unsupported_claims": 98
+  },
+  "confidence_calibration": {
+    "[0.0,0.5)": {
+      "case_count": 8,
+      "conclusion_correct_ratio": 0.0,
+      "low_value_write_ratio": 0.0,
+      "unsupported_claim_ratio": 0.7058823529411765
+    },
+    "[0.5,0.7)": {
+      "case_count": 24,
+      "conclusion_correct_ratio": 0.0,
+      "low_value_write_ratio": 0.5833333333333334,
+      "unsupported_claim_ratio": 0.9365079365079365
+    },
+    "[0.7,0.9)": {
+      "case_count": 7,
+      "conclusion_correct_ratio": 0.0,
+      "low_value_write_ratio": 0.14285714285714285,
+      "unsupported_claim_ratio": 0.875
+    },
+    "[0.9,1.0]": {
+      "case_count": 1,
+      "conclusion_correct_ratio": 0.0,
+      "low_value_write_ratio": 0.0,
+      "unsupported_claim_ratio": 0.8571428571428571
+    }
+  },
+  "confidence_one_unsupported_cases": [
+    "recovery-edit-targeted-pass-001"
+  ],
+  "dataset_schema_version": 1,
+  "engine": "minicode.agent_reflection.ReflectionEngine",
+  "engine_errors": [],
+  "error_deduplication": {
+    "actual_error_records": 22,
+    "actual_unique_errors": 15,
+    "call_id_association_errors": 15,
+    "duplicate_error_records": 7,
+    "expected_logical_errors": 16,
+    "merge_accuracy": 0.7272727272727273
+  },
+  "event_count_confidence": {
+    "groups": [
+      {
+        "average_confidence": 0.25,
+        "case_count": 1,
+        "event_count": 0
+      },
+      {
+        "average_confidence": 0.5614285714285714,
+        "case_count": 21,
+        "event_count": 3
+      },
+      {
+        "average_confidence": 0.6425,
+        "case_count": 8,
+        "event_count": 4
+      },
+      {
+        "average_confidence": 0.7274999999999999,
+        "case_count": 4,
+        "event_count": 5
+      },
+      {
+        "average_confidence": 0.75,
+        "case_count": 1,
+        "event_count": 6
+      },
+      {
+        "average_confidence": 0.7166666666666667,
+        "case_count": 3,
+        "event_count": 7
+      },
+      {
+        "average_confidence": 1.0,
+        "case_count": 1,
+        "event_count": 8
+      },
+      {
+        "average_confidence": 0.5900000000000001,
+        "case_count": 1,
+        "event_count": 16
+      }
+    ],
+    "pearson_correlation": 0.3444917791332665
+  },
+  "evidence_extraction": {
+    "decisions": {
+      "f1": 0.5555555555555556,
+      "false_negatives": 5,
+      "false_positives": 3,
+      "precision": 0.625,
+      "recall": 0.5,
+      "true_positives": 5
+    },
+    "errors": {
+      "f1": 0.8421052631578948,
+      "false_negatives": 0,
+      "false_positives": 6,
+      "precision": 0.7272727272727273,
+      "recall": 1.0,
+      "true_positives": 16
+    },
+    "files_changed": {
+      "f1": 0.0,
+      "false_negatives": 8,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 0.0,
+      "true_positives": 0
+    },
+    "files_read": {
+      "f1": 0.7843137254901961,
+      "false_negatives": 0,
+      "false_positives": 11,
+      "precision": 0.6451612903225806,
+      "recall": 1.0,
+      "true_positives": 20
+    },
+    "libraries": {
+      "f1": 0.0,
+      "false_negatives": 9,
+      "false_positives": 3,
+      "precision": 0.0,
+      "recall": 0.0,
+      "true_positives": 0
+    },
+    "recoveries": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "true_positives": 6
+    },
+    "tools": {
+      "f1": 0.968421052631579,
+      "false_negatives": 3,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 0.9387755102040817,
+      "true_positives": 46
+    },
+    "verification": {
+      "f1": 0.0,
+      "false_negatives": 18,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 0.0,
+      "true_positives": 0
+    }
+  },
+  "high_confidence_error_cases": [
+    "recovery-edit-targeted-pass-001"
+  ],
+  "known_defects": {
+    "changing_interpreted_as_gin": {
+      "case_id": "library-changing-gin-negative-005",
+      "reproduced": true
+    },
+    "command_interpreted_as_path": {
+      "case_id": "path-command-is-not-file-002",
+      "reproduced": true
+    },
+    "tool_result_error_duplicate": {
+      "case_id": "error-same-call-two-sources-001",
+      "reproduced": true
+    }
+  },
+  "metric_definitions": {
+    "conclusion_correct": "No evidence FP/FN, missing/unsupported/forbidden claim, or outcome mismatch.",
+    "evidence": "Micro-averaged exact or required-term TP/FP/FN by field.",
+    "library_positive": "Only golden confirmed dependencies are positive; weak mentions and non-dependencies are negatives.",
+    "value_selection": "Predicted write is current confidence >= 0.5."
+  },
+  "report_schema_version": 1,
+  "trace_schema": {
+    "common_fields": [
+      "event_id",
+      "call_id",
+      "type",
+      "tool_name",
+      "status",
+      "input",
+      "files",
+      "output_summary"
+    ],
+    "current_output_fields": [
+      "files",
+      "libraries",
+      "tools",
+      "errors",
+      "recoveries",
+      "project_state",
+      "key_decisions",
+      "lessons_learned",
+      "confidence"
+    ],
+    "event_types": [
+      "tool_call",
+      "tool_result",
+      "error",
+      "recovery",
+      "assistant_step",
+      "task_result"
+    ]
+  },
+  "value_selection": {
+    "confusion_matrix": {
+      "should_not_write_and_skipped": 3,
+      "should_not_write_but_wrote": 15,
+      "should_write_and_wrote": 17,
+      "should_write_but_skipped": 5
+    },
+    "low_value_false_write_rate": 0.8333333333333334,
+    "metrics": {
+      "f1": 0.6296296296296297,
+      "false_negatives": 5,
+      "false_positives": 15,
+      "precision": 0.53125,
+      "recall": 0.7727272727272727,
+      "true_positives": 17
+    }
+  }
+}

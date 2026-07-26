@@ -1,0 +1,386 @@
+{
+  "schema_version": "1.0",
+  "synthetic_data": true,
+  "reference_time": 1736942400,
+  "cases": [
+    {
+      "case_id": "p2b-weak-01", "category": "cross_scope_weak_noise",
+      "query": "Fix payment webhook replay deduplication", "current_files": ["src/payments/webhook.py"], "active_domains": ["backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-weak-01-primary", "scope": "project", "category": "architecture", "content": "Payment webhook replay deduplication uses the provider event ID as the idempotency key.", "tags": ["payment", "webhook", "replay", "deduplication"], "domains": ["backend"]},
+        {"id": "p2b-weak-01-noise", "scope": "user", "category": "preference", "content": "Prefer payment examples in documentation.", "tags": ["payment"], "domains": ["documentation"]}
+      ],
+      "primary_ids": ["p2b-weak-01-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-weak-01-noise"],
+      "expected_suppressions": [{"entry_id": "p2b-weak-01-noise", "reason": "no_incremental_value", "dominating_id": "p2b-weak-01-primary"}],
+      "expected_rendered_ids": ["p2b-weak-01-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-weak-02", "category": "cross_scope_weak_noise",
+      "query": "Repair invoice PDF font embedding", "current_files": ["src/invoice/pdf.py"], "active_domains": ["backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-weak-02-primary", "scope": "project", "category": "bugfix", "content": "Invoice PDF font embedding loads the bundled font before multilingual rendering.", "tags": ["invoice", "pdf", "font", "embedding"], "domains": ["backend"]},
+        {"id": "p2b-weak-02-noise", "scope": "user", "category": "preference", "content": "Invoice examples use round amounts in documentation.", "tags": ["invoice"], "domains": ["documentation"]}
+      ],
+      "primary_ids": ["p2b-weak-02-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-weak-02-noise"],
+      "expected_suppressions": [{"entry_id": "p2b-weak-02-noise", "reason": "no_incremental_value", "dominating_id": "p2b-weak-02-primary"}],
+      "expected_rendered_ids": ["p2b-weak-02-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-weak-03", "category": "cross_scope_weak_noise",
+      "query": "Use cursor pagination for account history", "current_files": ["src/accounts/history.py"], "active_domains": ["backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-weak-03-primary", "scope": "project", "category": "api", "content": "Account history uses cursor pagination ordered by created time and unique ID.", "tags": ["account", "history", "cursor", "pagination"], "domains": ["backend"]},
+        {"id": "p2b-weak-03-noise", "scope": "user", "category": "frontend", "content": "Account history page uses a compact date label.", "tags": ["account", "history"], "domains": ["frontend"]}
+      ],
+      "primary_ids": ["p2b-weak-03-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-weak-03-noise"],
+      "expected_suppressions": [{"entry_id": "p2b-weak-03-noise", "reason": "no_incremental_value", "dominating_id": "p2b-weak-03-primary"}],
+      "expected_rendered_ids": ["p2b-weak-03-primary"], "unresolved_conflict_render_nothing": false
+    },
+
+    {
+      "case_id": "p2b-near-01", "category": "near_duplicate",
+      "query": "Fix catalog lookup by normalized SKU", "current_files": ["src/catalog/search.py"], "active_domains": ["search", "backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-near-01-primary", "scope": "project", "category": "decision", "content": "Canonical verified catalog lookup uses normalized SKU before fuzzy title matching.", "tags": ["catalog", "lookup", "normalized", "sku", "canonical", "verified"], "domains": ["search", "backend"], "metadata": {"canonical": true, "verified": true}},
+        {"id": "p2b-near-01-copy", "scope": "local", "category": "decision", "content": "Catalog lookups use a normalized SKU before fuzzy matching on title.", "tags": ["catalog", "lookup", "normalized", "sku"], "domains": ["search", "backend"]}
+      ],
+      "primary_ids": ["p2b-near-01-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-near-01-copy"],
+      "expected_suppressions": [{"entry_id": "p2b-near-01-copy", "reason": "near_duplicate", "dominating_id": "p2b-near-01-primary"}],
+      "expected_rendered_ids": ["p2b-near-01-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-near-02", "category": "near_duplicate",
+      "query": "Apply order total rounding policy", "current_files": ["src/orders/total.py"], "active_domains": ["backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-near-02-primary", "scope": "project", "category": "decision", "content": "Canonical verified order total rounding occurs once after summing decimal line amounts.", "tags": ["order", "total", "rounding", "decimal", "canonical", "verified"], "domains": ["backend"], "metadata": {"canonical": true, "verified": true}},
+        {"id": "p2b-near-02-copy", "scope": "local", "category": "decision", "content": "Order totals are rounded one time after decimal line amounts are summed.", "tags": ["order", "total", "rounding", "decimal"], "domains": ["backend"]}
+      ],
+      "primary_ids": ["p2b-near-02-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-near-02-copy"],
+      "expected_suppressions": [{"entry_id": "p2b-near-02-copy", "reason": "near_duplicate", "dominating_id": "p2b-near-02-primary"}],
+      "expected_rendered_ids": ["p2b-near-02-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-near-03", "category": "near_duplicate",
+      "query": "Use tenant cache key isolation", "current_files": ["src/cache/tenant.py"], "active_domains": ["backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-near-03-primary", "scope": "project", "category": "architecture", "content": "Canonical verified tenant cache keys contain tenant ID and normalized resource ID.", "tags": ["tenant", "cache", "key", "isolation", "canonical", "verified"], "domains": ["backend"], "metadata": {"canonical": true, "verified": true}},
+        {"id": "p2b-near-03-copy", "scope": "local", "category": "architecture", "content": "Tenant cache keys include the tenant ID plus a normalized resource identifier.", "tags": ["tenant", "cache", "key", "isolation"], "domains": ["backend"]}
+      ],
+      "primary_ids": ["p2b-near-03-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-near-03-copy"],
+      "expected_suppressions": [{"entry_id": "p2b-near-03-copy", "reason": "near_duplicate", "dominating_id": "p2b-near-03-primary"}],
+      "expected_rendered_ids": ["p2b-near-03-primary"], "unresolved_conflict_render_nothing": false
+    },
+
+    {
+      "case_id": "p2b-conflict-01", "category": "direct_conflict",
+      "query": "Use canonical notification retry sequence", "current_files": ["src/notify/retry.py"], "active_domains": ["backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-conflict-01-primary", "scope": "project", "category": "failure-recovery", "content": "Canonical notification retry sequence waits with jitter and retries once.", "tags": ["notification", "retry", "sequence", "canonical"], "domains": ["backend"], "metadata": {"canonical": true}},
+        {"id": "p2b-conflict-01-old", "scope": "user", "category": "failure-recovery", "content": "Notification retry sequence repeats forever without delay.", "tags": ["notification", "retry", "sequence"], "domains": ["backend"]}
+      ],
+      "primary_ids": ["p2b-conflict-01-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-conflict-01-old"],
+      "expected_suppressions": [{"entry_id": "p2b-conflict-01-old", "reason": "lower_authority_conflict", "dominating_id": "p2b-conflict-01-primary"}],
+      "expected_rendered_ids": ["p2b-conflict-01-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-conflict-02", "category": "direct_conflict",
+      "query": "Choose current catalog cache expiry", "current_files": ["src/catalog/cache.py"], "active_domains": ["backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-conflict-02-primary", "scope": "project", "category": "decision", "content": "Current catalog cache expiry is five minutes with event invalidation.", "tags": ["catalog", "cache", "expiry", "current"], "domains": ["backend"], "metadata": {"current": true}},
+        {"id": "p2b-conflict-02-old", "scope": "local", "category": "decision", "content": "Catalog cache expiry is twenty-four hours.", "tags": ["catalog", "cache", "expiry"], "domains": ["backend"]}
+      ],
+      "primary_ids": ["p2b-conflict-02-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-conflict-02-old"],
+      "expected_suppressions": [{"entry_id": "p2b-conflict-02-old", "reason": "lower_authority_conflict", "dominating_id": "p2b-conflict-02-primary"}],
+      "expected_rendered_ids": ["p2b-conflict-02-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-conflict-03", "category": "direct_conflict",
+      "query": "Use corrected webhook retry status", "current_files": ["src/webhooks/retry.py"], "active_domains": ["backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-conflict-03-primary", "scope": "project", "category": "correction", "content": "User correction: webhook retry applies only to 429 and 5xx statuses.", "tags": ["webhook", "retry", "status", "correction"], "domains": ["backend"], "metadata": {"user_correction": true}},
+        {"id": "p2b-conflict-03-old", "scope": "local", "category": "decision", "content": "Webhook retry applies to every non-success status.", "tags": ["webhook", "retry", "status"], "domains": ["backend"]}
+      ],
+      "primary_ids": ["p2b-conflict-03-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-conflict-03-old"],
+      "expected_suppressions": [{"entry_id": "p2b-conflict-03-old", "reason": "lower_authority_conflict", "dominating_id": "p2b-conflict-03-primary"}],
+      "expected_rendered_ids": ["p2b-conflict-03-primary"], "unresolved_conflict_render_nothing": false
+    },
+
+    {
+      "case_id": "p2b-super-01", "category": "superseded_fact",
+      "query": "Use current upload chunk size policy", "current_files": ["src/uploads/chunks.py"], "active_domains": ["backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-super-01-primary", "scope": "project", "category": "decision", "content": "Current upload chunk size policy uses eight megabytes.", "tags": ["upload", "chunk", "size", "current"], "domains": ["backend"], "metadata": {"current": true, "supersedes": ["p2b-super-01-old"]}},
+        {"id": "p2b-super-01-old", "scope": "local", "category": "decision", "content": "Upload chunk size policy uses two megabytes.", "tags": ["upload", "chunk", "size"], "domains": ["backend"], "metadata": {"superseded_by": "p2b-super-01-primary"}}
+      ],
+      "primary_ids": ["p2b-super-01-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-super-01-old"],
+      "expected_suppressions": [{"entry_id": "p2b-super-01-old", "reason": "superseded", "dominating_id": "p2b-super-01-primary"}],
+      "expected_rendered_ids": ["p2b-super-01-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-super-02", "category": "superseded_fact",
+      "query": "Use current invoice export delimiter", "current_files": ["src/invoice/export.py"], "active_domains": ["backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-super-02-primary", "scope": "project", "category": "decision", "content": "Current invoice export delimiter is a comma for the canonical CSV format.", "tags": ["invoice", "export", "delimiter", "current"], "domains": ["backend"], "metadata": {"current": true, "supersedes": ["p2b-super-02-old"]}},
+        {"id": "p2b-super-02-old", "scope": "local", "category": "decision", "content": "Invoice export delimiter is a tab.", "tags": ["invoice", "export", "delimiter"], "domains": ["backend"], "metadata": {"superseded_by": "p2b-super-02-primary"}}
+      ],
+      "primary_ids": ["p2b-super-02-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-super-02-old"],
+      "expected_suppressions": [{"entry_id": "p2b-super-02-old", "reason": "superseded", "dominating_id": "p2b-super-02-primary"}],
+      "expected_rendered_ids": ["p2b-super-02-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-super-03", "category": "superseded_fact",
+      "query": "Use current search index refresh policy", "current_files": ["src/search/index.py"], "active_domains": ["search", "backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-super-03-primary", "scope": "project", "category": "decision", "content": "Current search index refresh policy uses event-driven updates.", "tags": ["search", "index", "refresh", "current"], "domains": ["search", "backend"], "metadata": {"current": true, "supersedes": ["p2b-super-03-old"]}},
+        {"id": "p2b-super-03-old", "scope": "local", "category": "decision", "content": "Search index refresh policy runs once each day.", "tags": ["search", "index", "refresh"], "domains": ["search", "backend"], "metadata": {"superseded_by": "p2b-super-03-primary"}}
+      ],
+      "primary_ids": ["p2b-super-03-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-super-03-old"],
+      "expected_suppressions": [{"entry_id": "p2b-super-03-old", "reason": "superseded", "dominating_id": "p2b-super-03-primary"}],
+      "expected_rendered_ids": ["p2b-super-03-primary"], "unresolved_conflict_render_nothing": false
+    },
+
+    {
+      "case_id": "p2b-verify-01", "category": "verified_unverified_recovery",
+      "query": "Recover SQLite database lock", "current_files": ["tests/db/test_runner.py"], "active_domains": ["testing", "database"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-verify-01-primary", "scope": "project", "category": "failure-recovery", "content": "Verified SQLite database lock recovery closes the leaked fixture connection; the focused test passed.", "tags": ["sqlite", "database", "lock", "recovery", "verified"], "domains": ["testing", "database"], "metadata": {"verified": true}},
+        {"id": "p2b-verify-01-draft", "scope": "local", "category": "failure-recovery", "content": "Possible SQLite database lock recovery might add a long sleep; not verified.", "tags": ["sqlite", "database", "lock", "recovery", "unverified"], "domains": ["testing", "database"], "metadata": {"unverified": true}}
+      ],
+      "primary_ids": ["p2b-verify-01-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-verify-01-draft"],
+      "expected_suppressions": [{"entry_id": "p2b-verify-01-draft", "reason": "unverified_recovery", "dominating_id": "p2b-verify-01-primary"}],
+      "expected_rendered_ids": ["p2b-verify-01-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-verify-02", "category": "verified_unverified_recovery",
+      "query": "Recover package download timeout", "current_files": ["scripts/bootstrap.py"], "active_domains": ["devops"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-verify-02-primary", "scope": "project", "category": "failure-recovery", "content": "Verified package download timeout recovery retries once against the configured mirror; verification passed.", "tags": ["package", "download", "timeout", "recovery", "verified"], "domains": ["devops"], "metadata": {"verified": true}},
+        {"id": "p2b-verify-02-draft", "scope": "user", "category": "failure-recovery", "content": "Possible package download timeout recovery might disable checksum validation; no verification ran.", "tags": ["package", "download", "timeout", "recovery", "unverified"], "domains": ["devops"], "metadata": {"unverified": true}}
+      ],
+      "primary_ids": ["p2b-verify-02-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-verify-02-draft"],
+      "expected_suppressions": [{"entry_id": "p2b-verify-02-draft", "reason": "unverified_recovery", "dominating_id": "p2b-verify-02-primary"}],
+      "expected_rendered_ids": ["p2b-verify-02-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-verify-03", "category": "verified_unverified_recovery",
+      "query": "Recover order migration deadlock", "current_files": ["db/migrations/204_order.sql"], "active_domains": ["database"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-verify-03-primary", "scope": "project", "category": "failure-recovery", "content": "Verified order migration deadlock recovery acquires table locks in canonical order; the migration passed.", "tags": ["order", "migration", "deadlock", "recovery", "verified"], "domains": ["database"], "metadata": {"verified": true}},
+        {"id": "p2b-verify-03-draft", "scope": "local", "category": "failure-recovery", "content": "Possible order migration deadlock recovery might retry forever; not verified.", "tags": ["order", "migration", "deadlock", "recovery", "unverified"], "domains": ["database"], "metadata": {"unverified": true}}
+      ],
+      "primary_ids": ["p2b-verify-03-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-verify-03-draft"],
+      "expected_suppressions": [{"entry_id": "p2b-verify-03-draft", "reason": "unverified_recovery", "dominating_id": "p2b-verify-03-primary"}],
+      "expected_rendered_ids": ["p2b-verify-03-primary"], "unresolved_conflict_render_nothing": false
+    },
+
+    {
+      "case_id": "p2b-correct-01", "category": "user_correction",
+      "query": "Use corrected inventory lock order", "current_files": ["src/inventory/transfer.py"], "active_domains": ["database", "backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-correct-01-primary", "scope": "project", "category": "correction", "content": "User correction: inventory lock order acquires warehouse rows by ascending ID.", "tags": ["inventory", "lock", "order", "correction"], "domains": ["database", "backend"], "metadata": {"user_correction": true}},
+        {"id": "p2b-correct-01-old", "scope": "local", "category": "decision", "content": "Inventory lock order follows request order during transfers.", "tags": ["inventory", "lock", "order"], "domains": ["database", "backend"]}
+      ],
+      "primary_ids": ["p2b-correct-01-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-correct-01-old"],
+      "expected_suppressions": [{"entry_id": "p2b-correct-01-old", "reason": "lower_authority_conflict", "dominating_id": "p2b-correct-01-primary"}],
+      "expected_rendered_ids": ["p2b-correct-01-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-correct-02", "category": "user_correction",
+      "query": "Use corrected audit timestamp conversion", "current_files": ["src/audit/export.py"], "active_domains": ["backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-correct-02-primary", "scope": "project", "category": "correction", "content": "User correction: audit timestamp conversion applies account timezone only during final CSV formatting.", "tags": ["audit", "timestamp", "conversion", "correction"], "domains": ["backend"], "metadata": {"user_correction": true}},
+        {"id": "p2b-correct-02-old", "scope": "local", "category": "decision", "content": "Audit timestamp conversion applies account timezone before database filtering.", "tags": ["audit", "timestamp", "conversion"], "domains": ["backend"]}
+      ],
+      "primary_ids": ["p2b-correct-02-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-correct-02-old"],
+      "expected_suppressions": [{"entry_id": "p2b-correct-02-old", "reason": "lower_authority_conflict", "dominating_id": "p2b-correct-02-primary"}],
+      "expected_rendered_ids": ["p2b-correct-02-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-correct-03", "category": "user_correction",
+      "query": "Use corrected OAuth state verification", "current_files": ["src/auth/callback.py"], "active_domains": ["security", "backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-correct-03-primary", "scope": "project", "category": "correction", "content": "User correction: OAuth state verification compares the signed session value before code exchange.", "tags": ["oauth", "state", "verification", "correction"], "domains": ["security", "backend"], "metadata": {"user_correction": true}},
+        {"id": "p2b-correct-03-old", "scope": "local", "category": "decision", "content": "OAuth state verification occurs after code exchange.", "tags": ["oauth", "state", "verification"], "domains": ["security", "backend"]}
+      ],
+      "primary_ids": ["p2b-correct-03-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-correct-03-old"],
+      "expected_suppressions": [{"entry_id": "p2b-correct-03-old", "reason": "lower_authority_conflict", "dominating_id": "p2b-correct-03-primary"}],
+      "expected_rendered_ids": ["p2b-correct-03-primary"], "unresolved_conflict_render_nothing": false
+    },
+
+    {
+      "case_id": "p2b-complement-01", "category": "complementary_secondary",
+      "query": "Apply account cache isolation policy", "current_files": ["src/cache/account.py"], "active_domains": ["backend", "testing"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-complement-01-primary", "scope": "project", "category": "architecture", "content": "Canonical account cache isolation keys by account ID and tenant ID.", "tags": ["account", "cache", "isolation", "canonical"], "domains": ["backend"], "metadata": {"canonical": true}},
+        {"id": "p2b-complement-01-secondary", "scope": "project", "category": "testing", "content": "Verify account cache isolation with a cross-tenant regression test.", "tags": ["account", "cache", "isolation", "verified"], "domains": ["backend", "testing"], "metadata": {"verified": true}}
+      ],
+      "primary_ids": ["p2b-complement-01-primary"], "allowed_secondary_ids": ["p2b-complement-01-secondary"], "must_exclude_ids": [], "expected_suppressions": [],
+      "expected_rendered_ids": ["p2b-complement-01-primary", "p2b-complement-01-secondary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-complement-02", "category": "complementary_secondary",
+      "query": "Apply search checkpoint recovery", "current_files": ["src/search/indexer.py"], "active_domains": ["search", "backend", "testing"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-complement-02-primary", "scope": "project", "category": "failure-recovery", "content": "Canonical search checkpoint recovery resumes after the last committed source batch.", "tags": ["search", "checkpoint", "recovery", "canonical"], "domains": ["search", "backend"], "metadata": {"canonical": true}},
+        {"id": "p2b-complement-02-secondary", "scope": "project", "category": "testing", "content": "Verify search checkpoint recovery by replaying an interrupted source batch.", "tags": ["search", "checkpoint", "recovery", "verified"], "domains": ["search", "testing"], "metadata": {"verified": true}}
+      ],
+      "primary_ids": ["p2b-complement-02-primary"], "allowed_secondary_ids": ["p2b-complement-02-secondary"], "must_exclude_ids": [], "expected_suppressions": [],
+      "expected_rendered_ids": ["p2b-complement-02-primary", "p2b-complement-02-secondary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-complement-03", "category": "complementary_secondary",
+      "query": "Resolve inventory reservation race", "current_files": ["src/inventory/reserve.py"], "active_domains": ["backend", "database"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-complement-03-primary", "scope": "project", "category": "concurrency", "content": "Inventory reservation race is prevented with a conditional stock update in one transaction.", "tags": ["inventory", "reservation", "race"], "domains": ["backend", "database"]},
+        {"id": "p2b-complement-03-secondary", "scope": "user", "category": "testing", "content": "Race tests must use fixed seeds.", "tags": ["race"], "domains": ["testing"]}
+      ],
+      "primary_ids": ["p2b-complement-03-primary"], "allowed_secondary_ids": ["p2b-complement-03-secondary"], "must_exclude_ids": [], "expected_suppressions": [],
+      "expected_rendered_ids": ["p2b-complement-03-primary", "p2b-complement-03-secondary"], "unresolved_conflict_render_nothing": false
+    },
+
+    {
+      "case_id": "p2b-ambiguous-01", "category": "ambiguous_authority",
+      "query": "Choose widget mode for batch imports", "current_files": ["src/imports/widget.py"], "active_domains": ["backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-ambiguous-01-a", "scope": "project", "category": "decision", "content": "Widget mode must be enabled for batch imports.", "tags": ["widget", "mode", "batch", "import"], "domains": ["backend"], "metadata": {"conflicts_with": ["p2b-ambiguous-01-b"]}},
+        {"id": "p2b-ambiguous-01-b", "scope": "local", "category": "decision", "content": "Widget mode must be disabled for batch imports.", "tags": ["widget", "mode", "batch", "import"], "domains": ["backend"], "metadata": {"conflicts_with": ["p2b-ambiguous-01-a"]}}
+      ],
+      "primary_ids": [], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-ambiguous-01-a", "p2b-ambiguous-01-b"],
+      "expected_suppressions": [
+        {"entry_id": "p2b-ambiguous-01-a", "reason": "unresolved_conflict", "dominating_id": ""},
+        {"entry_id": "p2b-ambiguous-01-b", "reason": "unresolved_conflict", "dominating_id": ""}
+      ],
+      "expected_rendered_ids": [], "unresolved_conflict_render_nothing": true
+    },
+    {
+      "case_id": "p2b-ambiguous-02", "category": "ambiguous_authority",
+      "query": "Choose ledger sign convention", "current_files": ["src/ledger/post.py"], "active_domains": ["database", "backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-ambiguous-02-a", "scope": "project", "category": "decision", "content": "Ledger debit sign convention stores debits as positive values.", "tags": ["ledger", "debit", "sign", "convention"], "domains": ["database", "backend"], "metadata": {"conflicts_with": ["p2b-ambiguous-02-b"]}},
+        {"id": "p2b-ambiguous-02-b", "scope": "local", "category": "decision", "content": "Ledger debit sign convention stores debits as negative values.", "tags": ["ledger", "debit", "sign", "convention"], "domains": ["database", "backend"], "metadata": {"conflicts_with": ["p2b-ambiguous-02-a"]}}
+      ],
+      "primary_ids": [], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-ambiguous-02-a", "p2b-ambiguous-02-b"],
+      "expected_suppressions": [
+        {"entry_id": "p2b-ambiguous-02-a", "reason": "unresolved_conflict", "dominating_id": ""},
+        {"entry_id": "p2b-ambiguous-02-b", "reason": "unresolved_conflict", "dominating_id": ""}
+      ],
+      "expected_rendered_ids": [], "unresolved_conflict_render_nothing": true
+    },
+    {
+      "case_id": "p2b-ambiguous-03", "category": "ambiguous_authority",
+      "query": "Choose archive checksum encoding", "current_files": ["src/archive/checksum.py"], "active_domains": ["backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-ambiguous-03-a", "scope": "project", "category": "decision", "content": "Archive checksum encoding uses lowercase hexadecimal.", "tags": ["archive", "checksum", "encoding"], "domains": ["backend"], "metadata": {"conflicts_with": ["p2b-ambiguous-03-b"]}},
+        {"id": "p2b-ambiguous-03-b", "scope": "local", "category": "decision", "content": "Archive checksum encoding uses uppercase hexadecimal.", "tags": ["archive", "checksum", "encoding"], "domains": ["backend"], "metadata": {"conflicts_with": ["p2b-ambiguous-03-a"]}}
+      ],
+      "primary_ids": [], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-ambiguous-03-a", "p2b-ambiguous-03-b"],
+      "expected_suppressions": [
+        {"entry_id": "p2b-ambiguous-03-a", "reason": "unresolved_conflict", "dominating_id": ""},
+        {"entry_id": "p2b-ambiguous-03-b", "reason": "unresolved_conflict", "dominating_id": ""}
+      ],
+      "expected_rendered_ids": [], "unresolved_conflict_render_nothing": true
+    },
+
+    {
+      "case_id": "p2b-generic-01", "category": "generic_token_false_chain",
+      "query": "Review billing profile API test coverage", "current_files": [], "active_domains": ["backend", "testing"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-generic-01-a", "scope": "project", "category": "testing", "content": "Billing API contract test checks decimal invoice totals.", "tags": ["billing", "api", "test"], "domains": ["backend", "testing"]},
+        {"id": "p2b-generic-01-b", "scope": "project", "category": "performance", "content": "Profile API load test checks avatar throughput.", "tags": ["profile", "api", "test"], "domains": ["backend", "testing"]}
+      ],
+      "primary_ids": ["p2b-generic-01-a"], "allowed_secondary_ids": ["p2b-generic-01-b"], "must_exclude_ids": [], "expected_suppressions": [],
+      "expected_rendered_ids": ["p2b-generic-01-a", "p2b-generic-01-b"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-generic-02", "category": "generic_token_false_chain",
+      "query": "Review catalog account project file errors", "current_files": [], "active_domains": ["backend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-generic-02-a", "scope": "project", "category": "bugfix", "content": "Catalog project file error reports malformed SKU rows.", "tags": ["catalog", "project", "file", "error"], "domains": ["backend"]},
+        {"id": "p2b-generic-02-b", "scope": "project", "category": "bugfix", "content": "Account project file error reports invalid tenant rows.", "tags": ["account", "project", "file", "error"], "domains": ["backend"]}
+      ],
+      "primary_ids": ["p2b-generic-02-a"], "allowed_secondary_ids": ["p2b-generic-02-b"], "must_exclude_ids": [], "expected_suppressions": [],
+      "expected_rendered_ids": ["p2b-generic-02-a", "p2b-generic-02-b"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-generic-03", "category": "generic_token_false_chain",
+      "query": "Review checkout search code test", "current_files": [], "active_domains": ["frontend", "search", "testing"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-generic-03-a", "scope": "project", "category": "testing", "content": "Checkout code test verifies coupon total display.", "tags": ["checkout", "code", "test"], "domains": ["frontend", "testing"]},
+        {"id": "p2b-generic-03-b", "scope": "project", "category": "testing", "content": "Search code test verifies synonym indexing.", "tags": ["search", "code", "test"], "domains": ["search", "testing"]}
+      ],
+      "primary_ids": ["p2b-generic-03-a"], "allowed_secondary_ids": ["p2b-generic-03-b"], "must_exclude_ids": [], "expected_suppressions": [],
+      "expected_rendered_ids": ["p2b-generic-03-a", "p2b-generic-03-b"], "unresolved_conflict_render_nothing": false
+    },
+
+    {
+      "case_id": "p2b-file-01", "category": "file_domain_collision",
+      "query": "Update snapshot expectations", "current_files": ["tests/ui/test_nav_snapshot.py"], "active_domains": ["testing", "frontend"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-file-01-primary", "scope": "local", "category": "testing", "content": "test_nav_snapshot.py snapshots normalize generated element IDs.", "tags": ["snapshot", "test_nav_snapshot.py"], "domains": ["testing", "frontend"]},
+        {"id": "p2b-file-01-noise", "scope": "project", "category": "api", "content": "API contract snapshots omit request timestamps.", "tags": ["snapshot"], "domains": ["backend", "testing"]}
+      ],
+      "primary_ids": ["p2b-file-01-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-file-01-noise"],
+      "expected_suppressions": [{"entry_id": "p2b-file-01-noise", "reason": "no_incremental_value", "dominating_id": "p2b-file-01-primary"}],
+      "expected_rendered_ids": ["p2b-file-01-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-file-02", "category": "file_domain_collision",
+      "query": "Update schema snapshot expectations", "current_files": ["tests/db/test_schema_snapshot.py"], "active_domains": ["testing", "database"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-file-02-primary", "scope": "local", "category": "testing", "content": "test_schema_snapshot.py schema snapshots sort generated constraint names.", "tags": ["schema", "snapshot", "test_schema_snapshot.py"], "domains": ["testing", "database"]},
+        {"id": "p2b-file-02-noise", "scope": "project", "category": "frontend", "content": "UI schema snapshots omit animation timestamps.", "tags": ["schema", "snapshot"], "domains": ["frontend", "testing"]}
+      ],
+      "primary_ids": ["p2b-file-02-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-file-02-noise"],
+      "expected_suppressions": [{"entry_id": "p2b-file-02-noise", "reason": "no_incremental_value", "dominating_id": "p2b-file-02-primary"}],
+      "expected_rendered_ids": ["p2b-file-02-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-file-03", "category": "file_domain_collision",
+      "query": "Correct lock fixture isolation", "current_files": ["tests/db/test_lock_fixture.py"], "active_domains": ["testing", "database"], "context_usage": 0.4, "max_memories": 5, "max_tokens": 500,
+      "memories": [
+        {"id": "p2b-file-03-primary", "scope": "project", "category": "testing", "content": "test_lock_fixture.py lock fixture isolation closes database handles after each test.", "tags": ["lock", "fixture", "isolation", "test_lock_fixture.py"], "domains": ["testing", "database"]},
+        {"id": "p2b-file-03-noise", "scope": "local", "category": "frontend", "content": "Browser lock fixture isolation clears modal state.", "tags": ["lock", "fixture", "isolation"], "domains": ["testing", "frontend"]}
+      ],
+      "primary_ids": ["p2b-file-03-primary"], "allowed_secondary_ids": [], "must_exclude_ids": ["p2b-file-03-noise"],
+      "expected_suppressions": [{"entry_id": "p2b-file-03-noise", "reason": "no_incremental_value", "dominating_id": "p2b-file-03-primary"}],
+      "expected_rendered_ids": ["p2b-file-03-primary"], "unresolved_conflict_render_nothing": false
+    },
+
+    {
+      "case_id": "p2b-budget-01", "category": "hard_budget_interaction",
+      "query": "Apply checkout cache isolation", "current_files": ["src/checkout/cache.py"], "active_domains": ["backend", "testing"], "context_usage": 0.4, "max_memories": 1, "max_tokens": 160,
+      "memories": [
+        {"id": "p2b-budget-01-primary", "scope": "project", "category": "architecture", "content": "Checkout cache isolation keys by account ID and cart ID.", "tags": ["checkout", "cache", "isolation"], "domains": ["backend"], "metadata": {"canonical": true}},
+        {"id": "p2b-budget-01-secondary", "scope": "project", "category": "testing", "content": "Verify checkout cache isolation with a cross-account regression test.", "tags": ["checkout", "cache", "isolation", "verified"], "domains": ["backend", "testing"], "metadata": {"verified": true}},
+        {"id": "p2b-budget-01-noise", "scope": "user", "category": "documentation", "content": "Checkout cache examples use placeholder account names.", "tags": ["checkout", "cache"], "domains": ["documentation"]}
+      ],
+      "primary_ids": ["p2b-budget-01-primary"], "allowed_secondary_ids": ["p2b-budget-01-secondary"], "must_exclude_ids": ["p2b-budget-01-noise"],
+      "expected_suppressions": [{"entry_id": "p2b-budget-01-noise", "reason": "no_incremental_value", "dominating_id": "p2b-budget-01-primary"}],
+      "expected_rendered_ids": ["p2b-budget-01-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-budget-02", "category": "hard_budget_interaction",
+      "query": "Apply report export recovery", "current_files": ["src/report/export.py"], "active_domains": ["backend", "testing"], "context_usage": 0.4, "max_memories": 1, "max_tokens": 160,
+      "memories": [
+        {"id": "p2b-budget-02-primary", "scope": "project", "category": "failure-recovery", "content": "Report export recovery resumes from the last committed page token.", "tags": ["report", "export", "recovery"], "domains": ["backend"], "metadata": {"canonical": true}},
+        {"id": "p2b-budget-02-secondary", "scope": "project", "category": "testing", "content": "Verify report export recovery by interrupting pagination after one page.", "tags": ["report", "export", "recovery", "verified"], "domains": ["backend", "testing"], "metadata": {"verified": true}},
+        {"id": "p2b-budget-02-noise", "scope": "local", "category": "style", "content": "Report export headings use title case.", "tags": ["report", "export"], "domains": ["frontend"]}
+      ],
+      "primary_ids": ["p2b-budget-02-primary"], "allowed_secondary_ids": ["p2b-budget-02-secondary"], "must_exclude_ids": ["p2b-budget-02-noise"],
+      "expected_suppressions": [{"entry_id": "p2b-budget-02-noise", "reason": "no_incremental_value", "dominating_id": "p2b-budget-02-primary"}],
+      "expected_rendered_ids": ["p2b-budget-02-primary"], "unresolved_conflict_render_nothing": false
+    },
+    {
+      "case_id": "p2b-budget-03", "category": "hard_budget_interaction",
+      "query": "Apply webhook signature verification", "current_files": ["src/webhooks/signature.py"], "active_domains": ["security", "backend", "testing"], "context_usage": 0.4, "max_memories": 1, "max_tokens": 160,
+      "memories": [
+        {"id": "p2b-budget-03-primary", "scope": "project", "category": "security", "content": "Webhook signature verification compares the raw request body before JSON parsing.", "tags": ["webhook", "signature", "verification"], "domains": ["security", "backend"], "metadata": {"canonical": true}},
+        {"id": "p2b-budget-03-secondary", "scope": "project", "category": "testing", "content": "Verify webhook signature rejection with a modified-body regression test.", "tags": ["webhook", "signature", "verification", "verified"], "domains": ["security", "testing"], "metadata": {"verified": true}},
+        {"id": "p2b-budget-03-noise", "scope": "user", "category": "documentation", "content": "Webhook signature examples use placeholder hostnames.", "tags": ["webhook", "signature"], "domains": ["documentation"]}
+      ],
+      "primary_ids": ["p2b-budget-03-primary"], "allowed_secondary_ids": ["p2b-budget-03-secondary"], "must_exclude_ids": ["p2b-budget-03-noise"],
+      "expected_suppressions": [{"entry_id": "p2b-budget-03-noise", "reason": "no_incremental_value", "dominating_id": "p2b-budget-03-primary"}],
+      "expected_rendered_ids": ["p2b-budget-03-primary"], "unresolved_conflict_render_nothing": false
+    }
+  ]
+}

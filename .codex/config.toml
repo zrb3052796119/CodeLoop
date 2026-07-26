@@ -1,0 +1,6 @@
+[mcp_servers.sequential-thinking]
+command = "npx"
+args = [
+    "-y",
+    "@zengwenliang/mcp-server-sequential-thinking",
+]

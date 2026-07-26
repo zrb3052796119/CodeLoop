@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "schema_version": 1,
+      "case_id": "low-value-read-file-001",
+      "category": "low_value_tasks",
+      "description": "Reading one file without a new finding has no durable memory value",
+      "task_description": "Read src/auth.py",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "read_file", "input": {"path": "src/auth.py"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "read_file", "status": "success", "files": ["src/auth.py"], "output_summary": "read complete"},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["src/auth.py"], "files_changed": [], "tools": ["read_file"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_read_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "A successful read is evidence of execution, not a reusable lesson."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "low-value-list-directory-002",
+      "category": "low_value_tasks",
+      "description": "Listing a directory without discovering a constraint is low value",
+      "task_description": "List the source directory",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "list_files", "input": {"path": "src"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "list_files", "status": "success", "output_summary": "auth.py service.py utils.py"},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["list_files"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_directory_listing"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "Directory contents are transient task context unless a stable structure is established."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "low-value-symbol-search-003",
+      "category": "low_value_tasks",
+      "description": "A symbol search with no new conclusion should not be persisted",
+      "task_description": "Find validate_token references",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "grep_files", "input": {"pattern": "validate_token", "path": "src"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "grep_files", "status": "success", "files": ["src/auth.py"], "output_summary": "src/auth.py:12"},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["src/auth.py"], "files_changed": [], "tools": ["grep_files"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_search_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "A location lookup is not itself a decision or lesson."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "low-value-green-test-no-fix-004",
+      "category": "low_value_tasks",
+      "description": "An already-green test run with no repair is routine verification",
+      "task_description": "Run the auth tests",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "run_command", "input": {"command": "pytest tests/test_auth.py -q"}, "referenced_files": ["tests/test_auth.py"]},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "14 passed"},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [{"verification_id": "verify-1", "result": "passed", "scope": "targeted", "required_terms": ["14 passed"], "evidence_ids": ["event-1", "event-2"]}], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_verification_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "Passing tests become valuable only when they verify a change, decision, or recovered failure."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "low-value-format-repeat-synonym-005",
+      "category": "low_value_tasks",
+      "description": "Formatting and repeating an existing memory in different words adds no value",
+      "task_description": "Format the file using the known project command",
+      "trace": [
+        {"event_id": "event-1", "type": "existing_memory", "content": "Use ruff format for Python files."},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_call", "tool_name": "run_command", "input": {"command": "ruff format src/service.py"}},
+        {"event_id": "event-3", "call_id": "call-1", "type": "tool_result", "tool_name": "run_command", "status": "success", "changed_files": ["src/service.py"], "output_summary": "1 file formatted"},
+        {"event_id": "event-4", "type": "assistant_step", "content": "I used ruff format for the Python file."},
+        {"event_id": "event-5", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": ["src/service.py"], "tools": ["run_command"], "libraries": [{"name": "ruff", "status": "confirmed", "evidence_ids": ["event-1", "event-2", "event-3"]}], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["duplicate_existing_memory", "routine_format_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["new", "ruff format"]}],
+      "notes": "The operation and its paraphrase are already represented by existing memory."
+    }
+  ]
+}

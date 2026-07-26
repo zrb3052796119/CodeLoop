@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "memory-retrieval-hybrid-offline.schema.json",
+  "title": "MiniCode Retrieval Phase 3B Offline Report",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "evaluator_version",
+    "synthetic_data",
+    "phase",
+    "production_connected",
+    "configuration",
+    "model",
+    "holdout_freeze",
+    "arms",
+    "datasets",
+    "performance",
+    "security_and_isolation",
+    "acceptance_gate",
+    "report_fingerprint"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evaluator_version": {"type": "string", "minLength": 1},
+    "synthetic_data": {"const": true},
+    "phase": {"const": "retrieval_phase3b_offline_prototype"},
+    "production_connected": {"const": false},
+    "configuration": {
+      "type": "object",
+      "required": ["selected_configuration", "calibration", "payload_sha256"]
+    },
+    "model": {
+      "type": "object",
+      "required": [
+        "model_id",
+        "model_revision",
+        "model_fingerprint",
+        "license",
+        "device",
+        "trust_remote_code",
+        "remote_inference",
+        "files",
+        "runtime_dependencies"
+      ],
+      "properties": {
+        "trust_remote_code": {"const": false},
+        "remote_inference": {"const": false}
+      }
+    },
+    "holdout_freeze": {
+      "type": "object",
+      "required": ["matches", "manifest_sha256", "mismatches"],
+      "properties": {"matches": {"const": true}}
+    },
+    "arms": {
+      "type": "array",
+      "minItems": 7,
+      "uniqueItems": true,
+      "items": {"type": "string"}
+    },
+    "datasets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phase3a_analysis",
+        "phase3a_sealed",
+        "phase3b_independent_holdout"
+      ],
+      "properties": {
+        "phase3a_analysis": {"$ref": "#/$defs/dataset"},
+        "phase3a_sealed": {"$ref": "#/$defs/dataset"},
+        "phase3b_independent_holdout": {"$ref": "#/$defs/dataset"}
+      }
+    },
+    "performance": {
+      "type": "object",
+      "required": ["scales", "model_cold_load_ms", "model_rss_delta_bytes"],
+      "properties": {
+        "scales": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["100", "500", "1000", "10000"],
+          "properties": {
+            "100": {"$ref": "#/$defs/performanceScale"},
+            "500": {"$ref": "#/$defs/performanceScale"},
+            "1000": {"$ref": "#/$defs/performanceScale"},
+            "10000": {"$ref": "#/$defs/performanceScale"}
+          }
+        }
+      }
+    },
+    "security_and_isolation": {
+      "type": "object",
+      "required": [
+        "remote_inference_calls",
+        "formal_memory_writes",
+        "counter_writes",
+        "feedback_writes",
+        "trust_remote_code"
+      ],
+      "properties": {
+        "remote_inference_calls": {"const": 0},
+        "formal_memory_writes": {"const": 0},
+        "counter_writes": {"const": 0},
+        "feedback_writes": {"const": 0},
+        "trust_remote_code": {"const": false}
+      }
+    },
+    "acceptance_gate": {
+      "type": "object",
+      "required": ["checks_by_split", "passed", "decision"],
+      "properties": {
+        "passed": {"type": "boolean"},
+        "decision": {"enum": ["pass", "fail"]},
+        "production_enablement_allowed": {"const": false},
+        "real_user_shadow_allowed": {"const": false}
+      }
+    },
+    "report_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "performanceScale": {
+      "type": "object",
+      "required": [
+        "document_encoding_and_index_build_ms",
+        "lexical_index_build_ms",
+        "query_encoding",
+        "lexical_search",
+        "index_search",
+        "fusion",
+        "semantic_gate",
+        "consolidator",
+        "controller_and_budget",
+        "warm_total",
+        "single_entry_update_ms",
+        "ten_entry_batch_update_ms",
+        "delete_invalidation_ms",
+        "peak_memory_bytes",
+        "index_bytes",
+        "incremental_update_rebuilt_full_index"
+      ],
+      "properties": {
+        "incremental_update_rebuilt_full_index": {"const": false}
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "required": [
+        "name",
+        "case_count",
+        "entry_count",
+        "index",
+        "metrics_by_arm",
+        "selected_arm_dimensions",
+        "stage_attribution",
+        "per_case_results",
+        "latency"
+      ],
+      "properties": {
+        "case_count": {"type": "integer", "minimum": 1},
+        "entry_count": {"type": "integer", "minimum": 1},
+        "per_case_results": {"type": "array", "minItems": 1}
+      }
+    }
+  }
+}

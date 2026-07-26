@@ -1,0 +1,5140 @@
+{
+  "schemaVersion": 1,
+  "audit": {
+    "name": "MiniCode Functional Reliability Audit 1A",
+    "generatedAt": "2026-07-26T09:40:30Z",
+    "durationMs": 726,
+    "categories": [
+      "dashboard",
+      "discovery",
+      "entrypoints",
+      "internal",
+      "memory",
+      "packaging",
+      "persistence",
+      "security",
+      "skill_mcp",
+      "tools",
+      "web"
+    ],
+    "liveNetwork": false,
+    "installedWheel": true,
+    "browserVerified": true,
+    "isolation": {
+      "home": "<isolated-home>",
+      "miniCodeDir": "<isolated-mini-code-dir>",
+      "workspace": "<isolated-workspace>",
+      "userConfigurationLoaded": false,
+      "paidModelCalled": false
+    },
+    "environment": {
+      "python": "3.13.13",
+      "implementation": "CPython",
+      "system": "Darwin",
+      "release": "24.5.0",
+      "machine": "arm64"
+    }
+  },
+  "summary": {
+    "capabilityCount": 185,
+    "registeredToolCount": 53,
+    "defaultCoreToolCount": 26,
+    "fullOnlyToolCount": 27,
+    "sourceToolDefinitionCount": 59,
+    "consoleScriptCount": 4,
+    "literalRouteCount": 27,
+    "issueCount": 7,
+    "statusCounts": {
+      "pass": 124,
+      "partial": 44,
+      "fail": 7,
+      "unavailable": 1,
+      "blocked": 6,
+      "not_reachable": 3,
+      "not_tested": 0
+    }
+  },
+  "discovery": {
+    "coreTools": [
+      "ask_user",
+      "batch_copy",
+      "batch_delete",
+      "batch_move",
+      "code_review",
+      "diff_viewer",
+      "edit_file",
+      "file_line_count",
+      "file_tree",
+      "find_references",
+      "find_symbols",
+      "get_ast_info",
+      "git",
+      "grep_files",
+      "list_files",
+      "load_skill",
+      "patch_file",
+      "propose_skill",
+      "read_file",
+      "run_command",
+      "task",
+      "test_runner",
+      "todo_write",
+      "web_fetch",
+      "web_search",
+      "write_file"
+    ],
+    "fullTools": [
+      "ask_user",
+      "base64_decode",
+      "base64_encode",
+      "batch_copy",
+      "batch_delete",
+      "batch_move",
+      "code_review",
+      "csv_create",
+      "csv_parse",
+      "current_time",
+      "diff_viewer",
+      "edit_file",
+      "file_line_count",
+      "file_tree",
+      "find_references",
+      "find_symbols",
+      "get_ast_info",
+      "git",
+      "grep_files",
+      "gzip_compress",
+      "gzip_decompress",
+      "hash",
+      "hmac",
+      "http_request",
+      "json_format",
+      "json_parse",
+      "line_count",
+      "list_files",
+      "load_skill",
+      "patch_file",
+      "propose_skill",
+      "random_string",
+      "read_file",
+      "regex_replace",
+      "regex_test",
+      "run_command",
+      "tar_create",
+      "tar_extract",
+      "task",
+      "test_runner",
+      "text_dedupe",
+      "text_join",
+      "text_sort",
+      "timestamp_convert",
+      "todo_write",
+      "url_decode",
+      "url_encode",
+      "uuid_generate",
+      "web_fetch",
+      "web_search",
+      "write_file",
+      "zip_create",
+      "zip_extract"
+    ],
+    "fullOnlyTools": [
+      "base64_decode",
+      "base64_encode",
+      "csv_create",
+      "csv_parse",
+      "current_time",
+      "gzip_compress",
+      "gzip_decompress",
+      "hash",
+      "hmac",
+      "http_request",
+      "json_format",
+      "json_parse",
+      "line_count",
+      "random_string",
+      "regex_replace",
+      "regex_test",
+      "tar_create",
+      "tar_extract",
+      "text_dedupe",
+      "text_join",
+      "text_sort",
+      "timestamp_convert",
+      "url_decode",
+      "url_encode",
+      "uuid_generate",
+      "zip_create",
+      "zip_extract"
+    ],
+    "sourceToolDefinitions": {
+      "list_mcp_resources": "minicode/mcp.py",
+      "read_mcp_resource": "minicode/mcp.py",
+      "list_mcp_prompts": "minicode/mcp.py",
+      "get_mcp_prompt": "minicode/mcp.py",
+      "<dynamic-mcp-tool>": "minicode/mcp.py",
+      "gzip_compress": "minicode/tools/archive_utils.py",
+      "gzip_decompress": "minicode/tools/archive_utils.py",
+      "tar_create": "minicode/tools/archive_utils.py",
+      "tar_extract": "minicode/tools/archive_utils.py",
+      "zip_create": "minicode/tools/archive_utils.py",
+      "zip_extract": "minicode/tools/archive_utils.py",
+      "ask_user": "minicode/tools/ask_user.py",
+      "batch_copy": "minicode/tools/batch_ops.py",
+      "batch_move": "minicode/tools/batch_ops.py",
+      "batch_delete": "minicode/tools/batch_ops.py",
+      "find_symbols": "minicode/tools/code_nav.py",
+      "find_references": "minicode/tools/code_nav.py",
+      "get_ast_info": "minicode/tools/code_nav.py",
+      "code_review": "minicode/tools/code_review.py",
+      "current_time": "minicode/tools/crypto_utils.py",
+      "timestamp_convert": "minicode/tools/crypto_utils.py",
+      "hash": "minicode/tools/crypto_utils.py",
+      "hmac": "minicode/tools/crypto_utils.py",
+      "csv_parse": "minicode/tools/csv_utils.py",
+      "csv_create": "minicode/tools/csv_utils.py",
+      "diff_viewer": "minicode/tools/diff_viewer.py",
+      "edit_file": "minicode/tools/edit_file.py",
+      "base64_encode": "minicode/tools/encoding_utils.py",
+      "base64_decode": "minicode/tools/encoding_utils.py",
+      "url_encode": "minicode/tools/encoding_utils.py",
+      "url_decode": "minicode/tools/encoding_utils.py",
+      "file_line_count": "minicode/tools/file_line_count.py",
+      "file_tree": "minicode/tools/file_tree.py",
+      "git": "minicode/tools/git.py",
+      "grep_files": "minicode/tools/grep_files.py",
+      "http_request": "minicode/tools/http_utils.py",
+      "json_format": "minicode/tools/json_utils.py",
+      "json_parse": "minicode/tools/json_utils.py",
+      "list_files": "minicode/tools/list_files.py",
+      "load_skill": "minicode/tools/load_skill.py",
+      "modify_file": "minicode/tools/modify_file.py",
+      "patch_file": "minicode/tools/patch_file.py",
+      "propose_skill": "minicode/tools/propose_skill.py",
+      "read_file": "minicode/tools/read_file.py",
+      "regex_test": "minicode/tools/regex_utils.py",
+      "regex_replace": "minicode/tools/regex_utils.py",
+      "run_command": "minicode/tools/run_command.py",
+      "task": "minicode/tools/task.py",
+      "test_runner": "minicode/tools/test_runner.py",
+      "uuid_generate": "minicode/tools/text_utils.py",
+      "text_sort": "minicode/tools/text_utils.py",
+      "text_dedupe": "minicode/tools/text_utils.py",
+      "text_join": "minicode/tools/text_utils.py",
+      "line_count": "minicode/tools/text_utils.py",
+      "random_string": "minicode/tools/text_utils.py",
+      "todo_write": "minicode/tools/todo_write.py",
+      "web_fetch": "minicode/tools/web_fetch.py",
+      "web_search": "minicode/tools/web_search.py",
+      "write_file": "minicode/tools/write_file.py"
+    },
+    "consoleScripts": {
+      "minicode-cron": "minicode.cron_runner:main",
+      "minicode-gateway": "minicode.gateway:run_gateway",
+      "minicode-headless": "minicode.headless:main",
+      "minicode-py": "minicode.main:main"
+    },
+    "tuiSlashCommands": [
+      "/help",
+      "/tools",
+      "/state",
+      "/status",
+      "/cost [--detailed]",
+      "/context",
+      "/cybernetics",
+      "/tasks",
+      "/memory",
+      "/config",
+      "/history",
+      "/clear",
+      "/retry",
+      "/transcript-save <path>",
+      "/model",
+      "/model <model-name>",
+      "/config-paths",
+      "/skills",
+      "/mcp",
+      "/permissions",
+      "/exit",
+      "/debug",
+      "/user",
+      "/ls [path]",
+      "/grep <pattern>::[path]",
+      "/read <path>",
+      "/write <path>::<content>",
+      "/modify <path>::<content>",
+      "/edit <path>::<search>::<replace>",
+      "/patch <path>::<search1>::<replace1>::<search2>::<replace2>...",
+      "/cmd [cwd::]<command> [args...]"
+    ],
+    "literalHttpRoutes": [
+      "/",
+      "/api/",
+      "/api/v1/changes",
+      "/api/v1/chat/turns",
+      "/api/v1/chat/turns/",
+      "/api/v1/chat/turns/(turn_[0-9a-f]{32})/cancel",
+      "/api/v1/connections",
+      "/api/v1/data-health",
+      "/api/v1/events",
+      "/api/v1/health",
+      "/api/v1/memory",
+      "/api/v1/memory/approvals/",
+      "/api/v1/memory/approvals/pending",
+      "/api/v1/memory/project/",
+      "/api/v1/ops",
+      "/api/v1/permissions/",
+      "/api/v1/permissions/pending",
+      "/api/v1/runs",
+      "/api/v1/runs/",
+      "/api/v1/sessions",
+      "/api/v1/sessions/",
+      "/api/v1/skills",
+      "/api/v1/snapshot",
+      "/api/v1/system",
+      "/assets/",
+      "/health",
+      "/run"
+    ]
+  },
+  "deterministicProbes": {
+    "toolSchemasSerializable": true,
+    "requiredValidation": false,
+    "isolatedHappyPaths": {
+      "json_format": true,
+      "json_parse": true,
+      "regex_test": true,
+      "regex_replace": true,
+      "base64_encode": true,
+      "base64_decode": true,
+      "url_encode": true,
+      "url_decode": true,
+      "current_time": true,
+      "timestamp_convert": true,
+      "hash": true,
+      "hmac": true,
+      "csv_parse": true,
+      "csv_create": true,
+      "uuid_generate": true,
+      "text_sort": true,
+      "text_dedupe": true,
+      "text_join": true,
+      "line_count": true,
+      "random_string": true,
+      "list_files": true,
+      "grep_files": true,
+      "read_file": true,
+      "file_line_count": true,
+      "find_symbols": false,
+      "find_references": false,
+      "get_ast_info": true,
+      "code_review": false,
+      "file_tree": true,
+      "diff_viewer": true
+    },
+    "web": {
+      "normalParser": true,
+      "explicitEmptyRecognized": true,
+      "changedMarkupRecognized": true,
+      "challengeRecognized": true,
+      "statusTaxonomy": {
+        "403": "forbidden",
+        "404": "forbidden",
+        "429": "rate_limited",
+        "503": "server_error"
+      },
+      "fallbackOnce": true,
+      "privateDestinationBlocked": true,
+      "mixedDnsBlocked": true,
+      "unsafeTargetTransportCalls": 0,
+      "pinnedTransport": true,
+      "oversizedResponseBlocked": true,
+      "maxReadBytes": 65536,
+      "contentFreeErrors": true
+    },
+    "memory": {
+      "ordinaryFactPersisted": false,
+      "errorPatternPersistedPending": true
+    },
+    "security": {
+      "httpMutationWithoutPermission": false,
+      "httpMutationFixtureStatus": "PermissionError",
+      "boundedDnsResolver": {
+        "workerLimit": 4,
+        "queueLimit": 8,
+        "outstandingLimit": 12,
+        "activeCount": 0,
+        "queuedCount": 0,
+        "accepting": true,
+        "closed": false,
+        "saturationError": "resolver_busy",
+        "workersBlockProcessExit": false
+      },
+      "archiveWorkspaceEscape": {
+        "gzip_compress": true,
+        "tar_create": true,
+        "zip_create": true
+      },
+      "toolErrorLeaksAbsolutePath": true
+    }
+  },
+  "liveSmoke": {
+    "enabled": false,
+    "totalDurationMs": 0,
+    "probes": {}
+  },
+  "capabilities": [
+    {
+      "id": "agent.cancellation",
+      "category": "agent",
+      "name": "agent cancellation",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "not_tested",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [],
+      "issues": []
+    },
+    {
+      "id": "agent.context_recovery",
+      "category": "agent",
+      "name": "context recovery and cancellation",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_agent_model_events.py",
+        "tests/test_context_compactor.py",
+        "tests/test_context_cybernetics.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "agent.mock_model",
+      "category": "agent",
+      "name": "MockModel agent turn",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_agent_flow.py",
+        "tests/test_agent_stress.py",
+        "tests/test_cybernetic_orchestrator.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "agent.model_switcher",
+      "category": "agent",
+      "name": "ModelSwitcher routing",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_agent_model_events.py",
+        "tests/test_context_observation_events.py",
+        "tests/test_conversation_presentation.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "agent.pricing",
+      "category": "agent",
+      "name": "canonical usage and pricing projection",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_agent_loop_work_chain_disabled.py",
+        "tests/test_agent_model_events.py",
+        "tests/test_cost_aggregation.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "agent.real_provider",
+      "category": "agent",
+      "name": "configured real model Provider availability",
+      "declared": true,
+      "registered": false,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "blocked",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "blocked",
+      "evidence": [
+        "minicode/model_registry.py",
+        "isolated audit intentionally removed Provider credentials",
+        "tests/test_agent_model_events.py",
+        "tests/test_anthropic_adapter.py",
+        "tests/test_context_observation_events.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "agent.run_lifecycle",
+      "category": "agent",
+      "name": "Run lifecycle and safe observation",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_mcp_runtime_observation.py",
+        "tests/test_memory_retrieval_production_baseline.py",
+        "tests/test_packaging.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "agent.tool_calls",
+      "category": "agent",
+      "name": "single and multiple Tool calls",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_agent_cancellation.py",
+        "tests/test_agent_flow.py",
+        "tests/test_agent_intelligence.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.chat",
+      "category": "dashboard",
+      "name": "Dashboard Chat/Turn fencing",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "not_tested",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [],
+      "issues": []
+    },
+    {
+      "id": "dashboard.data_health",
+      "category": "dashboard",
+      "name": "Dashboard data health",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_packaging.py",
+        "tests/test_storage_health.py",
+        "tests/test_storage_health_http.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.deletion",
+      "category": "dashboard",
+      "name": "Session and Project Memory deletion",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_conversation_deletion.py",
+        "tests/test_dashboard_deletion_http.py",
+        "tests/test_packaging.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.memory_approval",
+      "category": "dashboard",
+      "name": "Dashboard Memory Approval UI",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_packaging.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.page.connections",
+      "category": "dashboard",
+      "name": "Dashboard Connections",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "pass",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/web/static/assets/app.js",
+        "installed-wheel browser verified",
+        "tests/test_dashboard_catalog_read_model.py",
+        "tests/test_dashboard_change_feed.py",
+        "tests/test_dashboard_event_stream.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.page.memory",
+      "category": "dashboard",
+      "name": "Dashboard Memory",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "pass",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/web/static/assets/app.js",
+        "installed-wheel browser verified",
+        "tests/test_agent_flow.py",
+        "tests/test_agent_intelligence.py",
+        "tests/test_agent_loop_work_chain_disabled.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.page.memory_approvals",
+      "category": "dashboard",
+      "name": "Memory Approvals",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "pass",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "partial",
+      "evidence": [
+        "minicode/web/static/assets/app.js",
+        "installed-wheel browser verified"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.page.memory_injection",
+      "category": "dashboard",
+      "name": "Memory Injection",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "pass",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "partial",
+      "evidence": [
+        "minicode/web/static/assets/app.js",
+        "installed-wheel browser verified"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.page.memory_lifecycle",
+      "category": "dashboard",
+      "name": "Memory Lifecycle",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "pass",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "partial",
+      "evidence": [
+        "minicode/web/static/assets/app.js",
+        "installed-wheel browser verified"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.page.memory_overview",
+      "category": "dashboard",
+      "name": "Memory Overview",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "pass",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "partial",
+      "evidence": [
+        "minicode/web/static/assets/app.js",
+        "installed-wheel browser verified"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.page.memory_retrieval",
+      "category": "dashboard",
+      "name": "Memory Retrieval",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "pass",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/web/static/assets/app.js",
+        "installed-wheel browser verified",
+        "tests/test_memory_candidate_consolidation.py",
+        "tests/test_memory_retrieval_phase2a.py",
+        "tests/test_memory_retrieval_phase2b.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.page.memory_scopes",
+      "category": "dashboard",
+      "name": "Memory Scopes",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "pass",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "partial",
+      "evidence": [
+        "minicode/web/static/assets/app.js",
+        "installed-wheel browser verified"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.page.ops",
+      "category": "dashboard",
+      "name": "Dashboard Ops",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "pass",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/web/static/assets/app.js",
+        "installed-wheel browser verified",
+        "tests/test_context_aggregation.py",
+        "tests/test_dashboard_mcp_current_read_model.py",
+        "tests/test_dashboard_usage_read_model.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.page.overview",
+      "category": "dashboard",
+      "name": "Dashboard Overview",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "pass",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/web/static/assets/app.js",
+        "installed-wheel browser verified",
+        "tests/test_dashboard_agent_observatory.py",
+        "tests/test_dashboard_chat_http.py",
+        "tests/test_dashboard_read_model.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.page.runs",
+      "category": "dashboard",
+      "name": "Dashboard Runs",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "pass",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/web/static/assets/app.js",
+        "installed-wheel browser verified",
+        "tests/test_agent_flow.py",
+        "tests/test_conversation_cancellation.py",
+        "tests/test_conversation_deletion.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.page.sessions",
+      "category": "dashboard",
+      "name": "Dashboard Sessions",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "pass",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/web/static/assets/app.js",
+        "installed-wheel browser verified",
+        "tests/test_conversation_cancellation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_presentation.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.page.skills",
+      "category": "dashboard",
+      "name": "Dashboard Skills",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "pass",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/web/static/assets/app.js",
+        "installed-wheel browser verified",
+        "tests/test_dashboard_agent_observatory.py",
+        "tests/test_dashboard_catalog_read_model.py",
+        "tests/test_dashboard_change_feed.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.page.system",
+      "category": "dashboard",
+      "name": "Dashboard System",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "pass",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/web/static/assets/app.js",
+        "installed-wheel browser verified",
+        "tests/test_agent_cancellation.py",
+        "tests/test_agent_flow.py",
+        "tests/test_agent_loop.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.permissions",
+      "category": "dashboard",
+      "name": "Dashboard Permission UI",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_packaging.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.polling",
+      "category": "dashboard",
+      "name": "Dashboard polling fallback",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_dashboard_realtime_refresh.py",
+        "tests/test_dashboard_web.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.rest",
+      "category": "dashboard",
+      "name": "Dashboard REST read/write authorities",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_dashboard_chat_http.py",
+        "tests/test_dashboard_deletion_http.py",
+        "tests/test_dashboard_web.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.sse",
+      "category": "dashboard",
+      "name": "Dashboard SSE/replay/reset",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_dashboard_sse.py",
+        "tests/test_packaging.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "dashboard.static",
+      "category": "dashboard",
+      "name": "Dashboard static assets and no-store",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "dashboard"
+      ],
+      "deterministicTest": "not_tested",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.prefix",
+      "category": "entrypoint",
+      "name": "/api/",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.changes",
+      "category": "entrypoint",
+      "name": "/api/v1/changes",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.chat.turns",
+      "category": "entrypoint",
+      "name": "/api/v1/chat/turns",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_agent_stress.py",
+        "tests/test_cluster_stress.py",
+        "tests/test_context_aggregation.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.chat.turns.prefix",
+      "category": "entrypoint",
+      "name": "/api/v1/chat/turns/",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.chat.turns.turn.0.9a.f.32.cancel",
+      "category": "entrypoint",
+      "name": "/api/v1/chat/turns/(turn_[0-9a-f]{32})/cancel",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_cancellation.py",
+        "tests/test_conversation_deletion.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.connections",
+      "category": "entrypoint",
+      "name": "/api/v1/connections",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.data.health",
+      "category": "entrypoint",
+      "name": "/api/v1/data-health",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_cli_commands.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.events",
+      "category": "entrypoint",
+      "name": "/api/v1/events",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_agent_event_sink.py",
+        "tests/test_agent_loop.py",
+        "tests/test_agent_loop_work_chain_disabled.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.health",
+      "category": "entrypoint",
+      "name": "/api/v1/health",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_cli_commands.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.memory",
+      "category": "entrypoint",
+      "name": "/api/v1/memory",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_agent_flow.py",
+        "tests/test_agent_intelligence.py",
+        "tests/test_agent_loop_work_chain_disabled.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.memory.approvals.pending",
+      "category": "entrypoint",
+      "name": "/api/v1/memory/approvals/pending",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.memory.approvals.prefix",
+      "category": "entrypoint",
+      "name": "/api/v1/memory/approvals/",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.memory.project.prefix",
+      "category": "entrypoint",
+      "name": "/api/v1/memory/project/",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.ops",
+      "category": "entrypoint",
+      "name": "/api/v1/ops",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.permissions.pending",
+      "category": "entrypoint",
+      "name": "/api/v1/permissions/pending",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.permissions.prefix",
+      "category": "entrypoint",
+      "name": "/api/v1/permissions/",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.runs",
+      "category": "entrypoint",
+      "name": "/api/v1/runs",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_agent_flow.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_cancellation.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.runs.prefix",
+      "category": "entrypoint",
+      "name": "/api/v1/runs/",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.sessions",
+      "category": "entrypoint",
+      "name": "/api/v1/sessions",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_cancellation.py",
+        "tests/test_conversation_deletion.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.sessions.prefix",
+      "category": "entrypoint",
+      "name": "/api/v1/sessions/",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.skills",
+      "category": "entrypoint",
+      "name": "/api/v1/skills",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.snapshot",
+      "category": "entrypoint",
+      "name": "/api/v1/snapshot",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_bounded_resolver.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.system",
+      "category": "entrypoint",
+      "name": "/api/v1/system",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_agent_cancellation.py",
+        "tests/test_agent_flow.py",
+        "tests/test_agent_loop.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.assets.prefix",
+      "category": "entrypoint",
+      "name": "/assets/",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.health",
+      "category": "entrypoint",
+      "name": "/health",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_cli_commands.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.root",
+      "category": "entrypoint",
+      "name": "/",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.run",
+      "category": "entrypoint",
+      "name": "/run",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_agent_cancellation.py",
+        "tests/test_agent_flow.py",
+        "tests/test_agent_intelligence.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.minicode-cron",
+      "category": "entrypoint",
+      "name": "minicode-cron",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "headless"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "pyproject.toml::minicode-cron=minicode.cron_runner:main",
+        "tests/test_packaging.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.minicode-gateway",
+      "category": "entrypoint",
+      "name": "minicode-gateway",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "pyproject.toml::minicode-gateway=minicode.gateway:run_gateway",
+        "tests/test_context_aggregation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_turn.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.minicode-headless",
+      "category": "entrypoint",
+      "name": "minicode-headless",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "headless"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "pyproject.toml::minicode-headless=minicode.headless:main",
+        "tests/test_context_aggregation.py",
+        "tests/test_cost_aggregation.py",
+        "tests/test_dashboard_catalog_read_model.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.minicode-py",
+      "category": "entrypoint",
+      "name": "minicode-py",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "pyproject.toml::minicode-py=minicode.main:main",
+        "tests/test_context_compactor.py",
+        "tests/test_dashboard_agent_observatory.py",
+        "tests/test_dashboard_live_refresh.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.clear",
+      "category": "entrypoint",
+      "name": "/clear",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_cli_commands.py",
+        "tests/test_cluster_stress.py",
+        "tests/test_context_compactor.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.cmd.cwd.command.args",
+      "category": "entrypoint",
+      "name": "/cmd [cwd::]<command> [args...]",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_agent_flow.py",
+        "tests/test_cli_commands.py",
+        "tests/test_functional_completeness.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.config",
+      "category": "entrypoint",
+      "name": "/config",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_agent_intelligence.py",
+        "tests/test_cli_commands.py",
+        "tests/test_config.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.config.paths",
+      "category": "entrypoint",
+      "name": "/config-paths",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_cli_commands.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.context",
+      "category": "entrypoint",
+      "name": "/context",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_agent_intelligence.py",
+        "tests/test_agent_loop_work_chain_disabled.py",
+        "tests/test_agent_model_events.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.cost.detailed",
+      "category": "entrypoint",
+      "name": "/cost [--detailed]",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_cli_commands.py",
+        "tests/test_cost_aggregation.py",
+        "tests/test_cost_control.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.cybernetics",
+      "category": "entrypoint",
+      "name": "/cybernetics",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_advanced_cybernetics.py",
+        "tests/test_cli_commands.py",
+        "tests/test_cybernetics_concurrency.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.debug",
+      "category": "entrypoint",
+      "name": "/debug",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_cli_commands.py",
+        "tests/test_propose_skill.py",
+        "tests/test_run_entrypoint_lifecycle.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.edit.path.search.replace",
+      "category": "entrypoint",
+      "name": "/edit <path>::<search>::<replace>",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_cli_commands.py",
+        "tests/test_dashboard_permission_frontend.py",
+        "tests/test_file_review_normalization.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.exit",
+      "category": "entrypoint",
+      "name": "/exit",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_bounded_resolver.py",
+        "tests/test_cli_commands.py",
+        "tests/test_conversation_deletion.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.grep.pattern.path",
+      "category": "entrypoint",
+      "name": "/grep <pattern>::[path]",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_cli_commands.py",
+        "tests/test_integration.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.help",
+      "category": "entrypoint",
+      "name": "/help",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_agent_flow.py",
+        "tests/test_cli_commands.py",
+        "tests/test_functional_completeness.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.history",
+      "category": "entrypoint",
+      "name": "/history",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_cli_commands.py",
+        "tests/test_context_compactor.py",
+        "tests/test_conversation_cancellation.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.ls.path",
+      "category": "entrypoint",
+      "name": "/ls [path]",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_cli_commands.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.mcp",
+      "category": "entrypoint",
+      "name": "/mcp",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_cli_commands.py",
+        "tests/test_conversation_turn.py",
+        "tests/test_dashboard_catalog_read_model.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.memory",
+      "category": "entrypoint",
+      "name": "/memory",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_agent_flow.py",
+        "tests/test_agent_intelligence.py",
+        "tests/test_agent_loop_work_chain_disabled.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.model",
+      "category": "entrypoint",
+      "name": "/model",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_agent_cancellation.py",
+        "tests/test_agent_event_sink.py",
+        "tests/test_agent_flow.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.model.model.name",
+      "category": "entrypoint",
+      "name": "/model <model-name>",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_agent_cancellation.py",
+        "tests/test_agent_event_sink.py",
+        "tests/test_agent_flow.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.modify.path.content",
+      "category": "entrypoint",
+      "name": "/modify <path>::<content>",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_cli_commands.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.patch.path.search1.replace1.search2.replace2",
+      "category": "entrypoint",
+      "name": "/patch <path>::<search1>::<replace1>::<search2>::<replace2>...",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_cli_commands.py",
+        "tests/test_dashboard_page_read_model.py",
+        "tests/test_file_review_normalization.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.permissions",
+      "category": "entrypoint",
+      "name": "/permissions",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_agent_flow.py",
+        "tests/test_agent_loop_work_chain_disabled.py",
+        "tests/test_agent_stress.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.read.path",
+      "category": "entrypoint",
+      "name": "/read <path>",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_agent_cancellation.py",
+        "tests/test_agent_intelligence.py",
+        "tests/test_anthropic_adapter.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.retry",
+      "category": "entrypoint",
+      "name": "/retry",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_agent_intelligence.py",
+        "tests/test_cli_commands.py",
+        "tests/test_conversation_deletion.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.skills",
+      "category": "entrypoint",
+      "name": "/skills",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_cli_commands.py",
+        "tests/test_dashboard_agent_observatory.py",
+        "tests/test_dashboard_catalog_read_model.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.state",
+      "category": "entrypoint",
+      "name": "/state",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_advanced_cybernetics.py",
+        "tests/test_agent_loop.py",
+        "tests/test_cli_commands.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.status",
+      "category": "entrypoint",
+      "name": "/status",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_advanced_cybernetics.py",
+        "tests/test_agent_flow.py",
+        "tests/test_agent_loop_work_chain_disabled.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.tasks",
+      "category": "entrypoint",
+      "name": "/tasks",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_cli_commands.py",
+        "tests/test_dashboard_agent_observatory.py",
+        "tests/test_feedforward_controller.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.tools",
+      "category": "entrypoint",
+      "name": "/tools",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_agent_cancellation.py",
+        "tests/test_agent_flow.py",
+        "tests/test_agent_intelligence.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.transcript.save.path",
+      "category": "entrypoint",
+      "name": "/transcript-save <path>",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_cli_commands.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.user",
+      "category": "entrypoint",
+      "name": "/user",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_agent_flow.py",
+        "tests/test_agent_intelligence.py",
+        "tests/test_agent_loop.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.tui.write.path.content",
+      "category": "entrypoint",
+      "name": "/write <path>::<content>",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cli_commands.py",
+        "tests/test_agent_intelligence.py",
+        "tests/test_agent_model_events.py",
+        "tests/test_cli_commands.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "internal.agent_intelligence",
+      "category": "agent",
+      "name": "agent_intelligence",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/agent_intelligence.py",
+        "wiring=conditional",
+        "tests/test_agent_intelligence.py",
+        "tests/test_cluster_stress.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "internal.auto_mode",
+      "category": "agent",
+      "name": "auto_mode",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "not_tested",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/auto_mode.py",
+        "wiring=conditional"
+      ],
+      "issues": []
+    },
+    {
+      "id": "internal.background_tasks",
+      "category": "agent",
+      "name": "background_tasks",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "not_tested",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/background_tasks.py",
+        "wiring=conditional"
+      ],
+      "issues": []
+    },
+    {
+      "id": "internal.context_cybernetics",
+      "category": "agent",
+      "name": "context_cybernetics",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/context_cybernetics.py",
+        "wiring=conditional",
+        "tests/test_context_cybernetics.py",
+        "tests/test_cybernetics_concurrency.py",
+        "tests/test_cybernetics_e2e.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "internal.cron_runner",
+      "category": "agent",
+      "name": "cron_runner",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/cron_runner.py",
+        "wiring=formal",
+        "tests/test_packaging.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "internal.cybernetic_orchestrator",
+      "category": "agent",
+      "name": "cybernetic_orchestrator",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/cybernetic_orchestrator.py",
+        "wiring=conditional",
+        "tests/test_agent_flow.py",
+        "tests/test_cybernetic_orchestrator.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "internal.hooks",
+      "category": "agent",
+      "name": "hooks",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/hooks.py",
+        "wiring=conditional",
+        "tests/test_agent_flow.py",
+        "tests/test_domain_memory.py",
+        "tests/test_memory_reranker.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "internal.pipeline_engine",
+      "category": "agent",
+      "name": "pipeline_engine",
+      "declared": true,
+      "registered": false,
+      "reachableFrom": [],
+      "deterministicTest": "not_tested",
+      "installedWheelTest": "not_tested",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "not_reachable",
+      "evidence": [
+        "minicode/pipeline_engine.py",
+        "wiring=not_reachable"
+      ],
+      "issues": []
+    },
+    {
+      "id": "internal.self_healing_engine",
+      "category": "agent",
+      "name": "self_healing_engine",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/self_healing_engine.py",
+        "wiring=conditional",
+        "tests/test_advanced_cybernetics.py",
+        "tests/test_cybernetics_e2e.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "internal.smart_router",
+      "category": "agent",
+      "name": "smart_router",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/smart_router.py",
+        "wiring=conditional",
+        "tests/test_agent_model_events.py",
+        "tests/test_cybernetic_orchestrator.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "internal.task_graph",
+      "category": "agent",
+      "name": "task_graph",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/task_graph.py",
+        "wiring=conditional",
+        "tests/test_global_state_isolation.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "internal.task_tracker",
+      "category": "agent",
+      "name": "task_tracker",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/task_tracker.py",
+        "wiring=conditional",
+        "tests/test_global_state_isolation.py",
+        "tests/test_new_features.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "internal.timeline_memory",
+      "category": "agent",
+      "name": "timeline_memory",
+      "declared": true,
+      "registered": false,
+      "reachableFrom": [],
+      "deterministicTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "not_reachable",
+      "evidence": [
+        "minicode/timeline_memory.py",
+        "wiring=experimental",
+        "tests/test_timeline_memory.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "internal.vector_memory",
+      "category": "agent",
+      "name": "vector_memory",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "not_tested",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/vector_memory.py",
+        "wiring=conditional"
+      ],
+      "issues": []
+    },
+    {
+      "id": "internal.verification_controller",
+      "category": "agent",
+      "name": "verification_controller",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "not_tested",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/verification_controller.py",
+        "wiring=conditional"
+      ],
+      "issues": []
+    },
+    {
+      "id": "mcp.configuration",
+      "category": "mcp",
+      "name": "MCP configuration discovery",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_agent_intelligence.py",
+        "tests/test_config.py",
+        "tests/test_context_compactor.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "mcp.search",
+      "category": "mcp",
+      "name": "optional MCP search Tool",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "blocked",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "unavailable",
+      "evidence": [
+        "tests/test_agent_flow.py",
+        "tests/test_cli_commands.py",
+        "tests/test_cluster_stress.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "mcp.stdio",
+      "category": "mcp",
+      "name": "stdio MCP lifecycle and calls",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_conversation_turn.py",
+        "tests/test_dashboard_catalog_read_model.py",
+        "tests/test_dashboard_change_feed.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "memory.approval",
+      "category": "persistence",
+      "name": "Memory approval authority",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_dashboard_change_feed.py",
+        "tests/test_memory_approval_authority.py",
+        "tests/test_memory_approval_cross_process.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "memory.conversation_fact",
+      "category": "persistence",
+      "name": "ordinary conversational fact intake",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "fail",
+      "evidence": [
+        "tests/test_agent_flow.py",
+        "tests/test_agent_intelligence.py",
+        "tests/test_agent_loop_work_chain_disabled.py"
+      ],
+      "issues": [
+        "MEM-001"
+      ]
+    },
+    {
+      "id": "memory.error_reflection",
+      "category": "persistence",
+      "name": "error-pattern reflection",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_agent_model_events.py",
+        "tests/test_config.py",
+        "tests/test_cybernetic_orchestrator.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "memory.retrieval",
+      "category": "persistence",
+      "name": "Memory retrieval/ranking/injection",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_memory_candidate_consolidation.py",
+        "tests/test_memory_retrieval_phase2a.py",
+        "tests/test_memory_retrieval_phase2b.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "memory.storage",
+      "category": "persistence",
+      "name": "Memory file storage and scopes",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "not_tested",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [],
+      "issues": []
+    },
+    {
+      "id": "persistence.run_journal",
+      "category": "persistence",
+      "name": "RunJournal",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_conversation_cancellation.py",
+        "tests/test_conversation_deletion.py",
+        "tests/test_conversation_presentation.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "persistence.session",
+      "category": "persistence",
+      "name": "Session persistence",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_context_compactor.py",
+        "tests/test_conversation_cancellation.py",
+        "tests/test_conversation_deletion.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "persistence.turn",
+      "category": "persistence",
+      "name": "Conversation Turn state machine",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "not_tested",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [],
+      "issues": []
+    },
+    {
+      "id": "security.permissions",
+      "category": "security",
+      "name": "Permission review/checkpoint authority",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_agent_flow.py",
+        "tests/test_agent_loop_work_chain_disabled.py",
+        "tests/test_agent_stress.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "security.workspace",
+      "category": "security",
+      "name": "Workspace path and symlink boundary",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "fail",
+      "truthfulness": "pass",
+      "status": "fail",
+      "evidence": [
+        "tests/test_agent_flow.py",
+        "tests/test_agent_stress.py",
+        "tests/test_context_aggregation.py"
+      ],
+      "issues": [
+        "SEC-005"
+      ]
+    },
+    {
+      "id": "skill.discovery",
+      "category": "persistence",
+      "name": "four-source Skill discovery and routing",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "tests/test_dashboard_agent_observatory.py",
+        "tests/test_dashboard_catalog_read_model.py",
+        "tests/test_dashboard_change_feed.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "skill.source.project_claude",
+      "category": "persistence",
+      "name": "project Claude-compatible Skill source",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/skills.py",
+        "tests/test_dashboard_catalog_read_model.py",
+        "tests/test_dashboard_change_feed.py",
+        "tests/test_dashboard_read_model.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "skill.source.project_minicode",
+      "category": "persistence",
+      "name": "project MiniCode Skill source",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/skills.py",
+        "tests/test_dashboard_catalog_read_model.py",
+        "tests/test_dashboard_change_feed.py",
+        "tests/test_dashboard_read_model.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "skill.source.user_claude",
+      "category": "persistence",
+      "name": "user Claude-compatible Skill source",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/skills.py",
+        "tests/test_dashboard_catalog_read_model.py",
+        "tests/test_dashboard_change_feed.py",
+        "tests/test_dashboard_read_model.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "skill.source.user_minicode",
+      "category": "persistence",
+      "name": "user MiniCode Skill source",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/skills.py",
+        "tests/test_dashboard_catalog_read_model.py",
+        "tests/test_dashboard_change_feed.py",
+        "tests/test_dashboard_read_model.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.ask_user",
+      "category": "tool",
+      "name": "ask_user",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/ask_user.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.base64_decode",
+      "category": "tool",
+      "name": "base64_decode",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/encoding_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.base64_encode",
+      "category": "tool",
+      "name": "base64_encode",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/encoding_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=false",
+        "isolated_happy_path=true",
+        "tests/test_release_integration.py",
+        "tests/test_tools.py"
+      ],
+      "issues": [
+        "TOOL-003"
+      ]
+    },
+    {
+      "id": "tool.batch_copy",
+      "category": "tool",
+      "name": "batch_copy",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/batch_ops.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.batch_delete",
+      "category": "tool",
+      "name": "batch_delete",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/batch_ops.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.batch_move",
+      "category": "tool",
+      "name": "batch_move",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/batch_ops.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.code_review",
+      "category": "tool",
+      "name": "code_review",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/code_review.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=false",
+        "tests/test_tools.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.csv_create",
+      "category": "tool",
+      "name": "csv_create",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/csv_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.csv_parse",
+      "category": "tool",
+      "name": "csv_parse",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/csv_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true",
+        "tests/test_tools.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.current_time",
+      "category": "tool",
+      "name": "current_time",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/crypto_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.diff_viewer",
+      "category": "tool",
+      "name": "diff_viewer",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/diff_viewer.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.dynamic_mcp_tool",
+      "category": "tool",
+      "name": "<dynamic-mcp-tool>",
+      "declared": true,
+      "registered": false,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "blocked",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "blocked",
+      "evidence": [
+        "minicode/mcp.py",
+        "conditional on configured MCP descriptors/resources/prompts",
+        "isolated MCP configuration is empty",
+        "tests/test_conversation_turn.py",
+        "tests/test_dashboard_catalog_read_model.py",
+        "tests/test_dashboard_change_feed.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.edit_file",
+      "category": "tool",
+      "name": "edit_file",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/edit_file.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "tests/test_agent_intelligence.py",
+        "tests/test_dashboard_catalog_read_model.py",
+        "tests/test_file_review_normalization.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.file_line_count",
+      "category": "tool",
+      "name": "file_line_count",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/file_line_count.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true"
+      ],
+      "issues": [
+        "TOOL-002"
+      ]
+    },
+    {
+      "id": "tool.file_tree",
+      "category": "tool",
+      "name": "file_tree",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/file_tree.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true",
+        "tests/test_tools.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.find_references",
+      "category": "tool",
+      "name": "find_references",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/code_nav.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=false"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.find_symbols",
+      "category": "tool",
+      "name": "find_symbols",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/code_nav.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=false"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.get_ast_info",
+      "category": "tool",
+      "name": "get_ast_info",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/code_nav.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.get_mcp_prompt",
+      "category": "tool",
+      "name": "get_mcp_prompt",
+      "declared": true,
+      "registered": false,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "blocked",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "blocked",
+      "evidence": [
+        "minicode/mcp.py",
+        "conditional on configured MCP descriptors/resources/prompts",
+        "isolated MCP configuration is empty",
+        "tests/test_conversation_turn.py",
+        "tests/test_dashboard_catalog_read_model.py",
+        "tests/test_dashboard_change_feed.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.git",
+      "category": "tool",
+      "name": "git",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/git.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "tests/test_cli_commands.py",
+        "tests/test_functional_completeness.py",
+        "tests/test_memory_integration.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.grep_files",
+      "category": "tool",
+      "name": "grep_files",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/grep_files.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true",
+        "tests/test_agent_intelligence.py",
+        "tests/test_functional_completeness.py",
+        "tests/test_integration.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.gzip_compress",
+      "category": "tool",
+      "name": "gzip_compress",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "fail",
+      "truthfulness": "partial",
+      "status": "fail",
+      "evidence": [
+        "minicode/tools/archive_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true"
+      ],
+      "issues": [
+        "SEC-002"
+      ]
+    },
+    {
+      "id": "tool.gzip_decompress",
+      "category": "tool",
+      "name": "gzip_decompress",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "fail",
+      "truthfulness": "partial",
+      "status": "fail",
+      "evidence": [
+        "minicode/tools/archive_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true"
+      ],
+      "issues": [
+        "SEC-002",
+        "SEC-004"
+      ]
+    },
+    {
+      "id": "tool.hash",
+      "category": "tool",
+      "name": "hash",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/crypto_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=false",
+        "isolated_happy_path=true",
+        "tests/test_context_compactor.py",
+        "tests/test_memory_approval_authority.py",
+        "tests/test_memory_embedding_index.py"
+      ],
+      "issues": [
+        "TOOL-003"
+      ]
+    },
+    {
+      "id": "tool.hmac",
+      "category": "tool",
+      "name": "hmac",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/crypto_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.http_request",
+      "category": "tool",
+      "name": "http_request",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "blocked",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/http_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true",
+        "tests/test_bounded_resolver.py",
+        "tests/test_http_request_safety.py",
+        "permission=one-operation",
+        "destination=validated-and-pinned",
+        "resolver=workers:4,queue:8,outstanding:12",
+        "resolver-saturation=fail-closed",
+        "resolver-process-exit=daemon-workers",
+        "response=bounded",
+        "tests/test_dashboard_permission_frontend.py",
+        "tests/test_http_request_safety.py",
+        "tests/test_packaging.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.json_format",
+      "category": "tool",
+      "name": "json_format",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/json_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.json_parse",
+      "category": "tool",
+      "name": "json_parse",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/json_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.line_count",
+      "category": "tool",
+      "name": "line_count",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/text_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=false",
+        "isolated_happy_path=true"
+      ],
+      "issues": [
+        "TOOL-003"
+      ]
+    },
+    {
+      "id": "tool.list_files",
+      "category": "tool",
+      "name": "list_files",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/list_files.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true",
+        "tests/test_agent_cancellation.py",
+        "tests/test_agent_intelligence.py",
+        "tests/test_dashboard_chat_stream.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.list_mcp_prompts",
+      "category": "tool",
+      "name": "list_mcp_prompts",
+      "declared": true,
+      "registered": false,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "blocked",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "blocked",
+      "evidence": [
+        "minicode/mcp.py",
+        "conditional on configured MCP descriptors/resources/prompts",
+        "isolated MCP configuration is empty",
+        "tests/test_conversation_turn.py",
+        "tests/test_dashboard_catalog_read_model.py",
+        "tests/test_dashboard_change_feed.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.list_mcp_resources",
+      "category": "tool",
+      "name": "list_mcp_resources",
+      "declared": true,
+      "registered": false,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "blocked",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "blocked",
+      "evidence": [
+        "minicode/mcp.py",
+        "conditional on configured MCP descriptors/resources/prompts",
+        "isolated MCP configuration is empty",
+        "tests/test_conversation_turn.py",
+        "tests/test_dashboard_catalog_read_model.py",
+        "tests/test_dashboard_change_feed.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.load_skill",
+      "category": "tool",
+      "name": "load_skill",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/load_skill.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "tests/test_propose_skill.py",
+        "tests/test_skill_router.py",
+        "tests/test_skills.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.modify_file",
+      "category": "tool",
+      "name": "modify_file",
+      "declared": true,
+      "registered": false,
+      "reachableFrom": [],
+      "deterministicTest": "not_tested",
+      "installedWheelTest": "not_tested",
+      "liveTest": "not_required",
+      "safety": "not_tested",
+      "truthfulness": "partial",
+      "status": "not_reachable",
+      "evidence": [
+        "minicode/tools/modify_file.py",
+        "absent from create_default_tool_registry()"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.patch_file",
+      "category": "tool",
+      "name": "patch_file",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/patch_file.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "tests/test_cli_commands.py",
+        "tests/test_file_review_normalization.py",
+        "tests/test_integration.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.propose_skill",
+      "category": "tool",
+      "name": "propose_skill",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/propose_skill.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "tests/test_prompt.py",
+        "tests/test_propose_skill.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.random_string",
+      "category": "tool",
+      "name": "random_string",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/text_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.read_file",
+      "category": "tool",
+      "name": "read_file",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "fail",
+      "truthfulness": "fail",
+      "status": "fail",
+      "evidence": [
+        "minicode/tools/read_file.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true",
+        "tests/test_agent_cancellation.py",
+        "tests/test_agent_intelligence.py",
+        "tests/test_anthropic_adapter.py"
+      ],
+      "issues": [
+        "TOOL-001"
+      ]
+    },
+    {
+      "id": "tool.read_mcp_resource",
+      "category": "tool",
+      "name": "read_mcp_resource",
+      "declared": true,
+      "registered": false,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "blocked",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "blocked",
+      "evidence": [
+        "minicode/mcp.py",
+        "conditional on configured MCP descriptors/resources/prompts",
+        "isolated MCP configuration is empty",
+        "tests/test_conversation_turn.py",
+        "tests/test_dashboard_catalog_read_model.py",
+        "tests/test_dashboard_change_feed.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.regex_replace",
+      "category": "tool",
+      "name": "regex_replace",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/regex_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.regex_test",
+      "category": "tool",
+      "name": "regex_test",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/regex_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.run_command",
+      "category": "tool",
+      "name": "run_command",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/run_command.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "tests/test_agent_intelligence.py",
+        "tests/test_cli_commands.py",
+        "tests/test_cluster_stress.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.tar_create",
+      "category": "tool",
+      "name": "tar_create",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "fail",
+      "truthfulness": "partial",
+      "status": "fail",
+      "evidence": [
+        "minicode/tools/archive_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true"
+      ],
+      "issues": [
+        "SEC-002"
+      ]
+    },
+    {
+      "id": "tool.tar_extract",
+      "category": "tool",
+      "name": "tar_extract",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/archive_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.task",
+      "category": "tool",
+      "name": "task",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/task.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "tests/test_agent_intelligence.py",
+        "tests/test_agent_loop_work_chain_disabled.py",
+        "tests/test_cybernetic_orchestrator.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.test_runner",
+      "category": "tool",
+      "name": "test_runner",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/test_runner.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "tests/test_agent_intelligence.py",
+        "tests/test_memory_integration.py",
+        "tests/test_tools.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.text_dedupe",
+      "category": "tool",
+      "name": "text_dedupe",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/text_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=false",
+        "isolated_happy_path=true"
+      ],
+      "issues": [
+        "TOOL-003"
+      ]
+    },
+    {
+      "id": "tool.text_join",
+      "category": "tool",
+      "name": "text_join",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/text_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=false",
+        "isolated_happy_path=true"
+      ],
+      "issues": [
+        "TOOL-003"
+      ]
+    },
+    {
+      "id": "tool.text_sort",
+      "category": "tool",
+      "name": "text_sort",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/text_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=false",
+        "isolated_happy_path=true"
+      ],
+      "issues": [
+        "TOOL-003"
+      ]
+    },
+    {
+      "id": "tool.timestamp_convert",
+      "category": "tool",
+      "name": "timestamp_convert",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/crypto_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.todo_write",
+      "category": "tool",
+      "name": "todo_write",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/todo_write.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.url_decode",
+      "category": "tool",
+      "name": "url_decode",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/encoding_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.url_encode",
+      "category": "tool",
+      "name": "url_encode",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/encoding_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=false",
+        "isolated_happy_path=true"
+      ],
+      "issues": [
+        "TOOL-003"
+      ]
+    },
+    {
+      "id": "tool.uuid_generate",
+      "category": "tool",
+      "name": "uuid_generate",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/text_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true",
+        "isolated_happy_path=true"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.web_fetch",
+      "category": "tool",
+      "name": "web_fetch",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "blocked",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/web_fetch.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "tests/test_web_fetch_safety.py",
+        "destination=validated-and-pinned",
+        "resolver=shared-bounded-4,8,12",
+        "redirect=per-hop-validated,max-3",
+        "deadline=one-monotonic-budget",
+        "response=1MiB,max-read-64KiB",
+        "errors=content-free-low-cardinality",
+        "tests/test_agent_intelligence.py",
+        "tests/test_memory_retrieval_production_baseline_v38.py",
+        "tests/test_packaging.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.web_search",
+      "category": "tool",
+      "name": "web_search",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "blocked",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/web_search.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "tests/test_web_search.py",
+        "tests/test_search_providers.py",
+        "provider-order=baidu,duckduckgo",
+        "provider-attempts=once,max-2",
+        "deadline=total-15s,provider-max-6s",
+        "destination=validated-and-pinned",
+        "resolver=shared-bounded-4,8,12",
+        "redirect=per-hop-validated,max-3",
+        "response=1MiB,max-read-64KiB",
+        "parser=provider-specific-streaming",
+        "errors=truthful-content-free-low-cardinality",
+        "tests/test_memory_retrieval_production_baseline_v39.py",
+        "tests/test_packaging.py",
+        "tests/test_search_providers.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.write_file",
+      "category": "tool",
+      "name": "write_file",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "pass",
+      "evidence": [
+        "minicode/tools/write_file.py",
+        "profile=core",
+        "schema_serializable=true",
+        "required_validation=true",
+        "tests/test_agent_intelligence.py",
+        "tests/test_dashboard_change_feed.py",
+        "tests/test_dashboard_chat_stream.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "tool.zip_create",
+      "category": "tool",
+      "name": "zip_create",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "fail",
+      "truthfulness": "partial",
+      "status": "fail",
+      "evidence": [
+        "minicode/tools/archive_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true"
+      ],
+      "issues": [
+        "SEC-002"
+      ]
+    },
+    {
+      "id": "tool.zip_extract",
+      "category": "tool",
+      "name": "zip_extract",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "tui",
+        "headless",
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "partial",
+      "installedWheelTest": "pass",
+      "liveTest": "not_required",
+      "safety": "partial",
+      "truthfulness": "partial",
+      "status": "partial",
+      "evidence": [
+        "minicode/tools/archive_utils.py",
+        "profile=full-only",
+        "schema_serializable=true",
+        "required_validation=true"
+      ],
+      "issues": []
+    }
+  ],
+  "issues": [
+    {
+      "id": "SEC-002",
+      "severity": "P0",
+      "capabilityId": "tool.gzip_compress",
+      "userVisibleImpact": "Full-profile archive creation can write outside the Workspace with ../ paths and no permission checkpoint.",
+      "minimalReproduction": "Compress an isolated Workspace fixture to ../escape.gz; repeat for tar_create and zip_create.",
+      "expected": "All source and destination paths must use the canonical Workspace/permission resolver before I/O.",
+      "actual": "gzip_compress, tar_create and zip_create created sibling files outside the isolated Workspace.",
+      "evidence": [
+        "minicode/tools/archive_utils.py",
+        "scripts/run_functional_audit.py"
+      ],
+      "stableReproduction": true,
+      "environmentDependent": false,
+      "recommendedBatch": "Reliability 1B-2: File/command Tool correctness",
+      "requiredRedTest": "Traversal, absolute path, symlink and deny/cancel tests must prove zero archive writes outside Workspace."
+    },
+    {
+      "id": "SEC-004",
+      "severity": "P1",
+      "capabilityId": "tool.gzip_decompress",
+      "userVisibleImpact": "Archive decompression lacks aggregate byte, member and time budgets.",
+      "minimalReproduction": "Expand a high-ratio archive fixture in an isolated Workspace.",
+      "expected": "Archive extraction must stop at documented byte, member and time budgets before allocating or writing unbounded output.",
+      "actual": "The HTTP response paths are bounded; archive extraction still lacks an aggregate decompression budget.",
+      "evidence": [
+        "minicode/tools/archive_utils.py"
+      ],
+      "stableReproduction": true,
+      "environmentDependent": false,
+      "recommendedBatch": "Reliability 1B-2: File/command Tool correctness",
+      "requiredRedTest": "Archive bomb fixtures must stop at documented byte, member and time budgets."
+    },
+    {
+      "id": "TOOL-001",
+      "severity": "P1",
+      "capabilityId": "tool.read_file",
+      "userVisibleImpact": "Missing or unreadable files can be reported as successful empty files.",
+      "minimalReproduction": "Call read_file for a nonexistent path inside an isolated Workspace.",
+      "expected": "The Tool should return ok=false with a stable not_found or unreadable code.",
+      "actual": "The Tool returned ok=true, TOTAL_CHARS: 0 and no distinction from an empty file.",
+      "evidence": [
+        "minicode/tools/read_file.py",
+        "scripts/run_functional_audit.py"
+      ],
+      "stableReproduction": true,
+      "environmentDependent": false,
+      "recommendedBatch": "Reliability 1B-2: File/command Tool correctness",
+      "requiredRedTest": "Missing, permission-denied, directory, binary and true-empty fixtures must have distinct truthful outcomes."
+    },
+    {
+      "id": "TOOL-002",
+      "severity": "P3",
+      "capabilityId": "tool.file_line_count",
+      "userVisibleImpact": "A read-only Tool is classified as non-read-only/non-concurrency-safe, reducing truthful scheduling metadata.",
+      "minimalReproduction": "Inspect file_line_count ToolDefinition.is_read_only.",
+      "expected": "Read-only navigation tools should expose read-only and concurrency-safe metadata.",
+      "actual": "file_line_count is absent from the central read-only name set and has no explicit metadata.",
+      "evidence": [
+        "minicode/tooling.py",
+        "minicode/tools/file_line_count.py"
+      ],
+      "stableReproduction": true,
+      "environmentDependent": false,
+      "recommendedBatch": "Reliability 1B-2: File/command Tool correctness",
+      "requiredRedTest": "Registry metadata contract must enumerate every Tool's read/write, destructive and concurrency properties."
+    },
+    {
+      "id": "TOOL-003",
+      "severity": "P2",
+      "capabilityId": "tool.base64_encode",
+      "userVisibleImpact": "Several full-profile utility validators accept a missing schema-required field as an empty value.",
+      "minimalReproduction": "Call each validator with an empty object for base64_encode, hash, line_count, text_dedupe, text_join, text_sort and url_encode.",
+      "expected": "A field declared required in the Tool schema must be rejected when omitted.",
+      "actual": "All seven validators accept the empty object, so runtime behavior diverges from the model-visible schema.",
+      "evidence": [
+        "minicode/tools/encoding_utils.py",
+        "minicode/tools/crypto_utils.py",
+        "minicode/tools/text_utils.py",
+        "scripts/run_functional_audit.py"
+      ],
+      "stableReproduction": true,
+      "environmentDependent": false,
+      "recommendedBatch": "Reliability 1B-2: File/command Tool correctness",
+      "requiredRedTest": "Table-driven schema/validator conformance must reject every omitted required field and wrong scalar type."
+    },
+    {
+      "id": "SEC-005",
+      "severity": "P1",
+      "capabilityId": "security.workspace",
+      "userVisibleImpact": "Unhandled Tool errors can expose absolute Workspace paths and raw traceback excerpts to the model/user.",
+      "minimalReproduction": "Execute an isolated fixture Tool that raises with a Workspace path.",
+      "expected": "Tool errors should use closed codes and redacted diagnostics.",
+      "actual": "ToolRegistry.execute includes the raw exception and traceback excerpt containing the isolated absolute path.",
+      "evidence": [
+        "minicode/tooling.py",
+        "scripts/run_functional_audit.py"
+      ],
+      "stableReproduction": true,
+      "environmentDependent": false,
+      "recommendedBatch": "Reliability 1B-2: File/command Tool correctness",
+      "requiredRedTest": "Validation and runtime errors must redact paths, inputs, tokens, environment values and tracebacks."
+    },
+    {
+      "id": "MEM-001",
+      "severity": "P1",
+      "capabilityId": "memory.conversation_fact",
+      "userVisibleImpact": "Ordinary user facts are not persisted/retrievable across Sessions although error reflection can persist pending candidates.",
+      "minimalReproduction": "Submit the isolated phrase 小花是我唯一的好朋友。 through the current Memory write path, then search 小花.",
+      "expected": "A declared conversational fact intake path should create an approved/reviewable durable fact with scope and provenance.",
+      "actual": "No fact entry or search hit was produced; a separate web_search failure produced a pending inactive error_pattern candidate.",
+      "evidence": [
+        "minicode/memory_pipeline.py",
+        "docs/minicode-dashboard-batch-9-roadmap.md",
+        "scripts/run_functional_audit.py"
+      ],
+      "stableReproduction": true,
+      "environmentDependent": false,
+      "recommendedBatch": "Reliability 1B-3: Session/Memory persistence gaps",
+      "requiredRedTest": "Two isolated Sessions must prove the exact ordinary fact is persisted, approved, retrieved and injected without web_search."
+    }
+  ]
+}

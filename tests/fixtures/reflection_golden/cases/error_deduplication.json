@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "schema_version": 1,
+      "case_id": "error-same-call-two-sources-001",
+      "category": "error_deduplication",
+      "description": "Failed tool result and error event from one call are one logical error",
+      "task_description": "Run the auth regression test",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "run_command", "input": {"command": "pytest tests/test_auth.py -q"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "run_command", "status": "error", "is_error": true, "output_summary": "Expired token was accepted"},
+        {"event_id": "event-3", "call_id": "call-1", "type": "error", "tool_name": "run_command", "error_type": "AssertionError", "message": "Expired token was accepted"},
+        {"event_id": "event-4", "type": "task_result", "status": "failed"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "run_command", "error_type": "AssertionError", "message_key": "expired_token_accepted", "required_terms": ["expired token", "accepted"], "source_event_ids": ["event-2", "event-3"]}], "recoveries": [], "decisions": [], "verification": [{"verification_id": "verify-1", "result": "failed", "required_terms": ["expired token", "accepted"], "evidence_ids": ["event-1", "event-2"]}], "outcome": "failed"},
+      "expected_value": {"should_write_memory": true, "reasons": ["reusable_failure_pattern"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "failure", "semantic_key": "expired_token_accepted", "evidence_ids": ["event-2", "event-3"], "epistemic_status": "confirmed", "required_terms": ["expired token", "accepted"], "forbidden_terms": []}],
+      "forbidden_claims": [],
+      "notes": "Current engine emits two error strings for this one logical failure."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "error-same-message-different-calls-002",
+      "category": "error_deduplication",
+      "description": "The same message on two retry calls represents two failed occurrences",
+      "task_description": "Retry the flaky command once",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "run_command"},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "run_command", "status": "error", "is_error": true, "output_summary": "Connection timed out"},
+        {"event_id": "event-3", "call_id": "call-1", "type": "error", "tool_name": "run_command", "error_type": "TimeoutError", "message": "Connection timed out"},
+        {"event_id": "event-4", "call_id": "call-2", "type": "tool_call", "tool_name": "run_command"},
+        {"event_id": "event-5", "call_id": "call-2", "type": "tool_result", "tool_name": "run_command", "status": "error", "is_error": true, "output_summary": "Connection timed out"},
+        {"event_id": "event-6", "call_id": "call-2", "type": "error", "tool_name": "run_command", "error_type": "TimeoutError", "message": "Connection timed out"},
+        {"event_id": "event-7", "type": "task_result", "status": "failed"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "run_command", "error_type": "TimeoutError", "message_key": "connection_timeout_attempt_1", "required_terms": ["connection", "timed out"], "source_event_ids": ["event-2", "event-3"]}, {"error_id": "error-2", "call_id": "call-2", "tool_name": "run_command", "error_type": "TimeoutError", "message_key": "connection_timeout_attempt_2", "required_terms": ["connection", "timed out"], "source_event_ids": ["event-5", "event-6"]}], "recoveries": [], "decisions": [], "verification": [{"verification_id": "verify-1", "result": "failed", "required_terms": ["connection", "timed out"], "evidence_ids": ["event-4", "event-5"]}], "outcome": "failed"},
+      "expected_value": {"should_write_memory": true, "reasons": ["repeated_failure_after_retry"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "failure", "semantic_key": "retry_did_not_resolve_timeout", "evidence_ids": ["event-2", "event-5"], "epistemic_status": "confirmed", "required_terms": ["connection", "timed out"], "forbidden_terms": ["resolved"]}],
+      "forbidden_claims": [{"required_terms": ["timeout", "resolved"]}],
+      "notes": "Call identity prevents over-merging retries."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "error-path-line-distinction-003",
+      "category": "error_deduplication",
+      "description": "Similar exceptions at different files are distinct errors",
+      "task_description": "Compile two modules",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "compile", "error_type": "SyntaxError", "message": "src/a.py line 10: invalid syntax", "files": ["src/a.py"]},
+        {"event_id": "event-2", "call_id": "call-2", "type": "error", "tool_name": "compile", "error_type": "SyntaxError", "message": "src/b.py line 10: invalid syntax", "files": ["src/b.py"]},
+        {"event_id": "event-3", "type": "task_result", "status": "failed"}
+      ],
+      "expected_evidence": {"files_read": ["src/a.py", "src/b.py"], "files_changed": [], "tools": ["compile"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "compile", "error_type": "SyntaxError", "message_key": "syntax_src_a", "required_terms": ["src/a.py", "invalid syntax"], "source_event_ids": ["event-1"]}, {"error_id": "error-2", "call_id": "call-2", "tool_name": "compile", "error_type": "SyntaxError", "message_key": "syntax_src_b", "required_terms": ["src/b.py", "invalid syntax"], "source_event_ids": ["event-2"]}], "recoveries": [], "decisions": [], "verification": [], "outcome": "failed"},
+      "expected_value": {"should_write_memory": true, "reasons": ["multiple_distinct_failures"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "Line normalization must not erase the file distinction."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "error-traceback-summary-one-004",
+      "category": "error_deduplication",
+      "description": "A traceback and summary from one call describe one exception",
+      "task_description": "Load the application configuration",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_result", "tool_name": "run_command", "status": "error", "is_error": true, "output_summary": "KeyError: DATABASE_URL"},
+        {"event_id": "event-2", "call_id": "call-1", "type": "error", "tool_name": "run_command", "error_type": "KeyError", "message": "Traceback: config.py line 42 -> KeyError: DATABASE_URL", "files": ["config.py"]},
+        {"event_id": "event-3", "type": "task_result", "status": "failed"}
+      ],
+      "expected_evidence": {"files_read": ["config.py"], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "run_command", "error_type": "KeyError", "message_key": "missing_database_url", "required_terms": ["keyerror", "database_url"], "source_event_ids": ["event-1", "event-2"]}], "recoveries": [], "decisions": [], "verification": [], "outcome": "failed"},
+      "expected_value": {"should_write_memory": true, "reasons": ["configuration_failure"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "failure", "semantic_key": "missing_database_url", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "required_terms": ["database_url"], "forbidden_terms": ["password"]}],
+      "forbidden_claims": [],
+      "notes": "Traceback detail and summary remain linked to one logical error."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "error-missing-call-empty-chinese-005",
+      "category": "error_deduplication",
+      "description": "Missing call IDs and empty messages do not hide a separate Chinese error",
+      "task_description": "检查构建错误",
+      "trace": [
+        {"event_id": "event-1", "type": "error", "tool_name": "build", "error_type": "BuildError", "message": "模块依赖循环，无法完成构建"},
+        {"event_id": "event-2", "type": "error", "tool_name": "build", "error_type": "UnknownError", "message": ""},
+        {"event_id": "event-3", "call_id": "call-2", "type": "error", "tool_name": "build", "error_type": "PermissionError", "message": "Permission denied while writing dist/app.whl", "files": ["dist/app.whl"]},
+        {"event_id": "event-4", "type": "task_result", "status": "failed"}
+      ],
+      "expected_evidence": {"files_read": ["dist/app.whl"], "files_changed": [], "tools": ["build"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": null, "tool_name": "build", "error_type": "BuildError", "message_key": "dependency_cycle", "required_terms": ["依赖循环", "无法完成构建"], "source_event_ids": ["event-1"]}, {"error_id": "error-2", "call_id": "call-2", "tool_name": "build", "error_type": "PermissionError", "message_key": "dist_permission_denied", "required_terms": ["permission denied", "dist/app.whl"], "source_event_ids": ["event-3"]}], "recoveries": [], "decisions": [], "verification": [], "outcome": "failed"},
+      "expected_value": {"should_write_memory": true, "reasons": ["multiple_distinct_failures"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["unknownerror", "root cause"]}],
+      "notes": "An empty error event has no independently labelable fact."
+    }
+  ]
+}

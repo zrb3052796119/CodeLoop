@@ -1,0 +1,49 @@
+{
+  "addedFiles": {
+    "minicode/mcp.py": {
+      "reasonCode": "mcp_runtime_observation"
+    },
+    "minicode/mcp_event_contract.py": {
+      "reasonCode": "mcp_runtime_observation"
+    },
+    "minicode/mcp_observation.py": {
+      "reasonCode": "mcp_runtime_observation"
+    },
+    "minicode/tooling.py": {
+      "reasonCode": "mcp_runtime_observation"
+    }
+  },
+  "allowedChangesFromParent": {
+    "minicode/agent_loop.py": {
+      "reasonCode": "mcp_runtime_observation"
+    },
+    "minicode/run_journal.py": {
+      "reasonCode": "mcp_runtime_observation"
+    }
+  },
+  "baselineId": "memory-retrieval-production-v10",
+  "files": {
+    "minicode/agent_loop.py": "af245288753e71676f3765e8e897871262a4b4356659e3979a98c80517623aaa",
+    "minicode/context_compactor.py": "f05bd72a46be720bfa9b50e42e4824825b5e532c1b8885ae6db1ab7a316b4bec",
+    "minicode/headless.py": "f234cd32c571258d9099b712644b4df8fe0d055b31645a45efda32319715e2af",
+    "minicode/main.py": "678dec824b3ddc05ace5af45db9743c20baa13fdf3eedcf7e7fcadc1756a7bc4",
+    "minicode/mcp.py": "6625e6f80f6554b51c619ef418cdd09c47fa45ca7ce466f47929046e306d6417",
+    "minicode/mcp_event_contract.py": "583dc481a8e2d1ff30b9b3d6cf091a7c06bed91e14d7580f4399967745a25daa",
+    "minicode/mcp_observation.py": "d822098ee1f4f61a127f740806cdaa6f8d1a7cbeeb6e3f8cbe227948142fd0b8",
+    "minicode/memory.py": "2706a3e684c84fc830a7c553b907f45a06899c6a0d091a5c366c1dfbd3741108",
+    "minicode/memory_candidate_consolidation.py": "a2f44bd09a8594819f740f001c819458962fb00181206cf16a5f529b3169c6e4",
+    "minicode/memory_injector.py": "059d2812f0fa92e2d4db2ee3463b5843c6c84194b83ed11da1de0ebd921721ee",
+    "minicode/memory_pipeline.py": "a71062f86268010245ce1e924d65be8314bcc07d2afe142e5797726f957c35a1",
+    "minicode/memory_retrieval.py": "33b27c4e5ea32321d6ba776918da374b91ea04b7358649fc8e0167b56c576376",
+    "minicode/pricing.py": "ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0",
+    "minicode/run_events.py": "ba356751ac152115779260284272b36274c92cf73923aed0bfa104bde1c471c4",
+    "minicode/run_journal.py": "b852e052a255b325f189a13a1c23efedfffb9f5655dabe267fc56b43dbf1c5ae",
+    "minicode/run_lifecycle.py": "1a8103e0fc524fb6bcdc59f313fe5e236c1a86a9a9c548b73aeb4d185265cdf9",
+    "minicode/tooling.py": "ea2c9bc6c6d6539d51b8edcb8d5e81bfd32764e8dc26c24285e1e3d2d5e67952",
+    "minicode/tui/input_handler.py": "f826956da80bc6d3e0f0b04f6af519fd9a9876fa4224bfcbf497e9d94590069b",
+    "minicode/working_memory.py": "a3a44415ec418116c14300746cbb4cae3a14a181bc634c87a2600753ecc256e5"
+  },
+  "parentBaselineId": "memory-retrieval-production-v9",
+  "reason": "Batch 5C-1A run-scoped MCP runtime observation",
+  "schemaVersion": 1
+}

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "minicode-dashboard",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "minicode.gateway"],
+      "port": 8080
+    }
+  ]
+}

@@ -1,0 +1,446 @@
+{
+  "schema_version": "1.0",
+  "document_type": "cases",
+  "synthetic_data": true,
+  "reference_time": 1736942400,
+  "cases": [
+    {
+      "case_id": "sg-pos-zero-01",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "zero_overlap_paraphrase",
+      "query": "Keep the checkout request from being applied twice when a shopper retries.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-zero-01",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "Order writes require an idempotency ledger keyed by the client operation identifier.",
+          "tags": [
+            "idempotency",
+            "operation-ledger"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "checkout-contract"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-zero-01"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "zero_overlap_paraphrase",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "The ledger prevents a retried checkout operation from creating a second write.",
+      "why_lexical_retrieval_may_fail": "The request describes duplicate application while the memory uses idempotency terminology.",
+      "miss_impact": "A retry can create duplicate orders.",
+      "memory_kind": "constraint",
+      "annotation_evidence": "Synthetic checkout contract reviewed as a direct operational equivalence.",
+      "safety_lifecycle_expectation": "Approved active project constraint is injectable.",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-object-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-zero-02",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "zero_overlap_paraphrase",
+      "query": "Prevent two workers from taking the same pending job.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-zero-02",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "Queue claims use compare-and-swap on the lease generation before execution.",
+          "tags": [
+            "lease-generation",
+            "cas"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "worker-claim-test"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-zero-02"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "zero_overlap_paraphrase",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "Atomic lease generation claims ensure only one worker owns a pending unit.",
+      "why_lexical_retrieval_may_fail": "The symptom uses worker ownership language while the memory names CAS leases.",
+      "miss_impact": "Concurrent workers can execute one job twice.",
+      "memory_kind": "stable_fact",
+      "annotation_evidence": "Synthetic concurrency test establishes exclusive queue ownership.",
+      "safety_lifecycle_expectation": "Approved active local fact is injectable.",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-zero-03",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "zero_overlap_paraphrase",
+      "query": "Show commands without a decorative introduction.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-zero-03",
+          "scope": "user",
+          "category": "preference",
+          "content": "The user favors terse terminal responses that begin with the actionable line.",
+          "tags": [
+            "terse-cli",
+            "action-first"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "explicit-user-choice"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-zero-03"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "zero_overlap_paraphrase",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "Starting with the actionable line implements the requested absence of decorative preamble.",
+      "why_lexical_retrieval_may_fail": "The request says decorative introduction while the memory says terse and action first.",
+      "miss_impact": "Responses violate a stable user interaction preference.",
+      "memory_kind": "preference",
+      "annotation_evidence": "Synthetic explicit user preference is directly applicable to terminal output.",
+      "safety_lifecycle_expectation": "Approved active USER preference is injectable.",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-zero-04",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "zero_overlap_paraphrase",
+      "query": "批量导入时不要因为一行坏数据终止全部处理。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-zero-04",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "解析器采用逐记录隔离，并把无效项送入拒收清单。",
+          "tags": [
+            "逐记录隔离",
+            "拒收清单"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "ingest-contract"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-zero-04"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "zero_overlap_paraphrase",
+      "query_language": "zh",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "逐记录隔离允许有效记录继续，并单独收集错误项。",
+      "why_lexical_retrieval_may_fail": "查询使用坏数据和终止，记忆使用隔离和拒收清单。",
+      "miss_impact": "单条错误会错误地中断整个批次。",
+      "memory_kind": "constraint",
+      "annotation_evidence": "合成导入契约明确规定错误隔离行为。",
+      "safety_lifecycle_expectation": "已批准且活跃的项目约束可以注入。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-direction-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-zero-05",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "zero_overlap_paraphrase",
+      "query": "Resume a long publication after the process restarts.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-zero-05",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "The publisher persists a committed cursor after each completed source segment.",
+          "tags": [
+            "committed-cursor",
+            "source-segment"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "restart-drill"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-zero-05"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "zero_overlap_paraphrase",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "low",
+      "normalized_token_overlap": 0.071429,
+      "why_semantically_relevant": "A durable committed cursor supplies the continuation point after termination.",
+      "why_lexical_retrieval_may_fail": "The goal says resume after restart while the memory describes persisted segment cursors.",
+      "miss_impact": "The publication restarts from the beginning.",
+      "memory_kind": "recovery",
+      "annotation_evidence": "Synthetic restart drill verified cursor continuation.",
+      "safety_lifecycle_expectation": "Approved active local recovery is injectable.",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-zero-06",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "zero_overlap_paraphrase",
+      "query": "回答里只保留决定和下一步。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-zero-06",
+          "scope": "user",
+          "category": "preference",
+          "content": "用户偏好省略过程性寒暄，直接呈现结论与可执行动作。",
+          "tags": [
+            "结论优先",
+            "省略寒暄"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "explicit-user-choice"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-zero-06"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "zero_overlap_paraphrase",
+      "query_language": "zh",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "省略寒暄并给出结论动作与当前请求完全一致。",
+      "why_lexical_retrieval_may_fail": "查询使用决定和下一步，记忆使用结论、动作和寒暄。",
+      "miss_impact": "回复格式违背稳定用户偏好。",
+      "memory_kind": "preference",
+      "annotation_evidence": "合成显式用户选择证明该偏好稳定适用。",
+      "safety_lifecycle_expectation": "已批准且活跃的 USER 偏好可以注入。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    }
+  ]
+}

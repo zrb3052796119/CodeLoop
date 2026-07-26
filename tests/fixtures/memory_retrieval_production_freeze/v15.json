@@ -1,0 +1,60 @@
+{
+  "addedFiles": {
+    "minicode/conversation_turn_store.py": {
+      "reasonCode": "dashboard_chat_durable_turn_identity"
+    },
+    "minicode/session.py": {
+      "reasonCode": "dashboard_chat_durable_turn_identity"
+    },
+    "minicode/web/http.py": {
+      "reasonCode": "dashboard_chat_durable_turn_identity"
+    },
+    "minicode/web/static/assets/app.js": {
+      "reasonCode": "dashboard_chat_durable_turn_identity"
+    }
+  },
+  "allowedChangesFromParent": {
+    "minicode/conversation.py": {
+      "reasonCode": "dashboard_chat_durable_turn_identity"
+    },
+    "minicode/web/chat_http.py": {
+      "reasonCode": "dashboard_chat_durable_turn_identity"
+    }
+  },
+  "baselineId": "memory-retrieval-production-v15",
+  "files": {
+    "minicode/agent_loop.py": "af245288753e71676f3765e8e897871262a4b4356659e3979a98c80517623aaa",
+    "minicode/agent_runtime.py": "dffb15aa7fc74dcd839880e650ec1f61651426d735bab5bce3c7c9679c9405f6",
+    "minicode/context_compactor.py": "f05bd72a46be720bfa9b50e42e4824825b5e532c1b8885ae6db1ab7a316b4bec",
+    "minicode/conversation.py": "8cf116a787bac1ca809d42ecc2ad61abce9ad13e6acb3338f2e1baf0e3842c59",
+    "minicode/conversation_turn_store.py": "fd5448310122d5ff6b746ea279451381e3364e52fc26a349ca6e021753216ceb",
+    "minicode/gateway.py": "3c2769986a2f0e0fd8f224438006def610e7edee198e7fdac6cf9b5559df02e4",
+    "minicode/headless.py": "91bd8ef030a5bdd05f5d80c618596b4f600e31de5c39fffe242d108fc9899688",
+    "minicode/main.py": "678dec824b3ddc05ace5af45db9743c20baa13fdf3eedcf7e7fcadc1756a7bc4",
+    "minicode/mcp.py": "e39f2e44d2a4c06f2e53114f5664df4d9bf2b10435cc3917cb95c2f50f35d077",
+    "minicode/mcp_current_state.py": "063fed4b7e4a8ed117be46482fa1aeb876cb3fcffc24fb69073ce3a96553cbcc",
+    "minicode/mcp_event_contract.py": "583dc481a8e2d1ff30b9b3d6cf091a7c06bed91e14d7580f4399967745a25daa",
+    "minicode/mcp_observation.py": "d822098ee1f4f61a127f740806cdaa6f8d1a7cbeeb6e3f8cbe227948142fd0b8",
+    "minicode/memory.py": "2706a3e684c84fc830a7c553b907f45a06899c6a0d091a5c366c1dfbd3741108",
+    "minicode/memory_candidate_consolidation.py": "a2f44bd09a8594819f740f001c819458962fb00181206cf16a5f529b3169c6e4",
+    "minicode/memory_injector.py": "059d2812f0fa92e2d4db2ee3463b5843c6c84194b83ed11da1de0ebd921721ee",
+    "minicode/memory_pipeline.py": "a71062f86268010245ce1e924d65be8314bcc07d2afe142e5797726f957c35a1",
+    "minicode/memory_retrieval.py": "33b27c4e5ea32321d6ba776918da374b91ea04b7358649fc8e0167b56c576376",
+    "minicode/pricing.py": "ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0",
+    "minicode/run_events.py": "ba356751ac152115779260284272b36274c92cf73923aed0bfa104bde1c471c4",
+    "minicode/run_journal.py": "b852e052a255b325f189a13a1c23efedfffb9f5655dabe267fc56b43dbf1c5ae",
+    "minicode/run_lifecycle.py": "b6bd734a39dae2219ce0e4616d4a8e0a2121b7a87aa1f0cabccc18e0b7a57b50",
+    "minicode/session.py": "b0f4f7946a8206e30cc454bc25f48eda8a8ba8fd3817c353b067d7418aef3ee7",
+    "minicode/tooling.py": "267bead40137dfb0133b4dae797830b0150deb9ac744f7bd66b5d6cfbe7a0d88",
+    "minicode/tools/__init__.py": "7ae5a05d64801ac5faee5f1d2547a7c6d3f8cdbe9c6f6a041a64351bb9a1ae0d",
+    "minicode/tools/task.py": "65ee3fd9f60b0c18fa31d2062d9e1e08c949f9ca2a5ea4b1d402d80ad0095ef7",
+    "minicode/tui/input_handler.py": "f826956da80bc6d3e0f0b04f6af519fd9a9876fa4224bfcbf497e9d94590069b",
+    "minicode/web/chat_http.py": "dc213a384b68b7daea87c310e9221009729eb5fb868aaf15630f651d34ee319d",
+    "minicode/web/http.py": "3ef4bacf3eea4e53fbe9154b4372c293b4886a04114dbeac4406a51fe35f80c6",
+    "minicode/web/static/assets/app.js": "6c6f05008499e210d7f05226e5d467a4f89dc936ac0bb1f3fef0985d62d96014",
+    "minicode/working_memory.py": "a3a44415ec418116c14300746cbb4cae3a14a181bc634c87a2600753ecc256e5"
+  },
+  "parentBaselineId": "memory-retrieval-production-v14",
+  "reason": "Batch 6B-2A durable turn identity and restart recovery",
+  "schemaVersion": 1
+}

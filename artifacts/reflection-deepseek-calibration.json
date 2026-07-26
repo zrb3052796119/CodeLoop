@@ -1,0 +1,914 @@
+{
+  "adjudicated_metrics": {
+    "adjudicated_expected_case_match_count": 4,
+    "adjudicated_expected_case_recall": 0.6666666666666666,
+    "evaluator_label_disagreement_cases": [
+      "holdout-project-constraint-005",
+      "holdout-unverified-recovery-024",
+      "holdout-partial-recovery-008"
+    ],
+    "exact_claim_metrics_preserved": {
+      "f1": 0.4,
+      "false_negatives": 3,
+      "false_positives": 6,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "true_positives": 3
+    },
+    "exact_expected_case_match_count": 3,
+    "exact_expected_case_recall": 0.5,
+    "legal_synonym_or_split_claim_cases": [
+      "holdout-project-constraint-005"
+    ],
+    "policy_decisions": {
+      "holdout-partial-recovery-008": "The error fact is grounded, but unknown outcome and unverified recovery retain the no-write policy.",
+      "holdout-project-constraint-005": "Two separately grounded constraint/decision claims jointly cover the combined expected policy; exact metric remains unchanged.",
+      "holdout-unverified-recovery-024": "The error fact is grounded, but the no-write label is retained because failed unverified recovery lacks closed-loop value."
+    },
+    "positive_expected_case_count": 6
+  },
+  "baseline": {
+    "final_gate_replay": {
+      "accepted_claim_type_counts": {},
+      "all_claims_rejected_count": 3,
+      "all_claims_rejected_rate": 0.75,
+      "call_count": 8,
+      "candidate_claim_type_counts": {
+        "decision": 1,
+        "error_pattern": 3,
+        "recovery": 2,
+        "root_cause": 1,
+        "verification_rule": 1
+      },
+      "candidate_epistemic_status_counts": {
+        "confirmed": 7,
+        "inferred": 1
+      },
+      "candidate_reference_counts": {
+        "error": 5,
+        "evidence": 10,
+        "recovery": 2,
+        "verification": 3
+      },
+      "epistemic_mismatches": 0,
+      "forbidden_accepted_claims": 0,
+      "invalid_evidence_references": 0,
+      "llm_only_correct_cases": [],
+      "low_value_false_write_count": 0,
+      "parser_failure_codes": {
+        "invalid_semantic_key": 4
+      },
+      "parser_failure_detail_codes": {
+        "semantic_key_contains_hyphen": 3,
+        "semantic_key_multiple_violations": 1
+      },
+      "parser_success_rate": 0.5,
+      "root_cause_candidate_overclaim": 1,
+      "root_cause_overclaim": 0,
+      "rule_only_correct_cases": [
+        "holdout-provider-fallback-033",
+        "holdout-timeout-fallback-032",
+        "holdout-causal-trap-025"
+      ],
+      "schema_failure_count": 4,
+      "schema_failure_rate": 0.5,
+      "semantic_key_failure_count": 4,
+      "semantic_key_failure_rate": 0.5,
+      "validator_claim_quality": {
+        "f1": 0.0,
+        "false_negatives": 3,
+        "false_positives": 1,
+        "precision": 0.0,
+        "recall": 0.0,
+        "true_positives": 0
+      },
+      "validator_issue_code_counts": {
+        "claim_statement_not_grounded": 7,
+        "claim_type_evidence_mismatch": 4,
+        "verification_rule_not_stable": 1
+      },
+      "value_durable_signal_code_counts": {},
+      "value_quality": {
+        "f1": 0.0,
+        "false_negatives": 3,
+        "false_positives": 0,
+        "precision": 1.0,
+        "recall": 0.0,
+        "true_positives": 0
+      },
+      "value_reason_code_counts": {
+        "generic_error_summary": 2,
+        "no_durable_signal": 1,
+        "no_valid_claim": 3,
+        "unsupported_root_cause": 1,
+        "unverified_recovery_context": 1
+      }
+    },
+    "provider": {
+      "call_count": 8,
+      "eligible_count": 10,
+      "estimated_cost_usd": 0.00207578,
+      "input_safety_rejected_count": 2,
+      "latency_ms": {
+        "average": 2456.7031769995538,
+        "median": 2287.1182079998107,
+        "p95": 3897.297666999293
+      },
+      "negative_sample_count": 2,
+      "output_schema_version": 1,
+      "prompt_version": "baseline",
+      "prompt_version_hash": "f7d3cdc7bb989fa7",
+      "selected_case_count": 10,
+      "tokens": {
+        "cache_creation": 0,
+        "cache_read": 6272,
+        "input": 7311,
+        "output": 2190
+      },
+      "usage_sources": {
+        "provider": 8
+      }
+    }
+  },
+  "calibrated": {
+    "final_gate_replay": {
+      "accepted_claim_type_counts": {
+        "constraint": 1,
+        "decision": 2,
+        "error_pattern": 4
+      },
+      "all_claims_rejected_count": 0,
+      "all_claims_rejected_rate": 0.0,
+      "call_count": 8,
+      "candidate_claim_type_counts": {
+        "constraint": 1,
+        "decision": 2,
+        "error_pattern": 6,
+        "recovery": 4,
+        "verification_rule": 3
+      },
+      "candidate_epistemic_status_counts": {
+        "confirmed": 13,
+        "inferred": 3
+      },
+      "candidate_reference_counts": {
+        "error": 9,
+        "evidence": 19,
+        "recovery": 2,
+        "verification": 5
+      },
+      "epistemic_mismatches": 0,
+      "forbidden_accepted_claims": 0,
+      "invalid_evidence_references": 0,
+      "llm_only_correct_cases": [],
+      "low_value_false_write_count": 0,
+      "parser_failure_codes": {},
+      "parser_failure_detail_codes": {},
+      "parser_success_rate": 1.0,
+      "root_cause_candidate_overclaim": 0,
+      "root_cause_overclaim": 0,
+      "rule_only_correct_cases": [
+        "holdout-timeout-fallback-032",
+        "holdout-verified-recovery-007"
+      ],
+      "schema_failure_count": 0,
+      "schema_failure_rate": 0.0,
+      "semantic_key_failure_count": 0,
+      "semantic_key_failure_rate": 0.0,
+      "validator_claim_quality": {
+        "f1": 0.4,
+        "false_negatives": 3,
+        "false_positives": 6,
+        "precision": 0.3333333333333333,
+        "recall": 0.5,
+        "true_positives": 3
+      },
+      "validator_issue_code_counts": {
+        "claim_statement_not_grounded": 7,
+        "claim_type_evidence_mismatch": 7,
+        "verification_rule_not_stable": 3
+      },
+      "value_durable_signal_code_counts": {
+        "key_technical_decision": 2,
+        "reusable_error_pattern": 4,
+        "stable_project_constraint": 1
+      },
+      "value_quality": {
+        "f1": 1.0,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 6
+      },
+      "value_reason_code_counts": {
+        "accepted_durable_reflection": 6,
+        "unverified_recovery_context": 2
+      }
+    },
+    "provider": {
+      "call_count": 8,
+      "eligible_count": 10,
+      "estimated_cost_usd": 0.00279538,
+      "input_safety_rejected_count": 2,
+      "latency_ms": {
+        "average": 2652.059802250051,
+        "median": 2710.350854000353,
+        "p95": 3210.1963340010116
+      },
+      "negative_sample_count": 2,
+      "output_schema_version": 2,
+      "prompt_version": "calibrated",
+      "prompt_version_hash": "0906f8a16cd00ca5",
+      "selected_case_count": 10,
+      "tokens": {
+        "cache_creation": 0,
+        "cache_read": 7296,
+        "input": 11903,
+        "output": 2208
+      },
+      "usage_sources": {
+        "provider": 8
+      }
+    }
+  },
+  "comparison_method": "Captured synthetic responses replayed through the same final Parser, Validator, and ValueGate; provider reports supply usage only.",
+  "expansion_gate": {
+    "criteria": {
+      "epistemic_mismatches_zero": true,
+      "final_root_cause_overclaim_zero": true,
+      "invalid_evidence_references_zero": true,
+      "low_value_false_writes_zero": true,
+      "negative_real_samples_at_least_8": false,
+      "parser_success_at_least_95_percent": true,
+      "semantic_key_failure_at_most_5_percent": true,
+      "validator_precision_at_least_80_percent": false
+    },
+    "failed_criteria": [
+      "negative_real_samples_at_least_8",
+      "validator_precision_at_least_80_percent"
+    ],
+    "passed": false,
+    "recommendation": "do_not_expand_shadow"
+  },
+  "experiment": "deepseek_reflection_schema_value_calibration",
+  "intermediate_calibrated_pilot": {
+    "call_count": 8,
+    "eligible_count": 10,
+    "estimated_cost_usd": 0.00248402,
+    "input_safety_rejected_count": 2,
+    "latency_ms": {
+      "average": 3022.0124947500153,
+      "median": 3170.544416499979,
+      "p95": 4140.578374999677
+    },
+    "negative_sample_count": 2,
+    "output_schema_version": 2,
+    "prompt_version": "calibrated",
+    "prompt_version_hash": "cfe8ce94bf72ba13",
+    "selected_case_count": 10,
+    "tokens": {
+      "cache_creation": 0,
+      "cache_read": 5376,
+      "input": 10119,
+      "output": 2468
+    },
+    "usage_sources": {
+      "provider": 8
+    }
+  },
+  "known_limits": [
+    "Only eight selected cases produced provider responses per arm; two security cases were rejected before provider invocation.",
+    "Only two negative cases reached the provider in the final arm, below the required eight.",
+    "Validator precision remains below the expansion threshold even though case-level write decisions improved.",
+    "Synthetic holdout evidence does not establish production-distribution quality."
+  ],
+  "local_performance": {
+    "iterations": {
+      "parser": 5000,
+      "replay_pipeline": 500
+    },
+    "milliseconds_per_operation": {
+      "invalid_parse_with_detail": 0.005900691600254504,
+      "replay_parser_validator_value": 0.2679404999980761,
+      "valid_parse": 0.03315616680010862
+    },
+    "network_calls": 0,
+    "prompt_schema_size": {
+      "baseline_prompt_characters": 1281,
+      "baseline_schema_bytes": 1364,
+      "calibrated_prompt_characters": 3426,
+      "calibrated_schema_bytes": 2197,
+      "prompt_character_delta": 2145,
+      "schema_byte_delta": 833
+    },
+    "schema_version": 1
+  },
+  "per_case": [
+    {
+      "baseline": {
+        "candidate_claim_type_counts": {
+          "error_pattern": 1,
+          "verification_rule": 1
+        },
+        "candidate_epistemic_status_counts": {
+          "confirmed": 2
+        },
+        "candidate_reference_counts": {
+          "error": 1,
+          "evidence": 3,
+          "recovery": 0,
+          "verification": 1
+        },
+        "durable_signal_codes": [],
+        "expected_claim_count": 1,
+        "expected_memory_write": true,
+        "fallback_reason": "all_llm_claims_rejected",
+        "false_negative_claim_count": 1,
+        "false_positive_claim_count": 0,
+        "matched_claim_count": 0,
+        "parser_failure_code": null,
+        "parser_failure_detail_code": null,
+        "parser_success": true,
+        "production_source": "rule",
+        "rejected_claim_count": 2,
+        "valid_claim_count": 0,
+        "validator_issue_code_counts": {
+          "claim_statement_not_grounded": 2,
+          "claim_type_evidence_mismatch": 1,
+          "verification_rule_not_stable": 1
+        },
+        "value_accepted": false,
+        "value_reason_codes": [
+          "generic_error_summary",
+          "no_valid_claim"
+        ]
+      },
+      "calibrated": {
+        "candidate_claim_type_counts": {
+          "error_pattern": 1,
+          "verification_rule": 1
+        },
+        "candidate_epistemic_status_counts": {
+          "confirmed": 2
+        },
+        "candidate_reference_counts": {
+          "error": 1,
+          "evidence": 3,
+          "recovery": 0,
+          "verification": 1
+        },
+        "durable_signal_codes": [
+          "reusable_error_pattern"
+        ],
+        "expected_claim_count": 1,
+        "expected_memory_write": true,
+        "fallback_reason": null,
+        "false_negative_claim_count": 0,
+        "false_positive_claim_count": 0,
+        "matched_claim_count": 1,
+        "parser_failure_code": null,
+        "parser_failure_detail_code": null,
+        "parser_success": true,
+        "production_source": "llm",
+        "rejected_claim_count": 1,
+        "valid_claim_count": 1,
+        "validator_issue_code_counts": {
+          "claim_statement_not_grounded": 1,
+          "claim_type_evidence_mismatch": 1,
+          "verification_rule_not_stable": 1
+        },
+        "value_accepted": true,
+        "value_reason_codes": [
+          "accepted_durable_reflection"
+        ]
+      },
+      "case_id": "holdout-causal-trap-025"
+    },
+    {
+      "baseline": {
+        "candidate_claim_type_counts": {
+          "error_pattern": 1,
+          "recovery": 1
+        },
+        "candidate_epistemic_status_counts": {
+          "confirmed": 1,
+          "inferred": 1
+        },
+        "candidate_reference_counts": {
+          "error": 1,
+          "evidence": 2,
+          "recovery": 0,
+          "verification": 0
+        },
+        "durable_signal_codes": [],
+        "expected_claim_count": 0,
+        "expected_memory_write": false,
+        "fallback_reason": "llm_value_rejected",
+        "false_negative_claim_count": 0,
+        "false_positive_claim_count": 1,
+        "matched_claim_count": 0,
+        "parser_failure_code": null,
+        "parser_failure_detail_code": null,
+        "parser_success": true,
+        "production_source": "rule",
+        "rejected_claim_count": 1,
+        "valid_claim_count": 1,
+        "validator_issue_code_counts": {
+          "claim_statement_not_grounded": 1,
+          "claim_type_evidence_mismatch": 1
+        },
+        "value_accepted": false,
+        "value_reason_codes": [
+          "unverified_recovery_context"
+        ]
+      },
+      "calibrated": {
+        "candidate_claim_type_counts": {
+          "error_pattern": 1,
+          "recovery": 1
+        },
+        "candidate_epistemic_status_counts": {
+          "confirmed": 1,
+          "inferred": 1
+        },
+        "candidate_reference_counts": {
+          "error": 1,
+          "evidence": 2,
+          "recovery": 0,
+          "verification": 0
+        },
+        "durable_signal_codes": [],
+        "expected_claim_count": 0,
+        "expected_memory_write": false,
+        "fallback_reason": "llm_value_rejected",
+        "false_negative_claim_count": 0,
+        "false_positive_claim_count": 1,
+        "matched_claim_count": 0,
+        "parser_failure_code": null,
+        "parser_failure_detail_code": null,
+        "parser_success": true,
+        "production_source": "rule",
+        "rejected_claim_count": 1,
+        "valid_claim_count": 1,
+        "validator_issue_code_counts": {
+          "claim_statement_not_grounded": 1,
+          "claim_type_evidence_mismatch": 1
+        },
+        "value_accepted": false,
+        "value_reason_codes": [
+          "unverified_recovery_context"
+        ]
+      },
+      "case_id": "holdout-partial-recovery-008"
+    },
+    {
+      "baseline": {
+        "candidate_claim_type_counts": {},
+        "candidate_epistemic_status_counts": {},
+        "candidate_reference_counts": {
+          "error": 0,
+          "evidence": 0,
+          "recovery": 0,
+          "verification": 0
+        },
+        "durable_signal_codes": [],
+        "expected_claim_count": 1,
+        "expected_memory_write": true,
+        "fallback_reason": "invalid_semantic_key",
+        "false_negative_claim_count": 1,
+        "false_positive_claim_count": 0,
+        "matched_claim_count": 0,
+        "parser_failure_code": "invalid_semantic_key",
+        "parser_failure_detail_code": "semantic_key_contains_hyphen",
+        "parser_success": false,
+        "production_source": "rule",
+        "rejected_claim_count": 0,
+        "valid_claim_count": 0,
+        "validator_issue_code_counts": {},
+        "value_accepted": null,
+        "value_reason_codes": []
+      },
+      "calibrated": {
+        "candidate_claim_type_counts": {
+          "constraint": 1,
+          "decision": 1
+        },
+        "candidate_epistemic_status_counts": {
+          "confirmed": 2
+        },
+        "candidate_reference_counts": {
+          "error": 0,
+          "evidence": 2,
+          "recovery": 0,
+          "verification": 0
+        },
+        "durable_signal_codes": [
+          "stable_project_constraint",
+          "key_technical_decision"
+        ],
+        "expected_claim_count": 1,
+        "expected_memory_write": true,
+        "fallback_reason": null,
+        "false_negative_claim_count": 1,
+        "false_positive_claim_count": 2,
+        "matched_claim_count": 0,
+        "parser_failure_code": null,
+        "parser_failure_detail_code": null,
+        "parser_success": true,
+        "production_source": "llm",
+        "rejected_claim_count": 0,
+        "valid_claim_count": 2,
+        "validator_issue_code_counts": {},
+        "value_accepted": true,
+        "value_reason_codes": [
+          "accepted_durable_reflection"
+        ]
+      },
+      "case_id": "holdout-project-constraint-005"
+    },
+    {
+      "baseline": {
+        "candidate_claim_type_counts": {
+          "decision": 1
+        },
+        "candidate_epistemic_status_counts": {
+          "confirmed": 1
+        },
+        "candidate_reference_counts": {
+          "error": 0,
+          "evidence": 1,
+          "recovery": 0,
+          "verification": 0
+        },
+        "durable_signal_codes": [],
+        "expected_claim_count": 1,
+        "expected_memory_write": true,
+        "fallback_reason": "all_llm_claims_rejected",
+        "false_negative_claim_count": 1,
+        "false_positive_claim_count": 0,
+        "matched_claim_count": 0,
+        "parser_failure_code": null,
+        "parser_failure_detail_code": null,
+        "parser_success": true,
+        "production_source": "rule",
+        "rejected_claim_count": 1,
+        "valid_claim_count": 0,
+        "validator_issue_code_counts": {
+          "claim_statement_not_grounded": 1
+        },
+        "value_accepted": false,
+        "value_reason_codes": [
+          "no_durable_signal",
+          "no_valid_claim"
+        ]
+      },
+      "calibrated": {
+        "candidate_claim_type_counts": {
+          "decision": 1
+        },
+        "candidate_epistemic_status_counts": {
+          "confirmed": 1
+        },
+        "candidate_reference_counts": {
+          "error": 0,
+          "evidence": 1,
+          "recovery": 0,
+          "verification": 0
+        },
+        "durable_signal_codes": [
+          "key_technical_decision"
+        ],
+        "expected_claim_count": 1,
+        "expected_memory_write": true,
+        "fallback_reason": null,
+        "false_negative_claim_count": 0,
+        "false_positive_claim_count": 0,
+        "matched_claim_count": 1,
+        "parser_failure_code": null,
+        "parser_failure_detail_code": null,
+        "parser_success": true,
+        "production_source": "llm",
+        "rejected_claim_count": 0,
+        "valid_claim_count": 1,
+        "validator_issue_code_counts": {},
+        "value_accepted": true,
+        "value_reason_codes": [
+          "accepted_durable_reflection"
+        ]
+      },
+      "case_id": "holdout-provider-fallback-033"
+    },
+    {
+      "baseline": {
+        "candidate_claim_type_counts": {},
+        "candidate_epistemic_status_counts": {},
+        "candidate_reference_counts": {
+          "error": 0,
+          "evidence": 0,
+          "recovery": 0,
+          "verification": 0
+        },
+        "durable_signal_codes": [],
+        "expected_claim_count": 1,
+        "expected_memory_write": true,
+        "fallback_reason": "invalid_semantic_key",
+        "false_negative_claim_count": 1,
+        "false_positive_claim_count": 0,
+        "matched_claim_count": 0,
+        "parser_failure_code": "invalid_semantic_key",
+        "parser_failure_detail_code": "semantic_key_multiple_violations",
+        "parser_success": false,
+        "production_source": "rule",
+        "rejected_claim_count": 0,
+        "valid_claim_count": 0,
+        "validator_issue_code_counts": {},
+        "value_accepted": null,
+        "value_reason_codes": []
+      },
+      "calibrated": {
+        "candidate_claim_type_counts": {
+          "error_pattern": 1,
+          "verification_rule": 1
+        },
+        "candidate_epistemic_status_counts": {
+          "confirmed": 1,
+          "inferred": 1
+        },
+        "candidate_reference_counts": {
+          "error": 2,
+          "evidence": 3,
+          "recovery": 0,
+          "verification": 1
+        },
+        "durable_signal_codes": [
+          "reusable_error_pattern"
+        ],
+        "expected_claim_count": 1,
+        "expected_memory_write": true,
+        "fallback_reason": null,
+        "false_negative_claim_count": 0,
+        "false_positive_claim_count": 0,
+        "matched_claim_count": 1,
+        "parser_failure_code": null,
+        "parser_failure_detail_code": null,
+        "parser_success": true,
+        "production_source": "llm",
+        "rejected_claim_count": 1,
+        "valid_claim_count": 1,
+        "validator_issue_code_counts": {
+          "claim_statement_not_grounded": 1,
+          "claim_type_evidence_mismatch": 1,
+          "verification_rule_not_stable": 1
+        },
+        "value_accepted": true,
+        "value_reason_codes": [
+          "accepted_durable_reflection"
+        ]
+      },
+      "case_id": "holdout-redacted-secret-error-028"
+    },
+    {
+      "baseline": {
+        "candidate_claim_type_counts": {
+          "error_pattern": 1,
+          "recovery": 1,
+          "root_cause": 1
+        },
+        "candidate_epistemic_status_counts": {
+          "confirmed": 3
+        },
+        "candidate_reference_counts": {
+          "error": 3,
+          "evidence": 4,
+          "recovery": 2,
+          "verification": 2
+        },
+        "durable_signal_codes": [],
+        "expected_claim_count": 1,
+        "expected_memory_write": true,
+        "fallback_reason": "all_llm_claims_rejected",
+        "false_negative_claim_count": 1,
+        "false_positive_claim_count": 0,
+        "matched_claim_count": 0,
+        "parser_failure_code": null,
+        "parser_failure_detail_code": null,
+        "parser_success": true,
+        "production_source": "rule",
+        "rejected_claim_count": 3,
+        "valid_claim_count": 0,
+        "validator_issue_code_counts": {
+          "claim_statement_not_grounded": 3,
+          "claim_type_evidence_mismatch": 2
+        },
+        "value_accepted": false,
+        "value_reason_codes": [
+          "generic_error_summary",
+          "unsupported_root_cause",
+          "no_valid_claim"
+        ]
+      },
+      "calibrated": {
+        "candidate_claim_type_counts": {
+          "error_pattern": 1,
+          "recovery": 1
+        },
+        "candidate_epistemic_status_counts": {
+          "confirmed": 2
+        },
+        "candidate_reference_counts": {
+          "error": 2,
+          "evidence": 2,
+          "recovery": 1,
+          "verification": 1
+        },
+        "durable_signal_codes": [
+          "reusable_error_pattern"
+        ],
+        "expected_claim_count": 1,
+        "expected_memory_write": true,
+        "fallback_reason": null,
+        "false_negative_claim_count": 1,
+        "false_positive_claim_count": 1,
+        "matched_claim_count": 0,
+        "parser_failure_code": null,
+        "parser_failure_detail_code": null,
+        "parser_success": true,
+        "production_source": "llm",
+        "rejected_claim_count": 1,
+        "valid_claim_count": 1,
+        "validator_issue_code_counts": {
+          "claim_statement_not_grounded": 1,
+          "claim_type_evidence_mismatch": 1
+        },
+        "value_accepted": true,
+        "value_reason_codes": [
+          "accepted_durable_reflection"
+        ]
+      },
+      "case_id": "holdout-timeout-fallback-032"
+    },
+    {
+      "baseline": {
+        "candidate_claim_type_counts": {},
+        "candidate_epistemic_status_counts": {},
+        "candidate_reference_counts": {
+          "error": 0,
+          "evidence": 0,
+          "recovery": 0,
+          "verification": 0
+        },
+        "durable_signal_codes": [],
+        "expected_claim_count": 0,
+        "expected_memory_write": false,
+        "fallback_reason": "invalid_semantic_key",
+        "false_negative_claim_count": 0,
+        "false_positive_claim_count": 0,
+        "matched_claim_count": 0,
+        "parser_failure_code": "invalid_semantic_key",
+        "parser_failure_detail_code": "semantic_key_contains_hyphen",
+        "parser_success": false,
+        "production_source": "rule",
+        "rejected_claim_count": 0,
+        "valid_claim_count": 0,
+        "validator_issue_code_counts": {},
+        "value_accepted": null,
+        "value_reason_codes": []
+      },
+      "calibrated": {
+        "candidate_claim_type_counts": {
+          "error_pattern": 1,
+          "recovery": 1
+        },
+        "candidate_epistemic_status_counts": {
+          "confirmed": 1,
+          "inferred": 1
+        },
+        "candidate_reference_counts": {
+          "error": 1,
+          "evidence": 2,
+          "recovery": 0,
+          "verification": 0
+        },
+        "durable_signal_codes": [],
+        "expected_claim_count": 0,
+        "expected_memory_write": false,
+        "fallback_reason": "llm_value_rejected",
+        "false_negative_claim_count": 0,
+        "false_positive_claim_count": 1,
+        "matched_claim_count": 0,
+        "parser_failure_code": null,
+        "parser_failure_detail_code": null,
+        "parser_success": true,
+        "production_source": "rule",
+        "rejected_claim_count": 1,
+        "valid_claim_count": 1,
+        "validator_issue_code_counts": {
+          "claim_statement_not_grounded": 1,
+          "claim_type_evidence_mismatch": 1
+        },
+        "value_accepted": false,
+        "value_reason_codes": [
+          "unverified_recovery_context"
+        ]
+      },
+      "case_id": "holdout-unverified-recovery-024"
+    },
+    {
+      "baseline": {
+        "candidate_claim_type_counts": {},
+        "candidate_epistemic_status_counts": {},
+        "candidate_reference_counts": {
+          "error": 0,
+          "evidence": 0,
+          "recovery": 0,
+          "verification": 0
+        },
+        "durable_signal_codes": [],
+        "expected_claim_count": 1,
+        "expected_memory_write": true,
+        "fallback_reason": "invalid_semantic_key",
+        "false_negative_claim_count": 1,
+        "false_positive_claim_count": 0,
+        "matched_claim_count": 0,
+        "parser_failure_code": "invalid_semantic_key",
+        "parser_failure_detail_code": "semantic_key_contains_hyphen",
+        "parser_success": false,
+        "production_source": "rule",
+        "rejected_claim_count": 0,
+        "valid_claim_count": 0,
+        "validator_issue_code_counts": {},
+        "value_accepted": null,
+        "value_reason_codes": []
+      },
+      "calibrated": {
+        "candidate_claim_type_counts": {
+          "error_pattern": 1,
+          "recovery": 1,
+          "verification_rule": 1
+        },
+        "candidate_epistemic_status_counts": {
+          "confirmed": 3
+        },
+        "candidate_reference_counts": {
+          "error": 2,
+          "evidence": 4,
+          "recovery": 1,
+          "verification": 2
+        },
+        "durable_signal_codes": [
+          "reusable_error_pattern"
+        ],
+        "expected_claim_count": 1,
+        "expected_memory_write": true,
+        "fallback_reason": null,
+        "false_negative_claim_count": 1,
+        "false_positive_claim_count": 1,
+        "matched_claim_count": 0,
+        "parser_failure_code": null,
+        "parser_failure_detail_code": null,
+        "parser_success": true,
+        "production_source": "llm",
+        "rejected_claim_count": 2,
+        "valid_claim_count": 1,
+        "validator_issue_code_counts": {
+          "claim_statement_not_grounded": 2,
+          "claim_type_evidence_mismatch": 2,
+          "verification_rule_not_stable": 1
+        },
+        "value_accepted": true,
+        "value_reason_codes": [
+          "accepted_durable_reflection"
+        ]
+      },
+      "case_id": "holdout-verified-recovery-007"
+    }
+  ],
+  "prompt_input_token_effect": {
+    "average_input_token_delta": 574.0,
+    "average_input_token_delta_rate": 0.6280946518944057,
+    "baseline_average_input_tokens": 913.875,
+    "calibrated_average_input_tokens": 1487.875,
+    "note": "Same selected provider-response cases; delta includes the calibrated system prompt and output schema."
+  },
+  "provider_budget": {
+    "allowed_calls": 30,
+    "baseline_calls": 8,
+    "calibrated_calls": 8,
+    "intermediate_calls": 8,
+    "total_calls": 24,
+    "total_estimated_cost_usd": 0.00735518,
+    "within_budget": true
+  },
+  "same_case_ids": [
+    "holdout-causal-trap-025",
+    "holdout-partial-recovery-008",
+    "holdout-project-constraint-005",
+    "holdout-provider-fallback-033",
+    "holdout-redacted-secret-error-028",
+    "holdout-timeout-fallback-032",
+    "holdout-unverified-recovery-024",
+    "holdout-verified-recovery-007"
+  ],
+  "schema_version": 1
+}

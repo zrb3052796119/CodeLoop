@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "dataset_id": "reflection_llm_holdout",
+  "synthetic_data": true,
+  "response_capture_allowed": true
+}

@@ -1,0 +1,446 @@
+{
+  "schema_version": "1.0",
+  "document_type": "cases",
+  "synthetic_data": true,
+  "reference_time": 1736942400,
+  "cases": [
+    {
+      "case_id": "sg-pos-constraint-01",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "goal_to_project_constraint",
+      "query": "Reduce webhook delivery latency during traffic spikes.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-constraint-01",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "A webhook acknowledgement may be emitted only after the event is durably committed to the inbox table.",
+          "tags": [
+            "durable-inbox",
+            "ack-order"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成崩溃恢复规范确认持久化先于确认。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-constraint-01"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "goal_to_project_constraint",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "low",
+      "normalized_token_overlap": 0.058824,
+      "why_semantically_relevant": "降低延迟的实现不能越过持久化确认边界，否则崩溃时会丢失已确认事件。",
+      "why_lexical_retrieval_may_fail": "目标没有提到 inbox table、durable commit 或 acknowledgement ordering。",
+      "miss_impact": "错误优化会用可靠性交换延迟。",
+      "memory_kind": "constraint",
+      "annotation_evidence": "合成崩溃恢复规范确认持久化先于确认。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-direction-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-constraint-02",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "goal_to_project_constraint",
+      "query": "Make local startup feel instantaneous for repeated commands.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-constraint-02",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "The local runtime must validate the workspace ownership marker before reusing a warm process.",
+          "tags": [
+            "ownership-marker",
+            "warm-process"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成多工作区测试确认归属验证边界。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-constraint-02"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "goal_to_project_constraint",
+      "query_language": "en",
+      "memory_language": "en",
+      "lexical_overlap_class": "low",
+      "normalized_token_overlap": 0.058824,
+      "why_semantically_relevant": "复用热进程前验证归属标记是启动优化不得绕过的隔离约束。",
+      "why_lexical_retrieval_may_fail": "目标没有 workspace ownership marker 或 warm process validation。",
+      "miss_impact": "可能跨工作区复用错误进程。",
+      "memory_kind": "constraint",
+      "annotation_evidence": "合成多工作区测试确认归属验证边界。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-domain-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-constraint-03",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "goal_to_project_constraint",
+      "query": "这次重构尽量少打断我，直接完成能够确定的部分。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-constraint-03",
+          "scope": "user",
+          "category": "semantic-rule",
+          "content": "For this user, ask only when an irreversible choice lacks evidence; reversible implementation details may proceed autonomously.",
+          "tags": [
+            "autonomy-boundary",
+            "irreversible-choice"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成显式用户工作方式约束。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-constraint-03"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "goal_to_project_constraint",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "该 USER 约束定义了少打断的安全边界：可逆细节自主处理，不可逆且缺证据才询问。",
+      "why_lexical_retrieval_may_fail": "中文目标没有英文 irreversible、evidence 或 reversible details。",
+      "miss_impact": "代理可能频繁确认或擅自做不可逆决定。",
+      "memory_kind": "constraint",
+      "annotation_evidence": "合成显式用户工作方式约束。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-constraint-04",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "goal_to_project_constraint",
+      "query": "把导出流程改得更快，同时保持断电后可恢复。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-constraint-04",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "导出清单必须先原子落盘，文件复制只能引用已经提交的清单版本。",
+          "tags": [
+            "原子清单",
+            "提交版本"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成断电注入测试确认清单提交顺序。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-constraint-04"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "goal_to_project_constraint",
+      "query_language": "zh",
+      "memory_language": "zh",
+      "lexical_overlap_class": "low",
+      "normalized_token_overlap": 0.02439,
+      "why_semantically_relevant": "原子清单和已提交版本约束是兼顾性能与断电恢复的必要边界。",
+      "why_lexical_retrieval_may_fail": "目标没有出现导出清单、原子落盘或版本引用。",
+      "miss_impact": "并行复制可能产生无法恢复的半成品。",
+      "memory_kind": "constraint",
+      "annotation_evidence": "合成断电注入测试确认清单提交顺序。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-direction-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-constraint-05",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "goal_to_project_constraint",
+      "query": "Allow two local test runs to execute concurrently.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-constraint-05",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "每个运行实例必须使用由任务标识派生的独立临时目录，禁止共享默认沙箱。",
+          "tags": [
+            "实例隔离",
+            "临时目录"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成并行运行测试确认独立沙箱要求。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-constraint-05"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "goal_to_project_constraint",
+      "query_language": "en",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "并发测试要求实例隔离，按任务标识派生目录可防止共享沙箱冲突。",
+      "why_lexical_retrieval_may_fail": "英文并发目标未复述中文任务标识或临时目录规则。",
+      "miss_impact": "运行之间会覆盖文件并产生不稳定结果。",
+      "memory_kind": "constraint",
+      "annotation_evidence": "合成并行运行测试确认独立沙箱要求。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-path-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-constraint-06",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "goal_to_project_constraint",
+      "query": "请把最终答复压缩到我能快速审阅的程度。",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-constraint-06",
+          "scope": "user",
+          "category": "semantic-rule",
+          "content": "For code changes, this user still requires the verification result and affected file paths even in a concise response.",
+          "tags": [
+            "concise-report",
+            "verification-paths"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "合成用户明确确认的简洁报告底线。"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-constraint-06"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "goal_to_project_constraint",
+      "query_language": "zh",
+      "memory_language": "en",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "简洁答复仍必须保留验证结果和影响路径，这是稳定 USER 审阅约束。",
+      "why_lexical_retrieval_may_fail": "中文目标没有英文 verification result 或 affected paths。",
+      "miss_impact": "过度压缩会删除用户判断变更是否可靠所需信息。",
+      "memory_kind": "constraint",
+      "annotation_evidence": "合成用户明确确认的简洁报告底线。",
+      "safety_lifecycle_expectation": "已批准、活跃、非锁定且非归档的记忆应允许进入正常注入链路。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    }
+  ]
+}

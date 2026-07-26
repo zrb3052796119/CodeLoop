@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "case_id": "precision-positive-verified-recovery-101", "category": "verified_recovery", "task_description": "Repair lease renewal",
+      "trace": [
+        {"event_id": "event-0", "type": "assistant_step", "content": "I choose fencing-token validation for lease renewal."},
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "lease_probe", "error_type": "LeaseExpiredError", "message": "Renewal used a stale fencing token"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "patch_file", "related_error_call_ids": ["call-1"], "action": "Refresh the fencing token before renewal", "files_changed": ["src/lease.py"]},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_call", "tool_name": "verify_lease", "command": "pytest tests/test_lease.py -q"},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "verify_lease", "status": "success", "output_summary": "lease renewal fencing token tests: 6 passed"},
+        {"event_id": "event-5", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [{"claim_id": "expected-1", "claim_type": "recovery", "semantic_key": "lease_refresh_fencing_token", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "required_terms": ["stale fencing token", "Refresh the fencing token"], "forbidden_terms": ["root cause"]}],
+      "primary_claims": [{"claim_type": "recovery", "required_terms": ["stale fencing token", "Refresh the fencing token"]}],
+      "secondary_allowed_claims": [{"claim_type": "decision", "required_terms": ["fencing-token validation"]}], "forbidden_claims": [{"required_terms": ["root cause"]}],
+      "should_write_memory": true, "expected_rule_behavior": "accept_recovery", "expected_gap_fill_behavior": "keep_rule", "evidence_chain_ids": ["error-000001", "recovery-000001", "verify-000001"], "allowed_claim_count": 2,
+      "llm_script": {"kind": "candidate", "claims": [{"claim_type": "recovery", "semantic_key": "lease_refresh_fencing_token", "statement": "After Renewal used a stale fencing token, the recovery action was: Refresh the fencing token before renewal.", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "applies_when": "When lease renewal reports LeaseExpiredError.", "limitations": ["Targeted verification only."], "verification_ids": ["verify-000001"], "related_error_ids": ["error-000001"], "related_recovery_ids": ["recovery-000001"]}]}, "notes": "Primary recovery; same-chain error summary is redundant."
+    },
+    {
+      "case_id": "precision-positive-multilingual-recovery-102", "category": "verified_recovery_multilingual", "task_description": "修复事件投递去重",
+      "trace": [
+        {"event_id": "event-0", "type": "assistant_step", "content": "选择 idempotency key 作为 consumer retry policy。"},
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "event_consumer", "error_type": "DuplicateDelivery", "message": "同一个 event 被处理了两次"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "related_error_call_ids": ["call-1"], "action": "在提交前检查 idempotency key", "files_changed": ["src/consumer.py"]},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_call", "tool_name": "consumer_test", "command": "pytest tests/test_consumer.py -q"},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "consumer_test", "status": "success", "output_summary": "idempotency key 去重测试 8 passed"},
+        {"event_id": "event-5", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [{"claim_id": "expected-1", "claim_type": "recovery", "semantic_key": "consumer_idempotency_key", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "required_terms": ["event 被处理了两次", "检查 idempotency key"], "forbidden_terms": []}],
+      "primary_claims": [{"claim_type": "recovery", "required_terms": ["event 被处理了两次", "检查 idempotency key"]}],
+      "secondary_allowed_claims": [{"claim_type": "decision", "required_terms": ["idempotency key", "consumer retry policy"]}], "forbidden_claims": [],
+      "should_write_memory": true, "expected_rule_behavior": "accept_recovery", "expected_gap_fill_behavior": "keep_rule", "evidence_chain_ids": ["error-000001", "recovery-000001", "verify-000001"], "allowed_claim_count": 2,
+      "llm_script": {"kind": "candidate", "claims": [{"claim_type": "recovery", "semantic_key": "consumer_idempotency_key", "statement": "同一个 event 被处理了两次，recovery action 是在提交前检查 idempotency key。", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "applies_when": "当 consumer 处理重试事件时。", "limitations": ["仅完成 targeted verification。"], "verification_ids": ["verify-000001"], "related_error_ids": ["error-000001"], "related_recovery_ids": ["recovery-000001"]}]}, "notes": "Chinese-English recovery chain."
+    },
+    {
+      "case_id": "precision-positive-lock-recovery-103", "category": "verified_recovery", "task_description": "Repair lock release ordering",
+      "trace": [
+        {"event_id": "event-0", "type": "assistant_step", "content": "I choose release-after-commit ordering for lock ownership."},
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "lock_probe", "error_type": "PrematureRelease", "message": "Lock was released before transaction commit"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "related_error_call_ids": ["call-1"], "action": "Move lock release after transaction commit"},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_call", "tool_name": "lock_test", "command": "pytest tests/test_lock.py -q"},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "lock_test", "status": "success", "output_summary": "lock release transaction commit tests: 9 passed"},
+        {"event_id": "event-5", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [{"claim_id": "expected-1", "claim_type": "recovery", "semantic_key": "lock_release_after_commit", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "required_terms": ["released before transaction commit", "release after transaction commit"], "forbidden_terms": []}],
+      "primary_claims": [{"claim_type": "recovery", "required_terms": ["released before transaction commit", "release after transaction commit"]}], "secondary_allowed_claims": [{"claim_type": "decision", "required_terms": ["release-after-commit"]}], "forbidden_claims": [],
+      "should_write_memory": true, "expected_rule_behavior": "accept_recovery", "expected_gap_fill_behavior": "keep_rule", "evidence_chain_ids": ["error-000001", "recovery-000001", "verify-000001"], "allowed_claim_count": 2,
+      "llm_script": {"kind": "candidate", "claims": [{"claim_type": "recovery", "semantic_key": "lock_release_after_commit", "statement": "After Lock was released before transaction commit, the recovery action was: Move lock release after transaction commit.", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "applies_when": "When lock ownership spans transaction commit.", "limitations": ["Targeted verification only."], "verification_ids": ["verify-000001"], "related_error_ids": ["error-000001"], "related_recovery_ids": ["recovery-000001"]}]}, "notes": "Verified lock ordering recovery."
+    },
+    {
+      "case_id": "precision-positive-two-verifications-104", "category": "verified_recovery_two_checks", "task_description": "Repair export checksum",
+      "trace": [
+        {"event_id": "event-0", "type": "assistant_step", "content": "I choose checksum validation before export publication."},
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "export_probe", "error_type": "ChecksumMismatch", "message": "Published export had a stale checksum"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "related_error_call_ids": ["call-1"], "action": "Recompute the export checksum before publication"},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_call", "tool_name": "checksum_test", "command": "pytest tests/test_checksum.py -q"},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "checksum_test", "status": "success", "output_summary": "export checksum tests: 5 passed"},
+        {"event_id": "event-5", "call_id": "call-4", "type": "tool_call", "tool_name": "export_integration", "command": "pytest tests/test_export_integration.py -q"},
+        {"event_id": "event-6", "call_id": "call-4", "type": "tool_result", "tool_name": "export_integration", "status": "success", "output_summary": "export publication integration: 3 passed"},
+        {"event_id": "event-7", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [{"claim_id": "expected-1", "claim_type": "recovery", "semantic_key": "export_checksum_before_publish", "evidence_ids": ["event-1", "event-2", "event-3", "event-4", "event-5", "event-6"], "epistemic_status": "confirmed", "required_terms": ["stale checksum", "Recompute the export checksum"], "forbidden_terms": []}],
+      "primary_claims": [{"claim_type": "recovery", "required_terms": ["stale checksum", "Recompute the export checksum"]}], "secondary_allowed_claims": [{"claim_type": "decision", "required_terms": ["checksum validation"]}], "forbidden_claims": [],
+      "should_write_memory": true, "expected_rule_behavior": "accept_recovery", "expected_gap_fill_behavior": "keep_rule", "evidence_chain_ids": ["error-000001", "recovery-000001", "verify-000001", "verify-000002"], "allowed_claim_count": 2,
+      "llm_script": {"kind": "candidate", "claims": [{"claim_type": "recovery", "semantic_key": "export_checksum_before_publish", "statement": "After Published export had a stale checksum, the recovery action was: Recompute the export checksum before publication.", "evidence_ids": ["event-1", "event-2", "event-3", "event-4", "event-5", "event-6"], "epistemic_status": "confirmed", "applies_when": "When publishing generated exports.", "limitations": ["Verification covered checksum and export integration scopes."], "verification_ids": ["verify-000001", "verify-000002"], "related_error_ids": ["error-000001"], "related_recovery_ids": ["recovery-000001"]}]}, "notes": "One recovery supported by two checks."
+    },
+    {
+      "case_id": "precision-positive-gap-recovery-105", "category": "rule_false_negative_verified_recovery", "task_description": "Repair generation ownership",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "owner_probe", "error_type": "StaleOwner", "message": "Stale owner was accepted during acquire"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "related_error_call_ids": ["call-1"], "action": "Advance the generation before acquire"},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_call", "tool_name": "concurrency_suite", "command": "pytest tests/test_concurrency.py -q"},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "concurrency_suite", "status": "success", "output_summary": "targeted ownership suite: 12 passed"},
+        {"event_id": "event-5", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [{"claim_id": "expected-1", "claim_type": "recovery", "semantic_key": "advance_generation_before_acquire", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "required_terms": ["Stale owner was accepted", "Advance the generation"], "forbidden_terms": []}],
+      "primary_claims": [{"claim_type": "recovery", "required_terms": ["Stale owner was accepted", "Advance the generation"]}], "secondary_allowed_claims": [], "forbidden_claims": [],
+      "should_write_memory": true, "expected_rule_behavior": "reject_unlinked_targeted_check", "expected_gap_fill_behavior": "llm_gap_fill", "evidence_chain_ids": ["error-000001", "recovery-000001", "verify-000001"], "allowed_claim_count": 1,
+      "llm_script": {"kind": "candidate", "claims": [{"claim_type": "recovery", "semantic_key": "advance_generation_before_acquire", "statement": "After Stale owner was accepted during acquire, the recovery action was: Advance the generation before acquire.", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "applies_when": "When acquiring generation-scoped ownership.", "limitations": ["Targeted ownership verification only."], "verification_ids": ["verify-000001"], "related_error_ids": ["error-000001"], "related_recovery_ids": ["recovery-000001"]}]}, "notes": "Validator accepts the linked IDs; Rule token linking remains conservative."
+    },
+    {
+      "case_id": "precision-positive-gap-recovery-106", "category": "rule_false_negative_verified_recovery", "task_description": "Repair sequence allocation",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "sequence_probe", "error_type": "SequenceCollision", "message": "Two writers allocated the same sequence"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "related_error_call_ids": ["call-1"], "action": "Allocate the value inside the database transaction"},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_call", "tool_name": "writer_suite", "command": "pytest tests/test_writers.py -q"},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "writer_suite", "status": "success", "output_summary": "concurrent writer suite: 11 passed"},
+        {"event_id": "event-5", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [{"claim_id": "expected-1", "claim_type": "recovery", "semantic_key": "sequence_inside_transaction", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "required_terms": ["same sequence", "inside the database transaction"], "forbidden_terms": []}],
+      "primary_claims": [{"claim_type": "recovery", "required_terms": ["same sequence", "inside the database transaction"]}], "secondary_allowed_claims": [], "forbidden_claims": [],
+      "should_write_memory": true, "expected_rule_behavior": "reject_unlinked_targeted_check", "expected_gap_fill_behavior": "llm_gap_fill", "evidence_chain_ids": ["error-000001", "recovery-000001", "verify-000001"], "allowed_claim_count": 1,
+      "llm_script": {"kind": "candidate", "claims": [{"claim_type": "recovery", "semantic_key": "sequence_inside_transaction", "statement": "After Two writers allocated the same sequence, the recovery action was: Allocate the value inside the database transaction.", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "applies_when": "When concurrent writers allocate sequence values.", "limitations": ["Targeted concurrent-writer verification only."], "verification_ids": ["verify-000001"], "related_error_ids": ["error-000001"], "related_recovery_ids": ["recovery-000001"]}]}, "notes": "Second deterministic gap-fill control."
+    },
+    {
+      "case_id": "precision-positive-root-cause-107", "category": "confirmed_root_cause", "task_description": "Repair stale permission cache",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "permission_probe", "error_type": "StalePermission", "message": "Revoked role remained in the permission cache"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "related_error_call_ids": ["call-1"], "action": "Invalidate the permission cache on role revocation"},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_call", "tool_name": "permission_test", "command": "pytest tests/test_permission.py -q"},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "permission_test", "status": "success", "output_summary": "permission cache role revocation tests: 7 passed"},
+        {"event_id": "event-5", "type": "assistant_step", "content": "Root cause is that role revocation did not invalidate the permission cache."},
+        {"event_id": "event-6", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [{"claim_id": "expected-1", "claim_type": "root_cause", "semantic_key": "role_revocation_cache_invalidation", "evidence_ids": ["event-1", "event-2", "event-3", "event-4", "event-5"], "epistemic_status": "confirmed", "required_terms": ["role revocation", "did not invalidate", "permission cache"], "forbidden_terms": []}],
+      "primary_claims": [{"claim_type": "root_cause", "required_terms": ["role revocation", "did not invalidate", "permission cache"]}], "secondary_allowed_claims": [], "forbidden_claims": [],
+      "should_write_memory": true, "expected_rule_behavior": "accept_root_cause", "expected_gap_fill_behavior": "keep_rule", "evidence_chain_ids": ["error-000001", "recovery-000001", "verify-000001", "event-5"], "allowed_claim_count": 1,
+      "llm_script": {"kind": "candidate", "claims": [{"claim_type": "root_cause", "semantic_key": "role_revocation_cache_invalidation", "statement": "Root cause is that role revocation did not invalidate the permission cache.", "evidence_ids": ["event-1", "event-2", "event-3", "event-4", "event-5"], "epistemic_status": "confirmed", "applies_when": "When role revocation changes cached permissions.", "limitations": ["Targeted verification only."], "verification_ids": ["verify-000001"], "related_error_ids": ["error-000001"], "related_recovery_ids": ["recovery-000001"]}]}, "notes": "Complete causal chain; lower-level recovery/error claims are redundant."
+    },
+    {
+      "case_id": "precision-positive-specific-error-108", "category": "specific_error_pattern", "task_description": "Diagnose manifest decoding",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "manifest_loader", "error_type": "SchemaVersionError", "message": "Manifest schema version 9 is unsupported"},
+        {"event_id": "event-2", "type": "task_result", "status": "failed"}
+      ],
+      "expected_claims": [{"claim_id": "expected-1", "claim_type": "error_pattern", "semantic_key": "manifest_schema_version_unsupported", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "required_terms": ["schema version 9", "unsupported"], "forbidden_terms": []}],
+      "primary_claims": [{"claim_type": "error_pattern", "required_terms": ["schema version 9", "unsupported"]}], "secondary_allowed_claims": [], "forbidden_claims": [],
+      "should_write_memory": true, "expected_rule_behavior": "accept_error_pattern", "expected_gap_fill_behavior": "keep_rule", "evidence_chain_ids": ["error-000001"], "allowed_claim_count": 1,
+      "llm_script": {"kind": "candidate", "claims": [{"claim_type": "error_pattern", "semantic_key": "manifest_schema_version_unsupported", "statement": "Manifest schema version 9 is unsupported", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "applies_when": "When manifest_loader reads schema version 9.", "limitations": ["Observed in one synthetic trace."], "verification_ids": [], "related_error_ids": ["error-000001"], "related_recovery_ids": []}]}, "notes": "Specific reusable trigger."
+    },
+    {
+      "case_id": "precision-positive-old-memory-correction-109", "category": "old_memory_disproved", "task_description": "Correct pagination guidance",
+      "trace": [
+        {"event_id": "event-1", "type": "user_correction", "content": "The old memory is stale: offset pagination duplicates rows during concurrent inserts; use cursor pagination."},
+        {"event_id": "event-2", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [{"claim_id": "expected-1", "claim_type": "correction", "semantic_key": "cursor_pagination_correction", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "required_terms": ["offset pagination duplicates rows", "cursor pagination"], "forbidden_terms": []}],
+      "primary_claims": [{"claim_type": "correction", "required_terms": ["offset pagination duplicates rows", "cursor pagination"]}], "secondary_allowed_claims": [], "forbidden_claims": [],
+      "should_write_memory": true, "expected_rule_behavior": "accept_correction", "expected_gap_fill_behavior": "keep_rule", "evidence_chain_ids": ["event-1"], "allowed_claim_count": 1,
+      "llm_script": {"kind": "candidate", "claims": [{"claim_type": "correction", "semantic_key": "cursor_pagination_correction", "statement": "The old memory is stale: offset pagination duplicates rows during concurrent inserts; use cursor pagination.", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "applies_when": "When paginating rows under concurrent inserts.", "limitations": [], "verification_ids": [], "related_error_ids": [], "related_recovery_ids": []}]}, "notes": "Explicit user correction and stale-memory replacement."
+    },
+    {
+      "case_id": "precision-positive-cross-decision-110", "category": "cross_event_decision", "task_description": "Choose export delivery policy",
+      "trace": [
+        {"event_id": "event-1", "type": "assistant_step", "content": "I choose immutable export snapshots."},
+        {"event_id": "event-2", "type": "assistant_step", "content": "I choose signed URLs with ten-minute expiry."},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [{"claim_id": "expected-1", "claim_type": "decision", "semantic_key": "immutable_export_signed_url", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "required_terms": ["immutable export snapshots", "ten-minute expiry"], "forbidden_terms": []}],
+      "primary_claims": [{"claim_type": "decision", "required_terms": ["immutable export snapshots", "ten-minute expiry"]}],
+      "secondary_allowed_claims": [{"claim_type": "decision", "required_terms": ["immutable export snapshots"]}, {"claim_type": "decision", "required_terms": ["ten-minute expiry"]}], "forbidden_claims": [],
+      "should_write_memory": true, "expected_rule_behavior": "accept_split_decisions", "expected_gap_fill_behavior": "keep_rule", "evidence_chain_ids": ["event-1", "event-2"], "allowed_claim_count": 2,
+      "llm_script": {"kind": "candidate", "claims": [{"claim_type": "decision", "semantic_key": "immutable_export_signed_url", "statement": "I choose immutable export snapshots. I choose signed URLs with ten-minute expiry.", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "applies_when": "When delivering generated exports.", "limitations": [], "verification_ids": [], "related_error_ids": [], "related_recovery_ids": []}]}, "notes": "Adjudication allows Rule split claims while exact expects a combined claim."
+    },
+    {
+      "case_id": "precision-positive-multiple-errors-111", "category": "multiple_independent_errors", "task_description": "Diagnose two worker boundaries",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "lease_epoch_guard", "error_type": "ToolError", "message": "operation failed before completion"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "error", "tool_name": "upload_offset_guard", "error_type": "ToolError", "message": "operation failed before completion"},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_call", "tool_name": "worker_boundary_check", "command": "pytest tests/test_boundaries.py -q"},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "worker_boundary_check", "status": "failed", "output_summary": "boundary checks failed"},
+        {"event_id": "event-5", "type": "task_result", "status": "failed"}
+      ],
+      "expected_claims": [
+        {"claim_id": "expected-1", "claim_type": "error_pattern", "semantic_key": "lease_epoch_guard_failure", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "required_terms": ["lease_epoch_guard", "operation failed before completion"], "forbidden_terms": []},
+        {"claim_id": "expected-2", "claim_type": "error_pattern", "semantic_key": "upload_offset_guard_failure", "evidence_ids": ["event-2"], "epistemic_status": "confirmed", "required_terms": ["upload_offset_guard", "operation failed before completion"], "forbidden_terms": []}
+      ],
+      "primary_claims": [{"claim_type": "error_pattern", "required_terms": ["lease_epoch_guard", "operation failed before completion"]}, {"claim_type": "error_pattern", "required_terms": ["upload_offset_guard", "operation failed before completion"]}], "secondary_allowed_claims": [], "forbidden_claims": [],
+      "should_write_memory": true, "expected_rule_behavior": "reject_generic_messages", "expected_gap_fill_behavior": "llm_gap_fill", "evidence_chain_ids": ["error-000001", "error-000002"], "allowed_claim_count": 2,
+      "llm_script": {"kind": "candidate", "claims": [
+        {"claim_type": "error_pattern", "semantic_key": "lease_epoch_guard_failure", "statement": "lease_epoch_guard: operation failed before completion", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "applies_when": "When lease_epoch_guard executes.", "limitations": ["Observed once."], "verification_ids": [], "related_error_ids": ["error-000001"], "related_recovery_ids": []},
+        {"claim_type": "error_pattern", "semantic_key": "upload_offset_guard_failure", "statement": "upload_offset_guard: operation failed before completion", "evidence_ids": ["event-2"], "epistemic_status": "confirmed", "applies_when": "When upload_offset_guard executes.", "limitations": ["Observed once."], "verification_ids": [], "related_error_ids": ["error-000002"], "related_recovery_ids": []}
+      ]}, "notes": "Distinct error IDs must remain distinct."
+    },
+    {
+      "case_id": "precision-positive-config-constraint-112", "category": "config_constraint", "task_description": "Honor deployment compatibility",
+      "trace": [
+        {"event_id": "event-0", "call_id": "call-1", "type": "tool_call", "tool_name": "read_manifest", "input": {"path": "pyproject.toml"}},
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_result", "tool_name": "read_manifest", "status": "success", "output_summary": "requires-python = >=3.11"},
+        {"event_id": "event-2", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [{"claim_id": "expected-1", "claim_type": "constraint", "semantic_key": "python_311_compatibility", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "required_terms": ["compatibility", "Python 3.11"], "forbidden_terms": []}],
+      "primary_claims": [{"claim_type": "constraint", "required_terms": ["compatibility", "Python 3.11"]}], "secondary_allowed_claims": [], "forbidden_claims": [],
+      "should_write_memory": true, "expected_rule_behavior": "accept_constraint", "expected_gap_fill_behavior": "keep_rule", "evidence_chain_ids": ["event-1"], "allowed_claim_count": 1,
+      "llm_script": {"kind": "candidate", "claims": [{"claim_type": "constraint", "semantic_key": "python_311_compatibility", "statement": "Python 3.11 project constraint: requires-python = >=3.11", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "applies_when": "When changing runtime compatibility.", "limitations": [], "verification_ids": [], "related_error_ids": [], "related_recovery_ids": []}]}, "notes": "Stable config provenance."
+    }
+  ]
+}

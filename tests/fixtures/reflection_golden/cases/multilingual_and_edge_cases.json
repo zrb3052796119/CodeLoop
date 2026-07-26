@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "schema_version": 1,
+      "case_id": "edge-chinese-error-recovery-001",
+      "category": "multilingual_and_edge_cases",
+      "description": "中文错误和恢复动作应保持语义关联",
+      "task_description": "修复用户索引删除失败的问题",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "delete_entry", "error_type": "索引错误", "message": "删除后标签索引仍包含已删除条目"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "action": "删除条目后统一重建全部索引", "files": ["minicode/memory.py"]},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "索引一致性测试通过"},
+        {"event_id": "event-4", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": ["minicode/memory.py"], "tools": ["delete_entry", "edit_file", "run_command"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "delete_entry", "error_type": "索引错误", "message_key": "deleted_entry_stale_tag_index", "required_terms": ["标签索引", "已删除条目"], "source_event_ids": ["event-1"]}], "recoveries": [{"recovery_id": "recovery-1", "error_id": "error-1", "required_terms": ["重建", "全部索引"], "evidence_ids": ["event-2"]}], "decisions": [], "verification": [{"verification_id": "verify-1", "result": "passed", "scope": "targeted", "required_terms": ["一致性测试通过"], "evidence_ids": ["event-3"]}], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["verified_reusable_fix"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "fix", "semantic_key": "rebuild_indexes_after_delete_cn", "evidence_ids": ["event-1", "event-2", "event-3"], "epistemic_status": "confirmed", "required_terms": ["重建", "全部索引"], "forbidden_terms": ["可能"]}],
+      "forbidden_claims": [],
+      "notes": "中文标注不通过英文翻译间接生成。"
+    },
+    {
+      "schema_version": 1,
+      "case_id": "edge-mixed-language-decision-002",
+      "category": "multilingual_and_edge_cases",
+      "description": "中英混合技术决策保留关键术语",
+      "task_description": "为 auth cache 选择一致性策略",
+      "trace": [
+        {"event_id": "event-1", "type": "assistant_step", "content": "I choose write-through cache，因为用户权限更新必须立即对后续请求可见。"},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "cache consistency tests: 9 passed"},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [], "recoveries": [], "decisions": [{"decision_id": "decision-1", "semantic_key": "write_through_permission_cache", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "required_terms": ["write-through cache", "权限更新"]}], "verification": [{"verification_id": "verify-1", "result": "passed", "scope": "targeted", "required_terms": ["9 passed"], "evidence_ids": ["event-2"]}], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["key_technical_decision"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "decision", "semantic_key": "write_through_permission_cache", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "required_terms": ["write-through cache", "权限更新"], "forbidden_terms": []}],
+      "forbidden_claims": [],
+      "notes": "Required terms intentionally span two languages."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "edge-empty-trace-003",
+      "category": "multilingual_and_edge_cases",
+      "description": "An empty trace has no evidence and no memory value",
+      "task_description": "Unknown task",
+      "trace": [],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": [], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "failed"},
+      "expected_value": {"should_write_memory": false, "reasons": ["no_execution_evidence"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["root cause"]}],
+      "notes": "The current engine returns a low-confidence failed reflection rather than raising."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "edge-assistant-only-missing-fields-004",
+      "category": "multilingual_and_edge_cases",
+      "description": "Assistant-only and unknown events with missing optional fields remain low information",
+      "task_description": "Explain the module",
+      "trace": [
+        {"event_id": "event-1", "type": "assistant_step", "content": "The module was described without executing tools."},
+        {"event_id": "event-2", "type": "tool_call"},
+        {"event_id": "event-3", "type": "future_event", "payload": {"unknown": true}}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": [], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["assistant_only_no_durable_fact"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "Unknown events and unnamed tool calls must not crash evaluation."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "edge-out-of-order-long-contradiction-005",
+      "category": "multilingual_and_edge_cases",
+      "description": "A long out-of-order trace contains a task-success claim contradicted by failed verification",
+      "task_description": "Run the release verification",
+      "trace": [
+        {"event_id": "event-1", "type": "task_result", "status": "success", "summary": "release completed"},
+        {"event_id": "event-2", "type": "progress", "content": "phase 01"},
+        {"event_id": "event-3", "type": "progress", "content": "phase 02"},
+        {"event_id": "event-4", "type": "progress", "content": "phase 03"},
+        {"event_id": "event-5", "type": "progress", "content": "phase 04"},
+        {"event_id": "event-6", "type": "progress", "content": "phase 05"},
+        {"event_id": "event-7", "type": "progress", "content": "phase 06"},
+        {"event_id": "event-8", "type": "progress", "content": "phase 07"},
+        {"event_id": "event-9", "type": "progress", "content": "phase 08"},
+        {"event_id": "event-10", "type": "progress", "content": "phase 09"},
+        {"event_id": "event-11", "type": "progress", "content": "phase 10"},
+        {"event_id": "event-12", "type": "progress", "content": "phase 11"},
+        {"event_id": "event-13", "type": "progress", "content": "phase 12"},
+        {"event_id": "event-14", "call_id": "call-release", "type": "tool_call", "tool_name": "run_command", "command": "pytest -q"},
+        {"event_id": "event-15", "call_id": "call-release", "type": "tool_result", "tool_name": "run_command", "status": "error", "is_error": true, "output_summary": "2 release tests failed"},
+        {"event_id": "event-16", "call_id": "call-release", "type": "error", "tool_name": "run_command", "error_type": "TestFailure", "message": "2 release tests failed"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-release", "tool_name": "run_command", "error_type": "TestFailure", "message_key": "release_tests_failed", "required_terms": ["2 release tests", "failed"], "source_event_ids": ["event-15", "event-16"]}], "recoveries": [], "decisions": [], "verification": [{"verification_id": "verify-1", "result": "failed", "scope": "full", "required_terms": ["2 release tests", "failed"], "evidence_ids": ["event-14", "event-15"]}], "outcome": "failed"},
+      "expected_value": {"should_write_memory": true, "reasons": ["outcome_verification_contradiction"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "failure", "semantic_key": "release_verification_failed", "evidence_ids": ["event-15", "event-16"], "epistemic_status": "confirmed", "required_terms": ["release tests", "failed"], "forbidden_terms": ["completed successfully"]}],
+      "forbidden_claims": [{"required_terms": ["release", "completed successfully"]}],
+      "notes": "Concrete verification failure takes precedence in the golden outcome."
+    }
+  ]
+}

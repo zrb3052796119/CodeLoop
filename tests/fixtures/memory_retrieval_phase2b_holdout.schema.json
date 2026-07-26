@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minicode.local/schemas/memory-retrieval-phase2b-holdout-v1.json",
+  "title": "MiniCode deterministic candidate consolidation holdout",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "synthetic_data", "reference_time", "cases"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "synthetic_data": {"const": true},
+    "reference_time": {"const": 1736942400},
+    "cases": {
+      "type": "array",
+      "minItems": 30,
+      "items": {"$ref": "#/$defs/case"}
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^p2b-[a-z0-9-]+$"},
+    "id_list": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/id"}
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id", "category", "query", "current_files", "active_domains",
+        "context_usage", "max_memories", "max_tokens", "memories",
+        "primary_ids", "allowed_secondary_ids", "must_exclude_ids",
+        "expected_suppressions", "expected_rendered_ids",
+        "unresolved_conflict_render_nothing"
+      ],
+      "properties": {
+        "case_id": {"$ref": "#/$defs/id"},
+        "category": {
+          "enum": [
+            "cross_scope_weak_noise", "near_duplicate", "direct_conflict",
+            "superseded_fact", "verified_unverified_recovery", "user_correction",
+            "complementary_secondary", "ambiguous_authority",
+            "generic_token_false_chain", "file_domain_collision",
+            "hard_budget_interaction"
+          ]
+        },
+        "query": {"type": "string", "minLength": 1, "maxLength": 500},
+        "current_files": {"type": "array", "items": {"type": "string"}, "maxItems": 20},
+        "active_domains": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
+        "context_usage": {"type": "number", "minimum": 0, "maximum": 1},
+        "max_memories": {"type": "integer", "minimum": 1, "maximum": 20},
+        "max_tokens": {"type": "integer", "minimum": 16, "maximum": 8000},
+        "memories": {"type": "array", "minItems": 2, "maxItems": 12, "items": {"$ref": "#/$defs/memory"}},
+        "primary_ids": {"$ref": "#/$defs/id_list"},
+        "allowed_secondary_ids": {"$ref": "#/$defs/id_list"},
+        "must_exclude_ids": {"$ref": "#/$defs/id_list"},
+        "expected_suppressions": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/suppression"}
+        },
+        "expected_rendered_ids": {"$ref": "#/$defs/id_list"},
+        "unresolved_conflict_render_nothing": {"type": "boolean"}
+      }
+    },
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "scope", "category", "content", "tags", "domains"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "scope": {"enum": ["user", "project", "local"]},
+        "category": {"type": "string", "minLength": 1, "maxLength": 80},
+        "content": {"type": "string", "minLength": 1, "maxLength": 12000},
+        "tags": {"type": "array", "items": {"type": "string"}, "maxItems": 20},
+        "domains": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
+        "related_to": {"$ref": "#/$defs/id_list"},
+        "metadata": {"type": "object"},
+        "provenance": {"type": "object"},
+        "usefulness_score": {"type": "number", "minimum": -1, "maximum": 1},
+        "usage_count": {"type": "integer", "minimum": 0, "maximum": 10000}
+      }
+    },
+    "suppression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry_id", "reason", "dominating_id"],
+      "properties": {
+        "entry_id": {"$ref": "#/$defs/id"},
+        "reason": {
+          "enum": [
+            "superseded", "unverified_recovery", "lower_authority_conflict",
+            "unresolved_conflict", "near_duplicate", "no_incremental_value"
+          ]
+        },
+        "dominating_id": {
+          "oneOf": [{"const": ""}, {"$ref": "#/$defs/id"}]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "addedFiles": {},
+  "allowedChangesFromParent": {
+    "minicode/web/static/assets/app.js": {
+      "reasonCode": "dashboard_sse_store_switchover"
+    },
+    "minicode/web/static/assets/styles.css": {
+      "reasonCode": "dashboard_sse_store_switchover"
+    },
+    "minicode/web/static/index.html": {
+      "reasonCode": "dashboard_sse_store_switchover"
+    }
+  },
+  "baselineId": "memory-retrieval-production-v20",
+  "files": {
+    "minicode/agent_loop.py": "75ca257f6925497f6119756b58a94f13f3ecc070870d0775fc3aeebde4013ac8",
+    "minicode/agent_runtime.py": "daa908e4b21cb889df989bef8a87e75f40e83418b8e9254fab1ceac3784b5a9f",
+    "minicode/context_compactor.py": "f05bd72a46be720bfa9b50e42e4824825b5e532c1b8885ae6db1ab7a316b4bec",
+    "minicode/conversation.py": "53034ff37c2e6ba6d0d2f2a4b68439b03b31c488fe66b2213c9108db2fb37f0f",
+    "minicode/conversation_turn_store.py": "258561657a8495ae2e03f7390dcc06f95839f05a79a705e33427eadcc502f3f4",
+    "minicode/gateway.py": "1277b5f1b70e9881df851e23068b03a59339cd0604a81f01e62c9315fe82e5e7",
+    "minicode/headless.py": "91bd8ef030a5bdd05f5d80c618596b4f600e31de5c39fffe242d108fc9899688",
+    "minicode/main.py": "678dec824b3ddc05ace5af45db9743c20baa13fdf3eedcf7e7fcadc1756a7bc4",
+    "minicode/mcp.py": "e39f2e44d2a4c06f2e53114f5664df4d9bf2b10435cc3917cb95c2f50f35d077",
+    "minicode/mcp_current_state.py": "063fed4b7e4a8ed117be46482fa1aeb876cb3fcffc24fb69073ce3a96553cbcc",
+    "minicode/mcp_event_contract.py": "583dc481a8e2d1ff30b9b3d6cf091a7c06bed91e14d7580f4399967745a25daa",
+    "minicode/mcp_observation.py": "d822098ee1f4f61a127f740806cdaa6f8d1a7cbeeb6e3f8cbe227948142fd0b8",
+    "minicode/memory.py": "2706a3e684c84fc830a7c553b907f45a06899c6a0d091a5c366c1dfbd3741108",
+    "minicode/memory_candidate_consolidation.py": "a2f44bd09a8594819f740f001c819458962fb00181206cf16a5f529b3169c6e4",
+    "minicode/memory_injector.py": "059d2812f0fa92e2d4db2ee3463b5843c6c84194b83ed11da1de0ebd921721ee",
+    "minicode/memory_pipeline.py": "a71062f86268010245ce1e924d65be8314bcc07d2afe142e5797726f957c35a1",
+    "minicode/memory_retrieval.py": "33b27c4e5ea32321d6ba776918da374b91ea04b7358649fc8e0167b56c576376",
+    "minicode/pricing.py": "ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0",
+    "minicode/run_events.py": "ba356751ac152115779260284272b36274c92cf73923aed0bfa104bde1c471c4",
+    "minicode/run_journal.py": "b852e052a255b325f189a13a1c23efedfffb9f5655dabe267fc56b43dbf1c5ae",
+    "minicode/run_lifecycle.py": "a6f6ea2416fbd848829df6d8ee4fe4ce2e8b4026e3104d2debd9c019ed27391e",
+    "minicode/session.py": "b0f4f7946a8206e30cc454bc25f48eda8a8ba8fd3817c353b067d7418aef3ee7",
+    "minicode/tooling.py": "267bead40137dfb0133b4dae797830b0150deb9ac744f7bd66b5d6cfbe7a0d88",
+    "minicode/tools/__init__.py": "7ae5a05d64801ac5faee5f1d2547a7c6d3f8cdbe9c6f6a041a64351bb9a1ae0d",
+    "minicode/tools/task.py": "65ee3fd9f60b0c18fa31d2062d9e1e08c949f9ca2a5ea4b1d402d80ad0095ef7",
+    "minicode/tui/input_handler.py": "f826956da80bc6d3e0f0b04f6af519fd9a9876fa4224bfcbf497e9d94590069b",
+    "minicode/turn_cancellation.py": "1423a75023c835b211a0f2dd0e85c1e98d5fcec6910c2435c2f48b2d74daf37f",
+    "minicode/web/change_feed.py": "743a7510ecb1eb76fa3f85f297e2be9aa066e748581f8d84b2df9e03f1c03e1d",
+    "minicode/web/chat_http.py": "9aa70db819de6863915eaa755551cabc9ad7fbdb4c8cf516d21f4b6505fce8fe",
+    "minicode/web/event_stream.py": "b954308bc6bf8013b323c877aa31bb068197ea84eceaacced6991c3a1cbec3e8",
+    "minicode/web/http.py": "b7a0657f8273372f9d552f1ff6735e6a1c07a251f63f4fb1c40a21bd51d2530d",
+    "minicode/web/read_model.py": "2d622f82ca72a59a7d3e22f80409e51b92c14ace2086e0e48dd601f7cf2cacf0",
+    "minicode/web/static/assets/app.js": "1e9d79511ee8785fd0b4aa9fd2daf377101d654e7a30c2c01642c3a9b84ac11d",
+    "minicode/web/static/assets/styles.css": "1b15b7db62ff069e3a8a8fec22dbe010e9a4ed813e6ba10ea6e8d7d669eeaf33",
+    "minicode/web/static/index.html": "dad1780ce9ae322b4295df10a0c8da1ce0ed78e42299af03a1b495d665804fd2",
+    "minicode/working_memory.py": "a3a44415ec418116c14300746cbb4cae3a14a181bc634c87a2600753ecc256e5"
+  },
+  "parentBaselineId": "memory-retrieval-production-v19",
+  "reason": "Batch 7B SSE-driven Dashboard store invalidation",
+  "schemaVersion": 1
+}

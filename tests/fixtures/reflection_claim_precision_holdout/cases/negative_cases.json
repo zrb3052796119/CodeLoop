@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "case_id": "precision-negative-unverified-failed-001",
+      "category": "negative_unverified_recovery",
+      "task_description": "Attempt cache lease repair",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "lease_probe", "error_type": "LeaseBusy", "message": "Lease owner changed during refresh"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "patch_file", "related_error_call_ids": ["call-1"], "action": "Retry refresh after reading the owner again"},
+        {"event_id": "event-3", "type": "task_result", "status": "failed"}
+      ],
+      "expected_claims": [], "primary_claims": [], "secondary_allowed_claims": [],
+      "forbidden_claims": [{"required_terms": ["verified", "solution"]}],
+      "should_write_memory": false, "expected_rule_behavior": "reject_unverified_recovery", "expected_gap_fill_behavior": "reject", "evidence_chain_ids": ["error-000001", "recovery-000001"], "allowed_claim_count": 0,
+      "llm_script": {"kind": "candidate", "claims": []}, "notes": "Failed outcome and no passed verification."
+    },
+    {
+      "case_id": "precision-negative-unverified-unknown-002",
+      "category": "negative_unverified_recovery",
+      "task_description": "Investigate upload retry",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "upload_probe", "error_type": "UploadInterrupted", "message": "Upload stopped after the third chunk"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "related_error_call_ids": ["call-1"], "action": "Resume from the last acknowledged chunk"}
+      ],
+      "expected_claims": [], "primary_claims": [], "secondary_allowed_claims": [], "forbidden_claims": [{"required_terms": ["confirmed", "recovery"]}],
+      "should_write_memory": false, "expected_rule_behavior": "reject_unverified_recovery", "expected_gap_fill_behavior": "reject", "evidence_chain_ids": ["error-000001", "recovery-000001"], "allowed_claim_count": 0,
+      "llm_script": {"kind": "candidate", "claims": []}, "notes": "Unknown outcome and no verification."
+    },
+    {
+      "case_id": "precision-negative-transient-error-003",
+      "category": "negative_generic_transient_error",
+      "task_description": "Retry transient report fetch",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "report_fetch", "error_type": "ToolError", "message": "operation failed before completion"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "tool_call", "tool_name": "report_check", "command": "pytest tests/test_report.py -q"},
+        {"event_id": "event-3", "call_id": "call-2", "type": "tool_result", "tool_name": "report_check", "status": "failed", "output_summary": "report check failed"},
+        {"event_id": "event-4", "type": "task_result", "status": "failed"}
+      ],
+      "expected_claims": [], "primary_claims": [], "secondary_allowed_claims": [], "forbidden_claims": [{"required_terms": ["reusable", "trigger"]}],
+      "should_write_memory": false, "expected_rule_behavior": "reject_generic_error", "expected_gap_fill_behavior": "reject", "evidence_chain_ids": ["error-000001", "verify-000001"], "allowed_claim_count": 0,
+      "llm_script": {"kind": "candidate", "claims": []}, "notes": "Eligible error/verification relationship without a reusable trigger."
+    },
+    {
+      "case_id": "precision-negative-suggestion-only-004",
+      "category": "negative_suggestion_not_executed",
+      "task_description": "Diagnose snapshot timeout",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "snapshot", "error_type": "TimeoutError", "message": "Snapshot request timed out once"},
+        {"event_id": "event-2", "type": "assistant_step", "content": "A possible next step is to increase the timeout, but it was not executed."},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_call", "tool_name": "snapshot_check", "command": "pytest tests/test_snapshot.py -q"},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "snapshot_check", "status": "failed", "output_summary": "snapshot test failed"},
+        {"event_id": "event-5", "type": "task_result", "status": "failed"}
+      ],
+      "expected_claims": [], "primary_claims": [], "secondary_allowed_claims": [], "forbidden_claims": [{"required_terms": ["increase", "timeout"]}],
+      "should_write_memory": false, "expected_rule_behavior": "reject_nonexecuted_suggestion", "expected_gap_fill_behavior": "reject", "evidence_chain_ids": ["error-000001", "verify-000001"], "allowed_claim_count": 0,
+      "llm_script": {"kind": "candidate", "claims": []}, "notes": "Suggestion is not recovery evidence."
+    },
+    {
+      "case_id": "precision-negative-retry-failed-005",
+      "category": "negative_retry_still_failed",
+      "task_description": "Retry invoice delivery",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "invoice_send", "error_type": "DeliveryRejected", "message": "Provider rejected invoice delivery"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "invoice_send", "related_error_call_ids": ["call-1"], "action": "Retry invoice delivery once"},
+        {"event_id": "event-3", "call_id": "call-3", "type": "error", "tool_name": "invoice_send", "error_type": "DeliveryRejected", "message": "Provider rejected the retry"},
+        {"event_id": "event-4", "type": "task_result", "status": "failed"}
+      ],
+      "expected_claims": [], "primary_claims": [], "secondary_allowed_claims": [], "forbidden_claims": [{"required_terms": ["retry", "solution"]}],
+      "should_write_memory": false, "expected_rule_behavior": "reject_failed_recovery", "expected_gap_fill_behavior": "reject", "evidence_chain_ids": ["error-000001", "recovery-000001", "error-000002"], "allowed_claim_count": 0,
+      "llm_script": {"kind": "candidate", "claims": []}, "notes": "Retry did not recover the task."
+    },
+    {
+      "case_id": "precision-negative-unverified-modification-006",
+      "category": "negative_unverified_modification",
+      "task_description": "Modify cursor cleanup",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "cursor_probe", "error_type": "CursorLeak", "message": "Cursor remained open after cancellation"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "related_error_call_ids": ["call-1"], "action": "Close the cursor in the cancellation branch", "files_changed": ["src/cursor.py"]},
+        {"event_id": "event-3", "type": "task_result", "status": "failed"}
+      ],
+      "expected_claims": [], "primary_claims": [], "secondary_allowed_claims": [], "forbidden_claims": [{"required_terms": ["close", "cursor"]}],
+      "should_write_memory": false, "expected_rule_behavior": "reject_unverified_recovery", "expected_gap_fill_behavior": "reject", "evidence_chain_ids": ["error-000001", "recovery-000001"], "allowed_claim_count": 0,
+      "llm_script": {"kind": "candidate", "claims": []}, "notes": "Code changed but no successful check exists."
+    },
+    {
+      "case_id": "precision-negative-weak-dependency-007",
+      "category": "negative_weak_dependency",
+      "task_description": "Discuss optional serializer",
+      "trace": [
+        {"event_id": "event-1", "type": "assistant_step", "content": "msgspec might be useful someday."},
+        {"event_id": "event-2", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [], "primary_claims": [], "secondary_allowed_claims": [], "forbidden_claims": [{"required_terms": ["msgspec", "dependency"]}],
+      "should_write_memory": false, "expected_rule_behavior": "reject_weak_dependency", "expected_gap_fill_behavior": "not_eligible", "evidence_chain_ids": [], "allowed_claim_count": 0,
+      "llm_script": {"kind": "candidate", "claims": []}, "notes": "Natural-language mention is not LibraryEvidence."
+    },
+    {
+      "case_id": "precision-negative-assistant-preference-008",
+      "category": "negative_assistant_preference",
+      "task_description": "Discuss naming style",
+      "trace": [
+        {"event_id": "event-1", "type": "assistant_step", "content": "I prefer short local names, but no project rule was provided."},
+        {"event_id": "event-2", "type": "task_result", "status": "success"}
+      ],
+      "expected_claims": [], "primary_claims": [], "secondary_allowed_claims": [], "forbidden_claims": [{"required_terms": ["project", "constraint"]}],
+      "should_write_memory": false, "expected_rule_behavior": "reject_preference", "expected_gap_fill_behavior": "not_eligible", "evidence_chain_ids": [], "allowed_claim_count": 0,
+      "llm_script": {"kind": "candidate", "claims": []}, "notes": "Assistant preference is not stable provenance."
+    },
+    {
+      "case_id": "precision-negative-generic-warning-009",
+      "category": "negative_generic_warning",
+      "task_description": "Inspect intermittent worker failure",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "worker", "error_type": "ToolError", "message": "operation failed"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "tool_call", "tool_name": "worker_check", "command": "pytest tests/test_worker.py -q"},
+        {"event_id": "event-3", "call_id": "call-2", "type": "tool_result", "tool_name": "worker_check", "status": "failed", "output_summary": "worker check failed"},
+        {"event_id": "event-4", "type": "task_result", "status": "failed"}
+      ],
+      "expected_claims": [], "primary_claims": [], "secondary_allowed_claims": [], "forbidden_claims": [{"required_terms": ["warning"]}],
+      "should_write_memory": false, "expected_rule_behavior": "reject_generic_warning", "expected_gap_fill_behavior": "reject", "evidence_chain_ids": ["error-000001", "verify-000001"], "allowed_claim_count": 0,
+      "llm_script": {"kind": "candidate", "claims": []}, "notes": "No stable trigger condition."
+    },
+    {
+      "case_id": "precision-negative-no-durable-relation-010",
+      "category": "negative_no_durable_relation",
+      "task_description": "Try two speculative cleanup steps",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "cleanup", "error_type": "CleanupError", "message": "Temporary cleanup step did not finish"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "cleanup", "related_error_call_ids": ["call-1"], "action": "Try the cleanup operation again"},
+        {"event_id": "event-3", "call_id": "call-3", "type": "error", "tool_name": "cleanup", "error_type": "CleanupError", "message": "Second cleanup attempt also failed"},
+        {"event_id": "event-4", "type": "task_result", "status": "failed"}
+      ],
+      "expected_claims": [], "primary_claims": [], "secondary_allowed_claims": [], "forbidden_claims": [{"required_terms": ["cleanup", "recovery"]}],
+      "should_write_memory": false, "expected_rule_behavior": "reject_failed_speculation", "expected_gap_fill_behavior": "reject", "evidence_chain_ids": ["error-000001", "recovery-000001", "error-000002"], "allowed_claim_count": 0,
+      "llm_script": {"kind": "candidate", "claims": []}, "notes": "Many events do not imply a durable successful relation."
+    }
+  ]
+}

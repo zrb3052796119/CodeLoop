@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "schema_version": 1,
+      "case_id": "decision-user-public-api-001",
+      "category": "decisions_and_constraints",
+      "description": "An explicit user constraint on the public API is durable evidence",
+      "task_description": "Refactor the parser without changing its public API",
+      "trace": [
+        {"event_id": "event-1", "type": "user_constraint", "content": "Do not change the public parse() API or its return type."},
+        {"event_id": "event-2", "type": "assistant_step", "content": "I will preserve the public parse() API and return type."},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": [], "libraries": [], "errors": [], "recoveries": [], "decisions": [{"decision_id": "decision-1", "semantic_key": "preserve_parse_public_api", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "required_terms": ["public", "parse", "return type"]}], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["explicit_user_constraint"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "constraint", "semantic_key": "preserve_parse_public_api", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "required_terms": ["public", "parse", "return type"], "forbidden_terms": ["may change"]}],
+      "forbidden_claims": [{"required_terms": ["change", "return type"]}],
+      "notes": "Unknown event types may still contain golden evidence even if current engine ignores them."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "decision-config-python-version-002",
+      "category": "decisions_and_constraints",
+      "description": "A configuration file establishes a Python version constraint",
+      "task_description": "Choose syntax compatible with the project",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_call", "tool_name": "read_file", "input": {"path": "pyproject.toml"}},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "read_file", "status": "success", "files": ["pyproject.toml"], "output_summary": "requires-python = >=3.11"},
+        {"event_id": "event-3", "type": "assistant_step", "content": "I choose Python 3.11-compatible syntax because pyproject.toml requires it."},
+        {"event_id": "event-4", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["pyproject.toml"], "files_changed": [], "tools": ["read_file"], "libraries": [], "errors": [], "recoveries": [], "decisions": [{"decision_id": "decision-1", "semantic_key": "python_311_compatible_syntax", "evidence_ids": ["event-2", "event-3"], "epistemic_status": "confirmed", "required_terms": ["python 3.11", "compatible"]}], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["stable_project_constraint"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "constraint", "semantic_key": "python_311_minimum", "evidence_ids": ["event-2", "event-3"], "epistemic_status": "confirmed", "required_terms": ["python 3.11", "requires"], "forbidden_terms": ["python 3.10"]}],
+      "forbidden_claims": [],
+      "notes": "The decision is grounded in configuration, not preference."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "decision-compatible-strategy-inferred-003",
+      "category": "decisions_and_constraints",
+      "description": "A compatibility strategy can be explicit while its client impact remains inferred",
+      "task_description": "Add a response field without breaking clients",
+      "trace": [
+        {"event_id": "event-1", "type": "assistant_step", "content": "I choose an optional response field instead of renaming the existing field, because older clients may still deserialize the old shape."},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "compatibility tests: 12 passed"},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [], "recoveries": [], "decisions": [{"decision_id": "decision-1", "semantic_key": "optional_field_preserves_shape", "evidence_ids": ["event-1"], "epistemic_status": "confirmed", "required_terms": ["optional", "existing field"]}, {"decision_id": "decision-2", "semantic_key": "older_clients_may_deserialize_old_shape", "evidence_ids": ["event-1"], "epistemic_status": "inferred", "required_terms": ["older clients", "may"]}], "verification": [{"verification_id": "verify-1", "result": "passed", "scope": "compatibility", "required_terms": ["12 passed"], "evidence_ids": ["event-2"]}], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["key_technical_decision"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "decision", "semantic_key": "optional_field_preserves_shape", "evidence_ids": ["event-1", "event-2"], "epistemic_status": "confirmed", "required_terms": ["optional", "existing field"], "forbidden_terms": []}],
+      "forbidden_claims": [{"required_terms": ["all older clients", "confirmed"]}],
+      "notes": "Decision certainty and rationale certainty are labelled separately."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "decision-routine-step-best-practice-004",
+      "category": "decisions_and_constraints",
+      "description": "Routine sequencing and an unsupported best-practice claim are not technical decisions",
+      "task_description": "Inspect and format the module",
+      "trace": [
+        {"event_id": "event-1", "type": "assistant_step", "content": "I will read the file and then format it. This is always the best practice for every Python project."},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_result", "tool_name": "format_file", "status": "success", "files": ["src/module.py"]},
+        {"event_id": "event-3", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["src/module.py"], "files_changed": [], "tools": ["format_file"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_operation_no_decision"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["always", "best practice", "every python project"]}],
+      "notes": "Current keyword extraction treats 'I will' as a decision."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "decision-user-correction-old-memory-disproved-005",
+      "category": "decisions_and_constraints",
+      "description": "User correction and failing evidence disprove old memory and confirm the root cause",
+      "task_description": "Correct the deletion behavior",
+      "trace": [
+        {"event_id": "event-1", "type": "assistant_step", "content": "The root cause is not yet known; the old memory says delete_entry updates every index."},
+        {"event_id": "event-2", "type": "user_correction", "content": "That memory is wrong. The tag index remains stale after deletion."},
+        {"event_id": "event-3", "call_id": "call-1", "type": "tool_result", "tool_name": "run_command", "status": "error", "is_error": true, "output_summary": "deleted id still present in tag index"},
+        {"event_id": "event-4", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "action": "Rebuilt indexes after deleting the entry", "files": ["minicode/memory.py"]},
+        {"event_id": "event-5", "call_id": "call-3", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "index consistency test passed"},
+        {"event_id": "event-6", "type": "assistant_step", "content": "The stale tag index caused delete lookup failures; rebuilding indexes fixes it."},
+        {"event_id": "event-7", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": ["minicode/memory.py"], "tools": ["run_command", "edit_file"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "run_command", "message_key": "stale_tag_index", "required_terms": ["still present", "tag index"], "source_event_ids": ["event-3"]}], "recoveries": [{"recovery_id": "recovery-1", "error_id": "error-1", "required_terms": ["rebuilt", "indexes", "deleting"], "evidence_ids": ["event-4"]}], "decisions": [{"decision_id": "decision-1", "semantic_key": "old_memory_disproved", "evidence_ids": ["event-2", "event-3"], "epistemic_status": "confirmed", "required_terms": ["memory", "wrong", "tag index"]}, {"decision_id": "decision-2", "semantic_key": "root_cause_transition_unknown_to_confirmed", "evidence_ids": ["event-1", "event-3", "event-5", "event-6"], "epistemic_status": "confirmed", "required_terms": ["stale tag index", "caused"]}], "verification": [{"verification_id": "verify-1", "result": "passed", "scope": "targeted", "required_terms": ["consistency test passed"], "evidence_ids": ["event-5"]}], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["user_correction", "old_memory_disproved", "confirmed_root_cause"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "root_cause", "semantic_key": "stale_memory_index_caused_delete_failure", "evidence_ids": ["event-2", "event-3", "event-5", "event-6"], "epistemic_status": "confirmed", "required_terms": ["stale tag index", "delete"], "forbidden_terms": ["probably"]}, {"claim_id": "claim-2", "claim_type": "correction", "semantic_key": "old_delete_memory_invalid", "evidence_ids": ["event-2", "event-3"], "epistemic_status": "confirmed", "required_terms": ["memory", "wrong"], "forbidden_terms": []}],
+      "forbidden_claims": [{"required_terms": ["delete_entry", "updates every index"]}],
+      "notes": "The trace explicitly moves from unknown cause to confirmed cause."
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "addedFiles": {
+    "minicode/run_events.py": {
+      "reasonCode": "model_event_sink_dependency"
+    }
+  },
+  "allowedChangesFromParent": {
+    "minicode/agent_loop.py": {
+      "reasonCode": "model_event_sink"
+    },
+    "minicode/headless.py": {
+      "reasonCode": "model_event_entrypoint"
+    },
+    "minicode/main.py": {
+      "reasonCode": "model_event_entrypoint"
+    },
+    "minicode/run_lifecycle.py": {
+      "reasonCode": "model_event_observer"
+    },
+    "minicode/tui/input_handler.py": {
+      "reasonCode": "model_event_entrypoint"
+    }
+  },
+  "baselineId": "memory-retrieval-production-v4",
+  "files": {
+    "minicode/agent_loop.py": "32dd79cf3583a17128bfef7b40f2b9a19ad350729f3fa65ccc380b8dfce07706",
+    "minicode/context_compactor.py": "f05bd72a46be720bfa9b50e42e4824825b5e532c1b8885ae6db1ab7a316b4bec",
+    "minicode/headless.py": "fa822ae65a65988e0fbdfe4b6672bc55b9d345ba199839683ef35333676577a3",
+    "minicode/main.py": "9f09099c94602ab9f4877bb943b1f7f112aa993cb5fd432aa422847e2ebf5591",
+    "minicode/memory.py": "2706a3e684c84fc830a7c553b907f45a06899c6a0d091a5c366c1dfbd3741108",
+    "minicode/memory_candidate_consolidation.py": "a2f44bd09a8594819f740f001c819458962fb00181206cf16a5f529b3169c6e4",
+    "minicode/memory_injector.py": "059d2812f0fa92e2d4db2ee3463b5843c6c84194b83ed11da1de0ebd921721ee",
+    "minicode/memory_pipeline.py": "a71062f86268010245ce1e924d65be8314bcc07d2afe142e5797726f957c35a1",
+    "minicode/memory_retrieval.py": "33b27c4e5ea32321d6ba776918da374b91ea04b7358649fc8e0167b56c576376",
+    "minicode/run_events.py": "9b4225d132d807cf81b9a3796fa77b48bea02d01f97ab2b9b768af31e5524c04",
+    "minicode/run_journal.py": "20f41213996c853e178bacd114d0e99f4ec94a3a626d8be691324aa74b9144c1",
+    "minicode/run_lifecycle.py": "1a8103e0fc524fb6bcdc59f313fe5e236c1a86a9a9c548b73aeb4d185265cdf9",
+    "minicode/tui/input_handler.py": "6b220f7b7d0c22cfcbb0462b2037a5ad081af856ae95ba883b1cda5392bb910f"
+  },
+  "parentBaselineId": "memory-retrieval-production-v3",
+  "reason": "Batch 3B-2B model-request event sink instrumentation",
+  "schemaVersion": 1
+}

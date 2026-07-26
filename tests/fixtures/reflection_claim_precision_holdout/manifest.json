@@ -1,0 +1,31 @@
+{
+  "schema_version": 2,
+  "dataset_id": "reflection_claim_precision_holdout",
+  "synthetic_data": true,
+  "response_capture_allowed": true,
+  "purpose": "Measure exact and adjudicated persistable claim precision, primary lesson recall, redundancy, and conservative Rule-first gap filling.",
+  "case_schema_version": 1,
+  "annotation_rules": {
+    "primary_claims": "The durable lesson that should be retained if only one claim can be written for a chain.",
+    "secondary_allowed_claims": "Correct optional claims that are not required for task memory completion.",
+    "forbidden_claims": "Claims that must not become persistable.",
+    "redundant_claim": "A correct lower-value claim from a chain already covered by a higher-value primary claim."
+  },
+  "real_ab_case_ids": [
+    "precision-negative-unverified-failed-001",
+    "precision-negative-unverified-unknown-002",
+    "precision-negative-transient-error-003",
+    "precision-negative-suggestion-only-004",
+    "precision-negative-retry-failed-005",
+    "precision-negative-unverified-modification-006",
+    "precision-negative-generic-warning-009",
+    "precision-negative-no-durable-relation-010",
+    "precision-positive-verified-recovery-101",
+    "precision-positive-multilingual-recovery-102",
+    "precision-positive-lock-recovery-103",
+    "precision-positive-two-verifications-104",
+    "precision-positive-gap-recovery-105",
+    "precision-positive-gap-recovery-106",
+    "precision-positive-cross-decision-110"
+  ]
+}

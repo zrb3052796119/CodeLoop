@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "schema_version": 1,
+      "case_id": "trace-v2-explicit-event-ids-001",
+      "category": "multilingual_and_edge_cases",
+      "description": "Trace v2 events preserve explicit deterministic event IDs",
+      "task_description": "Read one source file",
+      "trace": [
+        {"trace_schema_version": 2, "event_id": "event-000001", "call_id": "call-1", "type": "tool_call", "tool_name": "read_file", "files_read": ["src/a.py"]},
+        {"trace_schema_version": 2, "event_id": "event-000002", "call_id": "call-1", "type": "tool_result", "tool_name": "read_file", "status": "success", "files_read": ["src/a.py"]},
+        {"trace_schema_version": 2, "event_id": "event-000003", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["src/a.py"], "files_changed": [], "tools": ["read_file"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_read_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "Production helper behavior is additionally covered by unit tests."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "trace-v2-legacy-fallback-ids-002",
+      "category": "multilingual_and_edge_cases",
+      "description": "Legacy events without event IDs receive extraction-local fallback IDs",
+      "task_description": "Inspect a legacy failure",
+      "trace": [
+        {"call_id": "call-1", "type": "error", "tool_name": "read_file", "error_type": "ReadError", "message": "Could not read src/legacy.py", "files": ["src/legacy.py"]},
+        {"type": "task_result", "status": "failed"}
+      ],
+      "expected_evidence": {"files_read": ["src/legacy.py"], "files_changed": [], "tools": ["read_file"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "read_file", "error_type": "ReadError", "required_terms": ["could not read", "src/legacy.py"], "source_event_ids": ["legacy-event-000001"]}], "recoveries": [], "decisions": [], "verification": [], "outcome": "failed"},
+      "expected_value": {"should_write_memory": true, "reasons": ["legacy_failure"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "Fallback IDs are deterministic and do not mutate the fixture."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "trace-v2-suggestion-not-recovery-003",
+      "category": "recovery_and_verification",
+      "description": "A retry nudge is a suggestion rather than an executed recovery",
+      "task_description": "Handle a denied file read",
+      "trace": [
+        {"event_id": "event-000001", "call_id": "call-1", "type": "error", "tool_name": "read_file", "error_type": "PermissionError", "message": "Permission denied for src/private.py", "files_read": ["src/private.py"]},
+        {"event_id": "event-000002", "call_id": "call-1", "type": "recovery_suggestion", "tool_name": "read_file", "suggestion": "Retry with an allowed path"},
+        {"event_id": "event-000003", "type": "task_result", "status": "failed"}
+      ],
+      "expected_evidence": {"files_read": ["src/private.py"], "files_changed": [], "tools": ["read_file"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "read_file", "error_type": "PermissionError", "required_terms": ["permission denied", "src/private.py"], "source_event_ids": ["event-000001"]}], "recoveries": [], "decisions": [], "verification": [], "outcome": "failed"},
+      "expected_value": {"should_write_memory": true, "reasons": ["permission_failure"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["retry", "succeeded"]}],
+      "notes": "Suggestion evidence is intentionally outside the legacy expected fields."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "trace-v2-recovered-final-success-004",
+      "category": "recovery_and_verification",
+      "description": "Historical errors do not force failure after a real fix and passing verification",
+      "task_description": "Fix and verify the parser",
+      "trace": [
+        {"event_id": "event-000001", "call_id": "call-1", "type": "error", "tool_name": "run_command", "error_type": "AssertionError", "message": "Parser returned the wrong token"},
+        {"event_id": "event-000002", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "related_error_call_ids": ["call-1"], "action": "Corrected token normalization", "files_changed": ["src/parser.py"]},
+        {"event_id": "event-000003", "call_id": "call-3", "type": "tool_call", "tool_name": "run_command", "command": "pytest tests/test_parser.py -q"},
+        {"event_id": "event-000004", "call_id": "call-3", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "7 passed"},
+        {"event_id": "event-000005", "type": "task_result", "status": "success", "had_errors": true, "errors_recovered": true}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": ["src/parser.py"], "tools": ["run_command", "edit_file"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "run_command", "error_type": "AssertionError", "required_terms": ["wrong token"], "source_event_ids": ["event-000001"]}], "recoveries": [{"recovery_id": "recovery-1", "error_id": "error-1", "required_terms": ["corrected", "normalization"], "evidence_ids": ["event-000002"]}], "decisions": [], "verification": [{"verification_id": "verify-1", "result": "passed", "scope": "targeted", "required_terms": ["7 passed"], "evidence_ids": ["event-000003", "event-000004"]}], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["verified_reusable_fix"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "Outcome and had_errors are independent dimensions."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "trace-v2-error-unknown-outcome-005",
+      "category": "error_deduplication",
+      "description": "An error without terminal or verification evidence leaves outcome unknown",
+      "task_description": "Attempt an operation",
+      "trace": [
+        {"event_id": "event-000001", "call_id": "call-1", "type": "error", "tool_name": "run_command", "error_type": "ToolError", "message": "Operation failed before completion"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "run_command", "error_type": "ToolError", "required_terms": ["operation failed"], "source_event_ids": ["event-000001"]}], "recoveries": [], "decisions": [], "verification": [], "outcome": "unknown"},
+      "expected_value": {"should_write_memory": true, "reasons": ["unresolved_failure"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["completed successfully"]}],
+      "notes": "No absence-of-errors inference is allowed."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "trace-v2-command-referenced-file-006",
+      "category": "path_extraction",
+      "description": "A command path is referenced but not read or changed",
+      "task_description": "Run a focused test",
+      "trace": [
+        {"event_id": "event-000001", "call_id": "call-1", "type": "tool_call", "tool_name": "run_command", "command": "pytest tests/test_cli.py -q", "referenced_files": ["tests/test_cli.py"]},
+        {"event_id": "event-000002", "call_id": "call-1", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "3 passed"},
+        {"event_id": "event-000003", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [{"verification_id": "verify-1", "result": "passed", "scope": "targeted", "required_terms": ["3 passed"], "evidence_ids": ["event-000001", "event-000002"]}], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["routine_verification_only"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["pytest tests/test_cli.py -q", "file"]}],
+      "notes": "Referenced files are evaluated through the extractor tests, not as read files."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "trace-v2-same-call-error-merge-007",
+      "category": "error_deduplication",
+      "description": "Two failure source events from one call merge into one error",
+      "task_description": "Run a failing build",
+      "trace": [
+        {"event_id": "event-000001", "call_id": "call-1", "type": "tool_result", "tool_name": "build", "status": "error", "is_error": true, "output_summary": "BuildError: missing artifact"},
+        {"event_id": "event-000002", "call_id": "call-1", "type": "error", "tool_name": "build", "error_type": "BuildError", "message": "BuildError: missing artifact"},
+        {"event_id": "event-000003", "type": "task_result", "status": "failed"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["build"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "build", "error_type": "BuildError", "required_terms": ["missing artifact"], "source_event_ids": ["event-000001", "event-000002"]}], "recoveries": [], "decisions": [], "verification": [{"verification_id": "verify-1", "result": "failed", "required_terms": ["missing artifact"], "evidence_ids": ["event-000001"]}], "outcome": "failed"},
+      "expected_value": {"should_write_memory": true, "reasons": ["build_failure"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "Source IDs must be retained after merging."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "trace-v2-different-call-errors-008",
+      "category": "error_deduplication",
+      "description": "Identical failures on distinct call IDs remain separate occurrences",
+      "task_description": "Retry a timed-out command",
+      "trace": [
+        {"event_id": "event-000001", "call_id": "call-1", "type": "error", "tool_name": "run_command", "error_type": "TimeoutError", "message": "Connection timed out"},
+        {"event_id": "event-000002", "call_id": "call-2", "type": "error", "tool_name": "run_command", "error_type": "TimeoutError", "message": "Connection timed out"},
+        {"event_id": "event-000003", "type": "task_result", "status": "failed"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "run_command", "error_type": "TimeoutError", "required_terms": ["connection timed out"], "source_event_ids": ["event-000001"]}, {"error_id": "error-2", "call_id": "call-2", "tool_name": "run_command", "error_type": "TimeoutError", "required_terms": ["connection timed out"], "source_event_ids": ["event-000002"]}], "recoveries": [], "decisions": [], "verification": [], "outcome": "failed"},
+      "expected_value": {"should_write_memory": true, "reasons": ["repeated_failure_after_retry"]},
+      "expected_claims": [],
+      "forbidden_claims": [],
+      "notes": "Call identity prevents cross-attempt over-merging."
+    }
+  ]
+}

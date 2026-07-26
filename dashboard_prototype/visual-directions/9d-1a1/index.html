@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta name="description" content="MiniCode Dashboard visual direction prototype">
+    <title>MiniCode · Visual Direction Prototype</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="./styles.css">
+    <script src="./app.js" defer></script>
+  </head>
+  <body data-variant="A">
+    <div class="prototype-notice" role="status">
+      <span>VISUAL PROTOTYPE</span>
+      <strong>Mock data · read-only · no Gateway connection</strong>
+    </div>
+
+    <div class="overlay-scrim" data-overlay-scrim hidden></div>
+
+    <div class="app-shell">
+      <aside class="nav-rail" id="primary-navigation" aria-label="Primary navigation">
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">M</span>
+          <span>
+            <strong>MiniCode</strong>
+            <small>Agent workspace</small>
+          </span>
+          <button class="icon-button nav-close" type="button" data-close-nav aria-label="Close navigation">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>
+          </button>
+        </div>
+
+        <div class="workspace-identity">
+          <span class="eyebrow">Workspace</span>
+          <strong>minicode-demo</strong>
+          <span class="live-label"><i aria-hidden="true"></i> Gateway live</span>
+        </div>
+
+        <nav class="nav-list">
+          <button class="nav-item is-active" type="button" data-view="overview" aria-current="page">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg>
+            <span>Overview</span><em>01</em>
+          </button>
+          <button class="nav-item" type="button" data-view="runs">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg>
+            <span>Runs</span><em>23</em>
+          </button>
+          <button class="nav-item" type="button" data-view="sessions">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v10H9l-4 4z"/></svg>
+            <span>Sessions</span><em>4</em>
+          </button>
+          <button class="nav-item" type="button" data-view="memory">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h10v14H7zM4 8h3M17 8h3M4 12h3M17 12h3M4 16h3M17 16h3"/></svg>
+            <span>Memory</span><em>12</em>
+          </button>
+          <button class="nav-item" type="button" data-view="skills">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.2 4.7L19 10l-4.8 2.3L12 17l-2.2-4.7L5 10l4.8-2.3zM18 16l.9 2.1L21 19l-2.1.9L18 22l-.9-2.1L15 19l2.1-.9z"/></svg>
+            <span>Skills</span><em>8</em>
+          </button>
+          <button class="nav-item" type="button" data-view="connections">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12h8M7 8h-1a4 4 0 0 0 0 8h1M17 8h1a4 4 0 0 1 0 8h-1"/></svg>
+            <span>Connections</span><em>3</em>
+          </button>
+          <button class="nav-item" type="button" data-view="ops">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V9M10 18V5M16 18v-7M22 18V3"/></svg>
+            <span>Ops</span><em>2</em>
+          </button>
+          <button class="nav-item" type="button" data-view="system">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19 12l2-1-2-3-2 .5-1.5-1L15 5h-6l-.5 2.5-1.5 1L5 8l-2 3 2 1v2l-2 1 2 3 2-.5 1.5 1L9 21h6l.5-2.5 1.5-1 2 .5 2-3-2-1z"/></svg>
+            <span>System</span><em>OK</em>
+          </button>
+        </nav>
+
+        <div class="rail-foot">
+          <span>Local authority</span>
+          <strong>127.0.0.1</strong>
+          <small>Prototype data never leaves this page.</small>
+        </div>
+      </aside>
+
+      <main class="workspace-main" id="main-content">
+        <header class="workspace-header">
+          <button class="icon-button nav-open" type="button" data-open-nav aria-label="Open navigation" aria-expanded="false" aria-controls="primary-navigation">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          </button>
+          <div class="page-heading">
+            <span class="eyebrow" data-view-kicker>Agent observatory / live workspace</span>
+            <h1 data-view-title tabindex="-1">Overview</h1>
+            <p data-view-deck>Follow the current execution from model intent to tool boundary and memory context.</p>
+          </div>
+          <div class="header-actions">
+            <span class="clock" data-clock>09:41:26</span>
+            <button class="dock-reopen" type="button" data-open-dock aria-expanded="true" aria-controls="chat-dock">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v10H9l-4 4z"/></svg>
+              <span>Open Dock</span>
+              <i aria-hidden="true">1</i>
+            </button>
+          </div>
+        </header>
+
+        <section class="status-band" aria-label="Workspace status">
+          <div class="status-lead">
+            <span class="signal-pulse" aria-hidden="true"></span>
+            <span><strong>Gateway live</strong><small>connected 18m</small></span>
+          </div>
+          <dl>
+            <div><dt>Sessions</dt><dd>4</dd></div>
+            <div><dt>Memories</dt><dd>12</dd></div>
+            <div><dt>Skills</dt><dd>8</dd></div>
+            <div><dt>Runs</dt><dd>23</dd></div>
+          </dl>
+          <div class="band-caption">local runtime · mock telemetry</div>
+        </section>
+
+        <div class="execution-grid">
+          <article class="run-focus" aria-labelledby="run-focus-title">
+            <header class="section-heading">
+              <div>
+                <span class="eyebrow">Current run · #run-023</span>
+                <h2 id="run-focus-title">Refine dashboard direction</h2>
+              </div>
+              <span class="running-badge"><i aria-hidden="true"></i> Running</span>
+            </header>
+
+            <div class="run-command">
+              <span>Prompt</span>
+              <p>Compare three production-ready visual systems without changing runtime behavior.</p>
+            </div>
+
+            <div class="step-focus">
+              <div class="step-count"><span>03</span><small>of 05</small></div>
+              <div>
+                <span class="eyebrow">Model · current step</span>
+                <h3>Evaluating execution hierarchy</h3>
+                <p>The assistant is reconciling live activity, approval urgency, and persistent conversation.</p>
+              </div>
+              <div class="generating-state">
+                <span class="typing-dots" aria-label="Assistant generating"><i></i><i></i><i></i></span>
+                <small>generating</small>
+              </div>
+            </div>
+
+            <footer class="run-facts">
+              <span><small>Elapsed</small><strong>00:01:42</strong></span>
+              <span><small>Input</small><strong>6,842 tok</strong></span>
+              <span><small>Output</small><strong>1,286 tok</strong></span>
+              <span><small>Cost</small><strong>$0.047</strong></span>
+            </footer>
+          </article>
+
+          <section class="activity-timeline" aria-labelledby="activity-title">
+            <header class="section-heading">
+              <div>
+                <span class="eyebrow">Execution trace</span>
+                <h2 id="activity-title">Activity</h2>
+              </div>
+              <span class="trace-time">just now</span>
+            </header>
+            <ol>
+              <li class="is-complete">
+                <span class="activity-node" aria-hidden="true"></span>
+                <div>
+                  <span class="activity-meta">09:40:02 · Model</span>
+                  <strong>Plan created</strong>
+                  <p>Established three comparable visual directions.</p>
+                </div>
+                <em>done</em>
+              </li>
+              <li class="is-complete">
+                <span class="activity-node" aria-hidden="true"></span>
+                <div>
+                  <span class="activity-meta">09:40:31 · Memory</span>
+                  <strong>Context retrieved</strong>
+                  <p>12 memories matched · 4 rendered into context.</p>
+                </div>
+                <em>done</em>
+              </li>
+              <li class="is-complete">
+                <span class="activity-node" aria-hidden="true"></span>
+                <div>
+                  <span class="activity-meta">09:41:08 · Tool</span>
+                  <strong>Read workspace</strong>
+                  <p>Dashboard sources inspected successfully.</p>
+                </div>
+                <em>done</em>
+              </li>
+              <li class="is-active">
+                <span class="activity-node" aria-hidden="true"></span>
+                <div>
+                  <span class="activity-meta">09:41:26 · Permission</span>
+                  <strong>write_file requires approval</strong>
+                  <p>One workspace-local file change is waiting.</p>
+                </div>
+                <em>pending</em>
+              </li>
+            </ol>
+          </section>
+
+          <section class="signal-board" aria-labelledby="signal-title">
+            <header class="section-heading">
+              <div>
+                <span class="eyebrow">Runtime reading</span>
+                <h2 id="signal-title">Signals</h2>
+              </div>
+            </header>
+            <div class="signal-metrics">
+              <span><small>Context</small><strong>38%</strong><i style="--fill:38%"></i></span>
+              <span><small>Cache read</small><strong>72%</strong><i style="--fill:72%"></i></span>
+              <span><small>Tool latency</small><strong>184ms</strong><i style="--fill:54%"></i></span>
+            </div>
+            <p><strong>Healthy.</strong> No failures observed. One approval boundary is pausing the active run.</p>
+          </section>
+
+          <section class="run-ledger" aria-labelledby="ledger-title">
+            <header class="section-heading">
+              <div>
+                <span class="eyebrow">Run ledger</span>
+                <h2 id="ledger-title">Recent work</h2>
+              </div>
+              <button type="button" class="text-button" data-view-link="runs">View 23 runs</button>
+            </header>
+            <div class="run-table" role="listbox" aria-label="Recent runs" tabindex="0">
+              <button class="run-row is-selected" type="button" role="option" aria-selected="true" data-run="023">
+                <span class="run-status run-status-live">running</span>
+                <span><strong>Refine dashboard direction</strong><small>#run-023 · current</small></span>
+                <span><small>Model</small><strong>step 3 / 5</strong></span>
+                <time>1m 42s</time>
+              </button>
+              <button class="run-row" type="button" role="option" aria-selected="false" data-run="022">
+                <span class="run-status">complete</span>
+                <span><strong>Verify semantic baseline</strong><small>#run-022</small></span>
+                <span><small>Tool calls</small><strong>18</strong></span>
+                <time>4m 08s</time>
+              </button>
+              <button class="run-row" type="button" role="option" aria-selected="false" data-run="021">
+                <span class="run-status">complete</span>
+                <span><strong>Inspect memory retrieval</strong><small>#run-021</small></span>
+                <span><small>Memories</small><strong>8 retrieved</strong></span>
+                <time>2m 51s</time>
+              </button>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <aside class="chat-dock" id="chat-dock" aria-label="Chat and permissions">
+        <header class="dock-header">
+          <div>
+            <span class="eyebrow">Control channel</span>
+            <h2>Chat <small>Session #04</small></h2>
+          </div>
+          <button class="icon-button" type="button" data-close-dock aria-label="Collapse Chat Dock">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg>
+          </button>
+        </header>
+
+        <div class="dock-context">
+          <span><i aria-hidden="true"></i> Local session</span>
+          <span>2 messages</span>
+        </div>
+
+        <div class="chat-scroll" data-chat-scroll>
+          <article class="message message-user">
+            <header><strong>You</strong><time>09:39</time></header>
+            <p>Show me which visual direction makes current Agent work easiest to understand.</p>
+          </article>
+
+          <article class="message message-assistant">
+            <header><strong>MiniCode</strong><time>09:40</time></header>
+            <p>I’m comparing the same run across three structures. Activity stays primary; approvals remain explicit.</p>
+          </article>
+
+          <article class="permission-card" data-permission data-state="pending" aria-live="polite">
+            <header>
+              <span class="permission-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 3 4 6v5c0 5.2 3.3 8.7 8 10 4.7-1.3 8-4.8 8-10V6zM12 8v5M12 16h.01"/></svg>
+              </span>
+              <div>
+                <span class="eyebrow">Approval required</span>
+                <h3 data-permission-title>Allow write_file?</h3>
+              </div>
+              <span class="permission-count">1 / 1</span>
+            </header>
+            <p data-permission-copy>MiniCode wants to update one workspace-local prototype file.</p>
+            <div class="permission-target">
+              <span>Target</span>
+              <code>visual-directions/9d-1a1/README.md</code>
+            </div>
+            <div class="permission-actions">
+              <button type="button" class="button-deny" data-deny>Block</button>
+              <button type="button" class="button-allow" data-allow>Allow once</button>
+              <button type="button" class="text-button permission-reset" data-reset-permission hidden>Reset mock</button>
+            </div>
+          </article>
+
+          <article class="message message-streaming">
+            <header><strong>MiniCode</strong><span>generating</span></header>
+            <p>Direction A makes the live run an observatory; Direction B turns the trace into a control spine; Direction C reads like an editorial work log<span class="cursor" aria-hidden="true"></span></p>
+          </article>
+        </div>
+
+        <form class="composer" data-composer>
+          <label for="message-draft">Message MiniCode</label>
+          <textarea id="message-draft" rows="3" placeholder="Ask about this mock run…" data-draft></textarea>
+          <div>
+            <span><kbd>⌘</kbd><kbd>↵</kbd> to send</span>
+            <button type="submit">Send</button>
+          </div>
+        </form>
+      </aside>
+    </div>
+
+    <div class="variant-switcher" role="group" aria-label="Visual direction switcher">
+      <button type="button" data-previous-variant aria-label="Previous visual direction">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+      </button>
+      <div>
+        <span>Direction <strong data-variant-letter>A</strong> / 3</span>
+        <small data-variant-name>Agent Observatory · recommended</small>
+      </div>
+      <div class="variant-tabs">
+        <button type="button" data-variant-button="A" aria-pressed="true">A</button>
+        <button type="button" data-variant-button="B" aria-pressed="false">B</button>
+        <button type="button" data-variant-button="C" aria-pressed="false">C</button>
+      </div>
+      <button type="button" data-next-variant aria-label="Next visual direction">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <div class="toast" role="status" aria-live="polite" data-toast hidden></div>
+  </body>
+</html>

@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "schema_version": 1,
+      "case_id": "recovery-edit-targeted-pass-001",
+      "category": "recovery_and_verification",
+      "description": "A failed assertion is fixed and the focused test verifies recovery",
+      "task_description": "Fix token expiry validation",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "tool_result", "tool_name": "run_command", "status": "error", "is_error": true, "output_summary": "Expired token was accepted"},
+        {"event_id": "event-2", "call_id": "call-1", "type": "error", "tool_name": "run_command", "error_type": "AssertionError", "message": "Expired token was accepted"},
+        {"event_id": "event-7", "call_id": "call-2", "type": "tool_call", "tool_name": "edit_file", "input": {"path": "src/auth.py"}},
+        {"event_id": "event-3", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "action": "Moved the expiry check before user lookup", "files": ["src/auth.py"]},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_call", "tool_name": "run_command", "command": "pytest tests/test_auth.py -q"},
+        {"event_id": "event-5", "call_id": "call-3", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "1 passed"},
+        {"event_id": "event-8", "type": "assistant_step", "content": "I decided to move the expiry check before user lookup."},
+        {"event_id": "event-6", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": ["src/auth.py"], "tools": ["run_command", "edit_file"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "run_command", "error_type": "AssertionError", "message_key": "expired_token_accepted", "required_terms": ["expired token", "accepted"], "source_event_ids": ["event-1", "event-2"]}], "recoveries": [{"recovery_id": "recovery-1", "error_id": "error-1", "required_terms": ["expiry check", "before user lookup"], "evidence_ids": ["event-3"]}], "decisions": [{"decision_id": "decision-1", "semantic_key": "expiry_check_before_lookup", "evidence_ids": ["event-7", "event-8"], "epistemic_status": "confirmed", "required_terms": ["expiry check", "before user lookup"]}], "verification": [{"verification_id": "verify-1", "recovery_id": "recovery-1", "result": "passed", "scope": "targeted", "required_terms": ["1 passed"], "evidence_ids": ["event-4", "event-5"]}], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["verified_reusable_fix"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "fix", "semantic_key": "expiry_check_before_lookup", "evidence_ids": ["event-3", "event-5"], "epistemic_status": "confirmed", "required_terms": ["expiry check", "before user lookup"], "forbidden_terms": ["probably"]}],
+      "forbidden_claims": [],
+      "notes": "Recovery and verification are linked but remain distinct evidence."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "recovery-retry-still-fails-002",
+      "category": "recovery_and_verification",
+      "description": "A retry action is a recovery attempt even when verification still fails",
+      "task_description": "Retry the package download",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "run_command", "error_type": "NetworkError", "message": "Package registry unavailable"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "run_command", "action": "Retried with exponential backoff"},
+        {"event_id": "event-3", "call_id": "call-2", "type": "tool_result", "tool_name": "run_command", "status": "error", "is_error": true, "output_summary": "Package registry unavailable"},
+        {"event_id": "event-4", "type": "task_result", "status": "failed"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "run_command", "error_type": "NetworkError", "message_key": "registry_unavailable_initial", "required_terms": ["registry", "unavailable"], "source_event_ids": ["event-1"]}, {"error_id": "error-2", "call_id": "call-2", "tool_name": "run_command", "message_key": "registry_unavailable_retry", "required_terms": ["registry", "unavailable"], "source_event_ids": ["event-3"]}], "recoveries": [{"recovery_id": "recovery-1", "error_id": "error-1", "required_terms": ["retried", "backoff"], "evidence_ids": ["event-2"]}], "decisions": [], "verification": [{"verification_id": "verify-1", "recovery_id": "recovery-1", "result": "failed", "required_terms": ["registry", "unavailable"], "evidence_ids": ["event-3"]}], "outcome": "failed"},
+      "expected_value": {"should_write_memory": true, "reasons": ["failed_recovery_attempt"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "recovery_result", "semantic_key": "backoff_retry_failed", "evidence_ids": ["event-2", "event-3"], "epistemic_status": "confirmed", "required_terms": ["registry", "unavailable"], "forbidden_terms": ["resolved"]}],
+      "forbidden_claims": [{"required_terms": ["backoff", "resolved"]}],
+      "notes": "A recovery action does not imply successful verification."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "recovery-switch-tool-workaround-003",
+      "category": "recovery_and_verification",
+      "description": "Switching tools can be a verified workaround",
+      "task_description": "Apply a patch after context mismatch",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "patch_file", "error_type": "PatchError", "message": "Context mismatch in src/service.py", "files": ["src/service.py"]},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "action": "Switched to edit_file after re-reading the current block", "files": ["src/service.py"]},
+        {"event_id": "event-3", "call_id": "call-2", "type": "tool_result", "tool_name": "edit_file", "status": "success", "changed_files": ["src/service.py"]},
+        {"event_id": "event-4", "call_id": "call-3", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "service tests: 8 passed"},
+        {"event_id": "event-5", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": ["src/service.py"], "files_changed": ["src/service.py"], "tools": ["patch_file", "edit_file", "run_command"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "patch_file", "error_type": "PatchError", "message_key": "patch_context_mismatch", "required_terms": ["context mismatch", "src/service.py"], "source_event_ids": ["event-1"]}], "recoveries": [{"recovery_id": "recovery-1", "error_id": "error-1", "required_terms": ["switched", "edit_file", "re-reading"], "evidence_ids": ["event-2", "event-3"]}], "decisions": [], "verification": [{"verification_id": "verify-1", "recovery_id": "recovery-1", "result": "passed", "scope": "targeted", "required_terms": ["8 passed"], "evidence_ids": ["event-4"]}], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["verified_tool_workaround"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "recovery", "semantic_key": "reread_then_edit_on_context_mismatch", "evidence_ids": ["event-1", "event-2", "event-4"], "epistemic_status": "confirmed", "required_terms": ["edit_file", "re-reading"], "forbidden_terms": []}],
+      "forbidden_claims": [],
+      "notes": "The workaround is reusable because a targeted check passed."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "recovery-claimed-fixed-unrelated-test-004",
+      "category": "recovery_and_verification",
+      "description": "A fix claim plus an unrelated passing test is not verification",
+      "task_description": "Fix payment rounding",
+      "trace": [
+        {"event_id": "event-1", "type": "assistant_step", "content": "The payment rounding bug is fixed."},
+        {"event_id": "event-2", "call_id": "call-1", "type": "tool_call", "tool_name": "run_command", "command": "pytest tests/test_logging.py -q"},
+        {"event_id": "event-3", "call_id": "call-1", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "3 passed"},
+        {"event_id": "event-4", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": [], "tools": ["run_command"], "libraries": [], "errors": [], "recoveries": [], "decisions": [], "verification": [{"verification_id": "verify-1", "result": "passed_but_unrelated", "scope": "unrelated", "required_terms": ["3 passed"], "evidence_ids": ["event-2", "event-3"]}], "outcome": "success"},
+      "expected_value": {"should_write_memory": false, "reasons": ["unverified_fix_claim"]},
+      "expected_claims": [],
+      "forbidden_claims": [{"required_terms": ["payment rounding", "verified"]}, {"required_terms": ["root cause"]}],
+      "notes": "Task success and an unrelated green test do not establish the fix."
+    },
+    {
+      "schema_version": 1,
+      "case_id": "recovery-multiple-verification-levels-005",
+      "category": "recovery_and_verification",
+      "description": "Focused, full, lint, and type checks independently verify a reusable fix",
+      "task_description": "Repair the memory index update",
+      "trace": [
+        {"event_id": "event-1", "call_id": "call-1", "type": "error", "tool_name": "delete_memory", "error_type": "IndexError", "message": "Deleted entry remained in tag index"},
+        {"event_id": "event-2", "call_id": "call-2", "type": "recovery", "tool_name": "edit_file", "action": "Rebuilt all indexes after deletion", "files": ["minicode/memory.py"]},
+        {"event_id": "event-3", "call_id": "call-3", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "targeted memory tests: 5 passed"},
+        {"event_id": "event-4", "call_id": "call-4", "type": "tool_result", "tool_name": "run_command", "status": "success", "output_summary": "full suite: 788 passed, 2 skipped"},
+        {"event_id": "event-5", "call_id": "call-5", "type": "tool_result", "tool_name": "ruff", "status": "success", "output_summary": "lint passed"},
+        {"event_id": "event-6", "call_id": "call-6", "type": "tool_result", "tool_name": "pyright", "status": "success", "output_summary": "type check passed"},
+        {"event_id": "event-7", "type": "task_result", "status": "success"}
+      ],
+      "expected_evidence": {"files_read": [], "files_changed": ["minicode/memory.py"], "tools": ["delete_memory", "edit_file", "run_command", "ruff", "pyright"], "libraries": [], "errors": [{"error_id": "error-1", "call_id": "call-1", "tool_name": "delete_memory", "error_type": "IndexError", "message_key": "stale_tag_index", "required_terms": ["remained", "tag index"], "source_event_ids": ["event-1"]}], "recoveries": [{"recovery_id": "recovery-1", "error_id": "error-1", "required_terms": ["rebuilt", "indexes", "deletion"], "evidence_ids": ["event-2"]}], "decisions": [], "verification": [{"verification_id": "verify-1", "result": "passed", "scope": "targeted", "required_terms": ["5 passed"], "evidence_ids": ["event-3"]}, {"verification_id": "verify-2", "result": "passed", "scope": "full", "required_terms": ["788 passed"], "evidence_ids": ["event-4"]}, {"verification_id": "verify-3", "result": "passed", "scope": "lint", "required_terms": ["lint passed"], "evidence_ids": ["event-5"]}, {"verification_id": "verify-4", "result": "passed", "scope": "type_check", "required_terms": ["type check passed"], "evidence_ids": ["event-6"]}], "outcome": "success"},
+      "expected_value": {"should_write_memory": true, "reasons": ["verified_reusable_fix"]},
+      "expected_claims": [{"claim_id": "claim-1", "claim_type": "fix", "semantic_key": "rebuild_indexes_after_delete", "evidence_ids": ["event-1", "event-2", "event-3", "event-4"], "epistemic_status": "confirmed", "required_terms": ["rebuilt", "indexes", "deletion"], "forbidden_terms": ["probably"]}],
+      "forbidden_claims": [],
+      "notes": "Verification scope is explicit rather than inferred from task success."
+    }
+  ]
+}

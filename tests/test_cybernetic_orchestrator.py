@@ -1,0 +1,156 @@
+"""Minimal smoke test for CyberneticOrchestrator — verifies all 15 controllers init."""
+from __future__ import annotations
+
+from unittest.mock import MagicMock
+
+from minicode.cybernetic_orchestrator import CyberneticOrchestrator
+from minicode.reflection_llm import StructuredClientFactoryResult
+
+
+class TestOrchestratorInit:
+    def test_initialize_all_controllers(self):
+        mock_model = MagicMock()
+        mock_model.model_id = "test-model"
+        mock_tools = MagicMock()
+        orch = CyberneticOrchestrator()
+        orch.initialize(mock_model, mock_tools)
+        assert orch._initialized
+        assert orch.feedback is not None
+        assert orch.stability is not None
+        assert orch.adaptive_tuner is not None
+        assert orch.state_observer is not None
+        assert orch.decoupling is not None
+        assert orch.predictive is not None
+        assert orch.progress is not None
+        assert orch.cost_control is not None
+        assert orch.memory_ctrl is not None
+        assert orch.model_ctrl is not None
+        assert orch.smart_router is not None
+        assert orch.model_switcher is not None
+
+    def test_wire_healing(self):
+        orch = CyberneticOrchestrator()
+        orch.healing = None
+        orch.wire_healing(tool_scheduler=MagicMock(), compactor=None)
+        assert orch.healing is not None
+
+    def test_rule_mode_does_not_create_reflection_model_client(self, monkeypatch):
+        def fail_if_called(*args, **kwargs):
+            raise AssertionError("rule mode must not create an LLM client")
+
+        monkeypatch.setattr(
+            "minicode.reflection_llm.create_structured_generation_client",
+            fail_if_called,
+        )
+        orch = CyberneticOrchestrator()
+
+        orch.initialize(MagicMock(model_id="test-model"), MagicMock(), {})
+
+        assert orch.reflection._llm_config.mode == "rule"
+        assert orch.reflection._llm_synthesizer is None
+
+    def test_shadow_mode_uses_isolated_reflection_client(self, monkeypatch):
+        client = MagicMock()
+        monkeypatch.setattr(
+            "minicode.reflection_llm.create_structured_generation_client",
+            lambda runtime, config: StructuredClientFactoryResult(
+                client=client,
+                unavailable_reason=None,
+                is_remote=False,
+            ),
+        )
+        orch = CyberneticOrchestrator()
+
+        orch.initialize(
+            MagicMock(model_id="test-model"),
+            MagicMock(),
+            {
+                "reflectionSynthesizerMode": "llm_shadow",
+                "reflectionModel": "local-reflection",
+            },
+        )
+
+        assert orch.reflection._llm_config.mode == "llm_shadow"
+        assert orch.reflection._llm_synthesizer is not None
+
+    def test_shadow_metrics_recorder_requires_both_shadow_mode_and_opt_in(
+        self, monkeypatch, tmp_path
+    ):
+        client = MagicMock()
+        monkeypatch.setattr(
+            "minicode.reflection_llm.create_structured_generation_client",
+            lambda runtime, config: StructuredClientFactoryResult(
+                client=client,
+                unavailable_reason=None,
+                is_remote=False,
+            ),
+        )
+        metrics_path = tmp_path / "shadow.jsonl"
+        orch = CyberneticOrchestrator()
+
+        orch.initialize(
+            MagicMock(model_id="test-model"),
+            MagicMock(),
+            {
+                "reflectionSynthesizerMode": "llm_shadow",
+                "reflectionModel": "local-reflection",
+                "reflectionShadowMetricsEnabled": True,
+                "reflectionShadowMetricsPath": str(metrics_path),
+            },
+        )
+
+        assert orch.reflection._shadow_metrics_recorder is not None
+        assert orch.reflection._shadow_metrics_recorder.path == metrics_path
+
+    def test_production_llm_mode_never_constructs_shadow_metrics_recorder(
+        self, monkeypatch, tmp_path
+    ):
+        client = MagicMock()
+        monkeypatch.setattr(
+            "minicode.reflection_llm.create_structured_generation_client",
+            lambda runtime, config: StructuredClientFactoryResult(
+                client=client,
+                unavailable_reason=None,
+                is_remote=False,
+            ),
+        )
+        orch = CyberneticOrchestrator()
+
+        orch.initialize(
+            MagicMock(model_id="test-model"),
+            MagicMock(),
+            {
+                "reflectionSynthesizerMode": "llm",
+                "reflectionModel": "local-reflection",
+                "reflectionShadowMetricsEnabled": True,
+                "reflectionShadowMetricsPath": str(tmp_path / "shadow.jsonl"),
+            },
+        )
+
+        assert orch.reflection._shadow_metrics_recorder is None
+
+    def test_wire_memory_reuses_configured_reflection_engine(self, monkeypatch):
+        pipeline = MagicMock()
+        pipeline_type = MagicMock(return_value=pipeline)
+        monkeypatch.setattr("minicode.memory_pipeline.MemoryPipeline", pipeline_type)
+        orch = CyberneticOrchestrator()
+        orch.reflection = MagicMock()
+        orch._last_model = MagicMock()
+
+        orch.wire_memory(MagicMock())
+
+        assert pipeline.initialize.call_args.kwargs["reflection_engine"] is orch.reflection
+
+    def test_legacy_reflection_fallback_still_emits_trace_v2_events(self):
+        orch = CyberneticOrchestrator()
+        orch.memory_pipeline = MagicMock()
+
+        orch.reflect_on_task("Legacy task", step=2, tool_error_count=1)
+
+        trace = orch.memory_pipeline.write.call_args.args[1]
+        assert [event["event_id"] for event in trace] == [
+            "event-000001",
+            "event-000002",
+            "event-000003",
+        ]
+        assert all(event["trace_schema_version"] == 2 for event in trace)

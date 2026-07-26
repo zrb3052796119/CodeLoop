@@ -1,0 +1,446 @@
+{
+  "schema_version": "1.0",
+  "document_type": "cases",
+  "synthetic_data": true,
+  "reference_time": 1736942400,
+  "cases": [
+    {
+      "case_id": "sg-pos-enzh-01",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "english_to_chinese",
+      "query": "A resumed upload starts again from the first chunk.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-enzh-01",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "分片传输在服务端保存已确认的偏移量，并从该位置继续。",
+          "tags": [
+            "确认偏移",
+            "断点续传"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "upload-restart-test"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-enzh-01"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "cross_language_equivalence",
+      "query_language": "en",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "已确认偏移量是上传恢复时避免从首块重传的依据。",
+      "why_lexical_retrieval_may_fail": "英文症状与中文断点规则没有共享词元。",
+      "miss_impact": "大文件恢复会重复传输。",
+      "memory_kind": "recovery",
+      "annotation_evidence": "合成重启测试确认服务端偏移恢复。",
+      "safety_lifecycle_expectation": "已批准且活跃的项目恢复经验可以注入。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-enzh-02",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "english_to_chinese",
+      "query": "Two browser tabs overwrite each other's draft changes.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-enzh-02",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "草稿更新必须携带版本号，服务端使用乐观并发检查。",
+          "tags": [
+            "版本号",
+            "乐观并发"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "draft-conflict-test"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-enzh-02"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "cross_language_equivalence",
+      "query_language": "en",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "版本检查能够检测两个页面基于旧状态的覆盖写入。",
+      "why_lexical_retrieval_may_fail": "英文标签页症状没有出现中文并发控制术语。",
+      "miss_impact": "用户较新的草稿内容可能丢失。",
+      "memory_kind": "constraint",
+      "annotation_evidence": "合成冲突测试验证版本号拒绝陈旧写入。",
+      "safety_lifecycle_expectation": "已批准且活跃的本地约束可以注入。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-object-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-enzh-03",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "english_to_chinese",
+      "query": "Keep the terminal answer brief and operational.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-enzh-03",
+          "scope": "user",
+          "category": "preference",
+          "content": "用户偏好直接给出结论和执行动作，不展开背景叙述。",
+          "tags": [
+            "结论优先",
+            "执行动作"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "explicit-user-choice"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-enzh-03"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "cross_language_equivalence",
+      "query_language": "en",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "直接给出结论和动作就是简短且可操作的终端回答。",
+      "why_lexical_retrieval_may_fail": "英文请求与中文偏好没有共享词元。",
+      "miss_impact": "回答会变得冗长且缺少行动焦点。",
+      "memory_kind": "preference",
+      "annotation_evidence": "合成显式偏好适用于终端输出。",
+      "safety_lifecycle_expectation": "已批准且活跃的 USER 偏好可以注入。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-01"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-enzh-04",
+      "split": "analysis",
+      "polarity": "positive",
+      "category": "english_to_chinese",
+      "query": "The list briefly shows records from the previous account after sign-in.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-enzh-04",
+          "scope": "project",
+          "category": "semantic-rule",
+          "content": "身份切换时必须先清空前端查询缓存，再加载新主体的数据。",
+          "tags": [
+            "身份切换",
+            "清空查询缓存"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "account-switch-test"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-enzh-04"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "project",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "cross_language_equivalence",
+      "query_language": "en",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "身份切换前清空查询缓存能够避免短暂展示旧主体记录。",
+      "why_lexical_retrieval_may_fail": "英文视觉症状没有使用中文缓存清理术语。",
+      "miss_impact": "可能短暂泄露前一账户信息。",
+      "memory_kind": "constraint",
+      "annotation_evidence": "合成账户切换测试确认先清缓存的顺序。",
+      "safety_lifecycle_expectation": "已批准且活跃的项目约束可以注入。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-object-02"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-enzh-05",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "english_to_chinese",
+      "query": "A successful scheduled run appears again after the coordinator recovers.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-enzh-05",
+          "scope": "local",
+          "category": "semantic-rule",
+          "content": "调度器以执行世代和计划标识组成唯一完成凭据。",
+          "tags": [
+            "执行世代",
+            "完成凭据"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "coordinator-failover-test"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-enzh-05"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "local",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "cross_language_equivalence",
+      "query_language": "en",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "唯一完成凭据可以阻止协调器恢复后重复执行已完成计划。",
+      "why_lexical_retrieval_may_fail": "英文故障描述没有出现中文世代凭据术语。",
+      "miss_impact": "定时任务可能重复产生外部副作用。",
+      "memory_kind": "stable_fact",
+      "annotation_evidence": "合成故障转移测试验证完成凭据去重。",
+      "safety_lifecycle_expectation": "已批准且活跃的本地事实可以注入。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-symptom-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    },
+    {
+      "case_id": "sg-pos-enzh-06",
+      "split": "sealed",
+      "polarity": "positive",
+      "category": "english_to_chinese",
+      "query": "Do not restate a decision that I already made explicit.",
+      "current_files": [],
+      "active_domains": [],
+      "context_usage": 0.2,
+      "max_memories": 5,
+      "max_tokens": 1200,
+      "background_pool_id": "semantic-pressure-v1",
+      "memories": [
+        {
+          "id": "sg-mem-enzh-06",
+          "scope": "user",
+          "category": "preference",
+          "content": "用户确认选择后，只需要说明影响和后续动作。",
+          "tags": [
+            "确认选择",
+            "后续动作"
+          ],
+          "domains": [],
+          "tier": "long_term",
+          "lifecycle_status": "active",
+          "safety_status": "safe",
+          "approval_status": "approved",
+          "curator_locked": false,
+          "usefulness_score": 0.0,
+          "created_at": 1736856000,
+          "updated_at": 1736938800,
+          "source": "semantic_gap_fixture",
+          "metadata": {},
+          "provenance": {
+            "kind": "synthetic_verified",
+            "evidence": "explicit-user-choice"
+          }
+        }
+      ],
+      "primary_entry_ids": [
+        "sg-mem-enzh-06"
+      ],
+      "allowed_secondary_ids": [],
+      "must_exclude_ids": [],
+      "expected_no_match": false,
+      "expected_scope": "user",
+      "expected_stage_behavior": {
+        "wide_candidate": "required",
+        "gate": "required",
+        "consolidation": "retain",
+        "rendered": "required"
+      },
+      "semantic_relation_type": "cross_language_equivalence",
+      "query_language": "en",
+      "memory_language": "zh",
+      "lexical_overlap_class": "zero",
+      "normalized_token_overlap": 0.0,
+      "why_semantically_relevant": "说明影响和后续动作避免重复用户已经确认的决定。",
+      "why_lexical_retrieval_may_fail": "英文请求与中文偏好没有共享词元。",
+      "miss_impact": "回答会重复已经结束的决策讨论。",
+      "memory_kind": "preference",
+      "annotation_evidence": "合成显式用户偏好覆盖确认后的回复方式。",
+      "safety_lifecycle_expectation": "已批准且活跃的 USER 偏好可以注入。",
+      "query_is_sufficient": true,
+      "structured_metadata_complete": true,
+      "hard_negative_control_case_ids": [
+        "sg-neg-preference-03"
+      ],
+      "allow_wide_candidate": true,
+      "must_gate_reject": false,
+      "allow_consolidator": true,
+      "allow_rendered": true
+    }
+  ]
+}

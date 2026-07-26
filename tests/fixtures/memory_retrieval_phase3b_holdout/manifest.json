@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "document_type": "manifest",
+  "dataset_id": "memory-retrieval-phase3b-holdout-v1",
+  "synthetic_data": true,
+  "case_count": 60,
+  "positive_count": 36,
+  "hard_negative_count": 24,
+  "positive_categories": [
+    "zero_overlap_paraphrase",
+    "chinese_to_english",
+    "english_to_chinese",
+    "symptom_to_recovery",
+    "symptom_to_root_cause",
+    "goal_to_project_constraint",
+    "behavior_to_configuration",
+    "alias_acronym",
+    "user_preference_rephrasing",
+    "correction_supersession",
+    "multi_clause_context"
+  ],
+  "negative_categories": [
+    "negation_opposite",
+    "same_symptom_different_root",
+    "same_basename_different_path",
+    "same_domain_different_object",
+    "semantic_similar_different_object",
+    "ambiguous_query",
+    "lifecycle_safety_negative"
+  ],
+  "case_file": "cases.json",
+  "background_file": "background.json",
+  "calibration_allowed": false,
+  "first_hybrid_run": false
+}

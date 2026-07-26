@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "responses": [
+    {
+      "case_id": "holdout-verified-recovery-007",
+      "prompt_version": "baseline",
+      "expected_parser_failure_code": "invalid_semantic_key",
+      "expected_parser_failure_detail_code": "semantic_key_contains_hyphen",
+      "response": {
+        "task_summary": "Repair lease renewal",
+        "outcome": "success",
+        "claims": [
+          {
+            "applies_when": "lease renewal uses a fencing token",
+            "claim_type": "error_pattern",
+            "epistemic_status": "confirmed",
+            "evidence_ids": ["event-1"],
+            "limitations": [],
+            "related_error_ids": ["error-000001"],
+            "related_recovery_ids": [],
+            "semantic_key": "stale-fencing-token-error",
+            "statement": "Lease renewal failed because the renewal used a stale fencing token.",
+            "verification_ids": []
+          },
+          {
+            "applies_when": "fencing token is stale before renewal",
+            "claim_type": "recovery",
+            "epistemic_status": "confirmed",
+            "evidence_ids": ["event-2"],
+            "limitations": [],
+            "related_error_ids": ["error-000001"],
+            "related_recovery_ids": ["recovery-000001"],
+            "semantic_key": "refresh-fencing-token-before-renewal",
+            "statement": "The recovery action was to refresh the fencing token before renewal by modifying src/lease.py.",
+            "verification_ids": []
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "holdout-redacted-secret-error-028",
+      "prompt_version": "baseline",
+      "expected_parser_failure_code": "invalid_semantic_key",
+      "expected_parser_failure_detail_code": "semantic_key_multiple_violations",
+      "response": {
+        "task_summary": "Diagnose authentication header parsing",
+        "outcome": "success",
+        "claims": [
+          {
+            "applies_when": "when parsing an Authorization header",
+            "claim_type": "error_pattern",
+            "epistemic_status": "confirmed",
+            "evidence_ids": ["event-1"],
+            "limitations": ["Only one synthetic instance was observed"],
+            "related_error_ids": ["error-000001"],
+            "related_recovery_ids": [],
+            "semantic_key": "Authorization header missing scheme separator",
+            "statement": "The redacted synthetic Authorization header lacked the required scheme separator.",
+            "verification_ids": ["verify-000001"]
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "holdout-unverified-recovery-024",
+      "prompt_version": "calibrated",
+      "expected_value_reason_code": "unverified_recovery_context",
+      "response": {
+        "task_summary": "Attempt queue recovery",
+        "outcome": "failed",
+        "claims": [
+          {
+            "semantic_key": "consumer_cursor_disappeared_during_rebalance",
+            "claim_type": "error_pattern",
+            "epistemic_status": "confirmed",
+            "statement": "Consumer cursor disappeared during rebalance",
+            "applies_when": "A queue consumer cursor is lost during a rebalance event",
+            "evidence_ids": ["event-1"],
+            "related_error_ids": [],
+            "related_recovery_ids": [],
+            "verification_ids": [],
+            "limitations": []
+          },
+          {
+            "semantic_key": "restore_cursor_from_last_checkpoint",
+            "claim_type": "recovery",
+            "epistemic_status": "inferred",
+            "statement": "Restore the cursor from the last checkpoint",
+            "applies_when": "The consumer cursor has been lost and a checkpoint is available",
+            "evidence_ids": ["event-2"],
+            "related_error_ids": ["error-000001"],
+            "related_recovery_ids": [],
+            "verification_ids": [],
+            "limitations": ["No verification evidence confirms successful recovery"]
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "holdout-partial-recovery-008",
+      "prompt_version": "calibrated",
+      "expected_value_reason_code": "unverified_recovery_context",
+      "response": {
+        "task_summary": "Retry failed shard upload",
+        "outcome": "unknown",
+        "claims": [
+          {
+            "semantic_key": "shard_upload_timeout",
+            "claim_type": "error_pattern",
+            "epistemic_status": "confirmed",
+            "statement": "Shard seven timed out after commit",
+            "applies_when": "uploading a shard with the shard_uploader tool",
+            "evidence_ids": ["event-1"],
+            "related_error_ids": [],
+            "related_recovery_ids": [],
+            "verification_ids": [],
+            "limitations": []
+          },
+          {
+            "semantic_key": "retry_shard_with_existing_commit_id",
+            "claim_type": "recovery",
+            "epistemic_status": "inferred",
+            "statement": "Retry shard seven with the existing commit id",
+            "applies_when": "shard upload times out after commit",
+            "evidence_ids": ["event-2"],
+            "related_error_ids": ["error-000001"],
+            "related_recovery_ids": [],
+            "verification_ids": [],
+            "limitations": ["No verification evidence confirms successful recovery"]
+          }
+        ]
+      }
+    }
+  ]
+}
