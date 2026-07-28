@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 import shutil
 from dataclasses import dataclass, field
@@ -32,6 +33,7 @@ class SkillSummary:
     tools: list[str] = field(default_factory=list)
     keywords: list[str] = field(default_factory=list)
     examples: list[str] = field(default_factory=list)
+    content_digest: str = ""
 
 
 @dataclass(slots=True)
@@ -283,6 +285,9 @@ def discover_skills(cwd: str | Path) -> list[SkillSummary]:
             tools=list(skill.tools),
             keywords=list(skill.keywords),
             examples=list(skill.examples),
+            content_digest=hashlib.sha256(
+                skill.content.encode("utf-8")
+            ).hexdigest(),
         )
         for skill in ordered
     ]

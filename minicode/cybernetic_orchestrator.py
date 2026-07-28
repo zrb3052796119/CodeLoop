@@ -29,6 +29,7 @@ Architecture:
 from __future__ import annotations
 
 import time
+from pathlib import Path
 from typing import Any
 
 from minicode.adaptive_pid_tuner import AdaptivePIDTuner
@@ -115,6 +116,8 @@ class CyberneticOrchestrator:
     ) -> None:
         """Initialize all controllers. Call once at task start."""
         self._last_model = model
+        feedback_root = Path(self._workspace) if self._workspace else Path.cwd()
+        self._workspace = str(feedback_root)
         self.feedback = FeedbackController()
         self.cyber_supervisor = CyberneticSupervisor()
         self.stability = StabilityMonitor(window_size=100)
@@ -137,7 +140,11 @@ class CyberneticOrchestrator:
         )
         from minicode.smart_router import SmartRouter
 
-        self.smart_router = SmartRouter()
+        # Keep learned routing outcomes durable but project-scoped so task text
+        # and model performance cannot contaminate unrelated workspaces.
+        self.smart_router = SmartRouter(
+            feedback_path=feedback_root / ".mini-code" / "router_feedback.json",
+        )
         reflection_config = ReflectionLLMConfig.from_runtime(runtime)
         reflection_synthesizer = None
         reflection_unavailable_reason = None
@@ -165,8 +172,6 @@ class CyberneticOrchestrator:
             and reflection_config.shadow_metrics_enabled
         ):
             try:
-                from pathlib import Path
-
                 from minicode.model_registry import build_provider_config
                 from minicode.reflection_shadow_metrics import (
                     ReflectionShadowMetricsRecorder,
@@ -409,11 +414,13 @@ class CyberneticOrchestrator:
             except Exception:
                 pass
 
-        # Background memory optimization via unified pipeline
-        if self.memory_pipeline:
-            self.memory_pipeline.maintain()
-
         return summary
+
+    def task_end(self) -> dict[str, Any] | None:
+        """Advance task-scoped maintenance exactly once at task finalization."""
+        if not self.memory_pipeline:
+            return None
+        return self.memory_pipeline.maintain()
 
     # ── MEMORY INJECTION ────────────────────────────────────────────
 

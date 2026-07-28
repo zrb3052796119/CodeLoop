@@ -31,6 +31,10 @@ from minicode.permission_event_contract import (
     PERMISSION_EVENT_TYPES,
     normalize_permission_event_payload,
 )
+from minicode.verification_observation import (
+    VERIFICATION_EVENT_TYPE,
+    normalize_verification_payload,
+)
 
 
 def _conversation_fenced_run_create(method):
@@ -94,7 +98,11 @@ EVENT_TYPES = frozenset(
         "tool.started",
         "tool.finished",
         "assistant.completed",
+        "task.outcome",
+        VERIFICATION_EVENT_TYPE,
         "skill.routed",
+        "skill.loaded",
+        "skill.attributed",
         "memory.retrieved",
         "memory.rendered",
         "working_memory.observed",
@@ -165,6 +173,15 @@ _DEFAULT_RUN_LIMIT = 20
 _DEFAULT_EVENT_LIMIT = 50
 _MAX_PAGE_LIMIT = 100
 _MAX_CURSOR_CHARS = 512
+_MAX_USER_SIGNAL_BYTES = 1_024
+_USER_SIGNAL_FILE = "user_signal.json"
+_USER_SIGNAL_LOCK = ".user-signal.lock"
+_USER_SIGNALS = frozenset({"accept", "correct", "reject"})
+_USER_SIGNAL_SOURCE = "explicit_user_action"
+_MAX_RENDERED_MEMORY_IDS = 20
+_MAX_RENDERED_MEMORY_BYTES = 4_096
+_RENDERED_MEMORY_FILE = "memory_rendered.json"
+_MEMORY_ENTRY_ID_RE = re.compile(r"^(user|project|local)-[0-9]{1,20}-[0-9a-f]{8}$")
 
 
 def _utc_now() -> datetime:
@@ -278,6 +295,13 @@ def _sanitize_event_payload(event_type: str, payload: Mapping[str, Any] | None) 
         if normalized_permission is None:
             raise RunJournalValidationError("Permission event payload is invalid.")
         return normalized_permission
+    if event_type == VERIFICATION_EVENT_TYPE:
+        normalized_verification = normalize_verification_payload(sanitized)
+        if normalized_verification is None:
+            raise RunJournalValidationError(
+                "Verification event payload is invalid."
+            )
+        return normalized_verification
     return sanitized
 
 
@@ -294,6 +318,19 @@ def _sanitize_metadata(metadata: Mapping[str, Any] | None) -> dict[str, str]:
             raise RunJournalValidationError("Run metadata value is too long.")
         sanitized[key] = _redact_text(value, max_chars=_MAX_METADATA_VALUE_CHARS)
     return sanitized
+
+
+def _normalize_rendered_memory_ids(entry_ids: object) -> tuple[str, ...]:
+    """Validate a bounded set of opaque Memory entry IDs, content-free."""
+    if not isinstance(entry_ids, (list, tuple)):
+        raise RunJournalValidationError("Rendered Memory IDs must be a list.")
+    deduped = tuple(dict.fromkeys(entry_ids))
+    if len(deduped) > _MAX_RENDERED_MEMORY_IDS:
+        raise RunJournalValidationError("Too many rendered Memory IDs.")
+    for entry_id in deduped:
+        if not isinstance(entry_id, str) or not _MEMORY_ENTRY_ID_RE.fullmatch(entry_id):
+            raise RunJournalValidationError("Rendered Memory ID is invalid.")
+    return deduped
 
 
 class RunJournalError(RuntimeError):
@@ -318,6 +355,53 @@ class RunJournalNotFoundError(RunJournalError):
 
 class RunJournalStorageError(RunJournalError):
     """Raised when a durable operation cannot be completed safely."""
+
+
+class RunJournalUserSignalConflictError(RunJournalError):
+    """Raised when an immutable Run already has a different user signal."""
+
+
+@dataclass(frozen=True, slots=True)
+class RunUserSignal:
+    schema_version: int
+    signal: str
+    source: str
+    recorded_at: str
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schemaVersion": self.schema_version,
+            "signal": self.signal,
+            "source": self.source,
+            "recordedAt": self.recorded_at,
+        }
+
+    @classmethod
+    def from_dict(cls, value: object) -> RunUserSignal:
+        if not isinstance(value, dict) or set(value) != {
+            "schemaVersion",
+            "signal",
+            "source",
+            "recordedAt",
+        }:
+            raise ValueError("invalid user signal record")
+        if value.get("schemaVersion") != SCHEMA_VERSION:
+            raise ValueError("invalid user signal schema")
+        signal = value.get("signal")
+        if signal not in _USER_SIGNALS:
+            raise ValueError("invalid user signal")
+        if value.get("source") != _USER_SIGNAL_SOURCE:
+            raise ValueError("invalid user signal source")
+        recorded_at = value.get("recordedAt")
+        if not isinstance(recorded_at, str):
+            raise ValueError("invalid user signal timestamp")
+        _parse_time(recorded_at)
+        return cls(
+            schema_version=SCHEMA_VERSION,
+            signal=signal,
+            source=_USER_SIGNAL_SOURCE,
+            recorded_at=recorded_at,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -636,6 +720,83 @@ class RunJournal:
         record, _ = self._read_run(run_id)
         return record
 
+    def get_user_signal(self, run_id: str) -> RunUserSignal | None:
+        """Read one immutable content-free post-terminal user action."""
+        self._validate_run_id(run_id)
+        record, _ = self._read_run(run_id)
+        if record is None:
+            raise RunJournalNotFoundError("Run was not found.")
+        run_dir = self._run_directory(run_id, must_exist=True)
+        return self._read_user_signal(run_dir)
+
+    def record_user_signal(
+        self,
+        run_id: str,
+        signal: str,
+    ) -> RunUserSignal:
+        """Record one explicit completed-Run signal, idempotently."""
+        self._validate_run_id(run_id)
+        if signal not in _USER_SIGNALS:
+            raise RunJournalValidationError("User signal is invalid.")
+        record, _ = self._read_run(run_id)
+        if record is None:
+            raise RunJournalNotFoundError("Run was not found.")
+        if record.status != "completed":
+            raise RunJournalTransitionError(
+                "User signal requires a completed Run."
+            )
+        if record.session_id is None:
+            return self._record_user_signal_locked(run_id, signal)
+        from minicode.deletion_store import (
+            DeletionStoreError,
+            conversation_write_guard,
+        )
+
+        try:
+            with conversation_write_guard(
+                self.workspace,
+                record.session_id,
+                data_dir=self.data_dir,
+            ):
+                return self._record_user_signal_locked(run_id, signal)
+        except DeletionStoreError as error:
+            raise RunJournalStorageError(
+                "User signal storage is unavailable."
+            ) from error
+
+    def _record_user_signal_locked(
+        self,
+        run_id: str,
+        signal: str,
+    ) -> RunUserSignal:
+        run_dir = self._run_directory(run_id, must_exist=True)
+        self._acquire_run_mutation_lock(run_dir)
+        try:
+            record, _ = self._read_run(run_id)
+            if record is None:
+                raise RunJournalNotFoundError("Run was not found.")
+            if record.status != "completed":
+                raise RunJournalTransitionError(
+                    "User signal requires a completed Run."
+                )
+            existing = self._read_user_signal(run_dir)
+            if existing is not None:
+                if existing.signal != signal:
+                    raise RunJournalUserSignalConflictError(
+                        "Run user signal is immutable."
+                    )
+                return existing
+            created = RunUserSignal(
+                schema_version=SCHEMA_VERSION,
+                signal=signal,
+                source=_USER_SIGNAL_SOURCE,
+                recorded_at=_iso_time(self._clock()),
+            )
+            self._write_user_signal(run_dir, created)
+            return created
+        finally:
+            self._release_run_mutation_lock(run_dir)
+
     def deletion_snapshot(self, session_id: str) -> RunDeletionSnapshot:
         """Read a bounded view of Runs linked to one Session."""
         if (
@@ -702,22 +863,30 @@ class RunJournal:
         deleted = 0
         for record in snapshot.terminal:
             directory = self._run_directory(record.id, must_exist=True)
-            current, current_diagnostics = self._read_run(record.id)
-            if (
-                current_diagnostics
-                or current is None
-                or current.session_id != session_id
-                or current.status not in TERMINAL_STATUSES
-                or (directory / ".writer.lock").exists()
-            ):
-                raise RunJournalStorageError("Run changed during deletion.")
-            self._validate_retention_directory(record.id, directory, root)
+            self._acquire_run_mutation_lock(directory)
             try:
+                current, current_diagnostics = self._read_run(record.id)
+                if (
+                    current_diagnostics
+                    or current is None
+                    or current.session_id != session_id
+                    or current.status not in TERMINAL_STATUSES
+                    or (directory / ".writer.lock").exists()
+                ):
+                    raise RunJournalStorageError(
+                        "Run changed during deletion."
+                    )
+                self._validate_retention_directory(
+                    record.id, directory, root
+                )
                 shutil.rmtree(directory)
             except FileNotFoundError:
                 continue
             except OSError as error:
                 raise RunJournalStorageError("Run deletion is unavailable.") from error
+            finally:
+                if directory.exists():
+                    self._release_run_mutation_lock(directory)
             self._writers.pop(record.id, None)
             self._writer_mutexes.pop(record.id, None)
             deleted += 1
@@ -888,6 +1057,43 @@ class RunJournal:
             )
             self._write_metadata(run_dir, checkpoint)
             return event
+
+    def record_rendered_memory_ids(
+        self,
+        run_id: str,
+        entry_ids: list[str],
+    ) -> None:
+        """Persist this Run's rendered Memory entry IDs once, content-free,
+        so a later explicit user signal can bind corroborated feedback to
+        the exact entries this turn actually rendered.
+        """
+        self._validate_run_id(run_id)
+        normalized = _normalize_rendered_memory_ids(entry_ids)
+        if not normalized:
+            return
+        mutex = self._writer_mutexes.get(run_id)
+        if mutex is None:
+            raise RunJournalOwnershipError("This process does not own the Run writer.")
+        with mutex:
+            run_dir = self._run_directory(run_id, must_exist=True)
+            self._require_writer(run_id, run_dir)
+            record, _ = self._read_run(run_id)
+            if record is None:
+                raise RunJournalNotFoundError("Run was not found.")
+            if record.status in TERMINAL_STATUSES:
+                raise RunJournalTransitionError(
+                    "A terminal Run cannot accept rendered Memory IDs."
+                )
+            self._write_rendered_memory_ids(run_dir, normalized)
+
+    def get_rendered_memory_ids(self, run_id: str) -> tuple[str, ...] | None:
+        """Read the content-free rendered Memory entry IDs for this Run."""
+        self._validate_run_id(run_id)
+        record, _ = self._read_run(run_id)
+        if record is None:
+            raise RunJournalNotFoundError("Run was not found.")
+        run_dir = self._run_directory(run_id, must_exist=True)
+        return self._read_rendered_memory_ids(run_dir)
 
     def transition(
         self,
@@ -1103,7 +1309,10 @@ class RunJournal:
                 item[0].id,
             ),
         ):
+            mutation_lock_acquired = False
             try:
+                self._acquire_run_mutation_lock(directory)
+                mutation_lock_acquired = True
                 self._validate_retention_directory(record.id, directory, root)
                 shutil.rmtree(directory)
                 deleted += 1
@@ -1114,6 +1323,9 @@ class RunJournal:
                         "An eligible Run could not be removed.",
                     )
                 )
+            finally:
+                if mutation_lock_acquired and directory.exists():
+                    self._release_run_mutation_lock(directory)
         if deleted:
             self._refresh_index_best_effort()
         return RetentionResult(
@@ -1347,6 +1559,225 @@ class RunJournal:
             except FileNotFoundError:
                 pass
             raise
+
+    def _write_user_signal(
+        self,
+        run_dir: Path,
+        record: RunUserSignal,
+    ) -> None:
+        encoded = (
+            json.dumps(
+                record.to_dict(),
+                ensure_ascii=False,
+                allow_nan=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n"
+        ).encode("utf-8")
+        if len(encoded) > _MAX_USER_SIGNAL_BYTES:
+            raise RunJournalStorageError("User signal exceeds the byte limit.")
+        fd, temporary = tempfile.mkstemp(
+            prefix=".user-signal-",
+            suffix=".tmp",
+            dir=run_dir,
+        )
+        target = run_dir / _USER_SIGNAL_FILE
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                os.fchmod(handle.fileno(), 0o600)
+                handle.write(encoded)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.link(temporary, target, follow_symlinks=False)
+            os.unlink(temporary)
+            self._fsync_directory(run_dir)
+        except FileExistsError as error:
+            try:
+                os.unlink(temporary)
+            except FileNotFoundError:
+                pass
+            raise RunJournalStorageError(
+                "User signal storage changed during write."
+            ) from error
+        except OSError as error:
+            try:
+                os.unlink(temporary)
+            except FileNotFoundError:
+                pass
+            raise RunJournalStorageError(
+                "User signal storage is unavailable."
+            ) from error
+
+    @staticmethod
+    def _acquire_run_mutation_lock(run_dir: Path) -> None:
+        try:
+            (run_dir / _USER_SIGNAL_LOCK).mkdir(mode=0o700)
+        except FileExistsError as error:
+            raise RunJournalStorageError(
+                "Run mutation storage is busy."
+            ) from error
+        except OSError as error:
+            raise RunJournalStorageError(
+                "Run mutation storage is unavailable."
+            ) from error
+
+    @staticmethod
+    def _release_run_mutation_lock(run_dir: Path) -> None:
+        try:
+            (run_dir / _USER_SIGNAL_LOCK).rmdir()
+        except OSError:
+            pass
+
+    def _read_user_signal(self, run_dir: Path) -> RunUserSignal | None:
+        path = run_dir / _USER_SIGNAL_FILE
+        try:
+            before = os.lstat(path)
+        except FileNotFoundError:
+            return None
+        except OSError as error:
+            raise RunJournalStorageError(
+                "User signal storage is unavailable."
+            ) from error
+        if (
+            stat.S_ISLNK(before.st_mode)
+            or not stat.S_ISREG(before.st_mode)
+            or before.st_size <= 0
+            or before.st_size > _MAX_USER_SIGNAL_BYTES
+        ):
+            raise RunJournalStorageError("User signal storage is unsafe.")
+        flags = os.O_RDONLY
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        try:
+            fd = os.open(path, flags)
+            try:
+                after = os.fstat(fd)
+                if (
+                    after.st_dev != before.st_dev
+                    or after.st_ino != before.st_ino
+                    or not stat.S_ISREG(after.st_mode)
+                    or after.st_size != before.st_size
+                ):
+                    raise OSError("user signal changed during read")
+                raw = os.read(fd, _MAX_USER_SIGNAL_BYTES + 1)
+            finally:
+                os.close(fd)
+            if len(raw) != before.st_size:
+                raise OSError("short user signal read")
+            return RunUserSignal.from_dict(json.loads(raw.decode("utf-8")))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
+            raise RunJournalStorageError(
+                "User signal storage is unsafe."
+            ) from error
+
+    def _write_rendered_memory_ids(
+        self,
+        run_dir: Path,
+        entry_ids: tuple[str, ...],
+    ) -> None:
+        encoded = (
+            json.dumps(
+                {"schemaVersion": SCHEMA_VERSION, "entryIds": list(entry_ids)},
+                ensure_ascii=False,
+                allow_nan=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n"
+        ).encode("utf-8")
+        if len(encoded) > _MAX_RENDERED_MEMORY_BYTES:
+            raise RunJournalStorageError("Rendered Memory IDs exceed the byte limit.")
+        fd, temporary = tempfile.mkstemp(
+            prefix=".memory-rendered-",
+            suffix=".tmp",
+            dir=run_dir,
+        )
+        target = run_dir / _RENDERED_MEMORY_FILE
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                os.fchmod(handle.fileno(), 0o600)
+                handle.write(encoded)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.link(temporary, target, follow_symlinks=False)
+            os.unlink(temporary)
+            self._fsync_directory(run_dir)
+        except FileExistsError:
+            try:
+                os.unlink(temporary)
+            except FileNotFoundError:
+                pass
+            # Only one retrieval happens per turn, so a second write attempt
+            # is tolerated only when the existing target is a safe file with
+            # identical content; anything else (a symlink, a mismatch) is a
+            # genuine storage problem, not a benign retry.
+            if self._read_rendered_memory_ids(run_dir) != entry_ids:
+                raise RunJournalStorageError(
+                    "Rendered Memory ID storage changed during write."
+                )
+        except OSError as error:
+            try:
+                os.unlink(temporary)
+            except FileNotFoundError:
+                pass
+            raise RunJournalStorageError(
+                "Rendered Memory ID storage is unavailable."
+            ) from error
+
+    def _read_rendered_memory_ids(self, run_dir: Path) -> tuple[str, ...] | None:
+        path = run_dir / _RENDERED_MEMORY_FILE
+        try:
+            before = os.lstat(path)
+        except FileNotFoundError:
+            return None
+        except OSError as error:
+            raise RunJournalStorageError(
+                "Rendered Memory ID storage is unavailable."
+            ) from error
+        if (
+            stat.S_ISLNK(before.st_mode)
+            or not stat.S_ISREG(before.st_mode)
+            or before.st_size <= 0
+            or before.st_size > _MAX_RENDERED_MEMORY_BYTES
+        ):
+            raise RunJournalStorageError("Rendered Memory ID storage is unsafe.")
+        flags = os.O_RDONLY
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        try:
+            fd = os.open(path, flags)
+            try:
+                after = os.fstat(fd)
+                if (
+                    after.st_dev != before.st_dev
+                    or after.st_ino != before.st_ino
+                    or not stat.S_ISREG(after.st_mode)
+                    or after.st_size != before.st_size
+                ):
+                    raise OSError("rendered Memory IDs changed during read")
+                raw = os.read(fd, _MAX_RENDERED_MEMORY_BYTES + 1)
+            finally:
+                os.close(fd)
+            if len(raw) != before.st_size:
+                raise OSError("short rendered Memory ID read")
+            decoded = json.loads(raw.decode("utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise RunJournalStorageError(
+                "Rendered Memory ID storage is unsafe."
+            ) from error
+        if (
+            not isinstance(decoded, dict)
+            or set(decoded) != {"schemaVersion", "entryIds"}
+            or decoded.get("schemaVersion") != SCHEMA_VERSION
+        ):
+            raise RunJournalStorageError("Rendered Memory ID storage is unsafe.")
+        try:
+            return _normalize_rendered_memory_ids(decoded.get("entryIds"))
+        except RunJournalValidationError as error:
+            raise RunJournalStorageError(
+                "Rendered Memory ID storage is unsafe."
+            ) from error
 
     @staticmethod
     def _fsync_directory(directory: Path) -> None:

@@ -205,6 +205,41 @@ def test_real_journal_persists_only_redacted_lifecycle_events(tmp_path: Path) ->
         assert secret not in serialized
 
 
+def test_observation_persists_rendered_memory_ids_readable_after_the_run(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    entry_ids = ["project-1785082406796413000-b6ecf281"]
+
+    with observe_run(
+        workspace=workspace,
+        source="headless",
+        title="Render one Memory",
+        journal_factory=lambda resolved: RunJournal(resolved, data_dir=data_dir),
+    ) as observation:
+        run_id = observation.run_id
+        observation.record_rendered_memory_ids(entry_ids)
+
+    journal = RunJournal(workspace, data_dir=data_dir)
+    assert journal.get_rendered_memory_ids(run_id) == tuple(entry_ids)
+
+
+def test_recording_journal_without_memory_binding_does_not_raise() -> None:
+    journal = RecordingJournal()
+
+    with observe_run(
+        workspace=Path("."),
+        source="headless",
+        title="No Memory binding seam",
+        journal_factory=lambda _workspace: journal,
+    ) as observation:
+        observation.record_rendered_memory_ids(
+            ["project-1785082406796413000-b6ecf281"]
+        )  # must not raise even though RecordingJournal lacks this method
+
+
 def test_logger_failure_is_isolated_with_journal_failure(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

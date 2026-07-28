@@ -244,6 +244,7 @@ def test_real_agent_working_memory_event_precedes_assistant_and_terminal(
         "model.completed",
         "model.costed",
         "working_memory.observed",
+        "task.outcome",
         "assistant.completed",
         "run.completed",
     ]

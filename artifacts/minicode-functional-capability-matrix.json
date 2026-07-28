@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "audit": {
     "name": "MiniCode Functional Reliability Audit 1A",
-    "generatedAt": "2026-07-26T09:40:30Z",
-    "durationMs": 726,
+    "generatedAt": "2026-07-27T16:59:03Z",
+    "durationMs": 1259,
     "categories": [
       "dashboard",
       "discovery",
@@ -18,8 +18,8 @@
       "web"
     ],
     "liveNetwork": false,
-    "installedWheel": true,
-    "browserVerified": true,
+    "installedWheel": false,
+    "browserVerified": false,
     "isolation": {
       "home": "<isolated-home>",
       "miniCodeDir": "<isolated-mini-code-dir>",
@@ -36,17 +36,17 @@
     }
   },
   "summary": {
-    "capabilityCount": 185,
+    "capabilityCount": 186,
     "registeredToolCount": 53,
     "defaultCoreToolCount": 26,
     "fullOnlyToolCount": 27,
     "sourceToolDefinitionCount": 59,
     "consoleScriptCount": 4,
-    "literalRouteCount": 27,
+    "literalRouteCount": 28,
     "issueCount": 7,
     "statusCounts": {
-      "pass": 124,
-      "partial": 44,
+      "pass": 112,
+      "partial": 57,
       "fail": 7,
       "unavailable": 1,
       "blocked": 6,
@@ -274,6 +274,7 @@
       "/api/v1/chat/turns",
       "/api/v1/chat/turns/",
       "/api/v1/chat/turns/(turn_[0-9a-f]{32})/cancel",
+      "/api/v1/chat/turns/(turn_[0-9a-f]{32})/feedback",
       "/api/v1/connections",
       "/api/v1/data-health",
       "/api/v1/events",
@@ -325,10 +326,10 @@
       "grep_files": true,
       "read_file": true,
       "file_line_count": true,
-      "find_symbols": false,
-      "find_references": false,
+      "find_symbols": true,
+      "find_references": true,
       "get_ast_info": true,
-      "code_review": false,
+      "code_review": true,
       "file_tree": true,
       "diff_viewer": true
     },
@@ -354,11 +355,11 @@
     },
     "memory": {
       "ordinaryFactPersisted": false,
-      "errorPatternPersistedPending": true
+      "singleErrorPatternSuppressed": true
     },
     "security": {
       "httpMutationWithoutPermission": false,
-      "httpMutationFixtureStatus": "PermissionError",
+      "httpMutationFixtureStatus": "blocked:destination_blocked",
       "boundedDnsResolver": {
         "workerLimit": 4,
         "queueLimit": 8,
@@ -397,7 +398,7 @@
         "dashboard"
       ],
       "deterministicTest": "not_tested",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -418,7 +419,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "pass",
@@ -443,7 +444,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "pass",
@@ -468,7 +469,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "pass",
@@ -493,7 +494,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "pass",
@@ -518,7 +519,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "blocked",
       "safety": "partial",
       "truthfulness": "pass",
@@ -545,7 +546,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "pass",
@@ -570,7 +571,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "pass",
@@ -592,7 +593,7 @@
         "dashboard"
       ],
       "deterministicTest": "not_tested",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -610,7 +611,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -632,7 +633,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -654,7 +655,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -674,14 +675,14 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
-      "liveTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
-      "status": "pass",
+      "status": "partial",
       "evidence": [
         "minicode/web/static/assets/app.js",
-        "installed-wheel browser verified",
+        "browser verification not supplied",
         "tests/test_dashboard_catalog_read_model.py",
         "tests/test_dashboard_change_feed.py",
         "tests/test_dashboard_event_stream.py"
@@ -698,14 +699,14 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
-      "liveTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
-      "status": "pass",
+      "status": "partial",
       "evidence": [
         "minicode/web/static/assets/app.js",
-        "installed-wheel browser verified",
+        "browser verification not supplied",
         "tests/test_agent_flow.py",
         "tests/test_agent_intelligence.py",
         "tests/test_agent_loop_work_chain_disabled.py"
@@ -722,14 +723,14 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
-      "liveTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
       "status": "partial",
       "evidence": [
         "minicode/web/static/assets/app.js",
-        "installed-wheel browser verified"
+        "browser verification not supplied"
       ],
       "issues": []
     },
@@ -743,14 +744,14 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
-      "liveTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
       "status": "partial",
       "evidence": [
         "minicode/web/static/assets/app.js",
-        "installed-wheel browser verified"
+        "browser verification not supplied"
       ],
       "issues": []
     },
@@ -764,14 +765,14 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
-      "liveTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
       "status": "partial",
       "evidence": [
         "minicode/web/static/assets/app.js",
-        "installed-wheel browser verified"
+        "browser verification not supplied"
       ],
       "issues": []
     },
@@ -785,14 +786,14 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
-      "liveTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
       "status": "partial",
       "evidence": [
         "minicode/web/static/assets/app.js",
-        "installed-wheel browser verified"
+        "browser verification not supplied"
       ],
       "issues": []
     },
@@ -806,14 +807,14 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
-      "liveTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
-      "status": "pass",
+      "status": "partial",
       "evidence": [
         "minicode/web/static/assets/app.js",
-        "installed-wheel browser verified",
+        "browser verification not supplied",
         "tests/test_memory_candidate_consolidation.py",
         "tests/test_memory_retrieval_phase2a.py",
         "tests/test_memory_retrieval_phase2b.py"
@@ -830,14 +831,14 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
-      "liveTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
       "status": "partial",
       "evidence": [
         "minicode/web/static/assets/app.js",
-        "installed-wheel browser verified"
+        "browser verification not supplied"
       ],
       "issues": []
     },
@@ -851,14 +852,14 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
-      "liveTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
-      "status": "pass",
+      "status": "partial",
       "evidence": [
         "minicode/web/static/assets/app.js",
-        "installed-wheel browser verified",
+        "browser verification not supplied",
         "tests/test_context_aggregation.py",
         "tests/test_dashboard_mcp_current_read_model.py",
         "tests/test_dashboard_usage_read_model.py"
@@ -875,14 +876,14 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
-      "liveTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
-      "status": "pass",
+      "status": "partial",
       "evidence": [
         "minicode/web/static/assets/app.js",
-        "installed-wheel browser verified",
+        "browser verification not supplied",
         "tests/test_dashboard_agent_observatory.py",
         "tests/test_dashboard_chat_http.py",
         "tests/test_dashboard_read_model.py"
@@ -899,14 +900,14 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
-      "liveTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
-      "status": "pass",
+      "status": "partial",
       "evidence": [
         "minicode/web/static/assets/app.js",
-        "installed-wheel browser verified",
+        "browser verification not supplied",
         "tests/test_agent_flow.py",
         "tests/test_conversation_cancellation.py",
         "tests/test_conversation_deletion.py"
@@ -923,14 +924,14 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
-      "liveTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
-      "status": "pass",
+      "status": "partial",
       "evidence": [
         "minicode/web/static/assets/app.js",
-        "installed-wheel browser verified",
+        "browser verification not supplied",
         "tests/test_conversation_cancellation.py",
         "tests/test_conversation_deletion.py",
         "tests/test_conversation_presentation.py"
@@ -947,14 +948,14 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
-      "liveTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
-      "status": "pass",
+      "status": "partial",
       "evidence": [
         "minicode/web/static/assets/app.js",
-        "installed-wheel browser verified",
+        "browser verification not supplied",
         "tests/test_dashboard_agent_observatory.py",
         "tests/test_dashboard_catalog_read_model.py",
         "tests/test_dashboard_change_feed.py"
@@ -971,14 +972,14 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
-      "liveTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
-      "status": "pass",
+      "status": "partial",
       "evidence": [
         "minicode/web/static/assets/app.js",
-        "installed-wheel browser verified",
+        "browser verification not supplied",
         "tests/test_agent_cancellation.py",
         "tests/test_agent_flow.py",
         "tests/test_agent_loop.py"
@@ -995,7 +996,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1015,7 +1016,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1036,7 +1037,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1058,7 +1059,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1079,7 +1080,7 @@
         "dashboard"
       ],
       "deterministicTest": "not_tested",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -1098,7 +1099,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1122,7 +1123,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1146,7 +1147,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1170,7 +1171,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1194,7 +1195,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1204,6 +1205,30 @@
         "tests/test_context_aggregation.py",
         "tests/test_conversation_cancellation.py",
         "tests/test_conversation_deletion.py"
+      ],
+      "issues": []
+    },
+    {
+      "id": "entrypoint.http.api.v1.chat.turns.turn.0.9a.f.32.feedback",
+      "category": "entrypoint",
+      "name": "/api/v1/chat/turns/(turn_[0-9a-f]{32})/feedback",
+      "declared": true,
+      "registered": true,
+      "reachableFrom": [
+        "gateway",
+        "dashboard"
+      ],
+      "deterministicTest": "pass",
+      "installedWheelTest": "not_tested",
+      "liveTest": "not_required",
+      "safety": "pass",
+      "truthfulness": "pass",
+      "status": "pass",
+      "evidence": [
+        "minicode/gateway.py",
+        "tests/test_advanced_cybernetics.py",
+        "tests/test_agent_flow.py",
+        "tests/test_agent_model_events.py"
       ],
       "issues": []
     },
@@ -1218,7 +1243,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1242,7 +1267,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1266,7 +1291,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1290,7 +1315,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1314,7 +1339,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1338,7 +1363,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1362,7 +1387,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1386,7 +1411,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1410,7 +1435,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1434,7 +1459,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1458,7 +1483,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1482,7 +1507,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1506,7 +1531,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1530,7 +1555,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1554,7 +1579,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1578,7 +1603,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1602,7 +1627,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1626,7 +1651,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1650,7 +1675,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1674,7 +1699,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1698,7 +1723,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1721,7 +1746,7 @@
         "gateway"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -1744,11 +1769,11 @@
         "headless"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
-      "status": "pass",
+      "status": "partial",
       "evidence": [
         "pyproject.toml::minicode-cron=minicode.cron_runner:main",
         "tests/test_packaging.py"
@@ -1766,11 +1791,11 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
-      "status": "pass",
+      "status": "partial",
       "evidence": [
         "pyproject.toml::minicode-gateway=minicode.gateway:run_gateway",
         "tests/test_context_aggregation.py",
@@ -1789,11 +1814,11 @@
         "headless"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
-      "status": "pass",
+      "status": "partial",
       "evidence": [
         "pyproject.toml::minicode-headless=minicode.headless:main",
         "tests/test_context_aggregation.py",
@@ -1812,11 +1837,11 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
-      "status": "pass",
+      "status": "partial",
       "evidence": [
         "pyproject.toml::minicode-py=minicode.main:main",
         "tests/test_context_compactor.py",
@@ -1835,7 +1860,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -1858,7 +1883,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -1881,7 +1906,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -1904,7 +1929,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -1925,7 +1950,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -1948,7 +1973,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -1971,7 +1996,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -1994,7 +2019,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2017,7 +2042,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2040,7 +2065,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2063,7 +2088,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2085,7 +2110,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2108,7 +2133,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2131,7 +2156,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2152,7 +2177,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2175,7 +2200,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2198,7 +2223,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2221,7 +2246,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2244,7 +2269,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2265,7 +2290,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2288,7 +2313,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2311,7 +2336,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2334,7 +2359,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2342,8 +2367,8 @@
       "evidence": [
         "minicode/cli_commands.py",
         "tests/test_agent_intelligence.py",
-        "tests/test_cli_commands.py",
-        "tests/test_conversation_deletion.py"
+        "tests/test_anthropic_adapter.py",
+        "tests/test_cli_commands.py"
       ],
       "issues": []
     },
@@ -2357,7 +2382,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2380,7 +2405,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2388,8 +2413,8 @@
       "evidence": [
         "minicode/cli_commands.py",
         "tests/test_advanced_cybernetics.py",
-        "tests/test_agent_loop.py",
-        "tests/test_cli_commands.py"
+        "tests/test_agent_flow.py",
+        "tests/test_agent_loop.py"
       ],
       "issues": []
     },
@@ -2403,7 +2428,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2426,7 +2451,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2449,7 +2474,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2472,7 +2497,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2493,7 +2518,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2516,7 +2541,7 @@
         "tui"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2542,7 +2567,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2568,7 +2593,7 @@
         "dashboard"
       ],
       "deterministicTest": "not_tested",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2592,7 +2617,7 @@
         "dashboard"
       ],
       "deterministicTest": "not_tested",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2616,7 +2641,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2643,7 +2668,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2668,7 +2693,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2694,7 +2719,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2740,7 +2765,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2766,7 +2791,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2774,6 +2799,7 @@
       "evidence": [
         "minicode/smart_router.py",
         "wiring=conditional",
+        "tests/test_agent_flow.py",
         "tests/test_agent_model_events.py",
         "tests/test_cybernetic_orchestrator.py"
       ],
@@ -2792,7 +2818,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2817,7 +2843,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2863,7 +2889,7 @@
         "dashboard"
       ],
       "deterministicTest": "not_tested",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2887,7 +2913,7 @@
         "dashboard"
       ],
       "deterministicTest": "not_tested",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -2911,7 +2937,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "pass",
@@ -2936,7 +2962,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "blocked",
       "safety": "partial",
       "truthfulness": "pass",
@@ -2961,7 +2987,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "pass",
@@ -2984,7 +3010,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "pass",
@@ -3009,7 +3035,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "pass",
@@ -3036,7 +3062,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "pass",
@@ -3061,7 +3087,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "pass",
@@ -3086,7 +3112,7 @@
         "dashboard"
       ],
       "deterministicTest": "not_tested",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3107,7 +3133,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "pass",
@@ -3130,7 +3156,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "pass",
@@ -3153,7 +3179,7 @@
         "dashboard"
       ],
       "deterministicTest": "not_tested",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3173,7 +3199,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -3198,7 +3224,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "fail",
       "truthfulness": "pass",
@@ -3225,7 +3251,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "pass",
@@ -3250,7 +3276,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -3276,7 +3302,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -3302,7 +3328,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -3328,7 +3354,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "pass",
       "truthfulness": "pass",
@@ -3354,7 +3380,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3380,7 +3406,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3407,7 +3433,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3438,7 +3464,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3464,7 +3490,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3490,7 +3516,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3516,7 +3542,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3526,7 +3552,7 @@
         "profile=core",
         "schema_serializable=true",
         "required_validation=true",
-        "isolated_happy_path=false",
+        "isolated_happy_path=true",
         "tests/test_tools.py"
       ],
       "issues": []
@@ -3544,7 +3570,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3571,7 +3597,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3599,7 +3625,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3626,7 +3652,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3653,7 +3679,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "blocked",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3681,7 +3707,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3710,7 +3736,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3739,7 +3765,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3766,8 +3792,8 @@
         "gateway",
         "dashboard"
       ],
-      "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "deterministicTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3777,7 +3803,8 @@
         "profile=core",
         "schema_serializable=true",
         "required_validation=true",
-        "isolated_happy_path=false"
+        "isolated_happy_path=true",
+        "tests/test_tools.py"
       ],
       "issues": []
     },
@@ -3793,8 +3820,8 @@
         "gateway",
         "dashboard"
       ],
-      "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "deterministicTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3804,7 +3831,8 @@
         "profile=core",
         "schema_serializable=true",
         "required_validation=true",
-        "isolated_happy_path=false"
+        "isolated_happy_path=true",
+        "tests/test_tools.py"
       ],
       "issues": []
     },
@@ -3821,7 +3849,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3848,7 +3876,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "blocked",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3876,7 +3904,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3905,7 +3933,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -3935,7 +3963,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "fail",
       "truthfulness": "partial",
@@ -3963,7 +3991,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "fail",
       "truthfulness": "partial",
@@ -3992,7 +4020,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4024,7 +4052,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4051,7 +4079,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
@@ -4088,7 +4116,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4115,7 +4143,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4142,7 +4170,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4171,7 +4199,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4201,7 +4229,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "blocked",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4229,7 +4257,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "blocked",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4257,7 +4285,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4268,8 +4296,8 @@
         "schema_serializable=true",
         "required_validation=true",
         "tests/test_propose_skill.py",
-        "tests/test_skill_router.py",
-        "tests/test_skills.py"
+        "tests/test_runtime_observation_events.py",
+        "tests/test_skill_evidence_ledger.py"
       ],
       "issues": []
     },
@@ -4305,7 +4333,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4334,7 +4362,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4362,7 +4390,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4389,7 +4417,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "fail",
       "truthfulness": "fail",
@@ -4421,7 +4449,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "blocked",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4449,7 +4477,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4476,7 +4504,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4503,7 +4531,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4532,7 +4560,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "fail",
       "truthfulness": "partial",
@@ -4560,7 +4588,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4586,7 +4614,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4596,9 +4624,9 @@
         "profile=core",
         "schema_serializable=true",
         "required_validation=true",
+        "tests/test_agent_flow.py",
         "tests/test_agent_intelligence.py",
-        "tests/test_agent_loop_work_chain_disabled.py",
-        "tests/test_cybernetic_orchestrator.py"
+        "tests/test_agent_loop_work_chain_disabled.py"
       ],
       "issues": []
     },
@@ -4615,7 +4643,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4626,8 +4654,8 @@
         "schema_serializable=true",
         "required_validation=true",
         "tests/test_agent_intelligence.py",
-        "tests/test_memory_integration.py",
-        "tests/test_tools.py"
+        "tests/test_agent_model_events.py",
+        "tests/test_memory_integration.py"
       ],
       "issues": []
     },
@@ -4644,7 +4672,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4673,7 +4701,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4702,7 +4730,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4731,7 +4759,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4758,7 +4786,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4784,7 +4812,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4811,7 +4839,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4840,7 +4868,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4867,7 +4895,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
@@ -4903,7 +4931,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "blocked",
       "safety": "pass",
       "truthfulness": "pass",
@@ -4924,8 +4952,8 @@
         "response=1MiB,max-read-64KiB",
         "parser=provider-specific-streaming",
         "errors=truthful-content-free-low-cardinality",
-        "tests/test_memory_retrieval_production_baseline_v39.py",
         "tests/test_packaging.py",
+        "tests/test_reflection_value_pipeline.py",
         "tests/test_search_providers.py"
       ],
       "issues": []
@@ -4943,7 +4971,7 @@
         "dashboard"
       ],
       "deterministicTest": "pass",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -4972,7 +5000,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "fail",
       "truthfulness": "partial",
@@ -5000,7 +5028,7 @@
         "dashboard"
       ],
       "deterministicTest": "partial",
-      "installedWheelTest": "pass",
+      "installedWheelTest": "not_tested",
       "liveTest": "not_required",
       "safety": "partial",
       "truthfulness": "partial",
@@ -5122,10 +5150,10 @@
       "id": "MEM-001",
       "severity": "P1",
       "capabilityId": "memory.conversation_fact",
-      "userVisibleImpact": "Ordinary user facts are not persisted/retrievable across Sessions although error reflection can persist pending candidates.",
+      "userVisibleImpact": "Ordinary user facts are not persisted/retrievable across Sessions.",
       "minimalReproduction": "Submit the isolated phrase 小花是我唯一的好朋友。 through the current Memory write path, then search 小花.",
       "expected": "A declared conversational fact intake path should create an approved/reviewable durable fact with scope and provenance.",
-      "actual": "No fact entry or search hit was produced; a separate web_search failure produced a pending inactive error_pattern candidate.",
+      "actual": "No fact entry or search hit was produced; the separate one-off web_search failure was correctly suppressed as non-recurrent.",
       "evidence": [
         "minicode/memory_pipeline.py",
         "docs/minicode-dashboard-batch-9-roadmap.md",
@@ -5134,7 +5162,7 @@
       "stableReproduction": true,
       "environmentDependent": false,
       "recommendedBatch": "Reliability 1B-3: Session/Memory persistence gaps",
-      "requiredRedTest": "Two isolated Sessions must prove the exact ordinary fact is persisted, approved, retrieved and injected without web_search."
+      "requiredRedTest": "Two isolated Sessions must prove the exact ordinary fact is persisted, approved, retrieved and injected."
     }
   ]
 }

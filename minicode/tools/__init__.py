@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from minicode.mcp import create_mcp_backed_tools
 from minicode.skills import discover_skills
+from minicode.skill_versions import observe_skill_catalog_safely
 from minicode.tooling import ToolRegistry
 from minicode.tools.ask_user import ask_user_tool
 from minicode.tools.batch_ops import batch_copy_tool, batch_move_tool, batch_delete_tool
@@ -142,6 +143,7 @@ def create_default_tool_registry(
     mcp_current_state_registry: McpCurrentStateRegistry | None = None,
 ) -> ToolRegistry:
     skills = [asdict(skill) for skill in discover_skills(cwd)]
+    observe_skill_catalog_safely(cwd, skills)
     mcp_servers = dict(runtime.get("mcpServers", {})) if runtime else {}
     if mcp_current_state_registry is None:
         mcp = create_mcp_backed_tools(cwd=cwd, mcp_servers=mcp_servers)

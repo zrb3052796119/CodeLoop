@@ -19,6 +19,9 @@ if TYPE_CHECKING:
     from minicode.memory_injector import MemoryInjectionController
 
 
+_CORROBORATION_WEIGHT = 0.05
+_CORROBORATION_MIN_SAMPLES = 3
+
 _SPACE_RE = re.compile(r"\s+")
 _SEPARATOR_RE = re.compile(r"[_./\\:-]+")
 _GENERIC_TERMS = {
@@ -206,6 +209,7 @@ class RetrievalScore:
     tier_score: float = 0.0
     recency_score: float = 0.0
     usefulness_score: float = 0.0
+    corroborated_score: float = 0.0
     final_score: float = 0.0
     matched_terms: tuple[str, ...] = ()
     reason_codes: tuple[str, ...] = ()
@@ -221,6 +225,7 @@ class RetrievalScore:
             "tier_score",
             "recency_score",
             "usefulness_score",
+            "corroborated_score",
             "final_score",
         )
         for name in names:
@@ -615,6 +620,16 @@ class CanonicalMemoryRetriever:
         age_days = max(0.0, (time.time() - entry.updated_at) / 86400.0)
         recency_score = 1.0 / (1.0 + age_days / 30.0)
         usefulness_score = max(-1.0, min(1.0, float(entry.usefulness_score)))
+        corroborated_total = (
+            entry.corroborated_success_count + entry.corroborated_failure_count
+        )
+        corroborated_score = 0.0
+        if corroborated_total > 0:
+            raw_corroborated = max(
+                -1.0, min(1.0, float(entry.corroborated_usefulness_score))
+            )
+            confidence = min(1.0, corroborated_total / _CORROBORATION_MIN_SAMPLES)
+            corroborated_score = raw_corroborated * confidence
         final_score = max(
             0.0,
             lexical_score * 0.72
@@ -625,7 +640,8 @@ class CanonicalMemoryRetriever:
             + scope_score * 0.02
             + tier_score * 0.005
             + recency_score * 0.005
-            + usefulness_score * 0.005,
+            + usefulness_score * 0.005
+            + corroborated_score * _CORROBORATION_WEIGHT,
         )
         reasons = list(gate_reasons)
         if domain_score > 0:
@@ -642,6 +658,7 @@ class CanonicalMemoryRetriever:
             tier_score=tier_score,
             recency_score=recency_score,
             usefulness_score=usefulness_score,
+            corroborated_score=corroborated_score,
             final_score=final_score,
             matched_terms=matched,
             reason_codes=tuple(reasons),

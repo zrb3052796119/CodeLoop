@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable, Protocol
 
 if TYPE_CHECKING:
     from minicode.mcp_current_state import McpCurrentStateRegistry
-    from minicode.run_events import AgentEventSink
+    from minicode.run_events import AgentEventSink, SkillUsageTracker
 
 
 # ---------------------------------------------------------------------------
@@ -217,6 +217,7 @@ class ToolResult:
     output: str
     backgroundTask: BackgroundTaskResult | None = None
     awaitUser: bool = False
+    verification: dict[str, object] | None = None
 
 
 @dataclass(slots=True)
@@ -227,6 +228,11 @@ class ToolContext:
     _event_sink: "AgentEventSink | None" = None
     _step: int | None = None
     _mcp_current_state_registry: "McpCurrentStateRegistry | None" = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    _skill_usage_tracker: "SkillUsageTracker | None" = field(
         default=None,
         repr=False,
         compare=False,

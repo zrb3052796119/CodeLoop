@@ -266,6 +266,87 @@ def test_injected_entry_id_feedback_persists_and_only_updates_injected(
     assert untouched.failure_count == 0
 
 
+def test_verified_turn_also_records_corroborated_feedback_once(
+    isolated_workspace: Path,
+):
+    manager = _manager(isolated_workspace)
+    entry = manager.add_entry(
+        MemoryScope.PROJECT,
+        "testing",
+        "Use pytest fixtures for auth tests",
+        tags=["test"],
+    )
+    assert entry is not None
+
+    pipeline = _pipeline(manager, isolated_workspace)
+    messages = [{"role": "system", "content": "system"}]
+    pipeline.inject("auth pytest fixtures", ["tests/test_auth.py"], messages, context_usage=0.50)
+    assert entry.id in pipeline._last_injected_ids
+
+    pipeline.feedback(True, [entry.id], verification_passed=2, verification_failed=0)
+
+    reloaded = _manager(isolated_workspace)
+    updated = reloaded.memories[MemoryScope.PROJECT]._id_index[entry.id]
+    assert updated.success_count == 1
+    assert updated.corroborated_success_count == 1
+    assert updated.corroborated_failure_count == 0
+    assert updated.corroborated_usefulness_score == 1.0
+
+
+def test_a_failed_verification_corroborates_negatively_even_on_a_successful_turn(
+    isolated_workspace: Path,
+):
+    manager = _manager(isolated_workspace)
+    entry = manager.add_entry(
+        MemoryScope.PROJECT,
+        "testing",
+        "Use pytest fixtures for auth tests",
+        tags=["test"],
+    )
+    assert entry is not None
+
+    pipeline = _pipeline(manager, isolated_workspace)
+    messages = [{"role": "system", "content": "system"}]
+    pipeline.inject("auth pytest fixtures", ["tests/test_auth.py"], messages, context_usage=0.50)
+
+    # The whole turn still reports success, but one of the verifications the
+    # agent ran during that turn failed — corroboration must not be inferred
+    # from the coarse turn label.
+    pipeline.feedback(True, [entry.id], verification_passed=1, verification_failed=1)
+
+    reloaded = _manager(isolated_workspace)
+    updated = reloaded.memories[MemoryScope.PROJECT]._id_index[entry.id]
+    assert updated.success_count == 1
+    assert updated.corroborated_success_count == 0
+    assert updated.corroborated_failure_count == 1
+    assert updated.corroborated_usefulness_score == -1.0
+
+
+def test_no_verification_observed_leaves_corroborated_counters_untouched(
+    isolated_workspace: Path,
+):
+    manager = _manager(isolated_workspace)
+    entry = manager.add_entry(
+        MemoryScope.PROJECT,
+        "testing",
+        "Use pytest fixtures for auth tests",
+        tags=["test"],
+    )
+    assert entry is not None
+
+    pipeline = _pipeline(manager, isolated_workspace)
+    messages = [{"role": "system", "content": "system"}]
+    pipeline.inject("auth pytest fixtures", ["tests/test_auth.py"], messages, context_usage=0.50)
+    pipeline.feedback(True, [entry.id])
+
+    reloaded = _manager(isolated_workspace)
+    updated = reloaded.memories[MemoryScope.PROJECT]._id_index[entry.id]
+    assert updated.success_count == 1
+    assert updated.corroborated_success_count == 0
+    assert updated.corroborated_failure_count == 0
+    assert updated.corroborated_usefulness_score == 0.0
+
+
 def test_domains_metadata_tier_source_and_provenance_persist(isolated_workspace: Path):
     manager = _manager(isolated_workspace)
     entry = manager.add_entry(

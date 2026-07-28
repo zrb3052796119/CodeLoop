@@ -28,6 +28,19 @@ class TestOrchestratorInit:
         assert orch.smart_router is not None
         assert orch.model_switcher is not None
 
+    def test_router_feedback_is_scoped_to_the_workspace(self, tmp_path):
+        orch = CyberneticOrchestrator()
+        orch._workspace = str(tmp_path)
+
+        orch.initialize(
+            MagicMock(model_id="test-model"),
+            MagicMock(),
+        )
+
+        assert orch.smart_router.learner._storage == (
+            tmp_path / ".mini-code" / "router_feedback.json"
+        )
+
     def test_wire_healing(self):
         orch = CyberneticOrchestrator()
         orch.healing = None
@@ -154,3 +167,23 @@ class TestOrchestratorInit:
             "event-000003",
         ]
         assert all(event["trace_schema_version"] == 2 for event in trace)
+
+    def test_memory_maintenance_runs_only_at_task_end(self):
+        orch = CyberneticOrchestrator()
+        orch.memory_pipeline = MagicMock()
+        scheduler = MagicMock()
+
+        orch.step_end(
+            scheduler,
+            context_manager=None,
+            step=1,
+            tool_error_count=0,
+            saw_tool_result=False,
+            max_steps=3,
+        )
+
+        orch.memory_pipeline.maintain.assert_not_called()
+
+        orch.task_end()
+
+        orch.memory_pipeline.maintain.assert_called_once_with()

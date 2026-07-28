@@ -60,6 +60,12 @@ class _Journal(Protocol):
         payload: Mapping[str, Any] | None = None,
     ) -> object: ...
 
+    def record_rendered_memory_ids(
+        self,
+        run_id: str,
+        entry_ids: list[str],
+    ) -> None: ...
+
 
 JournalFactory = Callable[[Path], _Journal]
 
@@ -172,6 +178,18 @@ class _BestEffortLifecycle:
             return False
         return True
 
+    def record_rendered_memory_ids(self, entry_ids: list[str]) -> bool:
+        """Persist this turn's rendered Memory IDs while keeping observation
+        strictly optional, mirroring append_event's failure isolation."""
+        if not self._running or self._journal is None or self._run_id is None:
+            return False
+        try:
+            self._journal.record_rendered_memory_ids(self._run_id, entry_ids)
+        except Exception:  # noqa: BLE001 - trace failures never alter execution
+            _safe_observation_warning("memory_rendered_ids")
+            return False
+        return True
+
 
 class RunObservation:
     """Small, no-throw handle for callback-derived execution trace metadata."""
@@ -195,6 +213,10 @@ class RunObservation:
     ) -> None:
         """Adapt the structured Agent Event Sink to this Run's writer."""
         self._lifecycle.append_event(event_type, step=step, payload=payload)
+
+    def record_rendered_memory_ids(self, entry_ids: list[str]) -> None:
+        """Persist this turn's rendered Memory entry IDs against this Run."""
+        self._lifecycle.record_rendered_memory_ids(entry_ids)
 
     def tool_started(self, tool_name: str) -> None:
         safe_name = _safe_tool_name(tool_name)

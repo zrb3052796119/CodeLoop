@@ -150,11 +150,18 @@ def _validate_entry(entry: Any, index: int) -> tuple[bool, list[str]]:
         "injection_count",
         "success_count",
         "failure_count",
+        "corroborated_success_count",
+        "corroborated_failure_count",
     ):
         if int_field in entry and not isinstance(entry[int_field], int):
             errors.append(f"{prefix} field '{int_field}' must be an integer")
 
-    for float_field in ("last_accessed", "last_used", "usefulness_score"):
+    for float_field in (
+        "last_accessed",
+        "last_used",
+        "usefulness_score",
+        "corroborated_usefulness_score",
+    ):
         if float_field in entry and not isinstance(entry[float_field], (int, float)):
             errors.append(f"{prefix} field '{float_field}' must be a number")
 
@@ -1089,6 +1096,9 @@ class MemoryEntry:
     failure_count: int = 0
     last_used: float = 0.0
     usefulness_score: float = 0.0
+    corroborated_success_count: int = 0
+    corroborated_failure_count: int = 0
+    corroborated_usefulness_score: float = 0.0
     lifecycle_status: str = _ACTIVE_LIFECYCLE
     tier_reason: str = ""
     deprecated_at: float | None = None
@@ -1158,6 +1168,9 @@ class MemoryEntry:
             "failure_count": self.failure_count,
             "last_used": self.last_used,
             "usefulness_score": self.usefulness_score,
+            "corroborated_success_count": self.corroborated_success_count,
+            "corroborated_failure_count": self.corroborated_failure_count,
+            "corroborated_usefulness_score": self.corroborated_usefulness_score,
             "lifecycle_status": self.lifecycle_status,
             "tier_reason": self.tier_reason,
             "deprecated_at": self.deprecated_at,
@@ -1197,6 +1210,11 @@ class MemoryEntry:
             failure_count=int(data.get("failure_count", 0) or 0),
             last_used=float(data.get("last_used", 0.0) or 0.0),
             usefulness_score=float(data.get("usefulness_score", 0.0) or 0.0),
+            corroborated_success_count=int(data.get("corroborated_success_count", 0) or 0),
+            corroborated_failure_count=int(data.get("corroborated_failure_count", 0) or 0),
+            corroborated_usefulness_score=float(
+                data.get("corroborated_usefulness_score", 0.0) or 0.0
+            ),
             lifecycle_status=str(data.get("lifecycle_status", _ACTIVE_LIFECYCLE) or _ACTIVE_LIFECYCLE),
             tier_reason=str(data.get("tier_reason", "") or ""),
             deprecated_at=(
@@ -2805,7 +2823,38 @@ class MemoryManager:
             touched.add(scope)
         for scope in sorted(touched, key=lambda item: item.value):
             self._save_scope(scope)
-    
+
+    @_coordinated_all_write
+    def record_corroborated_feedback(self, entry_ids: list[str], success: bool) -> None:
+        """Persist feedback backed by independent verification or an explicit
+        user accept/correct/reject signal, kept separate from whole-turn
+        outcome feedback because it carries materially stronger evidence.
+        """
+        touched: set[MemoryScope] = set()
+        now = time.time()
+        for entry_id in dict.fromkeys(entry_ids):
+            scope, entry = self._find_entry_by_id(entry_id)
+            if scope is None or entry is None:
+                logger.debug(
+                    "Memory corroborated feedback skipped missing entry_id=%s", entry_id
+                )
+                continue
+            if success:
+                entry.corroborated_success_count += 1
+            else:
+                entry.corroborated_failure_count += 1
+            entry.last_used = now
+            entry.last_accessed = now
+            total = entry.corroborated_success_count + entry.corroborated_failure_count
+            entry.corroborated_usefulness_score = (
+                (entry.corroborated_success_count - entry.corroborated_failure_count) / total
+                if total
+                else 0.0
+            )
+            touched.add(scope)
+        for scope in sorted(touched, key=lambda item: item.value):
+            self._save_scope(scope)
+
     def _save_scope(self, scope: MemoryScope) -> None:
         """Save memory to disk (atomic write to prevent corruption)."""
         if not self.in_write_transaction:

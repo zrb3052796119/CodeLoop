@@ -386,6 +386,7 @@ def test_cybernetic_not_recovered_emits_completed_without_compaction(
         "model.failed",
         "recovery.started",
         "recovery.completed",
+        "task.outcome",
     ]
     assert sink.events[3][2]["outcome"] == "not_recovered"
     assert sink.events[2][2]["contextOperationId"] == sink.events[3][2][
@@ -453,6 +454,7 @@ def test_direct_compactor_recovery_emits_recovered_sequence(
         "model.completed",
         "model.costed",
         "working_memory.observed",
+        "task.outcome",
     ]
     context_id = sink.events[2][2]["contextOperationId"]
     assert sink.events[3][2]["contextOperationId"] == context_id
@@ -494,6 +496,7 @@ def test_recovery_exception_keeps_started_dangling_and_preserves_identity(
         "model.started",
         "model.failed",
         "recovery.started",
+        "task.outcome",
     ]
 
 
@@ -641,3 +644,44 @@ def test_feedback_forced_compaction_has_existing_mismatched_seam(
         context_compactor=compactor,
         model_switcher=None,
     ) == 9
+
+
+def test_unimplemented_memory_and_skill_signals_do_not_fake_actuation() -> None:
+    class Budget:
+        def __init__(self) -> None:
+            self.flush_calls = 0
+
+        def flush(self) -> None:
+            self.flush_calls += 1
+
+    budget = Budget()
+    scheduler = agent_loop_module.ToolScheduler()
+    signal = SimpleNamespace(
+        confidence=1.0,
+        limit_max_steps=None,
+        adjust_token_budget=1.0,
+        reduce_parallelism=False,
+        adjust_concurrency=0,
+        increase_model_level=False,
+        decrease_model_level=False,
+        suggest_memory_persistence=True,
+        recommend_skill_update=True,
+        reduce_tool_timeout=None,
+        increase_nudge_frequency=False,
+        promote_pattern=None,
+        force_compaction=False,
+        oscillation_index=0.0,
+    )
+
+    result = agent_loop_module._apply_control_signal(
+        control_signal=signal,
+        system_state=SimpleNamespace(pattern_reuse_rate=0.9),
+        max_steps=9,
+        tool_scheduler=scheduler,
+        context_compactor=SimpleNamespace(_tool_budget=budget),
+        model_switcher=None,
+    )
+
+    assert result == 9
+    assert budget.flush_calls == 0
+    assert not hasattr(scheduler, "_pending_skill_update")

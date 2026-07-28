@@ -7,7 +7,8 @@ import os
 from pathlib import Path
 from typing import Any
 from minicode.tooling import ToolDefinition, ToolResult
-from minicode.workspace import resolve_tool_path
+from minicode.verification_observation import project_verification
+from minicode.workspace import relative_display_path, resolve_tool_path
 
 
 # ---------------------------------------------------------------------------
@@ -240,8 +241,13 @@ def _run(input_data: dict, context) -> ToolResult:
     # fixtures, the tests themselves) — route through the permission manager
     # instead of silently spawning the interpreter. The signature is kept
     # coarse (framework + target) so one approval covers the whole suite.
+    # The target is shown workspace-relative so an in-workspace path (the
+    # common case) doesn't trip the reviewer's local-absolute-path redaction
+    # and become impossible to approve remotely.
     if getattr(context, "permissions", None) is not None:
-        context.permissions.ensure_command(framework, [str(target)], str(context.cwd))
+        context.permissions.ensure_command(
+            framework, [relative_display_path(target, context.cwd)], str(context.cwd)
+        )
 
     # Run tests
     lines = [
@@ -336,6 +342,11 @@ def _run(input_data: dict, context) -> ToolResult:
     return ToolResult(
         ok=success,
         output="\n".join(lines),
+        verification=project_verification(
+            kind="tests",
+            passed=success,
+            source="test_runner",
+        ),
     )
 
 

@@ -1,7 +1,10 @@
 from pathlib import Path
 import io
+from types import SimpleNamespace
 import sys
 import tarfile
+import threading
+import time
 import zipfile
 
 import pytest
@@ -17,7 +20,9 @@ from minicode.tools.run_command import _build_execution_command, split_command_l
 from minicode.tools.patch_file import patch_file_tool
 from minicode.tools.archive_utils import tar_extract_tool, zip_extract_tool
 from minicode.tools.run_command import run_command_tool
+from minicode.permission_approval import PermissionApprovalBroker
 from minicode.tools.test_runner import test_runner_tool
+from minicode.turn_cancellation import TurnCancellationToken
 from minicode.tools.write_file import write_file_tool
 from minicode.tooling import ToolContext
 from minicode.tools import create_default_tool_registry
@@ -95,6 +100,40 @@ def test_run_command_tool_supports_echo_on_current_platform(tmp_path: Path) -> N
 
     assert result.ok is True
     assert "hello" in result.output.lower()
+
+
+def test_run_command_attaches_verification_only_after_direct_process_exit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(run_command_module.sys, "platform", "win32")
+    monkeypatch.setattr(
+        run_command_module.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=1,
+            stdout="",
+            stderr="failed",
+        ),
+    )
+
+    result = run_command_tool.run(
+        {
+            "command": "python",
+            "args": ["-m", "pytest", "-q"],
+            "cwd": None,
+            "timeout": 30,
+        },
+        ToolContext(cwd=str(tmp_path), permissions=None),
+    )
+
+    assert result.ok is False
+    assert result.verification == {
+        "verificationVersion": 1,
+        "kind": "tests",
+        "outcome": "failed",
+        "source": "run_command_exit",
+    }
 
 
 @pytest.mark.parametrize(
@@ -304,6 +343,124 @@ def test_test_runner_rejects_paths_that_escape_workspace(
 
     assert result.ok is False
     assert "escapes workspace" in result.output
+    assert result.verification is None
+
+
+def test_test_runner_attaches_verification_after_suite_exit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "test_sample.py").write_text(
+        "def test_sample():\n    assert True\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        test_runner_module.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=0,
+            stdout="1 passed",
+            stderr="",
+        ),
+    )
+
+    result = test_runner_tool.run(
+        {
+            "path": ".",
+            "framework": "pytest",
+            "verbose": False,
+            "coverage": False,
+            "pattern": None,
+            "timeout": 30,
+        },
+        ToolContext(cwd=str(tmp_path), permissions=None),
+    )
+
+    assert result.ok is True
+    assert result.verification == {
+        "verificationVersion": 1,
+        "kind": "tests",
+        "outcome": "passed",
+        "source": "test_runner",
+    }
+
+
+def test_test_runner_permission_review_stays_approvable_for_an_in_workspace_target(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The permission preview must show a workspace-relative target so it is
+    not blanket-redacted by the reviewer's local-absolute-path check, which
+    would otherwise make every test_runner call unapprovable remotely."""
+    (tmp_path / "test_sample.py").write_text(
+        "def test_sample():\n    assert True\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        test_runner_module.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=0,
+            stdout="1 passed",
+            stderr="",
+        ),
+    )
+
+    turn_id = "turn_" + "c" * 32
+    broker = PermissionApprovalBroker(tmp_path, timeout_seconds=5)
+    session = broker.begin_turn(
+        turn_id=turn_id,
+        run_id=None,
+        cancellation_token=TurnCancellationToken(turn_id),
+    )
+    manager = PermissionManager(str(tmp_path), prompt=session.prompt)
+    outcome: dict[str, object] = {}
+
+    def run_tool() -> None:
+        outcome["result"] = test_runner_tool.run(
+            {
+                "path": ".",
+                "framework": "pytest",
+                "verbose": False,
+                "coverage": False,
+                "pattern": None,
+                "timeout": 30,
+            },
+            ToolContext(cwd=str(tmp_path), permissions=manager),
+        )
+
+    thread = threading.Thread(target=run_tool)
+    thread.start()
+    try:
+        item = None
+        end = time.monotonic() + 1.0
+        while time.monotonic() < end:
+            items = broker.snapshot()["items"]
+            if items:
+                item = items[0]
+                break
+            time.sleep(0.005)
+        assert item is not None, "permission request did not become pending"
+        assert item["reviewable"] is True
+        assert item["review"]["commandPreview"] == "pytest ."
+        assert str(tmp_path) not in item["review"]["commandPreview"]
+        broker.decide(
+            permission_id=item["permissionId"],
+            turn_id=turn_id,
+            decision="allow_once",
+        )
+    finally:
+        thread.join(timeout=2)
+        broker.close()
+
+    result = outcome["result"]
+    assert result.ok is True
+    assert result.verification == {
+        "verificationVersion": 1,
+        "kind": "tests",
+        "outcome": "passed",
+        "source": "test_runner",
+    }
 
 
 @pytest.mark.parametrize(

@@ -634,8 +634,12 @@ ModelAdapter:
 **存储结构**：
 
 ```
-.mini-code-memory/
-  └── advanced_memory.json      # 高级记忆数据
+.mini-code-memory/         # project scope
+  └── memory.json
+.mini-code-memory-local/   # local scope（.gitignore，不提交）
+  └── memory.json
+~/.mini-code/memory/       # user scope
+  └── memory.json
 ```
 
 **记忆类型**：
@@ -643,8 +647,10 @@ ModelAdapter:
 | 类型 | 说明 | 存储位置 |
 |------|------|----------|
 | 工作记忆 | 当前会话的短期上下文 | `working_memory.py` |
-| 长期记忆 | 跨会话持久化的重要信息 | `memory.py` |
-| 会话记忆 | 会话级记忆 | `.mini-code-session-memory/` |
+| 长期记忆 | 跨 scope（user/project/local）持久化的重要信息 | `memory.py` |
+
+`.mini-code-session-memory/` 不是一个独立的记忆 scope，而是 reflection replay 的
+capture 目录（`reflection_replay.py`，存放 `capture.jsonl`）。
 
 ### 5.11 State Management (state.py)
 

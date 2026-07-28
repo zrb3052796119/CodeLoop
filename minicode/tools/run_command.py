@@ -9,6 +9,7 @@ from typing import Sequence
 
 from minicode.background_tasks import register_background_shell_task
 from minicode.tooling import ToolDefinition, ToolResult
+from minicode.verification_observation import project_command_verification
 from minicode.workspace import resolve_tool_path
 
 # 命令执行超时（秒）- 5 分钟
@@ -276,6 +277,14 @@ def _validate(input_data: dict) -> dict:
     return {"command": command, "args": [str(arg) for arg in args], "cwd": cwd, "timeout": timeout}
 
 
+def _with_verification(input_data: dict, result: ToolResult) -> ToolResult:
+    result.verification = project_command_verification(
+        input_data,
+        passed=result.ok,
+    )
+    return result
+
+
 def _run(input_data: dict, context) -> ToolResult:
     effective_cwd = str(resolve_tool_path(context, input_data["cwd"], "list")) if input_data.get("cwd") else context.cwd
     normalized_command, normalized_args = _normalize_command_input(input_data)
@@ -403,11 +412,17 @@ def _run(input_data: dict, context) -> ToolResult:
             output_str = _truncate_large_output(output_str)
             
             if timed_out:
-                return ToolResult(
-                    ok=False,
-                    output=f"Command timed out after {effective_timeout} seconds (process killed).\nPartial output:\n{output_str}",
+                return _with_verification(
+                    input_data,
+                    ToolResult(
+                        ok=False,
+                        output=f"Command timed out after {effective_timeout} seconds (process killed).\nPartial output:\n{output_str}",
+                    ),
                 )
-            return ToolResult(ok=process.returncode == 0, output=output_str)
+            return _with_verification(
+                input_data,
+                ToolResult(ok=process.returncode == 0, output=output_str),
+            )
             
         except ImportError:
             pass  # Fallback to subprocess on systems without pty
@@ -427,7 +442,10 @@ def _run(input_data: dict, context) -> ToolResult:
         )
         output = "\n".join(part for part in [completed.stdout.strip(), completed.stderr.strip()] if part).strip()
         output = _truncate_large_output(output)
-        return ToolResult(ok=completed.returncode == 0, output=output)
+        return _with_verification(
+            input_data,
+            ToolResult(ok=completed.returncode == 0, output=output),
+        )
     except subprocess.TimeoutExpired as e:
         # Capture partial output from timeout
         partial_stdout = (e.stdout or "").strip() if e.stdout else ""
@@ -435,9 +453,12 @@ def _run(input_data: dict, context) -> ToolResult:
         partial = "\n".join(part for part in [partial_stdout, partial_stderr] if part)
         if partial:
             partial = f"\nPartial output:\n{_truncate_large_output(partial)}"
-        return ToolResult(
-            ok=False,
-            output=f"Command timed out after {effective_timeout} seconds (process killed).{partial}",
+        return _with_verification(
+            input_data,
+            ToolResult(
+                ok=False,
+                output=f"Command timed out after {effective_timeout} seconds (process killed).{partial}",
+            ),
         )
 
 

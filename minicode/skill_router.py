@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -68,6 +70,10 @@ _SCOPE_TERMS = {
     CapabilityScope.EXTERNAL: {"external", "web", "network", "http", "fetch"},
 }
 
+_GENERIC_ROUTING_KEYWORDS = frozenset(
+    {"agent", "project", "skill", "skills", "workflow"}
+)
+
 
 @dataclass(slots=True)
 class RoutedSkillDirectory:
@@ -98,6 +104,7 @@ class RoutedSkill:
     qualified_name: str = ""
     directory: str = ""
     tools: list[str] = field(default_factory=list)
+    content_digest: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -171,9 +178,6 @@ class SkillRouter:
 
         scored: list[tuple[RoutedSkill, float, float, int]] = []
         for index, skill in enumerate(skills):
-            directory = str(skill.get("directory", ""))
-            if selected_directory_names and directory and directory not in selected_directory_names:
-                continue
             routed, signal_score, affinity_score = self._score_skill(
                 skill,
                 intent,
@@ -185,27 +189,13 @@ class SkillRouter:
             scored.append((routed, signal_score, affinity_score, index))
 
         if not any(signal_score > 0 for _, signal_score, _, _ in scored):
-            selected = [
-                RoutedSkill(
-                    name=str(skill.get("name", "")),
-                    qualified_name=str(skill.get("qualified_name") or skill.get("name", "")),
-                    description=str(skill.get("description", "")),
-                    path=str(skill.get("path", "")),
-                    source=str(skill.get("source", "")),
-                    directory=str(skill.get("directory", "")),
-                    tools=_list_field(skill, "tools"),
-                    score=0.0,
-                    reasons=["fallback:no strong skill match"],
-                )
-                for skill in skills
-            ]
             return SkillRoutingResult(
                 intent_type=intent.intent_type.value,
                 action_type=intent.action_type.value,
                 capability_domains=[domain.value for domain in domains],
                 capability_scopes=[scope.value for scope in scopes],
-                selected=selected,
-                selected_skills=selected,
+                selected=[],
+                selected_skills=[],
                 selected_directories=[],
                 tool_affinity={},
                 total_skills=len(skills),
@@ -320,6 +310,18 @@ class SkillRouter:
         source = str(skill.get("source", ""))
         directory = str(skill.get("directory", ""))
         tools = _list_field(skill, "tools")
+        content = skill.get("content")
+        supplied_digest = skill.get("content_digest")
+        content_digest = (
+            supplied_digest
+            if isinstance(supplied_digest, str)
+            and re.fullmatch(r"[0-9a-f]{64}", supplied_digest)
+            else (
+                hashlib.sha256(content.encode("utf-8")).hexdigest()
+                if isinstance(content, str)
+                else ""
+            )
+        )
         text = _normalize_text(
             " ".join([
                 name,
@@ -329,6 +331,7 @@ class SkillRouter:
                 " ".join(_list_field(skill, "domains")),
                 " ".join(_list_field(skill, "scopes")),
                 " ".join(_list_field(skill, "keywords")),
+                " ".join(_list_field(skill, "examples")),
                 " ".join(tools),
             ])
         )
@@ -336,13 +339,10 @@ class SkillRouter:
 
         if directory and directory in selected_directory_names:
             score += 1.0
-            signal_score += 1.0
             reasons.append(f"directory:{directory}")
 
         affinity_score, affinity_reasons = self._tool_affinity(skill, intent, domains, scopes, registry)
         score += affinity_score
-        if affinity_score > 0:
-            signal_score += affinity_score
         reasons.extend(affinity_reasons)
 
         source_bonus = _SOURCE_BONUS.get(source, 0.0)
@@ -359,6 +359,7 @@ class SkillRouter:
                 source=source,
                 directory=directory,
                 tools=tools,
+                content_digest=content_digest,
                 score=round(score, 3),
                 reasons=reasons,
             ),
@@ -384,8 +385,6 @@ class SkillRouter:
             capability = registry.get(tool_name)
             if capability is None:
                 continue
-            score += 0.4
-            reasons.append(f"tool:{tool_name}")
             domain = capability.metadata.domain
             scope = capability.metadata.scope
             if domain in desired_domains:
@@ -415,14 +414,10 @@ class SkillRouter:
             available_scopes.add(capability.metadata.scope)
 
         desired_domains = _INTENT_DOMAINS.get(intent.intent_type, set())
-        domains = available_domains & desired_domains if desired_domains else available_domains
-        if not domains:
-            domains = available_domains
+        domains = available_domains & desired_domains
 
         desired_scopes = _ACTION_SCOPES.get(intent.action_type, set())
-        scopes = available_scopes & desired_scopes if desired_scopes else available_scopes
-        if not scopes:
-            scopes = available_scopes
+        scopes = available_scopes & desired_scopes
 
         return (
             sorted(domains, key=lambda domain: domain.value),
@@ -447,6 +442,8 @@ def _score_text(
             reasons.append(f"intent/action:{term}")
 
     for keyword in intent.keywords:
+        if _normalize_text(keyword) in _GENERIC_ROUTING_KEYWORDS:
+            continue
         if _contains(text, keyword):
             score += 1.0
             signal_score += 1.0
@@ -461,13 +458,11 @@ def _score_text(
     for domain in domains:
         if any(_contains(text, term) for term in _DOMAIN_TERMS.get(domain, {domain.value})):
             score += 1.0
-            signal_score += 1.0
             reasons.append(f"capability-domain:{domain.value}")
 
     for scope in scopes:
         if any(_contains(text, term) for term in _SCOPE_TERMS.get(scope, {scope.value})):
             score += 0.5
-            signal_score += 0.5
             reasons.append(f"capability-scope:{scope.value}")
 
     return score, signal_score, reasons
@@ -481,6 +476,14 @@ def _contains(text: str, term: str) -> bool:
     normalized = _normalize_text(str(term).strip())
     if not normalized:
         return False
+    if normalized.isascii():
+        return (
+            re.search(
+                rf"(?<![a-z0-9]){re.escape(normalized)}(?![a-z0-9])",
+                text,
+            )
+            is not None
+        )
     return normalized in text
 
 

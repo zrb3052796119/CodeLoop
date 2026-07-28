@@ -28,6 +28,11 @@ from minicode.conversation_turn_store import (
     validate_turn_id,
 )
 from minicode.run_events import emit_skill_routing_safely
+from minicode.run_journal import (
+    RunJournal,
+    RunJournalError,
+    RunJournalUserSignalConflictError,
+)
 from minicode.run_lifecycle import JournalFactory, observe_run
 from minicode.session import (
     SessionData,
@@ -109,6 +114,14 @@ class ConversationTurnNotFound(ConversationError):
     code = "turn_not_found"
 
 
+class ConversationFeedbackConflict(ConversationError):
+    code = "feedback_conflict"
+
+
+class ConversationFeedbackUnavailable(ConversationError):
+    code = "feedback_unavailable"
+
+
 class _TurnCompletionWriteFailed(RuntimeError):
     """Session committed, but the necessary Turn completion write did not."""
 
@@ -146,6 +159,15 @@ class ConversationCancellationResult:
     created_session: bool | None
     run_id: str | None
     updated_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class ConversationFeedbackResult:
+    turn_id: str
+    run_id: str
+    signal: str
+    source: str
+    recorded_at: str
 
 
 def _iso_timestamp(value: float) -> str:
@@ -191,6 +213,31 @@ def _error_for_code(code: str | None) -> ConversationError:
         "turn_cancelled": ConversationTurnCancelled,
     }
     return errors.get(code or "", ConversationTurnFailed)()
+
+
+def _apply_corroborated_memory_feedback(
+    workspace: Path,
+    journal: Any,
+    run_id: str,
+    signal: str,
+) -> None:
+    """Best-effort: bind a freshly recorded explicit user signal to this
+    Run's rendered Memory entries as corroborated feedback. Kept separate
+    from Memory's whole-turn success/failure counters, and never allowed to
+    change the outcome of recording the user signal itself."""
+    try:
+        rendered_ids = journal.get_rendered_memory_ids(run_id)
+    except Exception:  # noqa: BLE001 - corroboration is optional
+        return
+    if not rendered_ids:
+        return
+    try:
+        from minicode.memory import MemoryManager
+
+        manager = MemoryManager(project_root=workspace)
+        manager.record_corroborated_feedback(list(rendered_ids), signal == "accept")
+    except Exception:  # noqa: BLE001 - corroboration must not fail feedback
+        pass
 
 
 class ConversationTurnService:
@@ -441,6 +488,66 @@ class ConversationTurnService:
             completed_at=record.completed_at,
             error_code=record.error_code,
             result_available=result_available,
+        )
+
+    def record_feedback(
+        self,
+        turn_id: str,
+        signal: str,
+    ) -> ConversationFeedbackResult:
+        """Bind one explicit user action to one authoritative completed Turn."""
+        if signal not in {"accept", "correct", "reject"}:
+            raise ValueError("invalid feedback signal")
+        try:
+            validated = validate_turn_id(turn_id)
+            record = self._turn_store.get(validated)
+        except ValueError:
+            raise
+        except Exception as error:  # noqa: BLE001
+            raise ConversationFeedbackUnavailable() from error
+        if record is None:
+            raise ConversationTurnNotFound()
+        if (
+            record.status in {"accepted", "running", "cancel_requested", "committing"}
+            and (
+                record.owner_id != self._turn_store.owner_id
+                or not self._turn_store.is_active(record.turn_id)
+            )
+        ):
+            record = self._reconcile_active(record)
+        if (
+            record.status != "completed"
+            or record.run_id is None
+            or self._authoritative_result(record) is None
+        ):
+            raise ConversationFeedbackUnavailable()
+        try:
+            journal = (
+                self._journal_factory(self.workspace)
+                if self._journal_factory is not None
+                else RunJournal(self.workspace)
+            )
+            try:
+                previously_recorded = journal.get_user_signal(record.run_id) is not None
+            except Exception:  # noqa: BLE001 - corroboration is optional
+                previously_recorded = True
+            stored = journal.record_user_signal(record.run_id, signal)
+        except RunJournalUserSignalConflictError as error:
+            raise ConversationFeedbackConflict() from error
+        except RunJournalError as error:
+            raise ConversationFeedbackUnavailable() from error
+        except Exception as error:  # noqa: BLE001 - fixed safe domain boundary
+            raise ConversationFeedbackUnavailable() from error
+        if not previously_recorded:
+            _apply_corroborated_memory_feedback(
+                self.workspace, journal, record.run_id, stored.signal
+            )
+        return ConversationFeedbackResult(
+            turn_id=record.turn_id,
+            run_id=record.run_id,
+            signal=stored.signal,
+            source=stored.source,
+            recorded_at=stored.recorded_at,
         )
 
     def cancel(self, turn_id: str) -> ConversationCancellationResult:
@@ -750,6 +857,9 @@ class ConversationTurnService:
 __all__ = [
     "ConversationError",
     "ConversationCancellationResult",
+    "ConversationFeedbackConflict",
+    "ConversationFeedbackResult",
+    "ConversationFeedbackUnavailable",
     "ConversationRuntimeUnavailable",
     "ConversationSessionBusy",
     "ConversationSessionConflict",

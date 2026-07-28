@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import functools
 import json
+import os
+import tempfile
 import threading
 import time
 from dataclasses import dataclass, field
@@ -22,6 +24,18 @@ from minicode.model_registry import resolve_model_info
 from minicode.model_switcher import ModelSwitcher, SwitchResult
 
 logger = get_logger("smart_router")
+
+
+def _task_profile_key(task_text: str) -> tuple[str, bool, bool, bool, bool, bool]:
+    profile = extract_task_profile(task_text)
+    return (
+        profile.complexity.value,
+        profile.requires_coding,
+        profile.requires_reasoning,
+        profile.requires_creativity,
+        profile.is_dangerous,
+        profile.deadline_urgent,
+    )
 
 
 @dataclass
@@ -78,6 +92,7 @@ class FeedbackLearner:
         perf["total_cost"] += outcome.cost_usd
         perf["total_duration_ms"] += outcome.duration_ms
         perf["total_errors"] += outcome.tool_errors
+        self.get_model_score.cache_clear()
         
         self._dirty = True
         # Batch save: only write to disk every N outcomes
@@ -102,6 +117,53 @@ class FeedbackLearner:
         
         return max(0, min(1, success_rate * 0.7 + (1 - cost_penalty) * 0.3))
 
+    def get_observation_count(
+        self,
+        model: str,
+        task_text: str | None = None,
+    ) -> int:
+        """Return durable outcomes for a model, optionally by task profile."""
+        if task_text is not None:
+            task_key = _task_profile_key(task_text)
+            return sum(
+                1
+                for outcome in self._outcomes
+                if (
+                    outcome.assigned_model == model
+                    and _task_profile_key(outcome.task_text) == task_key
+                )
+            )
+        perf = self._model_performance.get(model)
+        if not perf:
+            return 0
+        return int(perf.get("total_tasks", 0))
+
+    def get_model_score_for_task_type(
+        self,
+        model: str,
+        task_text: str,
+    ) -> float:
+        """Score a model using outcomes from the same coarse task profile."""
+        task_key = _task_profile_key(task_text)
+        matching = [
+            outcome
+            for outcome in self._outcomes
+            if (
+                outcome.assigned_model == model
+                and _task_profile_key(outcome.task_text) == task_key
+            )
+        ]
+        if not matching:
+            return 0.5
+
+        success_rate = sum(outcome.success for outcome in matching) / len(matching)
+        avg_cost = sum(outcome.cost_usd for outcome in matching) / len(matching)
+        cost_penalty = min(avg_cost / 1.0, 1.0)
+        return max(
+            0,
+            min(1, success_rate * 0.7 + (1 - cost_penalty) * 0.3),
+        )
+
     def get_best_model_for_task_type(
         self,
         task_text: str,
@@ -114,7 +176,7 @@ class FeedbackLearner:
         best_score = -1.0
         
         for model in candidate_models:
-            base_score = self.get_model_score(model)
+            base_score = self.get_model_score_for_task_type(model, task_text)
             
             info = resolve_model_info(model)
             capability_bonus = 0.0
@@ -186,11 +248,24 @@ class FeedbackLearner:
                     "model_performance": self._model_performance,
                 }
                 self._storage.parent.mkdir(parents=True, exist_ok=True)
-                # Atomic write: tmp file then replace
-                tmp_path = self._storage.with_suffix(".tmp")
-                tmp_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
-                import os
-                os.replace(str(tmp_path), str(self._storage))
+                fd, tmp_path = tempfile.mkstemp(
+                    dir=self._storage.parent,
+                    prefix=f".{self._storage.name}.",
+                    suffix=".tmp",
+                )
+                try:
+                    with os.fdopen(fd, "w", encoding="utf-8") as file:
+                        json.dump(data, file, indent=2)
+                        file.write("\n")
+                    os.replace(tmp_path, self._storage)
+                    if os.name != "nt":
+                        self._storage.chmod(0o600)
+                except Exception:
+                    try:
+                        os.unlink(tmp_path)
+                    except OSError:
+                        pass
+                    raise
                 self._dirty = False
                 logger.debug("Saved %d outcomes to %s", len(self._outcomes), self._storage)
             except Exception as e:
@@ -253,16 +328,64 @@ class SmartRouter:
         self._current_model = current_model
 
         decision = self._router.route_task(task_text)
+        decision = self._apply_learned_rerank(task_text, decision)
 
         if self._switcher and decision.selected_model != current_model:
             switch_result = self._switcher.switch_to(
                 target_model=decision.selected_model,
                 reason=f"auto_routed: {decision.reasoning}",
             )
+            if switch_result.success:
+                self._current_model = switch_result.new_model
             logger.info("Auto-switched model: %s", switch_result.to_log())
             return decision, switch_result
 
         return decision, None
+
+    def _apply_learned_rerank(
+        self,
+        task_text: str,
+        decision: RoutingDecision,
+    ) -> RoutingDecision:
+        """Rerank only sufficiently observed candidates in the static tier."""
+        if self._router.force_model or decision.tier_name == "forced":
+            return decision
+
+        tier = next(
+            (item for item in self._router.tiers if item.name == decision.tier_name),
+            None,
+        )
+        if tier is None:
+            return decision
+
+        tier_candidates = [tier.primary_model, *tier.fallback_models]
+        eligible = [
+            model
+            for model in tier_candidates
+            if (
+                model in self._router.available_models
+                and self._learner.get_observation_count(model, task_text) >= 3
+            )
+        ]
+        if len(eligible) < 2 or decision.selected_model not in eligible:
+            return decision
+
+        selected_model = self._learner.get_best_model_for_task_type(
+            task_text,
+            eligible,
+        )
+        if selected_model == decision.selected_model:
+            return decision
+
+        decision.selected_model = selected_model
+        decision.estimated_cost = self._router._estimate_cost(
+            selected_model,
+            decision.profile.estimated_tokens,
+        )
+        decision.reasoning = (
+            f"{decision.reasoning}; learned rerank from >=3 similar outcomes"
+        )
+        return decision
 
     def record_task_outcome(
         self,

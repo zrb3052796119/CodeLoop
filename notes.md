@@ -4039,3 +4039,1038 @@ Batch 7A.1 is complete; Batch 7B, 7C, and 8A remain unimplemented.
   passed without changing a threshold or unrelated source.
 
 ---
+---
+
+# Persistent Memory and Skill Routing Audit Notes
+
+## Scope and working-tree guardrail
+
+- Review-only task; no production changes are authorized.
+- Existing uncommitted files at audit start:
+  `.mini-code-memory/MEMORY.md`,
+  `.mini-code-memory/approval_audit.json`,
+  `.mini-code-memory/memory.json`,
+  `.mini-code-memory/pipeline_state.json`,
+  `minicode/cybernetic_orchestrator.py`.
+- Evidence must distinguish committed behavior from those in-progress edits.
+
+## Evaluation model
+
+A genuine self-evolution loop should expose:
+
+1. observation with stable provenance;
+2. candidate extraction with explicit scope and confidence;
+3. validation against actual task outcomes;
+4. controlled promotion/versioning;
+5. context-sensitive routing with abstention;
+6. downstream measurement and counterfactual comparison;
+7. decay, conflict resolution, rollback, and deletion propagation.
+
+Accumulation without outcome attribution is persistence, not self-evolution.
+
+## Persistent-memory lifecycle findings
+
+- The production loop is connected: `agent_loop.py` wires `MemoryPipeline`,
+  injects canonical retrieval results at task start, writes a reflection at
+  task end, and applies outcome feedback only to actually rendered IDs.
+- Automatic reflections are deliberately
+  `USER_REVIEW_REQUIRED`; therefore a candidate cannot become injectable
+  without human approval. This is a sound safety boundary but creates a hard
+  throughput bottleneck when candidate precision is low.
+- The current project store has one reflection entry, now rejected, with zero
+  injections and zero outcome-feedback observations. Thus the live project
+  currently has no active persistent-memory learning loop.
+- The one rejected candidate contains two near-duplicate transient
+  `web_search` failure claims plus truncated retry-system text. The rule value
+  gate treats any specific single-trace `error_pattern` as a reusable durable
+  signal even while adding the limitation that recurrence is unestablished.
+  This sends first-occurrence operational noise to the user's review queue.
+- Canonical retrieval weights lexical evidence at `0.72` and learned
+  usefulness at `0.005`. Moving usefulness from -1 to +1 changes the final
+  score by at most `0.01`; outcome feedback therefore has almost no ranking
+  authority.
+- `MemoryPipeline.maintain()` calls `curator.on_task_complete()`, but the
+  orchestrator invokes `maintain()` from `step_end`. A nominal
+  “every 10 tasks” curator cadence is therefore every 10 agent steps and can
+  mutate memory mid-task.
+- The repository contains 53 `advanced_memory.json` entries in legacy/session
+  files, but no production code reads `advanced_memory.json`. The active
+  `MemoryManager` reads `memory.json`; these artifacts are an orphan memory
+  namespace, not usable agent knowledge.
+- Reflection/retrieval evaluation is unusually extensive and explicit about
+  its limits: the Phase 2B datasets are synthetic; the semantic-gap report
+  records 37 confirmed lexical/cross-language gaps; the hybrid adjudication
+  rejects the attempted semantic gate for production.
+
+## Skill-routing and evolution findings
+
+- The user's exact Chinese audit request parses as `unknown/unknown` with
+  confidence `0.05`. The router ignores intent confidence and selects five
+  skills anyway, including TDD, pytest debugging, and safe refactoring.
+- The negative control “给我讲个笑话” produces almost the same routed list.
+  With unknown intent, `_relevant_capabilities` returns all available registry
+  domains/scopes; `_score_text` then finds those terms in Skill metadata. The
+  router therefore treats system capability availability as task evidence.
+- Chinese keyword extraction does not segment Chinese text, so whole clauses
+  become keywords. Chinese review/memory/skill-routing patterns are absent.
+  English manifests cannot match these clause tokens.
+- The fallback path deliberately returns every discovered skill and ignores
+  `top_k`; this increases prompt noise precisely when confidence is lowest.
+- Routing is uncalibrated: no minimum score, top-1/top-2 margin, explicit
+  abstention reason, or negative evidence. `ParsedIntent.confidence` and Skill
+  `examples` are both ignored.
+- Routing changes only the prompt's shortlist. The model still decides whether
+  to call `load_skill`; there is no `skill.loaded` observation or per-skill
+  outcome attribution. `skill.routed` records candidates, not actual Skill
+  use, so successful/failed runs cannot train the Skill router.
+- `FeedbackController.recommend_skill_update` only sets
+  `tool_scheduler._pending_skill_update`; no code consumes that flag.
+  `suggest_memory_persistence` calls `context_compactor._tool_budget.flush()`,
+  but `ToolResultBudgetManager` has no `flush` method and the exception is
+  swallowed. Both advertised positive-feedback actuators are no-ops.
+- `propose_skill` is a static placement/frontmatter advisor. It does not mine
+  repeated successful traces, create a candidate version, run a shadow
+  evaluation, or promote/rollback a Skill.
+- Skill content has no durable version, approval status, outcome metrics, or
+  rollback pointer. Local discovery precedence exists, but self-authored
+  evolution governance does not.
+- The adjacent `SmartRouter` learns model-level aggregate statistics, not Skill
+  routing. Its learner is not consulted by `route_and_switch`; outcome writes
+  are batched by ten with no shutdown flush, and its cached model scores are
+  not invalidated. The current uncommitted `feedback_path` change adds a
+  destination but does not close any of those gaps.
+
+## Validation
+
+- Focused existing suite: `147 passed in 1.22s` across Skill router/discovery/
+  proposal, Memory E2E/integration/regressions, orchestrator, and feedback
+  controller tests.
+- Passing tests confirm component mechanics but also encode two weak policies:
+  fallback must return all Skills, and an ambiguous task may route from generic
+  available-capability overlap.
+- Production-equivalent routing probe after capability registration:
+  - exact user query: `unknown/unknown`, confidence `0.05`; selected
+    `minicode-study`, TDD, pytest debugging, safe refactor, README authoring;
+  - “审查持久化记忆和技能路由”: `unknown/unknown`, confidence `0.0`; nearly
+    the same list;
+  - “给我讲个笑话”: `unknown/unknown`, confidence `0.0`; nearly the same
+    list.
+- Current project durable state: one rejected reflection, zero active entries,
+  zero injections, and zero feedback observations.
+- Outcome authority is inconsistent:
+  `turn_outcome` marks any non-progress final text as success; `TaskState` and
+  model-router feedback mark any turn with a tool error as failure; Memory
+  feedback uses `turn_outcome`. The same Run can therefore reinforce Memory,
+  penalize model routing, and be stored as a failed Task.
+- Memory feedback applies the same whole-turn label to every rendered memory;
+  it cannot distinguish helpful, unused, or harmful entries. This is correlated
+  credit assignment, not causal learning.
+
+## Synthesis
+
+The system currently provides safe persistent context, deterministic
+retrieval, static Skill recommendation, and rich observability. It does not yet
+provide measurable self-evolution because the positive-feedback actuators are
+not connected, Skill use is not observed, outcomes are inconsistent, and
+learned Memory utility has negligible decision authority.
+
+---
+
+# Persistent Memory and Skill Routing P0 Repair Notes
+
+## Implemented control-loop corrections
+
+- Skill routing now abstains on unknown/no-evidence input, uses empty fallback,
+  consumes bilingual intent aliases and Skill examples, and prevents
+  capability/tool/directory/source compatibility from creating relevance.
+- ASCII evidence uses token boundaries, so partial words such as `audit` in
+  `auditing` cannot route an unrelated sibling Skill.
+- Successful `load_skill` calls emit privacy-safe `skill.loaded` observations
+  with stable identity and content digest through Run Journal and Dashboard.
+- One canonical task outcome now feeds TaskState, auditor, Memory, model
+  routing, and pattern feedback; recovered Tool errors no longer turn a
+  successful task into a downstream failure.
+- Curator maintenance runs once at task finalization. A lone unverified
+  transient error is rejected before durable Memory review; verified recovery
+  or independent same-task recurrence remains eligible.
+- Fake memory-flush and queued-Skill-update actuators were replaced with honest
+  observation-only logging.
+- SmartRouter feedback is project-scoped under `.mini-code`, flushed at task
+  end, invalidates cached scores, and survives restart without cross-project
+  task-text or model-stat contamination. Learned reranking is constrained to
+  two or more candidates in the same static tier, with at least three
+  observations per candidate on the same coarse task profile.
+
+## Verification
+
+- Production-equivalent routing:
+  - exact Chinese audit request -> `review/analyze`, confidence `1.0`, three
+    directly evidenced Skills;
+  - Chinese negative control -> `unknown/unknown`, empty selection, abstain.
+- Focused regression: `341 passed in 39.26s`.
+- Complete regression:
+  `3340 passed, 2 skipped, 3 existing warnings in 194.98s`.
+- Existing user changes in `.mini-code-memory/*` and the SmartRouter storage
+  persistence intent were preserved; the feedback file itself is now isolated
+  per project.
+
+## Residual work
+
+- Skill-level outcome attribution, version ledger, holdout, shadow/canary and
+  rollback remain P1/P2.
+- Memory usefulness remains whole-turn and weakly weighted.
+- Cross-task transient-error recurrence needs a TTL observation buffer.
+- Legacy `advanced_memory.json` stores remain orphaned.
+
+---
+
+# Skill Usage Outcome Attribution P1 Notes
+
+## Phase 1 seam trace
+
+- `run_agent_turn` owns the canonical final outcome and constructs every
+  `ToolContext` through `_execute_single_tool`, including serial and concurrent
+  paths.
+- `load_skill` is the only truthful boundary for actual Skill use; routing
+  remains candidate observation only.
+- The same `RunObservation` is already passed as the event sink from Headless
+  and Dashboard Chat through `AgentTurnRuntime.execute`.
+- A task-scoped tracker passed through `ToolContext` avoids globals,
+  cross-task leakage, and querying the Run Journal during execution.
+- The final contract will be one bounded `skill.attributed` event with:
+  version, `task_correlation`, canonical outcome fields, unique loaded-Skill
+  identities/digests, total count, and truncation state.
+- Paths, Skill content, task text, prompts, and model response text are not
+  admissible fields.
+
+## Phase 2–3 implementation evidence
+
+- One shared `SkillUsageTracker` is created per `run_agent_turn` only when an
+  event sink exists and is propagated through serial/concurrent ToolContext
+  construction.
+- `load_skill` records only after a successful real load. Identity is
+  `(qualifiedName, source, directory, contentDigest)`.
+- Repeating the same load twice emits two truthful `skill.loaded` events but
+  one deduplicated task attribution.
+- A recovered Tool error produces task success plus separate
+  `hadToolErrors=true`, `errorsRecovered=true`, and `toolErrorCount=1`.
+- Attribution emission is optional observation; tracker or sink failures
+  cannot change Tool or Agent results.
+
+## Phase 4 implementation evidence
+
+- `skill.attributed` is accepted by `RunJournal` and is persisted in the same
+  Run as the real `skill.loaded` events.
+- The Dashboard read model validates the complete versioned contract before
+  returning a strict whitelist. Injected task text, model responses, Skill
+  content, and local paths are not projected.
+- The generic Run event list renders actual Skill loads and task-correlated
+  outcomes. The dedicated Skill Routing panel remains routing-only so that
+  routed, loaded, and outcome-correlated do not collapse into one claim.
+- Focused regression covering runtime observation, RunJournal, Dashboard read
+  model/HTTP, agent event sequences, and entrypoint lifecycle:
+  `177 passed in 33.79s`.
+- A sandboxed run failed only because localhost socket binding was denied;
+  rerunning the identical suite with local-socket permission passed.
+
+## Phase 5 final verification
+
+- Contract review tightened canonical consistency:
+  `goalAchieved == (outcomeStatus == success)` and
+  `errorsRecovered == (hadToolErrors and goalAchieved)`.
+- The new private `ToolContext` field was appended after existing fields so
+  prior positional construction remains source-compatible.
+- Persisted lifecycle order is verified as all `skill.loaded` events before
+  the single `skill.attributed` event, followed by `run.completed`.
+- Focused suite: `177 passed in 33.79s`; post-review core suite:
+  `82 passed in 0.64s`; persisted-order probe: `1 passed in 0.10s`.
+- Complete suite:
+  `3348 passed, 2 skipped, 3 pre-existing warnings in 194.87s`.
+- `ruff`, `compileall`, `node --check`, and `git diff --check` passed.
+- Residual boundary: whole-task, possibly multi-Skill correlation is not causal
+  effectiveness. Cross-Run aggregation, comparable cohorts, verification/user
+  signals, a Skill version ledger, shadow/canary, promotion, and rollback are
+  deliberately not actuated in P1.
+
+---
+
+# Cross-Run Skill Evidence Ledger P2A Notes
+
+## Scope
+
+- Build the next safe evaluation layer from RunJournal facts.
+- Emit canonical outcomes for unloaded tasks so treatment/control semantics do
+  not diverge.
+- Compare only single-Skill treatment Runs against zero-Skill controls inside
+  the same `intentType/actionType` profile.
+- Keep all decisions shadow-only; no live routing or promotion mutation.
+
+## Phase 1 seam findings
+
+- `RunJournal.list_runs()` and `list_events()` both page at at most 100 items;
+  the ledger must own pagination and enforce an overall scan bound.
+- Run lifecycle status cannot serve as task outcome: a normally returned
+  max-step failure can still produce lifecycle `run.completed`.
+- P1 attribution supplies canonical outcomes only for tasks that loaded a
+  Skill, so a separate `task.outcome` event is required for valid no-Skill
+  controls.
+- `skill.routed@v1` identifies name/source/directory but not content digest.
+  Production discovery reads each Skill once, then deliberately returns a
+  content-free summary. It can calculate and retain only a SHA-256 before
+  discarding the body, so routing needs no second file read and exposes no
+  content. New complete observations can be v2; historical v1 stays readable
+  but cannot support exact-version controls.
+- Stronger comparable control: same v2-routed Skill digest, same coarse
+  intent/action, and zero loaded Skills. Single-Skill treatment must match the
+  routed digest. Multi-Skill loads and direct/non-routed loads are excluded.
+- The deep-module interface should accept a RunJournal dependency and return
+  one immutable/JSON-safe snapshot; scan/join/statistics remain implementation
+  details.
+
+## Phase 2–3 implementation evidence
+
+- Every observed `run_agent_turn` now emits one `task.outcome@v1`, even when no
+  Skill was loaded. The contract includes canonical status, goal achievement,
+  nullable learning success, Tool-error count, and recovered-error state.
+- Production discovery carries a SHA-256 derived during the existing Skill
+  read, while continuing to strip the body from summaries. Routing emits
+  `skill.routed@v2` when the safely projected candidates are complete.
+  Incomplete legacy/fixture projections remain v1.
+- `SkillEvidenceLedger(journal).snapshot()` is the sole external interface.
+  It owns Run/event pagination, strict event validation, profile/digest joins,
+  cohort statistics, exclusion accounting, and output bounds.
+- Treatment requires exactly one unique loaded Skill, a matching v2 routed
+  digest, one consistent attribution, and a binary canonical outcome.
+- Control requires the exact routed digest/profile, no loaded event, no
+  attribution, and the same binary canonical outcome contract.
+- Multi-Skill, direct/mismatched loads, legacy routing, malformed/missing
+  outcomes, non-binary outcomes, non-completed Runs, and overlarge event scans
+  are excluded with bounded reason counts.
+- Wilson 95% intervals gate `positive_signal`/`negative_signal`; fewer than
+  five treatment or five control Runs is `insufficient_evidence`. Delta is
+  `null` when either cohort is empty.
+- Public results always set `mode=shadow` and `promotionEligible=false`.
+- Real RunJournal paging probe crossed the 100-Run page seam and retained all
+  105 treatment/control records.
+
+## Phase 4 implementation evidence
+
+- The existing read-only Skills endpoint now includes an independently
+  failure-isolated evidence wrapper. Skill discovery remains available if the
+  RunJournal evidence scan fails.
+- Dashboard evidence exposes only the bounded aggregate: scan/eligibility
+  counts, exclusion counts, Skill identity/digest, coarse profile, cohort
+  outcomes, Wilson intervals, delta, sample gate, and shadow status.
+- Run titles, task text, prompts, model responses, Skill bodies, paths, event
+  IDs, and Run IDs are never returned by the ledger.
+- The frontend validates the evidence contract before rendering and labels the
+  panel `shadow only`, `task correlation, not causal proof`, and
+  `promotion locked`.
+- Run details now strictly project `task.outcome@v1` and both historical
+  `skill.routed@v1` and digest-bearing `skill.routed@v2`.
+
+## Phase 5 final verification and review
+
+- A production-equivalent probe creates a real project Skill, discovers and
+  routes it, executes five real `load_skill` treatments plus five no-load
+  controls, persists their Runs, and derives one positive shadow signal. It
+  also proves that task titles and Skill content do not enter the snapshot.
+- Review made event order part of eligibility:
+  `skill.routed → skill.loaded → task.outcome → skill.attributed`. Corrupt or
+  impossible orderings fail closed as inconsistent Skill use.
+- Failed `load_skill` attempts are never controls. Runs with Journal read
+  diagnostics, per-Run read failures, or more than 500 events are excluded;
+  incomplete evidence is surfaced as `partial`, not `live`.
+- Scans are capped at the newest 200 retained Runs, 500 events per Run, and
+  100 evaluation rows. Truncation is explicit.
+- Paged RunJournal regression covers 105 Runs; production discovery/routing
+  regression protects the content-free summary → v2 digest seam.
+- Focused P2A/Dashboard/Gateway regression passed 237 tests before the final
+  review hardening. The final complete suite passed
+  `3365 passed, 2 skipped, 3 pre-existing warnings in 195.21s`.
+- `ruff`, `compileall`, `node --check`, and `git diff --check` passed.
+
+## P2A boundary
+
+- The ledger measures task-level observational correlation under an exact
+  Skill digest and coarse intent/action profile. Routing and model choice are
+  not randomized, so selection bias and unobserved task difficulty remain.
+- The outcome does not yet include independent verification, user acceptance
+  or correction, cost, or latency gates.
+- There is still no first-class Skill version record with parent, status,
+  evaluation provenance, canary state, or rollback target.
+- Consequently every public result remains `mode=shadow` and
+  `promotionEligible=false`; no consumer feeds it back into live routing.
+
+---
+
+# Skill Version and Promotion Gate Ledger P2B Notes
+
+## Phase 1 seam findings
+
+- `propose_skill` is intentionally proposal-only. Actual Skill creation/editing
+  still happens through ordinary approved file writes, so there is no truthful
+  automatic draft provenance or promotion actuator to reuse.
+- Production Skill discovery already reads each body and returns a content-free
+  summary with SHA-256. A version observer can consume those summaries without
+  reopening files or persisting content/path/task text.
+- `model.completed` and `model.failed` carry bounded per-call duration;
+  `model.costed` carries reconciliable priced/unavailable observations linked
+  by `operationId`. These are truthful cost/latency sources for eligible P2A
+  Runs.
+- There is no RunJournal event for independent task verification or explicit
+  post-task user acceptance/correction. Tool success, assistant success, Memory
+  feedback, permission approval, and reflection verification are not valid
+  substitutes: they measure different facts or are not linked to the public
+  Run evidence seam.
+- Verification and user gates must therefore remain `unavailable` in P2B until
+  dedicated observations exist. Missing gates fail closed; task success cannot
+  synthesize them.
+- The narrow deep-module interface is:
+  `SkillVersionLedger.observe_catalog(skills)` for atomic immutable version
+  observation and `snapshot(catalog, evidence)` for read-only lineage/gates.
+  Storage validation, version IDs, parent selection, bounds, atomic replacement
+  and gate policy stay behind that interface.
+- Persist only immutable version facts under project `.mini-code`; evaluation
+  remains derived from the current bounded P2A snapshot so stale success cannot
+  become durable promotion authority.
+- Runtime catalog construction is the truthful write seam. Dashboard remains
+  read-only and may pass its independently discovered catalog only to mark
+  which persisted digest is currently visible.
+- Gate policy for this slice:
+  - outcome passes only with at least one positive sample-gated profile and no
+    negative/inconclusive sample-gated profile;
+  - cost/latency require complete treatment/control observation coverage and
+    no mean regression, compared without floating-point division;
+  - verification and user gates are unavailable;
+  - all versions remain observed/shadow with promotion and rollback execution
+    locked.
+
+## Phase 2 implementation evidence
+
+- `SkillVersionLedger.observe_catalog(skills)` records only qualified name,
+  source, directory, digest, deterministic version ID, parent, observed status,
+  first-observed timestamp, and an honestly empty `createdFromRuns`.
+- Version IDs are deterministic hashes of the public identity/digest. A newly
+  observed digest links only to the latest prior version of the same
+  qualified/source/directory identity; cross-Skill parent linkage is rejected.
+- The project store is atomic, owner-only `0600`, bounded to 1,000 versions and
+  2 MiB, and coordinated by a process lock plus POSIX file lock.
+- Malformed, oversized, symlinked, duplicate, cyclic/out-of-order, or
+  cross-Skill history is rejected. Runtime-safe observation swallows the error
+  but never overwrites the untrusted bytes.
+- `create_default_tool_registry` is the observation seam. It already owns real
+  Skill discovery and now records the content-free catalog without changing
+  Tool construction when observation storage is unavailable.
+- `snapshot(catalog, evidence)` is read-only. It marks a persisted digest as
+  currently visible only from the caller-provided catalog; absence does not
+  mutate or retire historical versions.
+
+## Phase 3 implementation evidence
+
+- Eligible P2A experiences now reconcile exact per-Run economics from bounded
+  canonical Model events. Cost requires every completed operation to have one
+  valid priced `model.costed` record and no failed attempt; totals remain
+  JavaScript-safe decimal strings.
+- Latency requires every started Model operation to have one terminal event
+  with a valid bounded `durationMs`. A valid unpriced Cost observation makes
+  cost unavailable without erasing independently valid latency.
+- Cohorts expose observed Run count, exact total, and explicit complete
+  coverage for cost and latency. Missing/malformed/incomplete observations
+  never become zero cost or zero latency.
+- Version gates consume only strict P2A snapshots for the exact digest.
+  Sample-gated positive outcome with no negative/inconclusive profile passes
+  the outcome gate; any sampled negative/inconclusive profile fails it.
+- Mean cost and latency comparisons use integer cross-multiplication rather
+  than floating-point division. Any observed regression fails; incomplete
+  coverage is unavailable.
+- Verification and user gates are always unavailable in P2B because their
+  dedicated observations do not exist. Consequently
+  `allRequiredGatesPassed=false`, `promotionCandidate=false`, and
+  `promotionLocked=true` even when outcome/cost/latency pass.
+
+## Phase 4 implementation evidence
+
+- The Skills endpoint now returns a separate `versionLedger` wrapper. Catalog,
+  P2A evidence, and version storage fail independently; corrupt version history
+  does not hide live Skill summaries or shadow evidence.
+- Dashboard uses its existing bounded Skill read to compute the same content
+  digest and mark persisted versions `catalogCurrent`; the read path never
+  observes or writes a version.
+- The frontend validates ledger/version IDs, digest, parent/rollback identity,
+  observed status, current flag, exact five-gate order/status, and the locked
+  promotion invariants before rendering.
+- Version cards expose content-free lineage, outcome/verification/user/cost/
+  latency gate reasons, observed profile count, current/historical state, and
+  explicit promotion/rollback locks. No mutation controls exist.
+
+## Phase 5 review and final verification
+
+- Review tightened “immutable lineage” from “parent is an earlier version of
+  the same Skill” to “parent is exactly the immediately preceding observed
+  version of that Skill.” Dropped parents, skipped parents, cross-Skill links,
+  duplicate IDs, and out-of-order parents all make the complete store
+  unavailable and are never repaired by overwriting history.
+- The project state root and version file reject symbolic links and non-
+  directory/non-regular targets. Reads use `lstat`, `O_NOFOLLOW` where
+  available, `fstat`, and device/inode agreement before JSON parsing. A broken
+  storage symlink is preserved rather than silently replaced; a symlinked
+  `.mini-code` root cannot redirect version writes outside the Workspace.
+- Gate input now accepts only canonical `IntentType`/`ActionType` values and
+  verifies that `sampleGatePassed` agrees with the five-treatment/five-control
+  minimum.
+- Economics review separated Model lifecycle integrity from Cost integrity. A
+  malformed Cost observation makes Cost unavailable but does not erase a
+  fully paired, bounded Model duration; malformed lifecycle observations still
+  fail both channels closed.
+- Runtime construction remains available when version observation fails.
+  Dashboard reads never create or change the ledger and independently isolate
+  catalog, P2A evidence, and version-history failures.
+- Focused storage/evidence/read-model/Tool regression:
+  `115 passed in 2.14s`.
+- Dashboard HTTP and installed-wheel packaging regression:
+  `80 passed in 41.37s`.
+- Complete suite:
+  `3381 passed, 2 skipped, 3 pre-existing benchmark-marker warnings in
+  196.42s`.
+- `python -m compileall`, `node --check`, `git diff --check`, and Ruff over
+  `skill_versions.py`, `skill_evidence.py`, the Tool registry integration, and
+  the Dashboard read model all passed.
+- Functional Reliability Audit 1A scanned 185 capabilities and retained its
+  seven known baseline failures: archive Workspace escape/budgets, read-file
+  truthfulness, utility validator metadata/conformance, raw Tool-error
+  redaction, and ordinary conversational fact intake. P2B does not change
+  those oracles or claim they are resolved.
+
+## P2B boundary and next safe slice
+
+- Outcome/cost/latency can now be evaluated for an immutable Skill digest, but
+  verification and explicit user acceptance/correction have no canonical
+  RunJournal observation and therefore stay `unavailable`.
+- No version can become a promotion candidate while either required signal is
+  unavailable. There is no Skill file mutation, replay executor, holdout
+  assignment, canary traffic, promotion, or rollback actuator.
+- The next safe self-evolution slice is P2C: add content-free independent
+  verification and post-task user signal events, preserve correction/negative
+  evidence, and evaluate them in replay/shadow mode. Canary/promotion should
+  remain locked until those observations have production coverage.
+
+---
+
+# Independent Verification and User Signal Evidence P2C Notes
+
+## Phase 1 seam findings
+
+- `_execute_single_tool` is the first shared point after a Tool has returned,
+  but a generic `ToolResult.ok` cannot distinguish a real verifier process from
+  validation failure, permission denial, Tool crash, or an unrelated command.
+  Therefore the Agent loop must never synthesize verification from Tool name,
+  output text, or success alone.
+- Trusted built-in verifiers can attach a strict content-free marker only after
+  their actual subprocess returns. `test_runner` is an explicit test verifier;
+  `run_command` may attach a marker only for a directly executed allowlisted
+  verifier/build/lint/typecheck invocation, never for a shell snippet,
+  background process, or wrapper such as `echo`.
+- The canonical event shape can remain four closed fields:
+  `verificationVersion`, `kind`, `outcome`, and `source`. It contains no
+  command, arguments, path, stdout/stderr, prompt, secret, or user text.
+- The existing Run event stream is the correct same-task verification seam:
+  the marker is projected immediately after the real Tool result and therefore
+  precedes the canonical `task.outcome`.
+- A completed Run releases its sole event writer and correctly rejects later
+  events. Explicit user feedback is necessarily post-terminal, so reopening
+  the event stream would violate its ownership/append-only contract.
+- The narrow post-terminal seam is one immutable content-free
+  `user_signal.json` sidecar inside the Run directory. RunJournal owns strict
+  validation, atomic owner-only storage, idempotence, conflict rejection,
+  symlink/size checks, and reads. Run retention and Session deletion already
+  remove the complete Run directory, so feedback follows existing lifecycle
+  and privacy boundaries automatically.
+- Dashboard Chat has a durable completed Turn record linked to exactly one Run.
+  `ConversationTurnService` can accept `accept|correct|reject` only after
+  authoritative completion and write through RunJournal. Silence, a later
+  message, and ordinary Session continuation do not call this seam.
+- Headless/TUI tasks retain the programmatic RunJournal feedback seam but have
+  no honest explicit user-action UI in this slice. Their user gate stays
+  unavailable rather than treating absence as acceptance.
+
+## Phase 2 trusted verification evidence
+
+- `verification_observation.py` owns one exact content-free event contract:
+  `verificationVersion`, `kind`, `outcome`, and `source`. Unsupported fields,
+  sources, kinds, outcomes, wrappers, shell control operators, and background
+  commands are rejected.
+- Only the built-in `test_runner` and recognized direct foreground verifier
+  commands executed by `run_command` may attach a `ToolResult.verification`
+  marker after a real subprocess result. Validation, permission, setup, and
+  ordinary Tool success paths never attach one.
+- Agent projection binds marker provenance to the actual trusted Tool name, so
+  a custom Tool cannot claim `test_runner` or `run_command` as its source.
+- RunJournal independently revalidates the payload and records
+  `task.verified` before the canonical `task.outcome`. No command, output,
+  prompt, path, user text, or secret enters the event.
+
+## Phase 3 explicit user-signal evidence
+
+- RunJournal owns one immutable completed-Run sidecar containing only schema,
+  `accept|correct|reject`, the fixed source `explicit_user_action`, and a
+  timestamp. Same-value retries are idempotent; a different later value is a
+  conflict rather than silent history rewriting.
+- The sidecar is bounded, owner-only, atomic, no-follow, device/inode checked,
+  and rejects symlink/special-file replacement. Feedback, Session deletion,
+  and retention share a Run mutation lock.
+- Session-linked feedback also participates in the conversation deletion
+  fence. A deletion in progress rejects the late write, while retention or
+  deletion cannot remove a Run under an active feedback mutation.
+- `ConversationTurnService.record_feedback` accepts feedback only for an
+  authoritative completed Turn with the exact durable Run and committed
+  Session result. The HTTP route accepts only an exact one-field JSON body and
+  exposes fixed safe conflict/unavailable errors.
+- Dashboard shows three explicit actions only for the selected Session's
+  completed Turn with a real Run. Generation and identity checks discard stale
+  responses. Starting another Turn or selecting another Session hides the
+  controls; silence and subsequent messages do nothing.
+
+## Phase 4 aggregation and locked version gates
+
+- P2A evidence consumes only strict `task.verified` events between routing and
+  outcome. Any observed verification failure is negative; complete passed
+  coverage is positive; missing, malformed, or out-of-order evidence remains
+  unavailable without erasing outcome, cost, or latency.
+- The immutable user-signal sidecar is joined independently. Cohorts expose
+  observed/pass/fail and accept/correct/reject counts plus explicit coverage
+  completeness for both treatment and control.
+- Gate policy v2 validates exact count arithmetic and coverage consistency.
+  Treatment verification fails on any failed Run and passes only with complete
+  passed coverage. The user gate fails on any correction/rejection and passes
+  only when every treatment Run is explicitly accepted.
+- When outcome, verification, user, cost, and latency all pass, a version may
+  become a `promotionCandidate` in the shadow ledger. `promotionLocked` remains
+  true, mode remains shadow, and the Dashboard exposes no promotion, mutation,
+  traffic, or rollback action.
+
+## Phase 5 review and verification
+
+- Security review added provenance binding against custom-Tool spoofing,
+  arithmetic rejection for fabricated signal counts, deletion-fence tests,
+  lock-preservation tests, safe storage race mapping, and selected-Session UI
+  scoping.
+- Focused runtime/storage/evidence regression: `124 passed`.
+- Focused Dashboard/Gateway/packaging regression: `268 passed` after updating
+  isolated Node harness dependencies for the new feedback helpers.
+- Complete suite: `3418 passed, 2 skipped, 3 pre-existing benchmark-marker
+  warnings in 203.05s`.
+- Ruff over every modified P2C Python module/test, `python -m compileall`,
+  `node --check`, and `git diff --check` all passed.
+- Functional Reliability Audit 1A now scans 186 capabilities, including the
+  feedback route, and retains exactly the seven known baseline findings:
+  `SEC-002`, `SEC-004`, `TOOL-001`, `TOOL-002`, `TOOL-003`, `SEC-005`, and
+  `MEM-001`. Its non-zero exit is expected while those baseline issues remain.
+
+## P2C boundary and next safe slice
+
+- Verification coverage currently comes only from the trusted built-in test
+  runner and recognized direct `run_command` test/build/lint/typecheck
+  commands. Other verification systems remain unavailable rather than being
+  inferred.
+- The Dashboard/Gateway has an explicit feedback UI. Headless/TUI use has only
+  the programmatic RunJournal seam, so its user gate generally stays
+  unavailable. The immutable one-shot signal also intentionally cannot model
+  a later change of mind.
+- Explicit feedback is self-selected and treatment/control cohorts are
+  observational, not randomized. Passing gates is stronger evidence, not a
+  causal proof that the Skill caused improvement.
+- Version provenance still has an honestly empty `createdFromRuns`; no code
+  generates a revised Skill body, executes a replay candidate, assigns a
+  holdout, routes canary traffic, promotes, or rolls back.
+- The next safe slice is P2D: a deterministic offline replay/holdout evaluator
+  that produces a proposed immutable Skill artifact and comparison report,
+  while keeping filesystem mutation, live routing, promotion, and rollback
+  actuators locked.
+
+---
+
+# Same-Turn Verification-Corroborated Memory Feedback Notes
+
+## Why
+
+The persistent-memory/skill-routing review found Memory's own feedback loop
+was the weakest link even after P2C gave Skills real verification/user-signal
+gates: every rendered memory in a turn got the same coarse whole-turn
+success/failure label, and the retrieval weight for that label was only
+`0.005` — deliberately not safe to amplify, since the credit assignment
+behind it was still confounded. P2C's `task.verified` marker is exactly the
+kind of independent, content-free ground truth that review asked for; this
+slice reuses it for Memory instead of only for Skills.
+
+## What this slice is (and is not)
+
+Only the synchronous, same-turn channel: verification markers observed
+during the current turn (via the already-existing `VERIFICATION_EVENT_TYPE`
+emission in `_execute_single_tool`) are tallied by a new `VerificationTracker`
+and reduced to one same-turn corroboration signal
+(`verification_corroboration`: any failure → negative, complete passed
+coverage → positive, no observation → `None`, mirroring how
+`skill_versions.py`'s own verification gate already treats the same
+three-way outcome). That signal drives a second, separately-counted
+`Memory.record_corroborated_feedback`, never blended into the original
+`record_feedback` counters.
+
+The async explicit user accept/correct/reject channel is intentionally out of
+scope here: it arrives after turn end, once the in-process
+`_last_injected_ids` this turn used are gone, and would need a new durable
+run_id → rendered-memory-id mapping (the existing `memory.rendered` event is
+deliberately count-only — no entry IDs — to keep the Journal content-free).
+That is the natural next slice.
+
+## Ranking
+
+`memory_retrieval.py` adds a `corroborated_score` term at weight `0.05`
+(10x the naive `usefulness_score` weight), confidence-scaled by
+`min(1, corroborated_samples / 3)` so a single anecdote cannot dominate.
+Verified regression: corroboration alone cannot activate an otherwise
+lexically-unrelated memory (same invariant already proven for the naive
+usefulness/recency terms), a single sample is discounted to 1/3 weight, and
+a fully-sampled corroborated entry outranks an otherwise-tied uncorroborated
+peer.
+
+## Errors encountered
+
+- New ranking tests were first added into `tests/test_memory_retrieval_
+  phase2a.py`, which is itself a pinned/frozen asset checked by
+  `test_phase2a_pin_cascade_has_exact_hardening_changed_set`. Editing it
+  surfaced as an unexpected extra entry in that cascade's changed-file set.
+  Reverted via `git checkout` and moved the new tests to a standalone
+  `tests/test_memory_corroborated_feedback.py`.
+- Full suite showed one failure unrelated to this change:
+  `test_dashboard_assets_load_from_an_installed_wheel` expects
+  `baidu=response_too_large`, but got `baidu=redirect_blocked` in this
+  sandbox. Confirmed via a temporary (reverted) debug print plus a direct
+  `socket.getaddrinfo` check that this sandbox's outbound DNS resolves
+  `www.baidu.com`/`www.bing.com` into the `198.18.0.0/15` RFC 2544 benchmark
+  range, which Python's `ipaddress.is_private` flags as private — the app's
+  own SSRF destination guard (`network_safety.py`) correctly raises
+  `destination_blocked` before the test's mocked oversized-response layer is
+  ever reached. Sandbox network-virtualization artifact, not a regression.
+
+## Verification
+
+- Focused: `tests/test_memory_retrieval_phase2a.py tests/test_memory_
+  regressions.py tests/test_memory_acceptance_audit.py tests/test_agent_
+  flow.py tests/test_runtime_observation_events.py tests/test_agent_model_
+  events.py tests/test_memory_corroborated_feedback.py
+  tests/test_memory_retrieval_phase2a_evaluator.py tests/test_memory_
+  retrieval_phase2b_evaluator.py` — all green.
+- Full suite: `3431 passed, 2 skipped, 1 failed` (the pre-existing
+  sandbox-only network failure above).
+- Ruff, `python -m compileall`, and `git diff --check` pass on every touched
+  file.
+
+## Next safe slice
+
+Wire the explicit user accept/correct/reject signal into Memory too: persist
+a Run-owned, content-free `run_id → rendered memory entry ID` sidecar at turn
+end (mirroring `user_signal.json`'s atomicity/symlink-safety properties), then
+have `ConversationTurnService.record_feedback` (or its caller) resolve that
+mapping and call `Memory.record_corroborated_feedback` once the user signal
+lands — giving Memory the same two-channel (verification + user) evidence
+Skills already have from P2C.
+
+---
+
+# Explicit User-Signal-Corroborated Memory Feedback Notes
+
+## Why
+
+The previous slice gave Memory a same-turn verification channel but
+explicitly deferred the async half: explicit user accept/correct/reject
+arrives after the turn's runtime (and its in-process `_last_injected_ids`)
+is already gone. This closes that gap using the same
+`Memory.record_corroborated_feedback` sink the verification slice built, so
+Memory finally has the same two independent evidence channels — verification
+and explicit user signal — that Skills got from P2C.
+
+## The missing link: where do rendered IDs live long enough?
+
+`user_signal.json` is deliberately post-terminal and immutable. The rendered
+Memory IDs, by contrast, are known mid-turn (same moment the existing
+count-only `memory.rendered` event fires) and need to survive until an HTTP
+request arrives, possibly much later, in a context that no longer holds the
+turn's `MemoryPipeline` instance. The fix: a new Run-owned sidecar,
+`memory_rendered.json`, written once while the Run is still `running`
+(guarded like `append_event`, not like `user_signal.json`), read back later by
+`ConversationTurnService.record_feedback` — which itself only needs a
+*fresh* `MemoryManager(project_root=workspace)`, since Memory storage is
+already file-backed and instance-independent (the same reason every test
+helper in this codebase freely constructs a new `MemoryManager` to read back
+what another instance wrote).
+
+## Threading the ID through without polluting the public event log
+
+`memory.rendered` is intentionally count-only — no entry IDs — to keep the
+Journal event stream itself content-free of internal identity data.  Rather
+than adding IDs to that public event or inventing a second sink parameter
+threaded through `run_agent_turn`'s already-large signature, the simplest fit
+was a **duck-typed extra seam on the existing `AgentEventSink`**:
+`emit_memory_result_safely` now does `getattr(sink, "record_rendered_memory_
+ids", None)` after its two normal `emit_event_safely` calls. Production's
+`RunObservation` implements it (forwarding through `_BestEffortLifecycle` to
+the new `RunJournal` method); every test double that doesn't implement it is
+silently skipped. No changes to `agent_loop.py`, `run_agent_turn`'s
+signature, or the `AgentEventSink` Protocol's required shape were needed.
+
+## Avoiding double-counting on repeated feedback
+
+`record_user_signal` is already idempotent (same signal twice → same
+result, no re-write). Naively calling `record_corroborated_feedback`
+every time `record_feedback` succeeds would double-increment Memory's
+counters on a idempotent replay. Fixed by reading `get_user_signal` *before*
+calling `record_user_signal`, and only applying corroboration when nothing
+existed beforehand. This is intentionally outside the lock
+`record_user_signal` takes internally, so two truly concurrent first
+submissions for the same Run could both see "nothing recorded yet" and both
+apply corroboration — an accepted, documented, low-severity race (soft
+ranking signal, not safety-critical), not eliminated here to avoid changing
+`record_user_signal`'s established return contract.
+
+## Errors encountered
+
+- The write-once sidecar's first `FileExistsError` handler silently treated
+  *any* pre-existing target as a benign retry — including a planted symlink.
+  A dedicated symlink-safety test (mirroring the existing `user_signal.json`
+  one) caught this. Fixed by reading the existing target back through the
+  same hardened `_read_rendered_memory_ids` path on conflict, only no-opping
+  when its content is identical; a symlink or mismatch now raises
+  `RunJournalStorageError` same as it would on the read path.
+- Assumed a terminal Run would reject a rendered-ID write with
+  `RunJournalTransitionError` (mirroring `append_event`'s structure). Actual
+  behavior is `RunJournalOwnershipError`, because `transition()` releases the
+  writer mutex in the same step it marks a Run terminal — so the terminal-
+  status branch in both `append_event` and the new method is effectively
+  unreachable through the public API. Corrected the test rather than the
+  code, since this matches pre-existing, already-shipped behavior.
+
+## Verification
+
+- Focused: `tests/test_run_journal.py tests/test_run_lifecycle.py tests/
+  test_runtime_observation_events.py tests/test_agent_flow.py tests/
+  test_memory_regressions.py tests/test_memory_acceptance_audit.py tests/
+  test_memory_corroborated_feedback.py tests/test_dashboard_chat_http.py
+  tests/test_conversation_cancellation.py` — 200 passed.
+- Ruff, `python -m compileall`, and `git diff --check` pass on every touched
+  file.
+- Full suite: `3443 passed, 2 skipped, 1 failed` — the same one
+  pre-existing sandbox-only network failure from the previous slice
+  (`test_dashboard_assets_load_from_an_installed_wheel`), unrelated to this
+  change.
+
+## Next safe slice
+
+Memory and Skills now share both corroboration channels. Remaining, not
+attempted here: promoting either signal from a soft ranking nudge to any
+kind of automatic gate/promotion (still explicitly out of scope, matching
+P2C's own locked-promotion stance), and closing the accepted TOCTOU race
+above if concurrent duplicate feedback submission turns out to matter in
+practice.
+
+---
+
+# Memory Corroborated Feedback Observability Notes
+
+## Why
+
+Both corroboration channels (verification, user signal) were fully wired
+into ranking with zero way to actually see them working. Rather than build
+more automation on unverified plumbing, this slice makes the existing signal
+visible on the Memory Dashboard page and proves — with a real, not
+simulated, run of the production code — that the numbers a user would see
+are the same numbers actually driving retrieval ranking.
+
+## What and where
+
+- `read_model.py`'s Memory page item gains the three corroborated fields
+  next to the existing `usefulnessScore`; its strict validator gains them in
+  the same finite/non-negative checks already applied to every other
+  numeric/counter field on the entry — no new validation philosophy, just
+  extending the existing one.
+- `app.js`'s `memoryRows()` shows ` · verified N✓ M✗ (score)` only when
+  `corroboratedSuccessCount + corroboratedFailureCount > 0`. This mirrors the
+  earlier design choice (in the ranking formula itself) that zero
+  corroborated samples must be a complete no-op — now true for the display
+  too, not just the score.
+
+## How "does it compute correctly" was actually checked
+
+Three independent proofs, from strongest to weakest:
+
+1. **Full production round-trip script** (most convincing): real
+   `MemoryManager.add_entry`, real `record_corroborated_feedback` calls (2
+   accept, 1 reject), a **fresh** `MemoryManager` instance re-reading from
+   disk (exactly what the async user-signal path in conversation.py actually
+   does), then both `CanonicalMemoryRetriever.retrieve` (ranking) and
+   `DashboardReadModel.memory()` (display) read back the identical
+   `corroborated_success_count=2`, `corroborated_failure_count=1`,
+   `corroborated_usefulness_score≈0.3333`. All four independent code paths
+   (write, reload, rank, display) agreed exactly.
+2. **Live browser check**: started the real `python -m minicode.gateway`
+   (not a mock/stub) against an isolated demo workspace via a temporary
+   launch config + wrapper script (both reverted afterward), seeded a
+   `memory.json` with one corroborated and one uncorroborated entry directly
+   (bypassing the agent loop, since driving a real chat turn through a mock
+   model to trigger verification would have been far more setup for the same
+   visual proof), and confirmed in a screenshot: `usefulness 1 · verified 2✓
+   1✗ (0.33)` for the corroborated entry, and no `verified` fragment at all
+   for the other. No console errors.
+3. **Targeted unit tests**: happy path (nonzero and zero corroboration) and
+   a dedicated rejection test (negative count, non-finite score) added to
+   `test_dashboard_page_read_model.py`.
+
+## Verification
+
+- Focused: `test_dashboard_page_read_model.py test_dashboard_web.py
+  test_dashboard_catalog_read_model.py test_dashboard_runs_read_model.py
+  test_dashboard_chat_stream_frontend.py
+  test_dashboard_permission_frontend.py` — 207 passed.
+- Ruff, `compileall`, `node --check`, and `git diff --check` all pass.
+- Full suite: `3444 passed, 2 skipped, 1 failed` — the same one
+  pre-existing sandbox-only network failure, unrelated to this change.
+
+## Next safe slice
+
+No further automatic gate/promotion work planned for Memory or Skills until
+there's real usage data behind these now-visible channels. If concurrent
+duplicate user-signal submission for the same Run ever turns out to matter
+in practice, that's the one previously-accepted, documented race left to
+close.
+
+---
+
+# Legacy `advanced_memory.json` Cleanup Notes
+
+## Why
+
+The very first persistent-memory/Skill-routing review flagged this and it
+was never closed: two `advanced_memory.json` files sitting in
+`.mini-code-memory-local/` and `.mini-code-session-memory/`, from a schema
+(`type`/`priority`/`confidence`/`dependencies`/`context_hash`/a `"session"`
+scope) that doesn't match the current `MemoryEntry` at all — i.e. leftover
+from a module that no longer exists. Zero production code reads the
+filename `advanced_memory.json`; the real `MemoryManager` only ever touches
+`memory.json`.
+
+## Confirming it was actually safe to delete
+
+The one thing that gave real pause: `scripts/memory_retrieval_evaluator.
+py`'s `snapshot_formal_memory()` hashes exactly these live directories
+(`project_root / ".mini-code-memory-local"`,
+`project_root / ".mini-code-session-memory"`), and a checked-in artifact
+(`artifacts/memory-retrieval-baseline.json`) even has historical hashes
+labeled `local/advanced_memory.json` / `session/advanced_memory.json`.
+Traced both uses before touching anything:
+
+- `snapshot_formal_memory` is only ever compared **before vs. after the same
+  test run** (`test_arm_execution_does_not_modify_formal_memory`) — proving
+  the Phase2A/2B evaluator doesn't mutate legacy memory stores while it
+  runs, not asserting a fixed historical hash. Fewer files before AND after
+  is still equal.
+- The baseline artifact's `local/advanced_memory.json` entries describe a
+  **different evaluator run's own patched temporary root** (its own
+  `formal_memory_access_mode` field says so explicitly), not these real
+  repo-root directories. Its own pinned whole-file hash (in
+  `memory_retrieval_phase2b_evaluator.py`) only depends on that JSON file's
+  own bytes, which this cleanup never touches.
+- `test_formal_memory_contamination_audit.py` builds its own isolated
+  `home` fixture and never reads these real paths at all.
+
+Ran `test_memory_retrieval_evaluator.py`, `test_formal_memory_contamination_
+audit.py`, `test_memory_retrieval_phase2a_evaluator.py`, and
+`test_memory_retrieval_phase2b_evaluator.py` (114 tests) both before and
+after deleting the files — identical pass results.
+
+## What changed
+
+- Deleted the two orphaned files (both untracked/`.gitignore`d, so this
+  doesn't even show up as a git change).
+- `docs/CODE_WIKI.md` §5.10 no longer describes `advanced_memory.json` as
+  the real storage file or `.mini-code-session-memory/` as a "session
+  memory" scope; it now matches the real three-scope `memory.json` layout
+  and correctly attributes `.mini-code-session-memory/` to reflection-replay
+  capture (`reflection_replay.py`).
+
+## Separate discovery, not acted on
+
+While checking this doc section, noticed `docs/CODE_WIKI.md` has ~41 other
+broken `file:///d:/Desktop/minicode/py-src/...` links (looks like it was
+authored/exported from a Windows machine with absolute local paths as
+"links"), and — more notably — this repo has a second, fully git-tracked
+225-file copy of the entire project at `py-src/` alongside `minicode/`.
+Neither is related to the Memory system specifically, both are out of scope
+for this cleanup, and the `py-src/` duplicate in particular is large enough
+that it deserves its own explicit decision rather than being swept in here.
+Flagged to the user; not touched.
+
+## Verification
+
+Full suite before and after: `3444 passed, 2 skipped, 1 failed` both times
+(the same pre-existing sandbox-only network failure, confirmed via a full
+rerun after the cleanup). Ruff/compileall not needed — no Python logic
+changed, only a Markdown doc and two deleted data files.
+
+---
+
+# Intent Parser False-Positive Fixes Notes
+
+## Why
+
+Adding 3 new project Skills and probing routing with realistic + negative
+task descriptions surfaced a real bug: "What is the weather like today"
+came back `explain/read` at confidence `1.0`, when it should abstain. Traced
+to `_EXPLAIN_PATTERNS` — every sibling pattern group requires the trigger
+verb to be followed by real context (a code/file/domain noun); EXPLAIN's
+`(?:explain|describe|tell|what is|how to|how does)` required nothing.
+
+## The three bugs, in the order found
+
+1. `_EXPLAIN_PATTERNS` (English + Chinese) — bare verb, no context
+   requirement. Fixed by requiring a nearby code/project noun or filename.
+2. `_CONFIGURE_PATTERNS` — identical shape of bug, same fix.
+3. `_adjust_confidence` — added its entity/keyword-count bonuses even when
+   `base` (the actual pattern-match score) was `0`, so a fully unmatched
+   message could still report confidence `0.05`. Fixed to short-circuit to
+   `0.0` when there's no real match to boost.
+
+## The self-correction worth remembering
+
+First pass at a *related* gap (a skill's own example text coincidentally
+containing a common word like "tell", scoring as a keyword match even
+though overall intent was UNKNOWN) went for the blunt fix: gate the whole
+keyword-scoring loop in `skill_router.py` on `intent_type != UNKNOWN`. Only
+caught because the exact probe suite built for THIS fix also included
+"Rename the taskkit package..." — a message with no dedicated REFACTOR
+pattern (intent stays `unknown`) that had always routed correctly via the
+literal keyword "rename" alone. The blunt gate silently deleted that
+legitimate path. The actual fix belonged one layer down: add the specific
+trigger verbs that now require pattern context (`tell`, `describe`,
+`explain`, `configure`, `setup`, `install`, `init`, `initialize`) to
+`_extract_keywords`'s stopword list, so *those specific* words stop leaking
+out as free-floating keywords — without touching how any other keyword
+(like "rename") contributes to routing. Lesson: when closing a keyword-
+collision gap, fix the specific leaking terms, not the general keyword
+channel — the channel carries real signal for cases with no dedicated
+regex pattern at all.
+
+## Verification
+
+- New `tests/test_intent_parser.py` (first dedicated test file for this
+  module) — 22 positive/negative cases across English and Chinese for both
+  patterns and the confidence-floor fix.
+- New `test_skill_router.py::test_unrelated_small_talk_does_not_route_via_
+  coincidental_keyword_overlap` locks in the "tell"/example-text collision
+  fix at the routing level; re-verified "rename" still routes correctly
+  after the revert-and-refix.
+- Focused regression across every file that calls `parse_intent`/
+  `IntentParser` (skill router, skill evidence ledger, feedforward
+  controller, packaging, run-entrypoint lifecycle) — all pass.
+- Full suite: `3468 passed, 2 skipped, 1 failed` — the same pre-existing
+  sandbox-only network failure, unrelated.
+- Ruff, `compileall`, `git diff --check` pass.

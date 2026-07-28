@@ -183,6 +183,13 @@ const chatStore = {
   terminalTurnId: null,
   terminalPromise: null,
   recoveryChecked: false,
+  feedbackTurnId: null,
+  feedbackRunId: null,
+  feedbackSessionId: null,
+  feedbackPhase: 'idle',
+  feedbackSignal: null,
+  feedbackError: null,
+  feedbackGeneration: 0,
 };
 
 const permissionStore = {
@@ -2875,6 +2882,98 @@ function assertReadContract(payload) {
   }
 }
 
+function assertSkillEvidenceContract(evidence) {
+  if (!evidence || !['live', 'partial', 'unavailable'].includes(evidence.status)
+      || evidence.scope !== 'retained-run-journal' || typeof evidence.message !== 'string') {
+    throw new Error('skill evidence contract mismatch');
+  }
+  if (evidence.status === 'unavailable') {
+    if (evidence.ledger !== null) throw new Error('skill evidence unavailable contract mismatch');
+    return;
+  }
+  const ledger = evidence.ledger;
+  const countFields = ['scannedRuns', 'eligibleTreatmentRuns', 'eligibleControlRuns', 'journalDiagnostics'];
+  if (!ledger || ledger.ledgerVersion !== 1 || ledger.mode !== 'shadow'
+      || ledger.promotionEligible !== false || !Array.isArray(ledger.evaluations)
+      || typeof ledger.runsTruncated !== 'boolean' || typeof ledger.evaluationsTruncated !== 'boolean'
+      || !countFields.every((field) => Number.isInteger(ledger[field]) && ledger[field] >= 0)
+      || !ledger.excludedRuns || Object.values(ledger.excludedRuns).some((value) => !Number.isInteger(value) || value < 0)) {
+    throw new Error('skill evidence ledger contract mismatch');
+  }
+  const validSignalMetric = (cohort) => {
+    const runs = cohort?.runs;
+    const verification = cohort?.verification;
+    const user = cohort?.userSignal;
+    const verificationCounts = [
+      verification?.observedRuns,
+      verification?.passedRuns,
+      verification?.failedRuns,
+    ];
+    const userCounts = [
+      user?.observedRuns,
+      user?.acceptedRuns,
+      user?.correctedRuns,
+      user?.rejectedRuns,
+    ];
+    return Number.isInteger(runs) && runs >= 0
+      && verificationCounts.every((value) => Number.isInteger(value) && value >= 0)
+      && verification.observedRuns === verification.passedRuns + verification.failedRuns
+      && verification.observedRuns <= runs
+      && verification.coverageComplete === (runs > 0 && verification.observedRuns === runs)
+      && userCounts.every((value) => Number.isInteger(value) && value >= 0)
+      && user.observedRuns === user.acceptedRuns + user.correctedRuns + user.rejectedRuns
+      && user.observedRuns <= runs
+      && user.coverageComplete === (runs > 0 && user.observedRuns === runs);
+  };
+  if (!ledger.evaluations.every((item) => validSignalMetric(item?.treatment) && validSignalMetric(item?.control))) {
+    throw new Error('skill evidence signal contract mismatch');
+  }
+}
+
+function assertSkillVersionLedgerContract(wrapper) {
+  if (!wrapper || !['live', 'partial', 'unavailable'].includes(wrapper.status)
+      || wrapper.scope !== 'project-skill-version-ledger' || typeof wrapper.message !== 'string') {
+    throw new Error('skill version ledger contract mismatch');
+  }
+  if (wrapper.status === 'unavailable') {
+    if (wrapper.ledger !== null) throw new Error('skill version ledger unavailable contract mismatch');
+    return;
+  }
+  const ledger = wrapper.ledger;
+  if (!ledger || ledger.ledgerVersion !== 1 || ledger.mode !== 'shadow'
+      || ledger.promotionLocked !== true || !Array.isArray(ledger.versions)
+      || !ledger.evaluation || ledger.evaluation.gatePolicyVersion !== 2
+      || !Number.isInteger(ledger.evaluation.versionCount)
+      || ledger.evaluation.versionCount !== ledger.versions.length
+      || !Number.isInteger(ledger.evaluation.promotionCandidateCount)
+      || ledger.evaluation.promotionCandidateCount < 0
+      || ledger.evaluation.promotionCandidateCount > ledger.versions.length) {
+    throw new Error('skill version ledger payload mismatch');
+  }
+  const gateNames = ['outcome', 'verification', 'user', 'cost', 'latency'];
+  const valid = ledger.versions.every((version) => {
+    const skill = version?.skill;
+    const evaluation = version?.evaluation;
+    const gates = evaluation?.gates;
+    return /^skillv_[0-9a-f]{32}$/.test(version?.versionId || '')
+      && (version.parentVersionId === null || /^skillv_[0-9a-f]{32}$/.test(version.parentVersionId))
+      && version.rollbackToVersionId === version.parentVersionId
+      && version.status === 'observed' && typeof version.catalogCurrent === 'boolean'
+      && skill && typeof skill.qualifiedName === 'string' && typeof skill.source === 'string'
+      && typeof skill.directory === 'string' && /^[0-9a-f]{64}$/.test(skill.contentDigest || '')
+      && evaluation?.gatePolicyVersion === 2 && Array.isArray(gates) && gates.length === gateNames.length
+      && gates.every((gate, index) => gate?.name === gateNames[index]
+        && ['pass', 'fail', 'unavailable'].includes(gate.status) && typeof gate.reason === 'string')
+      && evaluation.allRequiredGatesPassed === gates.every((gate) => gate.status === 'pass')
+      && evaluation.promotionCandidate === evaluation.allRequiredGatesPassed
+      && evaluation.promotionLocked === true;
+  });
+  if (!valid) throw new Error('skill version lineage contract mismatch');
+  if (ledger.evaluation.promotionCandidateCount !== ledger.versions.filter((version) => version.evaluation.promotionCandidate).length) {
+    throw new Error('skill version candidate count mismatch');
+  }
+}
+
 function assertConnectionsContract(payload) {
   assertReadContract(payload);
   const summary = payload?.summary;
@@ -2985,6 +3084,8 @@ async function loadSkills(append = false) {
     if (!response.ok) throw new Error('skills request failed');
     const payload = await response.json();
     assertPageContract(payload, 'items');
+    assertSkillEvidenceContract(payload.evidence);
+    assertSkillVersionLedgerContract(payload.versionLedger);
     if (!payload.summary || requestId !== skillsStore.requestId || filterKey !== JSON.stringify(skillsStore.filters)) return;
     if (append && skillsStore.data) payload.items = skillsStore.data.items.concat(payload.items);
     skillsStore.data = payload;
@@ -3241,10 +3342,29 @@ function runEventSummary(event) {
     const lengthLabel = Number.isInteger(contentLength) && contentLength >= 0 ? `${esc(contentLength)} chars` : '';
     return `<span class="run-event-detail"><span>${base}</span>${lengthLabel ? `<small>${lengthLabel}</small>` : ''}</span>`;
   }
+  if (event.type === 'task.outcome') {
+    const outcomeStatus = event.details?.outcomeStatus;
+    const toolErrorCount = event.details?.toolErrorCount;
+    const recovery = event.details?.errorsRecovered === true ? 'recovered tool errors' : '';
+    return `<span class="run-event-detail runtime-event"><span>${base}</span>${outcomeStatus ? statusPill(outcomeStatus) : ''}${Number.isInteger(toolErrorCount) ? `<code>${esc(toolErrorCount)} tool errors</code>` : ''}${recovery ? `<small>${esc(recovery)}</small>` : ''}</span>`;
+  }
   if (event.type === 'skill.routed') {
     const count = Number.isInteger(event.details?.selectedCount) ? event.details.selectedCount : null;
     const fallback = event.details?.usedFallback === true ? 'fallback' : 'matched';
     return `<span class="run-event-detail runtime-event"><span>${base}</span>${count == null ? '' : `<code>${esc(count)} selected</code>`}<small>${esc(fallback)}</small></span>`;
+  }
+  if (event.type === 'skill.loaded') {
+    const qualifiedName = event.details?.qualifiedName;
+    const contentDigest = event.details?.contentDigest;
+    const digestLabel = typeof contentDigest === 'string' ? `sha256:${contentDigest.slice(0, 12)}` : '';
+    return `<span class="run-event-detail runtime-event"><span>${base}</span>${qualifiedName ? `<code>${esc(qualifiedName)}</code>` : ''}${digestLabel ? `<small>${esc(digestLabel)}</small>` : ''}</span>`;
+  }
+  if (event.type === 'skill.attributed') {
+    const loadedSkillCount = Number.isInteger(event.details?.loadedSkillCount) ? event.details.loadedSkillCount : null;
+    const outcomeStatus = typeof event.details?.outcomeStatus === 'string' ? event.details.outcomeStatus : '';
+    const recoveryLabel = event.details?.errorsRecovered === true ? ' · recovered tool errors' : '';
+    const outcomeLabel = outcomeStatus ? `${outcomeStatus}${recoveryLabel}` : '';
+    return `<span class="run-event-detail runtime-event"><span>${base}</span>${loadedSkillCount == null ? '' : `<code>${esc(loadedSkillCount)} loaded</code>`}${outcomeLabel ? `<small>${esc(outcomeLabel)}</small>` : ''}</span>`;
   }
   if (event.type === 'memory.retrieved') {
     const candidateCount = Number.isInteger(event.details?.candidateCount) ? event.details.candidateCount : null;
@@ -3502,11 +3622,19 @@ function openObservatoryRun(runId) {
   loadRunDetail(runId, false);
 }
 
+function memoryCorroborationSpan(memory) {
+  const success = Number(memory.corroboratedSuccessCount) || 0;
+  const failure = Number(memory.corroboratedFailureCount) || 0;
+  if (success + failure === 0) return '';
+  const score = Number(memory.corroboratedUsefulnessScore) || 0;
+  return ` · verified ${esc(success)}✓ ${esc(failure)}✗ (${esc(score.toFixed(2))})`;
+}
+
 function memoryRows(items) {
   return items.map((memory) => `<div class="memory-row">
     <div class="memory-score"><b>${esc(memory.scope)}</b><span>${esc(memory.tier)}</span></div>
     <div class="memory-copy"><small>${esc(memory.category)} · updated ${esc(formatSnapshotTime(memory.updatedAt))}</small><b><code>${esc(memory.id)}</code></b><p>${esc(memory.content)}</p>
-      <div class="memory-entry-meta">${statusPill(memory.lifecycleStatus)} ${statusPill(memory.safetyStatus)} ${statusPill(memory.approvalStatus)}<span>${esc(memory.retrievalCount)} retrievals · ${esc(memory.injectionCount)} injections · usefulness ${esc(memory.usefulnessScore)}</span>${memory.truncated ? '<span>content truncated</span>' : ''}</div>
+      <div class="memory-entry-meta">${statusPill(memory.lifecycleStatus)} ${statusPill(memory.safetyStatus)} ${statusPill(memory.approvalStatus)}<span>${esc(memory.retrievalCount)} retrievals · ${esc(memory.injectionCount)} injections · usefulness ${esc(memory.usefulnessScore)}${memoryCorroborationSpan(memory)}</span>${memory.truncated ? '<span>content truncated</span>' : ''}</div>
     </div>
     <div class="memory-row-actions">${memory.contentHidden ? statusPill('held') : statusPill('live')}${memory.scope === 'project' ? `<button type="button" class="memory-delete-button" onclick="openProjectMemoryDeletion('${esc(memory.id)}', this)">删除</button>` : ''}</div>
   </div>`).join('') || '<div class="card empty">暂无 Memory 条目</div>';
@@ -3731,6 +3859,43 @@ function renderDataHealthPanel() {
   return `${heading}${boundary}${dataHealthStore.error ? `<div class="card snapshot-warning" role="alert"><p>保留上一次安全快照；${esc(dataHealthStore.error)}</p><button class="snapshot-button" type="button" onclick="refreshDataHealth()">重试</button></div>` : ''}${metricTiles([[data.summary.storeCount, 'Store'], [formatCount(data.summary.knownRecordCount), '已知记录'], [formatDataHealthBytes(data.summary.knownByteCount), '已知占用'], [data.summary.issueCount, '问题 Store', data.status]])}${stateNote}${diagnostics}<div class="data-health-grid">${cards}</div><div class="card data-health-plan"><header><div><b>Batch 9A-2 维护规划</b><small>${esc(data.maintenancePlan.status)} · destructive actions unavailable</small></div>${statusPill(data.status)}</header><section><b>Workspace 候选</b><div>${planned}</div><p>只表示未来边界候选；本页面不生成删除路径，也不执行维护。</p></section><section><b>User / configuration / source 明确排除</b><div>${excluded}</div></section>${blockers}</div>`;
 }
 
+function skillEvidencePanel(evidence) {
+  if (!evidence || evidence.status === 'unavailable' || !evidence.ledger) {
+    return `<div class="card unavailable-card"><b>Skill shadow evidence unavailable</b><p>${esc(evidence?.message || 'Retained RunJournal evidence could not be read.')}</p></div>`;
+  }
+  const ledger = evidence.ledger;
+  const evaluations = ledger.evaluations || [];
+  const excluded = Object.values(ledger.excludedRuns || {}).reduce((total, value) => total + value, 0);
+  const cards = evaluations.map((evaluation) => {
+    const skill = evaluation.skill || {};
+    const profile = evaluation.profile || {};
+    const treatment = evaluation.treatment || {};
+    const control = evaluation.control || {};
+    const delta = typeof evaluation.goalAchievementDelta === 'number' ? `${Math.round(evaluation.goalAchievementDelta * 1000) / 10} pp` : 'not comparable';
+    const digest = typeof skill.contentDigest === 'string' ? `sha256:${skill.contentDigest.slice(0, 12)}` : 'digest unavailable';
+    const verification = treatment.verification || {};
+    const user = treatment.userSignal || {};
+    return `<article class="tool-card skill-evidence-card"><div><code>${esc(skill.qualifiedName || 'unknown Skill')}</code>${statusPill(evaluation.shadowStatus || 'insufficient_evidence')}</div><p>${esc(profile.intentType || 'unknown')} / ${esc(profile.actionType || 'unknown')} · ${esc(digest)}</p><div class="skill-meta"><span>loaded ${esc(treatment.runs ?? 0)} · goal ${esc(treatment.goalAchievements ?? 0)}</span><span>not loaded ${esc(control.runs ?? 0)} · goal ${esc(control.goalAchievements ?? 0)}</span><span>verified ${esc(verification.passedRuns ?? 0)} / ${esc(verification.observedRuns ?? 0)}</span><span>user accept ${esc(user.acceptedRuns ?? 0)} · correct ${esc(user.correctedRuns ?? 0)} · reject ${esc(user.rejectedRuns ?? 0)}</span><span>delta ${esc(delta)}</span><span>${evaluation.sampleGatePassed === true ? 'sample gate passed' : 'sample gate pending'}</span><span>promotion locked</span></div></article>`;
+  }).join('') || '<div class="card empty"><b>No comparable Skill cohorts yet</b><p>New canonical task outcomes and versioned routing observations will populate this shadow ledger over time.</p></div>';
+  return `<section class="skill-evidence"><div class="page-actions"><div class="intro"><b>Cross-Run Skill evidence · shadow only</b> · ${esc(evidence.message)}</div>${statusPill(evidence.status)}</div>${metricTiles([[ledger.scannedRuns, 'Runs scanned'], [ledger.eligibleTreatmentRuns, 'single-Skill treatment'], [ledger.eligibleControlRuns, 'no-Skill controls'], [excluded, 'excluded Runs']])}<div class="runtime-skill-grid">${cards}</div>${ledger.runsTruncated || ledger.evaluationsTruncated ? '<div class="card snapshot-warning"><p>Evidence is bounded; this snapshot is partial.</p></div>' : ''}</section>`;
+}
+
+function skillVersionPanel(wrapper) {
+  if (!wrapper || wrapper.status === 'unavailable' || !wrapper.ledger) {
+    return `<div class="card unavailable-card"><b>Skill version history unavailable</b><p>${esc(wrapper?.message || 'Project version history could not be read.')}</p></div>`;
+  }
+  const ledger = wrapper.ledger;
+  const cards = ledger.versions.map((version) => {
+    const skill = version.skill || {};
+    const gates = version.evaluation?.gates || [];
+    const gateRows = gates.map((gate) => `<span>${esc(gate.name)} ${statusPill(gate.status)} · ${esc(gate.reason)}</span>`).join('');
+    const parent = version.parentVersionId ? `parent ${version.parentVersionId.slice(0, 15)}` : 'root observation';
+    const candidate = version.evaluation?.promotionCandidate === true ? 'shadow candidate · execution locked' : 'promotion evidence incomplete or failed';
+    return `<article class="tool-card skill-version-card"><div><code>${esc(skill.qualifiedName || 'unknown Skill')}</code>${version.catalogCurrent ? statusPill('current') : statusPill('historical')}</div><p>${esc(version.versionId)} · sha256:${esc((skill.contentDigest || '').slice(0, 12))}</p><div class="skill-meta"><span>${esc(parent)}</span><span>status ${esc(version.status)}</span><span>profiles ${esc(version.evaluation?.evidenceProfiles ?? 0)}</span><span>${esc(candidate)}</span><span>promotion locked</span><span>rollback execution locked</span>${gateRows}</div></article>`;
+  }).join('') || '<div class="card empty"><b>No observed Skill versions yet</b><p>A runtime catalog observation will create immutable digest lineage; Dashboard reads do not write it.</p></div>';
+  return `<section class="skill-version-ledger"><div class="page-actions"><div class="intro"><b>Skill version lineage · read-only</b> · ${esc(wrapper.message)}</div>${statusPill(wrapper.status)}</div>${metricTiles([[ledger.evaluation.versionCount, 'observed versions'], [ledger.evaluation.promotionCandidateCount, 'promotion candidates'], [ledger.versions.filter((item) => item.catalogCurrent).length, 'catalog current'], [0, 'executable actions']])}<div class="runtime-skill-grid">${cards}</div></section>`;
+}
+
 const VIEWS = {
   overview() {
     if (snapshotStore.phase === 'loading') {
@@ -3888,7 +4053,7 @@ const VIEWS = {
     const sourceFilters = `<div class="catalog-filter"><small>source</small><div class="scope-filters"><button class="${skillsStore.filters.source == null ? 'on' : ''}" onclick="setSkillSourceFilter(null)">全部</button>${sources.map(([source, label]) => `<button class="${skillsStore.filters.source === source ? 'on' : ''}" onclick="setSkillSourceFilter('${esc(source)}')">${esc(label)} · ${esc(data.summary.bySource[source] ?? 0)}</button>`).join('')}</div></div>`;
     const directoryFilters = `<div class="catalog-filter"><small>directory</small><div class="scope-filters"><button class="${skillsStore.filters.directory == null ? 'on' : ''}" onclick="setSkillDirectoryFilter(null)">全部</button>${(data.summary.directories || []).map((directory) => `<button class="${skillsStore.filters.directory === directory ? 'on' : ''}" onclick="setSkillDirectoryFilter('${esc(directory)}')">${esc(directory)}</button>`).join('')}</div></div>`;
     const items = data.items.map((skill) => `<article class="tool-card skill-card"><div><code>${esc(skill.qualifiedName)}</code>${sourceTag(skill.source)}${skill.directory ? `<span class="meta right">${esc(skill.directory)}</span>` : ''}</div><p>${esc(skill.description)}</p><div class="skill-meta"><span>${esc(skill.domains.join(' · ') || 'no domains')}</span><span>${esc(skill.scopes.join(' · ') || 'no scopes')}</span><span>${esc(skill.tools.join(' · ') || 'no declared tools')}</span><span>${esc(skill.keywords.join(' · ') || 'no keywords')}</span><span>${esc(skill.exampleCount)} examples${skill.descriptionTruncated ? ' · description truncated' : ''}</span></div></article>`).join('') || '<div class="card empty">当前筛选下没有 Skill。</div>';
-    return subtabBar('skills', tabs, sub) + `<div class="page-actions">${readSourceLine(data.source)}<button class="snapshot-button" onclick="refreshSkills()">刷新</button></div>${skillsStore.error ? `<div class="card snapshot-warning"><p>${esc(skillsStore.error)}</p></div>` : ''}<div class="intro">真实 Skill 安全摘要 · read-only；不提供安装、编辑、删除、加载全文或执行操作。</div><div class="catalog-filters">${sourceFilters}${directoryFilters}</div>${items}${data.page.hasMore ? `<button class="load-more" onclick="loadMoreSkills()" ${skillsStore.loadingMore ? 'disabled' : ''}>${skillsStore.loadingMore ? '加载中…' : '加载更多 Skills'}</button>` : ''}${pageDiagnostics(data.diagnostics)}`;
+    return subtabBar('skills', tabs, sub) + `<div class="page-actions">${readSourceLine(data.source)}<button class="snapshot-button" onclick="refreshSkills()">刷新</button></div>${skillsStore.error ? `<div class="card snapshot-warning"><p>${esc(skillsStore.error)}</p></div>` : ''}<div class="intro">真实 Skill 安全摘要 · read-only；不提供安装、编辑、删除、加载全文或执行操作。Evidence is task correlation, not causal proof; verification and user signals require complete explicit coverage; promotion locked; rollback execution locked.</div>${skillEvidencePanel(data.evidence)}${skillVersionPanel(data.versionLedger)}<div class="catalog-filters">${sourceFilters}${directoryFilters}</div>${items}${data.page.hasMore ? `<button class="load-more" onclick="loadMoreSkills()" ${skillsStore.loadingMore ? 'disabled' : ''}>${skillsStore.loadingMore ? '加载中…' : '加载更多 Skills'}</button>` : ''}${pageDiagnostics(data.diagnostics)}`;
   },
 
   connections(_, sub = 'gateways') {
@@ -5103,6 +5268,132 @@ function chatFeedback() {
   return `<div class="dock-chat-feedback ${kind}" role="alert"><b>${title}</b><p>${esc(chatStore.error)}</p><small>不会自动重发；Turn revision 变化时只会检查既有状态。</small>${check}</div>`;
 }
 
+function resetChatFeedbackTarget() {
+  chatStore.feedbackGeneration += 1;
+  chatStore.feedbackTurnId = null;
+  chatStore.feedbackRunId = null;
+  chatStore.feedbackSessionId = null;
+  chatStore.feedbackPhase = 'idle';
+  chatStore.feedbackSignal = null;
+  chatStore.feedbackError = null;
+}
+
+function setCompletedFeedbackTarget(payload) {
+  if (
+    !TURN_ID_PATTERN.test(payload?.turnId || '')
+    || !CHAT_STREAM_RUN_ID_PATTERN.test(payload?.runId || '')
+    || !SESSION_ID_PATTERN.test(payload?.sessionId || '')
+  ) {
+    resetChatFeedbackTarget();
+    return;
+  }
+  chatStore.feedbackGeneration += 1;
+  chatStore.feedbackTurnId = payload.turnId;
+  chatStore.feedbackRunId = payload.runId;
+  chatStore.feedbackSessionId = payload.sessionId;
+  chatStore.feedbackPhase = 'available';
+  chatStore.feedbackSignal = null;
+  chatStore.feedbackError = null;
+}
+
+function validChatFeedbackResponse(payload, turnId, runId, signal) {
+  return payload?.ok === true
+    && payload?.schemaVersion === 1
+    && payload?.mode === 'read-write'
+    && payload?.turnId === turnId
+    && payload?.runId === runId
+    && payload?.signal === signal
+    && payload?.source === 'explicit_user_action'
+    && typeof payload?.recordedAt === 'string';
+}
+
+async function recordChatFeedback(signal) {
+  const turnId = chatStore.feedbackTurnId;
+  const runId = chatStore.feedbackRunId;
+  if (
+    !['accept', 'correct', 'reject'].includes(signal)
+    || !TURN_ID_PATTERN.test(turnId || '')
+    || !CHAT_STREAM_RUN_ID_PATTERN.test(runId || '')
+    || !['available', 'error'].includes(chatStore.feedbackPhase)
+  ) return;
+  const generation = chatStore.feedbackGeneration + 1;
+  chatStore.feedbackGeneration = generation;
+  chatStore.feedbackPhase = 'submitting';
+  chatStore.feedbackError = null;
+  renderConversationDock();
+  try {
+    const response = await fetch(`/api/v1/chat/turns/${encodeURIComponent(turnId)}/feedback`, {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify({ signal }),
+    });
+    const payload = await response.json().catch(() => null);
+    if (
+      generation !== chatStore.feedbackGeneration
+      || chatStore.feedbackTurnId !== turnId
+      || chatStore.feedbackRunId !== runId
+    ) return;
+    if (
+      response.status === 409
+      && ['feedback_conflict', 'feedback_unavailable'].includes(payload?.error?.code)
+    ) {
+      chatStore.feedbackPhase = payload.error.code === 'feedback_conflict'
+        ? 'conflict'
+        : 'unavailable';
+      chatStore.feedbackError = payload.error.code === 'feedback_conflict'
+        ? '这一 Run 已记录另一项不可变反馈。'
+        : '这一 Run 当前无法记录反馈。';
+    } else if (response.status === 404) {
+      chatStore.feedbackPhase = 'unavailable';
+      chatStore.feedbackError = '这一 Turn 已不可用。';
+    } else if (!response.ok || !validChatFeedbackResponse(payload, turnId, runId, signal)) {
+      throw new Error('feedback response contract mismatch');
+    } else {
+      chatStore.feedbackPhase = 'recorded';
+      chatStore.feedbackSignal = signal;
+      chatStore.feedbackError = null;
+    }
+  } catch (_error) {
+    if (
+      generation !== chatStore.feedbackGeneration
+      || chatStore.feedbackTurnId !== turnId
+      || chatStore.feedbackRunId !== runId
+    ) return;
+    chatStore.feedbackPhase = 'error';
+    chatStore.feedbackError = '反馈暂时未确认；可再次明确选择。';
+  }
+  renderConversationDock();
+}
+
+function chatUserSignal() {
+  if (
+    !chatStore.feedbackTurnId
+    || !chatStore.feedbackRunId
+    || chatStore.feedbackPhase === 'idle'
+    || chatStore.targetMode !== 'existing'
+    || sessionDetailStore.sessionId !== chatStore.feedbackSessionId
+  ) return '';
+  const labels = {
+    accept: '已接受结果',
+    correct: '已标记需要纠正',
+    reject: '已拒绝结果',
+  };
+  if (chatStore.feedbackPhase === 'recorded') {
+    return `<section class="dock-user-signal recorded"><b>${esc(labels[chatStore.feedbackSignal] || '反馈已记录')}</b><p>只保存了这一项显式选择，不保存消息正文或原因。</p></section>`;
+  }
+  if (['conflict', 'unavailable'].includes(chatStore.feedbackPhase)) {
+    return `<section class="dock-user-signal unavailable"><b>反馈不可用</b><p>${esc(chatStore.feedbackError || '这一 Run 无法记录反馈。')}</p></section>`;
+  }
+  const disabled = chatStore.feedbackPhase === 'submitting' ? 'disabled' : '';
+  const status = chatStore.feedbackPhase === 'submitting'
+    ? '<small>正在记录显式选择…</small>'
+    : chatStore.feedbackError
+      ? `<small class="error">${esc(chatStore.feedbackError)}</small>`
+      : '<small>不会把沉默或后续消息当作接受。</small>';
+  return `<section class="dock-user-signal"><b>这次结果是否解决了任务？</b><p>选择会作为与当前 Run 绑定的内容无关证据。</p><div class="dock-user-signal-actions"><button class="snapshot-button" ${disabled} onclick="recordChatFeedback('accept')">接受结果</button><button class="snapshot-button" ${disabled} onclick="recordChatFeedback('correct')">需要纠正</button><button class="snapshot-button" ${disabled} onclick="recordChatFeedback('reject')">拒绝结果</button></div>${status}</section>`;
+}
+
 function newConversation() {
   if (chatStore.activeTurnId) return;
   chatStore.targetMode = 'new';
@@ -5312,6 +5603,7 @@ async function refreshCompletedTurn(payload, preserveRunSelection = false) {
   }
   clearActiveTurn(turnId);
   if (chatStreamStore.turnId === turnId) resetChatStreamState();
+  setCompletedFeedbackTarget(payload);
   chatStore.phase = 'success';
   chatStore.error = null;
   renderConversationDock();
@@ -5433,6 +5725,7 @@ async function submitChatTurn() {
   chatStore.requestGeneration = requestGeneration;
   chatStore.phase = 'submitting';
   chatStore.error = null;
+  resetChatFeedbackTarget();
   chatStore.activeTurnId = turnId;
   chatStore.activeTargetSessionId = targetSessionId;
   chatStore.terminalTurnId = null;
@@ -5553,6 +5846,7 @@ async function submitChatTurn() {
       await loadSessionDetail(payload.sessionId, false, true);
     }
     if (requestGeneration !== chatStore.requestGeneration) return;
+    setCompletedFeedbackTarget(payload);
     chatStore.phase = 'success';
     chatStore.error = null;
   } catch (_error) {
@@ -5588,7 +5882,7 @@ function renderConversationDock(followStream = null) {
     const stateTitle = chatStore.phase === 'submitting'
       ? 'MiniCode 正在处理…'
       : chatStore.phase === 'recovering' ? '正在检查持久化状态…' : chatStore.phase === 'in_progress' ? '本轮可能仍在处理' : '开始新对话';
-    log.innerHTML = `<div class="dock-session-summary"><b>新 Session</b><small>首条消息成功提交后创建并持久化。</small></div><div class="dock-state"><b>${stateTitle}</b><p>连接内临时展示、可恢复；最终正文只以 Sessions REST 为准，不会自动重发。</p></div>${chatStreamPresentationHtml()}${chatFeedback()}`;
+    log.innerHTML = `<div class="dock-session-summary"><b>新 Session</b><small>首条消息成功提交后创建并持久化。</small></div><div class="dock-state"><b>${stateTitle}</b><p>连接内临时展示、可恢复；最终正文只以 Sessions REST 为准，不会自动重发。</p></div>${chatStreamPresentationHtml()}${chatFeedback()}${chatUserSignal()}`;
     settleScroll();
     return;
   }
@@ -5633,7 +5927,7 @@ function renderConversationDock(followStream = null) {
   const submitting = !presenting && ['submitting', 'cancelling', 'cancel_requested', 'committing'].includes(chatStore.phase)
     ? `<div class="dock-chat-progress"><i></i><span>${esc(chatStore.phase === 'committing' ? '结果正在提交…' : chatStore.phase === 'submitting' ? 'MiniCode 正在同步处理本轮…' : '正在等待安全取消点…')}</span></div>`
     : '';
-  log.innerHTML = `${heading}${messages}${chatStreamPresentationHtml()}${submitting}${chatFeedback()}${more}`;
+  log.innerHTML = `${heading}${messages}${chatStreamPresentationHtml()}${submitting}${chatFeedback()}${chatUserSignal()}${more}`;
   settleScroll();
 }
 

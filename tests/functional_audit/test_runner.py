@@ -151,8 +151,12 @@ def test_audit_closes_web_findings_but_retains_archive_remainder(
     assert web_search["issues"] == []
     assert "tests/test_web_search.py" in web_search["evidence"]
     assert "tests/test_search_providers.py" in web_search["evidence"]
-    assert payload["summary"]["capabilityCount"] == 185
+    assert payload["summary"]["capabilityCount"] == 186
     assert payload["summary"]["issueCount"] == 7
+    assert payload["deterministicProbes"]["memory"] == {
+        "ordinaryFactPersisted": False,
+        "singleErrorPatternSuppressed": True,
+    }
     assert payload["deterministicProbes"]["web"] == {
         "normalParser": True,
         "explicitEmptyRecognized": True,

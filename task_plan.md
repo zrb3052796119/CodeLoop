@@ -3192,3 +3192,1059 @@ wheel deletion smoke, official semantic evaluation, and two green complete
 suites. Batch 8D can close; Batch 9 was not entered.
 
 ---
+---
+
+# Task Plan: Persistent Memory and Skill Routing Self-Evolution Audit
+
+## Goal
+
+Determine whether MiniCode's persistent-memory and skill-routing subsystems
+produce a safe, measurable self-improvement loop, identify the highest-impact
+failure modes with file-and-line evidence, and recommend a prioritized design.
+
+## Phases
+
+- [x] Phase 1: Establish scope, preserve unrelated working-tree changes, and
+  inventory the relevant implementation/tests/docs
+- [x] Phase 2: Trace persistent-memory write, approval, storage, retrieval,
+  injection, feedback, deletion, and contamination boundaries end to end
+- [x] Phase 3: Trace skill discovery, matching, loading, proposal, execution
+  feedback, and memory coupling end to end
+- [x] Phase 4: Assess whether the combined system closes a measurable
+  self-evolution loop; validate findings against focused tests and artifacts
+- [x] Phase 5: Produce a severity-ranked review and concrete target
+  architecture with staged improvements
+
+## Key Questions
+
+1. Which stored observations can actually change a later agent decision?
+2. Is memory promotion grounded in observed outcomes, or only in text-level
+   heuristics and approval state?
+3. Can skill routing learn from success/failure, abstain under uncertainty,
+   and recover from a bad route?
+4. Are provenance, versioning, rollback, evaluation, and contamination
+   controls sufficient for autonomous evolution?
+
+## Decisions Made
+
+- Review both the committed baseline and current uncommitted orchestration
+  changes; do not modify production code.
+- Treat “self-evolution” as a closed control loop with measurable downstream
+  behavior, not as the mere accumulation of memories or generated skills.
+
+## Errors Encountered
+
+- One focused lifecycle assertion expected `working_memory.observed` to be
+  followed immediately by `assistant.completed`. The new canonical
+  `task.outcome` correctly appears between them because Agent finalization
+  precedes the entrypoint's assistant callback; the exact event contract was
+  updated and rerun.
+
+## Status
+
+**Completed** — review report written with production-equivalent routing
+probes, current-store evidence, severity-ranked findings, target architecture,
+staged implementation plan, and acceptance metrics. No production code or
+pre-existing user changes were modified.
+
+---
+
+# Task Plan: Persistent Memory and Skill Routing P0 Repair
+
+## Goal
+
+Close the first measurable self-evolution loop without weakening existing
+approval and contamination boundaries: abstain from unsupported Skill routes,
+observe Skills that were actually loaded, use one task outcome for downstream
+learning, run curation once per completed task, and keep one-off transient
+errors out of durable review.
+
+## Phases
+
+- [x] Phase 1: RED→GREEN Skill routing abstention, empty fallback, Chinese
+  audit intent, and example-aware relevance
+- [x] Phase 2: RED→GREEN `skill.loaded` run event with stable Skill identity
+  and content digest
+- [x] Phase 3: RED→GREEN canonical task outcome shared by TaskState, Memory
+  feedback, and model-routing feedback
+- [x] Phase 4: RED→GREEN task-finalization-only curation and recurrence gate
+  for unverified transient error reflections
+- [x] Phase 5: Remove misleading positive-feedback no-op actuators, run
+  focused and complete verification, review the diff, and document residual
+  P1 work
+
+## Decisions Made
+
+- Preserve all pre-existing working-tree changes and complete the in-progress
+  `SmartRouter` persistence intent, while moving its feedback file from global
+  user scope to project scope to prevent cross-project contamination.
+- Make abstention the safe default when routing has no task-derived evidence;
+  installed capability availability is compatibility evidence, not relevance.
+- Add behavior through public interfaces and one vertical test slice at a
+  time.
+- Let persisted model-routing feedback rerank only within the static tier and
+  only after two candidates each have three similar-task observations.
+- Keep Skill generation/promotion out of P0 until real loaded-Skill outcome
+  attribution, replay, canary, and rollback exist.
+
+## Errors Encountered
+
+- The existing functional-audit fixture expected a one-off Tool timeout to
+  become a pending Memory candidate. Its contract was updated to assert the
+  safer suppression behavior.
+- One historical baseline test still asserted the active `run_journal.py`
+  source hash despite the file-level note that working-tree freezes had been
+  removed with owner approval. The stale active hash assertion was removed;
+  historical v7-v10 manifest comparisons remain intact.
+
+## Status
+
+**Completed** — P0 is implemented and reviewed. Production-equivalent routing
+now distinguishes the exact Chinese audit request from an unrelated Chinese
+chat request; focused verification passed 341 tests and the complete suite
+passed 3340 tests with 2 skips and 3 pre-existing benchmark-marker warnings.
+
+---
+
+# Task Plan: Skill Usage Outcome Attribution P1
+
+## Goal
+
+Create a privacy-safe, task-scoped attribution record that links Skills
+actually loaded through `load_skill` to the canonical task outcome in the same
+Run, without treating correlation as autonomous promotion authority.
+
+## Phases
+
+- [x] Phase 1: Trace ToolContext creation and Run event boundaries; define the
+  smallest versioned public attribution contract
+- [x] Phase 2: RED→GREEN task-scoped loaded-Skill tracking with repeat-load
+  deduplication and no path/content leakage
+- [x] Phase 3: RED→GREEN `skill.attributed` finalization event using canonical
+  outcome fields, including recovered Tool errors
+- [x] Phase 4: RED→GREEN Run Journal, strict Dashboard projection, and
+  human-readable UI support
+- [x] Phase 5: Production-equivalent probes, focused/full verification, review,
+  and P1 residual documentation
+
+## Key Questions
+
+1. How can actual Skill usage be tracked across ToolContext instances without
+   global state or cross-task leakage?
+2. Which outcome fields are observationally honest without claiming causal
+   Skill effectiveness?
+3. How should repeated loads be deduplicated while preserving stable Skill
+   identity/version via content digest?
+4. Which fields must be rejected by the Dashboard projection to prevent task
+   text, Skill content, or local path leakage?
+
+## Decisions Made
+
+- Use the existing canonical task outcome as the only final task verdict.
+- Keep attribution task-scoped and event-based inside the existing Run; do not
+  add automatic Skill scoring or promotion in this slice.
+- Represent a loaded Skill by qualified name, source, directory, and content
+  digest only.
+- Deduplicate repeated loads by the stable identity plus digest.
+- Emit one bounded aggregate `skill.attributed` event per task rather than one
+  event per Skill; this preserves co-loading context and makes confounding
+  visible.
+- Mark the record `task_correlation`; it is evidence for later evaluation, not
+  causal proof or promotion authority.
+
+## Errors Encountered
+
+- The first combined multi-file patch missed the current `agent_loop.py` import
+  context and was rejected atomically. It was reapplied as small verified
+  patches; no partial edit survived the failed attempt.
+
+## Status
+
+**Completed.** Actual load tracking, repeat-load deduplication, canonical
+recovered-error attribution, same-Run Journal persistence, strict Dashboard
+projection, and human-readable event rendering are green. Focused verification
+passed 177 tests; the complete suite passed 3348 tests with 2 skips and 3
+pre-existing benchmark-marker warnings. Static checks and a persisted event
+ordering probe also passed. Automatic Skill scoring/promotion remains
+intentionally disabled because this slice establishes task correlation, not
+causal effectiveness.
+
+---
+
+# Task Plan: Cross-Run Skill Evidence Ledger P2A
+
+## Goal
+
+Derive a privacy-safe, cross-Run Skill evidence ledger from canonical
+observations, compare single-Skill loads with no-Skill controls inside the same
+coarse intent/action profile, and expose only shadow evaluation—never automatic
+route, promotion, or rollback authority.
+
+## Phases
+
+- [x] Phase 1: Trace RunJournal paging/read interfaces and define the smallest
+  deep-module evidence interface
+- [x] Phase 2: RED→GREEN canonical `task.outcome` event for every observed task
+- [x] Phase 3: RED→GREEN bounded cross-Run evidence derivation with strict
+  eligibility and exclusion reasons
+- [x] Phase 4: RED→GREEN Dashboard read model and human-readable shadow status
+- [x] Phase 5: Production-equivalent cohorts, focused/full verification,
+  review, and P2A residual documentation
+
+## Key Questions
+
+1. How can controls include tasks that loaded no Skill without storing task
+   text or duplicating outcome authority?
+2. Which Run states and event combinations are eligible, and how are
+   incomplete, ambiguous, multi-Skill, or malformed Runs excluded?
+3. What minimum evidence can be called shadow-comparable without implying
+   causality or allowing a later caller to promote automatically?
+4. How can RunJournal paging and retention remain hidden behind one small
+   read-only interface?
+
+## Decisions Made
+
+- Add a canonical `task.outcome` observation for every agent task so unloaded
+  controls have the same outcome semantics as loaded treatments.
+- Use coarse `intentType/actionType` only; never persist task text, prompts,
+  model output, Skill content, or local paths in the ledger.
+- Treat only exactly-one-Skill Runs as treatment evidence and zero-Skill Runs
+  as controls. Exclude multi-Skill Runs from effectiveness comparison while
+  retaining an explicit exclusion count.
+- Join treatment and control only within the same coarse task profile.
+- Return a read-only shadow verdict with sample counts and uncertainty gates;
+  do not feed it into SkillRouter or any promotion actuator.
+- Put scan, validation, join, bounding, and aggregation behind one deep-module
+  interface so callers do not learn RunJournal event ordering or storage.
+- Upgrade new routing observations to `skill.routed@v2` only when every
+  selected candidate has a content digest. Continue projecting legacy/fixture
+  observations as v1; v1 remains visible but is ineligible for version-level
+  comparison.
+- Match a control only when the same Skill digest was routed in the same
+  intent/action profile but no Skill was loaded. Direct loads and routed
+  candidates without a digest are not silently treated as comparable.
+- Use paged RunJournal reads behind a bounded ledger snapshot; incomplete scans
+  and malformed event combinations become explicit diagnostics/exclusions.
+
+## Errors Encountered
+
+- The first digest test used an artificial routing dictionary that still
+  contained full Skill content. The production discovery path intentionally
+  returns content-free summaries, so real routing observations remained v1
+  and every treatment/control Run was excluded. Discovery now computes and
+  carries only a SHA-256 before discarding content; a production-equivalent
+  ten-Run cohort test protects the complete route→load→outcome→ledger path.
+- The first complete suite exposed 14 historical exact-event-list assertions
+  that ended before the new mandatory `task.outcome`. All other behavior was
+  green. The assertions, including the installed-wheel smoke, were updated to
+  preserve the new canonical all-task observation contract.
+
+## Status
+
+**Completed.** Canonical all-task outcomes, production `skill.routed@v2`
+digests, bounded cross-Run derivation, fail-closed ordered eligibility, Wilson
+intervals, failure-isolated Dashboard projection, and human-readable shadow
+status are green. The final complete suite passed 3365 tests with 2 skips and
+3 pre-existing benchmark-marker warnings. Static checks passed. Promotion,
+live reranking, canary, and rollback authority remain deliberately disabled.
+
+---
+
+# Task Plan: Skill Version and Promotion Gate Ledger P2B
+
+## Goal
+
+Create a project-scoped, privacy-safe Skill version ledger that records
+immutable digest lineage and evaluates P2A evidence plus verification, user,
+cost, and latency gates, while keeping all promotion/canary/rollback actions
+read-only and explicitly locked.
+
+## Phases
+
+- [x] Phase 1: Trace existing Skill mutation, verification, usage/cost/duration
+  events, project storage conventions, and Dashboard seams
+- [x] Phase 2: RED→GREEN deep `SkillVersionLedger` interface with strict
+  immutable lineage and atomic project-scoped persistence
+- [x] Phase 3: RED→GREEN gate evaluation from bounded RunJournal evidence,
+  including verification, user signal, cost, latency, and negative evidence
+- [x] Phase 4: RED→GREEN Dashboard projection/UI for version lineage and locked
+  gate status without mutation controls
+- [x] Phase 5: Production-equivalent persistence/restart probes, review,
+  focused/full verification, and P2B residual documentation
+
+## Key Questions
+
+1. Which existing observations truthfully represent independent verification
+   and user acceptance/correction, and which signals must remain unavailable?
+2. What is the smallest deep-module interface that hides validation, atomic
+   storage, lineage, gate calculation, and bounded output?
+3. How can digest changes form immutable parent/child versions without
+   inventing provenance or allowing mutable Skill paths to rewrite history?
+4. Which conditions must fail closed before a version can even become a
+   promotion candidate, while actual promotion remains impossible in P2B?
+
+## Decisions Made
+
+- Treat the prior handoff as approval for P2B, but keep the slice
+  observation/read-only: no Skill file mutation, live reranking, canary traffic,
+  promotion, or rollback execution.
+- Reuse P2A `SkillEvidenceLedger` as evidence input rather than duplicating its
+  Run scanning and treatment/control algorithm.
+- Prefer one project-scoped deep module with a small snapshot/synchronize
+  interface; Dashboard and tests must not know storage layout or gate rules.
+- Missing verification, user, cost, or latency signals fail closed and are
+  reported as unavailable, never inferred from task success.
+- Preserve all pre-existing dirty worktree changes and avoid a mixed commit.
+
+## Errors Encountered
+
+- An initial focused command referenced two nonexistent historical test names
+  (`tests/test_tools_registry.py` and `tests/test_tooling.py`). The actual
+  registry suite is `tests/test_tools.py`; it was used for all final runs.
+- The first economics implementation omitted `Mapping` from
+  `skill_evidence.py`; the resulting `NameError` was caught by the focused
+  tests and fixed before broader verification.
+- Review RED tests proved that a later version could drop its immediate parent
+  and that a malformed Cost event erased independent latency evidence. Lineage
+  now requires the exact latest same-Skill parent, while invalid Cost events
+  degrade only the Cost channel.
+- Review also proved that a broken version-store symlink could be replaced,
+  a symlinked `.mini-code` root could escape the Workspace, and arbitrary task
+  profile strings passed the gate boundary. The store now rejects unsafe roots
+  and files, reads through a validated descriptor, and accepts only canonical
+  intent/action enums.
+- Dashboard/Gateway HTTP tests initially failed because the managed sandbox
+  forbids binding `127.0.0.1`. They passed unchanged when rerun with the
+  required local-socket permission.
+- Repository-wide Ruff still reports 11 pre-existing errors outside the P2B
+  slice. Ruff over every P2B-touched Python file passes.
+- Functional Reliability Audit 1A still reports its seven known baseline
+  issues (`SEC-002`, `SEC-004`, `SEC-005`, `TOOL-001`–`003`, `MEM-001`);
+  none is introduced by the version/gate ledger. They remain separate repair
+  batches rather than being hidden by changing the audit oracle.
+
+## Status
+
+**Completed.** Immutable digest lineage, exact same-Skill parent validation,
+project-scoped atomic persistence, strict economic evidence, all five fail-
+closed gates, and an independently failure-isolated read-only Dashboard are
+green. Review added symlink/root containment and Cost/latency channel
+separation. Focused verification passed 195 tests; the complete suite passed
+3381 tests with 2 skips and 3 pre-existing benchmark-marker warnings.
+`compileall`, `node --check`, `git diff --check`, and Ruff over all P2B-touched
+Python files passed. Promotion, canary traffic, Skill mutation, and rollback
+execution remain intentionally unavailable.
+
+---
+
+# Task Plan: Independent Verification and User Signal Evidence P2C
+
+## Goal
+
+Add privacy-safe canonical observations for independent task verification and
+explicit post-task user acceptance/correction, join them to immutable Skill
+versions without guessing from Tool or conversation activity, and evaluate
+both gates in replay/shadow mode while all actuators remain locked.
+
+## Phases
+
+- [x] Phase 1: Trace verification results, conversation/session boundaries,
+  RunJournal ownership, and feedback UI seams
+- [x] Phase 2: RED→GREEN canonical independent-verification observation with
+  strict provenance and same-task ordering
+- [x] Phase 3: RED→GREEN explicit user-signal intake linked to the completed
+  task without treating silence or arbitrary next messages as acceptance
+- [x] Phase 4: RED→GREEN P2A/P2B evidence aggregation and Dashboard projection
+  for verification/user gates
+- [x] Phase 5: Security/review hardening, production-equivalent probes,
+  focused/full verification, and P2C residual documentation
+
+## Key Questions
+
+1. Which existing verification results are independent of the task's own
+   canonical outcome, and where can they be observed without storing command
+   output, prompts, paths, or secrets?
+2. What explicit user action can honestly mean accept/correct/reject, and how
+   is it bound to exactly one completed Run across TUI, Headless, and Gateway?
+3. Should missing or conflicting signals exclude a Run, mark only a gate
+   unavailable, or fail a gate?
+4. What smallest deep-module interface can hide event validation, ordering,
+   Run linkage, deduplication, and gate policy from runtime and Dashboard
+   callers?
+
+## Decisions Made
+
+- Preserve the P2B safety boundary: no Skill mutation, replay execution,
+  canary traffic, promotion, live reranking, or rollback execution.
+- Do not infer verification from task success, Tool success, reflection
+  metadata, permission approval, or a test command name.
+- Do not infer user acceptance from silence, session continuation, lack of
+  correction, or arbitrary subsequent messages.
+- Prefer explicit content-free observations and closed enums; store no user
+  message, verifier output, Skill body, local path, or secret-bearing reason.
+- Reuse the existing canonical RunJournal and Skill evidence deep modules
+  rather than creating a second outcome authority.
+- Require a trusted Tool implementation to attach a closed, content-free
+  verification result after actual execution. The Agent loop may project that
+  marker but must not inspect Tool output or infer verification from ordinary
+  Tool success.
+- Persist post-terminal user feedback as an immutable Run-owned sidecar rather
+  than reopening the append-only event stream after its writer is released.
+  Bind feedback through the durable completed Conversation Turn → Run link.
+- Preserve the dirty multi-phase worktree and do not create a mixed commit,
+  despite the generic implementation skill's commit default.
+
+## Errors Encountered
+
+- The first verification tracer test failed at collection with the expected
+  `ModuleNotFoundError` because the new deep module did not exist. This
+  established the RED boundary before implementation.
+- The trusted-Tool RED slice then failed in three places because `ToolResult`
+  had no verification marker. The marker was added as optional structured
+  metadata, leaving pre-execution failures unset.
+- The Agent integration RED test observed no `task.verified` event even though
+  the trusted Tool returned a valid marker. `_execute_single_tool` now strictly
+  normalizes and safely emits that marker immediately after the real result.
+- The RunJournal RED test rejected `task.verified` as an unknown event type.
+  The journal now allowlists it and revalidates the exact closed payload before
+  persistence, rejecting extra fields.
+- The first user-signal RED slice failed at collection because no conflict type
+  or sidecar API existed. RunJournal now owns a strict immutable completed-Run
+  record with atomic private creation, idempotent replay, conflict rejection,
+  and safe restart reads.
+- The Conversation RED slice failed because no domain feedback API existed.
+  The service now requires an authoritative completed Turn, resolves its exact
+  Run, and maps immutable Journal conflicts/unavailability to fixed safe
+  domain failures.
+- The first HTTP feedback run was blocked by the managed sandbox's local socket
+  policy; rerunning with local-bind permission exposed the intended RED state:
+  all requests returned 404 because the route did not exist. The Gateway now
+  protects and dispatches an exact feedback route with a one-field closed body
+  and fixed safe responses.
+- The frontend RED contract found no completed-Turn feedback state or action.
+  Dashboard Chat now exposes three explicit buttons only after a completed Turn
+  has a real Run ID, posts only `{signal}`, ignores stale responses, and never
+  derives acceptance from silence or subsequent messages.
+- The cohort RED test found no verification or user-signal projections.
+  Eligible experiences now join strict in-order verification events and the
+  immutable Run sidecar independently, preserving missing channels as
+  unavailable without erasing outcome or economics.
+- The version-gate RED tests proved that P2B still hardcoded both channels
+  unavailable. Gate policy v2 now validates exact cohort counts, fails on any
+  treatment verification failure or correction/rejection, passes only with
+  complete positive coverage, and may label a shadow candidate while the
+  promotion actuator remains locked.
+- The first GREEN gate run exposed two stale tuple indices in the economics
+  comparison after adding signal facts, causing `TypeError`. Control Run count
+  and mean cross-multiplication now use the shifted canonical indices.
+- Dashboard read-model tests exposed the intentional gate-policy version bump.
+  The frontend now validates v2 signal counts, gate/candidate consistency, and
+  locked-actuator invariants, and renders treatment verification/user coverage
+  without adding mutation controls.
+- Security review found that a custom Tool could attach a valid marker claiming
+  another verifier's source. Projection now requires the returned source to
+  match the actual Tool name (`test_runner` or `run_command`) before emission.
+- Storage review found that Session deletion/retention ignored an in-flight
+  user-signal write, and a target race could escape as a raw `FileExistsError`.
+  Feedback, Session deletion, and retention now share an exclusive Run mutation
+  lock; Session-linked feedback also honors the conversation deletion fence,
+  and storage races map to fixed safe failures.
+- UI review found that the last completed Run's feedback controls remained
+  visible after navigating to another Session. The target now carries its
+  Session identity and renders only while that exact Session is selected.
+- Focused Ruff found one unused `ConversationTurnFailed` import in the modified
+  Chat HTTP module. The fixed-error boundary already catches it through the
+  generic safe branch, so the unused symbol was removed.
+- Final storage hardening tests now pin both directions of the Run mutation
+  boundary: an active conversation deletion fence rejects a late feedback
+  write, and retention cannot remove either the Run or another actor's active
+  user-signal lock.
+- Gate input hardening tests now reject arithmetically inconsistent verification
+  and user-signal counts before they can influence a Skill version evaluation.
+- The first complete P2C regression exposed one stale functional-audit
+  capability count and four isolated Node harnesses that did not provide the
+  new feedback helper dependencies. The expected count is now 186 and the
+  harnesses explicitly stub those dependencies; all targeted reruns passed.
+- Running the functional-audit test without local-fixture permission produced
+  `PermissionError` instead of its expected safe destination-blocked status.
+  The production-equivalent rerun with loopback fixture permission passed and
+  recorded `blocked:destination_blocked`.
+
+## Status
+
+**P2C complete.** Trusted verification and explicit user actions now reach
+canonical Run-owned storage, bounded cohorts, immutable-version gates, and the
+locked Dashboard shadow projection. Full regression is green, the functional
+audit retains only its seven known baseline findings, and all mutation,
+promotion, traffic, and rollback actuators remain locked.
+
+---
+
+# Task Plan: Same-Turn Verification-Corroborated Memory Feedback
+
+## Goal
+
+Reuse P2C's independent verification signal to give Memory's own feedback
+loop a second, materially stronger evidence channel — separate from the
+existing whole-turn success/failure label, whose retrieval weight (`0.005`)
+was already known to be too weak and too causally confounded to safely
+amplify on its own.
+
+## Scope decision
+
+This slice wires only the **synchronous, same-turn verification** channel
+(test/build/lint/typecheck outcomes observed during the turn, via the
+existing `task.verified` marker). It deliberately does **not** wire the
+async, post-terminal **explicit user accept/correct/reject** signal into
+Memory yet: that requires a new durable run_id → rendered-memory-ids sidecar
+(the in-process `_last_injected_ids` used by the synchronous path does not
+survive past turn end, and `memory.rendered` events are intentionally
+count-only, with no entry IDs, to avoid identity leakage into the Journal).
+Wiring the user-signal channel is the natural next slice.
+
+## What changed
+
+- `minicode/run_events.py`: new `VerificationTracker` (bounded, thread-safe
+  tally of pass/fail observed during one turn) and `verification_corroboration`
+  (any failure → negative, complete passed coverage → positive, no
+  observation → `None`), mirroring `SkillUsageTracker`'s existing shape.
+- `minicode/agent_loop.py`: `_execute_single_tool` now also records each
+  verification marker into a per-turn `VerificationTracker` (threaded through
+  the same serial/concurrent call sites as `skill_usage_tracker`); at turn end
+  the tally is passed into `memory_pipeline.feedback(...)`.
+- `minicode/memory_pipeline.py`: `feedback()` takes optional
+  `verification_passed`/`verification_failed` and, when they resolve to a
+  clear corroboration signal, additionally calls
+  `Memory.record_corroborated_feedback` — kept separate from (not blended
+  into) the existing whole-turn `record_feedback` call.
+- `minicode/memory.py`: `MemoryEntry` gained
+  `corroborated_success_count`/`corroborated_failure_count`/
+  `corroborated_usefulness_score`, serialized like the existing
+  success/failure counters; `Memory.record_corroborated_feedback` updates them
+  independently of the naive counters.
+- `minicode/memory_retrieval.py`: ranking adds a `corroborated_score` term,
+  confidence-scaled by sample count (`min(1, samples / 3)`) and weighted at
+  `0.05` — 10x the naive `0.005` — since it is now backed by real verification
+  rather than a guess. Zero corroborated samples contributes exactly `0.0`,
+  so the change is a no-op for the vast majority of existing entries.
+
+## Decisions made
+
+- Do not infer corroboration from the coarse turn label: a turn can report
+  `success` while one of its verifications failed, and that failure must
+  still corroborate negatively (mirrors P2C's own Skill-gate treatment).
+- Do not touch the existing naive `0.005` weight or credit-assignment path;
+  add a new, separately-gated channel instead, consistent with the earlier
+  review's warning against amplifying an already-confounded signal.
+- Sample-gate the corroborated weight (full confidence only at 3+ same-entry
+  observations) so a single anecdote cannot dominate ranking.
+
+## Errors encountered
+
+- The first retrieval-ranking tests were added directly into
+  `tests/test_memory_retrieval_phase2a.py`, which turned out to be a pinned/
+  frozen asset for the Phase2A evaluation harness (`test_phase2a_pin_cascade_
+  has_exact_hardening_changed_set` hashes it exactly). Editing it produced an
+  unexpected entry in that cascade's changed-file set. Reverted the file via
+  `git checkout` and moved the new ranking tests to a standalone
+  `tests/test_memory_corroborated_feedback.py` instead.
+- The full-suite run also surfaced `test_dashboard_assets_load_from_an_
+  installed_wheel` failing on `baidu=response_too_large`; confirmed via a
+  temporary debug print (reverted) that this sandbox's outbound DNS resolves
+  `www.baidu.com`/`www.bing.com` to the `198.18.0.0/15` benchmark range, which
+  Python's `ipaddress` treats as private — the app's own SSRF guard correctly
+  raises `destination_blocked` before the test's mocked large-response layer
+  is ever reached. Pre-existing sandbox artifact, unrelated to this change.
+
+## Status
+
+**Same-turn verification channel complete.** New unit tests cover
+`VerificationTracker`/`verification_corroboration`, `Memory.
+record_corroborated_feedback`, `MemoryPipeline.feedback`'s verification
+kwargs, and the retrieval-ranking effect (including that corroboration alone
+cannot activate an otherwise-unrelated memory, and that a single sample is
+discounted below full confidence). Full suite: `3428 passed, 2 skipped`,
+plus the one pre-existing sandbox-only network failure above. Ruff,
+`compileall`, and `git diff --check` pass on every touched file.
+
+The explicit user accept/correct/reject → Memory wiring (the async half of
+the original recommendation) remains the next slice: it needs a new
+Run-owned, content-safe sidecar mapping run_id → rendered memory entry IDs,
+written once at turn end, and a read path from
+`ConversationTurnService.record_feedback` into
+`Memory.record_corroborated_feedback` once that signal arrives.
+
+---
+
+# Task Plan: Explicit User-Signal-Corroborated Memory Feedback
+
+## Goal
+
+Close the second half of the corroborated-feedback slice: bind a Run's
+explicit post-task user accept/correct/reject signal (already captured for
+Skills by P2C) to the exact Memory entries that Run actually rendered, using
+`Memory.record_corroborated_feedback` from the previous slice.
+
+## What changed
+
+- `minicode/run_journal.py`: new `record_rendered_memory_ids(run_id,
+  entry_ids)` / `get_rendered_memory_ids(run_id)`, mirroring `user_signal.json`'s
+  atomic, owner-only (`0600`), symlink-safe, size-bounded write — but scoped
+  to the *running* writer (like `append_event`) rather than the *completed*
+  Run (like `user_signal.json`), since rendered IDs are known mid-turn.
+  Entry IDs are validated against the exact `MemoryEntry.id` shape
+  (`(user|project|local)-<digits>-<8 hex>`), deduplicated, and bounded to 20.
+- `minicode/run_lifecycle.py`: `_Journal` Protocol, `_BestEffortLifecycle`,
+  and `RunObservation` each gained a `record_rendered_memory_ids` seam with
+  the same best-effort, never-raises shape as `append_event`.
+- `minicode/run_events.py`: `emit_memory_result_safely` now also calls
+  `sink.record_rendered_memory_ids(...)` via duck-typing (`getattr` +
+  `callable`) after its two existing count-only events, so sinks without the
+  method (most test doubles) are unaffected.
+- `minicode/conversation.py`: `ConversationTurnService.record_feedback` reads
+  whether a user signal already existed for the Run *before* recording the
+  new one; only on a genuinely fresh recording does it look up
+  `get_rendered_memory_ids` and call `Memory.record_corroborated_feedback`
+  (`accept` → positive, `correct`/`reject` → negative) via a freshly
+  constructed `MemoryManager` — never the live per-turn instance, since
+  feedback typically arrives in a separate request after the turn's runtime
+  is disposed.
+
+## Decisions made
+
+- Do not let corroboration ever change the outcome of recording the user
+  signal itself — the Memory write is wrapped in its own try/except and is
+  always best-effort.
+- Guard against double-counting on idempotent replay (the user resubmitting
+  the same signal) by checking pre-existing state *before* the write, not by
+  changing `record_user_signal`'s established public contract. This leaves a
+  narrow, accepted TOCTOU race for two near-simultaneous first submissions
+  for the same Run — same-severity class as the already-documented
+  "immutable signal can't model a changed mind" limitation, not fixed here.
+- Reuse `Memory.record_corroborated_feedback` from the verification slice
+  rather than adding a third counter family — user-signal and verification
+  corroboration intentionally share one evidence channel and one retrieval
+  weight.
+
+## Errors encountered
+
+- First cut of `_write_rendered_memory_ids` treated any `FileExistsError` on
+  the hard-link-once write as a benign idempotent no-op. A dedicated symlink
+  test caught that this would silently ignore a planted symlink instead of
+  rejecting it. Fixed by reading back the existing target through the same
+  symlink/type-safe `_read_rendered_memory_ids` path on conflict, and only
+  treating it as a no-op when the existing content is byte-identical;
+  anything else (symlink, mismatch) now raises `RunJournalStorageError`.
+- First cut of the "terminal Run rejects a rendered-ID write" test expected
+  `RunJournalTransitionError`, mirroring `append_event`'s two-stage guard.
+  It actually raises `RunJournalOwnershipError`, because `transition()` to a
+  terminal status releases the writer mutex in the same step — so ownership
+  is lost before the terminal-status branch is ever reached, for both this
+  method and the pre-existing `append_event`. Corrected the test to match
+  observed behavior rather than assumed symmetry.
+
+## Status
+
+**Complete.** New tests cover the RunJournal sidecar (happy path, validation,
+writer-ownership, symlink safety, absence), the `RunObservation` forwarding
+seam (real Journal round-trip and a fake without the method), the
+`run_events.py` duck-typed bridge (forwards when present, swallows when a
+sink raises), and the full `ConversationTurnService.record_feedback` path
+(accept → positive, reject → negative, idempotent replay does not
+double-count, and a turn with no rendered Memory leaves counters untouched).
+Focused regression across all touched files is green; Ruff, `compileall`,
+and `git diff --check` pass. Full suite: `3443 passed, 2 skipped`, plus the
+same one pre-existing sandbox-only network failure documented in the
+previous slice (unrelated to this change).
+
+Memory and Skills now share the same two corroboration channels
+(verification + explicit user signal) that P2C first established for Skills
+alone.
+
+---
+
+# Task Plan: Memory Corroborated Feedback Observability
+
+## Goal
+
+Make the two corroboration channels just wired into Memory actually visible
+and independently checkable — both a Dashboard projection and a real,
+end-to-end computation proof — rather than adding more automation on top of
+unverified plumbing.
+
+## What changed
+
+- `minicode/web/read_model.py`: the Memory page item projection now includes
+  `corroboratedSuccessCount`/`corroboratedFailureCount`/
+  `corroboratedUsefulnessScore`; the strict per-entry validator
+  (`_read_memory_scope_for_page`) now also rejects non-finite corroborated
+  scores and negative corroborated counts, matching the existing
+  usefulness/success/failure checks exactly.
+- `minicode/web/static/assets/app.js`: `memoryRows()` appends a
+  `verified N✓ M✗ (score)` fragment to an entry's meta line only when it has
+  at least one corroborated observation; entries with none render exactly as
+  before (no added noise).
+
+## Verification
+
+- New backend tests in `tests/test_dashboard_page_read_model.py`: happy-path
+  projection of nonzero and zero corroborated entries, and rejection of a
+  negative count / non-finite score with a diagnostic while other entries
+  still render.
+- A standalone script exercised the **real production path** end to end:
+  `MemoryManager.add_entry` → `record_corroborated_feedback` (2 success, 1
+  failure) → reload from disk in a fresh `MemoryManager` instance (as the
+  async user-signal path actually does) → `CanonicalMemoryRetriever.retrieve`
+  confirms the same `corroborated_score` (0.3333, fully sample-gated at 3
+  observations) appears in ranking → `DashboardReadModel.memory()` projects
+  the identical counts and score. All four layers agreed exactly.
+- Frontend: started the real gateway (`python -m minicode.gateway`) against
+  an isolated demo workspace/HOME via a temporary launch config and wrapper
+  script (reverted after), navigated to `#memory/scopes` in the Browser
+  pane, and confirmed visually: the corroborated entry renders `usefulness 1
+  · verified 2✓ 1✗ (0.33)`, the uncorroborated entry renders with no
+  `verified` fragment at all, and no console errors.
+- Focused regression (`test_dashboard_page_read_model.py`,
+  `test_dashboard_web.py`, `test_dashboard_catalog_read_model.py`,
+  `test_dashboard_runs_read_model.py`,
+  `test_dashboard_chat_stream_frontend.py`,
+  `test_dashboard_permission_frontend.py`): 207 passed. Ruff, `compileall`,
+  and `git diff --check` pass on every touched file. Full suite: `3444
+  passed, 2 skipped`, plus the same one pre-existing sandbox-only network
+  failure from earlier slices (unrelated).
+
+## Status
+
+**Complete and confirmed working**, both by targeted automated tests and a
+live, real end-to-end computation trace from write to Dashboard display.
+
+---
+
+# Task Plan: Legacy `advanced_memory.json` Cleanup
+
+## Goal
+
+Close the "legacy `advanced_memory.json` stores remain orphaned" finding
+from the original persistent-memory review: confirm nothing depends on it,
+then remove the dead data and fix the documentation that still describes it
+as real.
+
+## Investigation
+
+- `grep -rl "advanced_memory" --include="*.py" .` — zero production code
+  references. The active `MemoryManager` only ever reads/writes
+  `memory.json`.
+- The only two files on disk were `.mini-code-memory-local/advanced_memory.
+  json` (645 bytes, 1 entry) and `.mini-code-session-memory/advanced_memory.
+  json` (29,168 bytes). Both use a completely different, older schema
+  (`type`, `priority`, `confidence`, `dependencies`, `context_hash`, a
+  `"session"` scope) than the current `MemoryEntry` dataclass — leftover from
+  a since-removed "advanced memory" module. Content was synthetic test data
+  ("批量测试记忆 #0", "调试测试问题"), not real user knowledge.
+- Neither file is tracked by git (`.mini-code-memory-local/` and
+  `.mini-code-session-memory/` are both `.gitignore`d).
+- `scripts/memory_retrieval_evaluator.py`'s `snapshot_formal_memory()` does
+  hash these exact live directories (including `advanced_memory.json`, if
+  present) — but only to prove the Phase2A/2B evaluator doesn't mutate them
+  during its own run (`before == after` within the same test), not against
+  any fixed historical value. Confirmed by running
+  `test_arm_execution_does_not_modify_formal_memory` and the full
+  `test_formal_memory_contamination_audit.py` suite (which uses its own
+  isolated fixture, not these live paths) before and after deletion.
+- `artifacts/memory-retrieval-baseline.json` (a checked-in historical audit
+  record) also contains hashes labeled `local/advanced_memory.json` etc.,
+  but those describe a **separate evaluator run's own patched temporary
+  root** (per its own `formal_memory_access_mode` field), not these live
+  files — and its own pinned whole-file hash in
+  `scripts/memory_retrieval_phase2b_evaluator.py` is unaffected by anything
+  outside that file's own content.
+- `docs/CODE_WIKI.md` §5.10 still described `.mini-code-memory/advanced_
+  memory.json` as the real storage file and `.mini-code-session-memory/` as
+  a "session memory" tier — both wrong. (Also noticed, but left alone as
+  out of scope: the same doc has ~41 broken `file:///d:/Desktop/minicode/
+  py-src/...` links from what looks like a Windows-authored draft, and the
+  repo has a fully separate, git-tracked `py-src/` copy of the whole
+  project alongside `minicode/` — flagged to the user, not touched here.)
+
+## What changed
+
+- Deleted both orphaned `advanced_memory.json` files.
+- Rewrote `docs/CODE_WIKI.md` §5.10's storage-structure diagram and memory-
+  type table to match the real three-scope (`user`/`project`/`local`)
+  `memory.json` layout, and clarified that `.mini-code-session-memory/` is
+  the reflection-replay capture directory, not a memory scope.
+
+## Status
+
+**Complete.** Full regression before/after: `3444 passed, 2 skipped`, same
+one pre-existing sandbox-only network failure as every prior slice.
+
+---
+
+# Task Plan: `test_runner` Remote-Approval Fix
+
+## Goal
+
+Fix a real gap found via a full production-equivalent usage simulation
+(real DeepSeek provider, real Gateway, real permission approvals): every
+`test_runner` invocation was permanently unapprovable through the remote
+Dashboard/Gateway path, because its permission-review signature always
+carried an absolute path.
+
+## Root cause
+
+`minicode/tools/test_runner.py`'s `context.permissions.ensure_command(
+framework, [str(target)], str(context.cwd))` always passed the fully
+resolved, absolute `target` path as the command's sole argument.
+`permission_approval.py`'s `_command_review_is_unsafe` treats *any* absolute
+path appearing in `command`/`args`/`reason` as unsafe-to-preview, collapsing
+the review to `[REDACTED SENSITIVE REVIEW]` with only `deny_once` offered —
+`decide()` itself refuses `allow_once` for a non-reviewable record
+(`permission_not_reviewable`), so there is no way to approve it, ever,
+through the HTTP decision API, regardless of who is asking.
+
+## Why this is a narrow fix, not a policy change
+
+The same redaction rule also (correctly, and separately) blocks `bash -c`/
+`sh -c`-wrapped commands — that is intentional and untouched: an arbitrary
+shell string can't be safely previewed, and `tests/test_permission_approval.
+py::test_command_review_never_serializes_local_absolute_paths` already pins
+that a *workspace-internal* absolute path argument must still redact for a
+generic command. Loosening `_command_review_is_unsafe`/
+`_contains_local_absolute_path` generally would reverse that deliberate,
+tested security posture for every tool, not just `test_runner`. Instead, the
+fix stays local to `test_runner`'s own call site: it now passes
+`relative_display_path(target, context.cwd)` (an existing helper, already
+used by `code_review.py`/`code_nav.py` for exactly this "safe to display"
+purpose) instead of the absolute path, so the review preview reads
+`pytest .`/`pytest tests` instead of leaking (and being redacted for)
+`/Users/.../workspace`.
+
+## What changed
+
+- `minicode/tools/test_runner.py`: import `relative_display_path`; build the
+  `ensure_command` args from the workspace-relative form of `target` instead
+  of `str(target)`.
+- `tests/test_tools.py`: new
+  `test_test_runner_permission_review_stays_approvable_for_an_in_workspace_
+  target` — runs `test_runner_tool.run()` against a real
+  `PermissionApprovalBroker`/`PermissionManager` in a background thread,
+  asserts the pending review is `reviewable: True` with preview `"pytest ."`
+  (no absolute path), approves it, and confirms the tool completes with a
+  genuine `task.verified`-shaped result.
+
+## Verification
+
+- New test passes; existing test_runner tests were unaffected (both used
+  `permissions=None`, never exercising `ensure_command` at all — confirming
+  they gave no signal on this gap).
+- Focused: `test_tools.py test_permission_approval.py test_dashboard_
+  permission_frontend.py` — 96 passed.
+- Ruff, `compileall`, `git diff --check` pass.
+- Full suite: `3445 passed, 2 skipped, 1 failed` — the same pre-existing
+  sandbox-only network failure as every prior slice, unrelated to this
+  change.
+
+## How this was found
+
+Not from reading the code — from actually running MiniCode against a real
+provider for ~20 tasks (see the usage-simulation session notes) and hitting
+a `run_command`/`test_runner` permission request that sat unapprovable for
+its full 2-minute internal wait before erroring, twice, before the root
+cause was traced through `_project_request` → `_command_review_is_unsafe`
+→ `_contains_local_absolute_path`.
+
+---
+
+# Task Plan: Intent Parser False-Positive Fixes
+
+## Goal
+
+Investigate and fix a real false positive found while testing the 3 new
+Skills: `parse_intent("What is the weather like today")` returned
+`explain/read` at confidence `1.0` instead of `unknown`/abstain, because
+`_EXPLAIN_PATTERNS`'s regex matched the bare phrase "what is" with no
+required following context.
+
+## Three connected bugs found (all in `minicode/intent_parser.py`, one
+touching `minicode/skill_router.py`)
+
+1. **`_EXPLAIN_PATTERNS` had no context requirement.** Every other pattern
+   group (`_CODE_PATTERNS`, `_DEBUG_PATTERNS`, `_REVIEW_PATTERNS`, `_TEST_
+   PATTERNS`, ...) requires the trigger verb to be followed by a real
+   code/project noun. EXPLAIN's `(?:explain|describe|tell|what is|how to|how
+   does)` had none, so it matched "what is the weather", "tell me a joke",
+   "how to bake a cake" with full confidence. Fixed by requiring a nearby
+   code/project-shaped noun or a bare filename (`\w+\.py` etc.); the Chinese
+   variant had the same gap (`为什么/如何/怎么` alone satisfied it) and got
+   the same treatment.
+2. **`_CONFIGURE_PATTERNS` had the identical shape of bug** —
+   `(?:configure|setup|install|init)` alone matched "set up a meeting",
+   "install a new habit". Same fix: require a settings/environment/project
+   noun nearby.
+3. **`_adjust_confidence` added bonuses even with zero base match.** A fully
+   unmatched (UNKNOWN) message with 3+ incidental keywords or a coincidental
+   file-like token still reported confidence `0.05`–`0.1`, undermining
+   "confidence == 0" as a reliable no-signal indicator. Fixed: return `0.0`
+   immediately when `base <= 0`.
+
+## One self-inflicted regression, caught and reverted
+
+First attempt at closing a related gap (a common word like "tell"
+coincidentally appearing in a skill's own example text still scored as a
+"keyword" match even though overall intent was UNKNOWN) gated the entire
+keyword-scoring loop in `skill_router.py`'s `_score_text` on `intent_type !=
+UNKNOWN`. That broke a real, legitimate case: "Rename the taskkit package to
+todokit" has intent `unknown` (no dedicated REFACTOR pattern for bare
+"rename"), and used to route correctly to `structural-rename` purely via the
+keyword "rename" — the fallback-gate change silently deleted that too.
+Reverted `skill_router.py` to its original state and instead fixed the
+actual root cause in `intent_parser.py`: added the exact trigger verbs that
+now require context (`tell`, `describe`, `explain`, `configure`, `setup`,
+`install`, `init`, `initialize`) to the keyword-extraction stopword list, so
+they stop leaking out as independent, context-free keywords — without
+touching how any other (specific, meaningful) keyword like "rename"
+contributes to routing.
+
+## What changed
+
+- `minicode/intent_parser.py`: tightened `_EXPLAIN_PATTERNS` (English +
+  Chinese) and `_CONFIGURE_PATTERNS` to require nearby context; fixed
+  `_adjust_confidence` to return `0.0` for an unmatched base; added the
+  now-context-gated trigger verbs to the keyword-extraction stopword list.
+- `tests/test_intent_parser.py` (new file — none existed before): positive/
+  negative regression cases for both patterns in English and Chinese, plus
+  the confidence-floor fix.
+- `tests/test_skill_router.py`: new
+  `test_unrelated_small_talk_does_not_route_via_coincidental_keyword_
+  overlap` locking in the "tell"/example-text collision fix at the routing
+  level.
+
+## Verification
+
+- New/updated tests: `test_intent_parser.py` (22 cases) + `test_skill_
+  router.py` (70 total) + `test_skill_evidence_ledger.py` + `test_
+  feedforward_controller.py` + `test_run_entrypoint_lifecycle.py` +
+  `test_packaging.py` (minus the sandbox-only wheel test) — all pass.
+- Re-ran the exact probes from the Skill-addition slice plus the new
+  negative cases; all now abstain or route correctly, including the
+  regression-then-fix on "rename".
+- Ruff, `compileall`, `git diff --check` pass.
+- Full suite: `3468 passed, 2 skipped, 1 failed` — the same pre-existing
+  sandbox-only network failure as every prior slice, unrelated to this
+  change.
+
+## Status
+
+**Complete.** This closes the specific false positive the user asked me to
+look into, plus two connected bugs found while verifying the fix, without
+narrowing any legitimate existing match.
+
+---
+
+# Task Plan: Full Intent/Capability Recognition Sweep and Fixes
+
+## Goal
+
+Run a full production-equivalent probe of intent recognition and capability-
+aware skill routing (real tool registry, real capability registry, real
+discovered Skills — not synthetic test fixtures) across every `IntentType`,
+then fix whatever it found.
+
+## What the sweep found
+
+1. **A systemic false-negative gap, bigger than the earlier false-positive
+   one.** 7 of 16 realistic positive probes failed to match *any* intent
+   pattern at all: "modify **the** code", "debug **this** error", "refactor
+   **this** code", "search **for the** function", "run **the** tests"
+   (plural, too), "document this **function**" (no code-symbol noun in
+   DOCUMENT's target list at all), "write **a new** function". Root cause:
+   `_CODE_PATTERNS`/`_DEBUG_PATTERNS`/`_REFACTOR_PATTERNS`/`_SEARCH_
+   PATTERNS`/`_TEST_PATTERNS`/`_DOCUMENT_PATTERNS` all required the trigger
+   verb to be followed by bare `\s+` then the target noun — no determiner,
+   preposition, adjective, or plural form tolerated. This is the *opposite*
+   failure mode from the EXPLAIN/CONFIGURE bug (too loose): these were too
+   rigid, silently failing to recognize completely ordinary phrasing.
+2. **A routing-ranking anomaly on a compound query** — investigated, and
+   NOT fixed (see below).
+
+## Fix
+
+Added a bounded `.{0,20}` gap (word-boundary-anchored) between trigger verb
+and target noun across all six pattern groups, plus plural noun forms
+(`tests?`, `files?`, ...) and added missing code-symbol nouns to DOCUMENT.
+Verified with both positive re-tests (all 7 previous failures now pass) and
+negative guards (`"I want to write a novel..."`, `"please fix your
+posture"`, `"clean the kitchen counter"`, `"find my keys..."` all still
+correctly abstain) — the bounded gap doesn't reopen the false-positive class
+the EXPLAIN/CONFIGURE fix just closed.
+
+## The routing anomaly — investigated, reverted, NOT fixed
+
+`"Run ruff check on this project and fix the warnings"` classifies as
+`review/analyze` (via `_REVIEW_PATTERNS` matching "check...project") and
+then ranks `code-skills/minicode-study` (a broad, unrelated "learn the
+codebase" Skill) above `quality/lint-and-static-cleanup` — because
+`_tool_affinity`'s readonly-task penalty knocks `lint-and-static-cleanup`
+down for needing `run_command` (destructive scope), while `minicode-study`
+accumulates tool-domain/tool-scope bonuses from five declared read-only
+tools with no penalty.
+
+First attempt: skip the penalty when the Skill's own frontmatter already
+declares the penalized scope (e.g. `scopes: [readonly, write, destructive]`
+on `lint-and-static-cleanup`). **Wrong — reverted.** An existing test,
+`test_read_task_penalizes_destructive_tool_affinity`, already locks in the
+opposite, deliberate behavior: a Skill declaring
+`scopes=["readonly", "destructive"]` and using `run_command` is *still*
+expected to be penalized relative to a pure-readonly alternative when the
+query itself is read-only — the penalty is about matching the *query's*
+need, not whether the Skill's author ever uses that capability elsewhere.
+Weakening it would have undermined a real, tested safety property (prefer
+the more conservative Skill for a read-only-looking request) for every
+Skill, not just this one.
+
+The actual root cause is one level up: `_REVIEW_PATTERNS` classifies "check
+X and fix Y" as purely `analyze`, losing the "fix" clause entirely — the
+action-type enum is single-valued and has no representation for a compound
+read+write request. Correctly fixing that would mean detecting secondary
+verb clauses across the whole pattern set, a materially larger and riskier
+change than this sweep's scope. Left as a known, documented limitation
+rather than patched with something that would have quietly broken a
+different, already-verified safety guarantee.
+
+## What changed
+
+- `minicode/intent_parser.py`: `_CODE_PATTERNS`, `_DEBUG_PATTERNS`,
+  `_REFACTOR_PATTERNS`, `_SEARCH_PATTERNS`, `_TEST_PATTERNS`, `_DOCUMENT_
+  PATTERNS` all gained a bounded `.{0,20}` gap and plural-tolerant nouns;
+  DOCUMENT gained missing code-symbol target nouns.
+- `minicode/skill_router.py`: touched then reverted to its original state
+  (net no change) — see above.
+- `tests/test_intent_parser.py`: new positive cases for all 7 previously-
+  failing phrasings, plus negative guards proving the wider gap doesn't
+  reopen false positives.
+
+## Verification
+
+- New probe script run against the real repo's actual tool registry,
+  capability registry, and discovered Skills (not synthetic fixtures):
+  16/16 intent-recognition positives now pass (was 9/16), 9/9 negative
+  abstains still pass, capability-availability-alone-creates-no-relevance
+  still holds, 9/10 routing cases pass (the compound-query anomaly is the
+  one documented exception).
+- `test_intent_parser.py` (33 cases), `test_skill_router.py`, `test_skill_
+  evidence_ledger.py`, `test_feedforward_controller.py`, `test_run_
+  entrypoint_lifecycle.py`, `test_packaging.py` (minus the sandbox-only
+  wheel test) — 113 passed.
+- Ruff, `compileall`, `git diff --check` pass.
+- Full suite: `3479 passed, 2 skipped, 1 failed` — the same pre-existing
+  sandbox-only network failure as every prior slice, unrelated to this
+  change.
+
+## Status
+
+**Complete for the fixable part.** The determiner/preposition/plural gap
+(the larger of the two findings) is fixed and tested. The compound-query
+ranking anomaly is documented as a known limitation rather than patched,
+because the only patch tried would have silently broken an existing,
+deliberate safety test.

@@ -2,18 +2,23 @@
 
 from __future__ import annotations
 
+import hashlib
 import math
 import re
 import uuid
 from collections.abc import Mapping
+from threading import Lock
 from typing import Protocol
 
 from minicode.logging_config import get_logger
+from minicode.task_outcome_event import project_task_outcome_event
 
 
 _logger = get_logger("run_events")
 
 _MAX_ROUTED_SKILLS = 20
+_MAX_ATTRIBUTED_SKILLS = 20
+_MAX_VERIFICATION_OBSERVATIONS = 10_000
 _MAX_ROUTING_SKILLS = 100_000
 _MAX_MEMORY_COUNT = 100_000
 _MAX_MEMORY_TOKENS = 10_000_000
@@ -89,6 +94,9 @@ _ACTION_TYPES = frozenset(
         "unknown",
     }
 )
+_TASK_OUTCOME_STATUSES = frozenset(
+    {"success", "failed", "unknown", "cancelled"}
+)
 _MEMORY_CONTROLLER_MODES = frozenset(
     {"none", "summary", "standard", "strong"}
 )
@@ -120,6 +128,87 @@ class AgentEventSink(Protocol):
     ) -> None: ...
 
 
+class SkillUsageTracker:
+    """Task-scoped, bounded record of Skills actually loaded by the tool."""
+
+    def __init__(self, max_skills: int = _MAX_ATTRIBUTED_SKILLS) -> None:
+        self._max_skills = max(1, min(max_skills, _MAX_ATTRIBUTED_SKILLS))
+        self._loaded: dict[tuple[str, str, str, str], dict[str, object]] = {}
+        self._truncated = False
+        self._lock = Lock()
+
+    def record(self, skill: object) -> None:
+        projected = project_skill_loaded_event(skill)
+        item = {
+            key: value
+            for key, value in projected.items()
+            if key != "loadVersion"
+        }
+        identity = (
+            str(item["qualifiedName"]),
+            str(item["source"]),
+            str(item["directory"]),
+            str(item["contentDigest"]),
+        )
+        with self._lock:
+            if identity in self._loaded:
+                return
+            if len(self._loaded) >= self._max_skills:
+                self._truncated = True
+                return
+            self._loaded[identity] = item
+
+    def snapshot(self) -> tuple[list[dict[str, object]], bool]:
+        with self._lock:
+            return (
+                [dict(item) for item in self._loaded.values()],
+                self._truncated,
+            )
+
+
+class VerificationTracker:
+    """Task-scoped, bounded, content-free tally of independent verification
+    outcomes observed during one Agent turn, for same-turn Memory credit
+    assignment. Carries no command, output, or Skill identity.
+    """
+
+    def __init__(self, max_observations: int = _MAX_VERIFICATION_OBSERVATIONS) -> None:
+        self._max_observations = max(1, min(max_observations, _MAX_VERIFICATION_OBSERVATIONS))
+        self._passed = 0
+        self._failed = 0
+        self._lock = Lock()
+
+    def record(self, verification: object) -> None:
+        if not isinstance(verification, Mapping):
+            return
+        outcome = verification.get("outcome")
+        if outcome not in {"passed", "failed"}:
+            return
+        with self._lock:
+            if self._passed + self._failed >= self._max_observations:
+                return
+            if outcome == "passed":
+                self._passed += 1
+            else:
+                self._failed += 1
+
+    def snapshot(self) -> tuple[int, int]:
+        with self._lock:
+            return self._passed, self._failed
+
+
+def verification_corroboration(passed: int, failed: int) -> bool | None:
+    """Reduce a turn's verification tally to one same-turn corroboration
+    signal: any failure is negative, complete passed coverage is positive,
+    no observation is ``None`` rather than an assumed neutral success.
+    """
+    if failed > 0:
+        return False
+    if passed > 0:
+        return True
+    return None
+
+
 def emit_event_safely(
     sink: AgentEventSink | None,
     event_type: str,
@@ -137,6 +226,26 @@ def emit_event_safely(
             _logger.warning("Agent event sink unavailable.")
         except Exception:  # noqa: BLE001 - logging must remain optional too
             pass
+
+
+def emit_task_outcome_safely(
+    sink: AgentEventSink | None,
+    outcome: object,
+    *,
+    step: int | None = None,
+) -> None:
+    """Emit one canonical task outcome without exposing task content."""
+    if sink is None:
+        return
+    try:
+        payload = project_task_outcome_event(outcome)
+    except Exception:  # noqa: BLE001 - outcome observation is optional
+        try:
+            _logger.warning("Task outcome observation unavailable.")
+        except Exception:  # noqa: BLE001 - logging remains optional too
+            pass
+        return
+    emit_event_safely(sink, "task.outcome", step=step, payload=payload)
 
 
 def new_model_operation_id() -> str:
@@ -440,6 +549,11 @@ def _safe_skill_item(value: object) -> dict[str, object] | None:
     source = getattr(value, "source", "")
     directory = getattr(value, "directory", "")
     score = getattr(value, "score", None)
+    content_digest = getattr(value, "content_digest", "")
+    if not content_digest:
+        content = getattr(value, "content", None)
+        if isinstance(content, str):
+            content_digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
     if (
         not isinstance(qualified_name, str)
         or not _SKILL_NAME_RE.fullmatch(qualified_name)
@@ -453,12 +567,18 @@ def _safe_skill_item(value: object) -> dict[str, object] | None:
         or abs(float(score)) > 1_000_000
     ):
         return None
-    return {
+    projected: dict[str, object] = {
         "qualifiedName": qualified_name,
         "source": source,
         "directory": directory,
         "score": score,
     }
+    if (
+        isinstance(content_digest, str)
+        and re.fullmatch(r"[0-9a-f]{64}", content_digest)
+    ):
+        projected["contentDigest"] = content_digest
+    return projected
 
 
 def project_skill_routing_event(routing_result: object) -> dict[str, object]:
@@ -490,8 +610,16 @@ def project_skill_routing_event(routing_result: object) -> dict[str, object]:
     used_fallback = getattr(routing_result, "used_fallback", None)
     if not isinstance(used_fallback, bool):
         raise ValueError("invalid routing fallback state")
+    routing_version = (
+        2
+        if (
+            len(selected) == min(selected_count, _MAX_ROUTED_SKILLS)
+            and all("contentDigest" in item for item in selected)
+        )
+        else 1
+    )
     return {
-        "routingVersion": 1,
+        "routingVersion": routing_version,
         "intentType": intent_type,
         "actionType": action_type,
         "totalSkills": total_skills,
@@ -517,6 +645,132 @@ def emit_skill_routing_safely(
             pass
         return
     emit_event_safely(sink, "skill.routed", payload=payload)
+
+
+def project_skill_loaded_event(skill: object) -> dict[str, object]:
+    """Project one successfully loaded Skill without content or local paths."""
+    qualified_name = getattr(skill, "qualified_name", "") or getattr(
+        skill, "name", ""
+    )
+    source = getattr(skill, "source", "")
+    directory = getattr(skill, "directory", "")
+    content = getattr(skill, "content", None)
+    if (
+        not isinstance(qualified_name, str)
+        or _SKILL_NAME_RE.fullmatch(qualified_name) is None
+        or not isinstance(source, str)
+        or source not in _SKILL_SOURCES
+        or not isinstance(directory, str)
+        or (directory and _SKILL_DIRECTORY_RE.fullmatch(directory) is None)
+        or not isinstance(content, str)
+    ):
+        raise ValueError("invalid loaded Skill observation")
+    return {
+        "loadVersion": 1,
+        "qualifiedName": qualified_name,
+        "source": source,
+        "directory": directory,
+        "contentDigest": hashlib.sha256(content.encode("utf-8")).hexdigest(),
+    }
+
+
+def emit_skill_loaded_safely(
+    sink: AgentEventSink | None,
+    skill: object,
+    *,
+    step: int | None = None,
+) -> None:
+    """Observe one already-successful Skill load at the real tool boundary."""
+    if sink is None:
+        return
+    try:
+        payload = project_skill_loaded_event(skill)
+    except Exception:  # noqa: BLE001 - projection is optional observation only
+        try:
+            _logger.warning("Loaded Skill observation unavailable.")
+        except Exception:  # noqa: BLE001 - logging must remain optional too
+            pass
+        return
+    emit_event_safely(sink, "skill.loaded", step=step, payload=payload)
+
+
+def record_skill_loaded_safely(
+    tracker: SkillUsageTracker | None,
+    skill: object,
+) -> None:
+    """Record actual Skill use without allowing observation to break loading."""
+    if tracker is None:
+        return
+    try:
+        tracker.record(skill)
+    except Exception:  # noqa: BLE001 - task observation remains optional
+        try:
+            _logger.warning("Loaded Skill attribution unavailable.")
+        except Exception:  # noqa: BLE001 - logging remains optional too
+            pass
+
+
+def project_skill_attribution_event(
+    tracker: SkillUsageTracker,
+    outcome: object,
+) -> dict[str, object]:
+    """Link actually loaded Skills to one canonical task outcome."""
+    loaded_skills, truncated = tracker.snapshot()
+    if not loaded_skills:
+        raise ValueError("no loaded Skills to attribute")
+
+    status = getattr(outcome, "status", None)
+    goal_achieved = getattr(outcome, "goal_achieved", None)
+    had_tool_errors = getattr(outcome, "had_tool_errors", None)
+    errors_recovered = getattr(outcome, "errors_recovered", None)
+    tool_error_count = getattr(outcome, "tool_error_count", None)
+    if (
+        status not in _TASK_OUTCOME_STATUSES
+        or not isinstance(goal_achieved, bool)
+        or goal_achieved != (status == "success")
+        or not isinstance(had_tool_errors, bool)
+        or not isinstance(errors_recovered, bool)
+    ):
+        raise ValueError("invalid canonical task outcome")
+    safe_tool_error_count = _bounded_count(
+        tool_error_count,
+        maximum=_MAX_ROUTING_SKILLS,
+    )
+    if (
+        had_tool_errors != (safe_tool_error_count > 0)
+        or errors_recovered != (had_tool_errors and goal_achieved)
+    ):
+        raise ValueError("inconsistent canonical task outcome")
+
+    return {
+        "attributionVersion": 1,
+        "attributionKind": "task_correlation",
+        "outcomeStatus": status,
+        "goalAchieved": goal_achieved,
+        "hadToolErrors": had_tool_errors,
+        "errorsRecovered": errors_recovered,
+        "toolErrorCount": safe_tool_error_count,
+        "loadedSkillCount": len(loaded_skills),
+        "loadedSkills": loaded_skills,
+        "loadedSkillsTruncated": truncated,
+    }
+
+
+def emit_skill_attribution_safely(
+    sink: AgentEventSink | None,
+    tracker: SkillUsageTracker | None,
+    outcome: object,
+    *,
+    step: int | None = None,
+) -> None:
+    """Emit one task-level correlation record when a Skill was loaded."""
+    if sink is None or tracker is None:
+        return
+    try:
+        payload = project_skill_attribution_event(tracker, outcome)
+    except Exception:  # noqa: BLE001 - attribution is optional observation only
+        return
+    emit_event_safely(sink, "skill.attributed", step=step, payload=payload)
 
 
 def _result_count(result: object, attribute: str) -> int:
@@ -588,15 +842,44 @@ def emit_memory_result_safely(
         return
     emit_event_safely(sink, "memory.retrieved", payload=retrieved)
     emit_event_safely(sink, "memory.rendered", payload=rendered)
+    _record_rendered_memory_ids_safely(sink, result)
+
+
+def _record_rendered_memory_ids_safely(sink: object, result: object) -> None:
+    """Best-effort, content-free bridge from a Memory result to a sink that
+    can bind rendered entry IDs to this Run for later corroborated feedback.
+    Silently does nothing for sinks (e.g. test doubles) without this seam.
+    """
+    recorder = getattr(sink, "record_rendered_memory_ids", None)
+    if not callable(recorder):
+        return
+    rendered_ids = getattr(result, "rendered_ids", None)
+    if not isinstance(rendered_ids, (list, tuple)) or not all(
+        isinstance(entry_id, str) for entry_id in rendered_ids
+    ):
+        return
+    try:
+        recorder(list(rendered_ids))
+    except Exception:  # noqa: BLE001 - rendered-id observation is optional
+        try:
+            _logger.warning("Memory rendered-id observation unavailable.")
+        except Exception:  # noqa: BLE001 - logging must remain optional too
+            pass
 
 
 __all__ = [
     "AgentEventSink",
+    "SkillUsageTracker",
+    "VerificationTracker",
+    "verification_corroboration",
     "emit_event_safely",
     "emit_context_compaction_safely",
     "emit_memory_result_safely",
     "emit_recovery_completed_safely",
     "emit_recovery_started_safely",
+    "emit_skill_attribution_safely",
+    "emit_task_outcome_safely",
+    "emit_skill_loaded_safely",
     "emit_skill_routing_safely",
     "emit_working_memory_safely",
     "new_context_operation_id",
@@ -607,6 +890,9 @@ __all__ = [
     "project_memory_result_events",
     "project_recovery_completed_event",
     "project_recovery_started_event",
+    "project_skill_attribution_event",
+    "project_skill_loaded_event",
     "project_skill_routing_event",
     "project_working_memory_event",
+    "record_skill_loaded_safely",
 ]

@@ -412,6 +412,226 @@ def test_run_detail_degrades_invalid_mcp_runtime_payload_without_echoing_secrets
     assert _run_event_details("mcp.runtime.observed", payload) == {}
 
 
+def test_run_detail_strictly_projects_task_correlated_skill_attribution() -> None:
+    payload = {
+        "attributionVersion": 1,
+        "attributionKind": "task_correlation",
+        "outcomeStatus": "success",
+        "goalAchieved": True,
+        "hadToolErrors": True,
+        "errorsRecovered": True,
+        "toolErrorCount": 1,
+        "loadedSkillCount": 1,
+        "loadedSkills": [
+            {
+                "qualifiedName": "project/memory-audit",
+                "source": "project",
+                "directory": "project",
+                "contentDigest": "a" * 64,
+                "path": "/private/path-secret",
+                "content": "password=skill-secret",
+            }
+        ],
+        "loadedSkillsTruncated": False,
+        "taskText": "password=task-secret",
+        "modelResponse": "Bearer response-secret",
+    }
+
+    details = _run_event_details("skill.attributed", payload)
+
+    assert details == {
+        "attributionVersion": 1,
+        "attributionKind": "task_correlation",
+        "outcomeStatus": "success",
+        "goalAchieved": True,
+        "hadToolErrors": True,
+        "errorsRecovered": True,
+        "toolErrorCount": 1,
+        "loadedSkillCount": 1,
+        "loadedSkills": [
+            {
+                "qualifiedName": "project/memory-audit",
+                "source": "project",
+                "directory": "project",
+                "contentDigest": "a" * 64,
+            }
+        ],
+        "loadedSkillsTruncated": False,
+    }
+    serialized = json.dumps(details)
+    for forbidden in (
+        "/private/",
+        "skill-secret",
+        "task-secret",
+        "response-secret",
+    ):
+        assert forbidden not in serialized
+
+
+def test_run_detail_strictly_projects_canonical_task_outcome() -> None:
+    payload = {
+        "outcomeVersion": 1,
+        "outcomeStatus": "success",
+        "goalAchieved": True,
+        "learningSuccess": True,
+        "hadToolErrors": True,
+        "errorsRecovered": True,
+        "toolErrorCount": 1,
+        "taskText": "password=task-secret",
+        "modelResponse": "Bearer response-secret",
+    }
+
+    details = _run_event_details("task.outcome", payload)
+
+    assert details == {
+        "outcomeVersion": 1,
+        "outcomeStatus": "success",
+        "goalAchieved": True,
+        "learningSuccess": True,
+        "hadToolErrors": True,
+        "errorsRecovered": True,
+        "toolErrorCount": 1,
+    }
+    serialized = json.dumps(details)
+    assert "task-secret" not in serialized
+    assert "response-secret" not in serialized
+
+
+def test_run_detail_projects_versioned_skill_routing_digests() -> None:
+    payload = {
+        "routingVersion": 2,
+        "intentType": "review",
+        "actionType": "analyze",
+        "totalSkills": 1,
+        "selectedCount": 1,
+        "selected": [
+            {
+                "qualifiedName": "project/memory-audit",
+                "source": "project",
+                "directory": "project",
+                "score": 4.25,
+                "contentDigest": "a" * 64,
+                "content": "password=skill-secret",
+                "path": "/private/SKILL.md",
+            }
+        ],
+        "selectedTruncated": False,
+        "usedFallback": False,
+    }
+
+    details = _run_event_details("skill.routed", payload)
+
+    assert details["routingVersion"] == 2
+    assert details["selected"] == [
+        {
+            "qualifiedName": "project/memory-audit",
+            "source": "project",
+            "directory": "project",
+            "score": 4.25,
+            "contentDigest": "a" * 64,
+        }
+    ]
+    serialized = json.dumps(details)
+    assert "skill-secret" not in serialized
+    assert "/private/" not in serialized
+
+
+def test_run_detail_rejects_inconsistent_skill_attribution() -> None:
+    valid = {
+        "attributionVersion": 1,
+        "attributionKind": "task_correlation",
+        "outcomeStatus": "success",
+        "goalAchieved": True,
+        "hadToolErrors": False,
+        "errorsRecovered": False,
+        "toolErrorCount": 0,
+        "loadedSkillCount": 1,
+        "loadedSkills": [
+            {
+                "qualifiedName": "memory-audit",
+                "source": "project",
+                "directory": "",
+                "contentDigest": "a" * 64,
+            }
+        ],
+        "loadedSkillsTruncated": False,
+    }
+    invalid_payloads = [
+        {**valid, "outcomeStatus": "password=invalid"},
+        {**valid, "goalAchieved": False},
+        {**valid, "hadToolErrors": True},
+        {**valid, "errorsRecovered": True},
+        {**valid, "loadedSkillCount": 2},
+        {
+            **valid,
+            "hadToolErrors": True,
+            "toolErrorCount": 1,
+            "errorsRecovered": False,
+        },
+        {
+            **valid,
+            "loadedSkills": [
+                {
+                    **valid["loadedSkills"][0],
+                    "contentDigest": "password=invalid",
+                }
+            ],
+        },
+    ]
+
+    assert all(
+        _run_event_details("skill.attributed", payload) == {}
+        for payload in invalid_payloads
+    )
+
+
+def test_run_detail_exposes_skill_attribution_summary(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    record = journal.create_run(title="Use a Skill", source="headless")
+    journal.transition(record.id, "running")
+    journal.append_event(
+        record.id,
+        "skill.attributed",
+        step=3,
+        payload={
+            "attributionVersion": 1,
+            "attributionKind": "task_correlation",
+            "outcomeStatus": "success",
+            "goalAchieved": True,
+            "hadToolErrors": False,
+            "errorsRecovered": False,
+            "toolErrorCount": 0,
+            "loadedSkillCount": 1,
+            "loadedSkills": [
+                {
+                    "qualifiedName": "memory-audit",
+                    "source": "project",
+                    "directory": "",
+                    "contentDigest": "a" * 64,
+                }
+            ],
+            "loadedSkillsTruncated": False,
+        },
+    )
+    journal.transition(record.id, "completed")
+
+    detail = DashboardReadModel(
+        workspace,
+        data_dir=data_dir,
+        run_journal=journal,
+    ).run_detail(record.id, limit=20)
+    event = next(
+        item for item in detail["events"] if item["type"] == "skill.attributed"
+    )
+
+    assert event["summary"] == "Skill outcome attributed"
+    assert event["details"]["loadedSkillCount"] == 1
+    assert event["details"]["outcomeStatus"] == "success"
+
+
 def test_run_detail_whitelists_tool_and_assistant_event_details(
     tmp_path: Path,
 ) -> None:
@@ -904,6 +1124,20 @@ def test_run_detail_strictly_projects_skill_and_memory_runtime_events(
     )
     journal.append_event(
         record.id,
+        "skill.loaded",
+        step=2,
+        payload={
+            "loadVersion": 1,
+            "qualifiedName": "project/safe-skill",
+            "source": "project",
+            "directory": "project",
+            "contentDigest": "a" * 64,
+            "path": "/Users/example/private/SKILL.md",
+            "content": "password=loaded-skill-secret",
+        },
+    )
+    journal.append_event(
+        record.id,
         "memory.retrieved",
         payload={
             "retrievalVersion": 1,
@@ -935,7 +1169,7 @@ def test_run_detail_strictly_projects_skill_and_memory_runtime_events(
     detail = DashboardReadModel(
         workspace, data_dir=data_dir, run_journal=journal
     ).run_detail(record.id, limit=100)
-    events = detail["events"][2:5]
+    events = detail["events"][2:6]
 
     assert events[0]["details"] == {
         "routingVersion": 1,
@@ -954,7 +1188,15 @@ def test_run_detail_strictly_projects_skill_and_memory_runtime_events(
         "selectedTruncated": True,
         "usedFallback": False,
     }
+    assert events[1]["summary"] == "Skill loaded"
     assert events[1]["details"] == {
+        "loadVersion": 1,
+        "qualifiedName": "project/safe-skill",
+        "source": "project",
+        "directory": "project",
+        "contentDigest": "a" * 64,
+    }
+    assert events[2]["details"] == {
         "retrievalVersion": 1,
         "candidateCount": 8,
         "selectedCount": 3,
@@ -962,7 +1204,7 @@ def test_run_detail_strictly_projects_skill_and_memory_runtime_events(
         "noMatch": False,
         "noMatchReason": None,
     }
-    assert events[2]["details"] == {
+    assert events[3]["details"] == {
         "renderVersion": 1,
         "renderedCount": 2,
         "totalTokens": 186,
@@ -972,6 +1214,7 @@ def test_run_detail_strictly_projects_skill_and_memory_runtime_events(
     serialized = json.dumps(detail)
     for forbidden in (
         "skill-secret",
+        "loaded-skill-secret",
         "/Users/",
         "unsafe-name",
         "unsafe-reason",

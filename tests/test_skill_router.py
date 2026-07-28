@@ -1,3 +1,5 @@
+import hashlib
+
 from minicode.capability_registry import (
     CapabilityDomain,
     CapabilityMetadata,
@@ -6,6 +8,7 @@ from minicode.capability_registry import (
 )
 from minicode.intent_parser import ActionType, IntentType, ParsedIntent, parse_intent
 from minicode.prompt import build_system_prompt
+from minicode.run_events import project_skill_routing_event
 from minicode.skill_router import SkillRouter
 
 
@@ -74,7 +77,7 @@ def test_debug_pytest_routes_debugging_skills_first() -> None:
     assert any("keyword:pytest" in reason for reason in result.selected[0].reasons)
 
 
-def test_capability_domain_matches_add_score() -> None:
+def test_available_capabilities_do_not_create_relevance_for_unknown_intent() -> None:
     skills = [
         _skill("filesystem-workflow", "Inspect file paths and search code safely"),
         _skill("neutral-workflow", "General task handling"),
@@ -92,10 +95,10 @@ def test_capability_domain_matches_add_score() -> None:
 
     result = SkillRouter().route(skills, intent, registry, top_k=5)
 
-    assert not result.used_fallback
-    assert result.selected[0].name == "filesystem-workflow"
-    assert "capability-domain:file" in result.selected[0].reasons
-    assert "capability-domain:search" in result.selected[0].reasons
+    assert result.used_fallback
+    assert result.selected == []
+    assert result.capability_domains == []
+    assert result.capability_scopes == []
 
 
 def test_top_k_limits_selected_skills() -> None:
@@ -109,7 +112,7 @@ def test_top_k_limits_selected_skills() -> None:
     assert len(result.selected) == 5
 
 
-def test_fallback_preserves_all_skills_when_no_strong_match() -> None:
+def test_fallback_abstains_when_no_task_evidence_matches() -> None:
     skills = [
         _skill("alpha", "Unrelated workflow"),
         _skill("beta", "Another unrelated workflow"),
@@ -125,7 +128,188 @@ def test_fallback_preserves_all_skills_when_no_strong_match() -> None:
     result = SkillRouter().route(skills, intent, registry, top_k=1)
 
     assert result.used_fallback
-    assert [skill.name for skill in result.selected] == ["alpha", "beta"]
+    assert result.selected == []
+
+
+def test_unrelated_chinese_chat_does_not_route_from_tool_availability() -> None:
+    skills = [
+        _skill(
+            "pytest-debugging",
+            "Debug pytest failures and runtime errors",
+            tools=["read_file", "run_command"],
+            domains=["code", "file", "execution"],
+        ),
+        _skill(
+            "memory-audit",
+            "Audit persistent memory behavior",
+            tools=["read_file", "grep_files"],
+            domains=["memory", "file", "analysis"],
+        ),
+    ]
+    intent = parse_intent("给我讲个笑话")
+    registry = _registry(
+        ("read_file", CapabilityDomain.FILE, CapabilityScope.READONLY),
+        ("grep_files", CapabilityDomain.SEARCH, CapabilityScope.READONLY),
+        ("run_command", CapabilityDomain.EXECUTION, CapabilityScope.DESTRUCTIVE),
+    )
+
+    result = SkillRouter().route(skills, intent, registry)
+
+    assert intent.intent_type == IntentType.UNKNOWN
+    assert result.used_fallback
+    assert result.selected == []
+
+
+def test_unrelated_small_talk_does_not_route_via_coincidental_keyword_overlap() -> None:
+    """A skill's own example text can coincidentally share a common word
+    (e.g. "tell") with an unrelated message. A bare keyword match must not
+    create relevance on its own once the intent itself is UNKNOWN — that
+    would silently defeat the fallback/abstain guarantee the other unknown-
+    intent tests rely on."""
+    skills = [
+        _skill(
+            "design-review",
+            "Review existing code for design issues without changing it",
+            keywords=["design review", "code smell", "inconsistency"],
+            examples=["Look at this module and tell me if the design has problems"],
+            tools=["read_file", "grep_files"],
+            domains=["code", "analysis"],
+        ),
+    ]
+    intent = parse_intent("Tell me a joke")
+    registry = _registry(
+        ("read_file", CapabilityDomain.FILE, CapabilityScope.READONLY),
+        ("grep_files", CapabilityDomain.SEARCH, CapabilityScope.READONLY),
+    )
+
+    result = SkillRouter().route(skills, intent, registry)
+
+    assert intent.intent_type == IntentType.UNKNOWN
+    assert result.used_fallback
+    assert result.selected == []
+
+
+def test_chinese_memory_and_skill_routing_audit_routes_matching_skill() -> None:
+    skills = [
+        _skill(
+            "memory-skill-routing-audit",
+            "Review persistent memory and skill routing architecture",
+            keywords=["audit", "memory", "skill", "routing", "evolution"],
+            tools=["read_file", "grep_files"],
+            domains=["memory", "code", "analysis"],
+        ),
+        _skill(
+            "pytest-debugging",
+            "Debug pytest failures and runtime errors",
+            keywords=["pytest", "failure", "debug"],
+            tools=["read_file", "run_command"],
+            domains=["code", "execution"],
+        ),
+    ]
+    intent = parse_intent(
+        "你仔细审查一下这个项目的持久化记忆和skill路由这一部分，"
+        "看看能否有效的提高此agent的自进化。"
+    )
+    registry = _registry(
+        ("read_file", CapabilityDomain.FILE, CapabilityScope.READONLY),
+        ("grep_files", CapabilityDomain.SEARCH, CapabilityScope.READONLY),
+        ("run_command", CapabilityDomain.EXECUTION, CapabilityScope.DESTRUCTIVE),
+    )
+
+    result = SkillRouter().route(skills, intent, registry, top_k=1)
+
+    assert intent.intent_type == IntentType.REVIEW
+    assert intent.action_type == ActionType.ANALYZE
+    assert {"memory", "skill", "routing", "evolution"} <= set(intent.keywords)
+    assert not result.used_fallback
+    assert result.selected[0].name == "memory-skill-routing-audit"
+
+
+def test_skill_examples_are_used_as_task_relevance_evidence() -> None:
+    skills = [
+        _skill(
+            "workflow-a",
+            "Structured subsystem assessment",
+            examples=["Audit persistent memory and skill routing design"],
+        ),
+        _skill(
+            "workflow-b",
+            "General purpose workflow",
+            examples=["Summarize a meeting"],
+        ),
+    ]
+    intent = parse_intent("audit persistent memory and skill routing design")
+
+    result = SkillRouter().route(skills, intent, CapabilityRegistry(), top_k=1)
+
+    assert not result.used_fallback
+    assert result.selected[0].name == "workflow-a"
+
+
+def test_compatibility_only_skill_is_not_routed_for_known_intent() -> None:
+    skills = [
+        _skill(
+            "memory-skill-routing-audit",
+            "Review persistent memory and skill routing architecture",
+            keywords=["memory", "skill", "routing"],
+            directory="auditing",
+            directory_description="Skills for subsystem review",
+            domains=["memory", "code", "analysis"],
+            scopes=["readonly"],
+            tools=["read_file", "grep_files"],
+        ),
+        _skill(
+            "readme-authoring",
+            "Write project README documentation",
+            keywords=["readme", "documentation"],
+            directory="documentation",
+            directory_description="Skills for README and documentation",
+            domains=["code", "file", "search"],
+            scopes=["readonly"],
+            tools=["read_file", "grep_files"],
+        ),
+    ]
+    intent = parse_intent("审查持久化记忆和技能路由")
+    registry = _registry(
+        ("read_file", CapabilityDomain.FILE, CapabilityScope.READONLY),
+        ("grep_files", CapabilityDomain.SEARCH, CapabilityScope.READONLY),
+    )
+
+    result = SkillRouter().route(skills, intent, registry)
+
+    assert [skill.name for skill in result.selected] == [
+        "memory-skill-routing-audit"
+    ]
+
+
+def test_matched_directory_does_not_make_unrelated_sibling_relevant() -> None:
+    skills = [
+        _skill(
+            "memory-skill-routing-audit",
+            "Review persistent memory and skill routing architecture",
+            keywords=["memory", "skill", "routing"],
+            directory="auditing",
+            directory_description="Skills for subsystem review",
+        ),
+        _skill(
+            "release-note-formatting",
+            "Format release notes and changelogs",
+            keywords=["release", "changelog"],
+            directory="auditing",
+            directory_description="Skills for subsystem review",
+        ),
+    ]
+    intent = parse_intent("审查持久化记忆和技能路由")
+
+    result = SkillRouter().route(
+        skills,
+        intent,
+        CapabilityRegistry(),
+    )
+
+    assert [skill.name for skill in result.selected] == [
+        "memory-skill-routing-audit"
+    ]
 
 
 def test_directory_recall_routes_code_understanding_before_debugging() -> None:
@@ -363,3 +547,33 @@ def test_prompt_uses_routed_directory_section() -> None:
     assert "code-understanding/codebase-explanation" in prompt
     assert "likely tools: read_file, grep_files, load_skill" in prompt
     assert "debugging/pytest-debugging" not in prompt
+
+
+def test_production_routing_observation_identifies_the_exact_skill_digest() -> None:
+    content = (
+        "---\n"
+        "name: memory-audit\n"
+        "description: Review persistent memory.\n"
+        "---\n"
+        "# Memory Audit\n"
+    )
+    routing = SkillRouter().route(
+        [
+            _skill(
+                "memory-audit",
+                "Review persistent memory and Skill routing",
+                qualified_name="project/memory-audit",
+                directory="project",
+                content=content,
+            )
+        ],
+        parse_intent("review persistent memory"),
+        _registry(),
+    )
+
+    payload = project_skill_routing_event(routing)
+
+    assert payload["routingVersion"] == 2
+    assert payload["selected"][0]["contentDigest"] == hashlib.sha256(
+        content.encode("utf-8")
+    ).hexdigest()

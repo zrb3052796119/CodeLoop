@@ -245,6 +245,7 @@ def test_work_chain_disabled_preserves_canonical_usage_and_duration_events(
         "model.completed",
         "model.costed",
         "working_memory.observed",
+        "task.outcome",
     ]
     operation_id = sink.events[0].payload["operationId"]  # type: ignore[index]
     assert re.fullmatch(r"modelop_[0-9a-f]{32}", operation_id)
@@ -372,6 +373,7 @@ def test_work_chain_disabled_preserves_model_failure_fallback_and_duration(
     assert [event.event_type for event in sink.events] == [
         "model.started",
         "model.failed",
+        "task.outcome",
     ]
     assert sink.events[1].payload == {
         "operationId": sink.events[0].payload["operationId"],  # type: ignore[index]
@@ -405,6 +407,7 @@ def test_work_chain_disabled_propagates_model_interrupt_with_failure_duration(
     assert [event.event_type for event in sink.events] == [
         "model.started",
         "model.failed",
+        "task.outcome",
     ]
     assert sink.events[1].payload == {
         "operationId": sink.events[0].payload["operationId"],  # type: ignore[index]
@@ -485,6 +488,7 @@ def test_work_chain_disabled_executes_tools_and_callbacks_once() -> None:
         "model.completed",
         "model.costed",
         "working_memory.observed",
+        "task.outcome",
     ]
 
 

@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from minicode.run_events import (
+    emit_skill_loaded_safely,
+    record_skill_loaded_safely,
+)
 from minicode.skills import load_skill
 from minicode.tooling import ToolDefinition, ToolResult
 
@@ -16,6 +20,12 @@ def create_load_skill_tool(cwd: str) -> ToolDefinition:
         skill = load_skill(cwd, input_data["name"])
         if skill is None:
             return ToolResult(ok=False, output=f"Unknown skill: {input_data['name']}")
+        record_skill_loaded_safely(_context._skill_usage_tracker, skill)
+        emit_skill_loaded_safely(
+            _context._event_sink,
+            skill,
+            step=_context._step,
+        )
         return ToolResult(
             ok=True,
             output="\n".join(

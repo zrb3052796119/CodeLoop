@@ -324,7 +324,7 @@ try:
     assert usage_model.calls == 1
     assert [event[0] for event in installed_sink.events] == [
         "model.started", "model.completed", "model.costed",
-        "working_memory.observed",
+        "working_memory.observed", "task.outcome",
     ]
     started_id = installed_sink.events[0][2]["operationId"]
     assert installed_sink.events[1][2] == {

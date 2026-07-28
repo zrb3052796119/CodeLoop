@@ -106,6 +106,9 @@ def _memory_entry(
     lifecycle_status: str = "active",
     safety_status: str = "safe",
     approval_status: str = "approved",
+    corroborated_success_count: int = 0,
+    corroborated_failure_count: int = 0,
+    corroborated_usefulness_score: float = 0.0,
 ) -> dict[str, object]:
     return {
         "id": entry_id,
@@ -118,6 +121,9 @@ def _memory_entry(
         "retrieval_count": 3,
         "injection_count": 2,
         "usefulness_score": 0.8,
+        "corroborated_success_count": corroborated_success_count,
+        "corroborated_failure_count": corroborated_failure_count,
+        "corroborated_usefulness_score": corroborated_usefulness_score,
         "lifecycle_status": lifecycle_status,
         "safety_status": safety_status,
         "approval_status": approval_status,
@@ -843,6 +849,9 @@ def test_memory_page_returns_real_summary_and_safe_bounded_items(tmp_path: Path)
                 tier="short_term",
                 content="Project architecture",
                 updated_at=30,
+                corroborated_success_count=2,
+                corroborated_failure_count=1,
+                corroborated_usefulness_score=1 / 3,
             ),
         ),
         (
@@ -887,10 +896,62 @@ def test_memory_page_returns_real_summary_and_safe_bounded_items(tmp_path: Path)
     assert payload["items"][0]["retrievalCount"] == 3
     assert payload["items"][0]["injectionCount"] == 2
     assert payload["items"][0]["usefulnessScore"] == 0.8
+    assert payload["items"][0]["corroboratedSuccessCount"] == 2
+    assert payload["items"][0]["corroboratedFailureCount"] == 1
+    assert payload["items"][0]["corroboratedUsefulnessScore"] == pytest.approx(1 / 3)
+    assert payload["items"][1]["corroboratedSuccessCount"] == 0
+    assert payload["items"][1]["corroboratedFailureCount"] == 0
+    assert payload["items"][1]["corroboratedUsefulnessScore"] == 0.0
     assert payload["items"][0]["lifecycleStatus"] == "active"
     assert payload["items"][0]["safetyStatus"] == "safe"
     assert payload["items"][0]["approvalStatus"] == "approved"
     assert "hidden-value" not in json.dumps(payload)
+
+
+def test_memory_page_rejects_entries_with_invalid_corroborated_fields(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    valid = _memory_entry(
+        "project-valid",
+        "project",
+        category="architecture",
+        tier="short_term",
+        content="Valid entry",
+        updated_at=10,
+    )
+    negative_count = _memory_entry(
+        "project-negative",
+        "project",
+        category="architecture",
+        tier="short_term",
+        content="Negative corroborated count",
+        updated_at=11,
+        corroborated_success_count=-1,
+    )
+    non_finite_score = _memory_entry(
+        "project-non-finite",
+        "project",
+        category="architecture",
+        tier="short_term",
+        content="Non-finite corroborated score",
+        updated_at=12,
+    )
+    non_finite_score["corroborated_usefulness_score"] = float("nan")
+    _write_memory_scope(
+        workspace / ".mini-code-memory",
+        "project",
+        [valid, negative_count, non_finite_score],
+    )
+
+    payload = DashboardReadModel(workspace, data_dir=data_dir).memory()
+
+    assert [item["id"] for item in payload["items"]] == ["project-valid"]
+    assert any(
+        item["code"] == "entry_invalid" for item in payload["diagnostics"]
+    )
 
 
 def test_memory_page_combines_filters_and_cursor_pagination(tmp_path: Path) -> None:

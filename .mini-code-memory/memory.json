@@ -1,6 +1,6 @@
 {
   "scope": "project",
-  "last_updated": 1785082406.7973561,
+  "last_updated": 1785086940.5828822,
   "entries": [
     {
       "id": "project-1785082406796413000-b6ecf281",
@@ -8,7 +8,7 @@
       "category": "task_context",
       "content": "Task Context: 你可以网上搜索一下 小红是谁吗？\n\nClaim:\n  Type: error_pattern\n  Statement: Observed error pattern for web_search: error[search_unavailable]: Web search is unavailable. Providers: baidu=response_unrecognized, duckduckgo=timeout.\n\n[System note: Network error detected. The previous attempt failed due to connectivity issues. Please retry the same operation. If it fails again, consider checking your network connection or trying an alternative approach. (This is retry attempt 2)]\n  Evidence: event-000003\n  Applies when: When web_search reports error[search_unavailable]: Web search is unavailable. Providers: baidu=response_unrecognized, duckduckgo=timeout.\n\n[System note: Network error detected. The pre.\n  Limitations: Observed in one task trace; broader recurrence is not yet established.\n\nClaim:\n  Type: error_pattern\n  Statement: Observed error pattern for web_search / TimeoutError: error[search_unavailable]: Web search is unavailable. Providers: baidu=response_unrecognized, duckduckgo=timeout.\n  Evidence: event-000004\n  Applies when: When web_search reports TimeoutError.\n  Limitations: Observed in one task trace; broader recurrence is not yet established.",
       "created_at": 1785082406.796439,
-      "updated_at": 1785082406.796439,
+      "updated_at": 1785086940.582079,
       "tags": [
         "self-reflection",
         "success",
@@ -189,17 +189,17 @@
       "failure_count": 0,
       "last_used": 0.0,
       "usefulness_score": 0.0,
-      "lifecycle_status": "active",
+      "lifecycle_status": "rejected",
       "tier_reason": "",
       "deprecated_at": null,
       "curator_locked": false,
       "safety_status": "safe",
       "safety_reason": "",
-      "approval_status": "pending",
+      "approval_status": "rejected",
       "approval_content_hash": "d1f7c968b90d94b8c4ed7318b22949d0d1e57206bc7fba204112f1caea753a18",
-      "approval_reason": "automatic memory requires user review",
-      "approval_actor": "safety_gate",
-      "approval_decided_at": 1785082406.7964532,
+      "approval_reason": "dashboard_rejected",
+      "approval_actor": "dashboard_user",
+      "approval_decided_at": 1785086940.581973,
       "approval_policy": "user_review_required"
     }
   ]

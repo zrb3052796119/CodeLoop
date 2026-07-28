@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from minicode.conversation import (
+    ConversationFeedbackConflict,
     ConversationRuntimeUnavailable,
     ConversationTurnCancelled,
     ConversationTurnService,
@@ -177,6 +178,127 @@ def _service(workspace, data_dir, factory, *, store=None, creator=create_new_ses
         turn_store=store,
         journal_factory=lambda resolved: RunJournal(resolved, data_dir=data_dir),
     )
+
+
+def test_completed_turn_records_one_explicit_run_user_signal(isolated) -> None:
+    workspace, data_dir = isolated
+    service = _service(workspace, data_dir, RuntimeFactory(Runtime()))
+    turn = service.turn(
+        message="safe",
+        session_id=None,
+        turn_id=TURN_ID,
+    )
+
+    first = service.record_feedback(TURN_ID, "correct")
+    repeated = service.record_feedback(TURN_ID, "correct")
+
+    assert first == repeated
+    assert first.turn_id == TURN_ID
+    assert first.run_id == turn.run_id
+    assert first.signal == "correct"
+    assert first.source == "explicit_user_action"
+    assert (
+        RunJournal(workspace, data_dir=data_dir)
+        .get_user_signal(turn.run_id)
+        .signal
+        == "correct"
+    )
+    with pytest.raises(ConversationFeedbackConflict):
+        service.record_feedback(TURN_ID, "accept")
+
+
+class RenderingRuntime(Runtime):
+    """A fake Runtime that also binds rendered Memory IDs to the Run, the
+    way the real AgentTurnRuntime does via emit_memory_result_safely."""
+
+    def __init__(self, entry_ids: list[str]) -> None:
+        super().__init__()
+        self.entry_ids = entry_ids
+
+    def execute(self, messages, observation, *, cancellation_token=None):
+        observation.record_rendered_memory_ids(self.entry_ids)
+        return super().execute(messages, observation, cancellation_token=cancellation_token)
+
+
+def test_accepted_feedback_applies_corroborated_memory_feedback_once(
+    isolated,
+) -> None:
+    from minicode.memory import MemoryManager, MemoryScope
+
+    workspace, data_dir = isolated
+    manager = MemoryManager(project_root=workspace)
+    entry = manager.add_entry(
+        MemoryScope.PROJECT,
+        "testing",
+        "Use pytest fixtures for auth tests",
+        tags=["test"],
+    )
+    assert entry is not None
+
+    service = _service(
+        workspace, data_dir, RuntimeFactory(RenderingRuntime([entry.id]))
+    )
+    service.turn(message="safe", session_id=None, turn_id=TURN_ID)
+
+    service.record_feedback(TURN_ID, "accept")
+    service.record_feedback(TURN_ID, "accept")  # idempotent replay
+
+    reloaded = MemoryManager(project_root=workspace)
+    updated = reloaded.memories[MemoryScope.PROJECT]._id_index[entry.id]
+    assert updated.corroborated_success_count == 1
+    assert updated.corroborated_failure_count == 0
+
+
+def test_rejected_feedback_corroborates_negatively(isolated) -> None:
+    from minicode.memory import MemoryManager, MemoryScope
+
+    workspace, data_dir = isolated
+    manager = MemoryManager(project_root=workspace)
+    entry = manager.add_entry(
+        MemoryScope.PROJECT,
+        "testing",
+        "Use pytest fixtures for auth tests",
+        tags=["test"],
+    )
+    assert entry is not None
+
+    service = _service(
+        workspace, data_dir, RuntimeFactory(RenderingRuntime([entry.id]))
+    )
+    service.turn(message="safe", session_id=None, turn_id=TURN_ID)
+
+    service.record_feedback(TURN_ID, "reject")
+
+    reloaded = MemoryManager(project_root=workspace)
+    updated = reloaded.memories[MemoryScope.PROJECT]._id_index[entry.id]
+    assert updated.corroborated_success_count == 0
+    assert updated.corroborated_failure_count == 1
+
+
+def test_feedback_without_rendered_memory_ids_leaves_memory_untouched(
+    isolated,
+) -> None:
+    from minicode.memory import MemoryManager, MemoryScope
+
+    workspace, data_dir = isolated
+    manager = MemoryManager(project_root=workspace)
+    entry = manager.add_entry(
+        MemoryScope.PROJECT,
+        "testing",
+        "Use pytest fixtures for auth tests",
+        tags=["test"],
+    )
+    assert entry is not None
+
+    service = _service(workspace, data_dir, RuntimeFactory(Runtime()))
+    service.turn(message="safe", session_id=None, turn_id=TURN_ID)
+
+    service.record_feedback(TURN_ID, "accept")
+
+    reloaded = MemoryManager(project_root=workspace)
+    updated = reloaded.memories[MemoryScope.PROJECT]._id_index[entry.id]
+    assert updated.corroborated_success_count == 0
+    assert updated.corroborated_failure_count == 0
 
 
 def test_accepted_cancel_wins_before_running_without_runtime_or_session_side_effects(

@@ -15,11 +15,15 @@ from minicode.pricing import (
 )
 from minicode.run_events import (
     AgentEventSink,
+    SkillUsageTracker,
+    VerificationTracker,
     emit_context_compaction_safely,
     emit_event_safely,
     emit_memory_result_safely,
     emit_recovery_completed_safely,
     emit_recovery_started_safely,
+    emit_skill_attribution_safely,
+    emit_task_outcome_safely,
     emit_working_memory_safely,
     new_context_operation_id,
     new_model_operation_id,
@@ -34,6 +38,10 @@ from minicode.turn_cancellation import (
     raise_if_cancelled,
 )
 from minicode.types import AgentStep, ChatMessage, ModelAdapter
+from minicode.verification_observation import (
+    VERIFICATION_EVENT_TYPE,
+    normalize_tool_verification,
+)
 
 # Hooks integration
 from minicode.hooks import HookEvent, fire_hook_sync
@@ -46,6 +54,7 @@ from minicode.working_memory import get_working_memory, protect_context
 # Work chain integration
 from minicode.intent_parser import parse_intent
 from minicode.task_object import build_task, TaskObject, TaskState
+from minicode.task_outcome import canonicalize_task_outcome
 from minicode.pipeline_engine import get_pipeline_engine
 from minicode.capability_registry import register_tool_capabilities
 from minicode.layered_context import ContextBuilder, LayeredContext
@@ -338,7 +347,9 @@ def _execute_single_tool(
     on_tool_result: Callable[[str, str, bool], None] | None,
     tool_scheduler: Any | None = None,
     event_sink: AgentEventSink | None = None,
+    skill_usage_tracker: SkillUsageTracker | None = None,
     cancellation_token: TurnCancellationToken | None = None,
+    verification_tracker: VerificationTracker | None = None,
 ) -> ToolResult:
     """Execute a single tool call with hooks, state updates, and crash protection.
     
@@ -382,6 +393,7 @@ def _execute_single_tool(
                     _runtime=runtime,
                     _event_sink=event_sink,
                     _step=step,
+                    _skill_usage_tracker=skill_usage_tracker,
                 ),
             )
             raise_if_cancelled(cancellation_token)
@@ -408,6 +420,20 @@ def _execute_single_tool(
         # re-raised below, everything else is converted to an error result by
         # the outer safety net. (The previous blind `execute_tool()` fallback
         # re-ran tools with side effects a second time.)
+
+        verification = normalize_tool_verification(
+            tool_name,
+            result.verification,
+        )
+        if verification is not None:
+            emit_event_safely(
+                event_sink,
+                VERIFICATION_EVENT_TYPE,
+                step=step,
+                payload=verification,
+            )
+            if verification_tracker is not None:
+                verification_tracker.record(verification)
 
         # Post-tool state updates (only for serial execution)
         if store:
@@ -679,22 +705,17 @@ def _apply_control_signal(
         )
 
     if control_signal.suggest_memory_persistence:
-        logger.info("FeedbackController: persisting working memory")
-        if context_compactor and hasattr(context_compactor, "_tool_budget"):
-            try:
-                context_compactor._tool_budget.flush()
-            except Exception:
-                pass
+        logger.info(
+            "FeedbackController: memory-persistence signal observed; "
+            "durable writes remain gated by task-end reflection"
+        )
 
     if control_signal.recommend_skill_update:
         logger.info(
-            "FeedbackController: skill update recommended (pattern=%.2f)",
+            "FeedbackController: skill-update signal observed without an "
+            "approved update actuator (pattern=%.2f)",
             system_state.pattern_reuse_rate,
         )
-        # Queue skill update for next maintenance cycle
-        if not hasattr(tool_scheduler, '_pending_skill_update'):
-            tool_scheduler._pending_skill_update = True
-        logger.info("FeedbackController: skill update queued for next maintenance cycle")
 
     if control_signal.reduce_tool_timeout:
         new_timeout = max(5.0, control_signal.reduce_tool_timeout)
@@ -775,6 +796,8 @@ def run_agent_turn(
     memory_mgr = memory_manager
 
     tool_scheduler = ToolScheduler(metrics_collector=metrics_collector)
+    skill_usage_tracker = SkillUsageTracker() if event_sink is not None else None
+    verification_tracker = VerificationTracker()
 
     # Initialize work chain if enabled
     task: TaskObject | None = None
@@ -814,6 +837,7 @@ def run_agent_turn(
 
         # 初始化所有工程控制论控制器（通过 Orchestrator 统一管理）
         orch = CyberneticOrchestrator()
+        orch._workspace = cwd
         orch.initialize(model, tools, runtime)
         feedback_controller = orch.feedback
         cybernetic_supervisor = orch.cyber_supervisor
@@ -1678,7 +1702,9 @@ def run_agent_turn(
                 result = _execute_single_tool(
                     call, tools, cwd, permissions, runtime, store, step,
                     on_tool_start, on_tool_result, tool_scheduler, event_sink,
+                    skill_usage_tracker,
                     cancellation_token,
+                    verification_tracker,
                 )
                 if metrics_collector:
                     metrics_collector.end_tool(
@@ -1722,7 +1748,9 @@ def run_agent_turn(
                                 _execute_single_tool,
                                 call, tools, cwd, permissions, runtime, None, step,
                                 on_tool_start, on_tool_result, tool_scheduler, event_sink,
+                                skill_usage_tracker,
                                 cancellation_token,
+                                verification_tracker,
                             ): call
                             for call in concurrent_calls
                         }
@@ -1744,7 +1772,9 @@ def run_agent_turn(
                         result = _execute_single_tool(
                             call, tools, cwd, permissions, runtime, store, step,
                             on_tool_start, on_tool_result, tool_scheduler, event_sink,
+                            skill_usage_tracker,
                             cancellation_token,
+                            verification_tracker,
                         )
                         if metrics_collector:
                             metrics_collector.end_tool(
@@ -1958,6 +1988,21 @@ def run_agent_turn(
         enable_work_chain = False
         raise
     finally:
+        canonical_outcome = canonicalize_task_outcome(
+            turn_outcome,
+            tool_error_count,
+        )
+        emit_task_outcome_safely(
+            event_sink,
+            canonical_outcome,
+            step=step,
+        )
+        emit_skill_attribution_safely(
+            event_sink,
+            skill_usage_tracker,
+            canonical_outcome,
+            step=step,
+        )
         fire_hook_sync(HookEvent.AGENT_STOP, step=step, tool_errors=tool_error_count)
 
         if metrics_collector and metrics_collector._current_turn is not None:
@@ -1967,17 +2012,32 @@ def run_agent_turn(
             metrics_collector.end_turn(total_tokens=total_tokens)
 
         if enable_work_chain and task:
-            final_state = TaskState.COMPLETED if tool_error_count == 0 else TaskState.FAILED
+            final_state = (
+                TaskState.COMPLETED
+                if canonical_outcome.goal_achieved
+                else TaskState.CANCELLED
+                if canonical_outcome.status == "cancelled"
+                else TaskState.FAILED
+            )
             task.set_state(final_state)
-            task.result_summary = f"Turn completed: {step} steps, {tool_error_count} errors"
+            task.result_summary = (
+                f"Turn {canonical_outcome.status}: {step} steps, "
+                f"{tool_error_count} tool errors"
+            )
 
             if auditor:
-                outcome = DecisionOutcome.SUCCESS if tool_error_count == 0 else DecisionOutcome.FAILURE
+                outcome = (
+                    DecisionOutcome.SUCCESS
+                    if canonical_outcome.goal_achieved
+                    else DecisionOutcome.FAILURE
+                )
                 auditor.complete_decision(
                     outcome,
                     step * 100.0,
                     task.result_summary,
-                    task.error_message if tool_error_count > 0 else "",
+                    task.error_message
+                    if not canonical_outcome.goal_achieved
+                    else "",
                 )
 
             logger.info(
@@ -1990,10 +2050,10 @@ def run_agent_turn(
             _append_trace_event(structured_trace, {
                 "type": "task_result",
                 "step": step,
-                "status": turn_outcome,
-                "final_outcome": turn_outcome,
-                "had_errors": tool_error_count > 0,
-                "errors_recovered": tool_error_count > 0 and turn_outcome == "success",
+                "status": canonical_outcome.status,
+                "final_outcome": canonical_outcome.status,
+                "had_errors": canonical_outcome.had_tool_errors,
+                "errors_recovered": canonical_outcome.errors_recovered,
                 "tool_error_count": tool_error_count,
                 "summary": _redact_trace_text(task.result_summary),
             })
@@ -2024,31 +2084,61 @@ def run_agent_turn(
             # 记忆质量反馈：只反馈给本轮实际注入的 entry_id。
             if orch and getattr(orch, "memory_pipeline", None) is not None:
                 try:
-                    orch.memory_pipeline.feedback(turn_outcome)
+                    _verification_passed, _verification_failed = (
+                        verification_tracker.snapshot()
+                    )
+                    orch.memory_pipeline.feedback(
+                        canonical_outcome.status,
+                        verification_passed=_verification_passed,
+                        verification_failed=_verification_failed,
+                    )
                 except Exception:
                     pass
 
             # 路由反馈学习：记录任务结果以优化未来路由
-            if smart_router and task:
+            routing_model_id = getattr(model, "model_id", None)
+            if (
+                not isinstance(routing_model_id, str)
+                or not routing_model_id.strip()
+            ):
+                routing_model_id = None
+            if (
+                smart_router
+                and task
+                and routing_model_id is not None
+                and canonical_outcome.learning_success is not None
+            ):
                 try:
                     outcome = TaskOutcome(
                         task_text=task.raw_input if hasattr(task, 'raw_input') else str(task.id),
-                        assigned_model=model.model_id if hasattr(model, 'model_id') else "unknown",
-                        success=(tool_error_count == 0),
+                        assigned_model=routing_model_id,
+                        success=canonical_outcome.learning_success,
                         duration_ms=step * 2000.0,
                         cost_usd=0.0,
                         tool_errors=tool_error_count,
-                        model_switches=model_switcher.switch_count() if model_switcher else 0,
+                        model_switches=model_switcher.switch_count if model_switcher else 0,
                     )
-                    smart_router.learner().record_outcome(outcome)
+                    smart_router.learner.record_outcome(outcome)
+                    smart_router.learner.flush()
+                except Exception:
+                    pass
+
+            if orch:
+                try:
+                    orch.task_end()
                 except Exception:
                     pass
 
         # 控制论反馈：记录模式有效性
-        if enable_work_chain and feedback_controller and task:
+        if (
+            enable_work_chain
+            and feedback_controller
+            and task
+            and canonical_outcome.learning_success is not None
+        ):
             pattern_id = f"{task_metadata.get('intent_type', 'unknown')}_{task.id}"
             feedback_controller.record_pattern_effectiveness(
-                pattern_id, tool_error_count == 0
+                pattern_id, canonical_outcome.learning_success
             )
 
         # 稳定性监测：记录快照
@@ -2186,17 +2276,16 @@ def run_agent_turn(
                         system_state.token_efficiency,
                     )
                 if control_signal.suggest_memory_persistence:
-                    logger.info("FeedbackController: persisting working memory")
-                    if context_compactor and hasattr(context_compactor, '_tool_budget'):
-                        try:
-                            context_compactor._tool_budget.flush()
-                        except Exception:
-                            pass
+                    logger.info(
+                        "FeedbackController: memory-persistence signal observed; "
+                        "durable writes remain gated by task-end reflection"
+                    )
                 if control_signal.recommend_skill_update:
-                    logger.info("FeedbackController: skill update recommended (pattern=%.2f)",
-                               system_state.pattern_reuse_rate)
-                    if not hasattr(tool_scheduler, '_pending_skill_update'):
-                        tool_scheduler._pending_skill_update = True
+                    logger.info(
+                        "FeedbackController: skill-update signal observed without "
+                        "an approved update actuator (pattern=%.2f)",
+                        system_state.pattern_reuse_rate,
+                    )
 
                 if control_signal.reduce_tool_timeout:
                     new_timeout = max(5.0, control_signal.reduce_tool_timeout)

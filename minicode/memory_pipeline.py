@@ -23,6 +23,7 @@ import time
 from typing import Any
 
 from minicode.logging_config import get_logger
+from minicode.run_events import verification_corroboration
 
 logger = get_logger("memory_pipeline")
 
@@ -554,11 +555,20 @@ class MemoryPipeline:
         self,
         task_success: bool | str,
         injected_memory_ids: list[str] | None = None,
+        *,
+        verification_passed: int = 0,
+        verification_failed: int = 0,
     ) -> None:
         """Task outcome → memory utility. Closes the outermost learning loop.
 
         Success → boost injected memories (positive reinforcement).
         Failure → gentle decay (they may have misled the agent).
+
+        ``verification_passed``/``verification_failed`` are an optional tally
+        of independently executed test/build/lint/typecheck outcomes observed
+        during this same turn. When present, they additionally drive
+        corroborated feedback — kept separate from the whole-turn label
+        because it is materially stronger, causally cleaner evidence.
         """
         if not self._memory or self._feedback_recorded:
             return
@@ -582,6 +592,13 @@ class MemoryPipeline:
         if hasattr(self._memory, "record_feedback"):
             self._memory.record_feedback(rendered_ids, success)
             self._feedback_recorded = True
+            corroborated = verification_corroboration(
+                verification_passed, verification_failed
+            )
+            if corroborated is not None and hasattr(
+                self._memory, "record_corroborated_feedback"
+            ):
+                self._memory.record_corroborated_feedback(rendered_ids, corroborated)
 
     @property
     def last_retrieval_result(self):

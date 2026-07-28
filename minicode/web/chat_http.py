@@ -9,11 +9,12 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 from minicode.conversation import (
+    ConversationFeedbackConflict,
+    ConversationFeedbackUnavailable,
     ConversationRuntimeUnavailable,
     ConversationSessionBusy,
     ConversationSessionConflict,
     ConversationSessionNotFound,
-    ConversationTurnFailed,
     ConversationTurnCancelled,
     ConversationTurnIdConflict,
     ConversationTurnInProgress,
@@ -26,6 +27,7 @@ from minicode.conversation_turn_store import TURN_ID_PATTERN, TURN_STATUSES
 CHAT_MAX_REQUEST_BODY_BYTES = 65_536
 CHAT_MAX_MESSAGE_CHARS = 32_000
 CHAT_CANCEL_MAX_REQUEST_BODY_BYTES = 1_024
+CHAT_FEEDBACK_MAX_REQUEST_BODY_BYTES = 1_024
 _SESSION_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}")
 _ALLOWED_FIELDS = frozenset({"message", "sessionId", "turnId"})
 _INVALID_REQUEST = {
@@ -163,6 +165,39 @@ def parse_chat_cancel_request(handler: _ChatHandler, path: str) -> str:
     if not isinstance(data, dict) or data:
         raise _InvalidChatRequest("cancel body must be empty")
     return match.group(1)
+
+
+def parse_chat_feedback_request(
+    handler: _ChatHandler,
+    path: str,
+) -> tuple[str, str]:
+    """Validate an exact explicit completed-Turn feedback action."""
+    match = re.fullmatch(
+        r"/api/v1/chat/turns/(turn_[0-9a-f]{32})/feedback",
+        path,
+    )
+    if "?" in handler.path or match is None:
+        raise _InvalidChatRequest("invalid feedback path")
+    _content_type(handler)
+    length = _content_length(
+        handler,
+        maximum=CHAT_FEEDBACK_MAX_REQUEST_BODY_BYTES,
+    )
+    try:
+        raw = handler.rfile.read(length)
+        data = json.loads(
+            raw.decode("utf-8", errors="strict"),
+            object_pairs_hook=_strict_object,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError, _InvalidChatRequest) as error:
+        raise _InvalidChatRequest("invalid JSON") from error
+    if (
+        not isinstance(data, dict)
+        or set(data) != {"signal"}
+        or data.get("signal") not in {"accept", "correct", "reject"}
+    ):
+        raise _InvalidChatRequest("invalid feedback body")
+    return match.group(1), str(data["signal"])
 
 
 def _send_error(
@@ -451,6 +486,68 @@ def serve_chat_turn_cancel(handler: _ChatHandler, path: str) -> None:
     )
 
 
+def serve_chat_turn_feedback(handler: _ChatHandler, path: str) -> None:
+    """Serve one explicit immutable post-completion user signal."""
+    try:
+        turn_id, signal = parse_chat_feedback_request(handler, path)
+    except _InvalidChatRequest:
+        handler._send_json(_INVALID_REQUEST, status=400)
+        return
+    try:
+        result = handler._conversation_turn_service().record_feedback(
+            turn_id,
+            signal,
+        )
+    except ConversationTurnNotFound:
+        _send_error(
+            handler,
+            status=404,
+            code="turn_not_found",
+            message="Turn was not found.",
+            turn_id=turn_id,
+        )
+        return
+    except ConversationFeedbackConflict:
+        _send_error(
+            handler,
+            status=409,
+            code="feedback_conflict",
+            message="Turn feedback was already recorded.",
+            turn_id=turn_id,
+        )
+        return
+    except ConversationFeedbackUnavailable:
+        _send_error(
+            handler,
+            status=409,
+            code="feedback_unavailable",
+            message="Turn feedback is unavailable.",
+            turn_id=turn_id,
+        )
+        return
+    except Exception:  # noqa: BLE001 - fixed safe boundary
+        _send_error(
+            handler,
+            status=500,
+            code="turn_failed",
+            message="Turn feedback could not be recorded.",
+            turn_id=turn_id,
+        )
+        return
+    handler._send_json(
+        {
+            "ok": True,
+            "schemaVersion": 1,
+            "mode": "read-write",
+            "turnId": result.turn_id,
+            "runId": result.run_id,
+            "signal": result.signal,
+            "source": result.source,
+            "recordedAt": result.recorded_at,
+        }
+    )
+
+
 def serve_chat_turn_status(handler: _ChatHandler, path: str) -> None:
     """Serve one allowlisted workspace-scoped durable Turn status."""
     prefix = "/api/v1/chat/turns/"
@@ -504,10 +601,13 @@ __all__ = [
     "CHAT_MAX_MESSAGE_CHARS",
     "CHAT_MAX_REQUEST_BODY_BYTES",
     "CHAT_CANCEL_MAX_REQUEST_BODY_BYTES",
+    "CHAT_FEEDBACK_MAX_REQUEST_BODY_BYTES",
     "ChatTurnRequest",
     "parse_chat_turn_request",
     "parse_chat_cancel_request",
+    "parse_chat_feedback_request",
     "serve_chat_turn",
     "serve_chat_turn_cancel",
+    "serve_chat_turn_feedback",
     "serve_chat_turn_status",
 ]

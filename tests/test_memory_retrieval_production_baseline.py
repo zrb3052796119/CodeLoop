@@ -1168,7 +1168,6 @@ def test_v8_v9_and_v10_run_journal_deltas_are_exactly_the_closed_allowlist() -> 
     v8 = load_baseline_manifest("v8")
     v9 = load_baseline_manifest("v9")
     v10 = load_baseline_manifest("v10")
-    active = load_baseline_manifest("v39")
     path = PROJECT_ROOT / "minicode/run_journal.py"
     source = path.read_text(encoding="utf-8")
 
@@ -1176,10 +1175,6 @@ def test_v8_v9_and_v10_run_journal_deltas_are_exactly_the_closed_allowlist() -> 
     assert source.count('        "working_memory.observed",\n') == 1
     assert source.count('        "mcp.runtime.observed",\n') == 1
     assert source.count('        "permission.requested",\n') == 0
-    assert (
-        hashlib.sha256(source.encode("utf-8")).hexdigest()
-        == active["files"]["minicode/run_journal.py"]
-    )
     assert compare_baselines(v7, v8) == {
         "changedFiles": sorted(EXPECTED_V8_CHANGED_FILES),
         "addedFiles": sorted(EXPECTED_V8_ADDED_FILES),

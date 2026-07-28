@@ -571,7 +571,7 @@ def test_error_pattern_cannot_bypass_unverified_recovery_context(
     assert "unverified_recovery_context" in decision.reason_codes
 
 
-def test_failed_specific_error_without_recovery_remains_durable() -> None:
+def test_single_failed_error_without_recovery_is_not_durable() -> None:
     claim = ReflectionClaim(
         "claim-error",
         "error_pattern",
@@ -602,6 +602,48 @@ def test_failed_specific_error_without_recovery_remains_durable() -> None:
     decision = ReflectionValueGate().evaluate(
         candidate,
         ClaimValidationResult(valid_claims=[claim]),
+        evidence,
+    )
+
+    assert decision.accepted is False
+    assert decision.durable_signals == []
+    assert "single_observation_error_pattern" in decision.reason_codes
+
+
+def test_reproduced_error_pattern_is_durable_without_recovery() -> None:
+    claims = [
+        ReflectionClaim(
+            f"claim-error-{index}",
+            "error_pattern",
+            "lock_probe_timeout",
+            "lock_probe failed with LockTimeout after 200 milliseconds.",
+            [f"event-{index}"],
+            "confirmed",
+            applies_when="When lock_probe runs.",
+            limitations=["Reproduced in the same task trace."],
+            related_error_ids=[f"error-{index}"],
+        )
+        for index in (1, 2)
+    ]
+    evidence = TaskEvidence(
+        errors=[
+            ErrorEvidence(
+                f"error-{index}",
+                f"call-{index}",
+                "lock_probe",
+                "LockTimeout",
+                "lock_probe failed with LockTimeout after 200 milliseconds.",
+                (f"event-{index}",),
+            )
+            for index in (1, 2)
+        ],
+        outcome="failed",
+        had_errors=True,
+    )
+
+    decision = ReflectionValueGate().evaluate(
+        ReflectionCandidate("Probe lock twice", "failed", claims),
+        ClaimValidationResult(valid_claims=claims),
         evidence,
     )
 

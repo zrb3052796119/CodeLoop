@@ -174,8 +174,9 @@ def test_agent_emits_snapshot_only_after_real_protection(
         "model.completed",
         "model.costed",
         "working_memory.observed",
+        "task.outcome",
     ]
-    assert events[-1][1] == {
+    assert events[-2][1] == {
         "workingMemoryVersion": 1,
         "action": "protected",
         "scope": "process",

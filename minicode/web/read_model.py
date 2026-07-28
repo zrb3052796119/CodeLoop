@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import hashlib
 import json
 import math
 import os
@@ -42,12 +43,15 @@ from minicode.session import (
     persistence_generation,
     validate_session_delta,
 )
+from minicode.skill_evidence import SkillEvidenceLedger
+from minicode.skill_versions import SkillVersionLedger
 from minicode.skills import (
     SkillSummary,
     discover_skills,
     extract_description,
     parse_frontmatter,
 )
+from minicode.task_outcome_event import normalize_task_outcome_payload
 from minicode.web.context_aggregation import (
     ContextAggregate,
     aggregate_run_context,
@@ -153,6 +157,7 @@ _TRACE_MODEL_OPERATION_ID_RE = re.compile(r"^modelop_[0-9a-f]{32}$")
 _TRACE_CONTEXT_OPERATION_ID_RE = re.compile(r"^ctxop_[0-9a-f]{32}$")
 _TRACE_SKILL_NAME_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_./-]{0,255}$")
 _TRACE_SKILL_DIRECTORY_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,63}$")
+_TRACE_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _MAX_TRACE_ASSISTANT_CONTENT_LENGTH = 1_000_000
 _MAX_TRACE_MODEL_TOOL_CALL_COUNT = 1_000
 _MAX_TRACE_MODEL_TOKENS = 1_000_000_000
@@ -162,6 +167,9 @@ _MAX_USAGE_EVENTS_PER_RUN = 1_000
 _USAGE_EVENT_PAGE_LIMIT = 100
 _MAX_TRACE_ROUTING_SKILLS = 100_000
 _MAX_TRACE_SELECTED_SKILLS = 20
+_TRACE_TASK_OUTCOME_STATUSES = frozenset(
+    {"success", "failed", "unknown", "cancelled"}
+)
 _MAX_TRACE_MEMORY_COUNT = 100_000
 _MAX_TRACE_MEMORY_TOKENS = 10_000_000
 _MAX_TRACE_CONTEXT_MESSAGES = 100_000
@@ -785,8 +793,11 @@ def _run_event_details(
         if kind == "returned_assistant":
             details["kind"] = kind
         return details
+    if event_type == "task.outcome":
+        return normalize_task_outcome_payload(payload) or details
     if event_type == "skill.routed":
-        if payload.get("routingVersion") != 1:
+        routing_version = payload.get("routingVersion")
+        if routing_version not in {1, 2}:
             return details
         intent_type = payload.get("intentType")
         action_type = payload.get("actionType")
@@ -795,7 +806,7 @@ def _run_event_details(
         used_fallback = payload.get("usedFallback")
         selected_value = payload.get("selected")
         if intent_type in _TRACE_INTENT_TYPES:
-            details["routingVersion"] = 1
+            details["routingVersion"] = routing_version
             details["intentType"] = intent_type
         if action_type in _TRACE_ACTION_TYPES:
             details["actionType"] = action_type
@@ -820,6 +831,7 @@ def _run_event_details(
                 source = raw_item.get("source")
                 directory = raw_item.get("directory")
                 score = raw_item.get("score")
+                content_digest = raw_item.get("contentDigest")
                 if (
                     not isinstance(qualified_name, str)
                     or not _TRACE_SKILL_NAME_RE.fullmatch(qualified_name)
@@ -833,16 +845,25 @@ def _run_event_details(
                     or not isinstance(score, (int, float))
                     or not math.isfinite(float(score))
                     or abs(float(score)) > 1_000_000
+                    or (
+                        routing_version == 2
+                        and (
+                            not isinstance(content_digest, str)
+                            or _TRACE_SHA256_RE.fullmatch(content_digest)
+                            is None
+                        )
+                    )
                 ):
                     continue
-                selected.append(
-                    {
-                        "qualifiedName": qualified_name,
-                        "source": source,
-                        "directory": directory,
-                        "score": score,
-                    }
-                )
+                item = {
+                    "qualifiedName": qualified_name,
+                    "source": source,
+                    "directory": directory,
+                    "score": score,
+                }
+                if routing_version == 2:
+                    item["contentDigest"] = content_digest
+                selected.append(item)
         details["selected"] = selected
         if "selectedCount" in details:
             details["selectedTruncated"] = (
@@ -851,6 +872,108 @@ def _run_event_details(
         if isinstance(used_fallback, bool):
             details["usedFallback"] = used_fallback
         return details
+    if event_type == "skill.loaded":
+        if payload.get("loadVersion") != 1:
+            return details
+        qualified_name = payload.get("qualifiedName")
+        source = payload.get("source")
+        directory = payload.get("directory")
+        content_digest = payload.get("contentDigest")
+        if (
+            not isinstance(qualified_name, str)
+            or _TRACE_SKILL_NAME_RE.fullmatch(qualified_name) is None
+            or source not in _TRACE_SKILL_SOURCES
+            or not isinstance(directory, str)
+            or (
+                directory
+                and _TRACE_SKILL_DIRECTORY_RE.fullmatch(directory) is None
+            )
+            or not isinstance(content_digest, str)
+            or _TRACE_SHA256_RE.fullmatch(content_digest) is None
+        ):
+            return details
+        return {
+            "loadVersion": 1,
+            "qualifiedName": qualified_name,
+            "source": source,
+            "directory": directory,
+            "contentDigest": content_digest,
+        }
+    if event_type == "skill.attributed":
+        if (
+            payload.get("attributionVersion") != 1
+            or payload.get("attributionKind") != "task_correlation"
+        ):
+            return details
+        outcome_status = payload.get("outcomeStatus")
+        goal_achieved = payload.get("goalAchieved")
+        had_tool_errors = payload.get("hadToolErrors")
+        errors_recovered = payload.get("errorsRecovered")
+        tool_error_count = payload.get("toolErrorCount")
+        loaded_skill_count = payload.get("loadedSkillCount")
+        loaded_skills_value = payload.get("loadedSkills")
+        loaded_skills_truncated = payload.get("loadedSkillsTruncated")
+        if (
+            outcome_status not in _TRACE_TASK_OUTCOME_STATUSES
+            or not isinstance(goal_achieved, bool)
+            or goal_achieved != (outcome_status == "success")
+            or not isinstance(had_tool_errors, bool)
+            or not isinstance(errors_recovered, bool)
+            or isinstance(tool_error_count, bool)
+            or not isinstance(tool_error_count, int)
+            or not 0 <= tool_error_count <= _MAX_TRACE_ROUTING_SKILLS
+            or had_tool_errors != (tool_error_count > 0)
+            or errors_recovered != (had_tool_errors and goal_achieved)
+            or isinstance(loaded_skill_count, bool)
+            or not isinstance(loaded_skill_count, int)
+            or not 1 <= loaded_skill_count <= _MAX_TRACE_SELECTED_SKILLS
+            or not isinstance(loaded_skills_value, list)
+            or len(loaded_skills_value) != loaded_skill_count
+            or not isinstance(loaded_skills_truncated, bool)
+        ):
+            return details
+
+        loaded_skills: list[dict[str, object]] = []
+        for raw_item in loaded_skills_value:
+            if not isinstance(raw_item, dict):
+                return details
+            qualified_name = raw_item.get("qualifiedName")
+            source = raw_item.get("source")
+            directory = raw_item.get("directory")
+            content_digest = raw_item.get("contentDigest")
+            if (
+                not isinstance(qualified_name, str)
+                or _TRACE_SKILL_NAME_RE.fullmatch(qualified_name) is None
+                or source not in _TRACE_SKILL_SOURCES
+                or not isinstance(directory, str)
+                or (
+                    directory
+                    and _TRACE_SKILL_DIRECTORY_RE.fullmatch(directory) is None
+                )
+                or not isinstance(content_digest, str)
+                or _TRACE_SHA256_RE.fullmatch(content_digest) is None
+            ):
+                return details
+            loaded_skills.append(
+                {
+                    "qualifiedName": qualified_name,
+                    "source": source,
+                    "directory": directory,
+                    "contentDigest": content_digest,
+                }
+            )
+        return {
+            "attributionVersion": 1,
+            "attributionKind": "task_correlation",
+            "outcomeStatus": outcome_status,
+            "goalAchieved": goal_achieved,
+            "hadToolErrors": had_tool_errors,
+            "errorsRecovered": errors_recovered,
+            "toolErrorCount": tool_error_count,
+            "loadedSkillCount": loaded_skill_count,
+            "loadedSkills": loaded_skills,
+            "loadedSkillsTruncated": loaded_skills_truncated,
+        }
     if event_type == "memory.retrieved":
         if payload.get("retrievalVersion") != 1:
             return details
@@ -1554,7 +1677,10 @@ class DashboardReadModel:
             "permission.requested": "Permission requested",
             "permission.decided": "Permission decided",
             "assistant.completed": "Assistant response completed",
+            "task.outcome": "Canonical task outcome recorded",
             "skill.routed": "Skill routing recorded",
+            "skill.loaded": "Skill loaded",
+            "skill.attributed": "Skill outcome attributed",
             "memory.retrieved": "Memory retrieval recorded",
             "memory.rendered": "Memory rendering recorded",
             "working_memory.observed": "Working memory observed",
@@ -2310,6 +2436,9 @@ class DashboardReadModel:
                     "retrievalCount": entry.retrieval_count,
                     "injectionCount": entry.injection_count,
                     "usefulnessScore": entry.usefulness_score,
+                    "corroboratedSuccessCount": entry.corroborated_success_count,
+                    "corroboratedFailureCount": entry.corroborated_failure_count,
+                    "corroboratedUsefulnessScore": entry.corroborated_usefulness_score,
                     "lifecycleStatus": entry.lifecycle_status,
                     "safetyStatus": entry.safety_status,
                     "approvalStatus": entry.approval_status,
@@ -2512,6 +2641,8 @@ class DashboardReadModel:
         )
         last = page_records[len(items) - 1] if items else None
         last_key = sort_key(last) if last is not None else None
+        evidence = self._skill_evidence()
+        version_ledger = self._skill_versions(records, evidence)
         payload: dict[str, object] = {
             "schemaVersion": 1,
             "generatedAt": generated_at,
@@ -2530,6 +2661,8 @@ class DashboardReadModel:
                 "directories": directories[:100],
             },
             "items": items,
+            "evidence": evidence,
+            "versionLedger": version_ledger,
             "page": {
                 "limit": page_limit,
                 "hasMore": has_more,
@@ -2553,6 +2686,70 @@ class DashboardReadModel:
             "diagnostics": diagnostics[:_MAX_DIAGNOSTICS],
         }
         return _redact_value(payload)
+
+    def _skill_evidence(self) -> dict[str, object]:
+        message = (
+            "Shadow-only correlation; never grants routing or promotion authority."
+        )
+        try:
+            ledger = SkillEvidenceLedger(self._run_journal).snapshot()
+        except Exception:  # noqa: BLE001 - source-local read failure
+            return {
+                "status": "unavailable",
+                "scope": "retained-run-journal",
+                "message": "Skill evidence could not be read.",
+                "ledger": None,
+            }
+        partial = (
+            ledger["runsTruncated"] is True
+            or ledger["evaluationsTruncated"] is True
+            or ledger["journalDiagnostics"] > 0
+            or ledger["excludedRuns"]["eventScanLimited"] > 0
+            or ledger["excludedRuns"]["eventReadIncomplete"] > 0
+        )
+        return {
+            "status": "partial" if partial else "live",
+            "scope": "retained-run-journal",
+            "message": message,
+            "ledger": ledger,
+        }
+
+    def _skill_versions(
+        self,
+        records: list[SkillSummary],
+        evidence: Mapping[str, object],
+    ) -> dict[str, object]:
+        evidence_ledger = evidence.get("ledger")
+        evidence_available = isinstance(evidence_ledger, Mapping)
+        if not evidence_available:
+            evidence_ledger = {
+                "ledgerVersion": 1,
+                "mode": "shadow",
+                "evaluations": [],
+                "promotionEligible": False,
+            }
+        try:
+            ledger = SkillVersionLedger(self.workspace).snapshot(
+                records,
+                evidence_ledger,
+            )
+        except Exception:  # noqa: BLE001 - source-local read failure
+            return {
+                "status": "unavailable",
+                "scope": "project-skill-version-ledger",
+                "message": "Skill version history could not be read.",
+                "ledger": None,
+            }
+        partial = not evidence_available or evidence.get("status") != "live"
+        return {
+            "status": "partial" if partial else "live",
+            "scope": "project-skill-version-ledger",
+            "message": (
+                "Observed immutable lineage; all promotion and rollback "
+                "execution remains locked."
+            ),
+            "ledger": ledger,
+        }
 
     def _skill_records_for_page(
         self,
@@ -2838,6 +3035,9 @@ class DashboardReadModel:
                 tools=self._skill_metadata_values(metadata.get("tools")),
                 keywords=values("keywords"),
                 examples=self._skill_metadata_values(metadata.get("examples")),
+                content_digest=hashlib.sha256(
+                    text.encode("utf-8")
+                ).hexdigest(),
             ),
             path.resolve(strict=True).stat().st_mtime,
         )
@@ -3373,12 +3573,15 @@ class DashboardReadModel:
                         entry.last_accessed,
                         entry.last_used,
                         entry.usefulness_score,
+                        entry.corroborated_usefulness_score,
                     )
                     counters = (
                         entry.retrieval_count,
                         entry.injection_count,
                         entry.success_count,
                         entry.failure_count,
+                        entry.corroborated_success_count,
+                        entry.corroborated_failure_count,
                     )
                     if (
                         any(not math.isfinite(float(value)) for value in numeric_values)

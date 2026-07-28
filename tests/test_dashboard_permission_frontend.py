@@ -725,6 +725,7 @@ async function loadSessionDetail(sessionId) {
   return 'loaded';
 }
 function resetChatStreamState() {}
+function setCompletedFeedbackTarget() {}
 const pendingEmpty = {
   schemaVersion: 1, generatedAt: '2026-07-20T00:00:03.000Z', mode: 'read-only',
   source: 'gateway-permission-broker', revision: `permissionrev_${'b'.repeat(32)}`, items: [],
@@ -885,6 +886,8 @@ function chatTargetSessionId() { return null; }
 function resetChatStreamState(turnId = null, generation = 0) {
   Object.assign(chatStreamStore, { turnId, generation, phase: turnId ? 'connecting' : 'idle' });
 }
+function resetChatFeedbackTarget() {}
+function setCompletedFeedbackTarget() {}
 function persistActiveTurn() {}
 function persistSessionSelection() {}
 function renderConversationDock() {}

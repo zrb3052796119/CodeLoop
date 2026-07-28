@@ -1052,6 +1052,26 @@ class ReflectionValueGate:
                 rejected_claim_ids=rejected_ids,
             )
 
+        has_verified_recovery = (
+            has_passed_verification
+            and any(
+                recovery.epistemic_status == "confirmed"
+                for recovery in evidence.recoveries
+            )
+        )
+        has_recurrent_error = self._has_recurrent_error(evidence)
+        if (
+            accepted_types
+            and accepted_types <= {"error_pattern", "warning"}
+            and not has_verified_recovery
+            and not has_recurrent_error
+        ):
+            return ReflectionValueDecision(
+                accepted=False,
+                reason_codes=["single_observation_error_pattern"],
+                rejected_claim_ids=rejected_ids,
+            )
+
         return ReflectionValueDecision(
             accepted=True,
             reason_codes=["accepted_durable_reflection"],
@@ -1059,6 +1079,20 @@ class ReflectionValueGate:
             accepted_claim_ids=accepted_claim_ids,
             rejected_claim_ids=rejected_ids,
         )
+
+    def _has_recurrent_error(self, evidence: TaskEvidence) -> bool:
+        signatures: dict[tuple[str, str, str], set[str]] = {}
+        for error in evidence.errors:
+            signature = (
+                _normalize_text(error.tool_name),
+                _normalize_text(error.error_type),
+                _normalize_text(error.message),
+            )
+            if not any(signature):
+                continue
+            occurrence_id = error.call_id or error.error_id
+            signatures.setdefault(signature, set()).add(occurrence_id)
+        return any(len(occurrences) >= 2 for occurrences in signatures.values())
 
     def _signals_for_claim(self, claim: ReflectionClaim) -> list[str]:
         if claim.claim_type == "constraint":

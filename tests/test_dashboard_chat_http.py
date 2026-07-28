@@ -11,6 +11,8 @@ from pathlib import Path
 import pytest
 
 from minicode.conversation import (
+    ConversationFeedbackConflict,
+    ConversationFeedbackUnavailable,
     ConversationRuntimeUnavailable,
     ConversationSessionBusy,
     ConversationSessionConflict,
@@ -60,6 +62,13 @@ class RecordingChatService:
             run_id="run_" + "a" * 32,
             updated_at="2026-07-19T10:00:01.000Z",
         )
+        self.feedback_outcome = SimpleNamespace(
+            turn_id="turn_" + "b" * 32,
+            run_id="run_" + "a" * 32,
+            signal="accept",
+            source="explicit_user_action",
+            recorded_at="2026-07-19T10:00:02.000Z",
+        )
 
     def turn(self, **kwargs):
         self.calls.append(kwargs)
@@ -78,6 +87,14 @@ class RecordingChatService:
         if isinstance(self.cancel_outcome, BaseException):
             raise self.cancel_outcome
         return self.cancel_outcome
+
+    def record_feedback(self, turn_id, signal):
+        self.calls.append(
+            {"feedback_turn_id": turn_id, "signal": signal}
+        )
+        if isinstance(self.feedback_outcome, BaseException):
+            raise self.feedback_outcome
+        return self.feedback_outcome
 
 
 class AcceptedStartGateStore(ConversationTurnStore):
@@ -424,6 +441,97 @@ def test_chat_turn_cancel_is_strict_idempotent_and_allowlisted(chat_server) -> N
         forbidden not in json.dumps(payload).lower()
         for forbidden in ("fingerprint", "owner", "reason", "token")
     )
+
+
+def test_chat_turn_feedback_is_explicit_versioned_and_content_free(
+    chat_server,
+) -> None:
+    port, service = chat_server
+
+    status, headers, payload = post(
+        port,
+        b'{"signal":"accept"}',
+        path="/api/v1/chat/turns/turn_" + "b" * 32 + "/feedback",
+    )
+
+    assert status == 200
+    assert headers["Cache-Control"] == "no-store"
+    assert payload == {
+        "ok": True,
+        "schemaVersion": 1,
+        "mode": "read-write",
+        "turnId": "turn_" + "b" * 32,
+        "runId": "run_" + "a" * 32,
+        "signal": "accept",
+        "source": "explicit_user_action",
+        "recordedAt": "2026-07-19T10:00:02.000Z",
+    }
+    assert service.calls == [
+        {
+            "feedback_turn_id": "turn_" + "b" * 32,
+            "signal": "accept",
+        }
+    ]
+    serialized = json.dumps(payload).lower()
+    assert "message" not in serialized
+    assert "reason" not in serialized
+
+
+@pytest.mark.parametrize(
+    ("body", "path", "content_type"),
+    [
+        (b"", "/api/v1/chat/turns/turn_" + "b" * 32 + "/feedback", "application/json"),
+        (b"{}", "/api/v1/chat/turns/turn_" + "b" * 32 + "/feedback", "application/json"),
+        (b'{"signal":"yes"}', "/api/v1/chat/turns/turn_" + "b" * 32 + "/feedback", "application/json"),
+        (b'{"signal":"accept","reason":"secret"}', "/api/v1/chat/turns/turn_" + "b" * 32 + "/feedback", "application/json"),
+        (b'{"signal":"accept","signal":"reject"}', "/api/v1/chat/turns/turn_" + "b" * 32 + "/feedback", "application/json"),
+        (b'{"signal":"accept"}', "/api/v1/chat/turns/turn_" + "B" * 32 + "/feedback", "application/json"),
+        (b'{"signal":"accept"}', "/api/v1/chat/turns/turn_" + "b" * 32 + "/feedback?retry=1", "application/json"),
+        (b'{"signal":"accept"}', "/api/v1/chat/turns/turn_" + "b" * 32 + "/feedback", "text/plain"),
+    ],
+)
+def test_chat_turn_feedback_rejects_implicit_or_invalid_signal(
+    chat_server,
+    body: bytes,
+    path: str,
+    content_type: str,
+) -> None:
+    port, service = chat_server
+
+    status, _, payload = post(port, body, path=path, content_type=content_type)
+
+    assert status == 400
+    assert payload["error"]["code"] == "invalid_request"
+    assert service.calls == []
+
+
+@pytest.mark.parametrize(
+    ("outcome", "expected_status", "code"),
+    [
+        (ConversationTurnNotFound(), 404, "turn_not_found"),
+        (ConversationFeedbackConflict(), 409, "feedback_conflict"),
+        (ConversationFeedbackUnavailable(), 409, "feedback_unavailable"),
+        (RuntimeError("Bearer fixture-secret"), 500, "turn_failed"),
+    ],
+)
+def test_chat_turn_feedback_maps_only_fixed_errors(
+    chat_server,
+    outcome,
+    expected_status: int,
+    code: str,
+) -> None:
+    port, service = chat_server
+    service.feedback_outcome = outcome
+
+    status, _, payload = post(
+        port,
+        b'{"signal":"reject"}',
+        path="/api/v1/chat/turns/turn_" + "b" * 32 + "/feedback",
+    )
+
+    assert status == expected_status
+    assert payload["error"]["code"] == code
+    assert "fixture-secret" not in json.dumps(payload)
 
 
 def test_http_accepted_boundary_cancel_returns_turn_cancelled_and_persists_terminal(

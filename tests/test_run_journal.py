@@ -8,11 +8,14 @@ from pathlib import Path
 
 import pytest
 
+from minicode.deletion_store import DeletionLedger
 from minicode.run_journal import (
     RunEvent,
     RunJournal,
     RunJournalOwnershipError,
+    RunJournalStorageError,
     RunJournalTransitionError,
+    RunJournalUserSignalConflictError,
     RunJournalValidationError,
     RunRecord,
 )
@@ -134,6 +137,383 @@ def test_append_transition_and_terminal_idempotency_preserve_one_writer(
     ).read_text(encoding="utf-8")
     assert "very-secret-token" not in persisted
     assert "sk-test-secret" not in persisted
+
+
+def test_run_journal_accepts_loaded_skill_observation(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(workspace, data_dir=tmp_path / "home" / ".mini-code")
+    record = journal.create_run(title="Load a Skill", source="headless")
+    journal.transition(record.id, "running")
+
+    event = journal.append_event(
+        record.id,
+        "skill.loaded",
+        step=2,
+        payload={
+            "loadVersion": 1,
+            "qualifiedName": "memory-audit",
+            "source": "project",
+            "directory": "",
+            "contentDigest": "a" * 64,
+        },
+    )
+
+    assert event.type == "skill.loaded"
+    assert event.step == 2
+    assert event.payload["qualifiedName"] == "memory-audit"
+
+
+def test_run_journal_accepts_canonical_task_outcome(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(workspace, data_dir=tmp_path / "home" / ".mini-code")
+    record = journal.create_run(title="Complete a task", source="headless")
+    journal.transition(record.id, "running")
+    payload = {
+        "outcomeVersion": 1,
+        "outcomeStatus": "success",
+        "goalAchieved": True,
+        "learningSuccess": True,
+        "hadToolErrors": True,
+        "errorsRecovered": True,
+        "toolErrorCount": 1,
+    }
+
+    event = journal.append_event(
+        record.id,
+        "task.outcome",
+        step=3,
+        payload=payload,
+    )
+
+    assert event.type == "task.outcome"
+    assert event.step == 3
+    assert event.payload == payload
+
+
+def test_run_journal_accepts_only_canonical_verification_observation(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(workspace, data_dir=tmp_path / "home" / ".mini-code")
+    record = journal.create_run(title="Verify a task", source="headless")
+    journal.transition(record.id, "running")
+    payload = {
+        "verificationVersion": 1,
+        "kind": "tests",
+        "outcome": "passed",
+        "source": "test_runner",
+    }
+
+    event = journal.append_event(
+        record.id,
+        "task.verified",
+        step=2,
+        payload=payload,
+    )
+
+    assert event.type == "task.verified"
+    assert event.payload == payload
+    with pytest.raises(RunJournalValidationError):
+        journal.append_event(
+            record.id,
+            "task.verified",
+            step=3,
+            payload={**payload, "output": "secret-bearing output"},
+        )
+
+
+def test_rendered_memory_ids_are_recorded_while_running_and_readable_after_completion(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    record = journal.create_run(title="Answer a user", source="gateway")
+    journal.transition(record.id, "running")
+    entry_ids = [
+        "project-1785082406796413000-b6ecf281",
+        "user-1785082406796413001-a1b2c3d4",
+    ]
+
+    journal.record_rendered_memory_ids(record.id, entry_ids)
+    journal.transition(record.id, "completed")
+
+    loaded = RunJournal(workspace, data_dir=data_dir).get_rendered_memory_ids(record.id)
+    assert loaded == tuple(entry_ids)
+    rendered_path = (
+        _runs_root(data_dir, record.workspace_id)
+        / record.id
+        / "memory_rendered.json"
+    )
+    assert rendered_path.stat().st_mode & 0o777 == 0o600
+    persisted = rendered_path.read_text(encoding="utf-8")
+    assert "Answer a user" not in persisted
+
+
+def test_rendered_memory_ids_reject_invalid_entries_oversized_lists_and_duplicates(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(workspace, data_dir=tmp_path / "home" / ".mini-code")
+    record = journal.create_run(title="Invalid ids", source="gateway")
+    journal.transition(record.id, "running")
+
+    with pytest.raises(RunJournalValidationError):
+        journal.record_rendered_memory_ids(record.id, ["../secret"])
+    with pytest.raises(RunJournalValidationError):
+        journal.record_rendered_memory_ids(
+            record.id,
+            [f"project-{index}-aaaaaaaa" for index in range(21)],
+        )
+    # An empty/no-op list is accepted and simply records nothing.
+    journal.record_rendered_memory_ids(record.id, [])
+    assert journal.get_rendered_memory_ids(record.id) is None
+    # Duplicate IDs are deduplicated rather than rejected.
+    journal.record_rendered_memory_ids(
+        record.id,
+        ["project-1785082406796413000-b6ecf281", "project-1785082406796413000-b6ecf281"],
+    )
+    assert journal.get_rendered_memory_ids(record.id) == (
+        "project-1785082406796413000-b6ecf281",
+    )
+
+
+def test_rendered_memory_ids_require_writer_ownership(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    record = journal.create_run(title="Terminal", source="gateway")
+    journal.transition(record.id, "running")
+    journal.transition(record.id, "completed")
+
+    # A terminal transition releases the writer mutex, so a completed Run
+    # (even from the same process) is rejected as ownership loss rather than
+    # reaching the separate terminal-status check.
+    with pytest.raises(RunJournalOwnershipError):
+        journal.record_rendered_memory_ids(
+            record.id, ["project-1785082406796413000-b6ecf281"]
+        )
+
+    reopened = RunJournal(workspace, data_dir=data_dir)
+    with pytest.raises(RunJournalOwnershipError):
+        reopened.record_rendered_memory_ids(
+            record.id, ["project-1785082406796413000-b6ecf281"]
+        )
+
+
+def test_rendered_memory_ids_symlink_is_rejected_without_overwriting_target(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    record = journal.create_run(title="Symlink", source="gateway")
+    journal.transition(record.id, "running")
+    outside = tmp_path / "outside.json"
+    outside.write_text('{"secret":"preserve"}\n', encoding="utf-8")
+    rendered_path = (
+        _runs_root(data_dir, record.workspace_id)
+        / record.id
+        / "memory_rendered.json"
+    )
+    rendered_path.symlink_to(outside)
+
+    with pytest.raises(RunJournalStorageError):
+        journal.get_rendered_memory_ids(record.id)
+    with pytest.raises(RunJournalStorageError):
+        journal.record_rendered_memory_ids(
+            record.id, ["project-1785082406796413000-b6ecf281"]
+        )
+
+    assert rendered_path.is_symlink()
+    assert outside.read_text(encoding="utf-8") == '{"secret":"preserve"}\n'
+
+
+def test_get_rendered_memory_ids_returns_none_when_absent(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(workspace, data_dir=tmp_path / "home" / ".mini-code")
+    record = journal.create_run(title="No memory", source="gateway")
+    journal.transition(record.id, "running")
+
+    assert journal.get_rendered_memory_ids(record.id) is None
+
+
+def test_completed_run_user_signal_is_immutable_private_and_restart_safe(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    record = journal.create_run(title="Answer a user", source="gateway")
+    journal.transition(record.id, "running")
+    journal.transition(record.id, "completed")
+
+    first = journal.record_user_signal(record.id, "accept")
+    repeated = journal.record_user_signal(record.id, "accept")
+    loaded = RunJournal(workspace, data_dir=data_dir).get_user_signal(record.id)
+
+    assert first == repeated == loaded
+    assert first.to_dict() == {
+        "schemaVersion": 1,
+        "signal": "accept",
+        "source": "explicit_user_action",
+        "recordedAt": first.recorded_at,
+    }
+    signal_path = (
+        _runs_root(data_dir, record.workspace_id)
+        / record.id
+        / "user_signal.json"
+    )
+    assert signal_path.stat().st_mode & 0o777 == 0o600
+    persisted = signal_path.read_text(encoding="utf-8")
+    assert record.id not in persisted
+    assert "Answer a user" not in persisted
+
+    with pytest.raises(RunJournalUserSignalConflictError):
+        journal.record_user_signal(record.id, "reject")
+    assert RunJournal(workspace, data_dir=data_dir).get_user_signal(
+        record.id
+    ) == first
+
+
+def test_user_signal_requires_completed_run_and_closed_enum(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(workspace, data_dir=tmp_path / "home" / ".mini-code")
+    record = journal.create_run(title="Incomplete", source="gateway")
+    journal.transition(record.id, "running")
+
+    with pytest.raises(RunJournalTransitionError):
+        journal.record_user_signal(record.id, "accept")
+    with pytest.raises(RunJournalValidationError):
+        journal.record_user_signal(record.id, "looks good")
+    assert journal.get_user_signal(record.id) is None
+
+
+def test_user_signal_rejects_symlink_without_overwriting_target(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    record = journal.create_run(title="Symlink", source="gateway")
+    journal.transition(record.id, "running")
+    journal.transition(record.id, "completed")
+    outside = tmp_path / "outside.json"
+    outside.write_text('{"secret":"preserve"}\n', encoding="utf-8")
+    signal_path = (
+        _runs_root(data_dir, record.workspace_id)
+        / record.id
+        / "user_signal.json"
+    )
+    signal_path.symlink_to(outside)
+
+    with pytest.raises(RunJournalStorageError):
+        journal.get_user_signal(record.id)
+    with pytest.raises(RunJournalStorageError):
+        journal.record_user_signal(record.id, "accept")
+
+    assert signal_path.is_symlink()
+    assert outside.read_text(encoding="utf-8") == '{"secret":"preserve"}\n'
+
+
+def test_active_user_signal_lock_blocks_session_run_deletion(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    record = journal.create_run(
+        title="Concurrent feedback",
+        source="gateway",
+        session_id="session_01",
+    )
+    journal.transition(record.id, "running")
+    journal.transition(record.id, "completed")
+    run_dir = _runs_root(data_dir, record.workspace_id) / record.id
+    (run_dir / ".user-signal.lock").mkdir()
+
+    with pytest.raises(RunJournalStorageError):
+        journal.delete_terminal_for_session("session_01")
+
+    assert journal.get_run(record.id) is not None
+
+
+def test_active_conversation_deletion_fence_blocks_user_signal(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    record = journal.create_run(
+        title="Deleting conversation",
+        source="gateway",
+        session_id="session_01",
+    )
+    journal.transition(record.id, "running")
+    journal.transition(record.id, "completed")
+    DeletionLedger(workspace, data_dir=data_dir).start(
+        "conversation",
+        "session_01",
+        "delrev_" + "a" * 64,
+    )
+
+    with pytest.raises(RunJournalStorageError):
+        journal.record_user_signal(record.id, "accept")
+
+    assert journal.get_user_signal(record.id) is None
+
+
+def test_run_journal_accepts_task_correlated_skill_attribution(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(workspace, data_dir=tmp_path / "home" / ".mini-code")
+    record = journal.create_run(title="Use a Skill", source="headless")
+    journal.transition(record.id, "running")
+    payload = {
+        "attributionVersion": 1,
+        "attributionKind": "task_correlation",
+        "outcomeStatus": "success",
+        "goalAchieved": True,
+        "hadToolErrors": True,
+        "errorsRecovered": True,
+        "toolErrorCount": 1,
+        "loadedSkillCount": 1,
+        "loadedSkills": [
+            {
+                "qualifiedName": "memory-audit",
+                "source": "project",
+                "directory": "",
+                "contentDigest": "a" * 64,
+            }
+        ],
+        "loadedSkillsTruncated": False,
+    }
+
+    event = journal.append_event(
+        record.id,
+        "skill.attributed",
+        step=3,
+        payload=payload,
+    )
+
+    assert event.type == "skill.attributed"
+    assert event.step == 3
+    assert event.payload == payload
 
 
 def test_list_runs_scans_canonical_records_filters_and_pages_without_index(
@@ -370,6 +750,36 @@ def test_retention_is_explicit_and_only_removes_valid_old_terminal_runs(
         "retention_path_unsafe",
     }
     assert "hidden-value" not in json.dumps(result.diagnostics)
+
+
+def test_retention_preserves_active_user_signal_lock(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    now = datetime(2026, 7, 16, 12, 0, tzinfo=timezone.utc)
+    journal = RunJournal(
+        workspace,
+        data_dir=data_dir,
+        clock=lambda: now,
+        terminal_max_age=timedelta(seconds=0),
+    )
+    record = journal.create_run(title="Concurrent retention")
+    journal.transition(record.id, "running")
+    journal.transition(record.id, "completed")
+    run_dir = _runs_root(data_dir, record.workspace_id) / record.id
+    mutation_lock = run_dir / ".user-signal.lock"
+    mutation_lock.mkdir()
+
+    result = journal.enforce_retention(now=now + timedelta(seconds=1))
+
+    assert result.deleted_count == 0
+    assert {item["code"] for item in result.diagnostics} == {
+        "retention_delete_failed"
+    }
+    assert mutation_lock.is_dir()
+    assert journal.get_run(record.id) is not None
 
 
 @pytest.mark.parametrize(

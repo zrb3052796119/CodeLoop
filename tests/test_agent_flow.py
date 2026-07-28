@@ -176,20 +176,67 @@ class TestAgentFlowCybernetics:
     def test_recovered_tool_error_does_not_force_task_result_failure(
         self, monkeypatch, tools, workspace, permissions
     ):
+        import minicode.agent_loop as agent_loop_module
+
         from minicode.cybernetic_orchestrator import CyberneticOrchestrator
+        from minicode.feedback_controller import FeedbackController
+        from minicode.memory_pipeline import MemoryPipeline
+        from minicode.smart_router import FeedbackLearner
+        from minicode.task_object import TaskState
 
         captured: list[list[dict]] = []
+        captured_tasks = []
+        memory_outcomes: list[str] = []
+        routing_outcomes = []
+        routing_flushes: list[bool] = []
+        pattern_outcomes: list[tuple[str, bool]] = []
 
         def capture_reflection(self, *args, **kwargs):
             captured.append(list(kwargs["execution_trace"]))
+
+        original_build_task = agent_loop_module._build_work_chain_task
+
+        def capture_task(messages):
+            task, metadata = original_build_task(messages)
+            captured_tasks.append(task)
+            return task, metadata
+
+        original_pattern_feedback = FeedbackController.record_pattern_effectiveness
+
+        def capture_pattern_feedback(self, pattern_id, success):
+            pattern_outcomes.append((pattern_id, success))
+            return original_pattern_feedback(self, pattern_id, success)
 
         monkeypatch.setattr(
             CyberneticOrchestrator,
             "reflect_on_task",
             capture_reflection,
         )
+        monkeypatch.setattr(agent_loop_module, "_build_work_chain_task", capture_task)
+        monkeypatch.setattr(
+            MemoryPipeline,
+            "feedback",
+            lambda self, outcome, *args, **kwargs: memory_outcomes.append(outcome),
+        )
+        monkeypatch.setattr(
+            FeedbackLearner,
+            "record_outcome",
+            lambda self, outcome: routing_outcomes.append(outcome),
+        )
+        monkeypatch.setattr(
+            FeedbackLearner,
+            "flush",
+            lambda self: routing_flushes.append(True),
+        )
+        monkeypatch.setattr(
+            FeedbackController,
+            "record_pattern_effectiveness",
+            capture_pattern_feedback,
+        )
+        routed_model = MockModelAdapter()
+        routed_model.model_id = "mock-model"
         run_agent_turn(
-            model=MockModelAdapter(),
+            model=routed_model,
             tools=tools,
             messages=[
                 {"role": "system", "content": "Use tools."},
@@ -199,6 +246,7 @@ class TestAgentFlowCybernetics:
             permissions=permissions,
             enable_work_chain=True,
             max_steps=3,
+            memory_manager=MemoryManager(project_root=workspace),
         )
 
         task_result = captured[0][-1]
@@ -207,6 +255,45 @@ class TestAgentFlowCybernetics:
         assert task_result["had_errors"] is True
         assert task_result["errors_recovered"] is True
         assert task_result["event_id"].startswith("event-")
+        assert captured_tasks[0].state == TaskState.COMPLETED
+        assert memory_outcomes == ["success"]
+        assert len(routing_outcomes) == 1
+        assert routing_outcomes[0].success is True
+        assert routing_outcomes[0].tool_errors == 1
+        assert routing_flushes == [True]
+        task_pattern = [
+            success
+            for pattern_id, success in pattern_outcomes
+            if pattern_id.endswith(captured_tasks[0].id)
+        ]
+        assert task_pattern == [True]
+
+    def test_unidentified_model_is_not_added_to_routing_feedback(
+        self, monkeypatch, tools, workspace, permissions
+    ):
+        from minicode.smart_router import FeedbackLearner
+
+        routing_outcomes = []
+        monkeypatch.setattr(
+            FeedbackLearner,
+            "record_outcome",
+            lambda self, outcome: routing_outcomes.append(outcome),
+        )
+
+        run_agent_turn(
+            model=MockModelAdapter(),
+            tools=tools,
+            messages=[
+                {"role": "system", "content": "Use tools."},
+                {"role": "user", "content": "hello"},
+            ],
+            cwd=str(workspace),
+            permissions=permissions,
+            enable_work_chain=True,
+            max_steps=3,
+        )
+
+        assert routing_outcomes == []
 
 
 class TestAgentMemoryPipeline:
@@ -241,3 +328,80 @@ class TestAgentMemoryPipeline:
             max_steps=3,
         )
         assert len(result) > 0
+
+    def test_same_turn_verification_tally_reaches_memory_feedback(
+        self, workspace, monkeypatch
+    ):
+        """An independently verified tool result must corroborate this turn's
+        Memory feedback, separately from the coarse whole-turn label."""
+        from minicode.memory import MemoryManager
+        from minicode.memory_pipeline import MemoryPipeline
+        from minicode.tooling import ToolDefinition, ToolRegistry, ToolResult
+        from minicode.types import AgentStep, ChatMessage, ModelAdapter
+
+        def run_verifier(_input_data: dict, _context) -> ToolResult:
+            return ToolResult(
+                ok=True,
+                output="verifier output",
+                verification={
+                    "verificationVersion": 1,
+                    "kind": "tests",
+                    "outcome": "passed",
+                    "source": "test_runner",
+                },
+            )
+
+        verifier_tools = ToolRegistry(
+            [
+                ToolDefinition(
+                    name="test_runner",
+                    description="trusted verifier",
+                    input_schema={"type": "object"},
+                    validator=lambda value: value,
+                    run=run_verifier,
+                )
+            ]
+        )
+
+        class VerifyThenDoneModel(ModelAdapter):
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def next(
+                self, messages: list[ChatMessage], on_stream_chunk=None
+            ) -> AgentStep:
+                self.calls += 1
+                if self.calls == 1:
+                    return AgentStep(
+                        type="tool_calls",
+                        calls=[
+                            {"id": "verify", "toolName": "test_runner", "input": {}}
+                        ],
+                    )
+                return AgentStep(type="assistant", content="done")
+
+        feedback_calls: list[tuple[object, dict]] = []
+        monkeypatch.setattr(
+            MemoryPipeline,
+            "feedback",
+            lambda self, outcome, *args, **kwargs: feedback_calls.append(
+                (outcome, kwargs)
+            ),
+        )
+
+        run_agent_turn(
+            model=VerifyThenDoneModel(),
+            tools=verifier_tools,
+            messages=[
+                {"role": "system", "content": "Use tools."},
+                {"role": "user", "content": "run the test suite and confirm it passes"},
+            ],
+            cwd=str(workspace),
+            enable_work_chain=True,
+            max_steps=3,
+            memory_manager=MemoryManager(project_root=workspace),
+        )
+
+        assert feedback_calls == [
+            ("success", {"verification_passed": 1, "verification_failed": 0})
+        ]

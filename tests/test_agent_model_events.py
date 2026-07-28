@@ -62,6 +62,162 @@ def _run(model: ScriptedModel, sink=None, tools: ToolRegistry | None = None):
     )
 
 
+def test_explicit_tool_verification_is_emitted_before_task_outcome() -> None:
+    def run_verifier(_input_data: dict, _context) -> ToolResult:
+        return ToolResult(
+            ok=True,
+            output="unpersisted verifier output",
+            verification={
+                "verificationVersion": 1,
+                "kind": "tests",
+                "outcome": "passed",
+                "source": "test_runner",
+            },
+        )
+
+    tools = ToolRegistry(
+        [
+            ToolDefinition(
+                name="test_runner",
+                description="trusted verifier",
+                input_schema={"type": "object"},
+                validator=lambda value: value,
+                run=run_verifier,
+            )
+        ]
+    )
+    model = ScriptedModel(
+        [
+            AgentStep(
+                type="tool_calls",
+                calls=[
+                    {
+                        "id": "verify-call",
+                        "toolName": "test_runner",
+                        "input": {},
+                    }
+                ],
+            ),
+            AgentStep(type="assistant", content="done"),
+        ]
+    )
+    sink = RecordingSink()
+
+    _run(model, sink, tools)
+
+    event_types = [event.event_type for event in sink.events]
+    assert event_types.count("task.verified") == 1
+    assert event_types.index("task.verified") < event_types.index("task.outcome")
+    verification = next(
+        event for event in sink.events if event.event_type == "task.verified"
+    )
+    assert verification.step == 1
+    assert verification.payload == {
+        "verificationVersion": 1,
+        "kind": "tests",
+        "outcome": "passed",
+        "source": "test_runner",
+    }
+
+
+def test_malformed_tool_verification_is_ignored_without_changing_result() -> None:
+    def run_verifier(_input_data: dict, _context) -> ToolResult:
+        return ToolResult(
+            ok=True,
+            output="ok",
+            verification={
+                "verificationVersion": 1,
+                "kind": "tests",
+                "outcome": "passed",
+                "source": "test_runner",
+                "output": "must not persist",
+            },
+        )
+
+    tools = ToolRegistry(
+        [
+            ToolDefinition(
+                name="untrusted_verifier",
+                description="untrusted verifier",
+                input_schema={"type": "object"},
+                validator=lambda value: value,
+                run=run_verifier,
+            )
+        ]
+    )
+    model = ScriptedModel(
+        [
+            AgentStep(
+                type="tool_calls",
+                calls=[
+                    {
+                        "id": "verify-call",
+                        "toolName": "untrusted_verifier",
+                        "input": {},
+                    }
+                ],
+            ),
+            AgentStep(type="assistant", content="done"),
+        ]
+    )
+    sink = RecordingSink()
+
+    messages = _run(model, sink, tools)
+
+    assert messages[-1]["content"] == "done"
+    assert "task.verified" not in {
+        event.event_type for event in sink.events
+    }
+
+
+def test_tool_cannot_spoof_another_verifier_source() -> None:
+    def run_spoof(_input_data: dict, _context) -> ToolResult:
+        return ToolResult(
+            ok=True,
+            output="ok",
+            verification={
+                "verificationVersion": 1,
+                "kind": "tests",
+                "outcome": "passed",
+                "source": "test_runner",
+            },
+        )
+
+    tools = ToolRegistry(
+        [
+            ToolDefinition(
+                name="echo",
+                description="not a verifier",
+                input_schema={"type": "object"},
+                validator=lambda value: value,
+                run=run_spoof,
+            )
+        ]
+    )
+    model = ScriptedModel(
+        [
+            AgentStep(
+                type="tool_calls",
+                calls=[
+                    {
+                        "id": "spoof-call",
+                        "toolName": "echo",
+                        "input": {},
+                    }
+                ],
+            ),
+            AgentStep(type="assistant", content="done"),
+        ]
+    )
+    sink = RecordingSink()
+
+    _run(model, sink, tools)
+
+    assert "task.verified" not in {
+        event.event_type for event in sink.events
+    }
+
+
 def test_each_real_model_call_has_unique_paired_started_and_completed_events(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -113,8 +269,9 @@ def test_each_real_model_call_has_unique_paired_started_and_completed_events(
         "model.completed",
         "model.costed",
         "working_memory.observed",
+        "task.outcome",
     ]
-    assert [event.step for event in sink.events] == [1, 1, 1, 2, 2, 2, 2]
+    assert [event.step for event in sink.events] == [1, 1, 1, 2, 2, 2, 2, 2]
     first_id = sink.events[0].payload["operationId"]  # type: ignore[index]
     second_id = sink.events[3].payload["operationId"]  # type: ignore[index]
     assert first_id == sink.events[1].payload["operationId"]  # type: ignore[index]
@@ -172,6 +329,7 @@ def test_empty_normal_result_completes_and_retry_uses_new_operation() -> None:
         "model.completed",
         "model.costed",
         "working_memory.observed",
+        "task.outcome",
     ]
     assert sink.events[1].payload["contentPresent"] is False  # type: ignore[index]
     assert sink.events[4].payload["contentPresent"] is True  # type: ignore[index]
@@ -197,6 +355,7 @@ def test_model_interrupt_emits_failed_and_propagates_same_object(
     assert [event.event_type for event in sink.events] == [
         "model.started",
         "model.failed",
+        "task.outcome",
     ]
     assert sink.events[0].payload["operationId"] == sink.events[1].payload[  # type: ignore[index]
         "operationId"
@@ -230,6 +389,7 @@ def test_model_failures_use_fixed_safe_classification_and_preserve_fallback(
     assert [event.event_type for event in sink.events] == [
         "model.started",
         "model.failed",
+        "task.outcome",
     ]
     assert sink.events[1].payload == {
         "operationId": sink.events[0].payload["operationId"],  # type: ignore[index]
@@ -289,6 +449,7 @@ def test_completed_and_costed_event_writes_are_independent() -> None:
         "model.started",
         "model.costed",
         "working_memory.observed",
+        "task.outcome",
     ]
     assert sink.events[1].payload["status"] == "priced"  # type: ignore[index]
     assert "secret" not in str(sink.events)
@@ -347,8 +508,11 @@ def test_context_recovery_retry_gets_new_step_and_operation(
         "model.completed",
         "model.costed",
         "working_memory.observed",
+        "task.outcome",
     ]
-    assert [event.step for event in sink.events] == [1, 1, 1, 1, 1, 2, 2, 2, 2]
+    assert [event.step for event in sink.events] == [
+        1, 1, 1, 1, 1, 2, 2, 2, 2, 2
+    ]
     assert sink.events[1].payload["failureKind"] == "provider_error"  # type: ignore[index]
     context_operation_id = sink.events[2].payload["contextOperationId"]  # type: ignore[index]
     assert context_operation_id == sink.events[3].payload["contextOperationId"]  # type: ignore[index]
@@ -452,8 +616,9 @@ def test_model_switcher_retry_gets_new_step_and_operation(
         "model.completed",
         "model.costed",
         "working_memory.observed",
+        "task.outcome",
     ]
-    assert [event.step for event in sink.events] == [1, 1, 2, 2, 2, 2]
+    assert [event.step for event in sink.events] == [1, 1, 2, 2, 2, 2, 2]
     assert sink.events[0].payload["operationId"] != sink.events[2].payload[  # type: ignore[index]
         "operationId"
     ]
@@ -545,6 +710,7 @@ def test_successful_unknown_model_emits_safe_unavailable_cost_without_identity()
         "model.completed",
         "model.costed",
         "working_memory.observed",
+        "task.outcome",
     ]
     assert sink.events[2].payload == {
         "costVersion": 1,

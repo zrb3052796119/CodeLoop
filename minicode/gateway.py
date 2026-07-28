@@ -28,7 +28,8 @@ class MiniCodeGatewayHandler(MiniCodeWebHandler):
             self._send_json({"ok": False, "error": "invalid request path"}, status=400)
             return
         is_execution_path = path == "/run" or path == "/api/v1/chat/turns" or (
-            path.startswith("/api/v1/chat/turns/") and path.endswith("/cancel")
+            path.startswith("/api/v1/chat/turns/")
+            and path.endswith(("/cancel", "/feedback"))
         )
         if is_execution_path:
             from minicode.web.request_guard import ensure_execution_authorized
@@ -44,6 +45,11 @@ class MiniCodeGatewayHandler(MiniCodeWebHandler):
             from minicode.web.chat_http import serve_chat_turn_cancel
 
             serve_chat_turn_cancel(self, path)
+            return
+        if path.startswith("/api/v1/chat/turns/") and path.endswith("/feedback"):
+            from minicode.web.chat_http import serve_chat_turn_feedback
+
+            serve_chat_turn_feedback(self, path)
             return
         if path.startswith("/api/v1/permissions/"):
             from minicode.web.permission_http import (

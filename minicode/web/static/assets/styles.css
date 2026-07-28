@@ -1832,6 +1832,21 @@ td .pill { margin-left: 5px; }
 .dock-stream-tool.success span { color: var(--good); }
 .dock-stream-tool.error span { color: var(--danger); }
 .dock-chat-feedback .snapshot-button { margin-top: 7px; }
+.dock-user-signal {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 4%, var(--panel));
+}
+.dock-user-signal p,
+.dock-user-signal small { margin: 0; color: var(--ink-3); font-size: 11px; line-height: 1.45; }
+.dock-user-signal small.error { color: var(--danger); }
+.dock-user-signal.recorded { border-color: color-mix(in srgb, var(--success) 38%, var(--line)); }
+.dock-user-signal.unavailable { border-color: var(--line); background: var(--surface-elevated); }
+.dock-user-signal-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+.dock-user-signal-actions .snapshot-button { margin: 0; }
 @keyframes chat-pulse { to { opacity: .3; transform: scale(.78); } }
 
 .chat-bar {

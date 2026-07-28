@@ -728,7 +728,10 @@ def test_runs_and_ops_frontend_use_canonical_model_observation_stores() -> None:
     assert "event.type === 'model.completed'" in javascript
     assert "event.type === 'model.failed'" in javascript
     assert "event.type === 'model.costed'" in javascript
+    assert "event.type === 'task.outcome'" in javascript
     assert "event.type === 'skill.routed'" in javascript
+    assert "event.type === 'skill.loaded'" in javascript
+    assert "event.type === 'skill.attributed'" in javascript
     assert "event.type === 'memory.retrieved'" in javascript
     assert "event.type === 'memory.rendered'" in javascript
     assert "event.type === 'context.compacted'" in javascript
@@ -745,6 +748,11 @@ def test_runs_and_ops_frontend_use_canonical_model_observation_stores() -> None:
     assert "event.details?.toolName" in javascript
     assert "event.details?.outcome" in javascript
     assert "event.details?.contentLength" in javascript
+    assert "event.details?.qualifiedName" in javascript
+    assert "event.details?.contentDigest" in javascript
+    assert "event.details?.loadedSkillCount" in javascript
+    assert "event.details?.outcomeStatus" in javascript
+    assert "event.details?.errorsRecovered" in javascript
     assert "event.details?.strategy" in javascript
     assert "event.details?.trigger" in javascript
     assert "event.details?.messagesBefore" in javascript
@@ -1377,6 +1385,121 @@ def test_chat_cancel_requested_and_committing_offer_manual_status_recovery() -> 
     assert "cancelActiveTurn()" not in feedback
 
 
+def test_completed_chat_feedback_requires_one_explicit_content_free_action() -> None:
+    javascript = (ROOT / "minicode/web/static/assets/app.js").read_text(
+        encoding="utf-8"
+    )
+
+    assert "feedbackTurnId" in javascript
+    assert "feedbackRunId" in javascript
+    assert "feedbackSessionId" in javascript
+    assert "function chatUserSignal()" in javascript
+    assert "async function recordChatFeedback(signal)" in javascript
+    assert (
+        "fetch(`/api/v1/chat/turns/${encodeURIComponent(turnId)}/feedback`"
+        in javascript
+    )
+    assert "body: JSON.stringify({ signal })" in javascript
+    assert "接受结果" in javascript
+    assert "需要纠正" in javascript
+    assert "拒绝结果" in javascript
+    assert "不会把沉默或后续消息当作接受" in javascript
+    assert "setTimeout(recordChatFeedback" not in javascript
+    assert "setInterval(recordChatFeedback" not in javascript
+
+
+def test_completed_chat_feedback_ignores_stale_response_and_posts_exact_signal() -> None:
+    javascript = (ROOT / "minicode/web/static/assets/app.js").read_text(
+        encoding="utf-8"
+    )
+    functions = javascript[
+        javascript.index("function resetChatFeedbackTarget") : javascript.index(
+            "\nfunction newConversation"
+        )
+    ]
+    harness = r"""
+const assert = require('node:assert/strict');
+const TURN_ID_PATTERN = /^turn_[0-9a-f]{32}$/;
+const CHAT_STREAM_RUN_ID_PATTERN = /^run_[0-9a-f]{32}$/;
+const SESSION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
+const turnA = 'turn_' + 'a'.repeat(32);
+const turnB = 'turn_' + 'b'.repeat(32);
+const runA = 'run_' + 'a'.repeat(32);
+const runB = 'run_' + 'b'.repeat(32);
+const chatStore = {
+  targetMode: 'existing',
+  feedbackTurnId: null,
+  feedbackRunId: null,
+  feedbackSessionId: null,
+  feedbackPhase: 'idle',
+  feedbackSignal: null,
+  feedbackError: null,
+  feedbackGeneration: 0,
+};
+const sessionDetailStore = { sessionId: 'session_a' };
+let renderCalls = 0;
+let requests = [];
+function renderConversationDock() { renderCalls += 1; }
+function esc(value) { return String(value); }
+function response(payload, status = 200) {
+  return {
+    status,
+    ok: status >= 200 && status < 300,
+    json: async () => payload,
+  };
+}
+function accepted(turnId, runId, signal) {
+  return {
+    ok: true,
+    schemaVersion: 1,
+    mode: 'read-write',
+    turnId,
+    runId,
+    signal,
+    source: 'explicit_user_action',
+    recordedAt: '2026-07-19T10:00:02.000Z',
+  };
+}
+
+(async () => {
+  setCompletedFeedbackTarget({ turnId: turnA, runId: runA, sessionId: 'session_a' });
+  let resolveFetch;
+  globalThis.fetch = (url, options) => {
+    requests.push({ url, options });
+    return new Promise((resolve) => { resolveFetch = resolve; });
+  };
+  const stale = recordChatFeedback('accept');
+  sessionDetailStore.sessionId = 'session_b';
+  setCompletedFeedbackTarget({ turnId: turnB, runId: runB, sessionId: 'session_b' });
+  resolveFetch(response(accepted(turnA, runA, 'accept')));
+  await stale;
+  assert.equal(chatStore.feedbackTurnId, turnB);
+  assert.equal(chatStore.feedbackPhase, 'available');
+
+  globalThis.fetch = async (url, options) => {
+    requests.push({ url, options });
+    return response(accepted(turnB, runB, 'correct'));
+  };
+  await recordChatFeedback('correct');
+  assert.equal(chatStore.feedbackPhase, 'recorded');
+  assert.equal(chatStore.feedbackSignal, 'correct');
+  sessionDetailStore.sessionId = 'session_other';
+  assert.equal(chatUserSignal(), '');
+  const latest = requests.at(-1);
+  assert.equal(latest.url, `/api/v1/chat/turns/${turnB}/feedback`);
+  assert.deepEqual(JSON.parse(latest.options.body), { signal: 'correct' });
+  assert.deepEqual(Object.keys(JSON.parse(latest.options.body)), ['signal']);
+  assert.ok(renderCalls >= 3);
+})().catch((error) => { console.error(error); process.exit(1); });
+"""
+    subprocess.run(
+        ["node", "-e", functions + "\n" + harness],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
 def test_chat_manual_status_recovery_and_stale_response_behavior() -> None:
     javascript = (ROOT / "minicode/web/static/assets/app.js").read_text(
         encoding="utf-8"
@@ -1447,6 +1570,7 @@ async function loadSessionDetail(sessionId) {
   return 'loaded';
 }
 function resetChatStreamState() {}
+function setCompletedFeedbackTarget() {}
 function response(payload, status = 200) {
   return { status, ok: status >= 200 && status < 300, json: async () => payload };
 }
@@ -1545,6 +1669,10 @@ def test_skills_connections_and_system_frontend_use_real_independent_stores() ->
     assert "const connectionsStore" in javascript
     assert "const systemStore" in javascript
     assert "fetch(`/api/v1/skills" in javascript
+    assert "function assertSkillEvidenceContract" in javascript
+    assert "function assertSkillVersionLedgerContract" in javascript
+    assert "function skillEvidencePanel" in javascript
+    assert "function skillVersionPanel" in javascript
     assert "fetch('/api/v1/connections'" in javascript
     assert "fetch('/api/v1/system'" in javascript
     assert "skillsStore.requestId" in javascript
@@ -1554,6 +1682,12 @@ def test_skills_connections_and_system_frontend_use_real_independent_stores() ->
     assert "loadMoreSkills" in skills_view
     assert "refreshSkills" in skills_view
     assert "runtimeTraceState('skill')" in skills_view
+    assert "skillEvidencePanel(data.evidence)" in skills_view
+    assert "skillVersionPanel(data.versionLedger)" in skills_view
+    assert "promotion locked" in skills_view
+    assert "rollback execution locked" in skills_view
+    assert "verification and user signals require complete explicit coverage" in skills_view
+    assert "task correlation, not causal proof" in skills_view
     assert "This Run has no observed Skill Routing event." in javascript
     assert "selectedTruncated" in javascript
     assert "DATA.skills" not in skills_view

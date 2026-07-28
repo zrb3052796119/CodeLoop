@@ -853,12 +853,7 @@ def _probe_memory_boundaries(workspace: Path) -> dict[str, Any]:
     )
     return {
         "ordinaryFactPersisted": bool(fact_id or fact_hits),
-        "errorPatternPersistedPending": bool(
-            error_entry is not None
-            and error_entry.approval_status == "pending"
-            and error_entry.is_active is False
-            and "error_pattern" in claim_types
-        ),
+        "singleErrorPatternSuppressed": error_entry is None and not claim_types,
     }
 
 
@@ -1625,19 +1620,19 @@ def _build_issues(
                 "MEM-001",
                 "P1",
                 "memory.conversation_fact",
-                "Ordinary user facts are not persisted/retrievable across Sessions although error reflection can persist pending candidates.",
+                "Ordinary user facts are not persisted/retrievable across Sessions.",
                 "Submit the isolated phrase 小花是我唯一的好朋友。 through the current Memory write path, then search 小花.",
                 "A declared conversational fact intake path should create an approved/reviewable durable fact with scope and provenance.",
-                "No fact entry or search hit was produced; a separate web_search failure produced a pending inactive error_pattern candidate.",
+                "No fact entry or search hit was produced; the separate one-off web_search failure was correctly suppressed as non-recurrent.",
                 ["minicode/memory_pipeline.py", "docs/minicode-dashboard-batch-9-roadmap.md", "scripts/run_functional_audit.py"],
                 environment_dependent=False,
                 recommended_batch="Reliability 1B-3: Session/Memory persistence gaps",
-                red_test="Two isolated Sessions must prove the exact ordinary fact is persisted, approved, retrieved and injected without web_search.",
+                red_test="Two isolated Sessions must prove the exact ordinary fact is persisted, approved, retrieved and injected.",
             ),
         ]
     )
     assert memory["ordinaryFactPersisted"] is False
-    assert memory["errorPatternPersistedPending"] is True
+    assert memory["singleErrorPatternSuppressed"] is True
     return issues
 
 

@@ -57,6 +57,30 @@ def test_value_rejected_reflection_is_not_written_even_with_high_confidence(
     assert manager.memories[MemoryScope.PROJECT].entries == []
 
 
+def test_single_transient_error_does_not_enter_memory_review(
+    memory_pipeline: tuple[MemoryPipeline, MemoryManager],
+) -> None:
+    pipeline, manager = memory_pipeline
+    trace = [
+        {
+            "event_id": "event-1",
+            "call_id": "call-1",
+            "type": "error",
+            "tool_name": "web_search",
+            "error_type": "TimeoutError",
+            "message": "Search provider timed out after 10 seconds.",
+        },
+        {"event_id": "event-2", "type": "task_result", "status": "failed"},
+    ]
+
+    result = pipeline._reflection.reflect("Search release notes", trace)
+
+    assert result.value_decision.accepted is False
+    assert "single_observation_error_pattern" in result.value_decision.reason_codes
+    assert pipeline.write("Search release notes", trace) is None
+    assert manager.memories[MemoryScope.PROJECT].entries == []
+
+
 def _verified_recovery_trace() -> list[dict]:
     return [
         {

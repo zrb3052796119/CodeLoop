@@ -255,6 +255,9 @@ function clearActiveTurn(turnId) {
 }
 function retirePermissionTurn() {}
 function resetChatStreamState() { resetCalls += 1; chatStreamStore.turnId = null; }
+function setCompletedFeedbackTarget(payload) {
+  assert.equal(payload.turnId, turn);
+}
 function renderConversationDock() {}
 const completed = {
   turnId: turn, sessionId: 'session_01', created: true,
@@ -366,6 +369,8 @@ function persistActiveTurn() { return true; }
 function persistSessionSelection() {}
 function renderConversationDock() {}
 function fixedChatError(code) { return `safe:${code}`; }
+function resetChatFeedbackTarget() {}
+function setCompletedFeedbackTarget() {}
 function resetChatStreamState(turnId = null, generation = 0) {
   Object.assign(chatStreamStore, {turnId, generation, provisionalText: '', detached: false, terminal: false});
 }

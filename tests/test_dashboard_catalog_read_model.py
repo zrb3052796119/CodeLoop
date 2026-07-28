@@ -9,8 +9,73 @@ import pytest
 
 from minicode.mcp_observation import mcp_server_key
 from minicode.run_journal import RunJournal
+from minicode.skill_versions import SkillVersionLedger
 from minicode.skills import SkillSummary
+from minicode.tools import create_default_tool_registry
 from minicode.web.read_model import DashboardReadError, DashboardReadModel
+
+
+def _record_shadow_skill_evidence(journal: RunJournal) -> None:
+    skill = {
+        "qualifiedName": "project/memory-audit",
+        "source": "project",
+        "directory": "project",
+        "contentDigest": "a" * 64,
+    }
+    record = journal.create_run(
+        title="password=private-task-title",
+        source="headless",
+    )
+    journal.transition(record.id, "running")
+    journal.append_event(
+        record.id,
+        "skill.routed",
+        payload={
+            "routingVersion": 2,
+            "intentType": "review",
+            "actionType": "analyze",
+            "totalSkills": 1,
+            "selectedCount": 1,
+            "selected": [{**skill, "score": 4.25}],
+            "selectedTruncated": False,
+            "usedFallback": False,
+        },
+    )
+    journal.append_event(
+        record.id,
+        "skill.loaded",
+        payload={"loadVersion": 1, **skill},
+    )
+    journal.append_event(
+        record.id,
+        "task.outcome",
+        payload={
+            "outcomeVersion": 1,
+            "outcomeStatus": "success",
+            "goalAchieved": True,
+            "learningSuccess": True,
+            "hadToolErrors": False,
+            "errorsRecovered": False,
+            "toolErrorCount": 0,
+        },
+    )
+    journal.append_event(
+        record.id,
+        "skill.attributed",
+        payload={
+            "attributionVersion": 1,
+            "attributionKind": "task_correlation",
+            "outcomeStatus": "success",
+            "goalAchieved": True,
+            "hadToolErrors": False,
+            "errorsRecovered": False,
+            "toolErrorCount": 0,
+            "loadedSkillCount": 1,
+            "loadedSkills": [skill],
+            "loadedSkillsTruncated": False,
+        },
+    )
+    journal.transition(record.id, "completed")
 
 
 def test_skills_page_distinguishes_a_real_empty_catalog(tmp_path: Path) -> None:
@@ -32,6 +97,262 @@ def test_skills_page_distinguishes_a_real_empty_catalog(tmp_path: Path) -> None:
         "hasMore": False,
         "nextCursor": None,
     }
+    assert payload["evidence"] == {
+        "status": "live",
+        "scope": "retained-run-journal",
+        "message": (
+            "Shadow-only correlation; never grants routing or promotion authority."
+        ),
+        "ledger": {
+            "ledgerVersion": 1,
+            "mode": "shadow",
+            "scannedRuns": 0,
+            "runsTruncated": False,
+            "eligibleTreatmentRuns": 0,
+            "eligibleControlRuns": 0,
+            "excludedRuns": {
+                "nonCompleted": 0,
+                "eventScanLimited": 0,
+                "eventReadIncomplete": 0,
+                "missingOrInvalidOutcome": 0,
+                "nonBinaryOutcome": 0,
+                "missingOrInvalidRouting": 0,
+                "legacyRouting": 0,
+                "ambiguousSkillUse": 0,
+                "inconsistentSkillUse": 0,
+            },
+            "journalDiagnostics": 0,
+            "evaluations": [],
+            "evaluationsTruncated": False,
+            "promotionEligible": False,
+        },
+    }
+
+
+def test_skills_page_exposes_shadow_evidence_without_run_titles(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(
+        workspace,
+        data_dir=tmp_path / "home" / ".mini-code",
+    )
+    _record_shadow_skill_evidence(journal)
+
+    payload = DashboardReadModel(
+        workspace,
+        data_dir=tmp_path / "home" / ".mini-code",
+        skill_loader=lambda _workspace: [],
+        run_journal=journal,
+    ).skills()
+
+    evidence = payload["evidence"]
+    assert evidence["status"] == "live"
+    assert evidence["scope"] == "retained-run-journal"
+    assert evidence["ledger"]["eligibleTreatmentRuns"] == 1
+    assert evidence["ledger"]["eligibleControlRuns"] == 0
+    assert evidence["ledger"]["promotionEligible"] is False
+    evaluation = evidence["ledger"]["evaluations"][0]
+    assert evaluation["shadowStatus"] == "insufficient_evidence"
+    assert evaluation["goalAchievementDelta"] is None
+    assert evaluation["skill"]["contentDigest"] == "a" * 64
+    assert "private-task-title" not in json.dumps(payload)
+
+
+def test_skills_page_exposes_read_only_version_lineage_and_locked_gates(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    skill = SkillSummary(
+        name="memory-audit",
+        qualified_name="auditing/memory-audit",
+        description="Review persistent memory.",
+        path="/private/password=skill-path/SKILL.md",
+        source="project",
+        directory="auditing",
+        content_digest="a" * 64,
+    )
+    version_ledger = SkillVersionLedger(workspace)
+    version_ledger.observe_catalog([skill])
+    storage = workspace / ".mini-code" / "skill_versions.json"
+    before = storage.read_bytes()
+
+    payload = DashboardReadModel(
+        workspace,
+        data_dir=tmp_path / "home" / ".mini-code",
+        skill_loader=lambda _workspace: [skill],
+    ).skills()
+
+    version_payload = payload["versionLedger"]
+    assert version_payload["status"] == "live"
+    assert version_payload["scope"] == "project-skill-version-ledger"
+    assert version_payload["ledger"]["promotionLocked"] is True
+    assert version_payload["ledger"]["evaluation"] == {
+        "gatePolicyVersion": 2,
+        "versionCount": 1,
+        "promotionCandidateCount": 0,
+    }
+    version = version_payload["ledger"]["versions"][0]
+    assert version["catalogCurrent"] is True
+    assert version["skill"]["contentDigest"] == "a" * 64
+    assert {
+        gate["name"]: gate["status"]
+        for gate in version["evaluation"]["gates"]
+    } == {
+        "outcome": "unavailable",
+        "verification": "unavailable",
+        "user": "unavailable",
+        "cost": "unavailable",
+        "latency": "unavailable",
+    }
+    assert storage.read_bytes() == before
+    serialized = json.dumps(version_payload)
+    assert "skill-path" not in serialized
+    assert str(workspace) not in serialized
+
+
+def test_default_dashboard_discovery_matches_runtime_observed_digest(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    workspace = tmp_path / "workspace"
+    skill_path = (
+        workspace
+        / ".mini-code"
+        / "skills"
+        / "memory-audit"
+        / "SKILL.md"
+    )
+    skill_path.parent.mkdir(parents=True)
+    skill_path.write_text(
+        "---\n"
+        "name: memory-audit\n"
+        "description: Review persistent memory.\n"
+        "---\n"
+        "# Memory Audit\n",
+        encoding="utf-8",
+    )
+    create_default_tool_registry(str(workspace), runtime={})
+
+    version_payload = DashboardReadModel(
+        workspace,
+        data_dir=tmp_path / "journal-home" / ".mini-code",
+    ).skills()["versionLedger"]
+
+    assert version_payload["status"] == "live"
+    versions = version_payload["ledger"]["versions"]
+    assert len(versions) == 1
+    assert versions[0]["catalogCurrent"] is True
+
+
+def test_version_history_failure_does_not_hide_catalog_or_shadow_evidence(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    storage = workspace / ".mini-code" / "skill_versions.json"
+    storage.parent.mkdir(parents=True)
+    storage.write_text(
+        '{"schemaVersion":1,"password":"version-secret"}',
+        encoding="utf-8",
+    )
+    skill = SkillSummary(
+        name="memory-audit",
+        qualified_name="memory-audit",
+        description="Review memory.",
+        path="/private/SKILL.md",
+        source="project",
+        content_digest="a" * 64,
+    )
+
+    payload = DashboardReadModel(
+        workspace,
+        data_dir=tmp_path / "home" / ".mini-code",
+        skill_loader=lambda _workspace: [skill],
+    ).skills()
+
+    assert payload["source"]["status"] == "live"
+    assert payload["items"][0]["qualifiedName"] == "memory-audit"
+    assert payload["evidence"]["status"] == "live"
+    assert payload["versionLedger"] == {
+        "status": "unavailable",
+        "scope": "project-skill-version-ledger",
+        "message": "Skill version history could not be read.",
+        "ledger": None,
+    }
+    assert "version-secret" not in json.dumps(payload)
+
+
+def test_skill_evidence_marks_incomplete_event_scan_partial(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(
+        workspace,
+        data_dir=tmp_path / "home" / ".mini-code",
+    )
+    snapshot = DashboardReadModel(
+        workspace,
+        data_dir=tmp_path / "home" / ".mini-code",
+        skill_loader=lambda _workspace: [],
+        run_journal=journal,
+    ).skills()["evidence"]["ledger"]
+    assert snapshot is not None
+    snapshot["excludedRuns"]["eventScanLimited"] = 1
+    monkeypatch.setattr(
+        "minicode.web.read_model.SkillEvidenceLedger.snapshot",
+        lambda _self: snapshot,
+    )
+
+    evidence = DashboardReadModel(
+        workspace,
+        data_dir=tmp_path / "home" / ".mini-code",
+        skill_loader=lambda _workspace: [],
+        run_journal=journal,
+    ).skills()["evidence"]
+
+    assert evidence["status"] == "partial"
+
+
+def test_skill_evidence_failure_does_not_hide_the_skill_catalog(
+    tmp_path: Path,
+) -> None:
+    class BrokenJournal:
+        def list_runs(self, **_kwargs):
+            raise OSError("password=journal-secret")
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    skill = SkillSummary(
+        name="daily-coding",
+        qualified_name="daily-coding",
+        description="Daily coding.",
+        path="/private/SKILL.md",
+        source="project",
+    )
+
+    payload = DashboardReadModel(
+        workspace,
+        data_dir=tmp_path / "home" / ".mini-code",
+        skill_loader=lambda _workspace: [skill],
+        run_journal=BrokenJournal(),  # type: ignore[arg-type]
+    ).skills()
+
+    assert payload["source"]["status"] == "live"
+    assert [item["qualifiedName"] for item in payload["items"]] == [
+        "daily-coding"
+    ]
+    assert payload["evidence"] == {
+        "status": "unavailable",
+        "scope": "retained-run-journal",
+        "message": "Skill evidence could not be read.",
+        "ledger": None,
+    }
+    assert "journal-secret" not in json.dumps(payload)
 
 
 def test_skills_page_projects_safe_summary_without_paths_or_bodies(

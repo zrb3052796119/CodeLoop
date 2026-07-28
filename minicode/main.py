@@ -109,7 +109,10 @@ def _save_transcript_file(cwd: str, permissions, transcript: list[TranscriptEntr
     return str(target)
 
 
-def _route_skills_for_prompt(tools, user_input: str | None) -> tuple[list[dict], dict | None]:
+def _route_skills_for_prompt(
+    tools,
+    user_input: str | None,
+) -> tuple[list[dict], object | None]:
     if not user_input:
         return tools.get_skills(), None
     from minicode.capability_registry import get_registry, register_tool_capabilities
@@ -119,7 +122,7 @@ def _route_skills_for_prompt(tools, user_input: str | None) -> tuple[list[dict],
     register_tool_capabilities(tools)
     intent = parse_intent(user_input)
     routing = SkillRouter().route(tools.get_skills(), intent, get_registry())
-    return routing.selected_skill_dicts(), routing.to_dict()
+    return routing.selected_skill_dicts(), routing
 
 
 def main() -> None:

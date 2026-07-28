@@ -233,6 +233,30 @@ def test_retrieval_injection_and_feedback_counts_are_distinct_and_persist(
     assert -1.0 <= again.usefulness_score <= 1.0
 
 
+def test_corroborated_feedback_counters_are_independent_of_whole_turn_feedback(
+    isolated_workspace: Path,
+):
+    manager = _manager(isolated_workspace)
+    entry = manager.add_entry(
+        MemoryScope.PROJECT,
+        "testing",
+        "Use pytest fixtures for audit tests",
+        tags=["pytest"],
+    )
+    assert entry is not None
+
+    manager.record_feedback([entry.id], success=False)
+    manager.record_corroborated_feedback([entry.id, entry.id, "missing-id"], success=True)
+    manager.record_corroborated_feedback([entry.id], success=True)
+
+    again = _manager(isolated_workspace).memories[MemoryScope.PROJECT]._id_index[entry.id]
+    assert again.failure_count == 1
+    assert again.success_count == 0
+    assert again.corroborated_success_count == 2
+    assert again.corroborated_failure_count == 0
+    assert again.corroborated_usefulness_score == 1.0
+
+
 def test_random_state_machine_keeps_indexes_and_injection_filter_consistent(
     isolated_workspace: Path,
 ):
