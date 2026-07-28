@@ -1,4 +1,4 @@
-# MiniCode Python
+# CodeLoop
 
 <p align="center">
   <strong>A self-regulating Python coding agent for local development.</strong>
@@ -7,9 +7,9 @@
 <p align="center">
   <a href="./README.zh-CN.md">简体中文</a>
   ·
-  <a href="https://github.com/LiuMengxuan04/MiniCode">MiniCode Main Repo</a>
+  <a href="https://github.com/LiuMengxuan04/MiniCode">MiniCode Main Repo (upstream)</a>
   ·
-  <a href="https://github.com/QUSETIONS/MiniCode-Python">Python Repo</a>
+  <a href="https://github.com/QUSETIONS/MiniCode-Python">MiniCode Python (upstream)</a>
 </p>
 
 <p align="center">
@@ -18,19 +18,23 @@
   <img alt="Package" src="https://img.shields.io/badge/package-minicode--py-555?style=flat-square">
 </p>
 
-MiniCode Python is the Python implementation in the MiniCode family. The main
-project is [LiuMengxuan04/MiniCode](https://github.com/LiuMengxuan04/MiniCode);
-this repository explores a Python-first agent runtime with cybernetic control,
-adaptive memory, and a testable local tool loop.
+CodeLoop is a personal fork of [MiniCode Python](https://github.com/QUSETIONS/MiniCode-Python)
+with substantial modifications on top of the upstream project: a persistent-
+memory feedback loop with independent verification and explicit user-signal
+corroboration, a Skill routing/evidence/version pipeline, and a number of
+correctness fixes to the intent-recognition and permission-approval layers.
+The Python package itself is still named `minicode` internally (no import
+paths changed), so existing MiniCode Python documentation about internals
+still applies.
 
 Instead of treating context pressure, tool failures, memory noise, and cost
-drift as prompt-only problems, MiniCode Python measures them during execution
-and feeds those signals back into runtime decisions.
+drift as prompt-only problems, CodeLoop measures them during execution and
+feeds those signals back into runtime decisions.
 
 ## Why It Exists
 
 Most coding agents are model wrappers: prompt in, tool calls out, hope the loop
-stays healthy. MiniCode Python is built around a different idea:
+stays healthy. CodeLoop is built around a different idea:
 
 > a coding agent should observe itself while it works, then adjust its own
 > context, memory, verification, concurrency, and recovery behavior.
@@ -39,16 +43,18 @@ That makes this repository useful as:
 
 - a local coding-agent implementation you can inspect end to end;
 - a Python research bed for agent control, memory, and verification loops;
-- a companion implementation to the TypeScript MiniCode main repo;
+- a fork that keeps the upstream MiniCode Python runtime as its base while
+  extending the memory/Skill feedback loop further;
 - a practical place to test ideas before they become larger platform features.
 
 ## Highlights
 
-| Area | What MiniCode Python Adds |
+| Area | What CodeLoop Adds |
 | --- | --- |
 | Runtime control | `CyberneticOrchestrator` coordinates context, cost, feedback, progress, memory, and recovery controllers. |
 | Context management | PID-style context pressure handling, compaction, budget adjustment, and predictive guards. |
-| Memory | Domain-aware retrieval, optional LLM reranking, prompt injection, reflection write-back, and maintenance. |
+| Memory | Domain-aware retrieval, optional LLM reranking, prompt injection, reflection write-back, maintenance, and dual-channel (verification + explicit user signal) corroborated feedback. |
+| Skill routing | Intent-aware Skill discovery/routing with a cross-run evidence ledger and an immutable version ledger (promotion intentionally locked pending real usage data). |
 | Tool loop | Local file/search/edit/command tools with scheduler-aware execution and error nudges. |
 | Recovery | Self-healing paths for context overflow, tool failures, oscillation, and resource pressure. |
 | Verification | Focused unit, integration, stress, and cybernetics tests across the active root package. |
@@ -83,7 +89,10 @@ surface.
 
 ## Repository Status
 
-The active package is the root package configured in `pyproject.toml`.
+The active package is the root package configured in `pyproject.toml`. The
+Python package/import path was intentionally left as `minicode` during the
+CodeLoop rename — only user-facing branding (this README, docs, the CLI
+persona, and startup banners) changed.
 
 | Path | Role |
 | --- | --- |
@@ -93,15 +102,11 @@ The active package is the root package configured in `pyproject.toml`.
 | `docs/OPTIMIZATION_SUMMARY.md` | Full optimization and integration record. |
 | `docs/memory_theory.md` | Memory/control theory notes. |
 
-The main TypeScript repository may include this project as
-`external/MiniCode-Python`, but this Python package is installed and verified
-from this repository root.
-
 ## Quick Start
 
 ```bash
-git clone https://github.com/QUSETIONS/MiniCode-Python.git
-cd MiniCode-Python
+git clone https://github.com/zrb3052796119/CodeLoop.git
+cd CodeLoop
 python -m pip install -e .[dev]
 ```
 
@@ -149,13 +154,19 @@ tests. They do not indicate failing behavior.
 | `minicode/domain_classifier.py` | Task and file-domain inference. |
 | `minicode/model_registry.py` | Model selection controller. |
 | `minicode/progress_controller.py` | Task health and stall detection. |
+| `minicode/skill_router.py` | Intent-aware Skill discovery and routing. |
+| `minicode/skill_evidence.py` / `minicode/skill_versions.py` | Cross-run Skill evidence and immutable version ledgers. |
 
-## MiniCode Family
+## Upstream / Related Projects
+
+CodeLoop forked from the Python member of the MiniCode family below; the
+other implementations are unrelated to this fork's changes but are listed
+here for context.
 
 | Version | Repository | Focus |
 | --- | --- | --- |
 | TypeScript | [LiuMengxuan04/MiniCode](https://github.com/LiuMengxuan04/MiniCode) | Mainline terminal agent, TUI, MCP, skills, sessions, context controls. |
-| Python | [QUSETIONS/MiniCode-Python](https://github.com/QUSETIONS/MiniCode-Python) | Cybernetic Python runtime, memory pipeline, verification-oriented experiments. |
+| Python (upstream) | [QUSETIONS/MiniCode-Python](https://github.com/QUSETIONS/MiniCode-Python) | Cybernetic Python runtime, memory pipeline, verification-oriented experiments. |
 | Rust | [harkerhand/MiniCode-rs](https://github.com/harkerhand/MiniCode-rs/tree/master) | Rust implementation and systems-side experimentation. |
 | Java | [hobbescalvin414-tech/minicode4j](https://github.com/hobbescalvin414-tech/minicode4j/tree/feat/default-ts-ui) | Java implementation with a TypeScript-style UI direction. |
 
@@ -163,7 +174,8 @@ tests. They do not indicate failing behavior.
 
 - [Optimization Summary](./docs/OPTIMIZATION_SUMMARY.md)
 - [Memory Theory](./docs/memory_theory.md)
-- [Main MiniCode Repository](https://github.com/LiuMengxuan04/MiniCode)
+- [Persistent Memory / Skill Routing Review](./docs/persistent-memory-skill-routing-review.md)
+- [Upstream MiniCode Repository](https://github.com/LiuMengxuan04/MiniCode)
 
 ## Design Principles
 

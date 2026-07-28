@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#171d2b" />
-    <title>MiniCode · Dashboard</title>
+    <title>CodeLoop · Dashboard</title>
     <link rel="stylesheet" href="/assets/styles.css" />
   </head>
   <body>
@@ -14,7 +14,7 @@
     <nav id="nav" aria-label="主导航">
       <div class="brand">
         <div class="brand-copy">
-          <span class="brand-name">MiniCode <span class="brand-mark" aria-hidden="true">⌁</span></span>
+          <span class="brand-name">CodeLoop <span class="brand-mark" aria-hidden="true">⌁</span></span>
           <small>本地 Agent 控制台</small>
         </div>
         <button id="nav-toggle" title="收起侧栏" aria-label="收起侧栏" aria-controls="nav" aria-expanded="true">❮</button>
@@ -42,7 +42,7 @@
         <div class="page-title-group">
           <span class="page-kicker" id="page-kicker">AGENT OBSERVATORY / LOCAL</span>
           <h1 id="title">概览</h1>
-          <p class="page-deck" id="page-deck">沿着当前执行、真实事件与工作区信号观察 MiniCode。</p>
+          <p class="page-deck" id="page-deck">沿着当前执行、真实事件与工作区信号观察 CodeLoop。</p>
         </div>
         <div class="page-meta-row">
           <span class="live-refresh-status connecting" id="live-refresh-status" role="status" aria-live="polite">正在连接</span>
@@ -54,7 +54,7 @@
 
     <div class="resizer" id="dock-resizer" role="separator" tabindex="0" aria-controls="dock" aria-orientation="vertical" aria-valuemin="280" aria-valuemax="620" aria-valuenow="380" aria-label="调整会话栏宽度" title="拖动或使用方向键调整会话栏"></div>
 
-    <aside id="dock" aria-label="MiniCode Session 对话">
+    <aside id="dock" aria-label="CodeLoop Session 对话">
       <div class="dock-head">
         <div class="dock-title-group">
           <span class="dock-kicker">CONTROL CHANNEL</span>
@@ -83,7 +83,7 @@
       <section id="permission-panel" class="permission-panel" aria-label="权限审批" aria-live="polite" hidden></section>
       <div class="chat-log" id="chat-log" aria-live="polite" aria-relevant="additions text"></div>
       <form class="chat-bar" id="chat-form">
-        <input id="message" autocomplete="off" maxlength="32000" placeholder="发送消息给 MiniCode" aria-label="发送消息给 MiniCode" />
+        <input id="message" autocomplete="off" maxlength="32000" placeholder="发送消息给 CodeLoop" aria-label="发送消息给 CodeLoop" />
         <button id="chat-cancel" type="button" hidden>取消</button>
         <button id="chat-submit" type="submit">发送</button>
       </form>

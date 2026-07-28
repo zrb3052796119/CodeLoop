@@ -1,4 +1,4 @@
-# MiniCode Python
+# CodeLoop
 
 <p align="center">
   <strong>一个具备自我调节能力的 Python 本地编码 Agent。</strong>
@@ -7,9 +7,9 @@
 <p align="center">
   <a href="./README.md">English</a>
   ·
-  <a href="https://github.com/LiuMengxuan04/MiniCode">MiniCode 主仓库</a>
+  <a href="https://github.com/LiuMengxuan04/MiniCode">MiniCode 主仓库(上游)</a>
   ·
-  <a href="https://github.com/QUSETIONS/MiniCode-Python">Python 仓库</a>
+  <a href="https://github.com/QUSETIONS/MiniCode-Python">MiniCode Python(上游)</a>
 </p>
 
 <p align="center">
@@ -18,33 +18,37 @@
   <img alt="Package" src="https://img.shields.io/badge/package-minicode--py-555?style=flat-square">
 </p>
 
-MiniCode Python 是 MiniCode 家族中的 Python 实现。主项目是
-[LiuMengxuan04/MiniCode](https://github.com/LiuMengxuan04/MiniCode)；本仓库负责探索
-Python-first 的 Agent 运行时，包括控制论编排、自适应记忆、本地工具循环和可验证实验。
+CodeLoop 是基于 [MiniCode Python](https://github.com/QUSETIONS/MiniCode-Python)
+的个人 fork,在上游基础上做了大量修改:给持久记忆加上了独立 verification +
+显式用户反馈两条真实证据通道、完善了 Skill 路由/证据/版本账本流水线,并修复了
+一批意图识别和权限审批层面的正确性问题。Python 包本身在改名过程中仍然保留
+`minicode` 这个内部名字(所有 import 路径都没有变),所以原有 MiniCode Python
+关于内部实现的文档大多依然适用。
 
-它不是把 LLM 简单包成一个命令行工具，而是把上下文压力、工具失败、记忆噪音和成本漂移都当作可观测信号，再反馈到运行时决策里。
+它不是把 LLM 简单包成一个命令行工具,而是把上下文压力、工具失败、记忆噪音和成本漂移都当作可观测信号,再反馈到运行时决策里。
 
 ## 为什么做这个版本
 
-很多 Coding Agent 本质上是“模型包装器”：输入 prompt，调用工具，然后希望循环不要坏掉。MiniCode Python 走的是另一条路线：
+很多 Coding Agent 本质上是"模型包装器":输入 prompt,调用工具,然后希望循环不要坏掉。CodeLoop 走的是另一条路线:
 
-> 编码 Agent 应该在工作时观察自己，并动态调整上下文、记忆、验证、并发和恢复行为。
+> 编码 Agent 应该在工作时观察自己,并动态调整上下文、记忆、验证、并发和恢复行为。
 
-因此这个仓库适合用来：
+因此这个仓库适合用来:
 
-- 阅读一个完整可运行的本地 Coding Agent；
-- 研究 Agent 控制、记忆和验证闭环；
-- 作为 TypeScript MiniCode 主仓库的 Python 伴随实现；
-- 在进入大型平台之前，先验证运行时控制想法。
+- 阅读一个完整可运行的本地 Coding Agent;
+- 研究 Agent 控制、记忆和验证闭环;
+- 作为在上游 MiniCode Python 运行时基础上,进一步扩展记忆/Skill 反馈闭环的 fork;
+- 在进入大型平台之前,先验证运行时控制想法。
 
 ## 核心亮点
 
-| 方向 | MiniCode Python 提供什么 |
+| 方向 | CodeLoop 提供什么 |
 | --- | --- |
 | 运行时控制 | `CyberneticOrchestrator` 统一协调上下文、成本、反馈、进度、记忆和恢复控制器。 |
 | 上下文管理 | PID 风格的上下文压力处理、压缩、预算调整和预测保护。 |
-| 记忆系统 | 领域感知检索、可选 LLM rerank、prompt 注入、任务反思写回和后台维护。 |
-| 工具循环 | 本地文件、搜索、编辑、命令工具，支持调度器感知执行和错误提示。 |
+| 记忆系统 | 领域感知检索、可选 LLM rerank、prompt 注入、任务反思写回、后台维护,以及基于 verification + 显式用户反馈两条通道的记忆 corroboration 反馈。 |
+| Skill 路由 | 意图感知的 Skill 发现/路由,配套跨 Run 的证据账本和不可变版本账本(promotion 目前有意保持锁定,等真实使用数据积累)。 |
+| 工具循环 | 本地文件、搜索、编辑、命令工具,支持调度器感知执行和错误提示。 |
 | 故障恢复 | 面向上下文溢出、工具失败、振荡和资源压力的自愈路径。 |
 | 验证体系 | 覆盖根包的单元测试、集成测试、压力测试和控制论测试。 |
 
@@ -63,7 +67,7 @@ flowchart LR
     Actions --> Loop
 ```
 
-主循环现在直接驱动 orchestrator 生命周期：
+主循环现在直接驱动 orchestrator 生命周期:
 
 - `wire_memory()`
 - `wire_healing()`
@@ -76,33 +80,33 @@ flowchart LR
 
 ## 仓库状态
 
-当前有效包是 `pyproject.toml` 配置的根目录包。
+当前有效包是 `pyproject.toml` 配置的根目录包。改名到 CodeLoop 时特意保留了
+`minicode` 这个 Python 包/导入路径——只改了对外可见的部分(这份 README、文档、
+CLI 人设文案和启动横幅)。
 
 | 路径 | 作用 |
 | --- | --- |
 | `minicode/` | 安装和测试使用的 canonical Python 包。 |
 | `tests/` | 当前有效测试套件。 |
-| `py-src/minicode/` | 兼容/迁移用镜像目录，会同步关键行为修复。 |
+| `py-src/minicode/` | 兼容/迁移用镜像目录,会同步关键行为修复。 |
 | `docs/OPTIMIZATION_SUMMARY.md` | 完整优化和集成记录。 |
 | `docs/memory_theory.md` | 记忆和控制理论说明。 |
-
-TypeScript 主仓库可以把本仓库作为 `external/MiniCode-Python` 关联进来，但 Python 包本身从本仓库根目录安装和验证。
 
 ## 快速开始
 
 ```bash
-git clone https://github.com/QUSETIONS/MiniCode-Python.git
-cd MiniCode-Python
+git clone https://github.com/zrb3052796119/CodeLoop.git
+cd CodeLoop
 python -m pip install -e .[dev]
 ```
 
-运行 CLI：
+运行 CLI:
 
 ```bash
 minicode-py
 ```
 
-或者直接运行模块：
+或者直接运行模块:
 
 ```bash
 python -m minicode.main
@@ -110,20 +114,20 @@ python -m minicode.main
 
 ## 验证
 
-当前根包使用以下命令验证：
+当前根包使用以下命令验证:
 
 ```bash
 python -m compileall -q minicode py-src\minicode tests
 pytest -q
 ```
 
-最近一次本地结果：
+最近一次本地结果:
 
 ```text
 738 passed, 2 skipped, 3 warnings
 ```
 
-这些 warning 来自 benchmark 测试中未注册的 `pytest.mark.benchmark` 标记，不代表行为失败。
+这些 warning 来自 benchmark 测试中未注册的 `pytest.mark.benchmark` 标记,不代表行为失败。
 
 ## 核心模块
 
@@ -139,26 +143,32 @@ pytest -q
 | `minicode/domain_classifier.py` | 任务和文件领域推断。 |
 | `minicode/model_registry.py` | 模型选择控制器。 |
 | `minicode/progress_controller.py` | 任务健康度和卡顿检测。 |
+| `minicode/skill_router.py` | 意图感知的 Skill 发现与路由。 |
+| `minicode/skill_evidence.py` / `minicode/skill_versions.py` | 跨 Run 的 Skill 证据账本和不可变版本账本。 |
 
-## MiniCode 家族
+## 上游 / 相关项目
+
+CodeLoop fork 自下面这个 MiniCode 家族里的 Python 成员;其余实现和这次 fork
+的改动无关,列在这里只是提供背景信息。
 
 | 版本 | 仓库 | 重点 |
 | --- | --- | --- |
 | TypeScript | [LiuMengxuan04/MiniCode](https://github.com/LiuMengxuan04/MiniCode) | 主线终端 Agent、TUI、MCP、Skills、会话和上下文控制。 |
-| Python | [QUSETIONS/MiniCode-Python](https://github.com/QUSETIONS/MiniCode-Python) | 控制论 Python 运行时、记忆管线和面向验证的实验。 |
+| Python(上游) | [QUSETIONS/MiniCode-Python](https://github.com/QUSETIONS/MiniCode-Python) | 控制论 Python 运行时、记忆管线和面向验证的实验。 |
 | Rust | [harkerhand/MiniCode-rs](https://github.com/harkerhand/MiniCode-rs/tree/master) | Rust 实现和系统侧实验。 |
-| Java | [hobbescalvin414-tech/minicode4j](https://github.com/hobbescalvin414-tech/minicode4j/tree/feat/default-ts-ui) | Java 实现，沿用 TypeScript 风格 UI 方向。 |
+| Java | [hobbescalvin414-tech/minicode4j](https://github.com/hobbescalvin414-tech/minicode4j/tree/feat/default-ts-ui) | Java 实现,沿用 TypeScript 风格 UI 方向。 |
 
 ## 文档
 
 - [完整优化总结](./docs/OPTIMIZATION_SUMMARY.md)
 - [记忆理论说明](./docs/memory_theory.md)
-- [MiniCode 主仓库](https://github.com/LiuMengxuan04/MiniCode)
+- [持久记忆 / Skill 路由审查](./docs/persistent-memory-skill-routing-review.md)
+- [上游 MiniCode 主仓库](https://github.com/LiuMengxuan04/MiniCode)
 
 ## 设计原则
 
 - 让 Agent 主循环保持可读、可查、可改。
-- 优先使用可观测运行时信号，而不是隐藏 prompt 技巧。
-- 运行时动作必须有边界：压缩、限流、调预算、恢复、反思。
+- 优先使用可观测运行时信号,而不是隐藏 prompt 技巧。
+- 运行时动作必须有边界:压缩、限流、调预算、恢复、反思。
 - 把验证和证据当作 Agent 运行时的一部分。
-- 让 Python 实现既能作为软件使用，也能作为研究脚手架。
+- 让 Python 实现既能作为软件使用,也能作为研究脚手架。

@@ -72,7 +72,7 @@ const PAGE_KICKERS = {
   system: 'LOCAL SYSTEM / HEALTH',
 };
 const PAGE_DECKS = {
-  overview: '沿着当前执行、真实事件与工作区信号观察 MiniCode。',
+  overview: '沿着当前执行、真实事件与工作区信号观察 CodeLoop。',
   runs: '检查当前 Workspace 中经过裁剪的真实 Run 生命周期与事件。',
   sessions: '查看本地会话权威、可见消息与显式管理边界。',
   memory: '追踪持久作用域、运行时检索、注入与生命周期。',
@@ -4028,7 +4028,7 @@ const VIEWS = {
         ${memoryPipelineCards()}
         <h2>真实条目状态</h2><div class="memory-list">${memoryRows(data.items)}</div>`;
     } else {
-      body = `<div class="card accent-card"><b>MiniCode 按作用域组织持久 Memory。</b><p>User / Project / Local 决定存储和共享语义；category 负责分类，tier 负责生命周期。当前接口只读。</p></div>
+      body = `<div class="card accent-card"><b>CodeLoop 按作用域组织持久 Memory。</b><p>User / Project / Local 决定存储和共享语义；category 负责分类，tier 负责生命周期。当前接口只读。</p></div>
         <h2>三个持久化作用域</h2>
         ${memoryScopeCards(data.summary, data.scopes)}
         <h2>Tier 分布</h2>${memoryTierCards(data.summary)}
@@ -4070,7 +4070,7 @@ const VIEWS = {
       const servers = data.mcpServers.map((server) => `<article class="tool-card connection-card"><div><code>${esc(server.name)}</code>${statusPill(server.status)}<span class="meta right">${esc(server.scope)}</span></div><div class="connection-facts"><div class="connection-fact"><small>Current configuration</small><b>${esc(statusText[server.status] || server.status)}</b><span>${server.protocol ? `configured protocol ${esc(server.protocol)}` : 'configured protocol unavailable'} · read-only</span></div>${renderMcpCurrentRuntime(server.current)}${renderMcpHistoricalRuntime(server.runtime)}</div></article>`).join('') || '<div class="card empty"><b>没有 MCP 配置</b><p>用户级和项目级配置源均可读，当前 effective 配置集合为空；当前快照中的 unmatched keys 被完全抑制，历史 unmatched facts 只以汇总计数显示。</p></div>';
       return subtabBar('connections', tabs, sub) + controls + `<div class="intro">configured 不等于 connected；current 仅表示这一个 Gateway process snapshot，history 仅来自保留 Runs。没有 heartbeat、全局状态或 Dashboard 进程控制。</div>${renderMcpCurrentCoverage(data)}${renderMcpCoverage(data)}${servers}${pageDiagnostics(data.diagnostics)}`;
     }
-    return subtabBar('connections', tabs, sub) + controls + `<div class="pillar-grid"><div class="flow-box"><b>MiniCode Gateway ${statusPill(data.gateway.status)}</b><span>${esc(data.gateway.transport)} · ${esc(data.gateway.scope)}</span><small>当前 Dashboard 请求的本地只读入口</small></div><div class="flow-box"><b>MCP configuration ${statusPill(data.source.status)}</b><span>${esc(formatCount(data.summary.configuredMcpCount))} configured</span><small>${esc(formatCount(data.summary.registeredConfiguredMcpCount))} registered in snapshot</small></div><div class="flow-box"><b>Current instances ${statusPill(data.mcpCurrent.status)}</b><span>${esc(formatCount(data.summary.activeMcpInstanceCount))} active instances</span><small>${esc(formatCount(data.summary.liveMcpCount))} Ready in this Gateway process</small></div></div><h2>配置来源</h2>${table(['来源', '状态', '条目', '更新时间'], Object.entries(data.configSources).map(([scope, source]) => `<tr><td>${esc(scope)}</td><td>${statusPill(source.status)}</td><td>${esc(source.count ?? '—')}</td><td class="meta">${source.updatedAt ? esc(formatSnapshotTime(source.updatedAt)) : 'no file'}</td></tr>`))}${pageDiagnostics(data.diagnostics)}`;
+    return subtabBar('connections', tabs, sub) + controls + `<div class="pillar-grid"><div class="flow-box"><b>CodeLoop Gateway ${statusPill(data.gateway.status)}</b><span>${esc(data.gateway.transport)} · ${esc(data.gateway.scope)}</span><small>当前 Dashboard 请求的本地只读入口</small></div><div class="flow-box"><b>MCP configuration ${statusPill(data.source.status)}</b><span>${esc(formatCount(data.summary.configuredMcpCount))} configured</span><small>${esc(formatCount(data.summary.registeredConfiguredMcpCount))} registered in snapshot</small></div><div class="flow-box"><b>Current instances ${statusPill(data.mcpCurrent.status)}</b><span>${esc(formatCount(data.summary.activeMcpInstanceCount))} active instances</span><small>${esc(formatCount(data.summary.liveMcpCount))} Ready in this Gateway process</small></div></div><h2>配置来源</h2>${table(['来源', '状态', '条目', '更新时间'], Object.entries(data.configSources).map(([scope, source]) => `<tr><td>${esc(scope)}</td><td>${statusPill(source.status)}</td><td>${esc(source.count ?? '—')}</td><td class="meta">${source.updatedAt ? esc(formatSnapshotTime(source.updatedAt)) : 'no file'}</td></tr>`))}${pageDiagnostics(data.diagnostics)}`;
   },
 
   ops() {
@@ -5232,7 +5232,7 @@ function syncChatControls() {
     || ['submitting', 'recovering', 'in_progress', 'cancelling', 'cancel_requested', 'committing'].includes(chatStore.phase);
   if (input.value !== chatStore.draft) input.value = chatStore.draft;
   input.disabled = submitting;
-  input.placeholder = chatStore.targetMode === 'new' ? '开始新的 MiniCode 对话' : '继续所选 Session';
+  input.placeholder = chatStore.targetMode === 'new' ? '开始新的 CodeLoop 对话' : '继续所选 Session';
   submit.disabled = submitting || !chatStore.draft.trim();
   submit.textContent = submitting ? '发送中…' : '发送';
   const cancellable = Boolean(chatStore.activeTurnId)
@@ -5409,8 +5409,8 @@ function fixedChatError(code) {
     session_not_found: '所选 Session 已不存在；请选择其他 Session 或开始新对话。',
     session_conflict: '该 Session 已被其他进程更新。已刷新最新内容，请确认后手动发送。',
     session_busy: 'Session 存储正忙，草稿已保留，请稍后手动发送。',
-    runtime_unavailable: 'MiniCode Runtime 暂时不可用，草稿已保留。',
-    turn_failed: 'MiniCode 未能完成并提交本轮，草稿已保留。',
+    runtime_unavailable: 'CodeLoop Runtime 暂时不可用，草稿已保留。',
+    turn_failed: 'CodeLoop 未能完成并提交本轮，草稿已保留。',
     turn_id_conflict: '该 turnId 已属于另一请求。本轮没有执行；请明确重新发送以生成新身份。',
     turn_in_progress: '该请求可能仍在处理中。页面不会自动重发；可等待只读状态检查或手动检查。',
     turn_interrupted: '该请求已中断且不会自动重跑。若要重试，请明确重新发送。',
@@ -5880,7 +5880,7 @@ function renderConversationDock(followStream = null) {
       ? 'submitting'
       : chatStore.phase === 'recovering' ? 'checking' : chatStore.phase === 'in_progress' ? 'recoverable' : chatStore.phase === 'success' ? 'success' : 'new';
     const stateTitle = chatStore.phase === 'submitting'
-      ? 'MiniCode 正在处理…'
+      ? 'CodeLoop 正在处理…'
       : chatStore.phase === 'recovering' ? '正在检查持久化状态…' : chatStore.phase === 'in_progress' ? '本轮可能仍在处理' : '开始新对话';
     log.innerHTML = `<div class="dock-session-summary"><b>新 Session</b><small>首条消息成功提交后创建并持久化。</small></div><div class="dock-state"><b>${stateTitle}</b><p>连接内临时展示、可恢复；最终正文只以 Sessions REST 为准，不会自动重发。</p></div>${chatStreamPresentationHtml()}${chatFeedback()}${chatUserSignal()}`;
     settleScroll();
@@ -5925,7 +5925,7 @@ function renderConversationDock(followStream = null) {
   const messages = detail.messages.map((message) => `<article class="chat-message ${esc(message.role)}"><small>${message.role === 'user' ? 'YOU' : 'MINICODE'} · #${esc(message.index)}${message.truncated ? ' · truncated' : ''}</small><div>${esc(message.content)}</div></article>`).join('') || '<div class="dock-state"><b>没有可展示的对话消息</b><p>system、tool、thinking 和 transcript 不会显示。</p></div>';
   const more = detail.page?.hasMore ? `<button class="load-more dock-load-more" onclick="loadMoreSessionMessages()" ${sessionDetailStore.loadingMore ? 'disabled' : ''}>${sessionDetailStore.loadingMore ? '加载中…' : '加载更多消息'}</button>` : '';
   const submitting = !presenting && ['submitting', 'cancelling', 'cancel_requested', 'committing'].includes(chatStore.phase)
-    ? `<div class="dock-chat-progress"><i></i><span>${esc(chatStore.phase === 'committing' ? '结果正在提交…' : chatStore.phase === 'submitting' ? 'MiniCode 正在同步处理本轮…' : '正在等待安全取消点…')}</span></div>`
+    ? `<div class="dock-chat-progress"><i></i><span>${esc(chatStore.phase === 'committing' ? '结果正在提交…' : chatStore.phase === 'submitting' ? 'CodeLoop 正在同步处理本轮…' : '正在等待安全取消点…')}</span></div>`
     : '';
   log.innerHTML = `${heading}${messages}${chatStreamPresentationHtml()}${submitting}${chatFeedback()}${chatUserSignal()}${more}`;
   settleScroll();

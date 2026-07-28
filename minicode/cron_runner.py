@@ -59,7 +59,7 @@ def run_configured_tasks(config: dict[str, Any], *, dry_run: bool = False) -> li
 
 
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description="Run MiniCode scheduled headless tasks.")
+    parser = argparse.ArgumentParser(description="Run CodeLoop scheduled headless tasks.")
     parser.add_argument("--config", default=None, help="Path to cron JSON config.")
     parser.add_argument("--once", action="store_true", help="Run tasks once and exit.")
     parser.add_argument("--dry-run", action="store_true", help="Validate tasks without executing prompts.")

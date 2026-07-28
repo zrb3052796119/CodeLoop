@@ -10,14 +10,14 @@ from .theme import theme
 def render_input_prompt(current_input: str, cursor_offset: int, compact: bool = False) -> str:
     """Render the input prompt line(s), supports multi-line via Ctrl+J.
 
-    Format matches the Rust version:
-      mini-code> <input with cursor>
+    Format matches the Rust version's prompt style:
+      codeloop> <input with cursor>
     Multi-line input renders each line with a continuation prefix.
     """
     t = theme()
     offset = max(0, min(cursor_offset, len(current_input)))
-    prefix = f"{t.input}{BOLD}mini-code>{RESET} "
-    cont_prefix = f"{t.subtle}          {RESET}"
+    prefix = f"{t.input}{BOLD}codeloop>{RESET} "
+    cont_prefix = f"{t.subtle}         {RESET}"
 
     if '\n' in current_input:
         # Multi-line: split and find which line the cursor is on

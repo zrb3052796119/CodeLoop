@@ -145,7 +145,7 @@ class MiniCodeGatewayHandler(MiniCodeWebHandler):
         except (Exception, SystemExit) as exc:  # noqa: BLE001
             if isinstance(exc, SystemExit):
                 message = str(exc) or f"headless exited with status {exc.code}"
-                print("MiniCode gateway headless execution exited.", file=sys.stderr)
+                print("CodeLoop gateway headless execution exited.", file=sys.stderr)
                 self._send_json({"ok": False, "error": message}, status=500)
                 return
             self._send_json({"ok": False, "error": str(exc)}, status=500)
@@ -227,7 +227,7 @@ def run_gateway() -> None:
     )
     try:
         event_stream.start()
-        print(f"MiniCode gateway listening on http://{host}:{port}", flush=True)
+        print(f"CodeLoop gateway listening on http://{host}:{port}", flush=True)
         server.serve_forever()
     except KeyboardInterrupt:
         pass

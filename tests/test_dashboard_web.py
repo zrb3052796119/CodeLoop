@@ -88,13 +88,13 @@ def test_dashboard_root_serves_the_shell_with_session_backed_chat_dock(
     assert status == 200
     assert headers["Content-Type"] == "text/html; charset=utf-8"
     assert headers["Cache-Control"] == "no-store"
-    assert "MiniCode · Dashboard" in html
+    assert "CodeLoop · Dashboard" in html
     assert "/assets/styles.css" in html
     assert "/assets/cost-format.js" in html
     assert "/assets/app.js" in html
     assert "read-only · loading snapshot" in html
-    assert "MiniCode Session 对话" in html
-    assert "发送消息给 MiniCode" in html
+    assert "CodeLoop Session 对话" in html
+    assert "发送消息给 CodeLoop" in html
     assert 'id="dock-new"' in html
 
 
@@ -1267,7 +1267,7 @@ def test_sessions_page_and_chat_dock_share_real_session_selection_store() -> Non
     assert "loopback permission approval" in html
     assert 'id="permission-panel"' in html
     assert "no token streaming" not in html
-    assert "发送消息给 MiniCode" in html
+    assert "发送消息给 CodeLoop" in html
     assert 'id="message"' in html and 'id="message" autocomplete="off"' in html
     assert 'id="chat-submit"' in html
     assert 'id="dock-new"' in html

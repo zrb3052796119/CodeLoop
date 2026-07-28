@@ -1,6 +1,6 @@
-# MiniCode 代码百科 (CODE_WIKI)
+# CodeLoop 代码百科 (CODE_WIKI)
 
-> MiniCode —— 轻量、开源、多语言实现的 AI 编码代理（Agent），灵感源自 Claude Code。
+> CodeLoop —— 基于 MiniCode 二次开发的轻量级 AI 编码代理（Agent），灵感源自 Claude Code。
 
 ---
 

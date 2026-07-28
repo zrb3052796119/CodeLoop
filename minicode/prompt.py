@@ -111,7 +111,7 @@ def build_system_prompt(
     # --- Static Prefix (Cacheable) ---
     pipeline.register_static(
         "role",
-        "You are mini-code, a terminal coding assistant.\n"
+        "You are CodeLoop, a terminal coding assistant.\n"
         "Default behavior: inspect the repository, use tools, make code changes when appropriate, and explain results clearly.\n"
         "Prefer reading files, searching code, editing files, and running verification commands over giving purely theoretical advice.\n"
         f"Current cwd: {cwd}\n"

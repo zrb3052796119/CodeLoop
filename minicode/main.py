@@ -35,7 +35,7 @@ def _render_banner(runtime: dict | None, cwd: str, permission_summary: list[str]
     model = runtime["model"] if runtime else "unconfigured"
     lines = [
         "╔══════════════════════════════════════════════════════════╗",
-        "║  🤖 MiniCode Python - Your Terminal Coding Assistant    ║",
+        "║  🤖 CodeLoop - Your Terminal Coding Assistant           ║",
         "╠══════════════════════════════════════════════════════════╣",
         f"║  Model: {model:<46} ║",
         f"║  CWD: {cwd:<50} ║",
@@ -129,7 +129,7 @@ def main() -> None:
     _configure_stdio_for_unicode()
 
     parser = argparse.ArgumentParser(
-        description="MiniCode Python - A lightweight terminal coding assistant",
+        description="CodeLoop - A lightweight terminal coding assistant",
         add_help=True,
     )
     parser.add_argument(
@@ -212,8 +212,8 @@ def main() -> None:
             "  2. Set your API key: export ANTHROPIC_API_KEY=sk-ant-...\n"
             "  3. Or edit ~/.mini-code/settings.json:\n"
             '     {"model": "claude-sonnet-4-20250514", "env": {"ANTHROPIC_API_KEY": "sk-ant-..."}}\n'
-            "  4. Restart MiniCode\n\n"
-            "📖 For more info: https://github.com/QUSETIONS/MiniCode-Python\n"
+            "  4. Restart CodeLoop\n\n"
+            "📖 For more info: https://github.com/zrb3052796119/CodeLoop\n"
             "   Falling back to mock model for now...\n",
             file=sys.stderr,
         )

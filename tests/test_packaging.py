@@ -2163,7 +2163,7 @@ try:
     assert run.source == "gateway"
     assert run.status == "completed"
     with urllib.request.urlopen(base + "/", timeout=5) as response:
-        assert "MiniCode · Dashboard" in response.read().decode("utf-8")
+        assert "CodeLoop · Dashboard" in response.read().decode("utf-8")
     with urllib.request.urlopen(base + "/assets/app.js", timeout=5) as response:
         installed_javascript = response.read()
         assert b"live invalidation, connection-scoped Chat presentation" in installed_javascript
