@@ -51,3 +51,60 @@ def test_build_system_prompt_requires_propose_skill_before_new_skill_write(tmp_p
     assert "Skill authoring policy" in prompt
     assert "call propose_skill first" in prompt
     assert "Do not call write_file for a new Skill" in prompt
+
+
+def test_system_prompt_states_the_current_date(tmp_path: Path) -> None:
+    """Without a date the model has no clock and silently answers from its
+    training cutoff — stating a wrong year with full confidence."""
+    from datetime import datetime
+
+    prompt = build_system_prompt(str(tmp_path), [], {})
+    today = datetime.now().astimezone()
+
+    assert "## Current date" in prompt
+    assert f"{today:%Y-%m-%d}" in prompt
+    assert f"{today:%A}" in prompt
+
+
+def test_current_date_sits_behind_the_prompt_cache_boundary(tmp_path: Path) -> None:
+    """A per-turn-changing section placed in the static prefix would
+    invalidate the cacheable region on every date change."""
+    from minicode.prompt_pipeline import SYSTEM_PROMPT_DYNAMIC_BOUNDARY
+
+    prompt = build_system_prompt(str(tmp_path), [], {})
+    static_prefix, dynamic_suffix = prompt.split(SYSTEM_PROMPT_DYNAMIC_BOUNDARY, 1)
+
+    assert "## Current date" in dynamic_suffix
+    assert "## Current date" not in static_prefix
+
+
+def test_current_date_is_never_served_from_the_section_cache(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """PromptSection defaults to a 5-minute TTL; a clock section must opt out
+    or it will emit a stale date after midnight."""
+    import re
+    from datetime import datetime, timedelta, timezone
+
+    import minicode.prompt as prompt_module
+
+    tz = timezone(timedelta(hours=8))
+
+    class FrozenDateTime:
+        current = datetime(2026, 7, 30, 10, 0, tzinfo=tz)
+
+        @classmethod
+        def now(cls, tz_=None):
+            return cls.current
+
+    monkeypatch.setattr(prompt_module, "datetime", FrozenDateTime)
+
+    def rendered_date(text: str) -> str:
+        return re.search(r"Today is (\d{4}-\d{2}-\d{2})", text).group(1)
+
+    first = rendered_date(build_system_prompt(str(tmp_path), [], {}))
+    FrozenDateTime.current = datetime(2026, 8, 1, 10, 0, tzinfo=tz)
+    second = rendered_date(build_system_prompt(str(tmp_path), [], {}))
+
+    assert first == "2026-07-30"
+    assert second == "2026-08-01"

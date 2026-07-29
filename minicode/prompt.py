@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 
 from minicode.prompt_pipeline import PromptPipeline, read_file_cached
@@ -8,6 +9,26 @@ from minicode.prompt_pipeline import PromptPipeline, read_file_cached
 def _maybe_read(path: Path) -> str | None:
     """Read file content with caching (reuses pipeline cache)."""
     return read_file_cached(path)
+
+
+def _current_date_section() -> str:
+    """Tell the model what day it is, in the user's local time zone.
+
+    The model otherwise has no clock: it cannot distinguish "now" from its
+    training cutoff, so questions about the date, or any reasoning about
+    recency, deadlines, or how old a dependency is, silently use a stale
+    year.
+    """
+    now = datetime.now().astimezone()
+    offset = now.strftime("%z")
+    formatted_offset = f"UTC{offset[:3]}:{offset[3:]}" if offset else "local time"
+    return (
+        "## Current date\n"
+        f"Today is {now:%Y-%m-%d} ({now:%A}), {formatted_offset}.\n"
+        "Use this instead of assuming a date from your training data. "
+        "Your knowledge cutoff is earlier than today, so treat anything you "
+        "recall about recent events as possibly out of date."
+    )
 
 
 def _engineering_governance_rules() -> str:
@@ -148,6 +169,13 @@ def build_system_prompt(
     )
 
     # --- Dynamic Suffix (Per-turn) ---
+    # Current date. Without this the model has no clock at all and silently
+    # falls back to its training cutoff — it will state a wrong year with
+    # full confidence rather than admit it cannot know. Registered dynamic
+    # (never static) so it stays behind the prompt-cache boundary, and with
+    # cache_ttl=0 so a clock section can never serve a stale value.
+    pipeline.register_dynamic("current_date", _current_date_section, cache_ttl=0.0)
+
     # Permission context
     if permission_summary:
         perm_text = "Permission context:\n" + "\n".join(permission_summary)
