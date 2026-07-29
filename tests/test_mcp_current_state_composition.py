@@ -160,6 +160,9 @@ def test_task_registry_inherits_dependency_and_disposes_exactly_once(
         def list(self) -> list[ToolDefinition]:
             return []
 
+        def get_skills(self) -> list[dict[str, object]]:
+            return []
+
         def dispose(self) -> None:
             nonlocal dispose_calls
             dispose_calls += 1
@@ -210,6 +213,9 @@ def test_standalone_task_keeps_factory_signature_and_disposes_on_setup_failure(
 
     class FullTools:
         def list(self) -> list[ToolDefinition]:
+            return []
+
+        def get_skills(self) -> list[dict[str, object]]:
             return []
 
         def dispose(self) -> None:

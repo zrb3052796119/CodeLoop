@@ -4248,3 +4248,179 @@ different, already-verified safety guarantee.
 ranking anomaly is documented as a known limitation rather than patched,
 because the only patch tried would have silently broken an existing,
 deliberate safety test.
+
+---
+
+# Task Plan: Sub-Agent Containment Fixes (Batch 1 — critical)
+
+## Goal
+
+Fix the three containment/stability defects found while reviewing the
+multi-agent (`task` tool) module. These are the "can it be trusted to run at
+all" class of problems, as opposed to the capability and UX gaps deferred to
+batch 2.
+
+## The three defects
+
+**1. Unbounded sub-agent recursion.** The `general` agent type is granted the
+full tool registry (`allowed_tools: None`), and the `task` tool is itself in
+that registry — verified: `'task' in create_default_tool_registry(...)` is
+`True`. There was no depth tracking anywhere, so a `general` sub-agent could
+spawn another `general` sub-agent indefinitely. Each level calls
+`create_default_tool_registry()` again, which re-runs Skill discovery and can
+start MCP server processes, so the blow-up is exponential in resources, not
+linear.
+
+**2. Cancellation could not reach a sub-agent.** `run_agent_turn` accepts a
+`cancellation_token`, but `task.py` passed none — and more fundamentally
+`ToolContext` had no field to carry one, so the tool physically could not
+forward it. Cancelling the parent Turn stopped the parent while the
+sub-agent kept calling the model in the background.
+
+**3. Sub-agents had no context governance at all.** `context_manager` was
+never passed. That single argument is the *only* gate for the entire
+compaction stack in `run_agent_turn` (`if context_manager:` constructs
+`ContextCompactor` + `ContextCyberneticsOrchestrator`), so a sub-agent ran
+with no PID pressure control, no compaction, no tool-result externalization,
+and no overflow recovery — it simply grew the prompt until the provider
+rejected it. This is the most likely cause of the "feels unreliable in real
+use" symptom that prompted the review.
+
+## What changed
+
+- `minicode/tooling.py`: `ToolContext` gained `_cancellation_token` and
+  `_agent_depth`. Both are documented as existing specifically for tools that
+  start their own long-running work.
+- `minicode/agent_loop.py`: `run_agent_turn` and `_execute_single_tool` gained
+  an `agent_depth` parameter, threaded to all three `_execute_single_tool`
+  call sites (single, concurrent, serial) and into the constructed
+  `ToolContext` along with the existing `cancellation_token`.
+- `minicode/tools/task.py`:
+  - New `MAX_AGENT_DEPTH = 1` constant; `_run` refuses with a closed
+    `error[sub_agent_depth_exceeded]` code when already at the limit.
+  - `general` sub-agents now receive the full registry *minus the `task` tool
+    itself* — withholding the recursion entry point is better than
+    advertising a tool whose every call would be refused. The depth check
+    remains as defense in depth for contexts constructed elsewhere.
+  - Forwards the parent's `cancellation_token`, and re-raises
+    `TurnCancellationRequested` instead of converting it into an `ok=False`
+    tool failure, since a cancelled parent is control flow rather than a
+    sub-agent error.
+  - Builds and passes a dedicated `ContextManager` for the sub-agent, seeded
+    with the sub-agent's own messages.
+  - Also passes `runtime` through (previously `None` inside the sub-agent,
+    leaving nested tools without configuration).
+  - Preserves the discovered Skill catalog when rebuilding the filtered
+    registry (groundwork for batch 2's Skill passthrough; no behavior change
+    yet since the sub-agent system prompt is still hardcoded).
+
+## Verification
+
+- New `tests/test_sub_agent_isolation.py` (7 cases): depth refusal, `task`
+  withheld from `general`, depth increments to 1, token forwarded,
+  cancellation propagates rather than becoming a tool failure, context
+  manager present and seeded, Skill catalog preserved.
+- End-to-end check with the *real* `run_agent_turn` (no loop monkeypatching):
+  a pre-cancelled parent token causes `TurnCancellationRequested` to
+  propagate with the model invoked **0** times — previously the sub-agent
+  would have run to completion.
+- End-to-end log check confirming a sub-agent now initializes
+  `ContextCybernetics: PID control loop + predictive guard` and
+  `CostControlLoop`, neither of which it previously had.
+- Two pre-existing tests in `test_mcp_current_state_composition.py` used a
+  minimal `FullTools` stub lacking `get_skills()`; the stub was extended to
+  match the contract the real `ToolRegistry` has always had. Their original
+  MCP-inheritance and dispose-exactly-once assertions are unchanged.
+
+## Deliberately NOT in this batch
+
+Capability passthrough (memory, Skill-aware system prompt, project context),
+observability (`event_sink` so sub-agent runs appear in the Run Journal),
+streaming/progress callbacks, real parallel sub-agent execution, and the
+`prompt`-defaults-to-a-5-word-`description` design smell. Those are batch 2.
+
+---
+
+# Task Plan: Sub-Agent Capability & Observability (Batch 2)
+
+## Goal
+
+Close the capability and UX gaps left by batch 1: sub-agents were markedly
+"dumber" than the main agent and invisible to the Dashboard.
+
+## Two findings that changed the plan
+
+**`system_prompt` and `project_context` on `run_agent_turn` are dead
+parameters.** They feed `_build_layered_context()`, whose `LayeredContext` /
+`ContextBuilder` results are assigned and then never read. The prompt the
+model actually receives is `messages[0]`, which the main path builds via
+`build_system_prompt()` in `prepare_conversation_messages`. So "make the
+sub-agent Skill-aware" could not be done by passing the existing parameter —
+the prompt had to be composed into `sub_messages[0]`.
+
+**Forwarding the parent's `event_sink` would have broken the Skill evidence
+ledger.** `skill_evidence.py` requires exactly one `task.outcome` and exactly
+one `skill.routed` per Run (`if len(...) != 1: return None,
+"missingOrInvalidOutcome"`). A sub-agent running a full nested loop emits its
+own, so every Run that used a sub-agent would have silently dropped out of
+the P2A/P2B evidence pipeline. Naive passthrough was abandoned in favour of a
+single bounded summary event.
+
+## What changed
+
+- **Skill/project awareness**: new `_build_sub_agent_system_prompt()` routes
+  Skills for the sub-agent's own task (mirroring `create_agent_turn_runtime`)
+  and composes `build_system_prompt()` output with the agent-type role text
+  and hand-back protocol. Falls back to the plain role text if prompt
+  assembly fails — a sub-agent with a basic prompt beats one that cannot
+  start.
+- **Memory**: the sub-agent now shares the project `MemoryManager`.
+  Injection is the motivation; reflection write-back rides along, which is
+  acceptable only because automatic memories land in the pending-approval
+  queue rather than the active pool.
+- **Observability**: new `minicode/subagent_observation.py` defines a
+  versioned, content-free `subagent.completed` contract (agent type, closed
+  outcome enum, model turns, tool calls, duration, max turns, truncation
+  flag). Registered in `RunJournal.EVENT_TYPES` and validated on write.
+  `task.py` emits exactly one per invocation, including for depth rejections
+  and sub-agent failures.
+- **Prompt quality**: `prompt` is now required rather than defaulting to the
+  3-5 word `description`, and is documented as needing to be self-contained
+  since the sub-agent cannot see the parent conversation.
+- **Correct stats**: the header counted `role == "user"` messages as "Turns",
+  but tool results also carry that role, so the number was neither turns nor
+  tool calls. Now reports model turns and tool calls separately.
+- **`explore` turn budget** raised 5 → 12; a tree/grep pass plus several
+  reads previously exhausted the limit mid-survey.
+
+## Verification
+
+- `tests/test_sub_agent_isolation.py` grew to 18 cases, adding: required
+  prompt, Skill-aware system prompt (with a Skill that actually routes),
+  memory passthrough, corrected turn/tool counts, exactly one bounded
+  summary event with a content-free field set, depth rejection recorded, and
+  a parametrized set of RunJournal rejections.
+- Real `RunJournal` round-trip confirmed the event persists and that
+  malformed variants are rejected — including a payload carrying an extra
+  `findings` field.
+- Full suite: `3497 passed, 2 skipped`, plus the same pre-existing
+  sandbox-only network failure. No real-home pollution.
+
+## A mistake worth recording
+
+The first `subagent.completed` normalizer built a whitelist dict but did not
+compare the incoming field set, so a payload with an extra `findings` key was
+*accepted* (with the extra field dropped) instead of rejected. No leak, but
+inconsistent with `verification_observation`, which does
+`set(payload) != _FIELDS`. Caught by a manual round-trip probe rather than by
+the unit tests, then fixed and covered by a parametrized rejection test.
+
+## Still open (not attempted)
+
+Real parallel sub-agent execution — `task.is_concurrency_safe` is `False`, so
+multiple sub-agents always run serially and the résumé's "并行探索效率" claim
+is not yet backed by the code. Making `task` concurrency-safe needs thought
+about permission prompting, MCP process fan-out, and per-sub-agent budgets,
+so it was deliberately left out of this batch. Streaming/progress callbacks
+into the parent UI also remain unimplemented; the summary event gives
+after-the-fact visibility, not live feedback.

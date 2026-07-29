@@ -237,6 +237,19 @@ class ToolContext:
         repr=False,
         compare=False,
     )
+    # Cooperative cancellation for the owning Turn. A tool that starts its own
+    # long-running work (notably the sub-agent `task` tool) must forward this
+    # so cancelling the parent Turn also stops the nested work instead of
+    # leaving it to burn tokens in the background.
+    _cancellation_token: Any | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    # Nesting depth of the agent loop that owns this context. The top-level
+    # loop is 0; a sub-agent spawned by the `task` tool runs at 1. Used to
+    # stop unbounded sub-agent recursion.
+    _agent_depth: int = 0
 
 
 Validator = Callable[[Any], Any]

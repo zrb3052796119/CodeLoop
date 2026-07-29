@@ -350,6 +350,7 @@ def _execute_single_tool(
     skill_usage_tracker: SkillUsageTracker | None = None,
     cancellation_token: TurnCancellationToken | None = None,
     verification_tracker: VerificationTracker | None = None,
+    agent_depth: int = 0,
 ) -> ToolResult:
     """Execute a single tool call with hooks, state updates, and crash protection.
     
@@ -394,6 +395,8 @@ def _execute_single_tool(
                     _event_sink=event_sink,
                     _step=step,
                     _skill_usage_tracker=skill_usage_tracker,
+                    _cancellation_token=cancellation_token,
+                    _agent_depth=agent_depth,
                 ),
             )
             raise_if_cancelled(cancellation_token)
@@ -784,6 +787,7 @@ def run_agent_turn(
     memory_manager: MemoryManager | None = None,
     event_sink: AgentEventSink | None = None,
     cancellation_token: TurnCancellationToken | None = None,
+    agent_depth: int = 0,
 ) -> list[ChatMessage]:
     current_messages = list(messages)
     saw_tool_result = False
@@ -1705,6 +1709,7 @@ def run_agent_turn(
                     skill_usage_tracker,
                     cancellation_token,
                     verification_tracker,
+                    agent_depth,
                 )
                 if metrics_collector:
                     metrics_collector.end_tool(
@@ -1751,6 +1756,7 @@ def run_agent_turn(
                                 skill_usage_tracker,
                                 cancellation_token,
                                 verification_tracker,
+                                agent_depth,
                             ): call
                             for call in concurrent_calls
                         }
@@ -1775,6 +1781,7 @@ def run_agent_turn(
                             skill_usage_tracker,
                             cancellation_token,
                             verification_tracker,
+                            agent_depth,
                         )
                         if metrics_collector:
                             metrics_collector.end_tool(

@@ -31,6 +31,10 @@ from minicode.permission_event_contract import (
     PERMISSION_EVENT_TYPES,
     normalize_permission_event_payload,
 )
+from minicode.subagent_observation import (
+    SUBAGENT_EVENT_TYPE,
+    normalize_subagent_payload,
+)
 from minicode.verification_observation import (
     VERIFICATION_EVENT_TYPE,
     normalize_verification_payload,
@@ -110,6 +114,7 @@ EVENT_TYPES = frozenset(
         "recovery.started",
         "recovery.completed",
         "mcp.runtime.observed",
+        SUBAGENT_EVENT_TYPE,
         *PERMISSION_EVENT_TYPES,
     }
 )
@@ -295,6 +300,11 @@ def _sanitize_event_payload(event_type: str, payload: Mapping[str, Any] | None) 
         if normalized_permission is None:
             raise RunJournalValidationError("Permission event payload is invalid.")
         return normalized_permission
+    if event_type == SUBAGENT_EVENT_TYPE:
+        normalized_subagent = normalize_subagent_payload(sanitized)
+        if normalized_subagent is None:
+            raise RunJournalValidationError("Sub-agent event payload is invalid.")
+        return normalized_subagent
     if event_type == VERIFICATION_EVENT_TYPE:
         normalized_verification = normalize_verification_payload(sanitized)
         if normalized_verification is None:

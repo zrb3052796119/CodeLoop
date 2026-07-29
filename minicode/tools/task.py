@@ -14,12 +14,28 @@ from __future__ import annotations
 import time
 
 from minicode.agent_loop import run_agent_turn
+from minicode.run_events import emit_event_safely
+from minicode.subagent_observation import (
+    SUBAGENT_EVENT_TYPE,
+    project_subagent_event,
+)
 from minicode.tooling import ToolDefinition, ToolResult
+from minicode.turn_cancellation import TurnCancellationRequested
 
 
 # ---------------------------------------------------------------------------
 # Agent type definitions
 # ---------------------------------------------------------------------------
+
+# Maximum agent nesting depth. The top-level agent loop runs at depth 0, so a
+# limit of 1 means "sub-agents may not spawn further sub-agents".
+#
+# This is deliberately strict. The `general` agent type is granted the full
+# tool registry, which includes this very tool, so without a hard limit a
+# sub-agent can spawn a sub-agent indefinitely — and every level rebuilds a
+# complete tool registry (including MCP server processes), making the blow-up
+# exponential rather than linear.
+MAX_AGENT_DEPTH = 1
 
 AGENT_TYPES = {
     "explore": {
@@ -33,7 +49,9 @@ AGENT_TYPES = {
             "When done, provide a concise summary of your findings."
         ),
         "allowed_tools": {"read_file", "list_files", "grep_files", "file_tree", "find_symbols", "find_references", "get_ast_info"},
-        "max_turns": 5,
+        # A real exploration needs a tree/grep pass plus several reads before
+        # it can summarize; 5 turns ran out mid-survey.
+        "max_turns": 12,
     },
     "plan": {
         "name": "Plan",
@@ -72,12 +90,98 @@ def _validate(input_data: dict) -> dict:
     if agent_type not in AGENT_TYPES:
         valid = ", ".join(AGENT_TYPES.keys())
         raise ValueError(f"agent_type must be one of: {valid}. Got: {agent_type}")
-    
+
+    # `description` is specified as 3-5 words for display. Silently using it
+    # as the sub-agent's entire task brief produces near-useless runs, so a
+    # real prompt is required rather than defaulted.
+    raw_prompt = input_data.get("prompt")
+    prompt = raw_prompt.strip() if isinstance(raw_prompt, str) else ""
+    if not prompt:
+        raise ValueError(
+            "prompt is required: give the sub-agent a full, self-contained task "
+            "description (it cannot see this conversation)"
+        )
+
     return {
         "description": description.strip(),
         "agent_type": agent_type,
-        "prompt": input_data.get("prompt", description.strip()),
+        "prompt": prompt,
     }
+
+
+def _emit_subagent_observation(context, **fields) -> None:
+    """Record one bounded summary of this sub-agent run in the parent Run.
+
+    The nested loop's own events are deliberately NOT forwarded: readers such
+    as `skill_evidence` require exactly one `task.outcome` / `skill.routed`
+    per Run, so replaying a sub-agent's lifecycle into the parent stream would
+    disqualify the Run from the Skill evidence ledger entirely.
+    """
+    sink = getattr(context, "_event_sink", None)
+    if sink is None:
+        return
+    try:
+        payload = project_subagent_event(**fields)
+        if payload is None:
+            return
+        emit_event_safely(
+            sink,
+            SUBAGENT_EVENT_TYPE,
+            step=getattr(context, "_step", None),
+            payload=payload,
+        )
+    except Exception:  # noqa: BLE001 - observation must never affect the result
+        pass
+
+
+def _build_sub_agent_system_prompt(
+    *,
+    cwd: str,
+    agent_def: dict,
+    task_prompt: str,
+    tools,
+    permissions,
+) -> str:
+    """Compose the sub-agent's system prompt: the shared project/Skill-aware
+    base plus this agent type's role and hand-back protocol.
+
+    Falls back to the standalone role text if the shared builder is
+    unavailable for any reason — a sub-agent with a plain prompt is far
+    better than a sub-agent that cannot start.
+    """
+    role_text = (
+        agent_def["system_prompt"]
+        + f"\n\nCurrent cwd: {cwd}"
+        + "\n\nIMPORTANT: When you have completed your task, end with <final> and provide your findings."
+        + " Do not ask the user questions — work autonomously with the tools available."
+        + " Be concise and focused."
+    )
+    try:
+        from minicode.capability_registry import get_registry
+        from minicode.intent_parser import parse_intent
+        from minicode.prompt import build_system_prompt
+        from minicode.skill_router import SkillRouter
+
+        routing = SkillRouter().route(
+            tools.get_skills(), parse_intent(task_prompt), get_registry()
+        )
+        try:
+            permission_summary = permissions.get_summary()
+        except Exception:  # noqa: BLE001 - summary is advisory only
+            permission_summary = []
+        base = build_system_prompt(
+            cwd,
+            permission_summary,
+            {
+                "skills": routing.selected_skill_dicts(),
+                "skill_routing": routing.to_dict(),
+                "mcpServers": tools.get_mcp_servers(),
+                "memory_context": "",
+            },
+        )
+    except Exception:  # noqa: BLE001 - never block the sub-agent on prompt assembly
+        return role_text
+    return f"{base}\n\n---\n\n{role_text}"
 
 
 def _run(input_data: dict, context) -> ToolResult:
@@ -92,11 +196,34 @@ def _run(input_data: dict, context) -> ToolResult:
     from minicode.model_registry import create_model_adapter
     from minicode.permissions import PermissionManager
     from minicode.tools import create_default_tool_registry
-    
+
     agent_type = input_data["agent_type"]
     agent_def = AGENT_TYPES[agent_type]
     task_prompt = input_data["prompt"]
-    
+
+    depth = getattr(context, "_agent_depth", 0)
+    if not isinstance(depth, int) or isinstance(depth, bool) or depth < 0:
+        depth = 0
+    if depth >= MAX_AGENT_DEPTH:
+        _emit_subagent_observation(
+            context,
+            agent_type=agent_type,
+            outcome="depth_rejected",
+            model_turns=0,
+            tool_calls=0,
+            duration_ms=0,
+            max_turns=agent_def["max_turns"],
+            result_truncated=False,
+        )
+        return ToolResult(
+            ok=False,
+            output=(
+                f"error[sub_agent_depth_exceeded]: already running at sub-agent "
+                f"depth {depth} (max {MAX_AGENT_DEPTH}). Sub-agents cannot spawn "
+                f"further sub-agents — complete this task with the tools you have."
+            ),
+        )
+
     # Try to get the model from context or fall back to creating one
     # The context object carries runtime info needed for the model adapter
     runtime = None
@@ -135,16 +262,22 @@ def _run(input_data: dict, context) -> ToolResult:
             mcp_current_state_registry=current_state_registry,
         )
     try:
+        from minicode.tooling import ToolRegistry
+
         allowed = agent_def["allowed_tools"]
         if allowed is not None:
             filtered_tools = [t for t in full_tools.list() if t.name in allowed]
-            from minicode.tooling import ToolRegistry
-            tools = ToolRegistry(
-                filtered_tools,
-                mcp_current_state_registry=current_state_registry,
-            )
         else:
-            tools = full_tools
+            # `general` gets the full registry, minus this tool itself: at
+            # MAX_AGENT_DEPTH=1 a nested call could only ever be refused, so
+            # withholding it entirely is better than advertising a tool whose
+            # every invocation returns an error.
+            filtered_tools = [t for t in full_tools.list() if t.name != "task"]
+        tools = ToolRegistry(
+            filtered_tools,
+            skills=full_tools.get_skills(),
+            mcp_current_state_registry=current_state_registry,
+        )
 
         model = create_model_adapter(
             model=runtime.get("model", ""),
@@ -160,20 +293,49 @@ def _run(input_data: dict, context) -> ToolResult:
                 prompt=getattr(context.permissions, "prompt", None),
             )
 
+        # Route Skills for the sub-agent's own task, exactly as the top-level
+        # runtime does. Without this the sub-agent's system prompt is the
+        # hardcoded blurb below and it never learns that Skills exist, so it
+        # can neither see candidates nor call load_skill.
+        #
+        # Note run_agent_turn's `system_prompt`/`project_context` parameters
+        # only feed a LayeredContext that nothing consumes; the prompt the
+        # model actually receives is messages[0], so it is composed here.
+        sub_system_prompt = _build_sub_agent_system_prompt(
+            cwd=context.cwd,
+            agent_def=agent_def,
+            task_prompt=task_prompt,
+            tools=tools,
+            permissions=sub_permissions,
+        )
         sub_messages = [
-            {
-                "role": "system",
-                "content": agent_def["system_prompt"]
-                + f"\n\nCurrent cwd: {context.cwd}"
-                + "\n\nIMPORTANT: When you have completed your task, end with <final> and provide your findings."
-                + " Do not ask the user questions — work autonomously with the tools available."
-                + " Be concise and focused.",
-            },
+            {"role": "system", "content": sub_system_prompt},
             {
                 "role": "user",
                 "content": task_prompt,
             },
         ]
+
+        # Give the sub-agent its own context window governor. Without this the
+        # sub-agent runs with no compaction at all, so a long exploration just
+        # grows the prompt until the provider rejects it.
+        from minicode.context_manager import ContextManager
+
+        sub_context_manager = ContextManager(model=runtime.get("model", "default"))
+        sub_context_manager.messages = sub_messages
+
+        # Share the project's memory store. Injection is a clear win — the
+        # sub-agent otherwise re-derives conventions the project already
+        # recorded. Reflection write-back rides along; that is acceptable
+        # because automatic memories land in the pending-approval queue
+        # rather than the active pool, so a narrow subtask cannot silently
+        # promote low-signal "lessons" into future prompts.
+        try:
+            from minicode.memory import MemoryManager
+
+            sub_memory = MemoryManager(project_root=context.cwd)
+        except Exception:  # noqa: BLE001 - memory is an enhancement, not a prerequisite
+            sub_memory = None
 
         start_time = time.time()
         max_turns = agent_def["max_turns"]
@@ -193,8 +355,29 @@ def _run(input_data: dict, context) -> ToolResult:
                 cwd=context.cwd,
                 permissions=sub_permissions,
                 max_steps=max_turns,
+                runtime=runtime,
+                context_manager=sub_context_manager,
+                memory_manager=sub_memory,
+                # Cancelling the parent Turn must stop the sub-agent too;
+                # otherwise it keeps calling the model after the user gave up.
+                cancellation_token=getattr(context, "_cancellation_token", None),
+                agent_depth=depth + 1,
             )
+        except TurnCancellationRequested:
+            # Cooperative cancellation is the parent Turn's decision, not a
+            # sub-agent failure — let it propagate so the parent unwinds.
+            raise
         except Exception as e:
+            _emit_subagent_observation(
+                context,
+                agent_type=agent_type,
+                outcome="failed",
+                model_turns=0,
+                tool_calls=0,
+                duration_ms=int((time.time() - start_time) * 1000),
+                max_turns=max_turns,
+                result_truncated=False,
+            )
             return ToolResult(
                 ok=False,
                 output=(
@@ -220,14 +403,22 @@ def _run(input_data: dict, context) -> ToolResult:
     if not final_message:
         final_message = "(sub-agent completed without a final message)"
     
-    # Build summary
-    tool_calls_count = sum(1 for m in result_messages if m.get("role") == "assistant_tool_call")
-    user_messages_count = sum(1 for m in result_messages if m.get("role") == "user")
-    
+    # Build summary. Model turns are assistant messages; tool results also
+    # arrive with role="user", so counting user messages (as this once did)
+    # reported neither turns nor tool calls.
+    tool_calls_count = sum(
+        1 for m in result_messages if m.get("role") == "assistant_tool_call"
+    )
+    model_turns = sum(
+        1
+        for m in result_messages
+        if m.get("role") in {"assistant", "assistant_tool_call"}
+    )
+
     header = (
         f"[Sub-agent {agent_def['name']} completed]\n"
         f"  Type: {agent_type}\n"
-        f"  Turns: {user_messages_count} (tool calls: {tool_calls_count})\n"
+        f"  Model turns: {model_turns} (tool calls: {tool_calls_count})\n"
         f"  Duration: {elapsed:.1f}s\n"
         f"  Max turns: {max_turns}\n"
     )
@@ -235,9 +426,21 @@ def _run(input_data: dict, context) -> ToolResult:
     # Truncate very long results
     result_text = final_message
     MAX_RESULT_LEN = 8000
-    if len(result_text) > MAX_RESULT_LEN:
+    truncated = len(result_text) > MAX_RESULT_LEN
+    if truncated:
         result_text = result_text[:MAX_RESULT_LEN] + f"\n\n... (truncated, {len(final_message)} chars total)"
-    
+
+    _emit_subagent_observation(
+        context,
+        agent_type=agent_type,
+        outcome="completed",
+        model_turns=model_turns,
+        tool_calls=tool_calls_count,
+        duration_ms=int(elapsed * 1000),
+        max_turns=max_turns,
+        result_truncated=truncated,
+    )
+
     return ToolResult(ok=True, output=header + "\n" + result_text)
 
 
@@ -259,7 +462,12 @@ task_tool = ToolDefinition(
             },
             "prompt": {
                 "type": "string",
-                "description": "Full task description for the sub-agent. If not provided, uses 'description'.",
+                "description": (
+                    "Full, self-contained task description for the sub-agent. "
+                    "The sub-agent runs in a fresh context and cannot see this "
+                    "conversation, so include every file path, constraint, and "
+                    "piece of background it needs."
+                ),
             },
             "agent_type": {
                 "type": "string",
@@ -267,7 +475,7 @@ task_tool = ToolDefinition(
                 "description": "Type of sub-agent: 'explore' (fast, read-only), 'plan' (thorough, read-only), 'general' (full tools, default)",
             },
         },
-        "required": ["description"],
+        "required": ["description", "prompt"],
     },
     validator=_validate,
     run=_run,
