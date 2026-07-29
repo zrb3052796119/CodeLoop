@@ -292,6 +292,140 @@ def test_depth_rejection_is_also_recorded_in_the_parent_run(
     assert events[0][1]["outcome"] == "depth_rejected"
 
 
+def test_sub_agent_tool_progress_reaches_the_ui_but_not_the_run_journal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Live progress belongs on the presentation channel. Routing it through
+    the parent's tool callbacks instead would write nested tool.started /
+    tool.finished events into the parent Run and disturb the approval
+    session's tool tracking."""
+    ui: list[tuple] = []
+    journal: list[str] = []
+
+    class Presentation:
+        def assistant_delta(self, text: str) -> None: ...
+
+        def tool_started(self, tool_name: str) -> None:
+            ui.append(("start", tool_name))
+
+        def tool_finished(self, tool_name: str, *, is_error: bool) -> None:
+            ui.append(("finish", tool_name, is_error))
+
+    class Sink:
+        def emit(self, event_type, *, step=None, payload=None) -> None:
+            journal.append(event_type)
+
+    def fake_run(**kwargs):
+        kwargs["on_tool_start"]("read_file", {})
+        kwargs["on_tool_result"]("read_file", "out", False)
+        return [{"role": "assistant", "content": "done"}]
+
+    monkeypatch.setattr(task_module, "run_agent_turn", fake_run)
+
+    task_tool.run(
+        {"description": "d", "prompt": "a full brief", "agent_type": "explore"},
+        _context(
+            tmp_path,
+            _agent_depth=0,
+            _presentation=Presentation(),
+            _event_sink=Sink(),
+        ),
+    )
+
+    # Prefixed so concurrent read-only sub-agents stay distinguishable.
+    assert ui == [
+        ("start", "explore▸read_file"),
+        ("finish", "explore▸read_file", False),
+    ]
+    # The Run stream still carries only the single bounded summary.
+    assert journal == ["subagent.completed"]
+
+
+def test_sub_agent_without_a_presentation_channel_passes_no_callbacks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured = _capture_sub_turn(monkeypatch)
+
+    task_tool.run(
+        {"description": "d", "prompt": "a full brief", "agent_type": "explore"},
+        _context(tmp_path, _agent_depth=0),
+    )
+
+    assert captured["on_tool_start"] is None
+    assert captured["on_tool_result"] is None
+
+
+def _task_call(agent_type: str, index: int = 0) -> dict:
+    return {
+        "id": str(index),
+        "toolName": "task",
+        "input": {
+            "agent_type": agent_type,
+            "description": "d",
+            "prompt": "a full self-contained task brief",
+        },
+    }
+
+
+def test_read_only_sub_agents_are_scheduled_concurrently() -> None:
+    """`explore`/`plan` carry no writers, run with prompt=None so they never
+    raise a permission prompt from a worker thread, and cannot touch the
+    working tree — so they may share the concurrent batch."""
+    from minicode.agent_intelligence import ToolScheduler
+    from minicode.tools import create_default_tool_registry
+
+    tools = create_default_tool_registry(".", runtime=None)
+    concurrent_calls, serial_calls = ToolScheduler().schedule_calls(
+        [_task_call("explore", 0), _task_call("plan", 1)], tools
+    )
+
+    assert len(concurrent_calls) == 2
+    assert serial_calls == []
+
+
+def test_general_sub_agents_stay_serial() -> None:
+    """`general` can write files and inherits the parent's permission prompt,
+    so two in flight could interleave edits and prompt concurrently."""
+    from minicode.agent_intelligence import ToolScheduler
+    from minicode.tools import create_default_tool_registry
+
+    tools = create_default_tool_registry(".", runtime=None)
+    concurrent_calls, serial_calls = ToolScheduler().schedule_calls(
+        [_task_call("general", 0), _task_call("general", 1)], tools
+    )
+
+    assert concurrent_calls == []
+    assert len(serial_calls) == 2
+
+
+def test_mixed_sub_agent_batch_splits_by_agent_type() -> None:
+    from minicode.agent_intelligence import ToolScheduler
+    from minicode.tools import create_default_tool_registry
+
+    tools = create_default_tool_registry(".", runtime=None)
+    concurrent_calls, serial_calls = ToolScheduler().schedule_calls(
+        [_task_call("explore", 0), _task_call("general", 1), _task_call("plan", 2)],
+        tools,
+    )
+
+    assert sorted(c["input"]["agent_type"] for c in concurrent_calls) == [
+        "explore",
+        "plan",
+    ]
+    assert [c["input"]["agent_type"] for c in serial_calls] == ["general"]
+
+
+def test_undecidable_task_call_input_falls_back_to_serial() -> None:
+    """An input the concurrency predicate cannot classify must not be
+    optimistically parallelized."""
+    from minicode.tools.task import task_tool as definition
+
+    assert definition.call_is_concurrency_safe({"agent_type": "explore"}) is True
+    assert definition.call_is_concurrency_safe({"agent_type": "general"}) is False
+    assert definition.call_is_concurrency_safe({}) is False
+    assert definition.call_is_concurrency_safe(None) is False
+
+
 @pytest.mark.parametrize(
     ("mutation", "reason"),
     [

@@ -4424,3 +4424,85 @@ about permission prompting, MCP process fan-out, and per-sub-agent budgets,
 so it was deliberately left out of this batch. Streaming/progress callbacks
 into the parent UI also remain unimplemented; the summary event gives
 after-the-fact visibility, not live feedback.
+
+---
+
+# Task Plan: Sub-Agent Parallelism & Live Progress (Batch 3)
+
+## Goal
+
+Close the two items batch 2 deferred: sub-agents always ran serially (making
+the project's "并行探索效率" claim unbacked), and a sub-agent run showed the
+user nothing until it finished.
+
+## Parallelism — a per-call decision, not a per-tool one
+
+`ToolScheduler.schedule_calls` partitioned on `tool_def.is_concurrency_safe`,
+a property of the tool *definition*. But sub-agent safety depends on the
+*invocation*: `explore`/`plan` carry only read-only tools, run with
+`prompt=None` so they never raise a permission prompt from a worker thread,
+and cannot touch the working tree; `general` can write files and inherits the
+parent's permission prompt, so two in flight could interleave edits and
+prompt concurrently.
+
+Rather than flipping one boolean and hoping, `ToolDefinition` gained an
+optional `concurrency_safe_for(call_input)` predicate and a
+`call_is_concurrency_safe()` accessor; the scheduler now asks per call. An
+undecidable input (non-dict, missing `agent_type`, predicate raising) falls
+back to serial. `task` declares `CONCURRENCY_SAFE` capability and supplies a
+predicate admitting only `CONCURRENCY_SAFE_AGENT_TYPES = {explore, plan}`.
+
+Measured with a timing probe: three read-only sub-agents finished in 0.32s
+against ~0.9s serial with peak concurrency 3, while two `general` sub-agents
+stayed at peak concurrency 1 and ~0.63s.
+
+## Live progress — presentation channel, not the tool callbacks
+
+Forwarding the parent's `on_tool_start`/`on_tool_result` would have repeated
+the `event_sink` mistake: those callbacks also write `tool.started` /
+`tool.finished` into the parent's Run journal and drive
+`approval_session.tool_started()`, whose tool tracking belongs to the parent
+Turn. Only the UI update was wanted.
+
+`ConversationPresentation` is explicitly documented as "connection-local UI
+facts without becoming authority" — the right channel. `ToolContext` gained
+`_presentation`, threaded from `run_agent_turn` (new `presentation`
+parameter) exactly the way `cancellation_token` is, and wired from
+`agent_runtime`. `task.py` builds callbacks that emit only to presentation,
+prefixed `"{agent_type}▸{tool_name}"` so concurrent read-only sub-agents stay
+distinguishable in an interleaved stream. With no presentation channel the
+callbacks are `None`, so nothing changes for TUI/headless.
+
+Verified: a sub-agent's tool activity produced four presentation events while
+the parent Run journal received exactly one `subagent.completed` and nothing
+else.
+
+## What changed
+
+- `minicode/tooling.py`: `ToolDefinition.concurrency_safe_for` +
+  `call_is_concurrency_safe()`; `ToolContext._presentation`.
+- `minicode/agent_intelligence.py`: scheduler partitions per call.
+- `minicode/agent_loop.py`: `presentation` parameter threaded through
+  `run_agent_turn` → `_execute_single_tool` (all three call sites) →
+  `ToolContext`.
+- `minicode/agent_runtime.py`: passes the presentation object through.
+- `minicode/tools/task.py`: `CONCURRENCY_SAFE_AGENT_TYPES`, tool metadata +
+  predicate, and `_sub_agent_progress_callbacks()`.
+
+## Verification
+
+`tests/test_sub_agent_isolation.py` grew to 24 cases, adding concurrent
+scheduling for read-only types, enforced serialization for `general`, mixed
+batch splitting, undecidable-input fallback, progress reaching the UI while
+the journal keeps only its single summary, and no callbacks when there is no
+presentation channel.
+
+Full suite: `3503 passed, 2 skipped`, plus the same pre-existing sandbox-only
+network failure. No real-home pollution.
+
+## Noted, not fixed
+
+`ruff` reports a pre-existing `F821 Undefined name 'AgentMetricsCollector'`
+in `agent_intelligence.py:330` (a string annotation with no import).
+Confirmed present before this work by re-running ruff on a stashed tree, so
+it was left alone rather than mixed into this change.

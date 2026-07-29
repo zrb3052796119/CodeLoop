@@ -351,6 +351,7 @@ def _execute_single_tool(
     cancellation_token: TurnCancellationToken | None = None,
     verification_tracker: VerificationTracker | None = None,
     agent_depth: int = 0,
+    presentation: Any | None = None,
 ) -> ToolResult:
     """Execute a single tool call with hooks, state updates, and crash protection.
     
@@ -397,6 +398,7 @@ def _execute_single_tool(
                     _skill_usage_tracker=skill_usage_tracker,
                     _cancellation_token=cancellation_token,
                     _agent_depth=agent_depth,
+                    _presentation=presentation,
                 ),
             )
             raise_if_cancelled(cancellation_token)
@@ -788,6 +790,7 @@ def run_agent_turn(
     event_sink: AgentEventSink | None = None,
     cancellation_token: TurnCancellationToken | None = None,
     agent_depth: int = 0,
+    presentation: Any | None = None,
 ) -> list[ChatMessage]:
     current_messages = list(messages)
     saw_tool_result = False
@@ -1710,6 +1713,7 @@ def run_agent_turn(
                     cancellation_token,
                     verification_tracker,
                     agent_depth,
+                    presentation,
                 )
                 if metrics_collector:
                     metrics_collector.end_tool(
@@ -1757,6 +1761,7 @@ def run_agent_turn(
                                 cancellation_token,
                                 verification_tracker,
                                 agent_depth,
+                                presentation,
                             ): call
                             for call in concurrent_calls
                         }
@@ -1782,6 +1787,7 @@ def run_agent_turn(
                             cancellation_token,
                             verification_tracker,
                             agent_depth,
+                            presentation,
                         )
                         if metrics_collector:
                             metrics_collector.end_tool(

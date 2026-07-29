@@ -250,6 +250,16 @@ class ToolContext:
     # loop is 0; a sub-agent spawned by the `task` tool runs at 1. Used to
     # stop unbounded sub-agent recursion.
     _agent_depth: int = 0
+    # Connection-local UI channel (ConversationPresentation). Deliberately
+    # separate from `_event_sink`: presentation is never authority, so a tool
+    # that runs its own nested loop can surface live progress here without
+    # writing nested lifecycle events into the parent Run's journal or
+    # disturbing the permission-approval session's tool tracking.
+    _presentation: Any | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
 
 
 Validator = Callable[[Any], Any]
@@ -264,7 +274,25 @@ class ToolDefinition:
     validator: Validator
     run: Runner
     metadata: ToolMetadata | None = None
-    
+    # Optional per-call refinement of `is_concurrency_safe`. Some tools are
+    # safe to parallelize only for certain inputs — the sub-agent tool, for
+    # example, is safe for its read-only agent types but not for the one that
+    # can write files and raise permission prompts. Returning False for a
+    # given call sends only that call to the serial batch.
+    concurrency_safe_for: Callable[[Any], bool] | None = None
+
+    def call_is_concurrency_safe(self, call_input: Any) -> bool:
+        """Whether this specific invocation may run in the concurrent batch."""
+        if not self.is_concurrency_safe:
+            return False
+        if self.concurrency_safe_for is None:
+            return True
+        try:
+            return bool(self.concurrency_safe_for(call_input))
+        except Exception:  # noqa: BLE001 - an undecidable call stays serial
+            return False
+
+
     @property
     def is_read_only(self) -> bool:
         """Check if this tool is read-only (safe for concurrent execution)."""

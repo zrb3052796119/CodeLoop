@@ -362,7 +362,9 @@ class ToolScheduler:
             tool_name = call["toolName"]
             tool_def = tools.find(tool_name)
 
-            if not tool_def or not tool_def.is_concurrency_safe:
+            if not tool_def or not tool_def.call_is_concurrency_safe(
+                call.get("input")
+            ):
                 serial_calls.append(call)
                 continue
 

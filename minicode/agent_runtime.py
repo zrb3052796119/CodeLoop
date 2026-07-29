@@ -105,6 +105,10 @@ class AgentTurnRuntime:
             memory_manager=self.memory_manager,
             event_sink=observation,
             cancellation_token=cancellation_token,
+            # Presentation-only channel so tools running their own nested
+            # loop (the sub-agent tool) can stream live progress to the UI
+            # without writing into the Run journal or the approval session.
+            presentation=presentation,
         )
 
     def dispose(self) -> None:

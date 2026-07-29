@@ -19,7 +19,12 @@ from minicode.subagent_observation import (
     SUBAGENT_EVENT_TYPE,
     project_subagent_event,
 )
-from minicode.tooling import ToolDefinition, ToolResult
+from minicode.tooling import (
+    ToolCapability,
+    ToolDefinition,
+    ToolMetadata,
+    ToolResult,
+)
 from minicode.turn_cancellation import TurnCancellationRequested
 
 
@@ -36,6 +41,14 @@ from minicode.turn_cancellation import TurnCancellationRequested
 # complete tool registry (including MCP server processes), making the blow-up
 # exponential rather than linear.
 MAX_AGENT_DEPTH = 1
+
+# Agent types whose sub-agents may run in the concurrent batch. These are the
+# read-only types: their tool sets contain no writers, they run with
+# `prompt=None` so they never raise a permission prompt from a worker thread,
+# and they cannot touch the working tree. `general` is deliberately excluded —
+# it can write files and inherits the parent's permission prompt, so two of
+# them in flight could interleave edits and prompt concurrently.
+CONCURRENCY_SAFE_AGENT_TYPES = frozenset({"explore", "plan"})
 
 AGENT_TYPES = {
     "explore": {
@@ -107,6 +120,34 @@ def _validate(input_data: dict) -> dict:
         "agent_type": agent_type,
         "prompt": prompt,
     }
+
+
+def _sub_agent_progress_callbacks(context, agent_type: str):
+    """Live tool progress for the parent UI, or ``(None, None)``.
+
+    Routed to the presentation channel only — never to the Run journal or the
+    approval session, whose tool tracking belongs to the parent Turn. Names
+    are prefixed with the agent type so concurrent read-only sub-agents stay
+    distinguishable in an interleaved stream.
+    """
+    presentation = getattr(context, "_presentation", None)
+    if presentation is None:
+        return None, None
+
+    from minicode.conversation_presentation import (
+        emit_tool_finished_safely,
+        emit_tool_started_safely,
+    )
+
+    def on_start(tool_name: str, _tool_input: object) -> None:
+        emit_tool_started_safely(presentation, f"{agent_type}▸{tool_name}")
+
+    def on_result(tool_name: str, _output: object, is_error: bool) -> None:
+        emit_tool_finished_safely(
+            presentation, f"{agent_type}▸{tool_name}", is_error=is_error
+        )
+
+    return on_start, on_result
 
 
 def _emit_subagent_observation(context, **fields) -> None:
@@ -348,6 +389,9 @@ def _run(input_data: dict, context) -> ToolResult:
     
     try:
         try:
+            sub_on_tool_start, sub_on_tool_result = _sub_agent_progress_callbacks(
+                context, agent_type
+            )
             result_messages = run_agent_turn(
                 model=model,
                 tools=tools,
@@ -355,6 +399,8 @@ def _run(input_data: dict, context) -> ToolResult:
                 cwd=context.cwd,
                 permissions=sub_permissions,
                 max_steps=max_turns,
+                on_tool_start=sub_on_tool_start,
+                on_tool_result=sub_on_tool_result,
                 runtime=runtime,
                 context_manager=sub_context_manager,
                 memory_manager=sub_memory,
@@ -444,6 +490,13 @@ def _run(input_data: dict, context) -> ToolResult:
     return ToolResult(ok=True, output=header + "\n" + result_text)
 
 
+def _call_is_concurrency_safe(call_input: object) -> bool:
+    """Only read-only sub-agent types may share the concurrent batch."""
+    if not isinstance(call_input, dict):
+        return False
+    return call_input.get("agent_type") in CONCURRENCY_SAFE_AGENT_TYPES
+
+
 task_tool = ToolDefinition(
     name="task",
     description=(
@@ -451,8 +504,16 @@ task_tool = ToolDefinition(
         "The sub-agent runs in its own isolated context with a turn limit. "
         "Use 'explore' for fast read-only codebase exploration, "
         "'plan' for thorough analysis, or 'general' for full-featured multi-step work. "
+        "Multiple 'explore'/'plan' sub-agents issued in one step run in "
+        "parallel; 'general' sub-agents always run one at a time. "
         "The sub-agent's final result is returned to you."
     ),
+    metadata=ToolMetadata(
+        name="task",
+        description="Sub-agent launcher",
+        capabilities={ToolCapability.CONCURRENCY_SAFE},
+    ),
+    concurrency_safe_for=_call_is_concurrency_safe,
     input_schema={
         "type": "object",
         "properties": {
