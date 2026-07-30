@@ -4624,3 +4624,59 @@ Claims 1, 3, and 4 remain open. Claim 1 (revoked-memory injection) is a
 correctness bug and the natural next slice; 3 and 4 are missing functionality
 rather than defects. The structural consolidation the report recommends would
 subsume all three but touches every persistence entry point at once.
+
+---
+
+# Task Plan: Revoked-Memory Read Visibility (P1 #1 from the re-review)
+
+## Goal
+
+Fix the second verified P1: an entry revoked by another process could still be
+selected and rendered into the prompt one final time.
+
+## Root cause
+
+Writes reload through `_coordinated_all_write`, which compares
+`_disk_revisions[scope]` against `_scope_disk_revision(scope)` and reloads on
+mismatch. The read path had no equivalent: `search()` only takes the
+coordinated path when `record_usage=True`, and the canonical retriever reads
+`manager.memories` directly (`memory_retrieval.py:504`). So one store was
+reachable under two different revision-consistency rules — the same shape of
+split the path-containment fix addressed for safety.
+
+## Design decision: reuse the write path's revision notion
+
+A cheaper stat-based (mtime+size) staleness signal was considered and
+rejected. Measured on a 190 KB / 135-entry store: hashing all three scopes
+costs **0.22 ms**, versus 0.017 ms for stat-only — 13x slower in relative
+terms but negligible against a multi-second model call, and retrieval already
+scores every entry. Introducing a second, weaker notion of "changed" to save
+0.2 ms would have been the wrong trade.
+
+## What changed
+
+- `minicode/memory.py`: new `MemoryManager.refresh_if_stale()` reloads only
+  the scopes whose on-disk authority changed and returns them. Two deliberate
+  stand-downs: it is a no-op inside an open write transaction (reloading would
+  discard the caller's uncommitted state), and an unreadable authority keeps
+  the current view rather than dropping memory entirely, leaving the write
+  path to surface the failure.
+- `minicode/memory_retrieval.py`: `CanonicalMemoryRetriever.retrieve()` syncs
+  before selecting anything. Duck-typed and exception-swallowing so a
+  retrieval never fails because of a sync attempt.
+
+## Verification
+
+- `tests/test_memory_revocation_visibility.py` (4 cases): revoked entry not
+  injected *and* the stale view proven resynced (not merely filtered
+  downstream); still-approved entry unaffected; `refresh_if_stale()` reports
+  only changed scopes and is idempotent; no-op inside an open transaction.
+- Mutation-checked: disabling the sync fails exactly the leak assertion.
+- 790 memory tests pass; 853 with retrieval/Dashboard/agent-flow included.
+
+## Remaining from the re-review
+
+Claims 3 (`MEM-001`, conversational facts have no cross-session production
+entry) and 4 (capacity eviction is a bare `entries.pop(0)` leaving orphan
+audit rows; no USER/LOCAL forget authority; no `/memory delete`) are missing
+functionality rather than defects, and are still open.

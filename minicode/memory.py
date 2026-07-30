@@ -35,6 +35,7 @@ from minicode.config import MINI_CODE_DIR
 from minicode.memory_store import (
     MemoryStoreConflict,
     MemoryStoreCoordinator,
+    MemoryStoreError,
     MemoryStoreUnsafePath,
 )
 
@@ -1639,6 +1640,40 @@ class MemoryManager:
             except OSError as error:
                 raise MemoryStoreConflict("Memory authority could not be read") from error
         return digest.hexdigest()
+
+    def refresh_if_stale(self) -> tuple[MemoryScope, ...]:
+        """Reload any scope whose on-disk authority changed since last sync.
+
+        Writes already reload through `_coordinated_all_write`, but reads did
+        not: a long-lived manager kept serving its in-memory view, so an entry
+        revoked by another process (Dashboard approval, another session) could
+        still be selected and rendered into the prompt one more time.
+
+        Returns the scopes that were reloaded. Cheap enough to call on every
+        retrieval — hashing all three scopes measures ~0.2 ms against a
+        multi-second model call — so it deliberately reuses the same revision
+        notion as the write path instead of introducing a second, weaker one.
+        """
+        if self.in_write_transaction:
+            # The caller owns an open transaction and its own consistency
+            # window; reloading underneath it would discard uncommitted state.
+            return ()
+        try:
+            stale = tuple(
+                scope
+                for scope in MemoryScope
+                if scope in self._disk_revisions
+                and self._disk_revisions[scope] != self._scope_disk_revision(scope)
+            )
+        except MemoryStoreError:
+            # Unreadable authority: keep the current view rather than dropping
+            # memory entirely, and let the write path surface the failure.
+            return ()
+        if not stale:
+            return ()
+        with self._store.transaction():
+            self._reload_scopes(stale)
+        return stale
 
     def _reload_scopes(self, scopes: tuple[MemoryScope, ...]) -> None:
         for scope in scopes:

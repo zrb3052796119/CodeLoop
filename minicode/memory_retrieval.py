@@ -754,6 +754,16 @@ class CanonicalMemoryRetriever:
         return tuple(rendered), prompt, tuple(skipped)
 
     def retrieve(self, request: MemoryRetrievalRequest) -> MemoryRetrievalResult:
+        # Sync with the on-disk authority before selecting anything. A
+        # long-lived manager otherwise keeps serving a view in which an entry
+        # revoked elsewhere (Dashboard approval, another session) is still
+        # approved, letting it reach the prompt one final time.
+        refresh = getattr(self._memory, "refresh_if_stale", None)
+        if callable(refresh):
+            try:
+                refresh()
+            except Exception:  # noqa: BLE001 - retrieval must not fail on a sync attempt
+                pass
         query_hash = self._query_hash(request.query)
         if not request.query and not request.allow_queryless:
             return MemoryRetrievalResult(
