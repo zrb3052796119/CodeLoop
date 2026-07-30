@@ -4506,3 +4506,121 @@ network failure. No real-home pollution.
 in `agent_intelligence.py:330` (a string annotation with no import).
 Confirmed present before this work by re-running ruff on a stashed tree, so
 it was left alone rather than mixed into this change.
+
+---
+
+# Task Plan: Persistent Memory Completeness Re-review 2026-07-30
+
+## Goal
+
+Determine whether the current persistent-memory module is complete as a
+production memory lifecycle, using source and behavioral evidence rather than
+test count or declared capability alone.
+
+## Phases
+
+- [x] Phase 1: Load review/deep-module guidance and preserve the dirty worktree
+- [x] Phase 2: Map durable stores, write/approval/retrieval/injection/deletion
+  paths, ownership, and public interfaces
+- [x] Phase 3: Trace production composition and run focused behavioral probes
+- [x] Phase 4: Review correctness, security, failure semantics, observability,
+  and lifecycle gaps with prioritized findings
+- [x] Phase 5: Publish a completeness verdict and evidence-backed next steps
+
+## Key Questions
+
+1. Can ordinary user facts enter durable memory through a production path?
+2. Are pending/approved/rejected states authoritative and consistently used by
+   retrieval and prompt injection?
+3. Do user/project/local scopes, Session deletion, retention, and explicit
+   forgetting form one coherent lifecycle?
+4. Are corruption, concurrency, privacy, and unavailable states fail-closed?
+5. Is the memory module deep enough that callers use one truthful interface,
+   or is policy duplicated across runtime, Dashboard, reflection, and tools?
+
+## Scope Guardrails
+
+- Review only; do not change runtime behavior.
+- Preserve all existing uncommitted work.
+- Treat generated audits and tests as evidence, not proof of completeness.
+
+## Status
+
+**Complete.** The review found a mature explicit-memory happy path, but not a
+complete production persistence lifecycle. The detailed verdict and evidence
+are in `docs/persistent-memory-completeness-review-2026-07-30.md`.
+
+---
+
+# Task Plan: Memory Store Path Containment (P1 #2 from the re-review)
+
+## Goal
+
+Fix the one item in the persistence re-review that is an actual security
+defect: `MemoryManager.add_entry()` would write the store outside its
+Workspace through a symlinked scope root.
+
+## Independent verification of the report first
+
+Each of the review's four claims was reproduced before touching code:
+
+1. **Revoked memory still injected once** — reproduced. `search()` carries no
+   `_coordinated_all_write` decorator, so the read path never compares disk
+   revision; a long-lived manager held `approved` in memory while disk said
+   `rejected` (revision `360d97ec` vs `ded9eba7`) and the content entered the
+   system prompt. Worth recording: the *first* probe did **not** reproduce it,
+   because `MemoryInjectionController` has a 30s injection cooldown
+   (`memory_injector.py:157`) that masked the second injection. Reproducing it
+   required rejecting *before* the first injection. This is why the bug is
+   intermittent in real use.
+2. **Symlink escape** — reproduced: `memory.json`, `MEMORY.md`, and
+   `approval_audit.json` all landed outside the Workspace. Also confirmed the
+   report's second half: `memory_approval.py` has 7 symlink checks,
+   `memory.py` had 0.
+3. **Conversational facts not persisted** — the built-in audit independently
+   reports 3 pass / 1 partial / 1 fail with `memory.conversation_fact` as the
+   failure, matching the report's numbers exactly.
+4. **Retention/forget incomplete** — `memory.py` evicts with a bare
+   `while len(self.entries) > self.max_entries: self.entries.pop(0)`;
+   `ProjectMemoryDeletionAuthority` mentions USER/LOCAL zero times; `/memory`
+   exposes add/approve/pending/reject/restore/review and no delete/forget.
+
+All four claims hold. The report's root-cause diagnosis — persistence
+authority scattered across manager/pipeline/approval/deletion/retriever/curator
+with no single deep store module — is also supported: the same store was
+reachable under two different path-safety rules and two different
+revision-consistency rules.
+
+## What changed (claim 2 only)
+
+- `minicode/memory_store.py`: new `MemoryStoreUnsafePath` in the existing
+  fixed-vocabulary store error family.
+- `minicode/memory.py`: new `_validate_scope_root()` mirroring the rule the
+  Dashboard authority already enforced — refuse a symlinked scope root, a
+  symlinked store file, and (for PROJECT/LOCAL only) a root whose parent is
+  not the owning Workspace. USER legitimately lives under the home data dir,
+  so only the link check applies there.
+  - Called from `_ensure_scope_path()` **before** `mkdir`, because
+    `mkdir(exist_ok=True)` follows an existing symlink — validating afterwards
+    would already be too late — and again after.
+  - `_atomic_write()` independently refuses a symlinked target or parent as
+    defense in depth, since every store write funnels through it.
+
+## Verification
+
+- New `tests/test_memory_store_path_containment.py` (9 cases): symlinked root
+  for PROJECT and LOCAL, symlinked `memory.json` / `MEMORY.md` /
+  `approval_audit.json` with the external target asserted byte-identical
+  afterwards, a non-symlink root pointing outright at another directory, USER
+  scope still working outside the Workspace, ordinary PROJECT/LOCAL writes
+  unaffected, and `_atomic_write` refusing on its own.
+- Mutation-checked: temporarily disabling the validation makes 7 of the 9
+  fail, so the tests are not vacuous.
+- All 781 memory tests pass.
+
+## Not fixed in this slice
+
+Claims 1, 3, and 4 remain open. Claim 1 (revoked-memory injection) is a
+correctness bug and the natural next slice; 3 and 4 are missing functionality
+rather than defects. The structural consolidation the report recommends would
+subsume all three but touches every persistence entry point at once.

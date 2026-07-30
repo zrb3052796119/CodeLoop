@@ -5074,3 +5074,41 @@ regex pattern at all.
 - Full suite: `3468 passed, 2 skipped, 1 failed` — the same pre-existing
   sandbox-only network failure, unrelated.
 - Ruff, `compileall`, `git diff --check` pass.
+
+---
+
+# Persistent Memory Completeness Re-review Notes — 2026-07-30
+
+## Verdict
+
+The explicit-memory happy path is mature, but the production persistence
+lifecycle is not complete. Review only; no runtime source was changed.
+
+## Reproduced P1 gaps
+
+1. A long-lived `MemoryManager` can render an entry once after another manager
+   has rejected it. Retrieval copies the in-memory active entries before the
+   later usage-recording mutation refreshes disk revision.
+2. A symlinked `.mini-code-memory` root is followed by direct
+   `MemoryManager.add_entry()`, producing `memory.json`, `MEMORY.md`, and
+   `approval_audit.json` outside the Workspace. ApprovalAuthority validates
+   these paths, but the main writer does not.
+3. The functional audit still reports stable, environment-independent P1
+   `MEM-001`: ordinary conversational facts do not become reviewable durable
+   candidates or cross Session boundaries.
+4. `MemoryFile._enforce_limits()` silently drops the oldest entry. A one-entry
+   limit probe retained the second entry but left one audit record referring to
+   the evicted first entry. Public Manager delete/clear paths likewise do not
+   provide one all-scope audited forgetting transaction.
+
+## Verification
+
+- Focused persistence/approval/retrieval/deletion tests: `145 passed`.
+- Broad Memory-related run: `709 passed, 24 failed` only because the sandbox
+  denied loopback socket bind. Rerunning the two affected HTTP files with
+  loopback permission gave `42 passed`; therefore all 733 unique tests are
+  behaviorally green in a capable environment.
+- `run_functional_audit.py --category memory`: exit 1; 3 pass, 1 partial,
+  1 fail; sole issue `MEM-001`.
+- Detailed review:
+  `docs/persistent-memory-completeness-review-2026-07-30.md`.

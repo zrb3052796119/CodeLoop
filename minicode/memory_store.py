@@ -40,6 +40,16 @@ class MemoryStoreConflict(MemoryStoreError):
     code = "memory_write_conflict"
 
 
+class MemoryStoreUnsafePath(MemoryStoreError):
+    """A store root or file would redirect writes outside its owner.
+
+    Raised for a symlinked scope root or store file, and for a
+    Project/Local root whose parent is not the owning Workspace.
+    """
+
+    code = "memory_store_unsafe_path"
+
+
 class MemoryStoreUnavailable(MemoryStoreError):
     """The local lock file could not be opened safely."""
 

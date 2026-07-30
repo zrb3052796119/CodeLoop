@@ -32,7 +32,11 @@ from pathlib import Path
 from typing import Any
 
 from minicode.config import MINI_CODE_DIR
-from minicode.memory_store import MemoryStoreConflict, MemoryStoreCoordinator
+from minicode.memory_store import (
+    MemoryStoreConflict,
+    MemoryStoreCoordinator,
+    MemoryStoreUnsafePath,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -2030,10 +2034,49 @@ class MemoryManager:
         else:
             return self.paths.local_memory
     
+    _STORE_FILENAMES = ("memory.json", "MEMORY.md", "approval_audit.json")
+
+    def _validate_scope_root(self, scope: MemoryScope) -> None:
+        """Refuse a scope root that could redirect writes outside its owner.
+
+        Without this a symlinked `.mini-code-memory` (or a symlinked store
+        file inside it) silently relocates `memory.json`, `MEMORY.md`, and the
+        approval audit anywhere on disk. The Dashboard approval authority
+        already refuses exactly this shape; the plain manager is the same
+        store and must not hold a weaker rule.
+        """
+        root = self._get_scope_path(scope)
+        try:
+            if root.is_symlink():
+                raise MemoryStoreUnsafePath(
+                    f"{scope.value} memory root is a symbolic link"
+                )
+            # PROJECT/LOCAL belong to this Workspace. USER legitimately lives
+            # under the home data dir, so only the link check applies there.
+            if scope in {MemoryScope.PROJECT, MemoryScope.LOCAL}:
+                workspace = Path(self.workspace).resolve(strict=False)
+                if root.parent.resolve(strict=False) != workspace:
+                    raise MemoryStoreUnsafePath(
+                        f"{scope.value} memory root escapes the workspace"
+                    )
+            for filename in self._STORE_FILENAMES:
+                if (root / filename).is_symlink():
+                    raise MemoryStoreUnsafePath(
+                        f"{scope.value} memory file {filename} is a symbolic link"
+                    )
+        except OSError as error:
+            raise MemoryStoreUnsafePath(
+                f"{scope.value} memory root could not be validated"
+            ) from error
+
     def _ensure_scope_path(self, scope: MemoryScope) -> None:
         """Ensure directory exists for scope."""
         path = self._get_scope_path(scope)
+        # Validate before mkdir: mkdir(exist_ok=True) follows an existing
+        # symlink, so checking afterwards would already have been too late.
+        self._validate_scope_root(scope)
         path.mkdir(parents=True, exist_ok=True)
+        self._validate_scope_root(scope)
 
     def _approval_audit_path(self, scope: MemoryScope) -> Path:
         return self._get_scope_path(scope) / "approval_audit.json"
@@ -2891,8 +2934,19 @@ class MemoryManager:
         
         This prevents data corruption if the process is killed mid-write
         or if multiple instances write to the same file concurrently.
+
+        Also refuses a symlinked target or parent as defense in depth: every
+        store write funnels through here, so a caller that skipped scope-root
+        validation still cannot redirect the write off-target.
         """
         import tempfile
+        try:
+            if target.is_symlink() or target.parent.is_symlink():
+                raise MemoryStoreUnsafePath(f"{target.name} target is a symbolic link")
+        except OSError as error:
+            raise MemoryStoreUnsafePath(
+                f"{target.name} target could not be validated"
+            ) from error
         tmp_fd, tmp_path = tempfile.mkstemp(
             dir=str(target.parent),
             prefix=f".{target.name}.",
