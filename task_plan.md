@@ -4680,3 +4680,64 @@ Claims 3 (`MEM-001`, conversational facts have no cross-session production
 entry) and 4 (capacity eviction is a bare `entries.pop(0)` leaving orphan
 audit rows; no USER/LOCAL forget authority; no `/memory delete`) are missing
 functionality rather than defects, and are still open.
+
+---
+
+# Task Plan: Tool Error Truthfulness and Crash Redaction (TOOL-001, SEC-005)
+
+## Goal
+
+Fix the two audit findings that most affect real agent behaviour, both
+verified by independent probe before touching code.
+
+## TOOL-001 — a missing file was reported as an empty file
+
+`_get_cached_file_content` caught `OSError` and returned `""`, so a
+nonexistent path produced `ok=True` with `TOTAL_CHARS: 0` — byte-identical to
+a genuinely empty file. This is not a cosmetic issue: "the file is empty, I'll
+write content" and "the file isn't there, I have the wrong path" call for
+opposite next steps, so the agent was being led to the wrong one.
+
+Read failures now raise and map to closed codes — `not_found`, `not_a_file`,
+`permission_denied`, `unreadable`, `binary_file` — while a genuinely empty
+file still succeeds. Messages echo the caller's own relative path, never the
+resolved absolute one.
+
+## SEC-005 — tool crashes leaked absolute paths and traceback
+
+The registry safety net returned the raw exception plus a traceback excerpt
+straight to the model. Now redacted to `error[tool_crashed]: Tool <name>
+failed with <ExceptionType>.`; the full detail goes to the local log, which
+is not model-visible, so debuggability is unchanged.
+
+## The part worth recording: the audit could not see its own fixes
+
+After fixing the code the audit still reported both as `fail`, because its
+findings are a hardcoded static map rather than live detection. Deleting the
+two issue entries turned them green — but a reverse check exposed that this
+had only silenced the audit: **restoring the bugs still reported `pass`**.
+
+Both verdicts are now probe-driven:
+- `tool.read_file` truthfulness reads `_probe_read_file_truthfulness`, which
+  already existed but was overridden by a hardcoded `truthfulness = "fail"`.
+- `security.workspace` safety reads `_probe_tool_error_leak`, which already
+  existed in the codebase and was **never wired to any verdict at all**.
+
+Re-verified in both directions: reintroducing either bug now flips the audit
+to `fail`, and restoring the fix flips it back.
+
+## Verification
+
+- New `tests/test_tool_error_truthfulness.py` (6 cases) covering all six
+  read outcomes, caller-path echoing, and crash redaction that stays
+  actionable (tool name + exception type survive).
+- Mutation-checked: reverting either fix fails exactly the two relevant tests.
+- Audit issues 7 -> 5 fail (13 -> 11 including blocked). `security.workspace`
+  is now pass/pass/pass; `tool.read_file` truthfulness pass.
+- Audit self-tests updated for the new counts, with the reason recorded inline.
+- Full suite: 3525 passed, 2 skipped.
+
+## Remaining audit findings
+
+`memory.conversation_fact` (MEM-001) and four archive-bomb findings
+(SEC-002/SEC-004 across gzip/tar/zip). Both are known and unchanged here.

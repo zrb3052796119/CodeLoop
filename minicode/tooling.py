@@ -5,6 +5,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Protocol
 
+from minicode.logging_config import get_logger
+
+_logger = get_logger("tooling")
+
 if TYPE_CHECKING:
     from minicode.mcp_current_state import McpCurrentStateRegistry
     from minicode.run_events import AgentEventSink, SkillUsageTracker
@@ -422,10 +426,21 @@ class ToolRegistry:
             tb_excerpt = "".join(tb_lines[-5:]).strip()
             error_type = type(error).__name__
             
+            # The message and traceback routinely carry absolute local paths
+            # and interpreter internals. This output goes straight to the
+            # model (and the user), so it is redacted to a closed shape:
+            # exception type and tool name only. `tb_excerpt` is kept for the
+            # local log, which is not model-visible.
+            _logger.warning(
+                "Tool %s crashed: %s: %s\n%s",
+                tool_name, error_type, error, tb_excerpt,
+            )
             return ToolResult(
                 ok=False,
-                output=f"[{error_type}] Tool {tool_name} crashed: {error}\n"
-                       f"Traceback (most recent):\n{tb_excerpt}"
+                output=(
+                    f"error[tool_crashed]: Tool {tool_name} failed with "
+                    f"{error_type}. Details were written to the local log."
+                ),
             )
 
     def dispose(self) -> None:

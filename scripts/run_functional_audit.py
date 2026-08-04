@@ -1083,7 +1083,11 @@ def _entrypoint_capabilities(
 
 
 def _aggregate_capabilities(
-    test_index: dict[str, list[str]], *, installed: str, browser_verified: bool
+    test_index: dict[str, list[str]],
+    *,
+    installed: str,
+    browser_verified: bool,
+    tool_error_leaks_path: bool,
 ) -> list[dict[str, Any]]:
     definitions = [
         ("agent.mock_model", "agent", "MockModel agent turn", ("tui", "headless", "gateway", "dashboard"), ("mock_model", "agent_flow")),
@@ -1127,6 +1131,16 @@ def _aggregate_capabilities(
             live = "blocked"
         if capability_id == "memory.conversation_fact":
             status = "fail"
+        safety_verdict = (
+            "pass" if tests and category in {"security", "dashboard"} else "partial"
+        )
+        if capability_id == "security.workspace":
+            # Driven by the live crash-leak probe rather than a static issue
+            # entry, so a regression that reintroduces absolute-path or
+            # traceback leakage is caught instead of silently passing.
+            if tool_error_leaks_path:
+                safety_verdict = "fail"
+                status = "fail"
         capabilities.append(
             _capability(
                 capability_id,
@@ -1136,7 +1150,7 @@ def _aggregate_capabilities(
                 deterministic="pass" if tests else "not_tested",
                 installed=installed,
                 live=live,
-                safety="pass" if tests and category in {"security", "dashboard"} else "partial",
+                safety=safety_verdict,
                 truthfulness="pass" if tests else "partial",
                 status=status,
                 evidence=tests,
@@ -1298,6 +1312,7 @@ def _tool_capabilities(
     *,
     installed: str,
     live_results: dict[str, Any],
+    read_file_misreports: bool,
 ) -> list[dict[str, Any]]:
     capabilities: list[dict[str, Any]] = []
     core_names = set(core)
@@ -1307,14 +1322,12 @@ def _tool_capabilities(
         "gzip_decompress",
         "tar_create",
         "zip_create",
-        "read_file",
     }
     issue_map = {
         "gzip_compress": ["SEC-002"],
         "gzip_decompress": ["SEC-002", "SEC-004"],
         "tar_create": ["SEC-002"],
         "zip_create": ["SEC-002"],
-        "read_file": ["TOOL-001"],
         "file_line_count": ["TOOL-002"],
         "base64_encode": ["TOOL-003"],
         "hash": ["TOOL-003"],
@@ -1349,7 +1362,9 @@ def _tool_capabilities(
             status = "fail"
             safety = "fail" if name != "web_search" else "partial"
         if name == "read_file":
-            truthfulness = "fail"
+            # Driven by the live probe, not a hardcoded verdict, so a fix to the
+            # Tool shows up here instead of the audit reporting a stale failure.
+            truthfulness = "fail" if read_file_misreports else "pass"
         if name in {"tar_extract", "zip_extract"} and tests:
             safety = "pass"
         if name == "file_line_count":
@@ -1560,19 +1575,6 @@ def _build_issues(
                 red_test="Archive bomb fixtures must stop at documented byte, member and time budgets.",
             ),
             _issue(
-                "TOOL-001",
-                "P1",
-                "tool.read_file",
-                "Missing or unreadable files can be reported as successful empty files.",
-                "Call read_file for a nonexistent path inside an isolated Workspace.",
-                "The Tool should return ok=false with a stable not_found or unreadable code.",
-                "The Tool returned ok=true, TOTAL_CHARS: 0 and no distinction from an empty file.",
-                ["minicode/tools/read_file.py", "scripts/run_functional_audit.py"],
-                environment_dependent=False,
-                recommended_batch="Reliability 1B-2: File/command Tool correctness",
-                red_test="Missing, permission-denied, directory, binary and true-empty fixtures must have distinct truthful outcomes.",
-            ),
-            _issue(
                 "TOOL-002",
                 "P3",
                 "tool.file_line_count",
@@ -1602,19 +1604,6 @@ def _build_issues(
                 environment_dependent=False,
                 recommended_batch="Reliability 1B-2: File/command Tool correctness",
                 red_test="Table-driven schema/validator conformance must reject every omitted required field and wrong scalar type.",
-            ),
-            _issue(
-                "SEC-005",
-                "P1",
-                "security.workspace",
-                "Unhandled Tool errors can expose absolute Workspace paths and raw traceback excerpts to the model/user.",
-                "Execute an isolated fixture Tool that raises with a Workspace path.",
-                "Tool errors should use closed codes and redacted diagnostics.",
-                "ToolRegistry.execute includes the raw exception and traceback excerpt containing the isolated absolute path.",
-                ["minicode/tooling.py", "scripts/run_functional_audit.py"],
-                environment_dependent=False,
-                recommended_batch="Reliability 1B-2: File/command Tool correctness",
-                red_test="Validation and runtime errors must redact paths, inputs, tokens, environment values and tracebacks.",
             ),
             _issue(
                 "MEM-001",
@@ -1744,6 +1733,7 @@ def run_audit(args: argparse.Namespace) -> dict[str, Any]:
         test_index,
         installed=installed,
         live_results=live_results,
+        read_file_misreports=read_file_misreports,
     )
     capabilities.extend(
         _entrypoint_capabilities(
@@ -1759,6 +1749,7 @@ def run_audit(args: argparse.Namespace) -> dict[str, Any]:
             test_index,
             installed=installed,
             browser_verified=args.browser_verified,
+            tool_error_leaks_path=tool_error_leak,
         )
     )
     capabilities.extend(_internal_capabilities(test_index, installed=installed))

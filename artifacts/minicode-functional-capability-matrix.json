@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "audit": {
     "name": "MiniCode Functional Reliability Audit 1A",
-    "generatedAt": "2026-07-27T16:59:03Z",
-    "durationMs": 1259,
+    "generatedAt": "2026-08-04T06:13:39Z",
+    "durationMs": 1264,
     "categories": [
       "dashboard",
       "discovery",
@@ -43,11 +43,11 @@
     "sourceToolDefinitionCount": 59,
     "consoleScriptCount": 4,
     "literalRouteCount": 28,
-    "issueCount": 7,
+    "issueCount": 5,
     "statusCounts": {
-      "pass": 112,
+      "pass": 114,
       "partial": 57,
-      "fail": 7,
+      "fail": 5,
       "unavailable": 1,
       "blocked": 6,
       "not_reachable": 3,
@@ -376,7 +376,7 @@
         "tar_create": true,
         "zip_create": true
       },
-      "toolErrorLeaksAbsolutePath": true
+      "toolErrorLeaksAbsolutePath": false
     }
   },
   "liveSmoke": {
@@ -816,8 +816,8 @@
         "minicode/web/static/assets/app.js",
         "browser verification not supplied",
         "tests/test_memory_candidate_consolidation.py",
-        "tests/test_memory_retrieval_phase2a.py",
-        "tests/test_memory_retrieval_phase2b.py"
+        "tests/test_memory_corroborated_feedback.py",
+        "tests/test_memory_retrieval_phase2a.py"
       ],
       "issues": []
     },
@@ -2027,8 +2027,8 @@
       "evidence": [
         "minicode/cli_commands.py",
         "tests/test_cli_commands.py",
-        "tests/test_propose_skill.py",
-        "tests/test_run_entrypoint_lifecycle.py"
+        "tests/test_intent_parser.py",
+        "tests/test_propose_skill.py"
       ],
       "issues": []
     },
@@ -2276,7 +2276,8 @@
       "status": "pass",
       "evidence": [
         "minicode/cli_commands.py",
-        "tests/test_cli_commands.py"
+        "tests/test_cli_commands.py",
+        "tests/test_intent_parser.py"
       ],
       "issues": []
     },
@@ -2576,7 +2577,8 @@
         "minicode/agent_intelligence.py",
         "wiring=conditional",
         "tests/test_agent_intelligence.py",
-        "tests/test_cluster_stress.py"
+        "tests/test_cluster_stress.py",
+        "tests/test_sub_agent_isolation.py"
       ],
       "issues": []
     },
@@ -3094,8 +3096,8 @@
       "status": "pass",
       "evidence": [
         "tests/test_memory_candidate_consolidation.py",
-        "tests/test_memory_retrieval_phase2a.py",
-        "tests/test_memory_retrieval_phase2b.py"
+        "tests/test_memory_corroborated_feedback.py",
+        "tests/test_memory_retrieval_phase2a.py"
       ],
       "issues": []
     },
@@ -3226,17 +3228,15 @@
       "deterministicTest": "pass",
       "installedWheelTest": "not_tested",
       "liveTest": "not_required",
-      "safety": "fail",
+      "safety": "pass",
       "truthfulness": "pass",
-      "status": "fail",
+      "status": "pass",
       "evidence": [
         "tests/test_agent_flow.py",
         "tests/test_agent_stress.py",
         "tests/test_context_aggregation.py"
       ],
-      "issues": [
-        "SEC-005"
-      ]
+      "issues": []
     },
     {
       "id": "skill.discovery",
@@ -4419,9 +4419,9 @@
       "deterministicTest": "pass",
       "installedWheelTest": "not_tested",
       "liveTest": "not_required",
-      "safety": "fail",
-      "truthfulness": "fail",
-      "status": "fail",
+      "safety": "partial",
+      "truthfulness": "pass",
+      "status": "pass",
       "evidence": [
         "minicode/tools/read_file.py",
         "profile=core",
@@ -4432,9 +4432,7 @@
         "tests/test_agent_intelligence.py",
         "tests/test_anthropic_adapter.py"
       ],
-      "issues": [
-        "TOOL-001"
-      ]
+      "issues": []
     },
     {
       "id": "tool.read_mcp_resource",
@@ -4653,9 +4651,9 @@
         "profile=core",
         "schema_serializable=true",
         "required_validation=true",
+        "tests/test_agent_flow.py",
         "tests/test_agent_intelligence.py",
-        "tests/test_agent_model_events.py",
-        "tests/test_memory_integration.py"
+        "tests/test_agent_model_events.py"
       ],
       "issues": []
     },
@@ -5077,23 +5075,6 @@
       "requiredRedTest": "Archive bomb fixtures must stop at documented byte, member and time budgets."
     },
     {
-      "id": "TOOL-001",
-      "severity": "P1",
-      "capabilityId": "tool.read_file",
-      "userVisibleImpact": "Missing or unreadable files can be reported as successful empty files.",
-      "minimalReproduction": "Call read_file for a nonexistent path inside an isolated Workspace.",
-      "expected": "The Tool should return ok=false with a stable not_found or unreadable code.",
-      "actual": "The Tool returned ok=true, TOTAL_CHARS: 0 and no distinction from an empty file.",
-      "evidence": [
-        "minicode/tools/read_file.py",
-        "scripts/run_functional_audit.py"
-      ],
-      "stableReproduction": true,
-      "environmentDependent": false,
-      "recommendedBatch": "Reliability 1B-2: File/command Tool correctness",
-      "requiredRedTest": "Missing, permission-denied, directory, binary and true-empty fixtures must have distinct truthful outcomes."
-    },
-    {
       "id": "TOOL-002",
       "severity": "P3",
       "capabilityId": "tool.file_line_count",
@@ -5128,23 +5109,6 @@
       "environmentDependent": false,
       "recommendedBatch": "Reliability 1B-2: File/command Tool correctness",
       "requiredRedTest": "Table-driven schema/validator conformance must reject every omitted required field and wrong scalar type."
-    },
-    {
-      "id": "SEC-005",
-      "severity": "P1",
-      "capabilityId": "security.workspace",
-      "userVisibleImpact": "Unhandled Tool errors can expose absolute Workspace paths and raw traceback excerpts to the model/user.",
-      "minimalReproduction": "Execute an isolated fixture Tool that raises with a Workspace path.",
-      "expected": "Tool errors should use closed codes and redacted diagnostics.",
-      "actual": "ToolRegistry.execute includes the raw exception and traceback excerpt containing the isolated absolute path.",
-      "evidence": [
-        "minicode/tooling.py",
-        "scripts/run_functional_audit.py"
-      ],
-      "stableReproduction": true,
-      "environmentDependent": false,
-      "recommendedBatch": "Reliability 1B-2: File/command Tool correctness",
-      "requiredRedTest": "Validation and runtime errors must redact paths, inputs, tokens, environment values and tracebacks."
     },
     {
       "id": "MEM-001",

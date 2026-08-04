@@ -116,8 +116,12 @@ def test_audit_closes_web_findings_but_retains_archive_remainder(
     assert issues["SEC-004"]["evidence"] == [
         "minicode/tools/archive_utils.py",
     ]
-    assert issues["TOOL-001"]["capabilityId"] == "tool.read_file"
-    assert issues["TOOL-001"]["actual"]
+    # TOOL-001 (missing file reported as an empty file) and SEC-005 (tool
+    # crashes leaking absolute paths/traceback) are fixed; both verdicts are
+    # now driven by live probes rather than static issue entries, so they must
+    # no longer appear as findings.
+    assert "TOOL-001" not in issues
+    assert "SEC-005" not in issues
     assert all(issue["recommendedBatch"].startswith("Reliability 1B-") for issue in issues.values())
     http_request = next(
         item
@@ -152,7 +156,8 @@ def test_audit_closes_web_findings_but_retains_archive_remainder(
     assert "tests/test_web_search.py" in web_search["evidence"]
     assert "tests/test_search_providers.py" in web_search["evidence"]
     assert payload["summary"]["capabilityCount"] == 186
-    assert payload["summary"]["issueCount"] == 7
+    # 7 -> 5: TOOL-001 and SEC-005 are fixed and probe-verified.
+    assert payload["summary"]["issueCount"] == 5
     assert payload["deterministicProbes"]["memory"] == {
         "ordinaryFactPersisted": False,
         "singleErrorPatternSuppressed": True,
@@ -198,7 +203,9 @@ def test_audit_closes_web_findings_but_retains_archive_remainder(
 def test_category_filter_keeps_discovery_and_requested_category(tmp_path: Path) -> None:
     completed, payload = _run_audit(tmp_path, "--category", "web")
 
-    assert completed.returncode == 1
+    # The web category's only remaining finding was SEC-005 (tool crashes
+    # leaking absolute paths), now fixed — so this slice exits clean.
+    assert completed.returncode == 0
     assert payload["audit"]["categories"] == ["web"]
     assert {capability["category"] for capability in payload["capabilities"]} <= {
         "tool",
