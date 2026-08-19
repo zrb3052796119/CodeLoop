@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "two-round-api-contract",
+      "rounds": 2,
+      "historyMarkers": ["QG_GOAL_KEEP_API_STABLE", "QG_FACT_TESTS_PASSED", "QG_REJECTED_GLOBAL_CACHE"],
+      "loadedSkillMarker": "QG_SKILL_REQUIRES_RUFF",
+      "latestUserMarker": "QG_LATEST_DO_NOT_EDIT_TESTS"
+    },
+    {
+      "id": "three-round-schema-migration",
+      "rounds": 3,
+      "historyMarkers": ["QG_GOAL_MIGRATE_SCHEMA_V2", "QG_FACT_BACKUP_VERIFIED", "QG_REJECTED_INPLACE_REWRITE"],
+      "loadedSkillMarker": "QG_SKILL_REQUIRES_ROLLBACK",
+      "latestUserMarker": "QG_LATEST_PRESERVE_OLD_READERS"
+    },
+    {
+      "id": "two-round-security-fix",
+      "rounds": 2,
+      "historyMarkers": ["QG_GOAL_CLOSE_AUTH_BYPASS", "QG_FACT_EXPLOIT_REPRODUCED", "QG_REJECTED_DISABLE_TLS"],
+      "loadedSkillMarker": "QG_SKILL_REQUIRES_FAIL_CLOSED",
+      "latestUserMarker": "QG_LATEST_NO_SECRET_LOGGING"
+    },
+    {
+      "id": "three-round-concurrency-fix",
+      "rounds": 3,
+      "historyMarkers": ["QG_GOAL_REMOVE_DATA_RACE", "QG_FACT_RACE_TEST_FAILED", "QG_REJECTED_GLOBAL_MUTEX"],
+      "loadedSkillMarker": "QG_SKILL_REQUIRES_COUNTEREXAMPLE",
+      "latestUserMarker": "QG_LATEST_KEEP_PARALLELISM"
+    },
+    {
+      "id": "two-round-memory-retrieval",
+      "rounds": 2,
+      "historyMarkers": ["QG_GOAL_REDUCE_FALSE_INJECTION", "QG_FACT_HARD_NEGATIVE_FOUND", "QG_REJECTED_THRESHOLD_FLIP"],
+      "loadedSkillMarker": "QG_SKILL_REQUIRES_PROVENANCE",
+      "latestUserMarker": "QG_LATEST_KEEP_LEXICAL_FALLBACK"
+    },
+    {
+      "id": "three-round-subagent-lifecycle",
+      "rounds": 3,
+      "historyMarkers": ["QG_GOAL_ASYNC_SUBAGENTS", "QG_FACT_JOURNAL_HAS_IDS", "QG_REJECTED_SECOND_REGISTRY"],
+      "loadedSkillMarker": "QG_SKILL_REQUIRES_IDEMPOTENT_CANCEL",
+      "latestUserMarker": "QG_LATEST_NO_POST_CANCEL_WRITES"
+    },
+    {
+      "id": "two-round-cli-repair",
+      "rounds": 2,
+      "historyMarkers": ["QG_GOAL_RESTORE_CLI_ENTRY", "QG_FACT_ENTRY_PROBE_FAILED", "QG_REJECTED_HIDE_EXCEPTION"],
+      "loadedSkillMarker": "QG_SKILL_REQUIRES_ENTRY_TEST",
+      "latestUserMarker": "QG_LATEST_PRESERVE_EXIT_CODES"
+    },
+    {
+      "id": "three-round-packaging-fix",
+      "rounds": 3,
+      "historyMarkers": ["QG_GOAL_REPRODUCIBLE_WHEEL", "QG_FACT_FRESH_INSTALL_PASSED", "QG_REJECTED_BUNDLE_TEST_TREE"],
+      "loadedSkillMarker": "QG_SKILL_REQUIRES_MANIFEST_AUDIT",
+      "latestUserMarker": "QG_LATEST_SUPPORT_PYTHON_311"
+    }
+  ]
+}

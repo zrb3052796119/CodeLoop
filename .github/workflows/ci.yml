@@ -35,6 +35,9 @@ jobs:
           python -m pip install ruff
           python -m ruff check minicode/ --select=E,F --ignore=E501
 
+      - name: Run deterministic agent quality gate
+        run: python scripts/evaluate_agent_quality.py --profile current
+
       - name: Run packaging smoke tests
         run: python -m pytest tests/test_packaging.py -q
 

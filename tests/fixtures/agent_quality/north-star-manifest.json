@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "suiteId": "minicode-north-star-seed-2026-08-19",
+  "description": "Seed manifest reconstructed from the repaired real-environment acceptance. Expand to 50-100 frozen tasks before an A claim.",
+  "cases": [
+    {
+      "id": "real-s1-skill-bugfix",
+      "category": "bug-fix",
+      "mutability": "write",
+      "executionMode": "interactive",
+      "fixtureId": "acceptance-inventory",
+      "promptClass": "explicit-skill-focused-bugfix",
+      "oracleIds": ["skill-loaded", "minimal-diff", "tests-pass", "canonical-success"]
+    },
+    {
+      "id": "real-s2-parallel-architecture",
+      "category": "multi-agent",
+      "mutability": "read_only",
+      "executionMode": "headless",
+      "fixtureId": "acceptance-invoice-flow",
+      "promptClass": "parallel-explore-code-understanding",
+      "oracleIds": ["two-subagents", "call-flow", "test-risk", "no-source-edits", "canonical-success"]
+    },
+    {
+      "id": "real-s3-project-constraint-memory",
+      "category": "persistent-memory",
+      "mutability": "read_only",
+      "executionMode": "headless-multi-turn",
+      "fixtureId": "acceptance-policy-date-format",
+      "promptClass": "learn-then-recall-project-constraint",
+      "oracleIds": ["memory-written", "provenance-present", "memory-rendered", "constraint-recalled"]
+    },
+    {
+      "id": "real-s4-compaction-continuity",
+      "category": "context-reliability",
+      "mutability": "read_only",
+      "executionMode": "production-regression",
+      "fixtureId": "context-compaction-regression-suite",
+      "promptClass": "forced-compaction-continuity",
+      "oracleIds": ["regression-suite-pass", "skill-retained", "summary-chain", "turn-identity"]
+    }
+  ]
+}

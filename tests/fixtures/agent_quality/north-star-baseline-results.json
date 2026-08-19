@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "suiteId": "minicode-north-star-seed-2026-08-19",
+  "recordedAt": "2026-08-19",
+  "sourceReport": "docs/coding-agent-system-acceptance-repair-2026-08-19.md",
+  "results": [
+    {
+      "id": "real-s1-skill-bugfix",
+      "status": "passed",
+      "verificationPassed": true,
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "durationMs": null,
+      "modelCalls": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "runId": "run_3306c04c018e46f8a5215c30f563decf",
+      "passedOracleIds": ["skill-loaded", "minimal-diff", "tests-pass", "canonical-success"]
+    },
+    {
+      "id": "real-s2-parallel-architecture",
+      "status": "passed",
+      "verificationPassed": true,
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "durationMs": null,
+      "modelCalls": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "runId": "run_080793698ad747b0b7626fe10b72c610",
+      "passedOracleIds": ["two-subagents", "call-flow", "test-risk", "no-source-edits", "canonical-success"]
+    },
+    {
+      "id": "real-s3-project-constraint-memory",
+      "status": "passed",
+      "verificationPassed": true,
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "durationMs": null,
+      "modelCalls": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "runId": "run_d199dac698e742a99f1b249901a25965",
+      "relatedRunIds": ["run_c5d0578344824820b1f6d3d88e9d2f39"],
+      "passedOracleIds": ["memory-written", "provenance-present", "memory-rendered", "constraint-recalled"]
+    },
+    {
+      "id": "real-s4-compaction-continuity",
+      "status": "passed",
+      "verificationPassed": true,
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "durationMs": null,
+      "modelCalls": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "runId": null,
+      "passedOracleIds": ["regression-suite-pass", "skill-retained", "summary-chain", "turn-identity"]
+    }
+  ]
+}

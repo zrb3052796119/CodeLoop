@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "topK": 5,
+  "catalog": [
+    {
+      "name": "pytest-debugging",
+      "qualified_name": "pytest-debugging",
+      "description": "Debug pytest failures, test errors, fixtures, and Python tracebacks",
+      "keywords": ["pytest", "test failure", "traceback", "fixture"],
+      "source": "project"
+    },
+    {
+      "name": "codebase-explanation",
+      "qualified_name": "codebase-explanation",
+      "description": "Explain code architecture, call flow, modules, classes, and references",
+      "keywords": ["architecture", "call flow", "explain code", "reference"],
+      "source": "project"
+    },
+    {
+      "name": "documentation-writing",
+      "qualified_name": "documentation-writing",
+      "description": "Write and revise README, API documentation, guides, and docstrings",
+      "keywords": ["readme", "documentation", "guide", "docstring"],
+      "source": "project"
+    },
+    {
+      "name": "frontend-design",
+      "qualified_name": "frontend-design",
+      "description": "Design production frontend pages, components, layouts, and visual interfaces",
+      "keywords": ["frontend", "landing page", "component", "layout"],
+      "source": "project"
+    },
+    {
+      "name": "security-audit",
+      "qualified_name": "security-audit",
+      "description": "Audit application security, vulnerabilities, authentication, secrets, and permissions",
+      "keywords": ["security", "vulnerability", "authentication", "secret"],
+      "source": "project"
+    },
+    {
+      "name": "database-tuning",
+      "qualified_name": "database-tuning",
+      "description": "Optimize database queries, SQL performance, indexes, transactions, and slow queries",
+      "keywords": ["database", "sql", "index", "slow query"],
+      "source": "project"
+    },
+    {
+      "name": "deployment-automation",
+      "qualified_name": "deployment-automation",
+      "description": "Automate Docker deployment, release pipelines, containers, and production rollout",
+      "keywords": ["docker", "deploy", "release", "container"],
+      "source": "project"
+    },
+    {
+      "name": "memory-audit",
+      "qualified_name": "memory-audit",
+      "description": "Audit persistent agent memory, retrieval, lessons, provenance, and feedback",
+      "keywords": ["persistent memory", "retrieval", "lesson", "provenance"],
+      "source": "project"
+    },
+    {
+      "name": "context-compaction",
+      "qualified_name": "context-compaction",
+      "description": "Analyze context windows, token pressure, conversation compaction, and summary fidelity",
+      "keywords": ["context", "compaction", "token", "summary"],
+      "source": "project"
+    },
+    {
+      "name": "multi-agent-orchestration",
+      "qualified_name": "multi-agent-orchestration",
+      "description": "Design sub-agent collaboration, parallel agents, task delegation, and orchestration",
+      "keywords": ["multi-agent", "sub-agent", "parallel agent", "delegation"],
+      "source": "project"
+    },
+    {
+      "name": "git-workflow",
+      "qualified_name": "git-workflow",
+      "description": "Manage Git branches, commits, merge conflicts, rebases, and release history",
+      "keywords": ["git", "commit", "branch", "merge conflict"],
+      "source": "project"
+    },
+    {
+      "name": "performance-profiling",
+      "qualified_name": "performance-profiling",
+      "description": "Profile CPU, memory, latency, throughput, and application performance regressions",
+      "keywords": ["profile", "cpu", "latency", "performance"],
+      "source": "project"
+    }
+  ],
+  "cases": [
+    {"id": "positive-pytest-01", "prompt": "debug the pytest fixture failure in tests/test_agent_loop.py", "expectedTop1": "pytest-debugging", "expectedRequired": [], "forbidden": ["documentation-writing"]},
+    {"id": "positive-pytest-02", "prompt": "the Python test traceback fails only under pytest, investigate it", "expectedTop1": "pytest-debugging", "expectedRequired": [], "forbidden": ["frontend-design"]},
+    {"id": "positive-architecture-01", "prompt": "explain the call flow from the API handler to storage", "expectedTop1": "codebase-explanation", "expectedRequired": [], "forbidden": ["database-tuning"]},
+    {"id": "positive-architecture-02", "prompt": "trace which classes and modules call this function", "expectedTop1": "codebase-explanation", "expectedRequired": [], "forbidden": ["documentation-writing"]},
+    {"id": "positive-docs-01", "prompt": "update the README installation guide and API documentation", "expectedTop1": "documentation-writing", "expectedRequired": [], "forbidden": ["deployment-automation"]},
+    {"id": "positive-docs-02", "prompt": "write docstrings and a migration guide for this module", "expectedTop1": "documentation-writing", "expectedRequired": [], "forbidden": ["pytest-debugging"]},
+    {"id": "positive-frontend-01", "prompt": "design a responsive frontend landing page and component layout", "expectedTop1": "frontend-design", "expectedRequired": [], "forbidden": ["database-tuning"]},
+    {"id": "positive-security-01", "prompt": "audit authentication permissions for security vulnerabilities", "expectedTop1": "security-audit", "expectedRequired": [], "forbidden": ["performance-profiling"]},
+    {"id": "positive-database-01", "prompt": "optimize this slow SQL query and recommend an index", "expectedTop1": "database-tuning", "expectedRequired": [], "forbidden": ["frontend-design"]},
+    {"id": "positive-database-02", "prompt": "investigate database transaction latency and query performance", "expectedTop1": "database-tuning", "expectedRequired": [], "forbidden": ["git-workflow"]},
+    {"id": "positive-deploy-01", "prompt": "automate the Docker container deployment and release pipeline", "expectedTop1": "deployment-automation", "expectedRequired": [], "forbidden": ["documentation-writing"]},
+    {"id": "positive-memory-01", "prompt": "audit persistent memory retrieval provenance and lesson feedback", "expectedTop1": "memory-audit", "expectedRequired": [], "forbidden": ["performance-profiling"]},
+    {"id": "positive-context-01", "prompt": "check context compaction summary fidelity under token pressure", "expectedTop1": "context-compaction", "expectedRequired": [], "forbidden": ["documentation-writing"]},
+    {"id": "positive-agents-01", "prompt": "design multi-agent task delegation with parallel sub-agents", "expectedTop1": "multi-agent-orchestration", "expectedRequired": [], "forbidden": ["git-workflow"]},
+    {"id": "positive-git-01", "prompt": "create a Git branch and conventional commit for these changes", "expectedTop1": "git-workflow", "expectedRequired": [], "forbidden": ["deployment-automation"]},
+    {"id": "positive-profile-01", "prompt": "profile the CPU and latency performance regression", "expectedTop1": "performance-profiling", "expectedRequired": [], "forbidden": ["security-audit"]},
+    {"id": "positive-zh-db-01", "prompt": "帮我优化数据库慢查询和 SQL 索引", "expectedTop1": "database-tuning", "expectedRequired": [], "forbidden": ["frontend-design"]},
+    {"id": "positive-zh-context-01", "prompt": "检查上下文压缩后是否丢失摘要中的关键决定", "expectedTop1": "context-compaction", "expectedRequired": [], "forbidden": ["documentation-writing"]},
+    {"id": "positive-zh-agent-01", "prompt": "设计多智能体并行协作和子代理任务委派", "expectedTop1": "multi-agent-orchestration", "expectedRequired": [], "forbidden": ["git-workflow"]},
+    {"id": "positive-zh-security-01", "prompt": "审计登录鉴权、权限和密钥泄漏风险", "expectedTop1": "security-audit", "expectedRequired": [], "forbidden": ["performance-profiling"]},
+    {"id": "explicit-pytest", "prompt": "Use the pytest-debugging Skill to investigate this failure", "expectedTop1": "pytest-debugging", "expectedRequired": ["pytest-debugging"], "forbidden": []},
+    {"id": "explicit-memory", "prompt": "请使用 memory-audit Skill 审查持久化教训", "expectedTop1": "memory-audit", "expectedRequired": ["memory-audit"], "forbidden": []},
+    {"id": "explicit-context", "prompt": "Load the context-compaction skill and review summary continuity", "expectedTop1": "context-compaction", "expectedRequired": ["context-compaction"], "forbidden": []},
+    {"id": "explicit-agent", "prompt": "使用 multi-agent-orchestration 技能设计异步子代理", "expectedTop1": "multi-agent-orchestration", "expectedRequired": ["multi-agent-orchestration"], "forbidden": []},
+    {"id": "abstain-chat-01", "prompt": "给我讲个笑话", "expectedTop1": null, "expectedRequired": [], "forbidden": ["pytest-debugging", "documentation-writing", "frontend-design", "security-audit", "database-tuning", "deployment-automation", "memory-audit", "context-compaction", "multi-agent-orchestration", "git-workflow", "performance-profiling"]},
+    {"id": "abstain-chat-02", "prompt": "How was your day?", "expectedTop1": null, "expectedRequired": [], "forbidden": ["pytest-debugging", "documentation-writing", "frontend-design", "security-audit", "database-tuning", "deployment-automation", "memory-audit", "context-compaction", "multi-agent-orchestration", "git-workflow", "performance-profiling"]},
+    {"id": "abstain-food-01", "prompt": "今晚吃什么比较好", "expectedTop1": null, "expectedRequired": [], "forbidden": ["database-tuning", "deployment-automation", "memory-audit"]},
+    {"id": "abstain-travel-01", "prompt": "Plan a relaxing beach holiday", "expectedTop1": null, "expectedRequired": [], "forbidden": ["deployment-automation", "frontend-design"]},
+    {"id": "abstain-math-01", "prompt": "what is 17 multiplied by 23", "expectedTop1": null, "expectedRequired": [], "forbidden": ["performance-profiling", "database-tuning"]},
+    {"id": "abstain-translation-01", "prompt": "translate this poem into French", "expectedTop1": null, "expectedRequired": [], "forbidden": ["documentation-writing"]},
+    {"id": "abstain-weather-01", "prompt": "明天上海天气怎么样", "expectedTop1": null, "expectedRequired": [], "forbidden": ["deployment-automation", "context-compaction"]},
+    {"id": "abstain-ambiguous-01", "prompt": "帮我看看这个", "expectedTop1": null, "expectedRequired": [], "forbidden": ["codebase-explanation", "security-audit", "memory-audit"]},
+    {"id": "hard-negative-negated-skill", "prompt": "Do not use the pytest-debugging skill; just tell me a joke", "expectedTop1": null, "expectedRequired": [], "forbidden": ["pytest-debugging"]},
+    {"id": "hard-negative-name-overlap", "prompt": "I bought a memory foam pillow", "expectedTop1": null, "expectedRequired": [], "forbidden": ["memory-audit"]},
+    {"id": "hard-negative-context-word", "prompt": "What does context mean in linguistics?", "expectedTop1": null, "expectedRequired": [], "forbidden": ["context-compaction"]},
+    {"id": "hard-negative-agent-word", "prompt": "Which travel agent should I call?", "expectedTop1": null, "expectedRequired": [], "forbidden": ["multi-agent-orchestration"]}
+  ]
+}

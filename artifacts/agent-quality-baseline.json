@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "baselineGrade": "B",
+  "description": "Recorded Tier 0 baseline; the current profile prevents regression while the a profile remains intentionally unmet.",
+  "mode": "offline-deterministic",
+  "remoteCallCount": 0,
+  "datasets": {
+    "skillRoutingSha256": "40a30fed29781d5fd1ef63dab563eeb7860705b38b80102ecfa090ad95ed2b72",
+    "compactionFidelitySha256": "a50a9a653c4c5086520c13a56b4e658a889ffb3230a2c371c1de931c14bf5730",
+    "northStarManifestSha256": "4a972b27b90e7f5f5af9618ab07f1aff5dcc251ee96bcbc7c2f994069b46adfd",
+    "northStarResultsSha256": "d06649ee6afcf24e633e722adbfc8dd35f5d9a42f7ebc6e383ca8b3f7c449c53"
+  },
+  "skillRouting": {
+    "caseCount": 36,
+    "positiveCount": 24,
+    "abstainCount": 12,
+    "top1Accuracy": 0.541667,
+    "abstainAccuracy": 0.833333,
+    "requiredExactMatchRate": 0.944444,
+    "forbiddenSelectionRate": 0.055556,
+    "failedCaseIds": [
+      "positive-pytest-02",
+      "positive-architecture-02",
+      "positive-docs-02",
+      "positive-frontend-01",
+      "positive-context-01",
+      "positive-agents-01",
+      "positive-git-01",
+      "positive-profile-01",
+      "positive-zh-context-01",
+      "positive-zh-agent-01",
+      "positive-zh-security-01",
+      "explicit-memory",
+      "hard-negative-negated-skill",
+      "hard-negative-name-overlap"
+    ]
+  },
+  "compactionFidelity": {
+    "caseCount": 8,
+    "markerRecall": 1.0,
+    "latestUserRetentionRate": 1.0,
+    "loadedSkillRetentionRate": 1.0,
+    "summaryChainRate": 1.0,
+    "toolPairIntegrityRate": 1.0,
+    "nonNegativeSavingsRate": 1.0,
+    "failedCaseIds": []
+  },
+  "northStar": {
+    "suiteId": "minicode-north-star-seed-2026-08-19",
+    "caseCount": 4,
+    "categoryCount": 4,
+    "writeCaseCount": 1,
+    "taskSuccessRate": 1.0,
+    "verifiedSuccessRate": 1.0,
+    "oraclePassRate": 1.0,
+    "minCategorySuccessRate": 1.0,
+    "unsafeActionRate": 0.0,
+    "interventionRate": 0.0,
+    "inconclusiveRate": 0.0,
+    "evidenceCompleteRate": 0.75,
+    "durationTelemetryCoverageRate": 0.0,
+    "modelCallTelemetryCoverageRate": 0.0,
+    "tokenTelemetryCoverageRate": 0.0,
+    "failedCaseIds": []
+  },
+  "evaluationPayloadSha256": "ec42234356fba214740e70732ea0b8a5b35431f13a236e051edab7293ef04fa4"
+}

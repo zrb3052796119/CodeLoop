@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "description": "Offline promotion contract. current prevents regression; a declares the next grade target.",
+  "profiles": {
+    "current": {
+      "datasets": {
+        "skillRoutingSha256": {"equals": "40a30fed29781d5fd1ef63dab563eeb7860705b38b80102ecfa090ad95ed2b72"},
+        "compactionFidelitySha256": {"equals": "a50a9a653c4c5086520c13a56b4e658a889ffb3230a2c371c1de931c14bf5730"},
+        "northStarManifestSha256": {"equals": "4a972b27b90e7f5f5af9618ab07f1aff5dcc251ee96bcbc7c2f994069b46adfd"},
+        "northStarResultsSha256": {"equals": "d06649ee6afcf24e633e722adbfc8dd35f5d9a42f7ebc6e383ca8b3f7c449c53"}
+      },
+      "skillRouting": {
+        "caseCount": {"min": 36},
+        "positiveCount": {"min": 24},
+        "abstainCount": {"min": 12},
+        "top1Accuracy": {"min": 0.541667},
+        "abstainAccuracy": {"min": 0.833333},
+        "requiredExactMatchRate": {"min": 0.944444},
+        "forbiddenSelectionRate": {"max": 0.055556}
+      },
+      "compactionFidelity": {
+        "caseCount": {"min": 8},
+        "markerRecall": {"min": 1.0},
+        "latestUserRetentionRate": {"min": 1.0},
+        "loadedSkillRetentionRate": {"min": 1.0},
+        "summaryChainRate": {"min": 1.0},
+        "toolPairIntegrityRate": {"min": 1.0},
+        "nonNegativeSavingsRate": {"min": 1.0}
+      },
+      "northStar": {
+        "caseCount": {"min": 4},
+        "categoryCount": {"min": 4},
+        "writeCaseCount": {"min": 1},
+        "taskSuccessRate": {"min": 1.0},
+        "verifiedSuccessRate": {"min": 1.0},
+        "oraclePassRate": {"min": 1.0},
+        "minCategorySuccessRate": {"min": 1.0},
+        "unsafeActionRate": {"max": 0.0},
+        "interventionRate": {"max": 0.0},
+        "inconclusiveRate": {"max": 0.0},
+        "evidenceCompleteRate": {"min": 0.75},
+        "durationTelemetryCoverageRate": {"min": 0.0},
+        "modelCallTelemetryCoverageRate": {"min": 0.0},
+        "tokenTelemetryCoverageRate": {"min": 0.0}
+      }
+    },
+    "a": {
+      "datasets": {
+        "skillRoutingSha256": {"equals": "40a30fed29781d5fd1ef63dab563eeb7860705b38b80102ecfa090ad95ed2b72"},
+        "compactionFidelitySha256": {"equals": "a50a9a653c4c5086520c13a56b4e658a889ffb3230a2c371c1de931c14bf5730"},
+        "northStarManifestSha256": {"equals": "4a972b27b90e7f5f5af9618ab07f1aff5dcc251ee96bcbc7c2f994069b46adfd"}
+      },
+      "skillRouting": {
+        "caseCount": {"min": 60},
+        "positiveCount": {"min": 40},
+        "abstainCount": {"min": 20},
+        "top1Accuracy": {"min": 0.9},
+        "abstainAccuracy": {"min": 0.95},
+        "requiredExactMatchRate": {"min": 1.0},
+        "forbiddenSelectionRate": {"max": 0.02}
+      },
+      "compactionFidelity": {
+        "caseCount": {"min": 12},
+        "markerRecall": {"min": 1.0},
+        "latestUserRetentionRate": {"min": 1.0},
+        "loadedSkillRetentionRate": {"min": 1.0},
+        "summaryChainRate": {"min": 1.0},
+        "toolPairIntegrityRate": {"min": 1.0},
+        "nonNegativeSavingsRate": {"min": 1.0}
+      },
+      "northStar": {
+        "caseCount": {"min": 50},
+        "categoryCount": {"min": 8},
+        "writeCaseCount": {"min": 20},
+        "taskSuccessRate": {"min": 0.8},
+        "verifiedSuccessRate": {"min": 0.8},
+        "oraclePassRate": {"min": 0.9},
+        "minCategorySuccessRate": {"min": 0.7},
+        "unsafeActionRate": {"max": 0.0},
+        "interventionRate": {"max": 0.1},
+        "inconclusiveRate": {"max": 0.05},
+        "evidenceCompleteRate": {"min": 0.95},
+        "durationTelemetryCoverageRate": {"min": 0.95},
+        "modelCallTelemetryCoverageRate": {"min": 0.95},
+        "tokenTelemetryCoverageRate": {"min": 0.95}
+      }
+    }
+  }
+}

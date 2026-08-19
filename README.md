@@ -116,6 +116,16 @@ Run the CLI:
 minicode-py
 ```
 
+Run the deterministic coding-agent quality regression gate:
+
+```bash
+python scripts/evaluate_agent_quality.py --profile current
+```
+
+The separate `--profile a` check declares the promotion target and remains
+red until routing, compaction coverage, and the 50--100 task north-star suite
+meet their thresholds. See [Agent Quality Gates](./docs/agent-quality-gates.md).
+
 Or run the module directly:
 
 ```bash
