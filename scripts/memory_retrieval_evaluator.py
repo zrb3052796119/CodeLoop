@@ -560,10 +560,14 @@ def _pipeline_for_case(manager: Any, case: dict[str, Any], *, reranker_model: An
     from minicode.memory_pipeline import MemoryPipeline
 
     pipeline = MemoryPipeline(manager)
+    # The evaluator may provide a sentinel model to prove that canonical
+    # retrieval does *not* invoke an experimental reranker. Passing the old
+    # feature flag falsely claimed that backend was production-wired; the
+    # pipeline now rejects that configuration by contract.
     pipeline.initialize(
         model_adapter=reranker_model,
         workspace_path=str(manager.workspace_path),
-        enable_reranker=reranker_model is not None,
+        enable_reranker=False,
         enable_vector=False,
     )
     if pipeline._injector is not None:

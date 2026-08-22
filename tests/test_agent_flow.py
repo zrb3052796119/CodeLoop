@@ -256,17 +256,18 @@ class TestAgentFlowCybernetics:
         assert task_result["errors_recovered"] is True
         assert task_result["event_id"].startswith("event-")
         assert captured_tasks[0].state == TaskState.COMPLETED
-        assert memory_outcomes == ["success"]
-        assert len(routing_outcomes) == 1
-        assert routing_outcomes[0].success is True
-        assert routing_outcomes[0].tool_errors == 1
-        assert routing_flushes == [True]
+        assert task_result["completion_succeeded"] is True
+        assert task_result["verification_status"] == "unverified"
+        assert task_result["goal_achieved"] is False
+        assert memory_outcomes == ["unknown"]
+        assert routing_outcomes == []
+        assert routing_flushes == []
         task_pattern = [
             success
             for pattern_id, success in pattern_outcomes
             if pattern_id.endswith(captured_tasks[0].id)
         ]
-        assert task_pattern == [True]
+        assert task_pattern == []
 
     def test_unidentified_model_is_not_added_to_routing_feedback(
         self, monkeypatch, tools, workspace, permissions
@@ -403,5 +404,5 @@ class TestAgentMemoryPipeline:
         )
 
         assert feedback_calls == [
-            ("success", {"verification_passed": 1, "verification_failed": 0})
+            (True, {"verification_passed": 1, "verification_failed": 0})
         ]

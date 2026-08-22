@@ -9,8 +9,8 @@ from minicode.tui.chrome import (
     render_footer_bar,
     render_panel,
     render_permission_prompt,
+    render_section,
     render_slash_menu,
-    render_status_line,
     render_tool_panel,
     SUBTLE,
     RESET,
@@ -103,7 +103,7 @@ def _render_prompt_panel(state: ScreenState) -> str:
             commands,
             min(state.selected_slash_index, len(commands) - 1),
         )
-    return render_panel("prompt", prompt_body)
+    return render_section("", prompt_body)
 
 
 def _compute_render_hash(args: TtyAppArgs, state: ScreenState) -> int:
@@ -173,7 +173,7 @@ def _render_screen(args: TtyAppArgs, state: ScreenState) -> None:
 
     # Header
     buf.append(_render_header_panel(args, state))
-    buf.append("\n\n")
+    buf.append("\n")
 
     has_skills = len(args.tools.get_skills()) > 0
 
@@ -218,20 +218,23 @@ def _render_screen(args: TtyAppArgs, state: ScreenState) -> None:
             state.transcript_revision,
         )
     else:
-        transcript_body = f"{render_status_line(None)}\n\nType /help for commands."
+        transcript_body = (
+            "Start with a task, or type / to browse commands.\n"
+            "Example: explain this project before changing anything."
+        )
     buf.append(
-        render_panel(
-            "session feed",
+        render_section(
+            "Conversation",
             transcript_body,
             right_title=f"{len(transcript_snapshot)} events",
             min_body_lines=body_lines,
         )
     )
-    buf.append("\n\n")
+    buf.append("\n")
 
     # Prompt
     buf.append(_render_prompt_panel(state))
-    buf.append("\n\n")
+    buf.append("\n")
 
     # Footer (cached)
     buf.append(_render_footer_cached(state.status, True, has_skills, background_tasks))

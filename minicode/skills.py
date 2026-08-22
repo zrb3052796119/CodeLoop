@@ -134,19 +134,52 @@ def _skill_roots(cwd: str | Path) -> list[tuple[Path, str]]:
     ]
 
 
-def _directory_from_file(path: Path, source: str) -> SkillDirectorySummary | None:
+def _safe_skill_file(root: Path, path: Path) -> Path | None:
+    """Resolve one regular Skill file without following catalog symlinks.
+
+    Skill roots are partly workspace-controlled.  Lexical ``..`` checks do
+    not stop ``skills/demo -> /private/path``; reject symlinks below the root
+    and then verify resolved containment before reading anything.
+    """
     try:
-        content = path.read_text(encoding="utf-8")
+        relative = path.relative_to(root)
+        current = root
+        for part in relative.parts:
+            current = current / part
+            if current.is_symlink():
+                return None
+        resolved_root = root.resolve(strict=True)
+        resolved = path.resolve(strict=True)
+        if not resolved.is_relative_to(resolved_root) or not resolved.is_file():
+            return None
+        return resolved
+    except (OSError, RuntimeError, ValueError):
+        return None
+
+
+def _directory_from_file(
+    path: Path,
+    source: str,
+    *,
+    root: Path,
+) -> SkillDirectorySummary | None:
+    safe_path = _safe_skill_file(root, path)
+    if safe_path is None:
+        return None
+    try:
+        content = safe_path.read_text(encoding="utf-8")
     except OSError:
         return None
     metadata, _ = parse_frontmatter(content)
-    name = str(metadata.get("name") or path.parent.name).strip()
+    name = _sanitize_skill_identifier(
+        str(metadata.get("name") or ""), safe_path.parent.name
+    )
     if not name:
         return None
     return SkillDirectorySummary(
         name=name,
         description=extract_description(content),
-        path=str(path),
+        path=str(safe_path),
         source=source,
         domains=_as_list(metadata.get("domains")),
         scopes=_as_list(metadata.get("scopes")),
@@ -158,20 +191,28 @@ def _skill_from_file(
     path: Path,
     source: str,
     *,
+    root: Path,
     fallback_name: str,
     directory: str = "",
     directory_summary: SkillDirectorySummary | None = None,
 ) -> LoadedSkill | None:
+    safe_path = _safe_skill_file(root, path)
+    if safe_path is None:
+        return None
     try:
-        content = path.read_text(encoding="utf-8")
+        content = safe_path.read_text(encoding="utf-8")
     except OSError:
         return None
 
     metadata, _ = parse_frontmatter(content)
-    name = str(metadata.get("name") or fallback_name).strip()
+    name = _sanitize_skill_identifier(
+        str(metadata.get("name") or ""), fallback_name
+    )
     if not name:
         return None
-    skill_directory = str(metadata.get("directory") or directory).strip()
+    skill_directory = _sanitize_skill_identifier(
+        str(metadata.get("directory") or ""), directory
+    )
     qualified_name = f"{skill_directory}/{name}" if skill_directory else name
     directory_description = directory_summary.description if directory_summary else ""
     domains = _as_list(metadata.get("domains")) or (directory_summary.domains if directory_summary else [])
@@ -182,7 +223,7 @@ def _skill_from_file(
         name=name,
         qualified_name=qualified_name,
         description=extract_description(content),
-        path=str(path),
+        path=str(safe_path),
         source=source,
         directory=skill_directory,
         directory_description=directory_description,
@@ -201,16 +242,23 @@ def _list_skill_dirs(root: Path, source: str) -> list[LoadedSkill]:
     results: list[LoadedSkill] = []
     for entry in root.iterdir():
         try:
-            if not entry.is_dir():
+            if entry.is_symlink() or not entry.is_dir():
                 continue
         except OSError:
             # Windows: untrusted mount points, broken symlinks, etc.
             continue
 
-        directory_summary = _directory_from_file(entry / "SKILL_DIR.md", source)
+        directory_summary = _directory_from_file(
+            entry / "SKILL_DIR.md", source, root=root
+        )
         direct_skill = entry / "SKILL.md"
-        if direct_skill.exists():
-            skill = _skill_from_file(direct_skill, source, fallback_name=entry.name)
+        if _safe_skill_file(root, direct_skill) is not None:
+            skill = _skill_from_file(
+                direct_skill,
+                source,
+                root=root,
+                fallback_name=entry.name,
+            )
             if skill is not None:
                 results.append(skill)
 
@@ -218,16 +266,17 @@ def _list_skill_dirs(root: Path, source: str) -> list[LoadedSkill]:
             continue
         for nested in entry.iterdir():
             try:
-                if not nested.is_dir():
+                if nested.is_symlink() or not nested.is_dir():
                     continue
             except OSError:
                 continue
             skill_path = nested / "SKILL.md"
-            if not skill_path.exists():
+            if _safe_skill_file(root, skill_path) is None:
                 continue
             skill = _skill_from_file(
                 skill_path,
                 source,
+                root=root,
                 fallback_name=nested.name,
                 directory=directory_summary.name,
                 directory_summary=directory_summary,
@@ -244,11 +293,13 @@ def discover_skill_directories(cwd: str | Path) -> list[SkillDirectorySummary]:
             continue
         for entry in root.iterdir():
             try:
-                if not entry.is_dir():
+                if entry.is_symlink() or not entry.is_dir():
                     continue
             except OSError:
                 continue
-            directory = _directory_from_file(entry / "SKILL_DIR.md", source)
+            directory = _directory_from_file(
+                entry / "SKILL_DIR.md", source, root=root
+            )
             if directory is not None:
                 by_key.setdefault(directory.name, directory)
     return list(by_key.values())
@@ -295,6 +346,21 @@ def discover_skills(cwd: str | Path) -> list[SkillSummary]:
 
 _SKILL_NAME_SEGMENT_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
+# Identifiers the SkillVersionLedger can represent (ASCII, no spaces). One
+# non-conforming catalog name aborts the whole version observation, so
+# untrusted frontmatter values are degraded instead of passed through.
+_LEDGER_SAFE_SEGMENT_RE = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}")
+
+
+def _sanitize_skill_identifier(value: str, fallback: str) -> str:
+    candidate = value.strip() or fallback.strip()
+    if not candidate:
+        return ""
+    if _LEDGER_SAFE_SEGMENT_RE.fullmatch(candidate):
+        return candidate
+    digest = hashlib.sha1(candidate.encode("utf-8")).hexdigest()[:12]
+    return f"skill_{digest}"
+
 
 def _is_safe_skill_name(name: str) -> bool:
     """Skill names are at most ``directory/skill`` with conservative segment
@@ -310,46 +376,74 @@ def _is_safe_skill_name(name: str) -> bool:
     )
 
 
-def load_skill(cwd: str | Path, name: str) -> LoadedSkill | None:
+def _summary_value(summary: SkillSummary | dict[str, Any], key: str) -> Any:
+    if isinstance(summary, dict):
+        return summary.get(key)
+    return getattr(summary, key, None)
+
+
+def load_skill_from_catalog(
+    cwd: str | Path,
+    name: str,
+    catalog: list[SkillSummary | dict[str, Any]],
+) -> LoadedSkill | None:
+    """Load the exact file/version advertised by one discovery snapshot."""
     normalized_name = name.strip().strip("/")
     if not normalized_name or not _is_safe_skill_name(normalized_name):
         return None
 
-    for root, source in _skill_roots(cwd):
-        if "/" in normalized_name:
-            directory, skill_name = normalized_name.split("/", 1)
-            skill_path = root / directory / skill_name / "SKILL.md"
-            directory_summary = _directory_from_file(root / directory / "SKILL_DIR.md", source)
-            if skill_path.exists():
-                return _skill_from_file(
-                    skill_path,
-                    source,
-                    fallback_name=skill_name,
-                    directory=directory,
-                    directory_summary=directory_summary,
-                )
+    exact = [
+        item for item in catalog
+        if str(_summary_value(item, "qualified_name") or "") == normalized_name
+    ]
+    matches = exact or [
+        item for item in catalog
+        if str(_summary_value(item, "name") or "") == normalized_name
+    ]
+    # A bare public name that identifies multiple directory Skills is not a
+    # stable binding. Require the qualified name instead of choosing by scan
+    # order.
+    if len(matches) != 1:
+        return None
+    binding = matches[0]
+    source = str(_summary_value(binding, "source") or "")
+    roots = {root_source: root for root, root_source in _skill_roots(cwd)}
+    root = roots.get(source)
+    if root is None:
+        return None
+    path = Path(str(_summary_value(binding, "path") or ""))
+    safe_path = _safe_skill_file(root, path)
+    if safe_path is None or str(safe_path) != str(path):
+        return None
+    try:
+        content = safe_path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    if digest != str(_summary_value(binding, "content_digest") or ""):
+        return None
+    return LoadedSkill(
+        name=str(_summary_value(binding, "name") or ""),
+        qualified_name=str(_summary_value(binding, "qualified_name") or ""),
+        description=str(_summary_value(binding, "description") or ""),
+        path=str(safe_path),
+        source=source,
+        directory=str(_summary_value(binding, "directory") or ""),
+        directory_description=str(
+            _summary_value(binding, "directory_description") or ""
+        ),
+        domains=list(_summary_value(binding, "domains") or []),
+        scopes=list(_summary_value(binding, "scopes") or []),
+        tools=list(_summary_value(binding, "tools") or []),
+        keywords=list(_summary_value(binding, "keywords") or []),
+        examples=list(_summary_value(binding, "examples") or []),
+        content_digest=digest,
+        content=content,
+    )
 
-        skill_path = root / normalized_name / "SKILL.md"
-        if skill_path.exists():
-            return _skill_from_file(skill_path, source, fallback_name=normalized_name)
 
-        if root.exists():
-            for entry in root.iterdir():
-                try:
-                    if not entry.is_dir() or not (entry / "SKILL_DIR.md").exists():
-                        continue
-                except OSError:
-                    continue
-                nested_path = entry / normalized_name / "SKILL.md"
-                if nested_path.exists():
-                    return _skill_from_file(
-                        nested_path,
-                        source,
-                        fallback_name=normalized_name,
-                        directory=entry.name,
-                        directory_summary=_directory_from_file(entry / "SKILL_DIR.md", source),
-                    )
-    return None
+def load_skill(cwd: str | Path, name: str) -> LoadedSkill | None:
+    return load_skill_from_catalog(cwd, name, discover_skills(cwd))
 
 
 def _managed_skill_root(scope: str, cwd: str | Path) -> Path:
@@ -372,6 +466,11 @@ def install_skill(cwd: str | Path, source_path: str, name: str | None = None, sc
     skill_name = (name or inferred_name).strip()
     if not skill_name:
         raise RuntimeError("Skill name cannot be empty.")
+    if not _is_safe_skill_name(skill_name):
+        raise RuntimeError(
+            "Invalid skill name: expected 'name' or 'directory/name' using "
+            "letters, digits, '.', '_', '-' only."
+        )
 
     target_dir = _managed_skill_root(scope, cwd) / skill_name
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -380,7 +479,13 @@ def install_skill(cwd: str | Path, source_path: str, name: str | None = None, sc
 
 
 def remove_managed_skill(cwd: str | Path, name: str, scope: str = "user") -> dict[str, object]:
-    target_path = _managed_skill_root(scope, cwd) / name
+    normalized_name = name.strip()
+    if not normalized_name or not _is_safe_skill_name(normalized_name):
+        raise RuntimeError(
+            "Invalid skill name: expected 'name' or 'directory/name' using "
+            "letters, digits, '.', '_', '-' only."
+        )
+    target_path = _managed_skill_root(scope, cwd) / normalized_name
     if not target_path.exists():
         return {"removed": False, "targetPath": str(target_path)}
     shutil.rmtree(target_path)

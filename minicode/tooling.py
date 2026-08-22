@@ -9,6 +9,15 @@ from minicode.logging_config import get_logger
 
 _logger = get_logger("tooling")
 
+
+class ToolExecutionAbandoned(RuntimeError):
+    """Raised when an owning tool timeout has abandoned this worker.
+
+    The worker thread cannot be killed from Python, but a nested Agent loop
+    can check the shared abandonment event at its next checkpoint and unwind
+    instead of continuing to spend model calls and money.
+    """
+
 if TYPE_CHECKING:
     from minicode.mcp_current_state import McpCurrentStateRegistry
     from minicode.run_events import AgentEventSink, SkillUsageTracker
@@ -38,6 +47,10 @@ _TOOL_OUTPUT_LIMITS: dict[str, int] = {
     "docker_helper": 20_000,
     "test_runner": 25_000,
     "api_tester": 15_000,
+    # SKILL.md is executable instruction context, not diagnostic output. Keep
+    # it whole up to a deliberately bounded ceiling instead of generic
+    # head/tail truncation that can remove the operative middle section.
+    "load_skill": 200_000,
 }
 
 
@@ -250,6 +263,50 @@ class ToolContext:
         repr=False,
         compare=False,
     )
+    # Absolute monotonic deadline for one nested Task invocation. Kept
+    # separate from `_cancellation_token` so the parent Turn's token identity
+    # and cancellation authority are preserved exactly.
+    _task_deadline_monotonic: float | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    _task_timeout_seconds: float | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    # Shared turn-level token/model-call/cost budget. The top-level loop owns
+    # one instance and passes it through every ToolContext; sub-agents must
+    # use the same object rather than creating independent budgets.
+    _agent_budget: Any | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    # Set by _execute_single_tool when a tool worker timed out. Long-running
+    # tools (notably the `task` sub-agent) check it cooperatively and unwind
+    # instead of continuing after the parent has already returned.
+    _tool_abandoned: Any | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    # Turn-scoped, bounded note mailbox shared by the top-level loop and every
+    # sub-agent/workflow phase. Collaboration tools use this object.
+    _subagent_mailbox: Any | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    # Turn-scoped owner for asynchronous read-only sub-agents. The top-level
+    # agent loop creates it once, nested loops share it, and only the owner
+    # shuts it down at the end of the turn.
+    _subagent_lifecycle: Any | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
     # Nesting depth of the agent loop that owns this context. The top-level
     # loop is 0; a sub-agent spawned by the `task` tool runs at 1. Used to
     # stop unbounded sub-agent recursion.
@@ -375,6 +432,11 @@ class ToolRegistry:
             return ToolResult(ok=False, output=f"Unknown tool: {tool_name}")
 
         try:
+            abandoned = context._tool_abandoned
+            if abandoned is not None and abandoned.is_set():
+                raise ToolExecutionAbandoned(
+                    "owning tool execution was abandoned before dispatch"
+                )
             if self._mcp_current_state_registry is not None:
                 context._mcp_current_state_registry = (
                     self._mcp_current_state_registry
@@ -405,6 +467,10 @@ class ToolRegistry:
                 )
             
             # Phase 2: Execution (with crash protection)
+            if abandoned is not None and abandoned.is_set():
+                raise ToolExecutionAbandoned(
+                    "owning tool execution was abandoned before execution"
+                )
             result = tool.run(parsed, context)
             
             # Phase 3: Output sanitization
@@ -417,7 +483,7 @@ class ToolRegistry:
             
             return result
             
-        except (KeyboardInterrupt, SystemExit):
+        except (KeyboardInterrupt, SystemExit, ToolExecutionAbandoned):
             # These should always propagate upward
             raise
         except Exception as error:  # noqa: BLE001

@@ -53,15 +53,36 @@ _CODE_PATTERNS = [
     # A bounded gap (not just \s+) so "write a NEW function"/"the code" still
     # match — a determiner or short adjective between the trigger verb and
     # its target noun is the normal way English phrases these requests.
-    (r"\b(?:write|create|implement|add|generate)\b.{0,20}\b(?:functions?|classes?|methods?|modules?|components?|pages?|apis?)\b", IntentType.CODE, ActionType.CREATE),
+    # "codes?" must live here, ahead of _DOCUMENT_PATTERNS, or the most common
+    # coding request ("write the code") is claimed by the document intent.
+    (r"\b(?:write|create|implement|add|generate)\b.{0,20}\b(?:functions?|classes?|methods?|modules?|components?|pages?|apis?|codes?)\b", IntentType.CODE, ActionType.CREATE),
     (r"\b(?:modify|update|change|fix)\b.{0,20}\b(?:codes?|files?|functions?|classes?|methods?)\b", IntentType.CODE, ActionType.UPDATE),
     (r"\b(?:implement|complete|develop)\b.{0,20}\b(?:features?|tasks?|requirements?)\b", IntentType.CODE, ActionType.CREATE),
+    (
+        r"\b(?:design|build|create|implement)\b.{0,80}\b(?:frontends?|"
+        r"landing\s+pages?|components?|layouts?|multi[- ]agents?|"
+        r"sub[- ]agents?|orchestrations?|delegations?)\b",
+        IntentType.CODE,
+        ActionType.CREATE,
+    ),
+    (
+        r"(?:设计|构建|实现).{0,80}"
+        r"(?:前端|页面|组件|布局|多智能体|多代理|子代理|任务委派|编排)",
+        IntentType.CODE,
+        ActionType.CREATE,
+    ),
 ]
 
 _DEBUG_PATTERNS = [
     (r"\b(?:debug|fix|solve|resolve|troubleshoot)\b.{0,20}\b(?:errors?|bugs?|issues?|problems?|exceptions?)\b", IntentType.DEBUG, ActionType.ANALYZE),
     (r"(?:what|why)\s+(?:is|does)\s+(?:wrong|error|fail|broken)", IntentType.DEBUG, ActionType.ANALYZE),
     (r"(?:调试|排查|修复|解决).*(?:错误|报错|失败|异常|问题|bug)", IntentType.DEBUG, ActionType.ANALYZE),
+    (
+        r"(?:\b(?:tracebacks?|failures?|errors?)\b.{0,80}\bpytest\b|"
+        r"\bpytest\b.{0,80}\b(?:tracebacks?|failures?|fails?|errors?)\b)",
+        IntentType.DEBUG,
+        ActionType.ANALYZE,
+    ),
 ]
 
 _REFACTOR_PATTERNS = [
@@ -91,6 +112,12 @@ _EXPLAIN_PATTERNS = [
         IntentType.EXPLAIN,
         ActionType.READ,
     ),
+    (
+        r"\b(?:trace|find|show)\b.{0,80}\b(?:callers?|references?|"
+        r"classes?|modules?)\b.{0,80}\b(?:functions?|methods?|calls?)\b",
+        IntentType.EXPLAIN,
+        ActionType.READ,
+    ),
 ]
 
 _SEARCH_PATTERNS = [
@@ -102,13 +129,28 @@ _SEARCH_PATTERNS = [
 _REVIEW_PATTERNS = [
     (
         r"(?:review|check|audit|inspect).{0,80}"
-        r"(?:code|file|implementation|design|architecture|system|project|memory|skill|routing)",
+        r"(?:code|file|implementation|design|architecture|system|project|memory|"
+        r"skill|routing|context|compaction|summary|authentication|permission|"
+        r"secret|security|performance|latency|profiling|database|query|sql)",
         IntentType.REVIEW,
         ActionType.ANALYZE,
     ),
     (
-        r"(?:审查|检查|审核|评审).{0,80}"
-        r"(?:代码|文件|实现|设计|架构|系统|项目|记忆|内存|技能|skill|路由)",
+        r"(?:审查|检查|审核|评审|审计).{0,80}"
+        r"(?:代码|文件|实现|设计|架构|系统|项目|记忆|内存|技能|skill|路由|"
+        r"上下文|压缩|摘要|登录|鉴权|权限|密钥|泄漏|安全|性能|延迟|"
+        r"数据库|查询|索引)",
+        IntentType.REVIEW,
+        ActionType.ANALYZE,
+    ),
+    (
+        r"\b(?:profile|benchmark)\b.{0,80}\b(?:cpu|memory|latency|"
+        r"throughput|performance|regressions?)\b",
+        IntentType.REVIEW,
+        ActionType.ANALYZE,
+    ),
+    (
+        r"(?:分析|剖析|测量).{0,80}(?:cpu|性能|延迟|吞吐|回归)",
         IntentType.REVIEW,
         ActionType.ANALYZE,
     ),
@@ -123,6 +165,18 @@ _DOCUMENT_PATTERNS = [
     # "document this function" is a common request but had no target noun
     # covering code symbols at all — only docs/comment/README/documentation.
     (r"\b(?:document|comment|write)\b.{0,20}\b(?:docs?|comments?|readme|documentation|functions?|classes?|methods?|code)\b", IntentType.DOCUMENT, ActionType.CREATE),
+    (
+        r"\b(?:write|create|update)\b.{0,30}\b(?:docstrings?|"
+        r"migration\s+guides?)\b",
+        IntentType.DOCUMENT,
+        ActionType.CREATE,
+    ),
+    (
+        r"(?:编写|撰写|更新|补充).{0,60}"
+        r"(?:readme|文档|说明|指南|注释|docstring)",
+        IntentType.DOCUMENT,
+        ActionType.CREATE,
+    ),
 ]
 
 _CONFIGURE_PATTERNS = [
@@ -137,10 +191,34 @@ _CONFIGURE_PATTERNS = [
         IntentType.CONFIGURE,
         ActionType.UPDATE,
     ),
+    (
+        r"\b(?:create|checkout|switch|merge|rebase)\b.{0,40}"
+        r"\b(?:git\s+)?(?:branches?|commits?|tags?|merge|rebase)\b",
+        IntentType.CONFIGURE,
+        ActionType.UPDATE,
+    ),
+    (
+        r"(?:配置|安装|初始化).{0,60}"
+        r"(?:设置|环境|依赖|项目|模型|服务器|工具|包|仓库|工作区|密钥|"
+        r"docker|容器|部署|流水线)",
+        IntentType.CONFIGURE,
+        ActionType.UPDATE,
+    ),
+    (
+        r"(?:创建|切换|合并|变基).{0,40}(?:git|分支|提交|标签)",
+        IntentType.CONFIGURE,
+        ActionType.UPDATE,
+    ),
 ]
 
 _MEMORY_PATTERNS = [
-    (r"(?:remember|memory|memorize|/memory|# remember)", IntentType.MEMORY, ActionType.CREATE),
+    (r"(?:remember|memorize|/memory|# remember)", IntentType.MEMORY, ActionType.CREATE),
+    (
+        r"(?:\b(?:persistent|agent|project|user|long[- ]term)\s+memory\b|"
+        r"\bmemory[-\s]+(?:retrieval|store|entry|lesson|profile|audit|system)\b)",
+        IntentType.MEMORY,
+        ActionType.CREATE,
+    ),
 ]
 
 _SYSTEM_PATTERNS = [
@@ -153,10 +231,15 @@ _ALL_PATTERNS = (
     _TEST_PATTERNS + _DOCUMENT_PATTERNS + _CONFIGURE_PATTERNS
 )
 
+# Raw tokens cap below the total so cross-language aliases always fit.
+_MAX_RAW_KEYWORDS = 14
+_MAX_KEYWORDS = 20
+
 _CHINESE_KEYWORD_ALIASES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("审查", ("audit", "review")),
     ("检查", ("inspect", "review")),
     ("审核", ("audit", "review")),
+    ("审计", ("audit", "review")),
     ("持久化", ("persistent",)),
     ("记忆", ("memory",)),
     ("内存", ("memory",)),
@@ -168,6 +251,34 @@ _CHINESE_KEYWORD_ALIASES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("测试", ("test",)),
     ("架构", ("architecture",)),
     ("项目", ("project",)),
+    ("上下文", ("context",)),
+    ("压缩", ("compaction",)),
+    ("摘要", ("summary",)),
+    ("多智能体", ("multi-agent", "agent")),
+    ("多代理", ("multi-agent", "agent")),
+    ("子代理", ("sub-agent", "agent")),
+    ("委派", ("delegation",)),
+    ("并行", ("parallel",)),
+    ("登录", ("authentication",)),
+    ("鉴权", ("authentication",)),
+    ("权限", ("permission",)),
+    ("密钥", ("secret",)),
+    ("泄漏", ("leak",)),
+    ("数据库", ("database",)),
+    ("查询", ("query",)),
+    ("索引", ("index",)),
+    ("部署", ("deploy",)),
+    ("容器", ("container",)),
+    ("流水线", ("pipeline",)),
+    ("文档", ("documentation",)),
+    ("指南", ("guide",)),
+    ("前端", ("frontend",)),
+    ("组件", ("component",)),
+    ("布局", ("layout",)),
+    ("性能", ("performance",)),
+    ("延迟", ("latency",)),
+    ("分支", ("branch",)),
+    ("提交", ("commit",)),
 )
 
 
@@ -310,16 +421,25 @@ class IntentParser:
         normalized_text = text.lower()
         words = re.findall(r"[a-z0-9_./-]+|[\u4e00-\u9fff]+", normalized_text)
         keywords = [w for w in words if w not in stopwords and len(w) > 1]
+        alias_keywords: list[str] = []
         for chinese_term, aliases in _CHINESE_KEYWORD_ALIASES:
             if chinese_term in normalized_text:
-                keywords.extend(aliases)
+                alias_keywords.extend(aliases)
         seen: set[str] = set()
         unique: list[str] = []
         for w in keywords:
             if w not in seen:
                 seen.add(w)
                 unique.append(w)
-        return unique[:20]
+        # Cross-language aliases are the only signal that can match English
+        # skill text from a Chinese request, so they get a reserved quota
+        # instead of being truncated away behind 20 raw tokens.
+        capped = unique[:_MAX_RAW_KEYWORDS]
+        for alias in alias_keywords:
+            if alias not in seen and len(capped) < _MAX_KEYWORDS:
+                seen.add(alias)
+                capped.append(alias)
+        return capped
 
     def _estimate_complexity(self, text: str, intent: IntentType, keywords: list[str]) -> str:
         length_score = min(len(text) / 200, 1.0)

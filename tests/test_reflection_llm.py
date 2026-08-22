@@ -30,10 +30,13 @@ def test_rule_synthesizer_implements_unified_protocol() -> None:
     assert isinstance(RuleReflectionSynthesizer(), ReflectionSynthesizer)
 
 
-def test_reflection_llm_config_defaults_to_rule_and_private_remote_access() -> None:
+def test_reflection_llm_config_defaults_to_shadow_and_private_remote_access(
+    monkeypatch,
+) -> None:
+    monkeypatch.delenv("MINI_CODE_REFLECTION_SYNTHESIZER_MODE", raising=False)
     config = ReflectionLLMConfig.from_runtime({})
 
-    assert config.mode == "rule"
+    assert config.mode == "llm_shadow"
     assert config.allow_remote_model is False
     assert config.timeout_seconds == 15.0
     assert config.max_output_tokens == 1200

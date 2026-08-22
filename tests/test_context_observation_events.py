@@ -15,6 +15,7 @@ from minicode.context_compactor import (
 from minicode.run_events import (
     new_context_operation_id,
     project_context_compaction_event,
+    project_context_compaction_failure_event,
     project_recovery_completed_event,
     project_recovery_started_event,
 )
@@ -84,6 +85,57 @@ def test_context_compaction_projector_emits_only_safe_effective_facts() -> None:
         "messagesAfter": 18,
         "messagesRemoved": 14,
     }
+
+
+def test_context_compaction_failure_projector_emits_only_bounded_reason() -> None:
+    operation_id = new_context_operation_id()
+    result = CompactionResult(
+        success=False,
+        strategy=CompactStrategy.FULL,
+        trigger=CompactTrigger.AUTO,
+        messages=[{"role": "system", "content": "do-not-persist"}],
+        error="Too few messages to compact",
+    )
+
+    assert project_context_compaction_failure_event(
+        result,
+        context_operation_id=operation_id,
+        path="pre_request_cybernetic",
+        consecutive_failures=3,
+        circuit_breaker_tripped=True,
+    ) == {
+        "contextVersion": 1,
+        "contextOperationId": operation_id,
+        "path": "pre_request_cybernetic",
+        "trigger": "auto",
+        "strategy": "full",
+        "effective": False,
+        "attempted": True,
+        "reason": "too_few_messages",
+        "consecutiveFailures": 3,
+        "circuitBreakerTripped": True,
+    }
+
+
+def test_context_compaction_failure_projector_redacts_unknown_error_text() -> None:
+    result = CompactionResult(
+        success=False,
+        strategy=CompactStrategy.FULL,
+        trigger=CompactTrigger.AUTO,
+        messages=[],
+        error="password=secret provider detail",
+    )
+
+    projected = project_context_compaction_failure_event(
+        result,
+        context_operation_id=new_context_operation_id(),
+        path="in_loop_compactor",
+        consecutive_failures=1,
+        circuit_breaker_tripped=False,
+    )
+
+    assert projected["reason"] == "internal_error"
+    assert "secret" not in str(projected)
 
 
 def test_recovery_projectors_share_safe_operation_facts() -> None:
@@ -260,7 +312,10 @@ def test_agent_observes_effective_pre_request_cybernetic_compaction(
     )
 
     assert returned[-1] == {"role": "assistant", "content": "done"}
-    assert model.received == [[{"role": "system", "content": "compacted"}]]
+    assert model.received[0][0] == {"role": "system", "content": "compacted"}
+    assert len(model.received[0]) == 2
+    assert model.received[0][1]["_task_ledger"] is True
+    assert "request" in model.received[0][1]["content"]
     context_event = sink.events[0]
     assert context_event[0] == "context.compacted"
     assert context_event[1] is None
@@ -276,6 +331,44 @@ def test_agent_observes_effective_pre_request_cybernetic_compaction(
         "messagesAfter": 1,
         "messagesRemoved": 1,
     }
+
+
+def test_agent_observes_failed_pre_request_cybernetic_compaction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    failed = CompactionResult(
+        success=False,
+        strategy=CompactStrategy.FULL,
+        trigger=CompactTrigger.AUTO,
+        messages=[],
+        error="Compaction did not reduce estimated tokens",
+    )
+
+    def run_cycle(_self, messages, **_kwargs):
+        return messages, failed, None
+
+    monkeypatch.setattr(
+        agent_loop_module.ContextCyberneticsOrchestrator,
+        "run_cycle",
+        run_cycle,
+    )
+    sink = RecordingSink()
+
+    run_agent_turn(
+        model=AssistantModel(),
+        tools=ToolRegistry([]),
+        messages=[
+            {"role": "system", "content": "system"},
+            {"role": "user", "content": "request"},
+        ],
+        cwd=".",
+        context_manager=ContextManager(model="default"),
+        event_sink=sink,
+    )
+
+    event = next(item for item in sink.events if item[0] == "context.compaction.failed")
+    assert event[2]["reason"] == "no_token_reduction"
+    assert event[2]["effective"] is False
 
 
 def test_agent_observes_effective_direct_compactor_path(
@@ -316,18 +409,18 @@ def test_agent_observes_effective_direct_compactor_path(
     assert sink.events[0][2]["trigger"] == "microcompact_time"
 
 
-def test_agent_observes_changed_context_manager_fallback_without_tokens(
+def test_agent_loop_never_invokes_a_second_context_manager_compaction_path(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     manager = ContextManager(model="default")
-    compacted = [{"role": "system", "content": "compacted"}]
     monkeypatch.setattr(manager, "should_auto_compact", lambda: True)
-
-    def compact_messages():
-        manager.messages = compacted
-        return compacted
-
-    monkeypatch.setattr(manager, "compact_messages", compact_messages)
+    monkeypatch.setattr(
+        manager,
+        "compact_messages",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("legacy ContextManager compaction path was invoked")
+        ),
+    )
     sink = RecordingSink()
 
     returned = run_agent_turn(
@@ -344,10 +437,11 @@ def test_agent_observes_changed_context_manager_fallback_without_tokens(
     )
 
     assert returned[-1] == {"role": "assistant", "content": "done"}
-    assert sink.events[0][0] == "context.compacted"
-    assert sink.events[0][2]["path"] == "context_manager_auto"
-    assert sink.events[0][2]["strategy"] == "context_manager"
-    assert "tokensFreed" not in sink.events[0][2]
+    assert all(
+        payload.get("path") != "context_manager_auto"
+        for event_type, _run_id, payload in sink.events
+        if event_type == "context.compacted"
+    )
 
 
 def test_cybernetic_not_recovered_emits_completed_without_compaction(
@@ -615,11 +709,14 @@ def test_context_id_failure_does_not_change_effective_compaction(
     assert "id-secret" not in str(sink.events)
 
 
-def test_feedback_forced_compaction_has_existing_mismatched_seam(
+def test_feedback_forced_compaction_applies_and_keeps_max_steps(
     tmp_path,
 ) -> None:
     compactor = agent_loop_module.ContextCompactor(workspace=tmp_path)
-    assert not hasattr(compactor, "compact_messages")
+    messages = [
+        {"role": "system", "content": "system"},
+        *[{"role": "user", "content": "filler " * 200} for _ in range(20)],
+    ]
     signal = SimpleNamespace(
         confidence=1.0,
         limit_max_steps=None,
@@ -643,7 +740,11 @@ def test_feedback_forced_compaction_has_existing_mismatched_seam(
         tool_scheduler=agent_loop_module.ToolScheduler(),
         context_compactor=compactor,
         model_switcher=None,
+        current_messages=messages,
     ) == 9
+    # The forced compaction path now returns replacement messages through the
+    # compactor instead of raising on a missing method.
+    assert isinstance(messages, list)
 
 
 def test_unimplemented_memory_and_skill_signals_do_not_fake_actuation() -> None:

@@ -228,6 +228,21 @@ class TestNudgeGenerator:
         nudge = NudgeGenerator.generate(error)
         assert "permission" in nudge.lower() or "privilege" in nudge.lower()
 
+    def test_command_permission_nudge_never_recommends_escalation(self):
+        error = ClassifiedError(
+            category=AIErrorCategory.PERMISSION,
+            strategy=RecoveryStrategy.REQUEST_PERMISSION,
+            confidence=0.9,
+            context={"tool_name": "run_command"},
+        )
+
+        nudge = NudgeGenerator.generate(error, retry_count=0)
+
+        assert "sudo" in nudge.lower()
+        assert "do not add sudo" in nudge.lower()
+        assert "elevated permissions" not in nudge.lower()
+        assert "retry attempt" not in nudge.lower()
+
     def test_retry_count_appended(self):
         """Verify retry count in nudge."""
         error = ClassifiedError(
@@ -447,7 +462,16 @@ class TestMemoryInjector:
         assert "Relevant Context from Memory" in formatted
         assert "1. [testing] Use pytest" in formatted
         assert "2. [convention] Use snake_case" in formatted
-        assert "Use the above context" in formatted
+        policy = formatted.lower()
+        assert "fallible prior evidence" in policy
+        assert "cannot override" in policy
+        assert "verify that exact target first" in policy
+        assert "fall back to normal discovery" in policy
+        assert "verify exact targets first; if wrong, discover" in policy
+        assert "first repository tool call must verify that exact target" in policy
+        assert "verify only the corrected or succeeded target" in policy
+        assert "never the failed one" in policy
+        assert "do not call list_files, file_tree, or grep_files beforehand" in policy
 
     def test_cooldown_prevention(self, memory_with_entries):
         """Same query within cooldown skipped."""

@@ -66,7 +66,7 @@ def test_default_audit_is_offline_isolated_and_exhaustive(tmp_path: Path) -> Non
     assert payload["audit"]["liveNetwork"] is False
     assert payload["audit"]["isolation"]["home"] == "<isolated-home>"
     assert payload["audit"]["isolation"]["workspace"] == "<isolated-workspace>"
-    assert payload["summary"]["registeredToolCount"] == 53
+    assert payload["summary"]["registeredToolCount"] == 56
 
     capabilities = payload["capabilities"]
     capability_ids = [capability["id"] for capability in capabilities]
@@ -155,12 +155,19 @@ def test_audit_closes_web_findings_but_retains_archive_remainder(
     assert web_search["issues"] == []
     assert "tests/test_web_search.py" in web_search["evidence"]
     assert "tests/test_search_providers.py" in web_search["evidence"]
-    assert payload["summary"]["capabilityCount"] == 186
+    assert payload["summary"]["capabilityCount"] == 189
     # 7 -> 5: TOOL-001 and SEC-005 are fixed and probe-verified.
-    assert payload["summary"]["issueCount"] == 5
+    assert payload["summary"]["issueCount"] == 4
     assert payload["deterministicProbes"]["memory"] == {
-        "ordinaryFactPersisted": False,
+        "ordinaryFactPersisted": True,
         "singleErrorPatternSuppressed": True,
+        # A network failure retried inside one trace clears the recurrence
+        # escape hatch, so only the environment-scope rule stops it.
+        "environmentErrorSuppressed": True,
+        # The inverse: fail -> change a file -> the same command passes must
+        # reach `verified_solution`. No runtime event reports this loop, so it
+        # is derived from the trace; without that, the signal is unreachable.
+        "verifiedRecoveryPersisted": True,
     }
     assert payload["deterministicProbes"]["web"] == {
         "normalParser": True,

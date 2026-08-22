@@ -19,7 +19,7 @@ from minicode.conversation_turn_store import (
     ConversationTurnStore,
     request_fingerprint,
 )
-from minicode.session import load_session
+from minicode.session import create_new_session, load_session
 from minicode.web.read_model import DashboardReadModel
 
 
@@ -115,6 +115,62 @@ def test_completed_duplicate_returns_authoritative_session_result_without_agent(
         "role": "assistant",
         "content": "real reply",
     }
+
+
+def test_compacted_turn_relocates_user_and_assistant_by_stable_identity(
+    isolated,
+) -> None:
+    workspace, data_dir = isolated
+    runtime = Runtime("compacted reply")
+
+    def compact(messages, _observation):
+        runtime.calls += 1
+        assert len(messages) > 20
+        return [
+            messages[0],
+            messages[-1],
+            {"role": "assistant", "content": runtime.reply},
+        ]
+
+    runtime.execute = compact
+
+    def create_session(workspace_value: str):
+        session = create_new_session(workspace_value)
+        session.messages = [
+            {"role": "user" if index % 2 == 0 else "assistant", "content": f"m{index}"}
+            for index in range(20)
+        ]
+        return session
+
+    service = ConversationTurnService(
+        workspace,
+        runtime_factory=lambda **_kwargs: runtime,
+        session_creator=create_session,
+        observation_enabled=False,
+        turn_store=_store(workspace, data_dir, "1" * 32),
+    )
+
+    first = service.turn(message="survive compaction", session_id=None, turn_id=TURN_ID)
+    duplicate = service.turn(
+        message="survive compaction", session_id=None, turn_id=TURN_ID
+    )
+
+    assert duplicate == first
+    assert first.assistant == "compacted reply"
+    assert runtime.calls == 1
+    session = load_session(first.session_id)
+    assert session is not None
+    assert len(session.turn_commits) == 1
+    marker = session.turn_commits[0]
+    assert session.messages[marker["userMessageIndex"]] == {
+        "role": "user",
+        "content": "survive compaction",
+    }
+    assert session.messages[marker["assistantMessageIndex"]] == {
+        "role": "assistant",
+        "content": "compacted reply",
+    }
+    assert all("_conversation_turn_id" not in message for message in session.messages)
 
 
 def test_same_turn_id_with_different_message_or_session_conflicts_before_agent(

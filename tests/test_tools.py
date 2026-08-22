@@ -16,6 +16,8 @@ from minicode.tools.batch_ops import batch_copy_tool, batch_move_tool
 from minicode.tools.code_nav import find_references_tool, find_symbols_tool, get_ast_info_tool
 from minicode.tools.code_review import code_review_tool
 from minicode.tools.file_tree import file_tree_tool
+from minicode.tools.list_files import list_files_tool
+from minicode.tools.read_file import read_file_tool
 from minicode.tools.run_command import _build_execution_command, split_command_line
 from minicode.tools.patch_file import patch_file_tool
 from minicode.tools.archive_utils import tar_extract_tool, zip_extract_tool
@@ -100,6 +102,42 @@ def test_run_command_tool_supports_echo_on_current_platform(tmp_path: Path) -> N
 
     assert result.ok is True
     assert "hello" in result.output.lower()
+
+
+def test_model_tools_cannot_inspect_internal_memory_stores(tmp_path: Path) -> None:
+    store = tmp_path / ".mini-code-memory"
+    store.mkdir()
+    (store / "memory.json").write_text(
+        '{"pending":"internal approval metadata"}',
+        encoding="utf-8",
+    )
+    context = ToolContext(cwd=str(tmp_path), permissions=None)
+
+    direct_read = read_file_tool.run(
+        {
+            "path": ".mini-code-memory/memory.json",
+            "offset": 0,
+            "limit": 8_000,
+        },
+        context,
+    )
+    root_listing = list_files_tool.run({"path": "."}, context)
+    hidden_tree = file_tree_tool.run(
+        {"path": ".", "show_hidden": True, "max_depth": 3},
+        context,
+    )
+    shell_read = run_command_tool.run(
+        {"command": "cat .mini-code-memory/memory.json"},
+        context,
+    )
+
+    assert not direct_read.ok
+    assert "internal" in direct_read.output.lower()
+    assert ".mini-code-memory" not in root_listing.output
+    assert ".mini-code-memory" not in hidden_tree.output
+    assert "internal approval metadata" not in hidden_tree.output
+    assert not shell_read.ok
+    assert "internal" in shell_read.output.lower()
 
 
 def test_run_command_attaches_verification_only_after_direct_process_exit(
@@ -236,6 +274,16 @@ def test_default_tool_registry_is_core_first(tmp_path: Path) -> None:
     assert "run_command" in names
     assert "base64_encode" not in names
     assert "csv_parse" not in names
+
+
+def test_default_tool_registry_can_disable_user_interaction(tmp_path: Path) -> None:
+    tools = create_default_tool_registry(
+        str(tmp_path),
+        runtime=None,
+        include_user_interaction=False,
+    )
+
+    assert "ask_user" not in {tool.name for tool in tools.list()}
 
 
 def test_full_tool_registry_can_opt_into_utility_wrappers(

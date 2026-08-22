@@ -1,0 +1,60 @@
+{
+  "acceptance_gate": {
+    "checks": {
+      "candidate_recall_at_20": true,
+      "frozen_holdout": true,
+      "hard_negative_render_rate": true,
+      "lifecycle_safety_leakage": true,
+      "post_decision_positive_recall": true,
+      "provider_fallback_count": true,
+      "rendered_positive_recall": true,
+      "rendered_precision": true,
+      "unsafe_indexed_count": true
+    },
+    "passed": true
+  },
+  "challenger": {
+    "minimum_confidence": 0.8,
+    "mode": "high-confidence-conflict-veto-v1",
+    "model_id": "deepseek-chat",
+    "prompt_sha256": "f8215617432ea1d081208d205b51c48ee5d4ef79360f1b251def251e1d927819",
+    "prompt_version": "hybrid-admission-challenger-v1",
+    "veto_reason_codes": [
+      "contradictory_order",
+      "contradictory_polarity",
+      "path_conflict"
+    ]
+  },
+  "dense_top_k": 20,
+  "holdout": {
+    "manifest_sha256": "d3bfde05c1652f6498cb529dd69148165da1eaea44cca4e5f1e48a64a454d97e",
+    "version": "v7-qwen"
+  },
+  "max_model_calls_per_task": 8,
+  "max_union_candidates": 32,
+  "model": {
+    "canary_fingerprint": "cd9799ab5a5f6456d4c46e1a3bff8de0462a2b945b02f603c43e33d5bf9a702b",
+    "canary_version": "embedding-canary-v1",
+    "dimension": 1024,
+    "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings",
+    "model_id": "text-embedding-v3",
+    "provider": "qwen",
+    "representation_version": "memory-structured-v1"
+  },
+  "production_enablement_allowed": true,
+  "promotion_report": {
+    "artifact": "artifacts/memory-retrieval-hybrid-v7-qwen-canonical.json",
+    "report_fingerprint": "27f8ac6cc058ed5c7158b6dfab456889e252d3a42bf8ecc0bebd8c441724f246"
+  },
+  "protocol_version": "hybrid-canonical-v4",
+  "query_gate_version": "concrete-object-v1",
+  "report_fingerprint": "bd317c42adb2d9d21807add9030ef111a197b9817bb88df6f24651600397e61e",
+  "schema_version": "2.0",
+  "synthetic_data": true,
+  "verifier": {
+    "minimum_confidence": 0.85,
+    "model_id": "deepseek-chat",
+    "prompt_sha256": "a3c7b784dd90b93319c9337d84cb68030f996a5c1e8b192066784e8028628eda",
+    "prompt_version": "hybrid-relevance-v2.1"
+  }
+}

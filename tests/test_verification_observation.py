@@ -23,6 +23,27 @@ def test_explicit_test_verification_is_content_free_and_round_trips() -> None:
     assert normalize_verification_payload(payload) == payload
 
 
+def test_workflow_review_verification_is_typed_and_source_bound() -> None:
+    payload = project_verification(
+        kind="review",
+        passed=True,
+        source="workflow_review",
+    )
+
+    assert payload == {
+        "verificationVersion": 1,
+        "kind": "review",
+        "outcome": "passed",
+        "source": "workflow_review",
+    }
+    assert normalize_verification_payload(payload) == payload
+    assert project_verification(
+        kind="tests",
+        passed=True,
+        source="workflow_review",
+    ) is None
+
+
 def test_normalizer_rejects_extra_fields_and_unknown_enum_values() -> None:
     valid = {
         "verificationVersion": 1,

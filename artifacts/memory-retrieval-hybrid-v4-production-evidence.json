@@ -1,0 +1,67 @@
+{
+  "schema_version": "2.0",
+  "protocol_version": "hybrid-canonical-v4",
+  "synthetic_data": true,
+  "promotion_report": {
+    "path": "artifacts/memory-retrieval-hybrid-v5-canonical.json",
+    "sha256": "cf2d8363202105e2ed4cb54fc1ad4a090117559337a635d62d7192171f5151a4",
+    "report_fingerprint": "61cd1d0d935922a6296aeae4792e42ef183a79b53e186205772bb5edd505fbee"
+  },
+  "holdout": {
+    "version": "v5",
+    "manifest_sha256": "189fdfe799f7dcc04ec8c48a993bbf4d0586fa0f898bb90b595fde0994e37447"
+  },
+  "model": {
+    "model_id": "Xenova/multilingual-e5-small",
+    "model_revision": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+    "model_fingerprint": "cb55c8134bf02eeff414a6fcb53a88e5160e45cf74e7a7cf1befbc5a9fa2b230",
+    "manifest_sha256": "cf93edffa0ea62ae43acd027a85f683702b5fa86474416c686c638c3f5715346"
+  },
+  "verifier": {
+    "model_id": "deepseek-chat",
+    "prompt_version": "hybrid-relevance-v2.1",
+    "prompt_sha256": "a3c7b784dd90b93319c9337d84cb68030f996a5c1e8b192066784e8028628eda",
+    "minimum_confidence": 0.85
+  },
+  "challenger": {
+    "model_id": "deepseek-chat",
+    "prompt_version": "hybrid-admission-challenger-v1",
+    "prompt_sha256": "f8215617432ea1d081208d205b51c48ee5d4ef79360f1b251def251e1d927819",
+    "minimum_confidence": 0.8,
+    "mode": "high-confidence-conflict-veto-v1",
+    "veto_reason_codes": [
+      "contradictory_order",
+      "contradictory_polarity",
+      "path_conflict"
+    ]
+  },
+  "query_gate_version": "concrete-object-v1",
+  "dense_top_k": 20,
+  "max_union_candidates": 32,
+  "max_model_calls_per_task": 8,
+  "acceptance_gate": {
+    "passed": true,
+    "checks": {
+      "candidate_recall_at_20": true,
+      "post_decision_positive_recall": true,
+      "rendered_positive_recall": true,
+      "rendered_precision": true,
+      "hard_negative_render_rate": true,
+      "lifecycle_safety_leakage": true,
+      "unsafe_indexed_count": true,
+      "provider_fallback_count": true
+    },
+    "metrics": {
+      "candidate_recall_at_20": 1.0,
+      "post_decision_positive_recall": 1.0,
+      "rendered_positive_recall": 1.0,
+      "rendered_precision": 1.0,
+      "hard_negative_render_rate": 0.0,
+      "lifecycle_safety_leakage": 0,
+      "unsafe_indexed_count": 0,
+      "provider_fallback_count": 0
+    }
+  },
+  "production_enablement_allowed": true,
+  "report_fingerprint": "b49e3261bc6cf81435de87fc503a4197713a55d3d4070fa57122b74772fdc872"
+}

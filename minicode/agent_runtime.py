@@ -39,6 +39,8 @@ class AgentTurnRuntime:
     model: Any
     skill_routing: Any
     system_prompt: str
+    context_manager: Any = None
+    allow_user_interaction: bool = True
 
     def execute(
         self,
@@ -51,6 +53,7 @@ class AgentTurnRuntime:
     ) -> list[dict[str, Any]]:
         """Execute the existing Agent Loop once with this runtime."""
         from minicode.agent_loop import run_agent_turn
+        from minicode.skill_router import required_skill_names_for_routing
         from minicode.conversation_presentation import (
             emit_assistant_delta_safely,
             emit_tool_finished_safely,
@@ -103,12 +106,18 @@ class AgentTurnRuntime:
                 else None
             ),
             memory_manager=self.memory_manager,
+            context_manager=self.context_manager,
+            runtime=self.runtime,
             event_sink=observation,
             cancellation_token=cancellation_token,
             # Presentation-only channel so tools running their own nested
             # loop (the sub-agent tool) can stream live progress to the UI
             # without writing into the Run journal or the approval session.
             presentation=presentation,
+            required_skill_names=required_skill_names_for_routing(
+                self.skill_routing
+            ),
+            allow_user_interaction=self.allow_user_interaction,
         )
 
     def dispose(self) -> None:
@@ -149,16 +158,18 @@ def create_agent_turn_runtime(
     workspace: Path,
     prompt: str,
     mcp_current_state_registry: McpCurrentStateRegistry | None = None,
+    include_mcp: bool = True,
+    allow_user_interaction: bool = True,
 ) -> AgentTurnRuntime:
     """Construct the canonical local runtime used by Headless and Dashboard Chat."""
     from minicode.capability_registry import get_registry, register_tool_capabilities
     from minicode.config import load_runtime_config
+    from minicode.context_manager import ContextManager
     from minicode.intent_parser import parse_intent
     from minicode.memory import MemoryManager
     from minicode.model_registry import create_model_adapter
     from minicode.permissions import PermissionManager
     from minicode.prompt import build_system_prompt
-    from minicode.skill_router import SkillRouter
     from minicode.tools import create_default_tool_registry
 
     resolved = Path(workspace).expanduser().resolve()
@@ -170,12 +181,19 @@ def create_agent_turn_runtime(
     tools = None
     try:
         if mcp_current_state_registry is None:
-            tools = create_default_tool_registry(str(resolved), runtime=runtime)
+            tools = create_default_tool_registry(
+                str(resolved),
+                runtime=runtime,
+                include_mcp=include_mcp,
+                include_user_interaction=allow_user_interaction,
+            )
         else:
             tools = create_default_tool_registry(
                 str(resolved),
                 runtime=runtime,
                 mcp_current_state_registry=mcp_current_state_registry,
+                include_mcp=include_mcp,
+                include_user_interaction=allow_user_interaction,
             )
         permissions = PermissionManager(str(resolved), prompt=None)
         memory_manager = MemoryManager(project_root=resolved)
@@ -184,19 +202,31 @@ def create_agent_turn_runtime(
             tools=tools,
             runtime=runtime,
         )
+        # Headless/Dashboard turns used to run without any ContextManager, so
+        # the whole compaction pipeline was disabled on those entrypoints.
+        # Own one here and pass it into the agent loop.
+        context_manager = ContextManager(model=runtime.get("model", "default"))
         register_tool_capabilities(tools)
         intent = parse_intent(prompt)
-        skill_routing = SkillRouter().route(
+        from minicode.skill_router import build_skill_router
+
+        skill_routing = build_skill_router(str(resolved)).route(
             tools.get_skills(), intent, get_registry()
+        )
+        skills_for_prompt = (
+            tools.get_skills()
+            if getattr(skill_routing, "used_fallback", False)
+            else skill_routing.selected_skill_dicts()
         )
         system_prompt = build_system_prompt(
             str(resolved),
             permissions.get_summary(),
             {
-                "skills": skill_routing.selected_skill_dicts(),
+                "skills": skills_for_prompt,
                 "skill_routing": skill_routing.to_dict(),
                 "mcpServers": tools.get_mcp_servers(),
                 "memory_context": "",
+                "user_interaction_available": allow_user_interaction,
             },
         )
         return AgentTurnRuntime(
@@ -208,6 +238,8 @@ def create_agent_turn_runtime(
             model=model,
             skill_routing=skill_routing,
             system_prompt=system_prompt,
+            context_manager=context_manager,
+            allow_user_interaction=allow_user_interaction,
         )
     except BaseException:
         if tools is not None:

@@ -57,10 +57,8 @@ def test_symlinked_scope_root_is_refused_without_writing_outside(
 ) -> None:
     workspace, outside = _workspace(tmp_path)
     (workspace / root_name).symlink_to(outside)
-    manager = MemoryManager(project_root=workspace)
-
     with pytest.raises(MemoryStoreUnsafePath):
-        manager.add_entry(scope, "testing", "SENTINEL escaped content")
+        MemoryManager(project_root=workspace)
 
     assert [p for p in outside.rglob("*") if p.is_file()] == []
 
@@ -75,10 +73,8 @@ def test_symlinked_store_file_is_refused_and_target_left_untouched(
     original = '{"scope":"project","entries":[],"marker":"untouched"}'
     target.write_text(original, encoding="utf-8")
     (workspace / ".mini-code-memory" / filename).symlink_to(target)
-    manager = MemoryManager(project_root=workspace)
-
     with pytest.raises(MemoryStoreUnsafePath):
-        manager.add_entry(MemoryScope.PROJECT, "testing", "SENTINEL escaped content")
+        MemoryManager(project_root=workspace)
 
     assert target.read_text(encoding="utf-8") == original
     assert "SENTINEL" not in target.read_text(encoding="utf-8")
@@ -101,10 +97,8 @@ def test_project_root_whose_parent_is_not_the_workspace_is_refused(
             )
         ),
     )
-    manager = MemoryManager(project_root=workspace)
-
     with pytest.raises(MemoryStoreUnsafePath):
-        manager.add_entry(MemoryScope.PROJECT, "testing", "SENTINEL escaped content")
+        MemoryManager(project_root=workspace)
 
 
 def test_user_scope_outside_the_workspace_still_works(

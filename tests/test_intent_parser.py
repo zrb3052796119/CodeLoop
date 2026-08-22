@@ -123,3 +123,88 @@ def test_determiner_tolerance_does_not_reopen_false_positives(text: str) -> None
     anything bug the EXPLAIN/CONFIGURE fixes closed."""
     intent = parse_intent(text)
     assert intent.intent_type == IntentType.UNKNOWN
+
+
+@pytest.mark.parametrize(
+    ("text", "expected_intent", "expected_action"),
+    [
+        (
+            "the Python test traceback fails only under pytest, investigate it",
+            IntentType.DEBUG,
+            ActionType.ANALYZE,
+        ),
+        (
+            "trace which classes and modules call this function",
+            IntentType.EXPLAIN,
+            ActionType.READ,
+        ),
+        (
+            "write docstrings and a migration guide for this module",
+            IntentType.DOCUMENT,
+            ActionType.CREATE,
+        ),
+        (
+            "design a responsive frontend landing page and component layout",
+            IntentType.CODE,
+            ActionType.CREATE,
+        ),
+        (
+            "check context compaction summary fidelity under token pressure",
+            IntentType.REVIEW,
+            ActionType.ANALYZE,
+        ),
+        (
+            "design multi-agent task delegation with parallel sub-agents",
+            IntentType.CODE,
+            ActionType.CREATE,
+        ),
+        (
+            "create a Git branch and conventional commit for these changes",
+            IntentType.CONFIGURE,
+            ActionType.UPDATE,
+        ),
+        (
+            "profile the CPU and latency performance regression",
+            IntentType.REVIEW,
+            ActionType.ANALYZE,
+        ),
+        (
+            "检查上下文压缩后是否丢失摘要中的关键决定",
+            IntentType.REVIEW,
+            ActionType.ANALYZE,
+        ),
+        (
+            "设计多智能体并行协作和子代理任务委派",
+            IntentType.CODE,
+            ActionType.CREATE,
+        ),
+        (
+            "审计登录鉴权、权限和密钥泄漏风险",
+            IntentType.REVIEW,
+            ActionType.ANALYZE,
+        ),
+    ],
+)
+def test_bounded_engineering_phrases_classify_without_bare_verb_leakage(
+    text: str,
+    expected_intent: IntentType,
+    expected_action: ActionType,
+) -> None:
+    intent = parse_intent(text)
+    assert intent.intent_type == expected_intent
+    assert intent.action_type == expected_action
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "I bought a memory foam pillow",
+        "This camera needs a larger memory card",
+        "The deployment of troops ended at dawn",
+        "Which travel agent should I call?",
+    ],
+)
+def test_engineering_nouns_in_everyday_prose_still_abstain(text: str) -> None:
+    intent = parse_intent(text)
+    assert intent.intent_type == IntentType.UNKNOWN
+    assert intent.action_type == ActionType.UNKNOWN

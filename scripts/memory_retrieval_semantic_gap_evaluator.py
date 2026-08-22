@@ -64,11 +64,11 @@ PHASE2B_FROZEN_HASHES = {
     "docs/memory-retrieval-phase2b-performance.md": "3cff028426be913baa06cacbd2eff69b3141f74ff16528d5e44b4f37416a5235",
     "docs/memory-retrieval-phase2b.md": "9ec83beff0ab5a5c0b2af3fd65e62f37b441a4416e556b98c751032e51027da9",
     "scripts/evaluate_memory_retrieval_phase2b.py": "841883544b031ff5b58ea759a2688413637e70143cd231708514843700ed05dd",
-    "scripts/memory_retrieval_phase2b_evaluator.py": "e8c075c3e114c2c5f9c1645e1b53ea365973de883eb3f6a8b2c833ecbef0765d",
+    "scripts/memory_retrieval_phase2b_evaluator.py": "1ff170cfbf856dad668912905e662ec8bd8284be26329cae8c047d5d8adc8096",
     "tests/fixtures/memory_retrieval_phase2b_holdout.json": "5ceb46134d0d17060c7b635bb99aeae8a43c799a3f6dd40a07d65978930b1136",
     "tests/fixtures/memory_retrieval_phase2b_holdout.schema.json": "c1d4461fcf2e23949585d0742fd20af4d2486d05f1406ad3469c204a21a83ae4",
     "tests/test_memory_candidate_consolidation.py": "4c7011ba7168388b88fc58a3fe253366a3d5c19dd68dac36c50c8febdf4de67c",
-    "tests/test_memory_retrieval_phase2b.py": "496882681aaa5d3281b66669d4d4b8a31a785386400d02a1009e6cee59b8548b",
+    "tests/test_memory_retrieval_phase2b.py": "9999eeb12f4248ab3a83506dd6a5d6ee34e57b4d75ccd89aa4d65bfa8c0882e8",
     "tests/test_memory_retrieval_phase2b_evaluator.py": "828bf028c91ed00c6d3d103d4d84e8c5632a0fddd28022b0c6cc11af3f8537c3",
 }
 
@@ -118,7 +118,7 @@ def snapshot_tree(root: Path) -> dict[str, Any]:
 
 
 def snapshot_isolated_case_tree(root: Path) -> dict[str, Any]:
-    """Snapshot semantic case outputs, excluding the validated coordination lock."""
+    """Snapshot authoritative case outputs, excluding derived store artifacts."""
     lock_relative = Path("home/.mini-code/memory-store.lock")
     lock_path = root / lock_relative
     if lock_path.exists() or lock_path.is_symlink():
@@ -131,7 +131,14 @@ def snapshot_isolated_case_tree(root: Path) -> dict[str, Any]:
             raise AssertionError("invalid memory-store coordination lock artifact")
     snapshot = snapshot_tree(root)
     files = [
-        item for item in snapshot["files"] if item["path"] != lock_relative.as_posix()
+        item
+        for item in snapshot["files"]
+        if item["path"] != lock_relative.as_posix()
+        # The redacted approval-audit file is a rebuildable human/tooling
+        # projection. Its authority is embedded in memory.json, so counting it
+        # as retrieval semantics makes the accepted behavior fingerprint depend
+        # on an implementation-only observability artifact.
+        and Path(item["path"]).name != "approval_audit.json"
     ]
     return {"root": snapshot["root"], "file_count": len(files), "files": files}
 

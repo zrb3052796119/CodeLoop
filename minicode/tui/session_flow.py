@@ -12,7 +12,6 @@ from minicode.session import (
     SessionData,
     create_new_session,
     format_session_list,
-    format_session_resume,
     get_latest_session,
     list_sessions,
     load_session,
@@ -38,21 +37,16 @@ def load_or_create_session(cwd: str, resume_session: str | None) -> SessionData:
         if resume_session == "latest":
             session = get_latest_session(workspace=workspace)
             if session:
-                print(format_session_resume(session))
                 return session
-            print("No previous session found for this workspace.")
             return create_new_session(workspace=workspace)
 
         session = load_session(resume_session)
         if not session:
             raise FileNotFoundError(f"Session '{resume_session}' not found.")
-        print(format_session_resume(session))
         return session
 
     session = get_latest_session(workspace=workspace)
     if session:
-        print(f"Previous session found: {session.session_id[:8]}")
-        print("Use --resume to continue, or starting fresh session.")
         return create_new_session(workspace=workspace)
 
     return create_new_session(workspace=workspace)
@@ -99,7 +93,7 @@ def build_tty_runtime_state(
         for entry_data in session.transcript_entries:
             state.transcript.append(TranscriptEntry(**entry_data))
         _bump_transcript_revision(state)
-        print(f"Restored {len(session.messages)} messages, {len(state.transcript)} transcript entries.")
+        state.status = f"Resumed {len(session.messages)} messages"
 
     return args, state
 
@@ -114,12 +108,17 @@ def install_permission_prompt(
 
     def _permission_prompt_handler(request: dict[str, Any]) -> dict[str, Any]:
         nonlocal approval_result
+        # Reset the reusable channel before making the request observable.
+        # A renderer or input driver may resolve immediately after pending is
+        # published; clearing afterwards would erase that decision and wait
+        # forever.
+        approval_result.clear()
+        approval_event.clear()
         state.pending_approval = PendingApproval(
             request=request,
             resolve=lambda r: None,
         )
         rerender()
-        approval_event.clear()
         approval_event.wait()
         result = approval_result.copy()
         state.pending_approval = None

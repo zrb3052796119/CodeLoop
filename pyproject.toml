@@ -8,10 +8,23 @@ version = "0.1.0"
 description = "A lightweight terminal coding assistant for local development workflows."
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "certifi>=2025.7.14,<2027",
+]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0.0"]
+dev = [
+    "jsonschema>=4.0.0",
+    "pytest>=8.0.0",
+    "setuptools>=68",
+    "wheel",
+]
+memory-hybrid = [
+    "huggingface-hub>=0.33.4,<1",
+    "numpy>=2.0.0,<3",
+    "onnxruntime>=1.22.0,<2",
+    "tokenizers>=0.21.0,<1",
+]
 
 [project.scripts]
 minicode-py = "minicode.main:main"
@@ -22,12 +35,16 @@ minicode-headless = "minicode.headless:main"
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = [
+    "benchmark: performance-oriented regression test",
+]
 
 [tool.setuptools]
 package-dir = {"" = "."}
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["minicode*"]
 namespaces = false
 
 [tool.setuptools.package-data]

@@ -11,7 +11,13 @@ from minicode.api_retry import (
     RETRYABLE_STATUS,
     calculate_backoff,
 )
+from minicode.model_call_control import (
+    bounded_request_timeout,
+    checkpoint_model_call,
+    controlled_retry_sleep,
+)
 from minicode.state import AppState, Store, add_cost, record_api_error, update_context_usage
+from minicode.tls import open_verified_url
 from minicode.types import AgentStep, ModelUsage, StepDiagnostics
 
 DEFAULT_MAX_RETRIES = 4
@@ -157,7 +163,15 @@ class AnthropicModelAdapter:
             self._tools_cache_key = current_key
         return self._cached_tools_json
 
-    def next(self, messages: list[dict[str, Any]], on_stream_chunk: Callable[[str], None] | None = None, on_thinking_delta: Callable[[str], None] | None = None, store: Store[AppState] | None = None) -> AgentStep:
+    def next(
+        self,
+        messages: list[dict[str, Any]],
+        on_stream_chunk: Callable[[str], None] | None = None,
+        on_thinking_delta: Callable[[str], None] | None = None,
+        store: Store[AppState] | None = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
+    ) -> AgentStep:
         system_message, converted_messages = _to_anthropic_messages(messages)
 
         # Replay stored thinking blocks into the first assistant message
@@ -213,11 +227,19 @@ class AnthropicModelAdapter:
         response = None
         for attempt in range(max_retries + 1):
             try:
-                timeout = float(
-                    self.runtime.get("modelTimeoutSeconds")
-                    or os.environ.get("MINICODE_MODEL_TIMEOUT", "60")
+                timeout = bounded_request_timeout(
+                    float(
+                        self.runtime.get("modelTimeoutSeconds")
+                        or os.environ.get("MINICODE_MODEL_TIMEOUT", "60")
+                    ),
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
                 )
-                response = urllib.request.urlopen(request, timeout=timeout)
+                response = open_verified_url(request, timeout=timeout)
+                checkpoint_model_call(
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                )
                 break
             except urllib.error.HTTPError as error:
                 response = error
@@ -229,17 +251,29 @@ class AnthropicModelAdapter:
                 retry_after = _parse_retry_after_seconds(error.headers.get("retry-after"))
                 wait = calculate_backoff(attempt, retry_after=retry_after,
                                         category=category)
-                time.sleep(wait)
+                controlled_retry_sleep(
+                    wait,
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                )
             except urllib.error.URLError:
                 if attempt >= max_retries:
                     raise
                 wait = calculate_backoff(attempt)
-                time.sleep(wait)
+                controlled_retry_sleep(
+                    wait,
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                )
         if response is None:
             raise RuntimeError("Model request failed before receiving a response")
 
         if not on_stream_chunk:
             data = _read_json_body(response)
+            checkpoint_model_call(
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+            )
             status = getattr(response, "status", getattr(response, "code", 200))
             if status >= 400:
                 if store:
@@ -356,6 +390,10 @@ class AnthropicModelAdapter:
         stream_usage_seen = False
         
         for line in response:
+            checkpoint_model_call(
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+            )
             line_str = line.decode("utf-8").strip()
             if not line_str.startswith("data: "):
                 continue

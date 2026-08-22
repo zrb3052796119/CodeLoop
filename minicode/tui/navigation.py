@@ -3,17 +3,17 @@ from __future__ import annotations
 from typing import Any
 
 from minicode.cli_commands import SLASH_COMMANDS, find_matching_slash_commands
-from minicode.tui.chrome import _cached_terminal_size
+from minicode.tui.chrome import _cached_terminal_size, render_slash_menu
 from minicode.tui.state import ScreenState, TtyAppArgs
 from minicode.tui.chrome import get_permission_prompt_max_scroll_offset
 from minicode.tui.transcript import get_transcript_max_scroll_offset
 
 
-_HEADER_LINES_ESTIMATE = 11
-_PROMPT_LINES_ESTIMATE = 7
+_HEADER_LINES_ESTIMATE = 3
+_PROMPT_LINES_ESTIMATE = 3
 _FOOTER_LINES = 1
 _GAPS = 3
-_TRANSCRIPT_FRAME_LINES = 4
+_TRANSCRIPT_FRAME_LINES = 2
 
 
 def _get_transcript_body_lines(args: TtyAppArgs, state: ScreenState) -> int:
@@ -26,7 +26,13 @@ def _get_transcript_body_lines(args: TtyAppArgs, state: ScreenState) -> int:
         + _GAPS
         + _TRANSCRIPT_FRAME_LINES
     )
-    return max(6, rows - chrome_overhead)
+    commands = _get_visible_commands(state.input)
+    if commands:
+        selected_index = min(state.selected_slash_index, len(commands) - 1)
+        chrome_overhead += len(
+            render_slash_menu(commands, selected_index).splitlines()
+        )
+    return max(4, rows - chrome_overhead)
 
 
 def _get_max_transcript_scroll_offset(args: TtyAppArgs, state: ScreenState) -> int:

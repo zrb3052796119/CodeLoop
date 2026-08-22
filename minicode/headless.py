@@ -88,6 +88,7 @@ def run_headless(
                     workspace=Path(cwd),
                     prompt=prompt,
                     mcp_current_state_registry=mcp_current_state_registry,
+                    allow_user_interaction=False,
                 )
             except AgentRuntimeConfigError as error:
                 print(f"Config error: {error.cause}", file=sys.stderr)

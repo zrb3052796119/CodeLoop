@@ -297,7 +297,7 @@ def test_project_memory_orphan_audit_and_backlink_are_previewed_and_cleaned(
     assert preview["affected"] == {
         "entries": 0,
         "approvalAuditRecords": 1,
-        "backlinks": 1,
+        "backlinks": 0,
     }
     result = authority.delete(target.id, str(preview["deletionRevision"]))
     assert result["status"] == "completed"
@@ -311,7 +311,7 @@ def test_project_memory_orphan_audit_and_backlink_are_previewed_and_cleaned(
     )
 
 
-def test_project_memory_partial_audit_failure_is_retryable_after_restart(
+def test_project_memory_deletion_does_not_depend_on_audit_projection(
     memory_workspace: tuple[Path, Path],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -327,23 +327,19 @@ def test_project_memory_partial_audit_failure_is_retryable_after_restart(
         raise OSError("private audit path must not escape")
 
     monkeypatch.setattr(MemoryManager, "_save_approval_audit", fail_audit)
-    partial = authority.delete(target.id, str(preview["deletionRevision"]))
+    result = authority.delete(target.id, str(preview["deletionRevision"]))
 
-    assert partial["status"] == "partial"
-    assert str(workspace) not in str(partial)
+    assert result["status"] == "completed"
+    assert str(workspace) not in str(result)
     monkeypatch.setattr(MemoryManager, "_save_approval_audit", original_save_audit)
     restarted = ProjectMemoryDeletionAuthority(workspace, data_dir=data_dir)
     restart_preview = restarted.snapshot(target.id)
-    assert restart_preview["status"] == "partial"
+    assert restart_preview["status"] == "completed"
     assert restart_preview["affected"] == {
         "entries": 0,
-        "approvalAuditRecords": 1,
+        "approvalAuditRecords": 0,
         "backlinks": 0,
     }
-    completed = restarted.delete(
-        target.id, str(restart_preview["deletionRevision"])
-    )
-    assert completed["status"] == "completed"
     assert MemoryManager(project_root=workspace).get_approval_audit(target.id) == []
 
 

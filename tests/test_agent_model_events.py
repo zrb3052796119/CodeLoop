@@ -118,6 +118,22 @@ def test_explicit_tool_verification_is_emitted_before_task_outcome() -> None:
         "outcome": "passed",
         "source": "test_runner",
     }
+    outcome = next(
+        event for event in sink.events if event.event_type == "task.outcome"
+    )
+    assert outcome.payload == {
+        "outcomeVersion": 2,
+        "outcomeStatus": "success",
+        "completionSucceeded": True,
+        "verificationStatus": "verified",
+        "verificationPassedCount": 1,
+        "verificationFailedCount": 0,
+        "goalAchieved": True,
+        "learningSuccess": True,
+        "hadToolErrors": False,
+        "errorsRecovered": False,
+        "toolErrorCount": 0,
+    }
 
 
 def test_malformed_tool_verification_is_ignored_without_changing_result() -> None:

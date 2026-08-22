@@ -185,20 +185,35 @@ def _same_workspace(candidate: str, workspace: Path) -> bool:
         return False
 
 
-def _new_assistant(
+_TURN_MESSAGE_ID_FIELD = "_conversation_turn_id"
+
+
+def _turn_result(
     messages: object,
     *,
-    start_index: int,
-) -> tuple[str, int] | None:
+    turn_id: str,
+) -> tuple[str, int, int] | None:
     if not isinstance(messages, list):
         return None
-    for index in range(len(messages) - 1, start_index - 1, -1):
+
+    user_indexes = [
+        index
+        for index, message in enumerate(messages)
+        if isinstance(message, dict)
+        and message.get("role") == "user"
+        and message.get(_TURN_MESSAGE_ID_FIELD) == turn_id
+    ]
+    if len(user_indexes) != 1:
+        return None
+    user_index = user_indexes[0]
+
+    for index in range(len(messages) - 1, user_index, -1):
         message = messages[index]
         if not isinstance(message, dict) or message.get("role") != "assistant":
             continue
         content = message.get("content")
         if isinstance(content, str) and content:
-            return content, index
+            return content, user_index, index
     return None
 
 
@@ -237,6 +252,47 @@ def _apply_corroborated_memory_feedback(
         manager = MemoryManager(project_root=workspace)
         manager.record_corroborated_feedback(list(rendered_ids), signal == "accept")
     except Exception:  # noqa: BLE001 - corroboration must not fail feedback
+        pass
+
+
+def _apply_written_memory_verdict(
+    workspace: Path,
+    journal: Any,
+    run_id: str,
+    signal: str,
+) -> None:
+    """Best-effort: let an explicit user verdict reach the lesson this Run wrote.
+
+    The rendered sidecar answers "did the memories shown to this turn help?".
+    This answers a different question: "should the conclusion this turn drew
+    be trusted at all?". A turn the user marked wrong has no business leaving
+    a durable lesson sitting in the approval queue as if it had gone well.
+
+    Rejection is chosen over a score nudge because the costs are asymmetric: a
+    wrong lesson that gets approved is injected into every later run, while a
+    sound lesson that gets rejected is merely unused. Both directions are
+    recorded in the approval audit, so the decision stays reviewable.
+    """
+    try:
+        written_ids = journal.get_written_memory_ids(run_id)
+    except Exception:  # noqa: BLE001 - the verdict is optional
+        return
+    if not written_ids:
+        return
+    try:
+        from minicode.memory import MemoryManager
+
+        manager = MemoryManager(project_root=workspace)
+        if signal == "accept":
+            manager.record_corroborated_feedback(list(written_ids), True)
+            return
+        for entry_id in written_ids:
+            manager.reject_entry(
+                entry_id,
+                actor="user_signal",
+                reason=f"the user marked this turn '{signal}'",
+            )
+    except Exception:  # noqa: BLE001 - the verdict must not fail feedback
         pass
 
 
@@ -287,7 +343,17 @@ class ConversationTurnService:
         user_message: str,
         runtime: Any,
     ) -> None:
-        session.messages = [dict(message) for message in messages]
+        # Runtime-only turn identity lets the transaction relocate the current
+        # user after compaction/reordering.  It must never become part of the
+        # persisted or externally rendered message schema.
+        session.messages = [
+            {
+                key: value
+                for key, value in message.items()
+                if key != _TURN_MESSAGE_ID_FIELD
+            }
+            for message in messages
+        ]
         session.history = [*session.history, user_message]
         session.permissions_summary = runtime.permissions.get_summary()
         session.skills = runtime.tools.get_skills()
@@ -542,6 +608,9 @@ class ConversationTurnService:
             _apply_corroborated_memory_feedback(
                 self.workspace, journal, record.run_id, stored.signal
             )
+            _apply_written_memory_verdict(
+                self.workspace, journal, record.run_id, stored.signal
+            )
         return ConversationFeedbackResult(
             turn_id=record.turn_id,
             run_id=record.run_id,
@@ -668,8 +737,7 @@ class ConversationTurnService:
                     system_prompt=runtime.system_prompt,
                     user_message=message,
                 )
-                user_index = len(prepared) - 1
-                assistant_start = len(prepared)
+                prepared[-1][_TURN_MESSAGE_ID_FIELD] = turn_id
                 try:
                     runtime.permissions.begin_turn()
                     try:
@@ -707,11 +775,11 @@ class ConversationTurnService:
                     )
                     raise ConversationTurnFailed() from error
 
-                assistant_result = _new_assistant(
+                turn_result = _turn_result(
                     result_messages,
-                    start_index=assistant_start,
+                    turn_id=turn_id,
                 )
-                if assistant_result is None:
+                if turn_result is None:
                     self._best_effort_user_commit(
                         session,
                         messages=prepared,
@@ -725,7 +793,7 @@ class ConversationTurnService:
                     not isinstance(item, dict) for item in result_messages
                 ):
                     raise ConversationTurnFailed()
-                assistant, assistant_index = assistant_result
+                assistant, user_index, assistant_index = turn_result
                 raise_if_cancelled(cancellation_token)
                 session_marker = {
                     "schemaVersion": 1,

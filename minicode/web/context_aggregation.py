@@ -19,6 +19,7 @@ _CONTEXT_PATHS = frozenset(
     {
         "pre_request_cybernetic",
         "pre_request_compactor",
+        "in_loop_compactor",
         "context_manager_auto",
         "reactive_cybernetic",
         "reactive_compactor",
@@ -30,6 +31,7 @@ _DIRECT_CONTEXT_PATHS = frozenset(
     {
         "pre_request_cybernetic",
         "pre_request_compactor",
+        "in_loop_compactor",
         "context_manager_auto",
         "predictive_recovery",
         "feedback_forced",
@@ -53,6 +55,17 @@ _CONTEXT_STRATEGIES = frozenset(
     }
 )
 _RECOVERY_KINDS = frozenset({"cybernetic", "compactor"})
+_CONTEXT_FAILURE_REASONS = frozenset(
+    {
+        "too_few_messages",
+        "no_summarizable_messages",
+        "no_token_reduction",
+        "strategy_ineffective",
+        "unchanged_state",
+        "circuit_open",
+        "internal_error",
+    }
+)
 _RECOVERY_OUTCOMES = frozenset({"recovered", "not_recovered"})
 _RUN_SOURCES = frozenset({"tui", "headless", "gateway", "unknown"})
 _MAX_CONTEXT_MESSAGES = 100_000
@@ -945,6 +958,42 @@ def project_context_breakdown(aggregate: ContextAggregate) -> dict[str, object]:
 
 def project_context_event_detail(event_type: str, payload: Mapping[str, Any]) -> dict[str, object]:
     """Whitelist one timeline Context/Recovery/WorkingMemory event safely."""
+    if event_type == "context.compaction.failed":
+        operation_id = payload.get("contextOperationId")
+        path = payload.get("path")
+        trigger = payload.get("trigger")
+        strategy = payload.get("strategy")
+        attempted = payload.get("attempted")
+        reason = payload.get("reason")
+        failures = payload.get("consecutiveFailures")
+        tripped = payload.get("circuitBreakerTripped")
+        if (
+            payload.get("contextVersion") != 1
+            or not isinstance(operation_id, str)
+            or not _CONTEXT_OPERATION_ID_RE.fullmatch(operation_id)
+            or path not in _CONTEXT_PATHS
+            or trigger not in _CONTEXT_TRIGGERS
+            or strategy not in _CONTEXT_STRATEGIES
+            or payload.get("effective") is not False
+            or not isinstance(attempted, bool)
+            or reason not in _CONTEXT_FAILURE_REASONS
+            or isinstance(failures, bool)
+            or not isinstance(failures, int)
+            or not 0 <= failures <= 100_000
+            or not isinstance(tripped, bool)
+        ):
+            return {}
+        return {
+            "contextVersion": 1,
+            "path": path,
+            "trigger": trigger,
+            "strategy": strategy,
+            "effective": False,
+            "attempted": attempted,
+            "reason": reason,
+            "consecutiveFailures": failures,
+            "circuitBreakerTripped": tripped,
+        }
     if event_type == "context.compacted":
         parsed = _parse_compaction(payload, sequence=0, timestamp=None, run_source="unknown")
         if parsed is None:

@@ -338,7 +338,7 @@ def test_authority_refuses_symlinked_scope_before_reading_it(
         MemoryApprovalAuthority(isolated_workspace).snapshot()
 
 
-def test_failed_approval_audit_write_restores_noninjectable_manager_state(
+def test_failed_approval_audit_projection_keeps_embedded_authority_consistent(
     isolated_workspace: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -360,7 +360,45 @@ def test_failed_approval_audit_write_restores_noninjectable_manager_state(
 
     monkeypatch.setattr(manager, "_atomic_write", fail_audit_write)
 
-    with pytest.raises(OSError, match="simulated audit failure"):
+    mutation = manager.decide_pending_entry(
+        entry.id,
+        "approve",
+        actor="dashboard_user",
+        reason="dashboard_approved",
+    )
+
+    current = manager.memories[MemoryScope.PROJECT]._id_index[entry.id]
+    assert mutation.status == "approved"
+    assert current.approval_status == "approved"
+    reloaded = MemoryManager(project_root=isolated_workspace)
+    persisted = reloaded.memories[MemoryScope.PROJECT]._id_index[entry.id]
+    assert persisted.approval_status == "approved"
+    assert reloaded.get_approval_audit(entry.id)[-1]["action"] == "approve"
+
+
+def test_failed_authority_commit_cannot_publish_audit_only_decision(
+    isolated_workspace: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manager = MemoryManager(project_root=isolated_workspace)
+    entry = manager.add_entry(
+        MemoryScope.PROJECT,
+        "note",
+        "Keep failed authority commits pending",
+        source="reflection",
+        approval_policy=MemoryApprovalPolicy.USER_REVIEW_REQUIRED,
+    )
+    assert entry is not None
+    original_atomic_write = manager._atomic_write
+
+    def fail_authority_write(target: Path, content: str) -> None:
+        if target.name == "memory.json":
+            raise OSError("simulated authority failure")
+        original_atomic_write(target, content)
+
+    monkeypatch.setattr(manager, "_atomic_write", fail_authority_write)
+
+    with pytest.raises(OSError, match="simulated authority failure"):
         manager.decide_pending_entry(
             entry.id,
             "approve",
@@ -368,6 +406,10 @@ def test_failed_approval_audit_write_restores_noninjectable_manager_state(
             reason="dashboard_approved",
         )
 
-    current = manager.memories[MemoryScope.PROJECT]._id_index[entry.id]
-    assert current.approval_status == "pending"
-    assert current.is_active is False
+    reloaded = MemoryManager(project_root=isolated_workspace)
+    persisted = reloaded.memories[MemoryScope.PROJECT]._id_index[entry.id]
+    assert persisted.approval_status == "pending"
+    assert all(
+        record["action"] != "approve"
+        for record in reloaded.get_approval_audit(entry.id)
+    )

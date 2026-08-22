@@ -5,12 +5,14 @@ import re
 import shlex
 import subprocess
 import sys
+from pathlib import Path
 from typing import Sequence
 
 from minicode.background_tasks import register_background_shell_task
 from minicode.tooling import ToolDefinition, ToolResult
 from minicode.verification_observation import project_command_verification
 from minicode.workspace import resolve_tool_path
+from minicode.workspace import INTERNAL_WORKSPACE_STORE_NAMES
 
 # 命令执行超时（秒）- 5 分钟
 COMMAND_TIMEOUT = 300
@@ -166,6 +168,29 @@ def _is_read_only_command(command: str) -> bool:
     return cmd in READONLY_COMMANDS
 
 
+def _internal_store_command_risk(command: str, args: list[str]) -> str | None:
+    """Reject command shapes that can bypass Memory retrieval authority."""
+    normalized = [str(value).replace("\\", "/").lower() for value in (command, *args)]
+    if any(
+        store in value
+        for value in normalized
+        for store in INTERNAL_WORKSPACE_STORE_NAMES
+    ):
+        return "command targets MiniCode internal Memory state"
+    command_name = Path(command).name.lower() if command else ""
+    if command_name == "find" and any(
+        value in {"-exec", "-execdir"} for value in normalized[1:]
+    ):
+        return "find -exec can traverse MiniCode internal Memory state"
+    if command_name in {"grep", "egrep", "fgrep"} and any(
+        value in {"-r", "--recursive"} for value in normalized[1:]
+    ):
+        return "recursive grep can traverse MiniCode internal Memory state"
+    if command_name == "rg" and "--hidden" in normalized[1:]:
+        return "hidden-file search can traverse MiniCode internal Memory state"
+    return None
+
+
 def _looks_like_shell_snippet(command: str, args: list[str]) -> bool:
     return not args and any(char in command for char in "|&;<>()$`")
 
@@ -295,6 +320,13 @@ def _run(input_data: dict, context) -> ToolResult:
     use_shell = _looks_like_shell_snippet(input_data["command"], raw_args)
     background_shell = _is_background_shell_snippet(input_data["command"], raw_args)
     known_command = _is_allowed_command(normalized_command)
+
+    internal_store_risk = _internal_store_command_risk(
+        normalized_command,
+        normalized_args,
+    )
+    if internal_store_risk:
+        return ToolResult(ok=False, output=f"Command not allowed: {internal_store_risk}.")
 
     command, args = _build_execution_command(
         input_data["command"],

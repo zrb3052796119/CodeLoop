@@ -637,6 +637,11 @@ class InstalledResolverStub:
         assert deadline > time.monotonic()
         if self.mode in {"dns_error", "timeout", "resolver_busy"}:
             raise ResolverError(self.mode)
+        addresses = (
+            ("93.184.216.34",)
+            if self.mode == "public"
+            else ("93.184.216.34", "10.0.0.8")
+        )
         return [
             (
                 network_safety_module.socket.AF_INET,
@@ -645,7 +650,7 @@ class InstalledResolverStub:
                 "",
                 (address, port),
             )
-            for address in ("93.184.216.34", "10.0.0.8")
+            for address in addresses
         ]
 
 installed_original_resolver = network_safety_module._DNS_RESOLVER
@@ -783,11 +788,15 @@ try:
         "error[response_too_large]: The response exceeds the safe byte limit."
     )
     os.environ["MINI_CODE_WEB_SEARCH_PROVIDERS"] = "baidu"
-    installed_search_large = installed_core_registry.execute(
-        "web_search",
-        {"query": "installed-large-query-fixture-secret"},
-        ToolContext(cwd=str(workspace), permissions=None),
-    )
+    network_safety_module._DNS_RESOLVER = InstalledResolverStub("public")
+    try:
+        installed_search_large = installed_core_registry.execute(
+            "web_search",
+            {"query": "installed-large-query-fixture-secret"},
+            ToolContext(cwd=str(workspace), permissions=None),
+        )
+    finally:
+        network_safety_module._DNS_RESOLVER = installed_original_resolver
     assert installed_search_large.output.startswith("error[search_unavailable]:")
     assert "baidu=response_too_large" in installed_search_large.output
     assert "fixture-secret" not in installed_search_large.output

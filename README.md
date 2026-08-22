@@ -54,7 +54,7 @@ That makes this repository useful as:
 | Runtime control | `CyberneticOrchestrator` coordinates context, cost, feedback, progress, memory, and recovery controllers. |
 | Context management | PID-style context pressure handling, compaction, budget adjustment, and predictive guards. |
 | Memory | Domain-aware retrieval, optional LLM reranking, prompt injection, reflection write-back, maintenance, and dual-channel (verification + explicit user signal) corroborated feedback. |
-| Skill routing | Intent-aware Skill discovery/routing with a cross-run evidence ledger and an immutable version ledger (promotion intentionally locked pending real usage data). |
+| Skill routing | Intent-aware discovery with a cross-run evidence ledger, digest/profile-bound bounded rank feedback, and an immutable version ledger (version promotion remains locked). |
 | Tool loop | Local file/search/edit/command tools with scheduler-aware execution and error nudges. |
 | Recovery | Self-healing paths for context overflow, tool failures, oscillation, and resource pressure. |
 | Verification | Focused unit, integration, stress, and cybernetics tests across the active root package. |
@@ -101,6 +101,9 @@ persona, and startup banners) changed.
 | `py-src/minicode/` | Compatibility/staging mirror kept aligned for migration work. |
 | `docs/OPTIMIZATION_SUMMARY.md` | Full optimization and integration record. |
 | `docs/memory_theory.md` | Memory/control theory notes. |
+| `docs/memory-hybrid-retrieval.md` | Evidence-gated local E5 or remote Qwen hybrid retrieval, privacy authorization, installation, and promotion results. |
+| `docs/skill-routing-feedback.md` | Live Skill evidence authority, safety gates, audit fields, and rollback switch. |
+| `docs/subagent-model-routing.md` | Dedicated per-agent Qwen routing, credential isolation, role overrides, and fail-closed behavior. |
 
 ## Quick Start
 

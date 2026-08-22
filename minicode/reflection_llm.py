@@ -9,16 +9,28 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import inspect
 import json
 import ipaddress
 import re
 import time
 import math
+import os
 from collections import Counter
 from dataclasses import dataclass
 from typing import Any, Literal, Protocol, runtime_checkable
 from urllib.parse import urlparse
 
+from minicode.agent_budget import AgentBudgetExceeded, record_budgeted_model_call
+from minicode.model_call_control import (
+    ModelCallDeadlineExceeded,
+    call_model_next,
+    checkpoint_model_call,
+)
+from minicode.pricing import (
+    pricing_failure_event_payload,
+    project_model_cost_event,
+)
 from minicode.reflection_evidence import TaskEvidence, sanitize_evidence_text
 from minicode.reflection_synthesis import (
     ClaimValidationResult,
@@ -27,6 +39,14 @@ from minicode.reflection_synthesis import (
     ReflectionSynthesizer,
     ReflectionValueDecision,
 )
+from minicode.run_events import (
+    emit_event_safely,
+    new_model_operation_id,
+    project_model_duration_ms,
+    project_model_usage,
+)
+from minicode.turn_cancellation import TurnCancellationRequested
+from minicode.types import ModelUsage
 
 
 ReflectionSynthesizerMode = Literal["rule", "llm_shadow", "llm"]
@@ -102,9 +122,20 @@ class ReflectionLLMConfig:
     @classmethod
     def from_runtime(cls, runtime: dict[str, Any] | None) -> ReflectionLLMConfig:
         values = runtime or {}
-        raw_mode = str(values.get("reflectionSynthesizerMode", "rule")).strip().lower()
+        # Mode precedence: explicit runtime config > the same env var the
+        # config layer reads (MINI_CODE_REFLECTION_SYNTHESIZER_MODE) >
+        # "llm_shadow" default. Shadow is the safe default: the rule
+        # synthesizer keeps producing the persisted memory while the LLM runs
+        # alongside for comparison metrics. Without a usable model client the
+        # orchestrator falls back to rule-only, so this default costs nothing
+        # on key-less installs.
+        raw_mode = str(
+            values.get("reflectionSynthesizerMode")
+            or os.environ.get("MINI_CODE_REFLECTION_SYNTHESIZER_MODE")
+            or "llm_shadow"
+        ).strip().lower()
         mode: ReflectionSynthesizerMode = (
-            raw_mode if raw_mode in {"rule", "llm_shadow", "llm"} else "rule"
+            raw_mode if raw_mode in {"rule", "llm_shadow", "llm"} else "llm_shadow"
         )
         model = str(values.get("reflectionModel") or "").strip() or None
         raw_prompt_version = str(
@@ -401,6 +432,9 @@ def _evidence_payload(
                 "files_changed": _bounded_strings(
                     item.files_changed, item_limit
                 ),
+                "verification_call_ids": _bounded_strings(
+                    item.verification_call_ids, item_limit
+                ),
                 "epistemic_status": item.epistemic_status,
             }
             for item in evidence.recoveries[:item_limit]
@@ -626,6 +660,10 @@ _CLAIM_TYPES = {
     "correction",
     "verification_rule",
     "warning",
+    # Kept in the LLM enum for parity with the rule synthesizer, which
+    # generates it for cleanly verified successes. The LLM may emit it too
+    # when the task shows the same verified-change shape.
+    "approach",
 }
 _CLAIM_FIELDS = {
     "claim_type",
@@ -889,6 +927,8 @@ class StructuredGenerationClient(Protocol):
         *,
         timeout_seconds: float,
         max_output_tokens: int,
+        cancellation_token: Any | None = None,
+        deadline_monotonic: float | None = None,
     ) -> StructuredGenerationResponse: ...
 
 
@@ -898,14 +938,28 @@ class ModelAdapterStructuredGenerationClient:
     def __init__(self, adapter: Any) -> None:
         self._adapter = adapter
 
+    @property
+    def model_id(self) -> str:
+        runtime = getattr(self._adapter, "runtime", None)
+        if isinstance(runtime, dict):
+            configured = runtime.get("model")
+            if isinstance(configured, str) and configured:
+                return configured
+        return str(getattr(self._adapter, "model_id", "") or "")
+
     def generate_json(
         self,
         messages: list[dict[str, str]],
         *,
         timeout_seconds: float,
         max_output_tokens: int,
+        cancellation_token: Any | None = None,
+        deadline_monotonic: float | None = None,
     ) -> StructuredGenerationResponse:
-        del timeout_seconds, max_output_tokens  # Fixed on this dedicated adapter.
+        del max_output_tokens  # Fixed on this dedicated adapter.
+        local_deadline = time.monotonic() + max(0.001, timeout_seconds)
+        if deadline_monotonic is not None:
+            local_deadline = min(local_deadline, deadline_monotonic)
         started = time.perf_counter()
         had_thinking_state = hasattr(self._adapter, "_thinking_blocks")
         saved_thinking = (
@@ -916,7 +970,12 @@ class ModelAdapterStructuredGenerationClient:
         if had_thinking_state:
             self._adapter._thinking_blocks = []
         try:
-            step = self._adapter.next(messages)
+            step = call_model_next(
+                self._adapter,
+                messages,
+                cancellation_token=cancellation_token,
+                deadline_monotonic=local_deadline,
+            )
         finally:
             if had_thinking_state:
                 self._adapter._thinking_blocks = saved_thinking
@@ -1061,6 +1120,11 @@ class AttemptingReflectionSynthesizer(ReflectionSynthesizer, Protocol):
         self,
         task_description: str,
         evidence: TaskEvidence,
+        *,
+        agent_budget: Any | None = None,
+        event_sink: Any | None = None,
+        cancellation_token: Any | None = None,
+        deadline_monotonic: float | None = None,
     ) -> LLMSynthesisAttempt: ...
 
 
@@ -1476,8 +1540,17 @@ class LLMReflectionSynthesizer:
         self,
         task_description: str,
         evidence: TaskEvidence,
+        *,
+        agent_budget: Any | None = None,
+        event_sink: Any | None = None,
+        cancellation_token: Any | None = None,
+        deadline_monotonic: float | None = None,
     ) -> LLMSynthesisAttempt:
         started = time.perf_counter()
+        checkpoint_model_call(
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
+        )
         try:
             envelope = build_llm_evidence_envelope(
                 task_description,
@@ -1524,13 +1597,57 @@ class LLMReflectionSynthesizer:
             },
             {"role": "user", "content": user_payload},
         ]
+        operation_id = new_model_operation_id()
+        model_identity = self._model_identity()
+        request_started = time.monotonic()
+        reservation = None
         try:
-            response = self._client.generate_json(
-                messages,
-                timeout_seconds=self._config.timeout_seconds,
-                max_output_tokens=self._config.max_output_tokens,
+            if agent_budget is not None:
+                reservation = agent_budget.reserve_model_call(
+                    self._estimate_message_tokens(messages)
+                )
+        except AgentBudgetExceeded:
+            return LLMSynthesisAttempt(
+                success=False,
+                failure_code="agent_budget_exhausted",
+                latency_ms=(time.perf_counter() - started) * 1_000,
+                input_safety_status=envelope.safety_status,
             )
+        emit_event_safely(
+            event_sink,
+            "model.started",
+            payload={
+                "operationId": operation_id,
+                "purpose": "memory_reflection",
+            },
+        )
+        try:
+            response = self._generate_json(
+                messages,
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+            )
+        except TurnCancellationRequested:
+            self._settle_failed_budget(agent_budget, reservation)
+            self._emit_model_failure(
+                event_sink, operation_id, request_started, "interrupted"
+            )
+            raise
+        except ModelCallDeadlineExceeded:
+            self._settle_failed_budget(
+                agent_budget, reservation, charge_estimate=True
+            )
+            self._emit_model_failure(
+                event_sink, operation_id, request_started, "timeout"
+            )
+            raise
         except TimeoutError:
+            self._settle_failed_budget(
+                agent_budget, reservation, charge_estimate=True
+            )
+            self._emit_model_failure(
+                event_sink, operation_id, request_started, "timeout"
+            )
             return LLMSynthesisAttempt(
                 success=False,
                 failure_code="provider_timeout",
@@ -1538,12 +1655,72 @@ class LLMReflectionSynthesizer:
                 input_safety_status=envelope.safety_status,
             )
         except Exception:
+            self._settle_failed_budget(
+                agent_budget, reservation, charge_estimate=True
+            )
+            self._emit_model_failure(
+                event_sink, operation_id, request_started, "provider_error"
+            )
             return LLMSynthesisAttempt(
                 success=False,
                 failure_code="provider_error",
                 latency_ms=(time.perf_counter() - started) * 1_000,
                 input_safety_status=envelope.safety_status,
             )
+
+        usage_source = response.usage_source
+        if usage_source == "unavailable" and (
+            isinstance(response.input_tokens, int)
+            or isinstance(response.output_tokens, int)
+        ):
+            usage_source = "estimated"
+        usage = project_model_usage(
+            ModelUsage(
+                input_tokens=response.input_tokens,
+                output_tokens=response.output_tokens,
+                cache_read_tokens=response.cache_read_tokens,
+                cache_creation_tokens=response.cache_creation_tokens,
+                source=usage_source,
+            )
+        )
+        try:
+            cost_payload = project_model_cost_event(
+                model=model_identity,
+                usage=usage,
+                operation_id=operation_id,
+            )
+        except BaseException:  # noqa: BLE001 - observation stays optional
+            cost_payload = pricing_failure_event_payload(operation_id)
+        try:
+            record_budgeted_model_call(
+                agent_budget,
+                model=model_identity,
+                usage=usage,
+                reservation=reservation,
+                cost_payload=cost_payload,
+            )
+        except Exception:
+            self._settle_failed_budget(agent_budget, reservation)
+        completed_payload: dict[str, object] = {
+            "operationId": operation_id,
+            "purpose": "memory_reflection",
+            "resultType": "assistant",
+            "contentPresent": bool(response.text),
+            "toolCallCount": len(response.tool_calls or []),
+            "usage": usage,
+        }
+        duration_ms = project_model_duration_ms(
+            request_started, time.monotonic()
+        )
+        if duration_ms is not None:
+            completed_payload["durationMs"] = duration_ms
+        emit_event_safely(
+            event_sink,
+            "model.completed",
+            payload=completed_payload,
+        )
+        cost_payload["purpose"] = "memory_reflection"
+        emit_event_safely(event_sink, "model.costed", payload=cost_payload)
 
         latency_ms = response.latency_ms
         if latency_ms is None:
@@ -1588,6 +1765,82 @@ class LLMReflectionSynthesizer:
             output_safety_status="safe",
             **base_attempt,
         )
+
+    def _generate_json(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        cancellation_token: Any | None,
+        deadline_monotonic: float | None,
+    ) -> StructuredGenerationResponse:
+        kwargs: dict[str, Any] = {
+            "timeout_seconds": self._config.timeout_seconds,
+            "max_output_tokens": self._config.max_output_tokens,
+        }
+        try:
+            parameters = inspect.signature(
+                self._client.generate_json
+            ).parameters.values()
+            accepts_kwargs = any(
+                parameter.kind == inspect.Parameter.VAR_KEYWORD
+                for parameter in parameters
+            )
+            names = {parameter.name for parameter in parameters}
+            if accepts_kwargs or "cancellation_token" in names:
+                kwargs["cancellation_token"] = cancellation_token
+            if accepts_kwargs or "deadline_monotonic" in names:
+                kwargs["deadline_monotonic"] = deadline_monotonic
+        except (TypeError, ValueError):
+            pass
+        return self._client.generate_json(messages, **kwargs)
+
+    def _model_identity(self) -> str:
+        return str(
+            self._config.model
+            or getattr(self._client, "model_id", "")
+            or "reflection-model"
+        )
+
+    @staticmethod
+    def _estimate_message_tokens(messages: list[dict[str, str]]) -> int:
+        try:
+            from minicode.context_manager import estimate_messages_tokens
+
+            return estimate_messages_tokens(messages)
+        except Exception:  # noqa: BLE001 - estimate is advisory
+            return max(
+                1,
+                sum(len(message.get("content", "")) for message in messages)
+                // 4,
+            )
+
+    @staticmethod
+    def _settle_failed_budget(
+        agent_budget: Any,
+        reservation: Any,
+        *,
+        charge_estimate: bool = False,
+    ) -> None:
+        settle = getattr(agent_budget, "fail_model_call", None)
+        if callable(settle):
+            settle(reservation, charge_estimate=charge_estimate)
+
+    @staticmethod
+    def _emit_model_failure(
+        event_sink: Any,
+        operation_id: str,
+        started_at: float,
+        failure_kind: str,
+    ) -> None:
+        payload: dict[str, object] = {
+            "operationId": operation_id,
+            "purpose": "memory_reflection",
+            "failureKind": failure_kind,
+        }
+        duration_ms = project_model_duration_ms(started_at, time.monotonic())
+        if duration_ms is not None:
+            payload["durationMs"] = duration_ms
+        emit_event_safely(event_sink, "model.failed", payload=payload)
 
 
 __all__ = [

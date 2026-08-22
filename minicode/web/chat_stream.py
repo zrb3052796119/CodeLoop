@@ -17,7 +17,10 @@ CHAT_STREAM_CONTENT_TYPE = "application/x-ndjson; charset=utf-8"
 CHAT_STREAM_MAX_FRAME_BYTES = 4 * 1024
 CHAT_STREAM_ASSISTANT_BUDGET_BYTES = 128 * 1024
 CHAT_STREAM_TOOL_EVENT_BUDGET = 512
-_SAFE_TOOL_NAME = re.compile(r"[A-Za-z0-9_.:-]{1,128}")
+# The "▸" separator is used to prefix sub-agent tool names
+# ("explore▸read_file") so parallel sub-agents stay distinguishable in the
+# stream; it must survive the name whitelist.
+_SAFE_TOOL_NAME = re.compile(r"[A-Za-z0-9_.:\u25b8-]{1,128}")
 
 
 class ChatStreamWriter:

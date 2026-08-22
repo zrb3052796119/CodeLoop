@@ -15,6 +15,7 @@ from minicode.local_tool_shortcuts import parse_local_tool_shortcut
 from minicode.prompt import build_system_prompt
 from minicode.run_events import emit_skill_routing_safely
 from minicode.run_lifecycle import observe_run
+from minicode.skill_router import required_skill_names_for_routing
 from minicode.tooling import ToolContext
 from minicode.tui.tool_helpers import _summarize_tool_input, _is_file_edit_tool, _extract_path_from_tool_input, _summarize_collapsed_tool_body
 from minicode.tui.tool_lifecycle import _push_transcript_entry, _update_tool_entry, _update_transcript_entry, _append_to_transcript_entry, _collapse_tool_entry, _finalize_dangling_running_tools, _get_running_tool_entries, _schedule_tool_auto_collapse
@@ -393,18 +394,25 @@ def _handle_input(
     # Refresh system prompt
     from minicode.capability_registry import get_registry, register_tool_capabilities
     from minicode.intent_parser import parse_intent
-    from minicode.skill_router import SkillRouter
+    from minicode.skill_router import build_skill_router
 
     register_tool_capabilities(args.tools)
     intent = parse_intent(input_text)
-    skill_routing = SkillRouter().route(args.tools.get_skills(), intent, get_registry())
+    skill_routing = build_skill_router(args.cwd).route(
+        args.tools.get_skills(), intent, get_registry()
+    )
+    skills_for_prompt = (
+        args.tools.get_skills()
+        if getattr(skill_routing, "used_fallback", False)
+        else skill_routing.selected_skill_dicts()
+    )
     args.messages[0] = {
         "role": "system",
         "content": build_system_prompt(
             args.cwd,
             args.permissions.get_summary(),
             {
-                "skills": skill_routing.selected_skill_dicts(),
+                "skills": skills_for_prompt,
                 "skill_routing": skill_routing.to_dict(),
                 "mcpServers": args.tools.get_mcp_servers(),
                 "memory_context": "",
@@ -656,6 +664,9 @@ def _handle_input(
                     runtime=args.runtime,
                     memory_manager=memory_mgr,
                     event_sink=observation,
+                    required_skill_names=required_skill_names_for_routing(
+                        skill_routing
+                    ),
                 )
                 returned_assistant = next(
                     (

@@ -68,3 +68,26 @@ node_modules/
 # Scratch output
 session-log.txt
 out.txt
+.acceptance-work/
+.experiment-work/
+.implementation-work/
+.repair-work/
+.review-work/
+
+# Local agent state and internal work logs
+/.mini-code-memory/
+/notes.md
+/task_plan.md
+/analysis-output/
+/probe.txt
+/你好.py
+
+# Raw acceptance runs contain journals, temporary workspaces and local state.
+# Commit only curated manifests, summaries, tables and figures.
+/artifacts/**/*-evidence/
+/artifacts/**/journal/
+/artifacts/**/workspace/
+/artifacts/**/memory-store.lock
+
+# Local secrets — copy from .env.example
+.env

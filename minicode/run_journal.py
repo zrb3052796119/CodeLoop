@@ -31,6 +31,10 @@ from minicode.permission_event_contract import (
     PERMISSION_EVENT_TYPES,
     normalize_permission_event_payload,
 )
+from minicode.subagent_journal import (
+    SubagentRunJournal,
+    SubagentRunSummary,
+)
 from minicode.subagent_observation import (
     SUBAGENT_EVENT_TYPE,
     normalize_subagent_payload,
@@ -112,6 +116,7 @@ EVENT_TYPES = frozenset(
         "memory.rendered",
         "working_memory.observed",
         "context.compacted",
+        "context.compaction.failed",
         "recovery.started",
         "recovery.completed",
         "mcp.runtime.observed",
@@ -187,6 +192,7 @@ _USER_SIGNAL_SOURCE = "explicit_user_action"
 _MAX_RENDERED_MEMORY_IDS = 20
 _MAX_RENDERED_MEMORY_BYTES = 4_096
 _RENDERED_MEMORY_FILE = "memory_rendered.json"
+_WRITTEN_MEMORY_FILE = "memory_written.json"
 _MEMORY_ENTRY_ID_RE = re.compile(r"^(user|project|local)-[0-9]{1,20}-[0-9a-f]{8}$")
 
 
@@ -1095,7 +1101,9 @@ class RunJournal:
                 raise RunJournalTransitionError(
                     "A terminal Run cannot accept rendered Memory IDs."
                 )
-            self._write_rendered_memory_ids(run_dir, normalized)
+            self._write_memory_id_sidecar(
+                run_dir, normalized, filename=_RENDERED_MEMORY_FILE, label="Rendered"
+            )
 
     def get_rendered_memory_ids(self, run_id: str) -> tuple[str, ...] | None:
         """Read the content-free rendered Memory entry IDs for this Run."""
@@ -1104,7 +1112,75 @@ class RunJournal:
         if record is None:
             raise RunJournalNotFoundError("Run was not found.")
         run_dir = self._run_directory(run_id, must_exist=True)
-        return self._read_rendered_memory_ids(run_dir)
+        return self._read_memory_id_sidecar(
+            run_dir, _RENDERED_MEMORY_FILE, "Rendered"
+        )
+
+    def record_written_memory_ids(
+        self,
+        run_id: str,
+        entry_ids: list[str],
+    ) -> None:
+        """Persist the Memory entries this Run *produced*, content-free.
+
+        The rendered sidecar records what was shown to the turn; this records
+        what the turn concluded. Without it an explicit "this was wrong" from
+        the user cannot reach the lesson the wrong turn just wrote, and that
+        lesson stays eligible for approval as if nothing had been said.
+        """
+        self._validate_run_id(run_id)
+        normalized = _normalize_rendered_memory_ids(entry_ids)
+        if not normalized:
+            return
+        mutex = self._writer_mutexes.get(run_id)
+        if mutex is None:
+            raise RunJournalOwnershipError("This process does not own the Run writer.")
+        with mutex:
+            run_dir = self._run_directory(run_id, must_exist=True)
+            self._require_writer(run_id, run_dir)
+            record, _ = self._read_run(run_id)
+            if record is None:
+                raise RunJournalNotFoundError("Run was not found.")
+            if record.status in TERMINAL_STATUSES:
+                raise RunJournalTransitionError(
+                    "A terminal Run cannot accept written Memory IDs."
+                )
+            self._write_memory_id_sidecar(
+                run_dir, normalized, filename=_WRITTEN_MEMORY_FILE, label="Written"
+            )
+
+    def get_written_memory_ids(self, run_id: str) -> tuple[str, ...] | None:
+        """Read the content-free Memory entry IDs this Run produced."""
+        self._validate_run_id(run_id)
+        record, _ = self._read_run(run_id)
+        if record is None:
+            raise RunJournalNotFoundError("Run was not found.")
+        run_dir = self._run_directory(run_id, must_exist=True)
+        return self._read_memory_id_sidecar(run_dir, _WRITTEN_MEMORY_FILE, "Written")
+
+    def open_subagent_journal(self, run_id: str) -> SubagentRunJournal:
+        """Open the bounded sidecar journal owned by one Run directory.
+
+        The journal is intentionally outside the parent event stream: readers
+        that require exactly one ``task.outcome`` per Run must not see nested
+        loop lifecycle events. Retention removes it together with the Run.
+        """
+        self._validate_run_id(run_id)
+        record, _ = self._read_run(run_id)
+        if record is None:
+            raise RunJournalNotFoundError("Run was not found.")
+        run_dir = self._run_directory(run_id, must_exist=True)
+        return SubagentRunJournal(run_dir)
+
+    def list_subagent_runs(
+        self, run_id: str
+    ) -> tuple[SubagentRunSummary, ...]:
+        """Read bounded sub-agent Run summaries for one parent Run."""
+        return self.open_subagent_journal(run_id).list_runs()
+
+    def list_subagent_events(self, run_id: str, subagent_id: str):
+        """Read one sub-agent's bounded event stream."""
+        return self.open_subagent_journal(run_id).list_events(subagent_id)
 
     def transition(
         self,
@@ -1682,10 +1758,13 @@ class RunJournal:
                 "User signal storage is unsafe."
             ) from error
 
-    def _write_rendered_memory_ids(
+    def _write_memory_id_sidecar(
         self,
         run_dir: Path,
         entry_ids: tuple[str, ...],
+        *,
+        filename: str,
+        label: str,
     ) -> None:
         encoded = (
             json.dumps(
@@ -1698,13 +1777,13 @@ class RunJournal:
             + "\n"
         ).encode("utf-8")
         if len(encoded) > _MAX_RENDERED_MEMORY_BYTES:
-            raise RunJournalStorageError("Rendered Memory IDs exceed the byte limit.")
+            raise RunJournalStorageError(f"{label} Memory IDs exceed the byte limit.")
         fd, temporary = tempfile.mkstemp(
-            prefix=".memory-rendered-",
+            prefix=f".memory-{filename}-",
             suffix=".tmp",
             dir=run_dir,
         )
-        target = run_dir / _RENDERED_MEMORY_FILE
+        target = run_dir / filename
         try:
             with os.fdopen(fd, "wb") as handle:
                 os.fchmod(handle.fileno(), 0o600)
@@ -1723,9 +1802,9 @@ class RunJournal:
             # is tolerated only when the existing target is a safe file with
             # identical content; anything else (a symlink, a mismatch) is a
             # genuine storage problem, not a benign retry.
-            if self._read_rendered_memory_ids(run_dir) != entry_ids:
+            if self._read_memory_id_sidecar(run_dir, filename, label) != entry_ids:
                 raise RunJournalStorageError(
-                    "Rendered Memory ID storage changed during write."
+                    f"{label} Memory ID storage changed during write."
                 )
         except OSError as error:
             try:
@@ -1733,18 +1812,20 @@ class RunJournal:
             except FileNotFoundError:
                 pass
             raise RunJournalStorageError(
-                "Rendered Memory ID storage is unavailable."
+                f"{label} Memory ID storage is unavailable."
             ) from error
 
-    def _read_rendered_memory_ids(self, run_dir: Path) -> tuple[str, ...] | None:
-        path = run_dir / _RENDERED_MEMORY_FILE
+    def _read_memory_id_sidecar(
+        self, run_dir: Path, filename: str, label: str
+    ) -> tuple[str, ...] | None:
+        path = run_dir / filename
         try:
             before = os.lstat(path)
         except FileNotFoundError:
             return None
         except OSError as error:
             raise RunJournalStorageError(
-                "Rendered Memory ID storage is unavailable."
+                f"{label} Memory ID storage is unavailable."
             ) from error
         if (
             stat.S_ISLNK(before.st_mode)
@@ -1752,7 +1833,7 @@ class RunJournal:
             or before.st_size <= 0
             or before.st_size > _MAX_RENDERED_MEMORY_BYTES
         ):
-            raise RunJournalStorageError("Rendered Memory ID storage is unsafe.")
+            raise RunJournalStorageError(f"{label} Memory ID storage is unsafe.")
         flags = os.O_RDONLY
         if hasattr(os, "O_NOFOLLOW"):
             flags |= os.O_NOFOLLOW
@@ -1766,28 +1847,28 @@ class RunJournal:
                     or not stat.S_ISREG(after.st_mode)
                     or after.st_size != before.st_size
                 ):
-                    raise OSError("rendered Memory IDs changed during read")
+                    raise OSError("memory ID sidecar changed during read")
                 raw = os.read(fd, _MAX_RENDERED_MEMORY_BYTES + 1)
             finally:
                 os.close(fd)
             if len(raw) != before.st_size:
-                raise OSError("short rendered Memory ID read")
+                raise OSError("short memory ID sidecar read")
             decoded = json.loads(raw.decode("utf-8"))
         except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
             raise RunJournalStorageError(
-                "Rendered Memory ID storage is unsafe."
+                f"{label} Memory ID storage is unsafe."
             ) from error
         if (
             not isinstance(decoded, dict)
             or set(decoded) != {"schemaVersion", "entryIds"}
             or decoded.get("schemaVersion") != SCHEMA_VERSION
         ):
-            raise RunJournalStorageError("Rendered Memory ID storage is unsafe.")
+            raise RunJournalStorageError(f"{label} Memory ID storage is unsafe.")
         try:
             return _normalize_rendered_memory_ids(decoded.get("entryIds"))
         except RunJournalValidationError as error:
             raise RunJournalStorageError(
-                "Rendered Memory ID storage is unsafe."
+                f"{label} Memory ID storage is unsafe."
             ) from error
 
     @staticmethod

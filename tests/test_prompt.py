@@ -53,6 +53,20 @@ def test_build_system_prompt_requires_propose_skill_before_new_skill_write(tmp_p
     assert "Do not call write_file for a new Skill" in prompt
 
 
+def test_noninteractive_prompt_requires_final_channel_and_hides_ask_user(
+    tmp_path: Path,
+) -> None:
+    prompt = build_system_prompt(
+        str(tmp_path),
+        [],
+        {"user_interaction_available": False},
+    )
+
+    assert "ask_user is unavailable" in prompt
+    assert "Return results through the assistant final response" in prompt
+    assert "call the ask_user tool" not in prompt
+
+
 def test_system_prompt_states_the_current_date(tmp_path: Path) -> None:
     """Without a date the model has no clock and silently answers from its
     training cutoff — stating a wrong year with full confidence."""
@@ -108,3 +122,30 @@ def test_current_date_is_never_served_from_the_section_cache(
 
     assert first == "2026-07-30"
     assert second == "2026-08-01"
+
+
+def test_fallback_skill_section_is_name_only_inventory(tmp_path: Path) -> None:
+    prompt = build_system_prompt(
+        str(tmp_path),
+        [],
+        {
+            "skills": [
+                {
+                    "name": "demo",
+                    "qualified_name": "project/demo",
+                    "description": "This description should stay out of an abstained prompt",
+                    "tools": ["read_file"],
+                }
+            ],
+            "skill_routing": {
+                "used_fallback": True,
+                "selected": [],
+                "selected_skills": [],
+            },
+        },
+    )
+
+    assert "no routing evidence" in prompt
+    assert "- project/demo" in prompt
+    assert "This description should stay out" not in prompt
+    assert "likely tools" not in prompt

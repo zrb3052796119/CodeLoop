@@ -43,6 +43,15 @@ def _parser() -> argparse.ArgumentParser:
         default=DEFAULT_CONTRACT,
     )
     parser.add_argument(
+        "--north-star-manifest",
+        type=Path,
+        default=None,
+        help=(
+            "evaluate an alternate frozen task manifest; defaults to the "
+            "manifest in the fixture root"
+        ),
+    )
+    parser.add_argument(
         "--north-star-results",
         type=Path,
         default=None,
@@ -65,6 +74,7 @@ def main(argv: list[str] | None = None) -> int:
         report = evaluate_quality_suite(
             args.fixture_root,
             include_cases=args.include_cases,
+            north_star_manifest_path=args.north_star_manifest,
             north_star_results_path=args.north_star_results,
         )
         gate = evaluate_gate(report, args.contract, profile=args.profile)

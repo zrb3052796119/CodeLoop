@@ -186,10 +186,14 @@ def test_agent_emits_canonical_task_outcome_without_loading_a_skill(
     ]
     assert outcomes == [
         {
-            "outcomeVersion": 1,
+            "outcomeVersion": 2,
             "outcomeStatus": "success",
-            "goalAchieved": True,
-            "learningSuccess": True,
+            "completionSucceeded": True,
+            "verificationStatus": "unverified",
+            "verificationPassedCount": 0,
+            "verificationFailedCount": 0,
+            "goalAchieved": False,
+            "learningSuccess": None,
             "hadToolErrors": False,
             "errorsRecovered": False,
             "toolErrorCount": 0,
@@ -286,10 +290,12 @@ def test_agent_attributes_repeated_skill_load_once_to_canonical_outcome(
     assert len(loaded) == 2
     assert attributed == [
         {
-            "attributionVersion": 1,
+            "attributionVersion": 2,
             "attributionKind": "task_correlation",
             "outcomeStatus": "success",
-            "goalAchieved": True,
+            "completionSucceeded": True,
+            "verificationStatus": "unverified",
+            "goalAchieved": False,
             "hadToolErrors": False,
             "errorsRecovered": False,
             "toolErrorCount": 0,
@@ -345,7 +351,9 @@ def test_skill_attribution_separates_recovered_tool_error_from_task_success(
         if event_type == "skill.attributed"
     )
     assert attributed["outcomeStatus"] == "success"
-    assert attributed["goalAchieved"] is True
+    assert attributed["completionSucceeded"] is True
+    assert attributed["verificationStatus"] == "unverified"
+    assert attributed["goalAchieved"] is False
     assert attributed["hadToolErrors"] is True
     assert attributed["errorsRecovered"] is True
     assert attributed["toolErrorCount"] == 1

@@ -821,11 +821,13 @@ def test_agent_turn_performs_one_main_retrieval_and_one_prompt_injection(
     assert system.count(entry.content) == 1
     assert entry.retrieval_count == 1
     assert entry.injection_count == 1
-    assert entry.success_count == 1
+    # Completion without an independent verifier is deliberately not treated as
+    # evidence that the retrieved memory helped produce a correct answer.
+    assert entry.success_count == 0
     assert entry.failure_count == 0
 
 
-def test_recovered_tool_error_rewards_rendered_memory_from_final_success(
+def test_recovered_tool_error_does_not_reward_memory_without_verification(
     tmp_path: Path,
 ) -> None:
     from minicode.agent_loop import run_agent_turn
@@ -863,7 +865,7 @@ def test_recovered_tool_error_rewards_rendered_memory_from_final_success(
         tools.dispose()
 
     assert entry.injection_count == 1
-    assert entry.success_count == 1
+    assert entry.success_count == 0
     assert entry.failure_count == 0
 
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import re
 import stat
@@ -16,6 +17,8 @@ from pathlib import Path
 from typing import Iterator
 
 from minicode.intent_parser import ActionType, IntentType
+
+logger = logging.getLogger(__name__)
 
 
 _SCHEMA_VERSION = 1
@@ -808,7 +811,10 @@ def observe_skill_catalog_safely(
     """Observe catalog versions without changing runtime construction."""
     try:
         SkillVersionLedger(workspace).observe_catalog(skills)
-    except Exception:
+    except Exception as error:
+        logger.warning(
+            "Skill version observation skipped: %s", error, exc_info=True
+        )
         return
 
 

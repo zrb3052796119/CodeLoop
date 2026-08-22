@@ -14,7 +14,12 @@ from __future__ import annotations
 
 import time
 
+import pytest
+from pathlib import Path
 
+
+from minicode.agent_budget import AgentTurnBudget
+from minicode.types import AgentStep, ModelUsage
 from minicode.context_compactor import (
     AutoCompactConfig,
     AutoCompactDispatcher,
@@ -30,6 +35,16 @@ from minicode.context_compactor import (
     SessionMemoryCompactEngine,
     ToolResultBudgetManager,
 )
+
+
+class RecordingSummarizer:
+    def __init__(self, summary: str = "transcript summary") -> None:
+        self.summary = summary
+        self.calls: list[list[dict]] = []
+
+    def summarize(self, messages: list[dict]) -> str:
+        self.calls.append(list(messages))
+        return self.summary
 
 
 # ---------------------------------------------------------------------------
@@ -163,6 +178,47 @@ class TestToolResultBudgetManager:
         assert saved == 0
         assert "X" * 3000 in modified[3]["content"]  # Under threshold
 
+    def test_crafted_tool_name_cannot_escape_results_directory(self, tmp_path):
+        mgr = ToolResultBudgetManager(
+            workspace=tmp_path,
+            persist_threshold=1000,
+        )
+        messages = [
+            {
+                "role": "tool_result",
+                "toolName": "../../escaped",
+                "content": "X" * 5000,
+                "toolUseId": "evil",
+            }
+        ]
+        modified, _ = mgr.check_and_replace(messages)
+
+        persisted = Path(modified[0]["_persisted_path"])
+        assert persisted.exists()
+        assert persisted.resolve().is_relative_to(tmp_path.resolve())
+        assert "escaped" not in persisted.name
+
+    def test_results_directory_symlink_is_refused(self, tmp_path):
+        outside = tmp_path.parent / "outside-results"
+        outside.mkdir(exist_ok=True)
+        results_dir = tmp_path / ".mini-code-tool-results"
+        results_dir.symlink_to(outside, target_is_directory=True)
+        mgr = ToolResultBudgetManager(
+            workspace=tmp_path,
+            persist_threshold=1000,
+        )
+        messages = [
+            {
+                "role": "tool_result",
+                "toolName": "read_file",
+                "content": "X" * 5000,
+                "toolUseId": "1",
+            }
+        ]
+
+        with pytest.raises(ValueError, match="symbolic link"):
+            mgr.check_and_replace(messages)
+
     def test_large_tool_result_persisted(self, tmp_path):
         mgr = ToolResultBudgetManager(
             workspace=tmp_path,
@@ -182,6 +238,29 @@ class TestToolResultBudgetManager:
         assert saved > 0
         assert "[Tool result persisted to disk" in modified[1]["content"]
         assert "_persisted_path" in modified[1]
+
+    def test_loaded_skill_instruction_is_not_replaced_by_persistence_stub(
+        self, tmp_path
+    ):
+        mgr = ToolResultBudgetManager(
+            workspace=tmp_path,
+            persist_threshold=100,
+        )
+        content = "SKILL: demo\n\n" + "instruction-marker " * 500
+        messages = [
+            {
+                "role": "tool_result",
+                "toolName": "load_skill",
+                "toolUseId": "skill-1",
+                "content": content,
+                "isError": False,
+            }
+        ]
+
+        modified, saved = mgr.check_and_replace(messages)
+
+        assert saved == 0
+        assert modified[0]["content"] == content
 
     def test_persisted_count_tracked(self, tmp_path):
         mgr = ToolResultBudgetManager(workspace=tmp_path, persist_threshold=10)
@@ -366,6 +445,33 @@ class TestMicrocompactEngine:
         ]
         assert len(non_cleared_tool_results) >= 4  # At least keep_recent preserved
 
+    def test_loaded_skill_result_is_never_microcompacted(self):
+        engine = MicrocompactEngine(MicrocompactState(
+            last_time_based_compact=0.0,
+            time_based_interval=0.0,
+            keep_recent_tool_results=2,
+        ))
+        skill_content = "SKILL: demo\nACTIVE_SKILL_MARKER"
+        msgs = [
+            {
+                "role": "tool_result",
+                "toolName": "load_skill",
+                "content": skill_content,
+                "toolUseId": "skill-1",
+            }
+        ] + self._messages_with_many_tool_results(10)
+
+        result = engine.run_time_based_microcompact(
+            msgs, now=time.time() + 10000
+        )
+
+        retained = next(
+            message for message in result.messages
+            if message.get("toolName") == "load_skill"
+        )
+        assert retained["content"] == skill_content
+        assert not retained.get("_microcompacted")
+
     def test_does_not_clear_already_persisted(self):
         engine = MicrocompactEngine(MicrocompactState(
             last_time_based_compact=0.0,
@@ -417,6 +523,18 @@ class TestSessionMemoryCompactEngine:
         result = engine.try_session_memory_compact(msgs, context_window=10000)
         assert result is None
 
+    def test_returns_none_when_dropped_transcript_cannot_be_summarized(self):
+        class FakeMemory:
+            def get_relevant_context(self, max_tokens=100, query=None):
+                return "durable history"
+
+        engine = SessionMemoryCompactEngine(memory_manager=FakeMemory())
+        msgs = [{"role": "user", "content": "x" * 100} for _ in range(30)]
+
+        result = engine.try_session_memory_compact(msgs, context_window=10000)
+
+        assert result is None
+
     def test_successful_session_memory_compact(self):
         class FakeMemory:
             def get_relevant_context(self, max_tokens=100, query=None):
@@ -428,8 +546,12 @@ class TestSessionMemoryCompactEngine:
             msgs.append({"role": role, "content": f"message {i} " * 10})
 
         config = AutoCompactConfig(max_expand_tokens=5000)
+        summarizer = RecordingSummarizer()
         result = engine.try_session_memory_compact(
-            msgs, context_window=100000, config=config
+            msgs,
+            context_window=100000,
+            config=config,
+            transcript_summarizer=summarizer,
         )
 
         assert result is not None
@@ -437,6 +559,8 @@ class TestSessionMemoryCompactEngine:
         assert result.strategy == CompactStrategy.SESSION_MEMORY
         assert len(result.messages) < len(msgs)
         assert "Project: test" in result.summary_text
+        assert "transcript summary" in result.summary_text
+        assert summarizer.calls
 
     def test_boundary_has_correct_metadata(self):
         class FakeMemory:
@@ -444,7 +568,11 @@ class TestSessionMemoryCompactEngine:
                 return "memory context here"
         engine = SessionMemoryCompactEngine(memory_manager=FakeMemory())
         msgs = [{"role": "user", "content": "msg"} for _ in range(30)]
-        result = engine.try_session_memory_compact(msgs, context_window=10000)
+        result = engine.try_session_memory_compact(
+            msgs,
+            context_window=10000,
+            transcript_summarizer=RecordingSummarizer(),
+        )
 
         assert result.boundary is not None
         assert result.boundary.strategy == CompactStrategy.SESSION_MEMORY
@@ -460,9 +588,102 @@ class TestSessionMemoryCompactEngine:
         user_msgs = [{"role": "user", "content": f"msg {i}"} for i in range(25)]
         msgs = [system_msg] + user_msgs
 
-        result = engine.try_session_memory_compact(msgs, context_window=10000)
+        result = engine.try_session_memory_compact(
+            msgs,
+            context_window=10000,
+            transcript_summarizer=RecordingSummarizer(),
+        )
         assert result is not None
         assert result.messages[0]["role"] == "system"
+
+    def test_current_transcript_is_summarized_instead_of_replaced_by_memory(self):
+        class FakeMemory:
+            def get_relevant_context(self, max_tokens=100, query=None):
+                return "DURABLE_HISTORY: Python 3.11"
+
+        summarizer = RecordingSummarizer()
+        engine = SessionMemoryCompactEngine(memory_manager=FakeMemory())
+        msgs = [
+            {
+                "role": "user" if index % 2 == 0 else "assistant",
+                "content": (
+                    "CURRENT_TURN_SENTINEL " + "x" * 200
+                    if index == 20
+                    else f"message-{index} " + "x" * 200
+                ),
+            }
+            for index in range(80)
+        ]
+
+        result = engine.try_session_memory_compact(
+            msgs,
+            context_window=100000,
+            config=AutoCompactConfig(max_expand_tokens=2000),
+            transcript_summarizer=summarizer,
+        )
+
+        assert result is not None
+        summarized = " ".join(
+            str(message.get("content", ""))
+            for call in summarizer.calls
+            for message in call
+        )
+        assert "CURRENT_TURN_SENTINEL" in summarized
+        assert "DURABLE_HISTORY" in result.summary_text
+
+    def test_session_memory_compact_pins_loaded_skill_pair(self):
+        class FakeMemory:
+            def get_relevant_context(self, max_tokens=100, query=None):
+                return "durable memory"
+
+        skill_body = "SKILL: demo\n\nACTIVE_SKILL_MARKER\n" + "rule " * 100
+        msgs = [
+            {"role": "user", "content": "start " + "x" * 500},
+            {
+                "role": "assistant_tool_call",
+                "toolUseId": "skill-1",
+                "toolName": "load_skill",
+                "input": {"name": "demo"},
+            },
+            {
+                "role": "tool_result",
+                "toolUseId": "skill-1",
+                "toolName": "load_skill",
+                "content": skill_body,
+                "isError": False,
+            },
+        ]
+        msgs.extend(
+            {
+                "role": "user" if index % 2 == 0 else "assistant",
+                "content": f"message-{index} " + "x" * 500,
+            }
+            for index in range(80)
+        )
+        summarizer = RecordingSummarizer()
+
+        result = SessionMemoryCompactEngine(FakeMemory()).try_session_memory_compact(
+            msgs,
+            context_window=100000,
+            config=AutoCompactConfig(max_expand_tokens=2000),
+            transcript_summarizer=summarizer,
+        )
+
+        assert result is not None and result.effective
+        retained = [
+            message for message in result.messages
+            if message.get("toolName") == "load_skill"
+        ]
+        assert [message["role"] for message in retained] == [
+            "assistant_tool_call",
+            "tool_result",
+        ]
+        assert retained[1]["content"] == skill_body
+        assert all(
+            "ACTIVE_SKILL_MARKER"
+            not in " ".join(str(message.get("content", "")) for message in call)
+            for call in summarizer.calls
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -501,6 +722,129 @@ class TestAutoCompactDispatcher:
         assert result.strategy == CompactStrategy.FULL
         assert len(result.messages) < len(msgs)
 
+    def test_full_compact_summarizes_exact_dropped_middle(self):
+        summarizer = RecordingSummarizer("bounded summary")
+        dispatcher = AutoCompactDispatcher(
+            context_window=100000,
+            config=AutoCompactConfig(min_keep_tokens=0, min_keep_messages=5),
+            summary_generator=summarizer,
+        )
+        msgs = [
+            {
+                "role": "user" if index % 2 == 0 else "assistant",
+                "content": (
+                    "MIDDLE_SENTINEL " + "x" * 2000
+                    if index == 25
+                    else f"message-{index} " + "x" * 2000
+                ),
+            }
+            for index in range(60)
+        ]
+
+        result = dispatcher.dispatch(msgs, force_full=True)
+
+        assert result.effective
+        summarized = " ".join(
+            str(message.get("content", ""))
+            for call in summarizer.calls
+            for message in call
+        )
+        assert "MIDDLE_SENTINEL" in summarized
+
+    def test_full_compact_pins_loaded_skill_pair_outside_summary(self):
+        summarizer = RecordingSummarizer("bounded summary")
+        dispatcher = AutoCompactDispatcher(
+            context_window=100000,
+            config=AutoCompactConfig(min_keep_tokens=0, min_keep_messages=5),
+            summary_generator=summarizer,
+        )
+        skill_body = "SKILL: demo\n\nACTIVE_SKILL_MARKER\n" + "rule " * 200
+        msgs = [
+            {"role": "user", "content": "start " + "x" * 2000},
+            {
+                "role": "assistant_tool_call",
+                "toolUseId": "skill-1",
+                "toolName": "load_skill",
+                "input": {"name": "demo"},
+            },
+            {
+                "role": "tool_result",
+                "toolUseId": "skill-1",
+                "toolName": "load_skill",
+                "content": skill_body,
+                "isError": False,
+            },
+        ]
+        msgs.extend(
+            {
+                "role": "user" if index % 2 == 0 else "assistant",
+                "content": f"message-{index} " + "x" * 2000,
+            }
+            for index in range(60)
+        )
+
+        result = dispatcher.dispatch(msgs, force_full=True)
+
+        assert result.effective
+        retained_skill = [
+            message for message in result.messages
+            if message.get("toolName") == "load_skill"
+        ]
+        assert [message["role"] for message in retained_skill] == [
+            "assistant_tool_call",
+            "tool_result",
+        ]
+        assert retained_skill[1]["content"] == skill_body
+        summarized = " ".join(
+            str(message.get("content", ""))
+            for call in summarizer.calls
+            for message in call
+        )
+        assert "ACTIVE_SKILL_MARKER" not in summarized
+
+    def test_full_compact_never_replaces_context_with_negative_token_savings(self):
+        dispatcher = AutoCompactDispatcher(
+            context_window=100000,
+            config=AutoCompactConfig(min_keep_tokens=0, min_keep_messages=2),
+            summary_generator=RecordingSummarizer("Y" * 8000),
+        )
+        msgs = [
+            {"role": "user" if index % 2 == 0 else "assistant", "content": f"m{index}"}
+            for index in range(6)
+        ]
+
+        result = dispatcher.dispatch(msgs, force_full=True)
+
+        assert result.success is False
+        assert result.effective is False
+        assert result.tokens_freed < 0
+        assert result.messages == msgs
+
+    def test_protected_user_is_not_duplicated_when_tail_expands(self):
+        dispatcher = AutoCompactDispatcher(
+            context_window=100000,
+            config=AutoCompactConfig(min_keep_tokens=1000, min_keep_messages=5),
+            summary_generator=RecordingSummarizer("bounded summary"),
+        )
+        msgs = [
+            {
+                "role": "user" if index % 2 == 0 else "assistant",
+                "content": "x" * 100,
+                "message_id": index,
+            }
+            for index in range(30)
+        ]
+
+        result = dispatcher.dispatch(msgs, force_full=True)
+
+        assert result.effective
+        retained_ids = [
+            message["message_id"]
+            for message in result.messages
+            if "message_id" in message
+        ]
+        assert len(retained_ids) == len(set(retained_ids))
+
     def test_circuit_breaker_initially_ok(self):
         dispatcher = AutoCompactDispatcher(context_window=100000)
         assert dispatcher.is_tripped is False
@@ -538,6 +882,54 @@ class TestAutoCompactDispatcher:
         assert dispatcher.is_tripped is True
         dispatcher.reset_circuit_breaker()
         assert dispatcher.is_tripped is False
+
+    def test_forced_compaction_does_not_retry_unchanged_failed_state(self):
+        dispatcher = AutoCompactDispatcher(
+            context_window=100,
+            config=AutoCompactConfig(circuit_breaker_limit=3),
+        )
+        messages = [{"role": "user", "content": "x" * 2_000}]
+
+        first = dispatcher.dispatch(messages, force_full=True)
+        second = dispatcher.dispatch(messages, force_full=True)
+
+        assert first.effective is False
+        assert first.error == "Too few messages to compact"
+        assert second.effective is False
+        assert second.error == "Compaction retry suppressed for unchanged message state"
+        assert dispatcher.consecutive_failures == 1
+        assert dispatcher.is_tripped is False
+
+    def test_material_message_change_can_retry_after_failed_state(self):
+        dispatcher = AutoCompactDispatcher(
+            context_window=100,
+            config=AutoCompactConfig(circuit_breaker_limit=3),
+        )
+        messages = [{"role": "user", "content": "x" * 2_000}]
+        dispatcher.dispatch(messages, force_full=True)
+
+        changed = [*messages, {"role": "assistant", "content": "y" * 2_000}]
+        retry = dispatcher.dispatch(changed, force_full=True)
+
+        assert retry.error == "Too few messages to compact"
+        assert dispatcher.consecutive_failures == 2
+
+    def test_selected_strategy_respects_open_circuit_even_when_forced(self):
+        dispatcher = AutoCompactDispatcher(
+            context_window=100,
+            config=AutoCompactConfig(circuit_breaker_limit=2),
+        )
+        first = [{"role": "user", "content": "a" * 2_000}]
+        second = [{"role": "user", "content": "b" * 2_000}]
+        third = [{"role": "user", "content": "c" * 2_000}]
+        dispatcher.execute_selected(first, CompactStrategy.FULL)
+        dispatcher.execute_selected(second, CompactStrategy.FULL)
+
+        blocked = dispatcher.execute_selected(third, CompactStrategy.FULL)
+
+        assert dispatcher.is_tripped is True
+        assert blocked.error == "Compaction circuit breaker is open"
+        assert dispatcher.consecutive_failures == 2
 
     def test_disabled_auto_compact_never_triggers(self):
         config = AutoCompactConfig(enabled=False)
@@ -710,6 +1102,10 @@ class TestFullPipelineIntegration:
                     "toolUseId": f"t{i}",
                 })
 
+        # A fresh engine intentionally does not clear recent tool results
+        # (the 1h gate protects prompt-cache-friendly content); age the gate
+        # so microcompact participates in this pipeline test deterministically.
+        compactor._microcompact._state.last_time_based_compact = 0.0
         result = compactor.process_request(msgs)
         assert result.success is True
         total_before = sum(len(str(m)) // 4 for m in msgs)
@@ -760,3 +1156,105 @@ class TestFullPipelineIntegration:
         for _ in range(5):
             compactor.process_request(huge)
         assert compactor.auto_compact.is_tripped is True or not compactor.auto_compact.is_tripped
+
+
+class TestLLMSummaryBudget:
+    def test_summary_chunks_cover_the_middle_instead_of_stopping_at_24k(self) -> None:
+        from minicode.context_compactor import LLMSummaryGenerator
+
+        class CapturingModel:
+            def __init__(self) -> None:
+                self.prompts: list[list[dict]] = []
+
+            def next(self, messages):
+                self.prompts.append(messages)
+                return AgentStep(type="assistant", content="chunk summary " * 5)
+
+        model = CapturingModel()
+        generator = LLMSummaryGenerator(model, timeout_seconds=5)
+        messages = [
+            {
+                "role": "user" if index % 2 == 0 else "assistant",
+                "content": (
+                    "CHUNK_MIDDLE_SENTINEL " + "x" * 1900
+                    if index == 25
+                    else "x" * 2000
+                ),
+            }
+            for index in range(60)
+        ]
+
+        summary = generator.summarize(messages)
+
+        assert summary is not None
+        assert len(model.prompts) > 1
+        rendered_prompts = " ".join(
+            str(message.get("content", ""))
+            for prompt in model.prompts
+            for message in prompt
+        )
+        assert "CHUNK_MIDDLE_SENTINEL" in rendered_prompts
+
+    def test_summary_charges_shared_budget(self) -> None:
+        from minicode.context_compactor import LLMSummaryGenerator
+
+        budget = AgentTurnBudget(max_model_calls=2, max_total_tokens=1000)
+
+        class FakeModel:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def next(self, messages):
+                self.calls += 1
+                return AgentStep(
+                    type="assistant",
+                    content="x" * 60,
+                    usage=ModelUsage(
+                        input_tokens=12,
+                        output_tokens=4,
+                        source="provider",
+                    ),
+                )
+
+        model = FakeModel()
+        generator = LLMSummaryGenerator(model, agent_budget=budget)
+        summary = generator.summarize(
+            [
+                {"role": "user", "content": "task one"},
+                {"role": "assistant", "content": "answer one"},
+                {"role": "user", "content": "task two"},
+                {"role": "assistant", "content": "answer two"},
+            ]
+        )
+
+        assert summary is not None
+        snapshot = budget.snapshot()
+        assert snapshot.used_model_calls == 1
+        assert snapshot.used_total_tokens == 16
+
+    def test_summary_skips_when_budget_exhausted(self) -> None:
+        from minicode.context_compactor import LLMSummaryGenerator
+
+        budget = AgentTurnBudget(max_total_tokens=1)
+
+        class FakeModel:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def next(self, messages):
+                self.calls += 1
+                return AgentStep(type="assistant", content="x" * 60)
+
+        model = FakeModel()
+        generator = LLMSummaryGenerator(model, agent_budget=budget)
+        summary = generator.summarize(
+            [
+                {"role": "user", "content": "task one"},
+                {"role": "assistant", "content": "answer one"},
+                {"role": "user", "content": "task two"},
+                {"role": "assistant", "content": "answer two"},
+            ]
+        )
+
+        assert summary is None
+        assert model.calls == 0

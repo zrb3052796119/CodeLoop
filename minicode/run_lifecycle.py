@@ -9,6 +9,7 @@ isolation.  It deliberately has no dependency on the Dashboard Web package.
 from __future__ import annotations
 
 import re
+import threading
 import uuid
 from collections import defaultdict, deque
 from collections.abc import Callable, Iterator, Mapping
@@ -190,6 +191,32 @@ class _BestEffortLifecycle:
             return False
         return True
 
+    def record_written_memory_ids(self, entry_ids: list[str]) -> bool:
+        """Persist the Memory IDs this turn produced, under the same
+        strictly-optional observation contract as the rendered IDs."""
+        if not self._running or self._journal is None or self._run_id is None:
+            return False
+        try:
+            self._journal.record_written_memory_ids(self._run_id, entry_ids)
+        except Exception:  # noqa: BLE001 - trace failures never alter execution
+            _safe_observation_warning("memory_written_ids")
+            return False
+        return True
+
+    def open_subagent_journal(self):
+        """Open this Run's bounded sub-agent journal, or ``None``.
+
+        Only the journal opener is returned -- never the RunJournal object --
+        so callers cannot write arbitrary parent Run events.
+        """
+        if not self._running or self._journal is None or self._run_id is None:
+            return None
+        try:
+            return self._journal.open_subagent_journal(self._run_id)
+        except Exception:  # noqa: BLE001 - sub-journal is optional observation
+            _safe_observation_warning("subagent_journal")
+            return None
+
 
 class RunObservation:
     """Small, no-throw handle for callback-derived execution trace metadata."""
@@ -197,6 +224,10 @@ class RunObservation:
     def __init__(self, lifecycle: _BestEffortLifecycle) -> None:
         self._lifecycle = lifecycle
         self._pending_tools: dict[str, deque[str]] = defaultdict(deque)
+        # Concurrent tool workers call tool_started/tool_finished from their
+        # own threads; the pending map must not race or start/finish events
+        # of same-named tools pair to the wrong operation IDs.
+        self._pending_tools_lock = threading.Lock()
         self._assistant_attempted = False
 
     @property
@@ -218,6 +249,14 @@ class RunObservation:
         """Persist this turn's rendered Memory entry IDs against this Run."""
         self._lifecycle.record_rendered_memory_ids(entry_ids)
 
+    def record_written_memory_ids(self, entry_ids: list[str]) -> None:
+        """Persist the Memory entry IDs this turn produced against this Run."""
+        self._lifecycle.record_written_memory_ids(entry_ids)
+
+    def open_subagent_journal(self):
+        """Open the parent Run's sub-agent sidecar journal, if available."""
+        return self._lifecycle.open_subagent_journal()
+
     def tool_started(self, tool_name: str) -> None:
         safe_name = _safe_tool_name(tool_name)
         operation_id = f"toolop_{uuid.uuid4().hex}"
@@ -225,14 +264,16 @@ class RunObservation:
             "tool.started",
             payload={"toolName": safe_name, "operationId": operation_id},
         ):
-            self._pending_tools[safe_name].append(operation_id)
+            with self._pending_tools_lock:
+                self._pending_tools[safe_name].append(operation_id)
 
     def tool_finished(self, tool_name: str, *, is_error: bool) -> None:
         safe_name = _safe_tool_name(tool_name)
-        pending = self._pending_tools.get(safe_name)
-        operation_id = pending.popleft() if pending else None
-        if pending is not None and not pending:
-            self._pending_tools.pop(safe_name, None)
+        with self._pending_tools_lock:
+            pending = self._pending_tools.get(safe_name)
+            operation_id = pending.popleft() if pending else None
+            if pending is not None and not pending:
+                self._pending_tools.pop(safe_name, None)
         payload: dict[str, Any] = {
             "toolName": safe_name,
             "outcome": "error" if is_error is True else "success",

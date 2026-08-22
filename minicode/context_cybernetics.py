@@ -47,11 +47,13 @@ import math
 import time
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from .feedback_controller import SystemState
 
 from .context_compactor import (
     CompactStrategy,
-    CompactTrigger,
     CompactionResult,
     ContextCompactor,
 )
@@ -125,9 +127,19 @@ class ContextPressureSensor:
         dt = now - self._last_timestamp if self._last_timestamp > 0 else 1.0
         dt = max(dt, 0.001)
 
-        raw_growth = (token_count - self._last_token_count) / max(context_window, 1) if self._last_timestamp > 0 else 0.0
-        growth_rate = raw_growth / dt if dt > 0 else 0.0
-        acceleration = (growth_rate - self._last_growth_rate) / dt if dt > 0 else 0.0
+        # growth_rate is measured PER SAMPLING CYCLE (one run_cycle call ≈ one
+        # agent turn), not per second. The predictor extrapolates it with
+        # "usage + growth * horizon_turns"; a per-second rate made rapid
+        # turn sequences (dt < 1s) look like instant overflow and forced
+        # FULL compacts, while slow interactive sessions under-predicted.
+        growth_rate = (
+            (token_count - self._last_token_count) / max(context_window, 1)
+            if self._last_timestamp > 0
+            else 0.0
+        )
+        acceleration = (
+            (growth_rate - self._last_growth_rate) / dt if dt > 0 else 0.0
+        )
 
         alpha = 0.3
         smoothed_growth = alpha * growth_rate + (1 - alpha) * self._last_growth_rate
@@ -167,8 +179,18 @@ class ContextPressureSensor:
         if acceleration > 0.001 and growth_rate > 0.01:
             return AnomalyType.ACCELERATING_GROWTH
         if len(self._history) >= 5:
-            signs = [1 if r.growth_rate > 0 else -1 for r in self._history[-5:]]
-            if len(set(signs)) >= 4 and abs(usage_ratio - self._history[-5].usage_ratio) < 0.05:
+            recent = self._history[-5:]
+            signs = [1 if r.growth_rate > 0 else -1 for r in recent]
+            # Oscillation = growth direction keeps flipping while net usage
+            # stays flat. 5 readings give at most 4 sign changes, so >=3
+            # means near-alternating direction.
+            sign_changes = sum(
+                1 for a, b in zip(signs, signs[1:]) if a != b
+            )
+            if (
+                sign_changes >= 3
+                and abs(usage_ratio - recent[0].usage_ratio) < 0.05
+            ):
                 return AnomalyType.OSCILLATION
         return None
 
@@ -713,17 +735,9 @@ class ContextCyberneticsOrchestrator:
         final_messages = messages
 
         if should_act or action.force_execution:
-            enable_auto = action.strategy in (CompactStrategy.FULL, CompactStrategy.SESSION_MEMORY)
-            enable_micro = action.strategy in (
-                CompactStrategy.MICROCOMPACT, CompactStrategy.SESSION_MEMORY, CompactStrategy.FULL
-            )
-
-            result = self.compactor.process_request(
+            result = self.compactor.execute_strategy(
                 final_messages,
-                enable_tool_budget=True,
-                enable_read_dedup=True,
-                enable_microcompact=enable_micro,
-                enable_auto_compact=enable_auto,
+                action.strategy,
             )
             if result.effective:
                 final_messages = result.messages
@@ -732,10 +746,12 @@ class ContextCyberneticsOrchestrator:
             sum(estimate_fn(m) for m in final_messages) / max(context_window, 1)
             if result and result.effective else reading.usage_ratio
         )
-        self.feedback.record(action, result or CompactionResult(
-            success=False, strategy=CompactStrategy.MICROCOMPACT,
-            trigger=CompactTrigger.MICROCOMPACT_CACHED, messages=[],
-        ), reading.usage_ratio, usage_after)
+        # Only executed compactions feed the effectiveness loop. Recording
+        # fabricated "failed" results for turns where nothing was attempted
+        # dragged effectiveness_rate down and made the outer loop misread a
+        # stable system as degrading.
+        if result is not None:
+            self.feedback.record(action, result, reading.usage_ratio, usage_after)
 
         pid_adjustment = self.feedback.recommend_pid_adjustment()
         if pid_adjustment:
@@ -836,7 +852,6 @@ class ContextCyberneticsOrchestrator:
 
         reading = self.sensor.get_recent_readings(1)[0] if self.sensor._history else None
         fb_stats = self.feedback.get_stats()
-        self.predictor._predictions[-1] if self.predictor._predictions else None
 
         return SystemState(
             success_rate=fb_stats.get("effectiveness_rate", 1.0),

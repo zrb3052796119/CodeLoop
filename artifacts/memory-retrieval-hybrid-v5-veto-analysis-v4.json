@@ -1,0 +1,987 @@
+{
+  "acceptance_gate": {
+    "checks": {
+      "candidate_recall_at_20": true,
+      "frozen_holdout": true,
+      "hard_negative_render_rate": true,
+      "lifecycle_safety_leakage": true,
+      "post_decision_positive_recall": false,
+      "provider_fallback_count": true,
+      "rendered_positive_recall": false,
+      "rendered_precision": true,
+      "unsafe_indexed_count": true
+    },
+    "passed": false
+  },
+  "candidate_corpus_protocol": "global_45_eligible_memories",
+  "canonical": {
+    "cases": [
+      {
+        "case_id": "v4-pos-01",
+        "hybrid_diagnostics": {
+          "accepted_count": 1,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2417,
+            "model_call_count": 2,
+            "output_tokens": 784,
+            "preliminary_accepted_count": 1,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [
+          "v4-pos-01-memory"
+        ],
+        "selected_ids": [
+          "v4-pos-01-memory"
+        ],
+        "target_candidate": {
+          "dense_score": 0.9295439402913955,
+          "reason_codes": [
+            "domain_with_lexical_evidence",
+            "project_exact_tag_object",
+            "domain_match",
+            "semantic_constraint",
+            "challenge_no_disqualifier",
+            "hybrid_semantic_admission"
+          ],
+          "semantic_score": 0.9
+        },
+        "target_id": "v4-pos-01-memory"
+      },
+      {
+        "case_id": "v4-pos-02",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2418,
+            "model_call_count": 2,
+            "output_tokens": 784,
+            "preliminary_accepted_count": 1,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.9143234468655399,
+          "reason_codes": [
+            "insufficient_relevance_evidence",
+            "semantic_recovery",
+            "challenge_unsupported_relation",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.8
+        },
+        "target_id": "v4-pos-02-memory"
+      },
+      {
+        "case_id": "v4-pos-03",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2350,
+            "model_call_count": 2,
+            "output_tokens": 784,
+            "preliminary_accepted_count": 1,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.9240460936032511,
+          "reason_codes": [
+            "insufficient_relevance_evidence",
+            "domain_match",
+            "semantic_constraint",
+            "challenge_query_underspecified",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.9
+        },
+        "target_id": "v4-pos-03-memory"
+      },
+      {
+        "case_id": "v4-pos-04",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2403,
+            "model_call_count": 2,
+            "output_tokens": 783,
+            "preliminary_accepted_count": 1,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.9341947305067784,
+          "reason_codes": [
+            "domain_with_lexical_evidence",
+            "domain_match",
+            "semantic_cause",
+            "challenge_unsupported_relation",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.8
+        },
+        "target_id": "v4-pos-04-memory"
+      },
+      {
+        "case_id": "v4-pos-05",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2413,
+            "model_call_count": 2,
+            "output_tokens": 784,
+            "preliminary_accepted_count": 1,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.9252260922735902,
+          "reason_codes": [
+            "insufficient_relevance_evidence",
+            "domain_match",
+            "semantic_recovery",
+            "challenge_unsupported_relation",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.9
+        },
+        "target_id": "v4-pos-05-memory"
+      },
+      {
+        "case_id": "v4-pos-06",
+        "hybrid_diagnostics": {
+          "accepted_count": 1,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2478,
+            "model_call_count": 2,
+            "output_tokens": 784,
+            "preliminary_accepted_count": 1,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [
+          "v4-pos-06-memory"
+        ],
+        "selected_ids": [
+          "v4-pos-06-memory"
+        ],
+        "target_candidate": {
+          "dense_score": 0.9215547698146898,
+          "reason_codes": [
+            "multiple_informative_terms",
+            "semantic_preference",
+            "challenge_no_disqualifier",
+            "hybrid_semantic_admission"
+          ],
+          "semantic_score": 0.9
+        },
+        "target_id": "v4-pos-06-memory"
+      },
+      {
+        "case_id": "v4-pos-07",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2585,
+            "model_call_count": 2,
+            "output_tokens": 783,
+            "preliminary_accepted_count": 1,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.9448718403480583,
+          "reason_codes": [
+            "file_match",
+            "multiple_informative_terms",
+            "high_token_coverage",
+            "semantic_rename",
+            "challenge_unsupported_relation",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.9
+        },
+        "target_id": "v4-pos-07-memory"
+      },
+      {
+        "case_id": "v4-pos-08",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2392,
+            "model_call_count": 2,
+            "output_tokens": 783,
+            "preliminary_accepted_count": 1,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.9351560915703752,
+          "reason_codes": [
+            "multiple_informative_terms",
+            "domain_with_lexical_evidence",
+            "domain_match",
+            "semantic_configuration",
+            "challenge_unsupported_relation",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.9
+        },
+        "target_id": "v4-pos-08-memory"
+      },
+      {
+        "case_id": "v4-pos-09",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2385,
+            "model_call_count": 2,
+            "output_tokens": 784,
+            "preliminary_accepted_count": 1,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.9380747124834509,
+          "reason_codes": [
+            "multiple_informative_terms",
+            "semantic_constraint",
+            "challenge_unsupported_relation",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.9
+        },
+        "target_id": "v4-pos-09-memory"
+      },
+      {
+        "case_id": "v4-pos-10",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2455,
+            "model_call_count": 2,
+            "output_tokens": 787,
+            "preliminary_accepted_count": 1,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.956023473967488,
+          "reason_codes": [
+            "file_match",
+            "domain_match",
+            "semantic_semantic_equivalence",
+            "challenge_query_underspecified",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.9
+        },
+        "target_id": "v4-pos-10-memory"
+      },
+      {
+        "case_id": "v4-neg-01",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 0,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 0,
+            "cache_hit": false,
+            "dense_candidate_count": 0,
+            "input_tokens": 0,
+            "model_call_count": 0,
+            "output_tokens": 0,
+            "provider": "local_e5_strict_llm_v2",
+            "query_gate": "underspecified"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.0,
+          "reason_codes": [
+            "insufficient_relevance_evidence"
+          ],
+          "semantic_score": 0.0
+        },
+        "target_id": "v4-neg-01-memory"
+      },
+      {
+        "case_id": "v4-neg-02",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2354,
+            "model_call_count": 2,
+            "output_tokens": 786,
+            "preliminary_accepted_count": 1,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.9495254115544878,
+          "reason_codes": [
+            "multiple_informative_terms",
+            "high_token_coverage",
+            "semantic_semantic_equivalence",
+            "challenge_contradictory_order",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.95
+        },
+        "target_id": "v4-neg-02-memory"
+      },
+      {
+        "case_id": "v4-neg-03",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 1945,
+            "model_call_count": 1,
+            "output_tokens": 747,
+            "preliminary_accepted_count": 0,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.9643110720816052,
+          "reason_codes": [
+            "multiple_informative_terms",
+            "high_token_coverage",
+            "semantic_opposite",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 1.0
+        },
+        "target_id": "v4-neg-03-memory"
+      },
+      {
+        "case_id": "v4-neg-04",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 1936,
+            "model_call_count": 1,
+            "output_tokens": 747,
+            "preliminary_accepted_count": 0,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.908117995138183,
+          "reason_codes": [
+            "insufficient_relevance_evidence",
+            "semantic_different_object",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.95
+        },
+        "target_id": "v4-neg-04-memory"
+      },
+      {
+        "case_id": "v4-neg-05",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2009,
+            "model_call_count": 1,
+            "output_tokens": 747,
+            "preliminary_accepted_count": 0,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.9166665863883995,
+          "reason_codes": [
+            "file_match",
+            "multiple_informative_terms",
+            "semantic_different_object",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.95
+        },
+        "target_id": "v4-neg-05-memory"
+      },
+      {
+        "case_id": "v4-neg-06",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 1961,
+            "model_call_count": 1,
+            "output_tokens": 747,
+            "preliminary_accepted_count": 0,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.9061224110990835,
+          "reason_codes": [
+            "insufficient_relevance_evidence",
+            "semantic_unrelated",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 1.0
+        },
+        "target_id": "v4-neg-06-memory"
+      },
+      {
+        "case_id": "v4-neg-07",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 21,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 1,
+            "input_tokens": 1979,
+            "model_call_count": 1,
+            "output_tokens": 746,
+            "preliminary_accepted_count": 0,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.0,
+          "reason_codes": [
+            "multiple_informative_terms",
+            "domain_with_lexical_evidence",
+            "domain_match",
+            "hybrid_ineligible_exact_gate",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.0
+        },
+        "target_id": "v4-neg-07-memory"
+      },
+      {
+        "case_id": "v4-neg-08",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 1921,
+            "model_call_count": 1,
+            "output_tokens": 746,
+            "preliminary_accepted_count": 0,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": null,
+        "target_id": "v4-neg-08-memory"
+      },
+      {
+        "case_id": "v4-neg-09",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2007,
+            "model_call_count": 1,
+            "output_tokens": 747,
+            "preliminary_accepted_count": 0,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.9120976472693672,
+          "reason_codes": [
+            "project_exact_tag_object",
+            "semantic_different_object",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.95
+        },
+        "target_id": "v4-neg-09-memory"
+      },
+      {
+        "case_id": "v4-neg-10",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 1909,
+            "model_call_count": 1,
+            "output_tokens": 747,
+            "preliminary_accepted_count": 0,
+            "provider": "local_e5_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.9540390194067525,
+          "reason_codes": [
+            "multiple_informative_terms",
+            "high_token_coverage",
+            "semantic_opposite",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 1.0
+        },
+        "target_id": "v4-neg-10-memory"
+      }
+    ],
+    "confusion": {
+      "fn": 8,
+      "fp": 0,
+      "tp": 2
+    },
+    "metrics": {
+      "hard_negative_render_rate": 0.0,
+      "lifecycle_safety_leakage": 0,
+      "post_decision_positive_recall": 0.2,
+      "provider_fallback_count": 0,
+      "rendered_positive_recall": 0.2,
+      "rendered_precision": 1.0,
+      "unsafe_indexed_count": 0
+    },
+    "unsafe_indexed_ids": []
+  },
+  "canonical_corpus_protocol": "case_target_plus_16_shared_background",
+  "challenger": {
+    "minimum_confidence": 0.8,
+    "model_id": "deepseek-chat",
+    "prompt_sha256": "f8215617432ea1d081208d205b51c48ee5d4ef79360f1b251def251e1d927819",
+    "prompt_version": "hybrid-admission-challenger-v1"
+  },
+  "dataset": {
+    "expected_manifest_sha256": "b6812eb64a0e1aa0d5b3ccba90b276fbe358284ef77ae7747b7ad4065d3389bf",
+    "manifest_sha256": "b6812eb64a0e1aa0d5b3ccba90b276fbe358284ef77ae7747b7ad4065d3389bf",
+    "matches": true,
+    "mismatches": {}
+  },
+  "dense": {
+    "cases": [
+      {
+        "case_id": "v4-pos-01",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "62b03dd82ef7129143af0091d5f609948bde013b22b40c8509f8ec6c10e92dd6"
+      },
+      {
+        "case_id": "v4-pos-02",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "930d7c1444390938d8538fd91c79595b1ece799be97af99c6b14475dbd3b435b"
+      },
+      {
+        "case_id": "v4-pos-03",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "698bbdfe36d242108c520366932711691eaf2a68a5222d37808e3d6a755a2cfa"
+      },
+      {
+        "case_id": "v4-pos-04",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "f855e5268b2fa110a1475b7858c02f6a7fefc32fcd224ea3b341155284f5c437"
+      },
+      {
+        "case_id": "v4-pos-05",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "4bfb5f13c235c81067d90a286231dfa37237af2a6aff807713b25dc9a270dc4a"
+      },
+      {
+        "case_id": "v4-pos-06",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "032022bdf554d7e44fb25b65c54772f332cde92ed5b80cfa71b105a6f4908714"
+      },
+      {
+        "case_id": "v4-pos-07",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "02d34454a3fdc19d250fa79c7238cffddec511d3c6f5cd418085f6b4a2c9b815"
+      },
+      {
+        "case_id": "v4-pos-08",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "81c09a9929bc8458e863f1c562336550fcba2e63b80ca9e91146b36034bca1c9"
+      },
+      {
+        "case_id": "v4-pos-09",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "24c2470e54a47d3dcc1157b5c0ddd38cc9a85654c4340544862c6fde3749de43"
+      },
+      {
+        "case_id": "v4-pos-10",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "28ceb51a6658731f83137706f52ba8c2c72b0f664a5712926dc6227baa1e9a6e"
+      },
+      {
+        "case_id": "v4-neg-01",
+        "polarity": "hard_negative",
+        "target_in_top_20": true,
+        "target_rank": 6,
+        "top_20_ids_sha256": "1c1f36c71ce92ddee51b047a2f9ec1991c850cab47931414100099bc5416b5bd"
+      },
+      {
+        "case_id": "v4-neg-02",
+        "polarity": "hard_negative",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "1a88b7b718d50328da782543e6521315d5c23dd6ac27ba0e381e82e4149d0e7a"
+      },
+      {
+        "case_id": "v4-neg-03",
+        "polarity": "hard_negative",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "dadaa6b292e26ce129efb033fcb8bd208fb5d53f3a071d5cf6d1ae1e9a4d5b6c"
+      },
+      {
+        "case_id": "v4-neg-04",
+        "polarity": "hard_negative",
+        "target_in_top_20": true,
+        "target_rank": 4,
+        "top_20_ids_sha256": "099efd766a37dd25e6efcc221df203f6df4ea59064c7eaf887a25c4ded7de25d"
+      },
+      {
+        "case_id": "v4-neg-05",
+        "polarity": "hard_negative",
+        "target_in_top_20": true,
+        "target_rank": 4,
+        "top_20_ids_sha256": "d0b99d21370dbdbb28c2474cae3c21fdbe82cbf84683498cf603ab4beae24949"
+      },
+      {
+        "case_id": "v4-neg-06",
+        "polarity": "hard_negative",
+        "target_in_top_20": true,
+        "target_rank": 15,
+        "top_20_ids_sha256": "61d5c5415fa82947b25520614922f70923636189619e12ea5e74c3fb34cd45e0"
+      },
+      {
+        "case_id": "v4-neg-07",
+        "polarity": "hard_negative",
+        "target_in_top_20": false,
+        "target_rank": null,
+        "top_20_ids_sha256": "034d0b318755c432b7ba99e91064dd567f559df4cbdbd3bae6f4fe4ab5b025d8"
+      },
+      {
+        "case_id": "v4-neg-08",
+        "polarity": "hard_negative",
+        "target_in_top_20": false,
+        "target_rank": null,
+        "top_20_ids_sha256": "20ff46d3ee35c898bdd7ce2842b264ef2f59ecebfd1c9d41dae9c939bd927307"
+      },
+      {
+        "case_id": "v4-neg-09",
+        "polarity": "hard_negative",
+        "target_in_top_20": true,
+        "target_rank": 2,
+        "top_20_ids_sha256": "f81007bf1c568f861e0ae517a34660bebc5bcebde7d3ed6d5261db12b56c4008"
+      },
+      {
+        "case_id": "v4-neg-10",
+        "polarity": "hard_negative",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "ebd4bce6ceb532df8ae23a8ec72c230d1e751ceea89c6377ea309f46a5b6e1ce"
+      }
+    ],
+    "eligible_corpus_size": 42,
+    "positive_hits": 10,
+    "positive_recall_at_20": 1.0,
+    "positive_total": 10
+  },
+  "dense_top_k": 20,
+  "holdout_version": "v4",
+  "max_union_candidates": 32,
+  "model": {
+    "model_fingerprint": "cb55c8134bf02eeff414a6fcb53a88e5160e45cf74e7a7cf1befbc5a9fa2b230",
+    "model_id": "Xenova/multilingual-e5-small",
+    "model_revision": "761b726dd34fb83930e26aab4e9ac3899aa1fa78"
+  },
+  "one_shot": true,
+  "protocol_version": "hybrid-canonical-v4",
+  "report_fingerprint": "257ef44fe138a1556c3af78c8f5d1f13108c4ea9c259b0d9a158efe4ed8ef88b",
+  "schema_version": "2.0",
+  "synthetic_data": true,
+  "thresholds": {
+    "candidate_recall_at_20_min": 0.9,
+    "hard_negative_render_rate_max": 0.05,
+    "lifecycle_safety_leakage_max": 0,
+    "post_decision_positive_recall_min": 0.8,
+    "rendered_positive_recall_min": 0.75,
+    "rendered_precision_min": 0.95
+  },
+  "verifier": {
+    "minimum_confidence": 0.85,
+    "model_id": "deepseek-chat",
+    "prompt_sha256": "a3c7b784dd90b93319c9337d84cb68030f996a5c1e8b192066784e8028628eda",
+    "prompt_version": "hybrid-relevance-v2.1"
+  }
+}

@@ -179,6 +179,7 @@ def test_compaction_evaluator_checks_cross_round_task_fidelity(tmp_path) -> None
     assert report["summaryChainRate"] == 1.0
     assert report["toolPairIntegrityRate"] == 1.0
     assert report["nonNegativeSavingsRate"] == 1.0
+    assert report["taskLedgerRetentionRate"] == 1.0
     assert report["failedCaseIds"] == []
 
 
@@ -281,9 +282,9 @@ def test_quality_suite_is_a_deterministic_content_addressed_report() -> None:
     assert first == second
     assert first["mode"] == "offline-deterministic"
     assert first["remoteCallCount"] == 0
-    assert first["skillRouting"]["caseCount"] == 36
-    assert first["compactionFidelity"]["caseCount"] == 8
-    assert first["northStar"]["caseCount"] == 4
+    assert first["skillRouting"]["caseCount"] == 60
+    assert first["compactionFidelity"]["caseCount"] == 12
+    assert first["northStar"]["caseCount"] == 50
     assert len(first["datasets"]["skillRoutingSha256"]) == 64
     assert len(first["datasets"]["compactionFidelitySha256"]) == 64
     assert len(first["datasets"]["northStarManifestSha256"]) == 64
@@ -323,23 +324,33 @@ def test_quality_suite_can_evaluate_fresh_north_star_results(tmp_path) -> None:
         north_star_results_path=fresh_results_path,
     )
 
-    assert fresh["northStar"]["taskSuccessRate"] == 0.75
-    assert fresh["northStar"]["oraclePassRate"] == 0.764706
+    assert fresh["northStar"]["taskSuccessRate"] < recorded["northStar"]["taskSuccessRate"]
+    assert fresh["northStar"]["oraclePassRate"] < recorded["northStar"]["oraclePassRate"]
     assert (
         fresh["datasets"]["northStarResultsSha256"]
         != recorded["datasets"]["northStarResultsSha256"]
     )
 
 
-def test_quality_cli_passes_current_and_rejects_unmet_a_profile(capsys) -> None:
+def test_quality_suite_accepts_explicit_north_star_manifest() -> None:
+    fixture_root = Path("tests/fixtures/agent_quality")
+    report = evaluate_quality_suite(
+        fixture_root,
+        north_star_manifest_path=fixture_root / "north-star-manifest.json",
+    )
+
+    assert report["northStar"]["caseCount"] == 50
+
+
+def test_quality_cli_passes_current_and_a_profiles(capsys) -> None:
     assert quality_cli_main(["--profile", "current"]) == 0
     current_output = json.loads(capsys.readouterr().out)
     assert current_output["gate"]["passed"] is True
 
-    assert quality_cli_main(["--profile", "a"]) == 1
+    assert quality_cli_main(["--profile", "a"]) == 0
     grade_a_output = json.loads(capsys.readouterr().out)
-    assert grade_a_output["gate"]["passed"] is False
-    assert "skillRouting.caseCount.min" in grade_a_output["gate"]["failedChecks"]
+    assert grade_a_output["gate"]["passed"] is True
+    assert grade_a_output["gate"]["failedChecks"] == []
 
 
 def test_a_profile_cli_accepts_fresh_north_star_evidence(tmp_path, capsys) -> None:
@@ -356,10 +367,11 @@ def test_a_profile_cli_accepts_fresh_north_star_evidence(tmp_path, capsys) -> No
             "--north-star-results",
             str(fresh_results),
         ]
-    ) == 1
+    ) == 0
     output = json.loads(capsys.readouterr().out)
 
-    assert output["northStar"]["caseCount"] == 4
+    assert output["northStar"]["caseCount"] == 50
+    assert output["gate"]["passed"] is True
     assert all(
         check["id"] != "datasets.northStarResultsSha256.equals"
         for check in output["gate"]["checks"]

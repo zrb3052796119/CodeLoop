@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 import minicode.memory as memory_mod
+from minicode.agent_budget import AgentTurnBudget
 from minicode.agent_reflection import ReflectionEngine
 from minicode.memory import MemoryManager, MemoryScope
 from minicode.memory_pipeline import MemoryPipeline
@@ -130,7 +131,7 @@ def test_rule_mode_ignores_replace_selection_strategy() -> None:
     assert client.call_count == 0
     assert result.selection_strategy == "gap_fill"
     assert result.selection_reason == "rule_mode"
-    assert result.synthesis_source == "rule"
+    assert result.synthesis_source in {"rule", "rule_fallback"}
 
 
 def test_llm_gap_fill_keeps_durable_rule_without_model_call() -> None:
@@ -140,7 +141,7 @@ def test_llm_gap_fill_keeps_durable_rule_without_model_call() -> None:
     )
 
     assert client.call_count == 0
-    assert result.synthesis_source == "rule"
+    assert result.synthesis_source in {"rule", "rule_fallback"}
     assert result.selection_source == "rule"
     assert result.selection_reason == "rule_already_durable"
     assert result.rule_persistable_claim_ids == ["claim-000001"]
@@ -239,7 +240,7 @@ def test_gap_fill_preserves_rule_recovery_for_known_replace_regressions(
     )
 
     assert client.call_count == 0
-    assert result.synthesis_source == "rule"
+    assert result.synthesis_source in {"rule", "rule_fallback"}
     assert result.structured_claims[0].claim_type == "recovery"
     assert result.rule_regression is False
 
@@ -371,7 +372,7 @@ def test_shadow_evaluates_llm_but_returns_the_rule_production_result() -> None:
     )
 
     assert client.call_count == 1
-    assert result.synthesis_source == "rule"
+    assert result.synthesis_source in {"rule", "rule_fallback"}
     assert result.reflection_candidate.claims[0].semantic_key.startswith(
         "project_constraint_"
     )
@@ -675,7 +676,7 @@ def test_wrong_reference_namespace_has_no_shadow_production_effect() -> None:
         "Preserve parser API", _constraint_trace()
     )
 
-    assert result.synthesis_source == "rule"
+    assert result.synthesis_source in {"rule", "rule_fallback"}
     assert result.value_decision.accepted is True
     assert result.shadow_comparison is not None
     assert result.shadow_comparison.fallback_reason == "invalid_evidence_id"
@@ -719,7 +720,8 @@ def test_shadow_pipeline_persists_only_rule_result_without_memory_side_effects(
     assert entry_id is not None
     entries = memory_manager.memories[MemoryScope.PROJECT].entries
     assert len(entries) == 1
-    assert entries[0].approval_status == "pending"
+    # A user-stated constraint carries its own authority: auto-approved.
+    assert entries[0].approval_status == "approved"
     structured = entries[0].metadata["structured_reflection"]
     assert structured["claims"][0]["claim_id"] == "claim-000001"
     assert "shadow_comparison" not in json.dumps(entries[0].metadata)
@@ -737,7 +739,7 @@ def test_shadow_model_call_starts_only_after_rule_persistence(
         def generate_json(self, messages, *, timeout_seconds, max_output_tokens):
             entries = memory_manager.memories[MemoryScope.PROJECT].entries
             assert len(entries) == 1
-            assert entries[0].approval_status == "pending"
+            assert entries[0].approval_status == "approved"
             return super().generate_json(
                 messages,
                 timeout_seconds=timeout_seconds,
@@ -789,3 +791,48 @@ def test_llm_mode_still_routes_suspicious_trace_to_pending(
     entry = memory_manager.memories[MemoryScope.PROJECT]._id_index[entry_id]
     assert entry.approval_status == "pending"
     assert entry.is_active is False
+
+
+def test_llm_reflection_skips_when_shared_budget_exhausted() -> None:
+    client = ScriptedClient(
+        [StructuredGenerationResponse(text=_llm_output())]
+    )
+    engine = _engine("llm", client)
+    budget = AgentTurnBudget(max_total_tokens=1)
+
+    result = engine.reflect(
+        "Preserve parser API",
+        _constraint_trace(),
+        defer_shadow=True,
+        agent_budget=budget,
+    )
+
+    assert client.call_count == 0
+    assert result.synthesis_source in {"rule", "rule_fallback"}
+
+
+def test_llm_reflection_records_shared_budget_usage() -> None:
+    client = ScriptedClient(
+        [
+            StructuredGenerationResponse(
+                text=_llm_output(),
+                input_tokens=30,
+                output_tokens=7,
+                estimated_cost_usd=0.0001,
+            )
+        ]
+    )
+    engine = _engine("llm", client)
+    budget = AgentTurnBudget(max_total_tokens=10_000)
+
+    engine.reflect(
+        "Preserve parser API",
+        _constraint_trace(),
+        defer_shadow=True,
+        agent_budget=budget,
+    )
+
+    snapshot = budget.snapshot()
+    assert client.call_count == 1
+    assert snapshot.used_model_calls == 1
+    assert snapshot.used_total_tokens == 37

@@ -26,6 +26,7 @@ import time
 import unicodedata
 import uuid
 from collections import Counter
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -688,6 +689,11 @@ class MemoryApprovalPolicy(str, Enum):
 
     USER_EXPLICIT = "user_explicit"
     USER_REVIEW_REQUIRED = "user_review_required"
+    # Lessons carrying independently verified durable signals (verified
+    # recovery, verified approach, explicit user correction) are approved on
+    # write: the verification chain, not a human click, is the authority.
+    # Users can still reject them afterwards through the normal review flow.
+    AUTO_APPROVE_VERIFIED = "auto_approve_verified"
 
 
 class MemoryTier(str, Enum):
@@ -1295,14 +1301,34 @@ class MemoryFile:
 
     @property
     def size_bytes(self) -> int:
-        """Estimate size in bytes."""
-        return sum(len(e.content) for e in self.entries)
-    
-    def add_entry(self, entry: MemoryEntry) -> None:
-        """Unsafe/internal add: caller must have applied safety and approval."""
+        """Estimate durable size in UTF-8 bytes.
+
+        This intentionally counts bytes, not Python characters: the store
+        limit is a storage limit, and a CJK character is up to three bytes on
+        disk. Metadata lives in ``memory.json`` beside the content and is
+        bounded separately by the same file-size guard.
+        """
+        return sum(
+            len(str(e.content).encode("utf-8"))
+            + sum(len(str(tag).encode("utf-8")) for tag in e.tags)
+            for e in self.entries
+        )
+
+    def add_entry(
+        self,
+        entry: MemoryEntry,
+        *,
+        on_evict: Any | None = None,
+    ) -> None:
+        """Unsafe/internal add: caller must have applied safety and approval.
+
+        ``on_evict`` receives ``(evicted_entry, previous_lifecycle,
+        previous_tier_reason)`` for every oldest entry removed by the count or
+        byte limits, so the owning manager can persist an audit tombstone.
+        """
         self.entries.append(entry)
         self._invalidate_cache()
-        self._enforce_limits()
+        self._enforce_limits(on_evict)
         self._ensure_cache_valid()
     
     def update_entry(self, entry_id: str, content: str) -> bool:
@@ -1326,9 +1352,21 @@ class MemoryFile:
         if entry is None:
             return False
         original_len = len(self.entries)
+        removed_id = entry.id
         self.entries = [e for e in self.entries if e.id != entry_id]
         if len(self.entries) == original_len:
             return False
+        # Backlinks are durable references into the same store. A deleted or
+        # evicted entry must not leave live entries pointing at a missing id,
+        # or the next spreading-activation / curator pass will re-create it.
+        for remaining in self.entries:
+            if removed_id in remaining.related_to:
+                remaining.related_to = [
+                    related
+                    for related in remaining.related_to
+                    if related != removed_id
+                ]
+                remaining.invalidate_tokens()
         self._rebuild_indices()
         return True
     
@@ -1429,17 +1467,44 @@ class MemoryFile:
                 entry.retrieval_count += 1
         return [entry for _, entry in scored]
     
-    def _enforce_limits(self) -> None:
-        """Remove oldest entries if exceeding limits."""
+    def _enforce_limits(self, on_evict: Any | None = None) -> None:
+        """Remove oldest entries if exceeding limits.
+
+        Eviction is now an observable state transition rather than a silent
+        ``pop(0)``: the entry is marked ``evicted``, live backlinks are
+        cleaned, and the owning manager receives the previous lifecycle so it
+        can write an audit tombstone.
+        """
         removed = False
+
+        def evict() -> MemoryEntry:
+            entry = self.entries.pop(0)
+            previous_lifecycle = entry.lifecycle_status
+            previous_tier_reason = entry.tier_reason
+            entry.lifecycle_status = "evicted"
+            entry.tier_reason = "capacity_eviction"
+            entry.deprecated_at = time.time()
+            removed_id = entry.id
+            for remaining in self.entries:
+                if removed_id in remaining.related_to:
+                    remaining.related_to = [
+                        related
+                        for related in remaining.related_to
+                        if related != removed_id
+                    ]
+                    remaining.invalidate_tokens()
+            if on_evict is not None:
+                on_evict(entry, previous_lifecycle, previous_tier_reason)
+            return entry
+
         # Check entry count
         while len(self.entries) > self.max_entries:
-            self.entries.pop(0)  # Remove oldest
+            evict()
             removed = True
-        
+
         # Check size
         while self.size_bytes > self.max_size_bytes and self.entries:
-            self.entries.pop(0)
+            evict()
             removed = True
 
         if removed:
@@ -1594,6 +1659,7 @@ class MemoryManager:
         project_root: str | Path | None = None,
         store_timeout: float = 5.0,
         readonly_load: bool = False,
+        data_root: str | Path | None = None,
     ):
         # Backward compatibility: older call sites pass `project_root=...`.
         resolved_workspace = workspace if workspace is not None else project_root
@@ -1605,7 +1671,10 @@ class MemoryManager:
             raise TypeError("readonly_load must be a bool")
         self._recover_on_load = not readonly_load
         self.paths = MemoryPaths.for_workspace(self.workspace)
-        self._store = MemoryStoreCoordinator(MINI_CODE_DIR, timeout=store_timeout)
+        self._data_root = Path(data_root) if data_root is not None else Path(MINI_CODE_DIR)
+        if data_root is not None:
+            self.paths.user_memory = self._data_root / "memory"
+        self._store = MemoryStoreCoordinator(self._data_root, timeout=store_timeout)
         self._disk_revisions: dict[MemoryScope, str] = {}
         self.memories: dict[MemoryScope, MemoryFile] = {
             MemoryScope.USER: MemoryFile(scope=MemoryScope.USER),
@@ -1629,9 +1698,19 @@ class MemoryManager:
         return self._store.in_transaction
 
     def _scope_disk_revision(self, scope: MemoryScope) -> str:
+        self._validate_scope_root(scope)
         digest = hashlib.sha256()
-        for filename in ("memory.json", "approval_audit.json"):
-            path = self._get_scope_path(scope) / filename
+        root = self._get_scope_path(scope)
+        # memory.json is the single authority and embeds its audit records.
+        # For a legacy scope that has no memory.json yet, include the old
+        # audit file so its first migration is still revision-fenced.
+        filenames = (
+            ("memory.json",)
+            if (root / "memory.json").exists()
+            else ("memory.json", "approval_audit.json")
+        )
+        for filename in filenames:
+            path = root / filename
             digest.update(filename.encode("ascii"))
             try:
                 digest.update(path.read_bytes())
@@ -1666,14 +1745,54 @@ class MemoryManager:
                 and self._disk_revisions[scope] != self._scope_disk_revision(scope)
             )
         except MemoryStoreError:
-            # Unreadable authority: keep the current view rather than dropping
-            # memory entirely, and let the write path surface the failure.
-            return ()
+            # Retrieval authority is fail-closed. Serving the previous view
+            # could resurrect an entry another process just rejected.
+            raise
         if not stale:
             return ()
         with self._store.transaction():
             self._reload_scopes(stale)
         return stale
+
+    @contextmanager
+    def retrieval_snapshot(self):
+        """Hold one revision-fenced authority view through prompt rendering."""
+        if self.in_write_transaction:
+            revisions = tuple(
+                (scope.value, self._scope_disk_revision(scope))
+                for scope in MemoryScope
+            )
+            yield revisions
+            return
+        with self._store.transaction():
+            current = {
+                scope: self._scope_disk_revision(scope) for scope in MemoryScope
+            }
+            stale = tuple(
+                scope
+                for scope in MemoryScope
+                if self._disk_revisions.get(scope) != current[scope]
+            )
+            if stale:
+                self._reload_scopes(stale)
+                current = {
+                    scope: self._scope_disk_revision(scope)
+                    for scope in MemoryScope
+                }
+            revision = tuple(
+                (scope.value, current[scope]) for scope in MemoryScope
+            )
+            yield revision
+            # Writers share this lock, so a changed revision means an unsafe
+            # out-of-band mutation bypassed coordination.
+            after = tuple(
+                (scope.value, self._scope_disk_revision(scope))
+                for scope in MemoryScope
+            )
+            if after != revision:
+                raise MemoryStoreConflict(
+                    "Memory authority changed during retrieval"
+                )
 
     def _reload_scopes(self, scopes: tuple[MemoryScope, ...]) -> None:
         for scope in scopes:
@@ -1964,6 +2083,13 @@ class MemoryManager:
                 
                 is_valid, errors = _validate_memory_data(data)
                 if is_valid:
+                    embedded_audit = data.get("approval_audit")
+                    if isinstance(embedded_audit, list):
+                        self.approval_audit[scope] = [
+                            record
+                            for record in embedded_audit
+                            if isinstance(record, dict)
+                        ]
                     changed = False
                     for entry_data in data.get("entries", []):
                         entry = MemoryEntry.from_dict(entry_data)
@@ -2132,14 +2258,22 @@ class MemoryManager:
         ]
 
     def _save_approval_audit(self, scope: MemoryScope) -> None:
+        """Commit audit together with Memory authority.
+
+        ``approval_audit.json`` remains a human/tooling projection only; the
+        authoritative records live inside the atomic memory.json commit.
+        """
         if not self.in_write_transaction:
             with self._store.transaction():
                 expected = self._disk_revisions.get(scope)
                 if expected is not None and expected != self._scope_disk_revision(scope):
                     raise MemoryStoreConflict("Memory approval audit changed")
-                self._save_approval_audit(scope)
+                self._save_scope_locked(scope)
                 self._disk_revisions[scope] = self._scope_disk_revision(scope)
                 return
+        self._save_scope_locked(scope)
+
+    def _write_approval_audit_projection(self, scope: MemoryScope) -> None:
         self._ensure_scope_path(scope)
         path = self._approval_audit_path(scope)
         data = {
@@ -2161,7 +2295,7 @@ class MemoryManager:
         reason: str = "",
         safety: MemorySafetyResult | None = None,
         extra: dict[str, Any] | None = None,
-        save: bool = True,
+        save: bool = False,
     ) -> dict[str, Any]:
         record = {
             "audit_id": f"audit-{time.time_ns()}-{uuid.uuid4().hex[:8]}",
@@ -2188,7 +2322,7 @@ class MemoryManager:
         }
         self.approval_audit.setdefault(scope, []).append(record)
         if save:
-            self._save_approval_audit(scope)
+            self._save_scope(scope)
         return record
 
     def get_approval_audit(self, entry_id: str) -> list[dict[str, Any]]:
@@ -2372,7 +2506,36 @@ class MemoryManager:
             approval_policy=approval_policy,
         )
 
-        self.memories[scope].add_entry(entry)
+        evictions: list[tuple[MemoryEntry, str, str]] = []
+
+        def record_eviction(
+            evicted: MemoryEntry,
+            previous_lifecycle: str,
+            previous_tier_reason: str,
+        ) -> None:
+            evictions.append(
+                (evicted, previous_lifecycle, previous_tier_reason)
+            )
+
+        self.memories[scope].add_entry(entry, on_evict=record_eviction)
+        for evicted, previous_lifecycle, previous_tier_reason in evictions:
+            self._append_approval_audit(
+                scope,
+                evicted,
+                action="capacity_eviction",
+                actor="retention",
+                previous_approval=evicted.approval_status,
+                previous_lifecycle=previous_lifecycle,
+                reason="capacity limit evicted oldest entry",
+                safety=None,
+                extra={
+                    "previous_tier_reason": previous_tier_reason,
+                    "evicted_content_hash": hashlib.sha256(
+                        evicted.content.encode("utf-8")
+                    ).hexdigest(),
+                },
+                save=False,
+            )
         self._append_approval_audit(
             scope,
             entry,
@@ -2458,9 +2621,31 @@ class MemoryManager:
     
     @_coordinated_scope_write
     def delete_entry(self, scope: MemoryScope, entry_id: str) -> bool:
-        """Delete an entry."""
-        if self.memories[scope].delete_entry(entry_id):
+        """Delete an entry with an approval-audit tombstone."""
+        memory_file = self.memories[scope]
+        memory_file._ensure_cache_valid()
+        before = memory_file._id_index.get(entry_id)
+        if before is None:
+            return False
+        if memory_file.delete_entry(entry_id):
+            self._append_approval_audit(
+                scope,
+                before,
+                action="delete",
+                actor="user",
+                previous_approval=before.approval_status,
+                previous_lifecycle=before.lifecycle_status,
+                reason="user deleted memory entry",
+                safety=None,
+                extra={
+                    "deleted_content_hash": hashlib.sha256(
+                        before.content.encode("utf-8")
+                    ).hexdigest(),
+                },
+                save=False,
+            )
             self._save_scope(scope)
+            self._save_approval_audit(scope)
             return True
         return False
 
@@ -2831,6 +3016,97 @@ class MemoryManager:
             self._save_scope(scope)
 
     @_coordinated_all_write
+    def reinforce_reflection_entry(self, entry_id: str) -> bool:
+        """Record that a lesson recurred in a later trace.
+
+        Recurrence, not repetition, is what makes a lesson trustworthy: the
+        same semantic claim observed again strengthens the existing entry
+        instead of queueing a near-duplicate for review.
+        """
+        scope, entry = self._find_entry_by_id(entry_id)
+        if scope is None or entry is None:
+            return False
+        previous_approval = entry.approval_status
+        previous_lifecycle = entry.lifecycle_status
+        metadata = entry.metadata if isinstance(entry.metadata, dict) else {}
+        metadata["recurrence"] = int(metadata.get("recurrence", 1) or 1) + 1
+        entry.metadata = metadata
+        provenance = entry.provenance if isinstance(entry.provenance, dict) else {}
+        provenance["last_recurred_at"] = time.time()
+        entry.provenance = provenance
+        entry.updated_at = time.time()
+        entry.invalidate_tokens()
+        self.memories[scope]._invalidate_cache()
+        # Metadata and provenance are part of the approval hash. Recurrence
+        # strengthens an already-approved lesson, so the hash must be
+        # refreshed in the same write; otherwise the next process load sees a
+        # mismatch and silently demotes the approved lesson back to pending.
+        entry.approval_content_hash = _approval_hash_for_entry(entry)
+        self._append_approval_audit(
+            scope,
+            entry,
+            action="recurrence_reinforced",
+            actor="reflection",
+            previous_approval=previous_approval,
+            previous_lifecycle=previous_lifecycle,
+            reason="semantic lesson recurrence observed",
+        )
+        self._save_scope(scope)
+        return True
+
+    def _apply_declared_supersession(self, replacement: MemoryEntry) -> int:
+        """Retract older claim entries named by an approved replacement."""
+        if not replacement.is_active:
+            return 0
+        metadata = replacement.metadata if isinstance(replacement.metadata, dict) else {}
+        supersedes = metadata.get("supersedes", [])
+        if not isinstance(supersedes, list):
+            return 0
+        changed = 0
+        for old_id in dict.fromkeys(str(value) for value in supersedes if str(value)):
+            old_scope, old = self._find_entry_by_id(old_id)
+            if old_scope is None or old is None or old.id == replacement.id:
+                continue
+            if old.lifecycle_status == "superseded":
+                continue
+            previous_approval = old.approval_status
+            previous_lifecycle = old.lifecycle_status
+            old.approval_status = _APPROVAL_REJECTED
+            old.approval_reason = f"superseded by {replacement.id}"
+            old.approval_actor = "claim_repository"
+            old.approval_decided_at = time.time()
+            old.lifecycle_status = "superseded"
+            old.curator_locked = False
+            old.updated_at = time.time()
+            old_metadata = old.metadata if isinstance(old.metadata, dict) else {}
+            old_metadata["superseded_by"] = replacement.id
+            old.metadata = old_metadata
+            old.approval_content_hash = _approval_hash_for_entry(old)
+            self.memories[old_scope]._invalidate_cache()
+            self._append_approval_audit(
+                old_scope,
+                old,
+                action="superseded",
+                actor="claim_repository",
+                previous_approval=previous_approval,
+                previous_lifecycle=previous_lifecycle,
+                reason=old.approval_reason,
+                extra={"replacement_id": replacement.id},
+            )
+            changed += 1
+        return changed
+
+    @_coordinated_all_write
+    def apply_reflection_supersession(self, replacement_id: str) -> int:
+        scope, replacement = self._find_entry_by_id(replacement_id)
+        if scope is None or replacement is None:
+            return 0
+        changed = self._apply_declared_supersession(replacement)
+        if changed:
+            for memory_scope in MemoryScope:
+                self._save_scope(memory_scope)
+        return changed
+
     def record_retrievals(self, entry_ids: list[str]) -> None:
         """Persist one retrieval observation per selected entry and scope."""
         touched: set[MemoryScope] = set()
@@ -2955,12 +3231,36 @@ class MemoryManager:
             "scope": scope.value,
             "last_updated": time.time(),
             "entries": [e.to_dict() for e in self.memories[scope].entries],
+            "approval_audit": list(self.approval_audit.get(scope, [])),
         }
         self._atomic_write(memory_json, json.dumps(data, indent=2, ensure_ascii=False))
         
-        # Also update MEMORY.md for human readability (atomic)
+        # MEMORY.md is a human-facing projection, not the audit authority.
+        # Keep pending/rejected/unsafe/inactive/archival entries in memory.json
+        # and approval_audit.json, but never advertise them as current lessons.
         memory_md = path / "MEMORY.md"
-        self._atomic_write(memory_md, self.memories[scope].format_as_markdown())
+        authoritative_projection = MemoryFile(
+            scope=scope,
+            entries=[
+                entry
+                for entry in self.memories[scope].entries
+                if entry.is_active
+            ],
+        )
+        self._atomic_write(
+            memory_md,
+            authoritative_projection.format_as_markdown(),
+        )
+        try:
+            self._write_approval_audit_projection(scope)
+        except OSError as error:
+            # Derived projection failure cannot roll back or contradict the
+            # already-committed authority. A later save rebuilds it.
+            logger.warning(
+                "Memory approval audit projection write failed for %s: %s",
+                scope.value,
+                error,
+            )
         self._disk_revisions[scope] = self._scope_disk_revision(scope)
     
     @staticmethod
@@ -3278,6 +3578,7 @@ class MemoryManager:
         entry.approval_content_hash = current_hash
         entry.lifecycle_status = _ACTIVE_LIFECYCLE
         entry.updated_at = time.time()
+        self._apply_declared_supersession(entry)
         self._append_approval_audit(
             scope,
             entry,

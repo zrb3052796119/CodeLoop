@@ -58,7 +58,9 @@ class TestOrchestratorInit:
         )
         orch = CyberneticOrchestrator()
 
-        orch.initialize(MagicMock(model_id="test-model"), MagicMock(), {})
+        orch.initialize(
+            MagicMock(model_id="test-model"), MagicMock(), {"reflectionSynthesizerMode": "rule"}
+        )
 
         assert orch.reflection._llm_config.mode == "rule"
         assert orch.reflection._llm_synthesizer is None
@@ -154,6 +156,80 @@ class TestOrchestratorInit:
         orch.wire_memory(MagicMock())
 
         assert pipeline.initialize.call_args.kwargs["reflection_engine"] is orch.reflection
+
+    def test_wire_memory_passes_evidence_gated_hybrid_runtime(self, monkeypatch):
+        pipeline = MagicMock()
+        monkeypatch.setattr(
+            "minicode.memory_pipeline.MemoryPipeline",
+            MagicMock(return_value=pipeline),
+        )
+        orch = CyberneticOrchestrator()
+        orch.reflection = MagicMock()
+        orch._last_model = MagicMock(model_id="deepseek-chat")
+        orch._runtime = {
+            "memoryHybridEnabled": True,
+            "memoryHybridModelPath": "/models/e5",
+            "memoryHybridEvidencePath": "/evidence/promotion.json",
+            "memoryHybridVerifierModel": "deepseek-chat",
+        }
+
+        orch.wire_memory(MagicMock())
+
+        kwargs = pipeline.initialize.call_args.kwargs
+        assert kwargs["enable_vector"] is True
+        assert kwargs["hybrid_model_path"] == "/models/e5"
+        assert kwargs["hybrid_evidence_path"] == "/evidence/promotion.json"
+        assert kwargs["model_adapter"] is orch._last_model
+
+    def test_wire_memory_passes_remote_embedding_authorization(self, monkeypatch):
+        pipeline = MagicMock()
+        monkeypatch.setattr(
+            "minicode.memory_pipeline.MemoryPipeline",
+            MagicMock(return_value=pipeline),
+        )
+        orch = CyberneticOrchestrator()
+        orch.reflection = MagicMock()
+        orch._last_model = MagicMock(model_id="deepseek-chat")
+        orch._runtime = {
+            "memoryHybridEnabled": True,
+            "memoryHybridEmbeddingProvider": "qwen",
+            "allowRemoteMemoryEmbedding": True,
+            "memoryHybridEvidencePath": "/evidence/qwen-promotion.json",
+            "memoryHybridVerifierModel": "deepseek-chat",
+        }
+
+        orch.wire_memory(MagicMock())
+
+        kwargs = pipeline.initialize.call_args.kwargs
+        assert kwargs["hybrid_embedding_provider"] == "qwen"
+        assert kwargs["allow_remote_memory_embedding"] is True
+        assert kwargs["hybrid_model_path"] is None
+
+    def test_wire_memory_can_use_dedicated_hybrid_verifier_model(self, monkeypatch):
+        pipeline = MagicMock()
+        verifier = MagicMock(model_id="deepseek-chat")
+        factory = MagicMock(return_value=verifier)
+        monkeypatch.setattr(
+            "minicode.memory_pipeline.MemoryPipeline",
+            MagicMock(return_value=pipeline),
+        )
+        monkeypatch.setattr("minicode.model_registry.create_model_adapter", factory)
+        orch = CyberneticOrchestrator()
+        orch.reflection = MagicMock()
+        orch._last_model = MagicMock(model_id="claude-main")
+        orch._runtime = {
+            "model": "claude-main",
+            "memoryHybridEnabled": True,
+            "memoryHybridModelPath": "/models/e5",
+            "memoryHybridEvidencePath": "/evidence/promotion.json",
+            "memoryHybridVerifierModel": "deepseek-chat",
+        }
+
+        orch.wire_memory(MagicMock())
+
+        factory.assert_called_once()
+        assert factory.call_args.args[0] == "deepseek-chat"
+        assert pipeline.initialize.call_args.kwargs["model_adapter"] is verifier
 
     def test_legacy_reflection_fallback_still_emits_trace_v2_events(self):
         orch = CyberneticOrchestrator()

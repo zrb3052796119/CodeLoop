@@ -219,7 +219,10 @@ def test_existing_legacy_messages_get_a_safe_system_prompt_without_assuming_inde
         "role": "system",
         "content": "safe current system prompt",
     }
-    assert received[-1] == {"role": "user", "content": "continue legacy"}
+    assert {
+        key: received[-1][key]
+        for key in ("role", "content")
+    } == {"role": "user", "content": "continue legacy"}
 
 
 def test_agent_failure_commits_truthful_user_only_state_and_marks_run_failed(

@@ -11,9 +11,11 @@ VERIFICATION_EVENT_TYPE = "task.verified"
 _FIELDS = frozenset(
     {"verificationVersion", "kind", "outcome", "source"}
 )
-_KINDS = frozenset({"tests", "build", "lint", "typecheck"})
+_KINDS = frozenset({"tests", "build", "lint", "typecheck", "review"})
 _OUTCOMES = frozenset({"passed", "failed"})
-_SOURCES = frozenset({"test_runner", "run_command_exit"})
+_SOURCES = frozenset(
+    {"test_runner", "run_command_exit", "workflow_review"}
+)
 _SHELL_METACHARACTERS = frozenset("|&;<>()$`\r\n")
 
 
@@ -28,6 +30,7 @@ def project_verification(
         kind not in _KINDS
         or type(passed) is not bool
         or source not in _SOURCES
+        or (kind == "review") != (source == "workflow_review")
     ):
         return None
     return {
@@ -52,6 +55,10 @@ def normalize_verification_payload(
         return None
     if payload.get("source") not in _SOURCES:
         return None
+    if (payload.get("kind") == "review") != (
+        payload.get("source") == "workflow_review"
+    ):
+        return None
     return {
         "verificationVersion": 1,
         "kind": payload["kind"],
@@ -71,6 +78,7 @@ def normalize_tool_verification(
     expected_tool = {
         "test_runner": "test_runner",
         "run_command_exit": "run_command",
+        "workflow_review": "task",
     }.get(str(normalized["source"]))
     return normalized if tool_name == expected_tool else None
 

@@ -8,6 +8,7 @@ from minicode.config import (
     MINI_CODE_PERMISSIONS_PATH,
     MINI_CODE_SETTINGS_PATH,
     load_runtime_config,
+    safe_runtime_summary,
     save_mini_code_settings,
 )
 
@@ -55,68 +56,20 @@ SLASH_COMMANDS = [
 
 
 def format_slash_commands() -> str:
-    lines = [
-        "╔══════════════════════════════════════════════════════════╗",
-        "║  📚 Available Commands                                  ║",
-        "╠══════════════════════════════════════════════════════════╣",
-    ]
-    
-    command_groups = {
-        "🔧 Core Commands": [
-            ("/help", "Show this help message"),
-            ("/exit", "Exit mini-code"),
-            ("/clear", "Clear the current transcript view"),
-            ("/history", "Show recent prompt history"),
-        ],
-        "🛠️ Tool Commands": [
-            ("/tools", "List all available tools"),
-            ("/skills", "List discovered SKILL.md workflows"),
-            ("/mcp", "Show MCP servers and connection state"),
-            ("/cmd", "Run development commands directly"),
-        ],
-        "📊 Status & Info": [
-            ("/status", "Show application state summary"),
-            ("/model", "Show or change current model"),
-            ("/user", "Show or manage user profile"),
-            ("/cost", "Show API cost and usage report"),
-            ("/context", "Show context window usage"),
-            ("/cybernetics", "Show control-system status"),
-            ("/tasks", "Show current task list"),
-            ("/memory", "Show memory system status"),
-        ],
-        "✏️ File Operations": [
-            ("/ls [path]", "List files in directory"),
-            ("/grep <pattern>", "Search text in files"),
-            ("/read <path>", "Read a file directly"),
-            ("/write <path>", "Write content to file"),
-            ("/edit <path>", "Edit file by exact replacement"),
-            ("/patch <path>", "Apply multiple replacements in one go"),
-            ("/modify <path>", "Replace file with reviewable diff"),
-        ],
-        "💾 Session Management": [
-            ("/transcript-save <path>", "Save transcript to text file"),
-            ("/retry", "Retry the last prompt"),
-            ("/permissions", "Show permission storage path"),
-            ("/config-paths", "Show settings file paths"),
-        ],
-    }
-    
-    for group_name, commands in command_groups.items():
-        lines.append(f"║  {group_name:<54}║")
-        for cmd, desc in commands:
-            cmd_display = f"    {cmd}"
-            lines.append(f"║  {cmd_display:<20} {desc:<33} ║")
-        lines.append("╠══════════════════════════════════════════════════════════╣")
-    
-    lines.extend([
-        "║  💡 Tips:                                              ║",
-        "║  - Use Tab to autocomplete commands                    ║",
-        "║  - Prefix with / to access any command                 ║",
-        "║  - Type naturally - I'll understand Chinese & English  ║",
-        "╚══════════════════════════════════════════════════════════╝",
-    ])
-    
-    return "\n".join(lines)
+    return "\n".join(
+        [
+            "CodeLoop commands",
+            "Project  /status /context /memory /tasks",
+            "Inspect  /ls /grep /read /tools",
+            "Edit     /write /edit /modify; /patch multiple",
+            "Run      /cmd /retry",
+            "Agent    /skills /mcp /permissions /user",
+            "Session  /history /clear /exit",
+            "Model    /model /cost /config",
+            "More     /cybernetics /config-paths /transcript-save",
+            "Type / to browse descriptions; Tab completes.",
+        ]
+    )
 
 
 def find_matching_slash_commands(user_input: str) -> list[str]:
@@ -227,6 +180,7 @@ def try_handle_local_command(user_input: str, tools=None, cwd: str | None = None
             return f"runtime not configured: {error}"
         from minicode.model_registry import detect_provider
         provider = detect_provider(runtime["model"], runtime)
+        safe_summary = safe_runtime_summary(runtime)
         auth_methods = []
         if runtime.get("authToken"):
             auth_methods.append("ANTHROPIC_AUTH_TOKEN")
@@ -244,6 +198,17 @@ def try_handle_local_command(user_input: str, tools=None, cwd: str | None = None
                 f"provider: {provider.value}",
                 f"baseUrl: {runtime['baseUrl']}",
                 f"auth: {', '.join(auth_methods) or 'none'}",
+                (
+                    "sub-agent auth: configured"
+                    if safe_summary["credentials"]["subagentConfigured"]
+                    else "sub-agent auth: none"
+                ),
+                (
+                    "turn budget: "
+                    f"{safe_summary['effectiveTurnBudget']['maxTokens']} tokens · "
+                    f"{safe_summary['effectiveTurnBudget']['maxModelCalls']} calls · "
+                    f"${safe_summary['effectiveTurnBudget']['maxCostUsd']}"
+                ),
                 f"mcp servers: {len(runtime.get('mcpServers', {}))}",
                 runtime["sourceSummary"],
             ]

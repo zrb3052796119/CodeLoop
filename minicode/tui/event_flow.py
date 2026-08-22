@@ -263,7 +263,15 @@ def _handle_normal_mode_return(
     rerender: Callable[[], None],
     handle_input_fn: Callable[[TtyAppArgs, ScreenState, Callable[[], None], str | None], bool],
 ) -> None:
-    if visible_commands and 0 <= state.selected_slash_index < len(visible_commands):
+    exact_command = any(
+        getattr(command, "name", None) == state.input
+        for command in visible_commands
+    )
+    if (
+        visible_commands
+        and not exact_command
+        and 0 <= state.selected_slash_index < len(visible_commands)
+    ):
         selected = visible_commands[state.selected_slash_index]
         usage = getattr(selected, "usage", str(selected))
         state.input = usage

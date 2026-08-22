@@ -32,6 +32,7 @@ _CONTEXT_PATHS = frozenset(
     {
         "pre_request_cybernetic",
         "pre_request_compactor",
+        "in_loop_compactor",
         "context_manager_auto",
         "reactive_cybernetic",
         "reactive_compactor",
@@ -54,6 +55,20 @@ _CONTEXT_STRATEGIES = frozenset(
         "context_manager",
     }
 )
+_CONTEXT_FAILURE_REASONS = {
+    "Too few messages to compact": ("too_few_messages", True),
+    "No messages remain to summarize": ("no_summarizable_messages", True),
+    "Compaction did not reduce estimated tokens": ("no_token_reduction", True),
+    "Selected Session Memory compaction was unavailable or ineffective": (
+        "strategy_ineffective",
+        True,
+    ),
+    "Compaction retry suppressed for unchanged message state": (
+        "unchanged_state",
+        False,
+    ),
+    "Compaction circuit breaker is open": ("circuit_open", False),
+}
 _RECOVERY_KINDS = frozenset({"cybernetic", "compactor"})
 _SKILL_NAME_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_./-]{0,255}$")
 _SKILL_DIRECTORY_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,63}$")
@@ -390,6 +405,45 @@ def project_context_compaction_event(
     return payload
 
 
+def project_context_compaction_failure_event(
+    result: object,
+    *,
+    context_operation_id: object,
+    path: object,
+    consecutive_failures: object,
+    circuit_breaker_tripped: object,
+) -> dict[str, object]:
+    """Project an ineffective compaction without retaining error/content text."""
+    if result is None or getattr(result, "effective", None) is not False:
+        raise ValueError("Context compaction failure was not ineffective")
+    if not isinstance(circuit_breaker_tripped, bool):
+        raise ValueError("invalid Context circuit state")
+    error = getattr(result, "error", "")
+    reason, attempted = _CONTEXT_FAILURE_REASONS.get(
+        error,
+        ("internal_error", True),
+    )
+    return {
+        "contextVersion": 1,
+        "contextOperationId": _context_operation_id(context_operation_id),
+        "path": _context_enum(path, _CONTEXT_PATHS),
+        "trigger": _context_enum(
+            getattr(result, "trigger", None), _CONTEXT_TRIGGERS
+        ),
+        "strategy": _context_enum(
+            getattr(result, "strategy", None), _CONTEXT_STRATEGIES
+        ),
+        "effective": False,
+        "attempted": attempted,
+        "reason": reason,
+        "consecutiveFailures": _bounded_count(
+            consecutive_failures,
+            maximum=_MAX_CONTEXT_MESSAGES,
+        ),
+        "circuitBreakerTripped": circuit_breaker_tripped,
+    }
+
+
 def project_recovery_started_event(
     *, context_operation_id: object, kind: object
 ) -> dict[str, object]:
@@ -486,6 +540,29 @@ def emit_context_compaction_safely(
     emit_event_safely(sink, "context.compacted", step=step, payload=payload)
 
 
+def emit_context_compaction_failure_safely(
+    sink: AgentEventSink | None,
+    result: object | None,
+    *,
+    step: int | None = None,
+    **facts: object,
+) -> None:
+    """Emit one bounded failed/suppressed compaction observation."""
+    if sink is None or result is None:
+        return
+    try:
+        payload = project_context_compaction_failure_event(result, **facts)
+    except BaseException:  # noqa: BLE001 - observation remains optional
+        _observation_warning("Context compaction failure")
+        return
+    emit_event_safely(
+        sink,
+        "context.compaction.failed",
+        step=step,
+        payload=payload,
+    )
+
+
 def emit_recovery_started_safely(
     sink: AgentEventSink | None,
     *,
@@ -550,6 +627,7 @@ def _safe_skill_item(value: object) -> dict[str, object] | None:
     directory = getattr(value, "directory", "")
     score = getattr(value, "score", None)
     content_digest = getattr(value, "content_digest", "")
+    evidence_adjustment = getattr(value, "evidence_adjustment", 0.0)
     if not content_digest:
         content = getattr(value, "content", None)
         if isinstance(content, str):
@@ -578,6 +656,16 @@ def _safe_skill_item(value: object) -> dict[str, object] | None:
         and re.fullmatch(r"[0-9a-f]{64}", content_digest)
     ):
         projected["contentDigest"] = content_digest
+    if (
+        isinstance(evidence_adjustment, (int, float))
+        and not isinstance(evidence_adjustment, bool)
+        and math.isfinite(float(evidence_adjustment))
+        and 0 < abs(float(evidence_adjustment)) <= 0.25
+    ):
+        projected["evidenceAdjustment"] = round(
+            float(evidence_adjustment),
+            3,
+        )
     return projected
 
 
@@ -720,14 +808,20 @@ def project_skill_attribution_event(
         raise ValueError("no loaded Skills to attribute")
 
     status = getattr(outcome, "status", None)
+    completion_succeeded = getattr(outcome, "completion_succeeded", None)
+    verification_status = getattr(outcome, "verification_status", None)
     goal_achieved = getattr(outcome, "goal_achieved", None)
     had_tool_errors = getattr(outcome, "had_tool_errors", None)
     errors_recovered = getattr(outcome, "errors_recovered", None)
     tool_error_count = getattr(outcome, "tool_error_count", None)
     if (
         status not in _TASK_OUTCOME_STATUSES
+        or not isinstance(completion_succeeded, bool)
+        or completion_succeeded != (status == "success")
+        or verification_status not in {"verified", "failed", "unverified"}
         or not isinstance(goal_achieved, bool)
-        or goal_achieved != (status == "success")
+        or goal_achieved
+        != (completion_succeeded and verification_status == "verified")
         or not isinstance(had_tool_errors, bool)
         or not isinstance(errors_recovered, bool)
     ):
@@ -738,14 +832,16 @@ def project_skill_attribution_event(
     )
     if (
         had_tool_errors != (safe_tool_error_count > 0)
-        or errors_recovered != (had_tool_errors and goal_achieved)
+        or errors_recovered != (had_tool_errors and completion_succeeded)
     ):
         raise ValueError("inconsistent canonical task outcome")
 
     return {
-        "attributionVersion": 1,
+        "attributionVersion": 2,
         "attributionKind": "task_correlation",
         "outcomeStatus": status,
+        "completionSucceeded": completion_succeeded,
+        "verificationStatus": verification_status,
         "goalAchieved": goal_achieved,
         "hadToolErrors": had_tool_errors,
         "errorsRecovered": errors_recovered,
@@ -867,6 +963,41 @@ def _record_rendered_memory_ids_safely(sink: object, result: object) -> None:
             pass
 
 
+def record_written_memory_id_safely(sink: object | None, entry_id: object) -> None:
+    """Best-effort, content-free bridge binding the entry a turn *wrote* to
+    this Run, so an explicit user signal can later reach it. Silently does
+    nothing for sinks (e.g. test doubles) without this seam.
+    """
+    record_written_memory_ids_safely(sink, [entry_id])
+
+
+def record_written_memory_ids_safely(
+    sink: object | None, entry_ids: object
+) -> None:
+    """Best-effort batch variant used when one turn writes several claims."""
+    if sink is None or not isinstance(entry_ids, (list, tuple)):
+        return
+    normalized = list(
+        dict.fromkeys(
+            entry_id
+            for entry_id in entry_ids
+            if isinstance(entry_id, str) and entry_id
+        )
+    )
+    if not normalized:
+        return
+    recorder = getattr(sink, "record_written_memory_ids", None)
+    if not callable(recorder):
+        return
+    try:
+        recorder(normalized)
+    except Exception:  # noqa: BLE001 - written-id observation is optional
+        try:
+            _logger.warning("Memory written-id observation unavailable.")
+        except Exception:  # noqa: BLE001 - logging must remain optional too
+            pass
+
+
 __all__ = [
     "AgentEventSink",
     "SkillUsageTracker",
@@ -893,6 +1024,8 @@ __all__ = [
     "project_skill_attribution_event",
     "project_skill_loaded_event",
     "project_skill_routing_event",
+    "record_written_memory_id_safely",
+    "record_written_memory_ids_safely",
     "project_working_memory_event",
     "record_skill_loaded_safely",
 ]

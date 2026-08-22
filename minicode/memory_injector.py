@@ -345,12 +345,25 @@ class MemoryInjector:
         if not memories:
             return ""
 
+        from minicode.memory_retrieval import (
+            MEMORY_DIRECT_VERIFICATION_POLICY,
+            MEMORY_INJECTION_FOOTER,
+            MEMORY_USE_POLICY,
+        )
+
         lines = ["## Relevant Context from Memory", ""]
 
         for i, mem in enumerate(memories, 1):
             lines.append(f"{i}. [{mem.category}] {mem.content}")
 
-        lines.append("")
-        lines.append("Use the above context to inform your decisions.")
+        lines.extend(
+            (
+                MEMORY_INJECTION_FOOTER,
+                "",
+                MEMORY_DIRECT_VERIFICATION_POLICY,
+                "",
+                MEMORY_USE_POLICY,
+            )
+        )
 
         return "\n".join(lines)

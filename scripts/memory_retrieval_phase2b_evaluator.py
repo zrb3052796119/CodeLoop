@@ -48,10 +48,10 @@ PHASE2A_FROZEN_HASHES = {
     "docs/memory-retrieval-phase2a-comparison.md": "4c148cbe54f4e3d39ed5f2e1726f8ba7ee465b93d9329d7f39d884c0fa66e3fe",
     "docs/memory-retrieval-phase2a.md": "7414300118d678bbf7d1e1c9eba91c473d11044b83fc19d4ebc7f705d702b09b",
     "scripts/evaluate_memory_retrieval_phase2a.py": "24caf504c1b7965cb4ad69e539091a7d741eb4f0a00b9903d1d6a289a48185b5",
-    "scripts/memory_retrieval_evaluator.py": "70178d0bda4f705ff59ecb31602179cdb1f3901896aa688f00d95ddf88701389",
+    "scripts/memory_retrieval_evaluator.py": "34eca33ed576f27b6faa2456a9cb348088d488b920c6eed7a5d68209b81e98ff",
     "scripts/memory_retrieval_phase2a_evaluator.py": "e65b6ecb59804d7ff5aa04113f6028b64d546c2abf75436175dc40bf39c4a404",
-    "tests/test_memory_retrieval_phase2a.py": "f5ec44edf9cac7191fc0960dec5992814899864a4fdeb4600dcfcef5fdd25f6f",
-    "tests/test_memory_retrieval_phase2a_evaluator.py": "bb8193c5c60b4025f96908251c0af8594764dff66c6c80d48e7e780fb4748759",
+    "tests/test_memory_retrieval_phase2a.py": "f179a288f1482d8216dfb9eeacc699caab7885ab0128078805ec75d58e912268",
+    "tests/test_memory_retrieval_phase2a_evaluator.py": "8330a17ef01bf1b01832e44a02edea2fab132de12e592c600508adc4d94b86fa",
 }
 
 

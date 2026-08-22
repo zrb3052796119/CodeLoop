@@ -1,0 +1,18 @@
+include README.md
+include pyproject.toml
+
+graft minicode
+
+prune artifacts
+prune benchmarks
+prune dashboard_prototype
+prune docs
+prune experiments
+prune py-src
+prune scripts
+prune tests
+prune ts-src
+
+global-exclude .DS_Store
+global-exclude *.py[cod]
+global-exclude __pycache__

@@ -131,6 +131,36 @@ def test_agent_runtime_sink_none_does_not_enable_provider_streaming() -> None:
     }
 
 
+def test_agent_runtime_passes_runtime_config_to_shared_budget_factory(
+    monkeypatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run_agent_turn(**kwargs):
+        captured.update(kwargs)
+        return [{"role": "assistant", "content": "done"}]
+
+    monkeypatch.setattr("minicode.agent_loop.run_agent_turn", fake_run_agent_turn)
+    runtime_config = {"agentTurnBudget": {"maxTokens": 1234}}
+    runtime = AgentTurnRuntime(
+        workspace=Path("."),
+        runtime=runtime_config,
+        tools=ToolRegistry([]),
+        permissions=None,
+        memory_manager=None,
+        model=object(),
+        skill_routing=None,
+        system_prompt="system",
+    )
+
+    runtime.execute(
+        [{"role": "system", "content": "system"}],
+        Observation(),
+    )
+
+    assert captured["runtime"] is runtime_config
+
+
 def test_presentation_baseexceptions_cannot_change_agent_result() -> None:
     runtime = AgentTurnRuntime(
         workspace=Path("."),

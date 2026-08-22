@@ -16,6 +16,7 @@ from minicode.permissions import PermissionManager
 from minicode.prompt import build_system_prompt
 from minicode.run_events import emit_skill_routing_safely
 from minicode.run_lifecycle import observe_run
+from minicode.skill_router import required_skill_names_for_routing
 from minicode.tools import create_default_tool_registry
 from minicode.tooling import ToolContext
 from minicode.tui.transcript import format_transcript_text
@@ -33,42 +34,49 @@ def _handle_local_command(user_input: str, tools) -> str | None:
 
 def _render_banner(runtime: dict | None, cwd: str, permission_summary: list[str], counts: dict[str, int]) -> str:
     model = runtime["model"] if runtime else "unconfigured"
+    project = Path(cwd).name or cwd
     lines = [
-        "╔══════════════════════════════════════════════════════════╗",
-        "║  🤖 CodeLoop - Your Terminal Coding Assistant           ║",
-        "╠══════════════════════════════════════════════════════════╣",
-        f"║  Model: {model:<46} ║",
-        f"║  CWD: {cwd:<50} ║",
+        f"CodeLoop · {project} · {model}",
+        (
+            f"workspace: {cwd}\n"
+            f"skills: {counts['skillCount']} · mcp: {counts['mcpCount']}"
+        ),
     ]
     if permission_summary:
-        for perm in permission_summary[:2]:  # 只显示前2个权限摘要
-            lines.append(f"║  {perm:<60} ║")
-    lines.append("╠══════════════════════════════════════════════════════════╣")
-    lines.append(
-        f"║  📊 Skills: {counts['skillCount']:>2} | MCP Servers: {counts['mcpCount']:>2} | "
-        f"Transcript: {counts['transcriptCount']:>3} ║"
-    )
-    lines.append("╚══════════════════════════════════════════════════════════╝")
+        lines.append(f"access: {permission_summary[0]}")
     return "\n".join(lines)
 
 
 def _render_quick_start() -> str:
-    """显示快速入门指南"""
-    return """
-💡 Quick Start Guide:
-  📝 Edit files:     edit_file.py or patch_file.py
-  🔍 Search code:    /grep <pattern> or grep_files tool
-  🏃 Run commands:   /cmd <command> or run_command tool
-  🧠 Think deeply:   Use sequential_thinking MCP tool
-  📚 View skills:    /skills
-  ❓ Get help:       /help
+    """Render a concise guide for line-oriented, non-interactive use."""
+    return (
+        "Try: 帮我分析这个项目的结构\n"
+        "Commands: /help · /skills · /status · /exit"
+    )
 
-🚀 Try saying:
-  "帮我分析这个项目的结构"
-  "用 TDD 方式实现 XX 功能"
-  "系统性地调试这个 bug"
-  "帮我写个技术方案"
-"""
+
+def _render_startup_prelude(
+    runtime: dict | None,
+    cwd: str,
+    permission_summary: list[str],
+    counts: dict[str, int],
+    *,
+    interactive: bool,
+) -> str:
+    """Return startup text only for the line-oriented fallback interface."""
+    if interactive:
+        return ""
+    parts = [_render_banner(runtime, cwd, permission_summary, counts)]
+    if os.environ.get("MINI_CODE_SHOW_GUIDE", "1") == "1":
+        parts.append(_render_quick_start())
+    return "\n\n".join(parts)
+
+
+def _setup_cli_logging(level: str, *, interactive: bool):
+    """Keep diagnostic logs out of the alternate-screen TUI."""
+    from minicode.logging_config import setup_logging
+
+    return setup_logging(level=level, log_to_console=not interactive)
 
 
 def _append_transcript(transcript: list[TranscriptEntry], **kwargs) -> None:
@@ -110,6 +118,7 @@ def _save_transcript_file(cwd: str, permissions, transcript: list[TranscriptEntr
 
 
 def _route_skills_for_prompt(
+    cwd: str,
     tools,
     user_input: str | None,
 ) -> tuple[list[dict], object | None]:
@@ -117,11 +126,17 @@ def _route_skills_for_prompt(
         return tools.get_skills(), None
     from minicode.capability_registry import get_registry, register_tool_capabilities
     from minicode.intent_parser import parse_intent
-    from minicode.skill_router import SkillRouter
+    from minicode.skill_router import build_skill_router
 
     register_tool_capabilities(tools)
     intent = parse_intent(user_input)
-    routing = SkillRouter().route(tools.get_skills(), intent, get_registry())
+    routing = build_skill_router(cwd).route(
+        tools.get_skills(), intent, get_registry()
+    )
+    # Abstention means "no routing evidence", not "no skills" — the prompt
+    # must still see the full inventory or the model believes none exist.
+    if getattr(routing, "used_fallback", False):
+        return tools.get_skills(), routing
     return routing.selected_skill_dicts(), routing
 
 
@@ -173,9 +188,12 @@ def main() -> None:
     if remaining_argv and not any(not arg.startswith("--") for arg in remaining_argv):
         parser.error(f"unrecognized arguments: {' '.join(remaining_argv)}")
 
-    # Initialize logging
-    from minicode.logging_config import setup_logging
-    setup_logging(level=args.log_level)
+    interactive = sys.stdin.isatty()
+
+    # The full-screen TUI owns stderr as part of the terminal surface. Keep
+    # warnings in minicode.log so background health diagnostics cannot corrupt
+    # a permission prompt or make the application appear stuck.
+    _setup_cli_logging(args.log_level, interactive=interactive)
 
     # Run config validation if requested
     if args.validate_config:
@@ -281,28 +299,23 @@ def main() -> None:
     history = load_history_entries()
     transcript: list[TranscriptEntry] = []
 
-    print(
-        _render_banner(
-            runtime,
-            cwd,
-            permissions.get_summary(),
-            {
-                "transcriptCount": 0,
-                "messageCount": len(messages),
-                "skillCount": len(tools.get_skills()),
-                "mcpCount": len(tools.get_mcp_servers()),
-            },
-        )
+    startup_prelude = _render_startup_prelude(
+        runtime,
+        cwd,
+        permissions.get_summary(),
+        {
+            "transcriptCount": 0,
+            "messageCount": len(messages),
+            "skillCount": len(tools.get_skills()),
+            "mcpCount": len(tools.get_mcp_servers()),
+        },
+        interactive=interactive,
     )
-    
-    # 显示快速入门指南
-    if not sys.stdin.isatty() or os.environ.get("MINI_CODE_SHOW_GUIDE", "1") == "1":
-        print(_render_quick_start())
-    else:
-        print("")
+    if startup_prelude:
+        print(startup_prelude)
 
     try:
-        if not sys.stdin.isatty():
+        if not interactive:
             for raw_input in sys.stdin:
                 user_input = raw_input.strip()
                 if not user_input:
@@ -350,7 +363,9 @@ def main() -> None:
                 messages.append({"role": "user", "content": user_input})
                 history.append(user_input)
                 save_history_entries(history)
-                routed_skills, skill_routing = _route_skills_for_prompt(tools, user_input)
+                routed_skills, skill_routing = _route_skills_for_prompt(
+                    cwd, tools, user_input
+                )
                 messages[0] = {
                     "role": "system",
                     "content": build_system_prompt(
@@ -392,6 +407,9 @@ def main() -> None:
                             runtime=runtime,
                             memory_manager=memory_mgr,
                             event_sink=observation,
+                            required_skill_names=required_skill_names_for_routing(
+                                skill_routing
+                            ),
                         )
                         returned_assistant = next(
                             (

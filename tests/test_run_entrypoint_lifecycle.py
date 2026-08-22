@@ -41,6 +41,55 @@ class FakeTools:
         self.dispose_calls += 1
 
 
+def test_classic_skill_routing_receives_the_workspace(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = str(tmp_path.resolve())
+    captured: dict[str, object] = {}
+
+    class Routing:
+        used_fallback = True
+
+        @staticmethod
+        def selected_skill_dicts() -> list[dict]:
+            return []
+
+    class Router:
+        def route(self, skills, intent, registry):
+            captured["skills"] = skills
+            captured["intent"] = intent
+            captured["registry"] = registry
+            return Routing()
+
+    monkeypatch.setattr(
+        "minicode.capability_registry.register_tool_capabilities",
+        lambda tools: captured.setdefault("tools", tools),
+    )
+    monkeypatch.setattr(
+        "minicode.capability_registry.get_registry",
+        lambda: "registry",
+    )
+    monkeypatch.setattr(
+        "minicode.skill_router.build_skill_router",
+        lambda routed_workspace: (
+            captured.setdefault("workspace", routed_workspace) and Router()
+        ),
+    )
+    tools = FakeTools()
+
+    routed, routing = main_module._route_skills_for_prompt(
+        workspace,
+        tools,
+        "fix the code",
+    )
+
+    assert routed == []
+    assert isinstance(routing, Routing)
+    assert captured["workspace"] == workspace
+    assert captured["tools"] is tools
+
+
 class RecordingJournal:
     def __init__(self) -> None:
         self.created: list[dict[str, object]] = []
@@ -201,6 +250,8 @@ def test_headless_forwards_optional_current_state_registry_only_when_supplied(
 
     assert calls[0]["mcp_current_state_registry"] is state_registry
     assert "mcp_current_state_registry" not in calls[1]
+    assert calls[0]["include_user_interaction"] is False
+    assert calls[1]["include_user_interaction"] is False
 
 
 def test_real_agent_working_memory_event_precedes_assistant_and_terminal(

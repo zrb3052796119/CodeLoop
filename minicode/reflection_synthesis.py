@@ -31,6 +31,7 @@ ClaimType = Literal[
     "correction",
     "verification_rule",
     "warning",
+    "approach",
 ]
 ClaimSeverity = Literal["info", "warning", "error"]
 
@@ -70,6 +71,36 @@ _GENERIC_ERROR_MESSAGES = {
     "unknown error",
     "an error occurred",
 }
+# Tools whose failures describe the host's network egress rather than the
+# project being worked on.
+_NETWORK_EGRESS_TOOLS = {"web_search", "web_fetch", "http_request"}
+# Transport/reachability codes emitted by those tools. A failure carrying one
+# of these describes the machine the agent happens to be running on -- a proxy,
+# a DNS policy, an unreachable remote host -- so it is state, not knowledge:
+# it does not generalise to another machine and it carries no remedy the agent
+# could apply. Persisting it produces memories whose "applies when" merely
+# restates the error.
+_ENVIRONMENT_ERROR_CODES = {
+    "destination_blocked",
+    "http_error",
+    "network_unavailable",
+    "rate_limited",
+    "redirect_blocked",
+    "resolver_busy",
+    "search_unavailable",
+    "server_error",
+}
+# Transport failures are environment-scoped whichever tool surfaces them.
+# Kept to phrases that only a transport layer emits: a project that itself
+# works on DNS, TLS or proxying must keep its own failures, so bare "dns",
+# "ssl" and "proxy" are deliberately not enough on their own.
+_ENVIRONMENT_ERROR_PATTERN = re.compile(
+    r"\b(?:dns (?:resolution|lookup|resolver)|getaddrinfo|"
+    r"name or service not known|temporary failure in name resolution|"
+    r"connection (?:refused|reset|aborted|timed out)|network is unreachable|"
+    r"no route to host|sslerror|ssl handshake fail|"
+    r"certificate verify failed|proxy (?:error|connection))\b"
+)
 _READ_TOOLS = {"read_file"}
 _SEARCH_TOOLS = {"grep_files", "search_files", "find_symbols", "find_references"}
 _LIST_TOOLS = {"list_directory", "list_files", "directory_tree"}
@@ -84,6 +115,196 @@ def _normalize_text(value: Any) -> str:
     return " ".join(sanitize_evidence_text(value, CLAIM_MAX_TEXT_CHARS).strip().lower().split())
 
 
+# A pytest node id is the most precise handle a later run can match on, so it
+# is tried before a plain path.
+_TEST_NODE_RE = re.compile(r"((?:[\w.-]+/)*[\w.-]+\.py::[\w.\[\]-]+)")
+# The leading lookbehind rejects anything preceded by "/", "~" or a word
+# character, so an absolute path contributes nothing: only workspace-relative
+# names travel to another machine, and only they are safe to persist.
+# A slash is strong evidence of a path, so that form stays permissive. A bare
+# "name.ext" is not: "leasekit.lease" and "self._token" look identical to it,
+# so it is restricted to extensions a file actually carries.
+_FILE_EXTENSIONS = (
+    "py|pyi|ts|tsx|js|jsx|mjs|cjs|json|toml|yaml|yml|md|rst|txt|ini|cfg|conf|"
+    "lock|rs|go|java|kt|rb|php|cs|swift|c|h|cc|cpp|hpp|sh|bash|zsh|sql|"
+    "html|css|scss|xml|csv|env"
+)
+_RELATIVE_PATH_RE = re.compile(
+    rf"(?<![\w/~.-])((?:[\w.-]+/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{{0,5}}"
+    rf"|[\w-]+\.(?:{_FILE_EXTENSIONS}))(?![\w/])"
+)
+# The artifact regexes already refuse absolute paths, but the residue
+# fallback quotes what is left of the message, so it needs its own scrub:
+# a home directory or a drive letter is this machine's layout, useless to a
+# later run and not something a condition should carry.
+_ABSOLUTE_PATH_RE = re.compile(
+    r"(?:[A-Za-z]:[\\/]|~[\\/]|(?<![\w.-])/)[^\s'\"()\[\]]*"
+)
+_FAILURE_CODE_RE = re.compile(r"error\[([a-z_]+)\]")
+_EXCEPTION_NAME_RE = re.compile(
+    r"\b([A-Z][A-Za-z0-9]*(?:Error|Exception|Failure|Timeout|Denied|NotFound))\b"
+)
+_CAMEL_SIGNAL_RE = re.compile(r"\b([A-Z][a-z]+(?:[A-Z][a-z0-9]+)+)\b")
+# Generic wrappers say nothing about what actually went wrong; the message
+# almost always carries the real signal underneath one of these.
+_GENERIC_ERROR_TYPES = {"toolerror", "unknownerror", "commanderror", "exception", "error"}
+_APPLIES_WHEN_MAX_ARTIFACTS = 2
+_CONNECTIVE = r"\b(?:and|or|in|on|at|for|from|of|the|a)\b"
+_TRIM_PUNCT = r"[\s:,;.\-—、，。；：]"
+
+
+# A failing command's message is its whole output: a pytest run contributes a
+# progress bar, a banner, a source excerpt and a summary. Only one line names
+# what actually failed.
+_SALIENT_LINE_RE = re.compile(
+    r"^(?:FAILED|ERROR|E\s)|(?:\b\w*(?:Error|Exception|Failure)\b\s*:)|^error\["
+    # Tools that render their own report mark failures with a glyph rather
+    # than a keyword; without these, a failing test_runner run matched nothing
+    # and fell through to the last-line fallback.
+    r"|^[✗❌⚠]",
+)
+# Lines that report success or are pure decoration. They are never the reason
+# something failed, but the fallback used to reach for them: a failing
+# test_runner run was recorded as "error pattern ... ⊘ Skipped: 0" and
+# "error pattern ... ✓ [::unknow" -- a counter and a passing test.
+_NON_FAILURE_LINE_RE = re.compile(r"^[✓⊘✅ℹ📊📈🧪🔍]|^\s*(?:✓|⊘)\s")
+_BANNER_RE = re.compile(r"^[=\-_~*#\s]*$|^[=\-_]{3,}.*[=\-_]{3,}$")
+# Output is bounded in more than one place before reflection sees it, so a
+# message can arrive already carrying a marker. Left in, the marker becomes
+# the "signal": a real run produced
+# ``When run_command fails with lease.transfer(...[truncated]``.
+_TRUNCATION_MARKER_RE = re.compile(r"\.*\[[a-z ]*truncated[a-z ]*\]\.*")
+# A line cut mid-expression ends on an opening delimiter or a connector; those
+# tails read as noise once quoted into a condition.
+_DANGLING_TAIL_RE = re.compile(r"[\s(\[{,=+\-/*.:]+$")
+
+
+
+def _salient_line(message: str) -> str:
+    """Reduce multi-line tool output to the line that names the failure.
+
+    Feeding the whole dump to the condition produced
+    ``When run_command fails with F [100%] ==== FAILURES ====`` -- the banner
+    won the race simply by coming first.
+    """
+    message = _TRUNCATION_MARKER_RE.sub(" ", message)
+    lines = [line.strip() for line in message.splitlines()]
+    lines = [
+        line
+        for line in lines
+        if line and not _BANNER_RE.match(line) and not _NON_FAILURE_LINE_RE.match(line)
+    ]
+    if not lines:
+        # Everything was a banner or a success counter. There is no failure
+        # line to quote, and quoting "⊘ Skipped: 0" instead invents one, so
+        # the caller is told there is no signal and the claim degrades or
+        # drops rather than asserting something the output never said.
+        return ""
+    for line in lines:
+        if _SALIENT_LINE_RE.search(line):
+            return _DANGLING_TAIL_RE.sub("", line) or line
+    # Falling back to the last line keeps it adjacent to the failure. Skipping
+    # over a truncated one to an earlier line traded a readable fragment for
+    # an unrelated header ("F [100%]"), which is worse; trimming the dangling
+    # tail is enough. Fragments that carry no failure information at all --
+    # "✓ [::unknow" -- are already gone, filtered above as success lines.
+    return _DANGLING_TAIL_RE.sub("", lines[-1]) or lines[-1]
+
+
+def _named_artifacts(message: str) -> tuple[list[str], list[str]]:
+    """Name the concrete things a failure was about.
+
+    An applicability condition is only useful if a later run can check it.
+    "When run_command reports CommandError" cannot be checked -- it restates
+    the observation. "When run_command fails on tests/test_lease.py::test_renew"
+    can.
+
+    Returns (shown, all_found). Only `shown` reaches the condition, but the
+    full list is needed to strip a message down to its residue: leaving the
+    artifacts past the cap in place produces "fails on a.py or b.py with
+    ... and and c.py".
+    """
+    found: list[str] = []
+    for match in _TEST_NODE_RE.finditer(message):
+        found.append(match.group(1))
+    for match in _RELATIVE_PATH_RE.finditer(message):
+        path = match.group(1)
+        if not any(path in item for item in found):
+            found.append(path)
+    found = list(dict.fromkeys(found))
+    return found[:_APPLIES_WHEN_MAX_ARTIFACTS], found
+
+
+def _failure_signal(error: ErrorEvidence, artifacts: list[str]) -> str:
+    """Name what went wrong, preferring the message's own code over the wrapper.
+
+    Returns "" when the message adds nothing beyond the artifacts already
+    named, so the condition stays free of "fails on X with ... X ...".
+    """
+    message = _salient_line(sanitize_evidence_text(error.message, 2_000))
+    code = _FAILURE_CODE_RE.search(message)
+    if code:
+        return code.group(1)
+    for pattern in (_EXCEPTION_NAME_RE, _CAMEL_SIGNAL_RE):
+        match = pattern.search(message)
+        if match:
+            return match.group(1)
+    error_type = sanitize_evidence_text(error.error_type or "", 80).strip()
+    if error_type and _normalize_text(error_type) not in _GENERIC_ERROR_TYPES:
+        return error_type
+    residue = _ABSOLUTE_PATH_RE.sub(" ", message)
+    for artifact in artifacts:
+        residue = residue.replace(artifact, " ")
+    # Removing the artifacts leaves line/column suffixes and connectives
+    # dangling; on their own they carry no meaning.
+    residue = re.sub(r":\d+(?::\d+)?", " ", residue)
+    residue = " ".join(residue.split())
+    residue = re.sub(rf"{_CONNECTIVE}(?:\s+{_CONNECTIVE})+", " ", residue)
+    residue = re.sub(rf"\s+{_CONNECTIVE}$", "", " ".join(residue.split()))
+    residue = re.sub(rf"^{_TRIM_PUNCT}+|{_TRIM_PUNCT}+$", "", residue).strip()
+    return residue[:80] if len(residue) >= 3 and re.search(r"[A-Za-z一-鿿]", residue) else ""
+
+
+# A tool crashing is a fault in the agent's own tooling, not a fact about the
+# project it is editing. One real run recorded five of these -- edit_file,
+# write_file and patch_file each crashing the same way -- and they crowded out
+# the single claim that described the actual code fix.
+_TOOLING_FAULT_RE = re.compile(
+    r"\berror\[(?:tool_crashed|sub_agent_depth_exceeded)\]"
+    # A tool hitting its own wall-clock limit describes how long this machine
+    # took, not anything about the project: real runs stored "Tool
+    # 'run_command' timed out after 120s" and "Tool 'task' timed out after
+    # 120s" as durable lessons.
+    r"|\btool '[^']+' timed out after \d+"
+    r"|\btools? timed out after \d+"
+)
+
+
+def _is_environment_scoped_error(error: ErrorEvidence) -> bool:
+    """Report whether a failure describes the host environment, not the project.
+
+    An unreachable search provider, an SSRF guard refusing a private
+    destination, or a saturated DNS resolver all say something about the
+    machine the run happened on. None of them generalise to the next machine
+    and none of them imply an action the agent could take differently, so a
+    durable memory built from one reads "when web_search reports ToolError,
+    web_search reported ToolError" -- a restatement, not a prediction.
+    """
+    haystack = _normalize_text(f"{error.error_type or ''} {error.message}")
+    if not haystack:
+        return False
+    if _TOOLING_FAULT_RE.search(haystack):
+        return True
+    if _ENVIRONMENT_ERROR_PATTERN.search(haystack):
+        return True
+    if _normalize_text(error.tool_name) not in _NETWORK_EGRESS_TOOLS:
+        return False
+    return any(
+        re.search(rf"\b{re.escape(code)}\b", haystack)
+        for code in _ENVIRONMENT_ERROR_CODES
+    )
+
+
 def _normalize_semantic_key(value: Any) -> str:
     return re.sub(
         r"[^a-z0-9_\u4e00-\u9fff]+",
@@ -96,6 +317,26 @@ def _semantic_slug(value: str, prefix: str) -> str:
     tokens = re.findall(r"[a-z0-9]+|[\u4e00-\u9fff]+", value.lower())
     body = "_".join(tokens[:12]).strip("_") or "fact"
     return f"{prefix}_{body}"[:160].rstrip("_")
+
+
+def _config_constraint_semantic_key(statement: str) -> str:
+    """Bind a policy claim to its stable subject, not its current value."""
+    lowered = statement.lower()
+    if "requires-python" in lowered or re.match(
+        r"(?i)^python\s+\d+(?:\.\d+)+\s+is\s+required\b",
+        statement.strip(),
+    ):
+        return "project_constraint_python_runtime_version"
+    operator = re.search(
+        r"(?i)\b(?:must|shall|required|requires|always|never|do\s+not|don't|"
+        r"cannot|may\s+not)\b|(?:必须|需要|不得|禁止|始终|一律)",
+        statement,
+    )
+    if operator is None or operator.start() < 4:
+        return _semantic_slug(statement, "project_constraint")
+    subject = statement[: operator.start()].strip(" :-")
+    subject = re.sub(r"(?i)^(?:every|all|the)\s+", "", subject).strip()
+    return _semantic_slug(subject or statement, "project_constraint")
 
 
 def _text_tokens(value: str) -> set[str]:
@@ -339,6 +580,8 @@ class RuleReflectionSynthesizer:
                 continue
             if not self._specific_error(error):
                 continue
+            if self._environment_scoped_error(error):
+                continue
             add_claim(
                 "error_pattern",
                 _semantic_slug(
@@ -353,12 +596,90 @@ class RuleReflectionSynthesizer:
                 related_error_ids=[error.error_id],
             )
 
+        self._synthesize_approach_claim(task_description, evidence, add_claim)
+
         return ReflectionCandidate(
             task_summary=sanitize_evidence_text(task_description, 200),
             outcome=evidence.outcome,
             claims=claims,
             source_event_ids=_ordered_unique(source_event_ids),
             synthesis_diagnostics=[],
+        )
+
+    def _synthesize_approach_claim(
+        self,
+        task_description: str,
+        evidence: TaskEvidence,
+        add_claim: Any,
+    ) -> None:
+        """Record how a cleanly successful, verified task was approached.
+
+        The other claim types all fire on failure signals (errors, user
+        corrections, dependency reads), so a flawless run used to leave
+        nothing durable behind -- the better the agent performed, the less it
+        "learned". This claim closes that gap, but only under the strict
+        shape that made the other types trustworthy: real file changes, a
+        passed verification, and the agent's own bounded causal summary.
+        """
+        if evidence.outcome != "success" or evidence.errors:
+            return
+        if not evidence.files_changed:
+            return
+        passed = [item for item in evidence.verification if item.result == "passed"]
+        if not passed:
+            return
+
+        files = sorted({item.path for item in evidence.files_changed})
+        files_shown = ", ".join(files[:5]) + (
+            f" (+{len(files) - 5} more)" if len(files) > 5 else ""
+        )
+        verification = passed[-1]
+        verify_desc = (
+            (verification.summary or "").strip()
+            or (verification.command_kind or "").strip()
+            or (verification.tool_name or "").strip()
+            or "verification"
+        )
+
+        # The agent's own one-line "why it worked"; dropped when it is too
+        # thin to add anything over the deterministic facts.
+        summary_line = ""
+        if evidence.final_summary:
+            candidate = _salient_line(evidence.final_summary)
+            if len(_normalize_text(candidate)) >= 16:
+                summary_line = candidate
+
+        task_summary = sanitize_evidence_text(task_description, 120)
+        statement = f"For '{task_summary}': "
+        if summary_line:
+            statement += f"{summary_line} "
+        statement += f"Changed {files_shown}; verified by {verify_desc} (passed)."
+
+        limitations: list[str] = []
+        if any(item.scope == "targeted" for item in passed):
+            limitations.append("Verified only by targeted checks.")
+
+        file_event_ids = [
+            event_id
+            for item in evidence.files_changed
+            for event_id in item.event_ids
+        ]
+        verification_event_ids = [
+            event_id for item in passed for event_id in item.event_ids
+        ]
+        add_claim(
+            "approach",
+            _semantic_slug(f"{task_summary} {files_shown}", "approach"),
+            statement,
+            _ordered_unique(
+                [*file_event_ids, *verification_event_ids, *evidence.final_summary_event_ids]
+            ),
+            "confirmed",
+            applies_when=(
+                f"When working on {files[0]} or similar tasks in this project."
+            ),
+            limitations=limitations or None,
+            verification_ids=[item.verification_id for item in passed],
         )
 
     def _synthesize_decision_claim(
@@ -401,7 +722,11 @@ class RuleReflectionSynthesizer:
                     return
             add_claim(
                 "constraint",
-                _semantic_slug(statement, "project_constraint"),
+                (
+                    _config_constraint_semantic_key(statement)
+                    if decision.source_kind == "config_constraint"
+                    else _semantic_slug(statement, "project_constraint")
+                ),
                 f"Project constraint: {statement}",
                 decision.event_ids,
                 decision.epistemic_status,
@@ -502,10 +827,19 @@ class RuleReflectionSynthesizer:
             event_id for item in linked_passed for event_id in item.event_ids
         ]
         error = related_errors[0]
+        statement = (
+            f"After {_salient_line(sanitize_evidence_text(error.message, 2_000))}, "
+            f"the recovery action was: {recovery.action}."
+        )
+        if recovery.change_summary:
+            # The old->new excerpt is what turns "a file was edited" into an
+            # executable fix; the action text stays verbatim above so
+            # statement-alignment validation still holds.
+            statement += f" Change: {recovery.change_summary}."
         add_claim(
             "recovery",
             _semantic_slug(f"{recovery.action} {error.message}", "recovery"),
-            f"After {error.message}, the recovery action was: {recovery.action}.",
+            statement,
             event_ids,
             status,
             applies_when=self._error_applies_when(error),
@@ -539,7 +873,14 @@ class RuleReflectionSynthesizer:
         errors: list[ErrorEvidence],
         evidence: TaskEvidence,
     ) -> bool:
+        if (
+            verification.call_id
+            and verification.call_id in recovery.verification_call_ids
+        ):
+            return True
         if verification.scope == "full":
+            return True
+        if self._reproduces_an_earlier_failure(verification, recovery, evidence):
             return True
         recovery_text = " ".join(
             [recovery.action, *recovery.files_changed, *(item.message for item in errors)]
@@ -554,6 +895,36 @@ class RuleReflectionSynthesizer:
             return True
         return bool(_cjk_bigrams(recovery_text) & _cjk_bigrams(verification_text))
 
+    def _reproduces_an_earlier_failure(
+        self,
+        verification: VerificationEvidence,
+        recovery: RecoveryEvidence,
+        evidence: TaskEvidence,
+    ) -> bool:
+        """Report the red-green pattern: this check failed before the change.
+
+        The token-overlap fallback below compares a recovery against a
+        verification summary, but a whole-suite summary is "1 passed in
+        0.01s" -- it shares nothing with the failure except, by coincidence,
+        the duration string. A real run showed the consequence: 640 characters
+        of coloured pytest output were truncated at the 600-character evidence
+        limit, the trailing "1 failed in 0.01s" was lost with it, and the only
+        overlapping token went with it, silently demoting a genuinely verified
+        fix to "inferred". Whether a fix counts as verified must not depend on
+        how verbose the tool was.
+        """
+        if not verification.command_kind:
+            return False
+        recovery_position = _event_position(evidence, recovery.event_ids)
+        if recovery_position < 0:
+            return False
+        return any(
+            item.result == "failed"
+            and item.command_kind == verification.command_kind
+            and 0 <= _event_position(evidence, item.event_ids) < recovery_position
+            for item in evidence.verification
+        )
+
     def _specific_error(self, error: ErrorEvidence) -> bool:
         message = _normalize_text(error.message)
         if not message or message in _GENERIC_ERROR_MESSAGES:
@@ -566,16 +937,41 @@ class RuleReflectionSynthesizer:
             or re.search(r"[\u4e00-\u9fff]{4,}", message)
         )
 
+    def _environment_scoped_error(self, error: ErrorEvidence) -> bool:
+        return _is_environment_scoped_error(error)
+
     def _error_statement(self, error: ErrorEvidence) -> str:
         prefix = " / ".join(
             item for item in (error.tool_name, error.error_type) if item
         )
-        return f"Observed error pattern for {prefix}: {error.message}" if prefix else f"Observed error pattern: {error.message}"
+        message = _salient_line(sanitize_evidence_text(error.message, 2_000))
+        return (
+            f"Observed error pattern for {prefix}: {message}"
+            if prefix
+            else f"Observed error pattern: {message}"
+        )
 
     def _error_applies_when(self, error: ErrorEvidence) -> str:
-        source = error.tool_name or "the operation"
-        signal = error.error_type or error.message[:160]
-        return f"When {source} reports {signal}."
+        """State a condition a later run can actually test itself against.
+
+        The previous form -- "When {tool} reports {error_type}." -- restated
+        the observation instead of predicting anything, so every memory built
+        on it answered "does this apply to me?" with "yes, if it applies".
+        Naming the artifact and the underlying signal makes the question
+        answerable.
+        """
+        source = sanitize_evidence_text(error.tool_name or "", 80).strip() or "the operation"
+        artifacts, every_artifact = _named_artifacts(
+            _salient_line(sanitize_evidence_text(error.message, 2_000))
+        )
+        signal = _failure_signal(error, every_artifact)
+        if artifacts and signal:
+            return f"When {source} fails on {' or '.join(artifacts)} with {signal}."
+        if artifacts:
+            return f"When {source} fails on {' or '.join(artifacts)}."
+        if signal:
+            return f"When {source} fails with {signal}."
+        return f"When {source} fails the same way."
 
 
 class ReflectionClaimValidator:
@@ -588,6 +984,7 @@ class ReflectionClaimValidator:
         "decision",
         "verification_rule",
         "warning",
+        "approach",
     }
 
     def validate(
@@ -736,6 +1133,8 @@ class ReflectionClaimValidator:
         for item in evidence.verification:
             for event_id in item.event_ids:
                 event_types[event_id].add("verification")
+        for event_id in evidence.final_summary_event_ids:
+            event_types[event_id].add("assistant")
         return {
             "event_types": event_types,
             "decisions_by_event": decisions_by_event,
@@ -835,6 +1234,7 @@ class ReflectionClaimValidator:
             "correction": {"decision"},
             "verification_rule": {"verification", "decision"},
             "warning": {"error"},
+            "approach": {"verification", "file"},
         }
         missing = required[claim.claim_type] - referenced_types
         if missing:
@@ -891,6 +1291,23 @@ class ReflectionClaimValidator:
         def source_text(value: str) -> str:
             return _normalize_text(sanitize_evidence_text(value, CLAIM_MAX_TEXT_CHARS))
 
+        def quotes_source(value: str) -> bool:
+            """Require the statement to quote the evidence, not all of it.
+
+            Verbatim containment is what stops a claim asserting something the
+            trace never said, and that property is kept: both accepted forms
+            are contiguous excerpts of the message itself, derived from it
+            deterministically. Demanding the *entire* message forced every
+            statement to paste a whole tool run -- a progress bar, a banner
+            and a source excerpt -- around the one line that carried the
+            lesson.
+            """
+            full = source_text(value)
+            if full and full in statement:
+                return True
+            salient = source_text(_salient_line(sanitize_evidence_text(value, 2_000)))
+            return bool(salient) and salient in statement
+
         decisions = [
             item
             for event_id in claim.evidence_ids
@@ -921,11 +1338,11 @@ class ReflectionClaimValidator:
             names = {source_text(item.name) for item in libraries if item.status == "confirmed"}
             aligned = bool(names) and all(name in statement for name in names)
         elif claim.claim_type in {"error_pattern", "warning"}:
-            aligned = any(source_text(item.message) in statement for item in errors)
+            aligned = any(quotes_source(item.message) for item in errors)
         elif claim.claim_type == "recovery":
             aligned = (
                 any(source_text(item.action) in statement for item in recoveries)
-                and any(source_text(item.message) in statement for item in errors)
+                and any(quotes_source(item.message) for item in errors)
             )
         if not aligned:
             reject(
@@ -1059,6 +1476,22 @@ class ReflectionValueGate:
                 for recovery in evidence.recoveries
             )
         )
+
+        # Checked before recurrence on purpose: retrying an unreachable
+        # endpoint inside one trace satisfies _has_recurrent_error, so an
+        # environment failure would otherwise ride a retry past the gate.
+        if (
+            accepted_types
+            and accepted_types <= {"error_pattern", "warning"}
+            and not has_verified_recovery
+            and self._only_environment_scoped_errors(validation, accepted_claim_ids, evidence)
+        ):
+            return ReflectionValueDecision(
+                accepted=False,
+                reason_codes=["environment_scoped_error_pattern"],
+                rejected_claim_ids=rejected_ids,
+            )
+
         has_recurrent_error = self._has_recurrent_error(evidence)
         if (
             accepted_types
@@ -1079,6 +1512,31 @@ class ReflectionValueGate:
             accepted_claim_ids=accepted_claim_ids,
             rejected_claim_ids=rejected_ids,
         )
+
+    def _only_environment_scoped_errors(
+        self,
+        validation: ClaimValidationResult,
+        accepted_claim_ids: list[str],
+        evidence: TaskEvidence,
+    ) -> bool:
+        """Report whether every failure behind the accepted claims is host state.
+
+        Scoped to the errors the accepted claims actually cite, so a run that
+        also hit a genuine project failure keeps its claim.
+        """
+        accepted = set(accepted_claim_ids)
+        cited = {
+            error_id
+            for claim in validation.valid_claims
+            if claim.claim_id in accepted
+            for error_id in claim.related_error_ids
+        }
+        errors = [error for error in evidence.errors if error.error_id in cited] or list(
+            evidence.errors
+        )
+        if not errors:
+            return False
+        return all(_is_environment_scoped_error(error) for error in errors)
 
     def _has_recurrent_error(self, evidence: TaskEvidence) -> bool:
         signatures: dict[tuple[str, str, str], set[str]] = {}
@@ -1115,6 +1573,8 @@ class ReflectionValueGate:
             return signals
         if claim.claim_type == "verification_rule":
             return ["stable_verification_rule"]
+        if claim.claim_type == "approach" and claim.epistemic_status == "confirmed":
+            return ["verified_approach"]
         return []
 
     def _low_value_reasons(self, evidence: TaskEvidence) -> list[str]:

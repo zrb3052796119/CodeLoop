@@ -14,12 +14,14 @@ These lock in three properties that were previously missing entirely:
 """
 from __future__ import annotations
 
+import json
+import re
 from pathlib import Path
 
 import pytest
 
 import minicode.tools.task as task_module
-from minicode.tooling import ToolContext
+from minicode.tooling import ToolContext, ToolResult
 from minicode.tools.task import MAX_AGENT_DEPTH, task_tool
 from minicode.turn_cancellation import (
     TurnCancellationRequested,
@@ -39,11 +41,33 @@ def _context(tmp_path: Path, **overrides) -> ToolContext:
     return ToolContext(**values)
 
 
+def _approve_workflow_review(mailbox, prompt: str) -> None:
+    match = re.search(r"review verdict key `([^`]+)`", prompt)
+    assert match is not None
+    mailbox.write(
+        match.group(1),
+        json.dumps(
+            {
+                "reviewVersion": 1,
+                "verdict": "approved",
+                "blockingFindings": [],
+                "warnings": [],
+            }
+        ),
+        author="reviewer",
+    )
+
+
 def _capture_sub_turn(monkeypatch) -> dict:
     captured: dict = {}
 
     def fake_run_agent_turn(**kwargs):
         captured.update(kwargs)
+        from minicode.task_outcome import canonicalize_task_outcome
+
+        kwargs["outcome_capture"].record(
+            canonicalize_task_outcome("success", 0)
+        )
         return [{"role": "assistant", "content": "sub-agent done"}]
 
     monkeypatch.setattr(task_module, "run_agent_turn", fake_run_agent_turn)
@@ -75,7 +99,10 @@ def test_general_sub_agent_never_receives_the_task_tool(
     assert result.ok is True
     tool_names = [tool.name for tool in captured["tools"].list()]
     assert "task" not in tool_names
+    assert "ask_user" not in tool_names
     assert "read_file" in tool_names
+    assert captured["allow_user_interaction"] is False
+    assert "ask_user is unavailable" in captured["messages"][0]["content"]
 
 
 def test_sub_agent_runs_one_level_deeper_than_its_parent(
@@ -89,6 +116,97 @@ def test_sub_agent_runs_one_level_deeper_than_its_parent(
     )
 
     assert captured["agent_depth"] == 1
+
+
+def test_sub_agent_uses_its_agent_type_qwen_route_instead_of_parent_model(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured = _capture_sub_turn(monkeypatch)
+    runtime = {
+        "model": "parent-model",
+        "subagentRoutingEnabled": True,
+        "subagentProvider": "openai-compatible",
+        "subagentBaseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "subagentApiKey": "child-key",
+        "subagentModels": {
+            "default": "qwen3.6-flash",
+            "explore": "qwen3.6-flash",
+        },
+    }
+
+    result = task_tool.run(
+        {
+            "description": "qwen explore",
+            "prompt": "inspect the auth module",
+            "agent_type": "explore",
+        },
+        _context(tmp_path, _runtime=runtime),
+    )
+
+    assert result.ok is True
+    assert captured["model"].runtime["model"] == "qwen3.6-flash"
+    assert captured["model"].runtime["openaiBaseUrl"] == (
+        "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    )
+
+
+def test_explicit_sub_agent_route_without_key_fails_closed_before_model_call(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured = _capture_sub_turn(monkeypatch)
+    runtime = {
+        "model": "parent-model",
+        "subagentRoutingEnabled": True,
+        "subagentProvider": "openai-compatible",
+        "subagentBaseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "subagentApiKey": "",
+        "subagentModels": {"default": "qwen3.6-flash"},
+    }
+
+    result = task_tool.run(
+        {
+            "description": "missing key",
+            "prompt": "inspect the auth module",
+            "agent_type": "explore",
+        },
+        _context(tmp_path, _runtime=runtime),
+    )
+
+    assert result.ok is False
+    assert result.output == (
+        "error[subagent_model_route_invalid]: subagent_api_key_missing"
+    )
+    assert captured == {}
+
+
+def test_sub_agent_fallback_text_cannot_be_misreported_as_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from minicode.task_outcome import canonicalize_task_outcome
+
+    def failed_turn(**kwargs):
+        kwargs["outcome_capture"].record(
+            canonicalize_task_outcome("failed", 0)
+        )
+        return [
+            {
+                "role": "assistant",
+                "content": "Model API timeout: provider deadline",
+            }
+        ]
+
+    monkeypatch.setattr(task_module, "run_agent_turn", failed_turn)
+
+    result = task_tool.run(
+        {"description": "probe", "prompt": "probe", "agent_type": "explore"},
+        _context(tmp_path, _agent_depth=0),
+    )
+
+    assert result.ok is False
+    assert "sub_agent_failed" in result.output
+    assert "Model API timeout" in result.output
 
 
 def test_parent_cancellation_token_reaches_the_sub_agent(
@@ -186,12 +304,18 @@ def test_sub_agent_system_prompt_is_skill_aware(
     )
 
     system_prompt = captured["messages"][0]["content"]
+    tool_names = {tool.name for tool in captured["tools"].list()}
     assert "load_skill" in system_prompt
+    assert "load_skill" in tool_names
+    assert "subagent_note_write" in tool_names
     assert "SKILL USAGE GUIDE" in system_prompt
     assert "codebase-explanation" in system_prompt
     # ...without losing the agent-type role or the hand-back protocol.
     assert "exploration agent" in system_prompt
     assert "<final>" in system_prompt
+    # Semantic recommendations remain visible in the prompt but do not veto
+    # a correct sub-agent answer when the user did not name the Skill.
+    assert captured["required_skill_names"] == []
 
 
 def test_sub_agent_receives_the_project_memory_store(
@@ -210,15 +334,22 @@ def test_sub_agent_receives_the_project_memory_store(
 def test_sub_agent_reports_model_turns_not_user_message_count(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Tool results also arrive with role="user", so the old count was
-    neither turns nor tool calls."""
+    """A batched tool response is one model turn, not one turn per call."""
 
-    def fake_run(**_kwargs):
+    def fake_run(**kwargs):
+        from minicode.task_outcome import canonicalize_task_outcome
+
+        kwargs["event_sink"].emit("model.started", step=1, payload={})
+        kwargs["event_sink"].emit("model.started", step=2, payload={})
+        kwargs["outcome_capture"].record(
+            canonicalize_task_outcome("success", 0)
+        )
         return [
             {"role": "system", "content": "s"},
             {"role": "user", "content": "task"},
             {"role": "assistant_tool_call", "content": ""},
-            {"role": "user", "content": "tool result"},
+            {"role": "assistant_tool_call", "content": ""},
+            {"role": "user", "content": "tool results"},
             {"role": "assistant", "content": "final answer"},
         ]
 
@@ -229,7 +360,7 @@ def test_sub_agent_reports_model_turns_not_user_message_count(
         _context(tmp_path, _agent_depth=0),
     )
 
-    assert "Model turns: 2 (tool calls: 1)" in result.output
+    assert "Model turns: 2 (tool calls: 2)" in result.output
 
 
 def test_sub_agent_records_one_bounded_summary_event_in_the_parent_run(
@@ -252,7 +383,8 @@ def test_sub_agent_records_one_bounded_summary_event_in_the_parent_run(
 
     assert [event_type for event_type, _ in events] == ["subagent.completed"]
     payload = events[0][1]
-    assert payload["subagentVersion"] == 1
+    assert payload["subagentVersion"] == 3
+    assert re.fullmatch(r"sub_[0-9a-f]{32}", payload["subagentId"])
     assert payload["agentType"] == "explore"
     assert payload["outcome"] == "completed"
     # Content-free: no prompt, findings, paths, or tool arguments.
@@ -260,13 +392,17 @@ def test_sub_agent_records_one_bounded_summary_event_in_the_parent_run(
     assert "auth" not in serialized
     assert set(payload) == {
         "subagentVersion",
+        "subagentId",
         "agentType",
         "outcome",
         "modelTurns",
         "toolCalls",
         "durationMs",
-        "maxTurns",
+        "modelTurnLimit",
+        "phaseCount",
+        "maxPhases",
         "resultTruncated",
+        "resultContractStatus",
     }
 
 
@@ -316,6 +452,11 @@ def test_sub_agent_tool_progress_reaches_the_ui_but_not_the_run_journal(
             journal.append(event_type)
 
     def fake_run(**kwargs):
+        from minicode.task_outcome import canonicalize_task_outcome
+
+        kwargs["outcome_capture"].record(
+            canonicalize_task_outcome("success", 0)
+        )
         kwargs["on_tool_start"]("read_file", {})
         kwargs["on_tool_result"]("read_file", "out", False)
         return [{"role": "assistant", "content": "done"}]
@@ -491,3 +632,440 @@ def test_sub_agent_tool_registry_still_exposes_discovered_skills(
         str(skill.get("name", "")) for skill in captured["tools"].get_skills()
     ]
     assert "demo" in skill_names
+
+
+def test_sub_agent_written_lessons_can_bind_to_parent_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured = _capture_sub_turn(monkeypatch)
+
+    class ParentSink:
+        def __init__(self) -> None:
+            self.written: list[list[str]] = []
+
+        def record_written_memory_ids(self, entry_ids: list[str]) -> None:
+            self.written.append(list(entry_ids))
+
+    sink = ParentSink()
+    task_tool.run(
+        {
+            "description": "explore",
+            "prompt": "explore",
+            "agent_type": "explore",
+        },
+        _context(tmp_path, _agent_depth=0, _event_sink=sink),
+    )
+
+    recorder = captured.get("on_memory_written")
+    assert callable(recorder)
+    recorder("project-lesson-id")
+    assert sink.written == [["project-lesson-id"]]
+
+    recorder("project-second-lesson-id")
+    assert sink.written[-1] == [
+        "project-lesson-id",
+        "project-second-lesson-id",
+    ]
+
+
+def test_sub_agent_receives_parent_tool_abandonment_event(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import threading
+
+    captured = _capture_sub_turn(monkeypatch)
+    abandoned = threading.Event()
+
+    task_tool.run(
+        {
+            "description": "explore",
+            "prompt": "look around",
+            "agent_type": "explore",
+        },
+        _context(tmp_path, _agent_depth=0, _tool_abandoned=abandoned),
+    )
+
+    assert captured["abandoned_event"] is abandoned
+
+
+def test_workflow_runs_plan_execute_review_phases_with_shared_budget(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from minicode.agent_budget import AgentTurnBudget
+    from minicode.subagent_mailbox import SubagentMailbox
+
+    captured: list[tuple[str, str, int, object]] = []
+    mailbox = SubagentMailbox()
+
+    def fake_run(input_data: dict, context) -> ToolResult:
+        captured.append(
+            (
+                input_data["agent_type"],
+                input_data["prompt"],
+                context._agent_depth,
+                context._agent_budget,
+            )
+        )
+        if input_data["description"].startswith("review:"):
+            _approve_workflow_review(mailbox, input_data["prompt"])
+        return ToolResult(
+            ok=True,
+            output=f"{input_data['agent_type']} phase complete",
+        )
+
+    monkeypatch.setattr(task_module, "_run", fake_run)
+    budget = AgentTurnBudget(max_model_calls=9)
+    result = task_module.task_tool.run(
+        {
+            "description": "auth refactor",
+            "prompt": "Refactor the auth module",
+            "agent_type": "workflow",
+        },
+        _context(
+            tmp_path,
+            _agent_depth=0,
+            _agent_budget=budget,
+            _subagent_mailbox=mailbox,
+        ),
+    )
+
+    assert result.ok is True
+    assert [call[0] for call in captured] == ["plan", "general", "plan"]
+    assert all(call[2] == 1 for call in captured)
+    assert all(call[3] is budget for call in captured)
+    assert "=== PLAN ===" in result.output
+    assert "=== EXECUTE ===" in result.output
+    assert "=== REVIEW VERDICT ===" in result.output
+    assert "=== REVIEW NARRATIVE ===" in result.output
+    assert result.verification == {
+        "verificationVersion": 1,
+        "kind": "review",
+        "outcome": "passed",
+        "source": "workflow_review",
+    }
+    assert "Refactor the auth module" in captured[1][1]
+
+
+def test_workflow_observation_separates_model_limit_from_phase_limit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from minicode.agent_budget import AgentTurnBudget
+    from minicode.subagent_mailbox import SubagentMailbox
+
+    mailbox = SubagentMailbox()
+    payloads: list[dict] = []
+
+    class RecordingSink:
+        def emit(self, event_type, *, step=None, payload=None):
+            if event_type == "subagent.completed":
+                payloads.append(payload)
+
+    def fake_run(input_data: dict, _context) -> ToolResult:
+        if input_data["description"].startswith("review:"):
+            _approve_workflow_review(mailbox, input_data["prompt"])
+        return ToolResult(
+            ok=True,
+            output=(
+                "[Sub-agent complete]\n"
+                "  Model turns: 4 (tool calls: 2)\n"
+                "phase complete"
+            ),
+        )
+
+    monkeypatch.setattr(task_module, "_run", fake_run)
+    budget = AgentTurnBudget(max_model_calls=20)
+    budget.reserve_model_call()
+    result = task_module.task_tool.run(
+        {
+            "description": "auth refactor",
+            "prompt": "Refactor the auth module",
+            "agent_type": "workflow",
+        },
+        _context(
+            tmp_path,
+            _agent_depth=0,
+            _agent_budget=budget,
+            _subagent_mailbox=mailbox,
+            _event_sink=RecordingSink(),
+        ),
+    )
+
+    assert result.ok is True
+    assert payloads == [
+        {
+            "subagentVersion": 3,
+            "subagentId": payloads[0]["subagentId"],
+            "agentType": "workflow",
+            "outcome": "completed",
+            "modelTurns": 12,
+            "toolCalls": 6,
+            "durationMs": payloads[0]["durationMs"],
+            "modelTurnLimit": 19,
+            "phaseCount": 3,
+            "maxPhases": 4,
+            "resultTruncated": False,
+            "resultContractStatus": "derived",
+        }
+    ]
+    assert payloads[0]["modelTurns"] <= payloads[0]["modelTurnLimit"]
+
+
+def test_workflow_v2_observation_rejects_mixed_or_impossible_limits() -> None:
+    from minicode.subagent_observation import normalize_subagent_payload
+
+    payload = {
+        "subagentVersion": 2,
+        "agentType": "workflow",
+        "outcome": "completed",
+        "modelTurns": 12,
+        "toolCalls": 6,
+        "durationMs": 100,
+        "modelTurnLimit": 19,
+        "phaseCount": 3,
+        "maxPhases": 4,
+        "resultTruncated": False,
+    }
+
+    assert normalize_subagent_payload(payload) == payload
+    assert normalize_subagent_payload({**payload, "maxTurns": 3}) is None
+    assert normalize_subagent_payload({**payload, "modelTurnLimit": 11}) is None
+    assert normalize_subagent_payload({**payload, "phaseCount": 5}) is None
+
+
+def test_run_journal_accepts_workflow_v2_observation(tmp_path: Path) -> None:
+    from minicode.run_journal import RunJournal
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(
+        workspace,
+        data_dir=tmp_path / "home" / ".mini-code",
+    )
+    record = journal.create_run(title="parent", source="headless")
+    journal.transition(record.id, "running")
+    payload = {
+        "subagentVersion": 2,
+        "agentType": "workflow",
+        "outcome": "completed",
+        "modelTurns": 12,
+        "toolCalls": 6,
+        "durationMs": 100,
+        "modelTurnLimit": 19,
+        "phaseCount": 3,
+        "maxPhases": 4,
+        "resultTruncated": False,
+    }
+
+    event = journal.append_event(
+        record.id,
+        "subagent.completed",
+        step=1,
+        payload=payload,
+    )
+
+    assert event.payload == payload
+
+
+def test_standalone_workflow_creates_one_budget_shared_by_all_phases(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from minicode.subagent_mailbox import SubagentMailbox
+
+    mailbox = SubagentMailbox()
+    budgets: list[object] = []
+
+    def fake_run(input_data: dict, context) -> ToolResult:
+        budgets.append(context._agent_budget)
+        if input_data["description"].startswith("review:"):
+            _approve_workflow_review(mailbox, input_data["prompt"])
+        return ToolResult(ok=True, output="phase complete")
+
+    monkeypatch.setattr(task_module, "_run", fake_run)
+    result = task_module.task_tool.run(
+        {
+            "description": "auth refactor",
+            "prompt": "Refactor the auth module",
+            "agent_type": "workflow",
+        },
+        _context(
+            tmp_path,
+            _agent_depth=0,
+            _subagent_mailbox=mailbox,
+        ),
+    )
+
+    assert result.ok is True
+    assert budgets[0] is not None
+    assert all(budget is budgets[0] for budget in budgets)
+    assert budgets[0].snapshot().limit_model_calls == 80
+
+
+def test_workflow_review_failure_is_a_typed_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls = 0
+
+    def fake_run(_input_data: dict, _context) -> ToolResult:
+        nonlocal calls
+        calls += 1
+        if calls == 3:
+            return ToolResult(ok=False, output="review unavailable")
+        return ToolResult(ok=True, output="phase complete")
+
+    monkeypatch.setattr(task_module, "_run", fake_run)
+
+    result = task_module.task_tool.run(
+        {
+            "description": "review gate",
+            "prompt": "Implement and review the change",
+            "agent_type": "workflow",
+        },
+        _context(tmp_path, _agent_depth=0),
+    )
+
+    assert result.ok is False
+    assert result.output.startswith("[Workflow review gate failed]")
+    assert "Workflow review phase failed" in result.output
+
+
+def test_workflow_blocking_typed_review_fails_and_stays_visible(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import json
+    import re
+
+    from minicode.subagent_mailbox import SubagentMailbox
+
+    calls = 0
+    mailbox = SubagentMailbox()
+
+    def fake_run(input_data: dict, _context) -> ToolResult:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return ToolResult(ok=True, output="P" * 6000)
+        if calls == 2:
+            return ToolResult(ok=True, output="E" * 10000)
+        match = re.search(r"review verdict key `([^`]+)`", input_data["prompt"])
+        assert match is not None
+        mailbox.write(
+            match.group(1),
+            json.dumps(
+                {
+                    "reviewVersion": 1,
+                    "verdict": "changes_required",
+                    "blockingFindings": ["BLOCKING_REVIEW_FINDING"],
+                    "warnings": [],
+                }
+            ),
+            author="reviewer",
+        )
+        return ToolResult(ok=True, output="review completed normally")
+
+    monkeypatch.setattr(task_module, "_run", fake_run)
+    result = task_module.task_tool.run(
+        {
+            "description": "review gate",
+            "prompt": "Implement and review the change",
+            "agent_type": "workflow",
+        },
+        _context(
+            tmp_path,
+            _agent_depth=0,
+            _subagent_mailbox=mailbox,
+        ),
+    )
+
+    assert result.ok is False
+    assert "changes_required" in result.output
+    assert "BLOCKING_REVIEW_FINDING" in result.output
+    assert result.verification is None
+
+
+def test_workflow_approved_review_is_preserved_when_phase_output_is_long(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import json
+    import re
+
+    from minicode.subagent_mailbox import SubagentMailbox
+
+    calls = 0
+    mailbox = SubagentMailbox()
+
+    def fake_run(input_data: dict, _context) -> ToolResult:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return ToolResult(ok=True, output="P" * 6000)
+        if calls == 2:
+            return ToolResult(ok=True, output="E" * 10000)
+        match = re.search(r"review verdict key `([^`]+)`", input_data["prompt"])
+        assert match is not None
+        mailbox.write(
+            match.group(1),
+            json.dumps(
+                {
+                    "reviewVersion": 1,
+                    "verdict": "approved",
+                    "blockingFindings": [],
+                    "warnings": ["APPROVED_REVIEW_VISIBLE"],
+                }
+            ),
+            author="reviewer",
+        )
+        return ToolResult(ok=True, output="REVIEW_NARRATIVE_VISIBLE")
+
+    monkeypatch.setattr(task_module, "_run", fake_run)
+    result = task_module.task_tool.run(
+        {
+            "description": "review gate",
+            "prompt": "Implement and review the change",
+            "agent_type": "workflow",
+        },
+        _context(
+            tmp_path,
+            _agent_depth=0,
+            _subagent_mailbox=mailbox,
+        ),
+    )
+
+    assert result.ok is True
+    assert "approved" in result.output
+    assert "APPROVED_REVIEW_VISIBLE" in result.output
+    assert "REVIEW_NARRATIVE_VISIBLE" in result.output
+    assert len(result.output) <= 8000
+
+
+def test_workflow_missing_typed_review_fails_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from minicode.subagent_mailbox import SubagentMailbox
+
+    monkeypatch.setattr(
+        task_module,
+        "_run",
+        lambda _input, _context: ToolResult(ok=True, output="phase complete"),
+    )
+
+    result = task_module.task_tool.run(
+        {
+            "description": "review gate",
+            "prompt": "Implement and review the change",
+            "agent_type": "workflow",
+        },
+        _context(
+            tmp_path,
+            _agent_depth=0,
+            _subagent_mailbox=SubagentMailbox(),
+        ),
+    )
+
+    assert result.ok is False
+    assert "review_verdict_missing" in result.output
+
+
+def test_workflow_is_not_concurrency_safe() -> None:
+    assert task_module.task_tool.call_is_concurrency_safe(
+        {"agent_type": "workflow"}
+    ) is False

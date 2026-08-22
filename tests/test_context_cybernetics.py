@@ -454,6 +454,36 @@ class TestContextCyberneticsOrchestrator:
         assert act is not None
         assert isinstance(act, ControlAction)
 
+    def test_forced_full_action_executes_below_high_water_without_strategy_drift(self):
+        orch = self._make_orchestrator(context_window=100000)
+
+        class Summary:
+            def summarize(self, _messages):
+                return "bounded full summary"
+
+        class MemoryMustNotRun:
+            def get_relevant_context(self, **_kwargs):
+                raise AssertionError("FULL strategy drifted into Session Memory")
+
+        orch.compactor._auto_compact._summary_generator = Summary()
+        orch.compactor._auto_compact._session_memory_engine._memory = MemoryMustNotRun()
+        orch.selector.select = lambda **_kwargs: ControlAction(
+            compaction_intensity=1.0,
+            strategy=CompactStrategy.FULL,
+            force_execution=True,
+            reason="forced test",
+        )
+        msgs = make_msgs(40, size=500)
+
+        out, result, action = orch.run_cycle(msgs, turn_id=1)
+
+        assert action is not None and action.force_execution
+        assert result is not None and result.effective
+        assert result.strategy == CompactStrategy.FULL
+        assert result.boundary is not None
+        assert out == result.messages
+        assert len(out) < len(msgs)
+
     def test_pid_setpoint_respected(self):
         orch = self._make_orchestrator()
         assert orch.pid.setpoint == 0.70
@@ -534,9 +564,12 @@ class TestContextCyberneticsOrchestrator:
         assert stats["cycles_executed"] == 5
 
     def test_feedback_loop_records_each_action(self):
-        orch = self._make_orchestrator(context_window=5000)
-        orch.run_cycle(make_msgs(10), turn_id=1)
-        orch.run_cycle(make_msgs(12), turn_id=2)
+        # Growth is measured per cycle (not per second), so only real
+        # over-threshold pressure triggers execution — a small window with
+        # sizeable messages guarantees it.
+        orch = self._make_orchestrator(context_window=100)
+        orch.run_cycle(make_msgs(10, size=50), turn_id=1)
+        orch.run_cycle(make_msgs(12, size=50), turn_id=2)
         assert orch.feedback._total_compactions >= 2
 
 
@@ -572,9 +605,9 @@ class TestCyberneticsE2EIntegration:
             assert isinstance(act.reason, str)
 
     def test_full_stats_report_after_multiple_cycles(self):
-        orch = self._orch(cw=8000)
+        orch = self._orch(cw=100)
         for i in range(8):
-            orch.run_cycle(make_msgs(5 + i * 2, size=30), turn_id=i, error_rate=0.05 * i, avg_latency=float(i))
+            orch.run_cycle(make_msgs(5 + i * 2, size=50), turn_id=i, error_rate=0.05 * i, avg_latency=float(i))
         stats = orch.get_stats()
         assert stats["cycles_executed"] == 8
         assert stats["feedback"]["total_compactions"] >= 1

@@ -396,8 +396,15 @@ class SmartRouter:
         model_switches: int = 0,
     ) -> None:
         """Record the outcome of a completed task."""
-        duration_ms = (time.time() - self._current_task_start) * 1000
-        
+        # An unpaired record (route_and_switch never ran, or a previous
+        # outcome already consumed the start) must not report a duration
+        # measured from the epoch.
+        if self._current_task_start > 0.0:
+            duration_ms = (time.time() - self._current_task_start) * 1000
+            self._current_task_start = 0.0
+        else:
+            duration_ms = 0.0
+
         self._learner.record_outcome(TaskOutcome(
             task_text=task_text,
             assigned_model=self._current_model or self._router.force_model or "unknown",

@@ -30,7 +30,27 @@ from pathlib import Path
 from typing import Any
 import unicodedata
 
+from minicode.agent_budget import AgentBudgetExceeded, record_budgeted_model_call
 from minicode.logging_config import get_logger
+from minicode.model_call_control import (
+    ModelCallDeadlineExceeded,
+    call_model_next,
+    checkpoint_model_call,
+)
+from minicode.pricing import (
+    pricing_failure_event_payload,
+    project_model_cost_event,
+)
+from minicode.run_events import (
+    emit_event_safely,
+    new_model_operation_id,
+    project_model_duration_ms,
+    project_model_usage,
+)
+from minicode.turn_cancellation import (
+    TurnCancellationRequested,
+)
+from minicode.types import ModelUsage
 
 logger = get_logger("memory_curator")
 
@@ -186,7 +206,15 @@ class MemoryCuratorAgent:
         """Notify curator that a task completed. Increments counter."""
         self._task_count += 1
 
-    def run_cycle(self, force: bool = False) -> CuratorReport:
+    def run_cycle(
+        self,
+        force: bool = False,
+        *,
+        agent_budget: Any = None,
+        event_sink: Any = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
+    ) -> CuratorReport:
         """Execute a full curation cycle.
 
         Args:
@@ -208,7 +236,14 @@ class MemoryCuratorAgent:
             from minicode.memory import MemoryScope
 
             return self._memory.coordinated_write(
-                tuple(MemoryScope), lambda: self.run_cycle(force=force)
+                tuple(MemoryScope),
+                lambda: self.run_cycle(
+                    force=force,
+                    agent_budget=agent_budget,
+                    event_sink=event_sink,
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                ),
             )
 
         start = time.time()
@@ -232,7 +267,16 @@ class MemoryCuratorAgent:
                 report.memories_validated = validated
 
             # 4. Consolidate related memories into insights
-            insights = self._timed_phase(report, "insights", self._consolidate_insights, report)
+            insights = self._timed_phase(
+                report,
+                "insights",
+                self._consolidate_insights,
+                report,
+                agent_budget,
+                event_sink,
+                cancellation_token,
+                deadline_monotonic,
+            )
             report.insights_created = insights
 
             # 5. Run tier promotion
@@ -248,6 +292,8 @@ class MemoryCuratorAgent:
             # detection; the legacy MemoryManager.link_memories path remains for
             # small direct calls but is too expensive for Curator cycles.
             self._timed_phase(report, "linking", self._link_memories_optimized, report)
+        except TurnCancellationRequested:
+            raise
         except Exception as exc:
             if report.status != "failed":
                 report.status = "failed"
@@ -977,7 +1023,14 @@ class MemoryCuratorAgent:
 
     # ── Insight consolidation ──────────────────────────────────
 
-    def _consolidate_insights(self, report: CuratorReport | None = None) -> int:
+    def _consolidate_insights(
+        self,
+        report: CuratorReport | None = None,
+        agent_budget: Any = None,
+        event_sink: Any = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
+    ) -> int:
         """Find related memory clusters and synthesize insights via LLM."""
         from minicode.memory import MemoryScope
 
@@ -992,7 +1045,13 @@ class MemoryCuratorAgent:
             clusters = self._find_clusters(entries, report=report)
             for cluster in clusters[:self._max_insights - created]:
                 before_ids = {e.id for e in self._memory.memories[scope].entries}
-                insight = self._synthesize_insight(cluster)
+                insight = self._synthesize_insight(
+                    cluster,
+                    agent_budget=agent_budget,
+                    event_sink=event_sink,
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                )
                 if insight:
                     from minicode.memory import MemoryApprovalPolicy, MemoryTier
                     entry = self._memory.add_entry(
@@ -1089,34 +1148,202 @@ class MemoryCuratorAgent:
 
         return [[entries[i] for i in c] for c in clusters[:5]]
 
-    def _synthesize_insight(self, cluster: list) -> str | None:
+    def _synthesize_insight(
+        self,
+        cluster: list,
+        *,
+        agent_budget: Any = None,
+        event_sink: Any = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
+    ) -> str | None:
         """Call LLM to synthesize an insight from a memory cluster."""
         texts = "\n".join(
             f"- [{e.id}] {e.content[:150]}" for e in cluster[:5]
         )
         prompt = CONSOLIDATE_PROMPT.format(memory_texts=texts)
+        if not self._model or not (
+            hasattr(self._model, "generate") or hasattr(self._model, "next")
+        ):
+            return self._rule_based_insight(cluster)
 
+        budget_reservation = None
+        operation_id = new_model_operation_id()
+        started_at = time.monotonic()
+        request_started = False
+        model_identity = self._model_identity()
         try:
+            checkpoint_model_call(
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+            )
+            if agent_budget is not None:
+                try:
+                    budget_reservation = agent_budget.reserve_model_call(
+                        max(1, len(prompt) // 4)
+                    )
+                except AgentBudgetExceeded:
+                    logger.info(
+                        "Curator insight synthesis skipped: shared Agent "
+                        "turn budget exhausted"
+                    )
+                    return None
+            emit_event_safely(
+                event_sink,
+                "model.started",
+                payload={
+                    "operationId": operation_id,
+                    "purpose": "memory_curation",
+                },
+            )
             if self._model and hasattr(self._model, 'generate'):
+                request_started = True
                 raw = self._model.generate(prompt)
+                checkpoint_model_call(
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                )
                 if isinstance(raw, dict):
                     result = raw.get("content", "") or raw.get("text", "")
                 else:
                     result = str(raw)
                 result = result.strip()
-                if 30 < len(result) < 500:
-                    return result
+                usage = ModelUsage(
+                    input_tokens=max(1, len(prompt) // 4),
+                    output_tokens=max(1, len(result) // 4),
+                    source="estimated",
+                )
             elif self._model and hasattr(self._model, 'next'):
                 msgs = [{"role": "user", "content": prompt}]
-                step = self._model.next(msgs)
+                request_started = True
+                step = call_model_next(
+                    self._model,
+                    msgs,
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                )
                 result = getattr(step, 'content', '') or ""
                 result = result.strip()
-                if 30 < len(result) < 500:
-                    return result
+                usage = getattr(step, 'usage', None)
+            else:  # pragma: no cover - guarded before reserving the budget
+                return self._rule_based_insight(cluster)
+
+            usage_payload = project_model_usage(usage)
+            try:
+                cost_payload = project_model_cost_event(
+                    model=model_identity,
+                    usage=usage_payload,
+                    operation_id=operation_id,
+                )
+            except BaseException:  # noqa: BLE001 - observation stays optional
+                cost_payload = pricing_failure_event_payload(operation_id)
+            record_budgeted_model_call(
+                agent_budget,
+                model=model_identity,
+                usage=usage_payload,
+                reservation=budget_reservation,
+                cost_payload=cost_payload,
+            )
+            completed: dict[str, object] = {
+                "operationId": operation_id,
+                "purpose": "memory_curation",
+                "resultType": "assistant",
+                "contentPresent": bool(result),
+                "toolCallCount": 0,
+                "usage": usage_payload,
+            }
+            duration_ms = project_model_duration_ms(
+                started_at, time.monotonic()
+            )
+            if duration_ms is not None:
+                completed["durationMs"] = duration_ms
+            emit_event_safely(
+                event_sink, "model.completed", payload=completed
+            )
+            cost_payload["purpose"] = "memory_curation"
+            emit_event_safely(
+                event_sink, "model.costed", payload=cost_payload
+            )
+            if 30 < len(result) < 500:
+                return result
+        except AgentBudgetExceeded:
+            logger.info(
+                "Curator insight synthesis skipped: shared Agent turn "
+                "budget exhausted"
+            )
+        except TurnCancellationRequested:
+            self._fail_model_call(
+                agent_budget,
+                budget_reservation,
+                event_sink,
+                operation_id,
+                started_at,
+                "interrupted",
+                charge_estimate=request_started,
+            )
+            raise
+        except ModelCallDeadlineExceeded:
+            self._fail_model_call(
+                agent_budget,
+                budget_reservation,
+                event_sink,
+                operation_id,
+                started_at,
+                "timeout",
+                charge_estimate=request_started,
+            )
+            logger.info("Curator insight synthesis stopped at Agent deadline")
         except Exception as e:
+            self._fail_model_call(
+                agent_budget,
+                budget_reservation,
+                event_sink,
+                operation_id,
+                started_at,
+                "provider_error",
+                charge_estimate=request_started,
+            )
             logger.debug("Curator insight synthesis failed: %s", e)
 
-        # Rule-based fallback
+        return self._rule_based_insight(cluster)
+
+    def _model_identity(self) -> str:
+        runtime = getattr(self._model, "runtime", None)
+        if isinstance(runtime, dict):
+            configured = runtime.get("model")
+            if isinstance(configured, str) and configured:
+                return configured
+        return str(getattr(self._model, "model_id", "") or "curator-model")
+
+    @staticmethod
+    def _fail_model_call(
+        agent_budget: Any,
+        reservation: Any,
+        event_sink: Any,
+        operation_id: str,
+        started_at: float,
+        failure_kind: str,
+        *,
+        charge_estimate: bool,
+    ) -> None:
+        settle = getattr(agent_budget, "fail_model_call", None)
+        if callable(settle):
+            try:
+                settle(reservation, charge_estimate=charge_estimate)
+            except Exception:  # noqa: BLE001 - fallback remains available
+                pass
+        payload: dict[str, object] = {
+            "operationId": operation_id,
+            "purpose": "memory_curation",
+            "failureKind": failure_kind,
+        }
+        duration_ms = project_model_duration_ms(started_at, time.monotonic())
+        if duration_ms is not None:
+            payload["durationMs"] = duration_ms
+        emit_event_safely(event_sink, "model.failed", payload=payload)
+
+    def _rule_based_insight(self, cluster: list) -> str | None:
+        """Produce the existing deterministic fallback without model telemetry."""
         domains = set(d for e in cluster for d in e.domains)
         common_words = self._extract_common_words([e.content for e in cluster])
         if common_words:

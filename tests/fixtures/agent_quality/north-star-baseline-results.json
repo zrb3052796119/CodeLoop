@@ -1,61 +1,973 @@
 {
-  "schemaVersion": 1,
-  "suiteId": "minicode-north-star-seed-2026-08-19",
-  "recordedAt": "2026-08-19",
-  "sourceReport": "docs/coding-agent-system-acceptance-repair-2026-08-19.md",
+  "adjudications": [
+    {
+      "id": "multiagent-test-risk",
+      "priorRunId": "run_707a85a56f0f4a27b430240432a761c3",
+      "priorStatus": "failed",
+      "reason": "oracle_revision_v2",
+      "replacementRunId": "run_d2a891bde28b40d28ea51d1a310402f2",
+      "replacementStatus": "failed"
+    },
+    {
+      "id": "multiagent-data-flow",
+      "priorRunId": "run_cda8e3af0c01403c8831752ca4fd4045",
+      "priorStatus": "failed",
+      "reason": "provider_error_first_pass",
+      "replacementRunId": "run_5a9e4add305842009d29eb4091d3223e",
+      "replacementStatus": "passed"
+    },
+    {
+      "id": "multiagent-reliability",
+      "priorRunId": "run_1d08bb12cff7457c805783d0d7cb5168",
+      "priorStatus": "failed",
+      "reason": "oracle_revision_v2",
+      "replacementRunId": "run_5bbd0d71372d4b53aee2f68ac57ca73c",
+      "replacementStatus": "passed"
+    },
+    {
+      "id": "skill-test-plan",
+      "priorRunId": "run_efaec6b7dfdb4fa495a90c3ae4b7ce23",
+      "priorStatus": "failed",
+      "reason": "headless_verifier_permission_fixed",
+      "replacementRunId": "run_54fb645badb04b729bc0ab3dc17cf25d",
+      "replacementStatus": "failed"
+    },
+    {
+      "id": "skill-regression-review",
+      "priorRunId": "run_d8fa5365412b4e7baead4ff3afb8bd95",
+      "priorStatus": "failed",
+      "reason": "headless_verifier_permission_fixed",
+      "replacementRunId": "run_6a1787fde0f448c48b8a8ee85215bff9",
+      "replacementStatus": "failed"
+    },
+    {
+      "id": "skill-test-plan",
+      "priorRunId": "run_54fb645badb04b729bc0ab3dc17cf25d",
+      "priorStatus": "failed",
+      "reason": "production_required_skill_step_floor_fix",
+      "replacementRunId": "run_2e6fed6bf14c4e739f1042bb763c478c",
+      "replacementStatus": "passed"
+    },
+    {
+      "id": "skill-regression-review",
+      "priorRunId": "run_6a1787fde0f448c48b8a8ee85215bff9",
+      "priorStatus": "failed",
+      "reason": "production_required_skill_step_floor_fix",
+      "replacementRunId": "run_87a25b3e2d0f4f6fa434c09704bfa1ee",
+      "replacementStatus": "passed"
+    },
+    {
+      "id": "multiagent-test-risk",
+      "priorRunId": "run_d2a891bde28b40d28ea51d1a310402f2",
+      "priorStatus": "failed",
+      "reason": "lifecycle finalization barrier repaired and independently rerun after the original 49-of-50 batch",
+      "replacementRunId": "run_2cc5ba20dd184598860ddfc9114302a3",
+      "replacementStatus": "passed"
+    }
+  ],
+  "manifestSha256": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362",
+  "recordedAt": "2026-08-20T16:11:43Z",
   "results": [
     {
-      "id": "real-s1-skill-bugfix",
+      "durationMs": 10083,
+      "id": "understand-order-flow",
+      "inputTokens": 34781,
+      "modelCalls": 4,
+      "outputTokens": 1152,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "facts-correct"
+      ],
+      "runId": "run_df3aad1f7f1543528a1c9be6c890bc9a",
       "status": "passed",
-      "verificationPassed": true,
       "unsafeActionCount": 0,
       "userInterventionCount": 0,
-      "durationMs": null,
-      "modelCalls": null,
-      "inputTokens": null,
-      "outputTokens": null,
-      "runId": "run_3306c04c018e46f8a5215c30f563decf",
-      "passedOracleIds": ["skill-loaded", "minimal-diff", "tests-pass", "canonical-success"]
+      "verificationPassed": true
     },
     {
-      "id": "real-s2-parallel-architecture",
+      "durationMs": 3847,
+      "id": "understand-config-precedence",
+      "inputTokens": 16657,
+      "modelCalls": 2,
+      "outputTokens": 346,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "facts-correct"
+      ],
+      "runId": "run_1d90f6a6b98c4dfb80e9e4da03f87ddf",
       "status": "passed",
-      "verificationPassed": true,
       "unsafeActionCount": 0,
       "userInterventionCount": 0,
-      "durationMs": null,
-      "modelCalls": null,
-      "inputTokens": null,
-      "outputTokens": null,
-      "runId": "run_080793698ad747b0b7626fe10b72c610",
-      "passedOracleIds": ["two-subagents", "call-flow", "test-risk", "no-source-edits", "canonical-success"]
+      "verificationPassed": true
     },
     {
-      "id": "real-s3-project-constraint-memory",
+      "durationMs": 5288,
+      "id": "understand-cache-invalidation",
+      "inputTokens": 16675,
+      "modelCalls": 2,
+      "outputTokens": 537,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "facts-correct"
+      ],
+      "runId": "run_9411296c91134759b9e96ec6d5201b55",
       "status": "passed",
-      "verificationPassed": true,
       "unsafeActionCount": 0,
       "userInterventionCount": 0,
-      "durationMs": null,
-      "modelCalls": null,
-      "inputTokens": null,
-      "outputTokens": null,
-      "runId": "run_d199dac698e742a99f1b249901a25965",
-      "relatedRunIds": ["run_c5d0578344824820b1f6d3d88e9d2f39"],
-      "passedOracleIds": ["memory-written", "provenance-present", "memory-rendered", "constraint-recalled"]
+      "verificationPassed": true
     },
     {
-      "id": "real-s4-compaction-continuity",
+      "durationMs": 10716,
+      "id": "understand-audit-ordering",
+      "inputTokens": 51938,
+      "modelCalls": 6,
+      "outputTokens": 961,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "facts-correct"
+      ],
+      "runId": "run_8920e1ba84d847b9880ccf322156c42b",
       "status": "passed",
-      "verificationPassed": true,
       "unsafeActionCount": 0,
       "userInterventionCount": 0,
-      "durationMs": null,
-      "modelCalls": null,
-      "inputTokens": null,
-      "outputTokens": null,
-      "runId": null,
-      "passedOracleIds": ["regression-suite-pass", "skill-retained", "summary-chain", "turn-identity"]
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 9737,
+      "id": "understand-retry-contract",
+      "inputTokens": 34205,
+      "modelCalls": 4,
+      "outputTokens": 1111,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "facts-correct"
+      ],
+      "runId": "run_4529f499361c464d89b7d95657471299",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 10280,
+      "id": "understand-invoice-rounding",
+      "inputTokens": 46529,
+      "modelCalls": 5,
+      "outputTokens": 1027,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "facts-correct"
+      ],
+      "runId": "run_998e393d132e4bdd88ddbfc9bcdf9d87",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5801,
+      "id": "bugfix-clamp",
+      "inputTokens": 35008,
+      "modelCalls": 4,
+      "outputTokens": 407,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes"
+      ],
+      "runId": "run_805c81b081a74c54a7442a928cebc58b",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 16808,
+      "id": "bugfix-slugify",
+      "inputTokens": 76047,
+      "modelCalls": 8,
+      "outputTokens": 1102,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes"
+      ],
+      "runId": "run_dd89b7fe1f214d7e85269ccd2b9b0687",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 14082,
+      "id": "bugfix-retry",
+      "inputTokens": 82985,
+      "modelCalls": 8,
+      "outputTokens": 962,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes"
+      ],
+      "runId": "run_8958b617ca894939add97445a509e4ef",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 8426,
+      "id": "bugfix-invoice",
+      "inputTokens": 47195,
+      "modelCalls": 5,
+      "outputTokens": 616,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes"
+      ],
+      "runId": "run_3aa48e788e5f440fa9953e4bba346446",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 9713,
+      "id": "bugfix-parse-bool",
+      "inputTokens": 61641,
+      "modelCalls": 7,
+      "outputTokens": 671,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes"
+      ],
+      "runId": "run_58e2d6ff22674b25a932cf5116d0ad21",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 38847,
+      "id": "bugfix-dedupe",
+      "inputTokens": 222164,
+      "modelCalls": 20,
+      "outputTokens": 3122,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes"
+      ],
+      "runId": "run_803d00e2145f43f4b4e91d5c8c6695fd",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 10123,
+      "id": "bugfix-chunks",
+      "inputTokens": 62866,
+      "modelCalls": 7,
+      "outputTokens": 846,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes"
+      ],
+      "runId": "run_6388df2ebc36410080c94dcebfb7eee3",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 16062,
+      "id": "bugfix-iso-date",
+      "inputTokens": 77971,
+      "modelCalls": 8,
+      "outputTokens": 887,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes"
+      ],
+      "runId": "run_b79ccb1db96a4b2598504d5b3bfe2c72",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6334,
+      "id": "feature-group-by",
+      "inputTokens": 38136,
+      "modelCalls": 4,
+      "outputTokens": 402,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes"
+      ],
+      "runId": "run_d0acf38bd55844cfa205d8fbdf3bdcf1",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 9029,
+      "id": "feature-moving-average",
+      "inputTokens": 47720,
+      "modelCalls": 5,
+      "outputTokens": 738,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes"
+      ],
+      "runId": "run_330522e1ecf0434a907f24da8c88d33f",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6314,
+      "id": "feature-mask-email",
+      "inputTokens": 38139,
+      "modelCalls": 4,
+      "outputTokens": 444,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes"
+      ],
+      "runId": "run_406930b1a00b4e8ca18c72ee9b8162a4",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 12194,
+      "id": "feature-parse-duration",
+      "inputTokens": 78539,
+      "modelCalls": 8,
+      "outputTokens": 1223,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes"
+      ],
+      "runId": "run_5406b83df7224cf2a25b9545c3273167",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 7124,
+      "id": "feature-top-n",
+      "inputTokens": 43851,
+      "modelCalls": 5,
+      "outputTokens": 514,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes"
+      ],
+      "runId": "run_7b3dc16eac3f44b0b11ad5d68379fa54",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 10708,
+      "id": "feature-merge-ranges",
+      "inputTokens": 65107,
+      "modelCalls": 7,
+      "outputTokens": 775,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes"
+      ],
+      "runId": "run_c5b15ac9a9a44f5a976ab6f0aa39e902",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 7804,
+      "id": "feature-normalize-phone",
+      "inputTokens": 54263,
+      "modelCalls": 6,
+      "outputTokens": 749,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes"
+      ],
+      "runId": "run_46179c02548040238f4eb4850d077697",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5878,
+      "id": "refactor-subtotal-helper",
+      "inputTokens": 45685,
+      "modelCalls": 5,
+      "outputTokens": 499,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes",
+        "structure-present"
+      ],
+      "runId": "run_de1949ca63e9455486c5fcc0321e88f5",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 9878,
+      "id": "refactor-positive-validator",
+      "inputTokens": 62659,
+      "modelCalls": 7,
+      "outputTokens": 759,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes",
+        "structure-present"
+      ],
+      "runId": "run_4bb52d2f0942456798630b86d0705dc2",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 21105,
+      "id": "refactor-invoice-dataclass",
+      "inputTokens": 119061,
+      "modelCalls": 12,
+      "outputTokens": 1653,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes",
+        "structure-present"
+      ],
+      "runId": "run_43f7e11cba9a45158edff0ba6e079128",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 12061,
+      "id": "refactor-label-helper",
+      "inputTokens": 64615,
+      "modelCalls": 7,
+      "outputTokens": 761,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes",
+        "structure-present"
+      ],
+      "runId": "run_8b0b5c67adf94dbfb3930cc97f31a58a",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 8625,
+      "id": "refactor-mutable-default",
+      "inputTokens": 44917,
+      "modelCalls": 5,
+      "outputTokens": 779,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes",
+        "structure-present"
+      ],
+      "runId": "run_eef1e3c738684510b2c8f77e6e39a6e2",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 10512,
+      "id": "testing-safe-divide",
+      "inputTokens": 68698,
+      "modelCalls": 7,
+      "outputTokens": 868,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "test-file-created",
+        "new-tests-pass"
+      ],
+      "runId": "run_e9c3bbd939954de7856eceda96fa1b04",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 14060,
+      "id": "testing-page-bounds",
+      "inputTokens": 83643,
+      "modelCalls": 9,
+      "outputTokens": 1174,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "test-file-created",
+        "new-tests-pass"
+      ],
+      "runId": "run_575a8f11b07e41358620d33fbfddeffb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 11692,
+      "id": "testing-merge-config",
+      "inputTokens": 84140,
+      "modelCalls": 8,
+      "outputTokens": 1031,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "test-file-created",
+        "new-tests-pass"
+      ],
+      "runId": "run_81648708eed942e8aaf8470855bc0e10",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 14691,
+      "id": "testing-relative-path",
+      "inputTokens": 116083,
+      "modelCalls": 10,
+      "outputTokens": 1174,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "test-file-created",
+        "new-tests-pass"
+      ],
+      "runId": "run_a707475e54bc4272a4cc232756f4a816",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 10127,
+      "id": "testing-callback",
+      "inputTokens": 65003,
+      "modelCalls": 7,
+      "outputTokens": 863,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "test-file-created",
+        "new-tests-pass"
+      ],
+      "runId": "run_ff676fb32e0b4dd189e070ff7fa6cf6b",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 28680,
+      "id": "docs-retry-policy",
+      "inputTokens": 92820,
+      "modelCalls": 8,
+      "outputTokens": 3285,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "documentation-present"
+      ],
+      "runId": "run_5bfc646c05cd4c50a469b6b7a8f23901",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 31760,
+      "id": "docs-core-api",
+      "inputTokens": 107914,
+      "modelCalls": 10,
+      "outputTokens": 2971,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "documentation-present"
+      ],
+      "runId": "run_69a447425cf443e9a336e8d2614d33eb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 25774,
+      "id": "docs-architecture-flow",
+      "inputTokens": 77431,
+      "modelCalls": 7,
+      "outputTokens": 2802,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "documentation-present"
+      ],
+      "runId": "run_79c4932fcc904e63a32bc965bc0e7331",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 41594,
+      "id": "docs-changelog",
+      "inputTokens": 175235,
+      "modelCalls": 15,
+      "outputTokens": 4931,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "documentation-present"
+      ],
+      "runId": "run_983708aa755c450b8f6386cb7ced6d16",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 41019,
+      "id": "multiagent-architecture",
+      "inputTokens": 166486,
+      "modelCalls": 17,
+      "outputTokens": 7880,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-subagents",
+        "synthesis-facts"
+      ],
+      "runId": "run_dbb9963ac4294b0088334dd472018e4f",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 168092,
+      "id": "multiagent-test-risk",
+      "inputTokens": 711017,
+      "modelCalls": 65,
+      "outputTokens": 29122,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-subagents",
+        "synthesis-facts"
+      ],
+      "runId": "run_2cc5ba20dd184598860ddfc9114302a3",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 51577,
+      "id": "multiagent-data-flow",
+      "inputTokens": 320317,
+      "modelCalls": 31,
+      "outputTokens": 8286,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-subagents",
+        "synthesis-facts"
+      ],
+      "runId": "run_5a9e4add305842009d29eb4091d3223e",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 48161,
+      "id": "multiagent-reliability",
+      "inputTokens": 214493,
+      "modelCalls": 22,
+      "outputTokens": 8414,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-subagents",
+        "synthesis-facts"
+      ],
+      "runId": "run_5bbd0d71372d4b53aee2f68ac57ca73c",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 41911,
+      "id": "multiagent-change-impact",
+      "inputTokens": 175710,
+      "modelCalls": 18,
+      "outputTokens": 8054,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-subagents",
+        "synthesis-facts"
+      ],
+      "runId": "run_c36b0f5af48341e3aa832b1385500354",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 25403,
+      "id": "skill-risk-review",
+      "inputTokens": 95537,
+      "modelCalls": 9,
+      "outputTokens": 2271,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "skill-loaded",
+        "skill-marker"
+      ],
+      "runId": "run_d87f9e00c23e42808023b35d8bdf3d55",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 15976,
+      "id": "skill-test-plan",
+      "inputTokens": 36750,
+      "modelCalls": 4,
+      "outputTokens": 1617,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "skill-loaded",
+        "skill-marker"
+      ],
+      "runId": "run_2e6fed6bf14c4e739f1042bb763c478c",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 27938,
+      "id": "skill-architecture-review",
+      "inputTokens": 80904,
+      "modelCalls": 8,
+      "outputTokens": 2694,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "skill-loaded",
+        "skill-marker"
+      ],
+      "runId": "run_c9fe74c8ffd14c3fab9f9a5587d46d2e",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 38309,
+      "id": "skill-regression-review",
+      "inputTokens": 64221,
+      "modelCalls": 6,
+      "outputTokens": 4213,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "skill-loaded",
+        "skill-marker"
+      ],
+      "runId": "run_87a25b3e2d0f4f6fa434c09704bfa1ee",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 2009,
+      "id": "memory-recall-invoice-prefix",
+      "inputTokens": 8167,
+      "modelCalls": 1,
+      "outputTokens": 135,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "memory-rendered",
+        "constraint-recalled"
+      ],
+      "runId": "run_179dc58f13874fecabfdc383be69609a",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 3917,
+      "id": "memory-recall-timestamp-format",
+      "inputTokens": 8169,
+      "modelCalls": 1,
+      "outputTokens": 417,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "memory-rendered",
+        "constraint-recalled"
+      ],
+      "runId": "run_601dbc499c304d37aaf69f8e990cf0d9",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 15764,
+      "id": "memory-write-verified-recovery",
+      "inputTokens": 77045,
+      "modelCalls": 8,
+      "outputTokens": 1187,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "target-test-passes",
+        "lesson-written"
+      ],
+      "runId": "run_76972661e4e043ec83585d6e718e6bd8",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 8106,
+      "id": "context-alpha-continuity",
+      "inputTokens": 13928,
+      "modelCalls": 1,
+      "outputTokens": 18,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "context-compacted",
+        "marker-retained"
+      ],
+      "runId": "run_1ff8e0d0f32141e6a68d12c22b542daf",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5354,
+      "id": "context-beta-continuity",
+      "inputTokens": 13780,
+      "modelCalls": 1,
+      "outputTokens": 13,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "context-compacted",
+        "marker-retained"
+      ],
+      "runId": "run_bd0c21f109ca40beb56fe1bff318a025",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6900,
+      "id": "context-gamma-continuity",
+      "inputTokens": 13914,
+      "modelCalls": 1,
+      "outputTokens": 8,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "context-compacted",
+        "marker-retained"
+      ],
+      "runId": "run_d9d565b3b1e144dba34f7c27e4af18cf",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
     }
-  ]
+  ],
+  "reusedOriginalEvidenceCount": 49,
+  "schemaVersion": 1,
+  "sourceReports": {
+    "original": ".acceptance-work/2026-08-20-north-star-50/north-star-v2-postfix-final-results.json",
+    "rerun": ".acceptance-work/2026-08-21-a-grade-multiagent-rerun.json",
+    "revisedManifest": ".acceptance-work/2026-08-20-north-star-50/north-star-manifest-v2.json"
+  },
+  "suiteId": "minicode-north-star-live-50-2026-08-20-v2"
 }

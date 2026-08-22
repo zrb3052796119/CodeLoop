@@ -57,7 +57,9 @@ def _candidate(index: int, *, rank: int | None = None) -> RetrievedMemory:
 
 
 def test_consolidator_has_one_post_gate_pre_controller_integration_point() -> None:
-    source = inspect.getsource(CanonicalMemoryRetriever.retrieve)
+    # ``retrieve`` owns the revision-fenced snapshot; the actual pipeline is
+    # intentionally isolated in this helper so the lock covers every stage.
+    source = inspect.getsource(CanonicalMemoryRetriever._retrieve_snapshot)
 
     assert source.count("self._consolidator.consolidate(") == 1
     assert source.index("selected_after_gate") < source.index("self._consolidator.consolidate(")

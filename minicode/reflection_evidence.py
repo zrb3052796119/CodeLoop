@@ -7,6 +7,7 @@ reflection engine and its evaluator.
 
 from __future__ import annotations
 
+import json
 import re
 import shlex
 from collections import defaultdict
@@ -72,6 +73,61 @@ _COMMAND_TOOLS = {
     "pyright",
     "mypy",
 }
+_OPERATIONAL_RESOURCE_NOISE = {
+    "backend",
+    "bin",
+    "build",
+    "dist",
+    "frontend",
+    "lib",
+    "node_modules",
+    "python",
+    "python3",
+    "pytest",
+    "ruff",
+    "src",
+    "test",
+    "tests",
+    "workspace",
+}
+_OPERATIONAL_ENGINES = {
+    "cargo",
+    "eslint",
+    "go",
+    "jest",
+    "mypy",
+    "npm",
+    "pnpm",
+    "pyright",
+    "pytest",
+    "ruff",
+    "tsc",
+    "unittest",
+    "vitest",
+    "yarn",
+}
+_GENERIC_RECOVERY_MAX_CALL_GAP = 8
+_GENERIC_INPUT_TOKEN_NOISE = {
+    "args",
+    "command",
+    "compatible",
+    "content",
+    "false",
+    "file_path",
+    "limit",
+    "max_results",
+    "mode",
+    "offset",
+    "path",
+    "query",
+    "resource",
+    "strict",
+    "timeout",
+    "true",
+}
+_SENSITIVE_INPUT_KEY_RE = re.compile(
+    r"(?i)(?:api[_-]?key|authorization|credential|password|token|secret)"
+)
 _MANIFEST_NAMES = {
     "requirements.txt",
     "requirements-dev.txt",
@@ -81,6 +137,23 @@ _MANIFEST_NAMES = {
     "cargo.toml",
     "go.mod",
 }
+_POLICY_BASENAMES = {
+    "policy.md",
+    "project-policy.md",
+    "project_policy.md",
+}
+_NORMATIVE_POLICY_RE = re.compile(
+    r"(?i)\b(?:must|shall|required|requires|always|never|do not|don't|"
+    r"cannot|may not)\b|(?:必须|需要|不得|禁止|始终|一律)"
+)
+_POLICY_SCOPE_RE = re.compile(
+    r"(?i)^(?:(?:this|the)\s+(?:rule|policy|requirement)|it)\s+"
+    r"(?:applies\b|does\s+not\s+apply\b)|^(?:applies\b|does\s+not\s+apply\b)"
+)
+_POLICY_TOOL_HEADER_RE = re.compile(
+    r"^(?:FILE|OFFSET|END|TOTAL_CHARS|TRUNCATED):"
+)
+_POLICY_CONSTRAINT_MAX_CHARS = 480
 _IMPORT_ALIASES = {
     "sklearn": "scikit-learn",
     "cv2": "opencv-python",
@@ -130,7 +203,26 @@ _MENTION_LIBRARIES = {
 
 _SECRET_ASSIGNMENT_RE = re.compile(
     r"(?i)\b((?:[a-z][a-z0-9]*[_-])*(?:api[_-]?key|authorization|credential|password|token|secret(?:[_-]?key)?))\b"
-    r"(\s*[:=]\s*)(?!\[redacted)[^\s,;]+"
+    r"(\s*[:=]\s*)((?!\[redacted)[^\s,;]+)"
+)
+# Values that cannot carry a secret, so redacting them only corrupts prose.
+# A real run stored a correct root-cause explanation as "sets `_token=[REDACTED]
+# BEFORE the increment", because any assignment to a name ending in "token"
+# was rewritten. The exemptions stay deliberately narrow:
+#   * a short number -- a credential worth hiding is not four digits long;
+#   * a language literal;
+#   * an attribute chain with no digits in it. Credentials in this position
+#     are JWTs or base64, which are longer and effectively always contain
+#     digits, so requiring digit-free short segments keeps them redacted
+#     while letting "self._store_token" through.
+# Anything else is still treated as a secret.
+_NON_SECRET_VALUE_RE = re.compile(
+    r"^(?:"
+    r"[0-9]{1,4}(?:\.[0-9]{1,4})?"
+    r"|(?:None|True|False|null|nil|undefined|NULL|NaN)"
+    r"|(?:str|int|float|bool|bytes|dict|list|set|tuple|Any)"
+    r"|[A-Za-z_][A-Za-z_]{0,15}(?:\.[A-Za-z_][A-Za-z_]{0,15}){1,3}"
+    r")[)\]}\"'`,.;:]*$"
 )
 _BEARER_RE = re.compile(r"(?i)\bbearer\s+(?!\[redacted)[a-z0-9._~+/-]+")
 _OPENAI_STYLE_KEY_RE = re.compile(r"\bsk-[a-zA-Z0-9_-]{8,}\b")
@@ -170,17 +262,138 @@ def append_trace_event(
     return True
 
 
+# Real tool output is coloured. pytest, ruff and cargo all emit SGR sequences,
+# and without this they reach durable memory verbatim -- a claim then reads
+# "When run_command fails with \x1b[31mF\x1b[0m ... [100%]". Stripping here
+# rather than at each call site also keeps terminal control characters out of
+# anything that later renders a memory.
+#
+# The intermediate-byte run is capped at two. ECMA-48 puts "." in that class,
+# and upstream bounding cuts a sequence in half before this ever runs: a
+# trailing "\x1b[33" followed by the appended "...[truncated]" let an
+# unbounded run swallow "\x1b[33...[" in one bite, so a real memory recorded
+# "When run_command fails with lease.transfer(truncated]".
+# ESC is deliberately excluded from the bare-control-character class. Left in,
+# it won the race against the sequence branches whenever the final byte had
+# been cut away: the lone ESC was eaten as a control character and its
+# parameters stayed behind as ordinary text, so a memory recorded
+# "When run_command fails with lease.transfer([3".
+_ANSI_RE = re.compile(
+    r"\x1b\[[0-9;?]{0,32}[ -/]{0,2}[@-~]|\x1b[@-Z\\-_]|[\x00-\x08\x0b\x0c\x0e-\x1a\x1c-\x1f\x7f]"
+)
+# Whatever is left of a sequence whose final byte was cut away, ESC included.
+# Intermediates are omitted on purpose: a cut sequence is indistinguishable
+# from the text after it, and consuming two "intermediates" ate two dots of
+# the appended "...[truncated]" marker, leaving ".[truncated]" behind.
+_PARTIAL_ANSI_RE = re.compile(r"\x1b\[?[0-9;?]{0,32}")
+
+
+_DECISION_MAX_CHARS = 240
+# Chinese sentences carry no space after their terminator, so requiring
+# whitespace left a whole paragraph as one "sentence".
+# The digit lookbehind keeps an enumeration marker attached to its item.
+# Splitting "This means either: 1. The failure already got fixed" after the
+# "1." separated the option from the "either" that made it speculative, and
+# the option was then stored as a decision.
+_SENTENCE_SPLIT_RE = re.compile(r"(?<![0-9]\.)(?<=[.!?])\s+|(?<=[。！？])|\n+")
+# Weighing options is not deciding. A model listing "this means either: 1. ...
+# 2. ..." is still thinking, and the trigger word that matched often sits
+# inside one of the options rather than in a conclusion.
+_SPECULATIVE_RE = re.compile(
+    r"(?i)\b(?:either|maybe|perhaps|probably|might|could be|possibly|"
+    r"not sure|unclear|assuming|suppose)\b|(?:可能|也许|或许|大概|不确定)"
+)
+# Markdown the model writes for the reader, meaningless once quoted.
+_MARKDOWN_NOISE_RE = re.compile(r"\*\*|\*|`+|^#{1,6}\s*|^\s*[-*+]\s+|^\s*\d+\.\s+", re.M)
+_DECISION_TRIGGER_RE = re.compile(
+    r"(?i)\b(?:choose|chose|decide|decided|select|selected|caused|fixes|root cause is)\b"
+    r"|(?:选择|决定|导致|根因是)"
+)
+
+
+def _decision_sentence(text: str) -> str:
+    """Reduce an assistant turn to the one sentence that states the decision.
+
+    Taking the whole turn stored a page of thinking-aloud as a "decision":
+    "Crucial finding: **"collected 154 items"** ... So this means either:
+    1. The user's reported failure already got fixed ...". The trigger word is
+    what made this a decision at all, so the sentence carrying it is the claim
+    and the rest is working-out.
+
+    Returns "" when every sentence carrying a trigger is speculative, so the
+    caller records no decision rather than one the model never committed to.
+    """
+    cleaned = _MARKDOWN_NOISE_RE.sub("", text)
+    sentences = [item.strip() for item in _SENTENCE_SPLIT_RE.split(cleaned) if item.strip()]
+    matched = False
+    for sentence in sentences:
+        if not _DECISION_TRIGGER_RE.search(sentence):
+            continue
+        matched = True
+        if not _SPECULATIVE_RE.search(sentence):
+            return " ".join(sentence.split())[:_DECISION_MAX_CHARS]
+    if matched:
+        return ""
+    condensed = " ".join(cleaned.split())
+    return condensed[:_DECISION_MAX_CHARS]
+
+
+_ELISION_MARKER = "\n...[truncated middle]...\n"
+_CONSTRAINT_MAX_CHARS = 200
+# Types a tool layer stamps on someone else's failure.
+_GENERIC_WRAPPER_TYPES = {"toolerror", "unknownerror", "exception", "error"}
+
+
+def bound_keeping_both_ends(text: str, limit: int) -> str:
+    """Bound text by eliding its middle, not its tail.
+
+    Tools print their summary last: pytest ends with
+    "FAILED tests/test_renew.py::test_renew - StaleTokenError", cargo and npm
+    the same. Cutting from the end keeps the progress bar and throws away the
+    line that names what failed, so a memory built from the result could not
+    name the failing test.
+    """
+    if len(text) <= limit:
+        return text
+    budget = max(0, limit - len(_ELISION_MARKER))
+    head = budget // 2
+    return text[:head] + _ELISION_MARKER + text[-(budget - head):]
+
+
+def _bound_error_message(value: Any) -> str:
+    """Bound a failing tool's whole output while keeping both of its ends.
+
+    A failure's "message" is everything the tool printed. Head-first
+    truncation discards exactly the part that carries the lesson, because
+    pytest, cargo and npm all print their summary last: a real 832-character
+    pytest failure kept the progress bar and the banner and lost
+    "FAILED tests/test_renew.py::test_renew_after_transfer - StaleTokenError",
+    so the memory built from it could no longer name the failing test.
+
+    Redaction still runs over the full text first, so nothing secret is
+    admitted by widening the window.
+    """
+    text = sanitize_evidence_text(value, EVIDENCE_MAX_TEXT_CHARS * 8)
+    return bound_keeping_both_ends(text, EVIDENCE_MAX_TEXT_CHARS)
+
+
+def _redact_secret_assignment(match: re.Match[str]) -> str:
+    """Redact an assignment unless its value provably cannot be a secret."""
+    value = match.group(3)
+    if _NON_SECRET_VALUE_RE.match(value):
+        return match.group(0)
+    return f"{match.group(1)}{match.group(2)}[REDACTED]"
+
+
 def sanitize_evidence_text(value: Any, limit: int = EVIDENCE_MAX_TEXT_CHARS) -> str:
     """Safely stringify, redact, and bound untrusted trace text."""
     try:
         text = value if isinstance(value, str) else str(value)
     except Exception:
         text = "[unprintable]"
+    text = _PARTIAL_ANSI_RE.sub("", _ANSI_RE.sub("", text))
     text = _BEARER_RE.sub("Bearer [REDACTED]", text)
-    text = _SECRET_ASSIGNMENT_RE.sub(
-        lambda match: f"{match.group(1)}{match.group(2)}[REDACTED]",
-        text,
-    )
+    text = _SECRET_ASSIGNMENT_RE.sub(_redact_secret_assignment, text)
     text = _OPENAI_STYLE_KEY_RE.sub("[REDACTED_API_KEY]", text)
     if len(text) > limit:
         return text[:limit] + "...[truncated]"
@@ -233,6 +446,15 @@ class RecoveryEvidence:
     event_ids: tuple[str, ...]
     files_changed: tuple[str, ...]
     epistemic_status: EpistemicStatus
+    # Bounded old->new excerpt of the edit that performed the repair, e.g.
+    # "src/a.py: 'from tenacity import retry' -> 'from tenacity import
+    # retry, stop_after_attempt'". A recovery without it says WHAT was
+    # touched but not what to actually do next time.
+    change_summary: str = ""
+    # Calls whose successful tool_result directly verifies this recovery.
+    # This supports non-command tools such as read_file/edit_file/web_search,
+    # whose success is real evidence but is not a test/lint verification.
+    verification_call_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -287,6 +509,11 @@ class TaskEvidence:
     outcome: Literal["success", "failed", "unknown"] = "unknown"
     had_errors: bool = False
     errors_recovered: bool = False
+    # The agent's own final causal summary (last assistant turn, bounded).
+    # It carries the "why" that structured events cannot express, and feeds
+    # approach claims for successfully verified work.
+    final_summary: str = ""
+    final_summary_event_ids: tuple[str, ...] = ()
     diagnostics: list[str] = field(default_factory=list)
     event_positions: dict[str, int] = field(default_factory=dict)
 
@@ -319,6 +546,23 @@ class _Event:
     raw: Mapping[str, Any]
 
 
+@dataclass(frozen=True)
+class _CallAttempt:
+    """One tool_call/tool_result pair reduced to what it acted on and how it went."""
+
+    call_id: str
+    tool_name: str
+    target: str
+    status: str
+    index: int
+    event_ids: tuple[str, ...]
+    input_event_id: str | None = None
+    invocation: str = ""
+    objective_kind: str | None = None
+    resource_keys: tuple[str, ...] = ()
+    engine_keys: tuple[str, ...] = ()
+
+
 def _safe_get(mapping: Mapping[str, Any], key: str, default: Any = None) -> Any:
     try:
         return mapping.get(key, default)
@@ -343,6 +587,60 @@ def _normalize_message(value: str) -> str:
 
 def _ordered_unique(values: Sequence[str]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(value for value in values if value))[:EVIDENCE_MAX_LIST_ITEMS]
+
+
+def _policy_constraint_statements(text: str) -> list[str]:
+    """Rebuild bounded Markdown policy paragraphs before finding constraints.
+
+    ``read_file`` preserves physical line wrapping. Treating each line as an
+    independent fact can approve a syntactically valid but incomplete lesson.
+    Join only lines in the same Markdown paragraph/list item, then attach an
+    immediately following paragraph when it explicitly scopes that rule.
+    """
+    blocks: list[str] = []
+    current: list[str] = []
+
+    def flush() -> None:
+        if not current:
+            return
+        block = " ".join(current).strip()
+        current.clear()
+        if block:
+            blocks.append(block)
+
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        if (
+            not stripped
+            or _POLICY_TOOL_HEADER_RE.match(stripped)
+            or stripped.startswith(("#", "```"))
+        ):
+            flush()
+            continue
+        list_item = re.match(r"^(?:[-*+]\s+|\d+[.)]\s+)(.+)$", stripped)
+        if list_item:
+            flush()
+            current.append(list_item.group(1).strip())
+            continue
+        current.append(stripped.removeprefix("> "))
+    flush()
+
+    statements: list[str] = []
+    index = 0
+    while index < len(blocks):
+        block = blocks[index]
+        index += 1
+        if not _NORMATIVE_POLICY_RE.search(block):
+            continue
+        statement = block
+        if index < len(blocks) and _POLICY_SCOPE_RE.search(blocks[index]):
+            scoped = f"{statement} {blocks[index]}"
+            if len(scoped) <= _POLICY_CONSTRAINT_MAX_CHARS:
+                statement = scoped
+                index += 1
+        if len(statement) <= _POLICY_CONSTRAINT_MAX_CHARS:
+            statements.append(statement)
+    return list(dict.fromkeys(statements))[:EVIDENCE_MAX_LIST_ITEMS]
 
 
 def _normalize_path(path: str) -> str:
@@ -532,7 +830,20 @@ class TraceEvidenceExtractor:
         tools = self._extract_tools(events)
         errors = self._extract_errors(events)
         verification = self._extract_verification(events)
-        recoveries = self._extract_recoveries(events, errors, file_evidence)
+        recoveries = self._extract_recoveries(
+            events,
+            errors,
+            file_evidence,
+            verification,
+        )
+        verification.extend(
+            self._extract_recovery_verifications(
+                events,
+                recoveries,
+                verification,
+            )
+        )
+        verification = verification[:EVIDENCE_MAX_LIST_ITEMS]
         suggestions = self._extract_recovery_suggestions(events, errors)
         libraries = self._extract_libraries(events, file_evidence)
         decisions = self._extract_decisions(events)
@@ -548,6 +859,7 @@ class TraceEvidenceExtractor:
             and outcome == "success"
             and (verification or any(event.event_type == "task_result" for event in events))
         )
+        final_summary, final_summary_event_ids = self._extract_final_summary(events)
         return TaskEvidence(
             files_read=by_role["read"],
             files_changed=by_role["changed"],
@@ -562,9 +874,36 @@ class TraceEvidenceExtractor:
             outcome=outcome,
             had_errors=had_errors,
             errors_recovered=errors_recovered,
+            final_summary=final_summary,
+            final_summary_event_ids=final_summary_event_ids,
             diagnostics=diagnostics[:EVIDENCE_MAX_LIST_ITEMS],
             event_positions={event.event_id: event.index for event in events},
         )
+
+    @staticmethod
+    def _extract_final_summary(
+        events: list["_Event"],
+    ) -> tuple[str, tuple[str, ...]]:
+        """Return the agent's last assistant explanation, bounded.
+
+        The final turn is where the model states what it did and why; earlier
+        turns are it thinking out loud. One event only, newest wins.
+        """
+        for event in reversed(events):
+            if event.event_type not in {"assistant", "assistant_step"}:
+                continue
+            text_value = (
+                _safe_get(event.raw, "text")
+                or _safe_get(event.raw, "content")
+                or _safe_get(event.raw, "summary")
+                or ""
+            )
+            if not isinstance(text_value, str):
+                continue
+            text = sanitize_evidence_text(text_value, 400)
+            if text.strip():
+                return text, (event.event_id,)
+        return "", ()
 
     def _normalize_events(
         self, execution_trace: Any
@@ -693,7 +1032,7 @@ class TraceEvidenceExtractor:
             or _safe_get(event.raw, "content")
             or ""
         )
-        message = sanitize_evidence_text(message_value)
+        message = _bound_error_message(message_value)
         error_type_value = _safe_get(event.raw, "error_type") or _safe_get(event.raw, "type_name")
         error_type = sanitize_evidence_text(error_type_value, 120).strip() if error_type_value else None
         if not error_type:
@@ -752,8 +1091,58 @@ class TraceEvidenceExtractor:
                 message=record["message"],
                 source_event_ids=_ordered_unique(record["sources"]),
             )
-            for index, record in enumerate(records.values(), start=1)
+            for index, record in enumerate(
+                self._merge_restated_failures(records), start=1
+            )
         ][:EVIDENCE_MAX_LIST_ITEMS]
+
+    @staticmethod
+    def _merge_restated_failures(
+        records: dict[tuple[str, str, str], dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Collapse one failure that the trace stated twice.
+
+        A crashing tool emits both a ``tool_result`` carrying the wrapper type
+        and an ``error`` carrying the underlying one. The fingerprint truncates
+        the message from its error type, so the same crash keyed twice and
+        produced two error_pattern claims -- "run_command / FileNotFoundError"
+        and "run_command / ToolError" over one identical message. Truncation
+        makes the more specific fingerprint a suffix of the other, which is
+        exactly the relation matched here; unrelated failures of the same call
+        share no such suffix and stay separate.
+        """
+        merged: list[dict[str, Any]] = []
+        anchors: dict[tuple[str | None, str | None], list[tuple[str, dict[str, Any]]]] = (
+            defaultdict(list)
+        )
+        for (_, _, fingerprint), record in records.items():
+            group = anchors[(record["call_id"], record["tool_name"])]
+            match = next(
+                (
+                    existing
+                    for existing_print, existing in group
+                    if fingerprint
+                    and existing_print
+                    and (
+                        fingerprint.endswith(existing_print)
+                        or existing_print.endswith(fingerprint)
+                    )
+                ),
+                None,
+            )
+            if match is None:
+                group.append((fingerprint, record))
+                merged.append(record)
+                continue
+            match["sources"].extend(record["sources"])
+            if len(record["message"]) > len(match["message"]):
+                match["message"] = record["message"]
+            # Prefer the underlying exception over the wrapper that reported it.
+            if record["error_type"] and _normalize_message(
+                record["error_type"]
+            ) not in _GENERIC_WRAPPER_TYPES:
+                match["error_type"] = record["error_type"]
+        return merged
 
     def _related_error_ids(
         self,
@@ -784,6 +1173,7 @@ class TraceEvidenceExtractor:
         events: list[_Event],
         errors: list[ErrorEvidence],
         files: list[FileEvidence],
+        verification: list[VerificationEvidence],
     ) -> list[RecoveryEvidence]:
         event_positions = {event.event_id: event.index for event in events}
         result_events_by_call: dict[str, list[str]] = defaultdict(list)
@@ -825,7 +1215,746 @@ class TraceEvidenceExtractor:
                     epistemic_status=status,
                 )
             )
+        recoveries.extend(
+            self._derive_recoveries(
+                events,
+                errors,
+                files,
+                verification,
+                recoveries,
+            )
+        )
         return recoveries[:EVIDENCE_MAX_LIST_ITEMS]
+
+    def _derive_recoveries(
+        self,
+        events: list[_Event],
+        errors: list[ErrorEvidence],
+        files: list[FileEvidence],
+        verification: list[VerificationEvidence],
+        explicit: list[RecoveryEvidence],
+    ) -> list[RecoveryEvidence]:
+        """Recover the fix-verified loop that no runtime event reports.
+
+        Nothing in the agent emits a "recovery"/"fix" event, so RecoveryEvidence
+        was only ever produced by test fixtures. That starved every claim type
+        built on it -- ``recovery`` and confirmed ``root_cause`` -- and left
+        bare ``error_pattern`` as the one path with a live feed.
+
+        The loop is nonetheless fully recorded in the trace already: a call
+        fails, files change, the same call succeeds. This reads that shape back
+        out. It requires an intervening file change on purpose: a same-target
+        retry that succeeds with nothing altered in between is flakiness, and
+        minting a "recovery" from it would reintroduce exactly the contentless
+        memory this whole path is meant to stop producing.
+        """
+        calls = self._call_attempts(events)
+        if not calls:
+            return []
+        errors_by_call: dict[str, list[ErrorEvidence]] = defaultdict(list)
+        for error in errors:
+            if error.call_id:
+                errors_by_call[error.call_id].append(error)
+        already_linked = {
+            error_id for recovery in explicit for error_id in recovery.related_error_ids
+        }
+        changes = self._changed_file_positions(events, files)
+
+        # One repair, one record. Attempts that failed on the same target
+        # before the same success describe a single fix, so they are grouped
+        # rather than emitted one-per-failure -- fragmenting one root cause
+        # across several entries is the noise pattern this path exists to
+        # avoid, not to reproduce.
+        repairs: dict[str, list[_CallAttempt]] = {}
+        successes: list[_CallAttempt] = []
+        for failure in calls:
+            if failure.status != "error":
+                continue
+            if not any(
+                error.error_id not in already_linked
+                for error in errors_by_call.get(failure.call_id, [])
+            ):
+                continue
+            success = next(
+                (
+                    item
+                    for item in calls
+                    if item.status == "success"
+                    and item.index > failure.index
+                    and item.tool_name == failure.tool_name
+                    and item.target == failure.target
+                ),
+                None,
+            )
+            if success is None:
+                continue
+            if success.call_id not in repairs:
+                repairs[success.call_id] = []
+                successes.append(success)
+            repairs[success.call_id].append(failure)
+
+        derived: list[RecoveryEvidence] = []
+        for success in successes:
+            failures = repairs[success.call_id]
+            # Whatever changed after the *last* failure is the actual repair:
+            # anything earlier demonstrably did not fix it, since the call
+            # failed again afterwards.
+            last_attempt = max(item.index for item in failures)
+            window = [
+                item for item in changes if last_attempt < item[1] < success.index
+            ]
+            if not window:
+                continue
+            repaired = list(dict.fromkeys(path for path, _, _ in window))
+            # The repair *is* the change; the passing re-run that follows is
+            # the verification of it. Keeping the successful call out of
+            # event_ids is what lets _passed_verifications_after see that
+            # verification as coming after the recovery, which is the only
+            # way the claim reaches "confirmed".
+            event_positions = {event.event_id: event.index for event in events}
+            fix_event_ids = [
+                event_id
+                for _, _, event_ids in window
+                for event_id in event_ids
+                # A successful mutating call is both the corrective action
+                # (its tool_call) and the proof that the action completed (its
+                # later tool_result).  Keep only the action side in the
+                # recovery boundary; otherwise _passed_verifications_after
+                # sees the proof at the same position and incorrectly
+                # downgrades a real edit recovery to ``inferred``.
+                if event_positions.get(event_id, success.index) < success.index
+            ]
+            related = _ordered_unique(
+                [
+                    error.error_id
+                    for item in failures
+                    for error in errors_by_call.get(item.call_id, [])
+                    if error.error_id not in already_linked
+                ]
+            )
+            shown = ", ".join(repaired[:3])
+            if len(repaired) > 3:
+                shown = f"{shown} (+{len(repaired) - 3} more)"
+            change_summary = self._change_summary_for_window(
+                events, last_attempt, success.index
+            )
+            derived.append(
+                RecoveryEvidence(
+                    recovery_id=f"recovery-{len(explicit) + len(derived) + 1:06d}",
+                    related_error_ids=tuple(related),
+                    # No trailing period: the claim template appends one.
+                    action=sanitize_evidence_text(
+                        f"Changed {shown}, after which {success.tool_name} "
+                        f"succeeded on {success.target}"
+                    ),
+                    event_ids=_ordered_unique(
+                        [
+                            *(
+                                event_id
+                                for item in failures
+                                for event_id in item.event_ids
+                            ),
+                            *fix_event_ids,
+                        ]
+                    ),
+                    files_changed=tuple(repaired),
+                    epistemic_status="confirmed",
+                    change_summary=change_summary,
+                    verification_call_ids=(success.call_id,),
+                )
+            )
+        derived.extend(
+            self._derive_operational_recoveries(
+                calls,
+                errors,
+                verification,
+                [*explicit, *derived],
+            )
+        )
+        derived.extend(
+            self._derive_generic_tool_recoveries(
+                calls,
+                errors,
+                [*explicit, *derived],
+            )
+        )
+        return derived
+
+    def _derive_operational_recoveries(
+        self,
+        calls: list[_CallAttempt],
+        errors: list[ErrorEvidence],
+        verification: list[VerificationEvidence],
+        existing: list[RecoveryEvidence],
+    ) -> list[RecoveryEvidence]:
+        """Derive verified command/tool corrections that do not edit files.
+
+        A command repair is not a same-input retry.  It is a materially changed
+        invocation that verifies the same bounded objective: for example,
+        replacing literal pipe arguments with ``bash -lc`` or replacing the
+        agent's interpreter with the project's virtual-environment Python.
+
+        Correlation stays deliberately strict.  Both calls must describe the
+        same verification kind, the successful call must have an independently
+        parsed passing verification, and path-bearing calls must share a
+        non-generic resource fingerprint.  This prevents an unrelated later
+        ``ruff`` or ``pytest`` success from laundering an earlier failure into
+        a durable lesson.
+        """
+        passed_calls = {
+            item.call_id
+            for item in verification
+            if item.call_id and item.result == "passed"
+        }
+        errors_by_call: dict[str, list[ErrorEvidence]] = defaultdict(list)
+        for error in errors:
+            if error.call_id:
+                errors_by_call[error.call_id].append(error)
+        already_linked = {
+            error_id for recovery in existing for error_id in recovery.related_error_ids
+        }
+
+        repairs: dict[str, list[_CallAttempt]] = {}
+        successes: list[_CallAttempt] = []
+        for failure in calls:
+            if failure.status != "error" or not failure.objective_kind:
+                continue
+            if not any(
+                error.error_id not in already_linked
+                for error in errors_by_call.get(failure.call_id, [])
+            ):
+                continue
+            success = next(
+                (
+                    item
+                    for item in calls
+                    if item.status == "success"
+                    and item.call_id in passed_calls
+                    and item.index > failure.index
+                    and self._same_operational_objective(failure, item)
+                ),
+                None,
+            )
+            if success is None:
+                continue
+            if success.call_id not in repairs:
+                repairs[success.call_id] = []
+                successes.append(success)
+            repairs[success.call_id].append(failure)
+
+        result: list[RecoveryEvidence] = []
+        for success in successes:
+            failures = repairs[success.call_id]
+            last_failure = max(failures, key=lambda item: item.index)
+            related = _ordered_unique(
+                [
+                    error.error_id
+                    for attempt in failures
+                    for error in errors_by_call.get(attempt.call_id, [])
+                    if error.error_id not in already_linked
+                ]
+            )
+            if not related or not success.input_event_id:
+                continue
+            failed_invocation = sanitize_evidence_text(last_failure.invocation, 240)
+            successful_invocation = sanitize_evidence_text(success.invocation, 320)
+            action = sanitize_evidence_text(
+                f"Verified recovery: use the corrected {success.objective_kind} "
+                f"invocation `{successful_invocation}`; do not reuse the failed "
+                f"invocation `{failed_invocation}`"
+            )
+            result.append(
+                RecoveryEvidence(
+                    recovery_id=(
+                        f"recovery-{len(existing) + len(result) + 1:06d}"
+                    ),
+                    related_error_ids=tuple(related),
+                    action=action,
+                    # The successful tool_call is the observed corrective
+                    # action.  Its tool_result remains after this position and
+                    # therefore serves as the independent verification.
+                    event_ids=_ordered_unique(
+                        [
+                            *(
+                                event_id
+                                for attempt in failures
+                                for event_id in attempt.event_ids
+                            ),
+                            success.input_event_id,
+                        ]
+                    ),
+                    files_changed=(),
+                    epistemic_status="confirmed",
+                    verification_call_ids=(success.call_id,),
+                )
+            )
+            already_linked.update(related)
+        return result
+
+    def _derive_generic_tool_recoveries(
+        self,
+        calls: list[_CallAttempt],
+        errors: list[ErrorEvidence],
+        existing: list[RecoveryEvidence],
+    ) -> list[RecoveryEvidence]:
+        """Derive changed-input retries for any tool, including future tools.
+
+        Tool names are deliberately not classified here.  A failed call and a
+        later successful call must use the same tool, carry materially changed
+        structured input, and still describe the same target.  Path-bearing
+        tools match by stable path fingerprints; targetless tools match by a
+        bounded input-token overlap and a short call window.
+
+        The successful ToolResult is direct proof that the corrected invocation
+        is executable.  It becomes a ``tool_recovery`` VerificationEvidence in
+        ``_extract_recovery_verifications`` so safe claims can be auto-approved
+        without pretending that a generic retry nudge was the fix.
+        """
+        errors_by_call: dict[str, list[ErrorEvidence]] = defaultdict(list)
+        for error in errors:
+            if error.call_id:
+                errors_by_call[error.call_id].append(error)
+        already_linked = {
+            error_id for recovery in existing for error_id in recovery.related_error_ids
+        }
+        call_positions = {item.call_id: index for index, item in enumerate(calls)}
+
+        repairs: dict[str, list[_CallAttempt]] = {}
+        successes: list[_CallAttempt] = []
+        for failure in calls:
+            if failure.status != "error" or not failure.invocation:
+                continue
+            if not any(
+                error.error_id not in already_linked
+                for error in errors_by_call.get(failure.call_id, [])
+            ):
+                continue
+            failure_position = call_positions[failure.call_id]
+            success = next(
+                (
+                    item
+                    for item in calls[failure_position + 1 :]
+                    if 0
+                    < call_positions[item.call_id] - failure_position
+                    <= _GENERIC_RECOVERY_MAX_CALL_GAP
+                    and item.status == "success"
+                    and item.input_event_id
+                    and self._same_generic_tool_objective(failure, item)
+                ),
+                None,
+            )
+            if success is None:
+                continue
+            if success.call_id not in repairs:
+                repairs[success.call_id] = []
+                successes.append(success)
+            repairs[success.call_id].append(failure)
+
+        result: list[RecoveryEvidence] = []
+        for success in successes:
+            failures = repairs[success.call_id]
+            last_failure = max(failures, key=lambda item: item.index)
+            related = _ordered_unique(
+                [
+                    error.error_id
+                    for attempt in failures
+                    for error in errors_by_call.get(attempt.call_id, [])
+                    if error.error_id not in already_linked
+                ]
+            )
+            if not related or not success.input_event_id:
+                continue
+            failed_invocation = sanitize_evidence_text(last_failure.invocation, 240)
+            successful_invocation = sanitize_evidence_text(success.invocation, 320)
+            result.append(
+                RecoveryEvidence(
+                    recovery_id=(
+                        f"recovery-{len(existing) + len(result) + 1:06d}"
+                    ),
+                    related_error_ids=tuple(related),
+                    action=sanitize_evidence_text(
+                        f"Verified recovery: use the corrected {success.tool_name} "
+                        f"invocation `{successful_invocation}`; do not reuse the "
+                        f"failed invocation `{failed_invocation}`"
+                    ),
+                    event_ids=_ordered_unique(
+                        [
+                            *(
+                                event_id
+                                for attempt in failures
+                                for event_id in attempt.event_ids
+                            ),
+                            success.input_event_id,
+                        ]
+                    ),
+                    files_changed=(),
+                    epistemic_status="confirmed",
+                    verification_call_ids=(success.call_id,),
+                )
+            )
+            already_linked.update(related)
+        return result
+
+    def _same_generic_tool_objective(
+        self,
+        failure: _CallAttempt,
+        success: _CallAttempt,
+    ) -> bool:
+        if failure.tool_name != success.tool_name:
+            return False
+        if not failure.invocation or not success.invocation:
+            return False
+        if " ".join(failure.invocation.lower().split()) == " ".join(
+            success.invocation.lower().split()
+        ):
+            return False
+        failed_resources = set(self._generic_resource_keys(failure.invocation))
+        successful_resources = set(self._generic_resource_keys(success.invocation))
+        if failed_resources or successful_resources:
+            common_resources = failed_resources & successful_resources
+            if not common_resources:
+                return False
+            # A basename alone is ambiguous when both calls carry directory
+            # context: ``src/config.py`` and ``tests/config.py`` are different
+            # targets even though both expose ``config.py``.  A genuine path
+            # correction such as ``src/auth.py`` -> ``backend/src/auth.py``
+            # still shares the stable ``src/auth.py`` suffix.
+            if any("/" in item for item in failed_resources) and any(
+                "/" in item for item in successful_resources
+            ):
+                return any("/" in item for item in common_resources)
+            return True
+
+        failed_tokens = self._generic_invocation_tokens(failure.invocation)
+        successful_tokens = self._generic_invocation_tokens(success.invocation)
+        common = failed_tokens & successful_tokens
+        union = failed_tokens | successful_tokens
+        return bool(common) and len(common) / max(1, len(union)) >= 0.4
+
+    @staticmethod
+    def _generic_resource_keys(invocation: str) -> tuple[str, ...]:
+        """Return path suffixes without discarding meaningful directories.
+
+        Operational verifier matching intentionally treats ``src``/``tests``
+        as noise.  Generic tool recovery cannot: those directories distinguish
+        two same-named files.  Keep the basename for flat-path retries and the
+        last two/three components for relocations that add an outer prefix.
+        """
+        candidates = re.findall(
+            r"(?:[A-Za-z]:)?(?:\.{0,2}/|/)?"
+            r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+",
+            invocation,
+        )
+        keys: list[str] = []
+        for candidate in candidates[: EVIDENCE_MAX_LIST_ITEMS * 2]:
+            normalized = _normalize_path(candidate).strip("'\"`.,;:()[]{}").lower()
+            parts = [part for part in normalized.split("/") if part and part != "."]
+            if not parts:
+                continue
+            keys.append(parts[-1])
+            if len(parts) >= 2:
+                keys.append("/".join(parts[-2:]))
+            if len(parts) >= 3:
+                keys.append("/".join(parts[-3:]))
+        return _ordered_unique(keys)
+
+    @staticmethod
+    def _generic_invocation_tokens(invocation: str) -> set[str]:
+        return {
+            token
+            for token in re.findall(r"[a-z0-9_.-]{3,}", invocation.lower())
+            if token not in _GENERIC_INPUT_TOKEN_NOISE
+            and token != "redacted"
+            and not token.isdigit()
+        }
+
+    @staticmethod
+    def _same_operational_objective(
+        failure: _CallAttempt,
+        success: _CallAttempt,
+    ) -> bool:
+        if not success.objective_kind or failure.objective_kind != success.objective_kind:
+            return False
+        if not failure.invocation or not success.invocation:
+            return False
+        if " ".join(failure.invocation.lower().split()) == " ".join(
+            success.invocation.lower().split()
+        ):
+            # An unchanged retry can pass because of flakiness; it teaches no
+            # executable recovery method.
+            return False
+        failed_resources = set(failure.resource_keys)
+        successful_resources = set(success.resource_keys)
+        if failed_resources or successful_resources:
+            return bool(failed_resources & successful_resources)
+        return bool(set(failure.engine_keys) & set(success.engine_keys))
+
+    @staticmethod
+    def _change_summary_for_window(
+        events: list["_Event"], start_index: int, end_index: int
+    ) -> str:
+        """Bounded old->new excerpts of the edits inside a repair window.
+
+        The recovery action alone says which file was touched; the excerpt is
+        what makes the lesson executable next time. Multiline edits collapse
+        to their first meaningful line per side.
+        """
+        parts: list[str] = []
+        for event in events:
+            if not (start_index < event.index < end_index):
+                continue
+            if event.event_type != "tool_call":
+                continue
+            tool = _normalize_name(event.tool_name or "")
+            if tool not in _CHANGE_TOOLS:
+                continue
+            raw_input = _safe_get(event.raw, "input")
+            if not isinstance(raw_input, Mapping):
+                continue
+            path = str(
+                _safe_get(raw_input, "path")
+                or _safe_get(raw_input, "file_path")
+                or ""
+            ).strip()
+            old_value = _safe_get(raw_input, "old_string")
+            new_value = _safe_get(raw_input, "new_string")
+
+            def _excerpt(value: Any) -> str:
+                if not isinstance(value, str):
+                    return ""
+                lines = [line.strip() for line in value.splitlines() if line.strip()]
+                return sanitize_evidence_text(lines[0] if lines else "", 80)
+
+            old_line = _excerpt(old_value)
+            new_line = _excerpt(new_value)
+            location = path or tool
+            if old_line and new_line and old_line != new_line:
+                parts.append(f"{location}: '{old_line}' -> '{new_line}'")
+            elif new_line:
+                parts.append(f"{location}: '{new_line}'")
+            elif path:
+                parts.append(path)
+            if len(parts) >= 3:
+                break
+        return "; ".join(parts)
+
+    def _call_attempts(self, events: list[_Event]) -> list[_CallAttempt]:
+        """Fold tool_call/tool_result pairs into one comparable attempt each."""
+        inputs: dict[str, _Event] = {}
+        attempts: list[_CallAttempt] = []
+        for event in events:
+            if not event.call_id:
+                continue
+            if event.event_type == "tool_call":
+                inputs.setdefault(event.call_id, event)
+                continue
+            if event.event_type != "tool_result":
+                continue
+            tool_name = _normalize_name(
+                event.tool_name
+                or (inputs[event.call_id].tool_name if event.call_id in inputs else "")
+            )
+            if not tool_name:
+                continue
+            status = _normalize_name(_safe_get(event.raw, "status", ""))
+            if _safe_get(event.raw, "is_error"):
+                status = "error"
+            if status not in {"success", "error"}:
+                continue
+            input_event = inputs.get(event.call_id)
+            sources = [event] + ([input_event] if input_event is not None else [])
+            target = self._call_target(tool_name, sources)
+            invocation = self._call_invocation(tool_name, sources)
+            if not target and not invocation:
+                continue
+            output = self._event_text(event)
+            attempts.append(
+                _CallAttempt(
+                    call_id=event.call_id,
+                    tool_name=tool_name,
+                    target=target,
+                    status=status,
+                    index=event.index,
+                    event_ids=tuple(item.event_id for item in sources),
+                    input_event_id=input_event.event_id if input_event else None,
+                    invocation=invocation,
+                    objective_kind=self._verification_kind(
+                        tool_name,
+                        invocation,
+                        output,
+                    ),
+                    resource_keys=self._operational_resource_keys(invocation),
+                    engine_keys=self._operational_engine_keys(tool_name, invocation),
+                )
+            )
+        return attempts
+
+    def _call_invocation(self, tool_name: str, sources: list[_Event]) -> str:
+        """Render a bounded, redacted invocation from structured tool input."""
+        payload: Mapping[str, Any] | None = None
+        for source in sources:
+            if source.event_type != "tool_call":
+                continue
+            nested = _safe_get(source.raw, "input")
+            payload = nested if isinstance(nested, Mapping) else source.raw
+            break
+        if payload is None:
+            return ""
+
+        command_value = _safe_get(payload, "command", "")
+        command = sanitize_evidence_text(command_value, 240).strip()
+        raw_args = _safe_get(payload, "args", [])
+        args = (
+            [sanitize_evidence_text(value, 320) for value in raw_args[:32]]
+            if isinstance(raw_args, list)
+            else []
+        )
+        if command:
+            if args:
+                try:
+                    return sanitize_evidence_text(shlex.join([command, *args]), 480)
+                except (TypeError, ValueError):
+                    pass
+            return sanitize_evidence_text(command, 480)
+
+        structured = self._sanitize_method_input(payload)
+        if not structured:
+            return ""
+        try:
+            rendered = json.dumps(
+                structured,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        except (TypeError, ValueError):
+            return ""
+        return sanitize_evidence_text(f"{tool_name} {rendered}", 480)
+
+    @staticmethod
+    def _sanitize_method_input(payload: Mapping[str, Any]) -> dict[str, Any]:
+        """Bound and redact arbitrary structured input for a recovery method."""
+        seen: set[int] = set()
+
+        def walk(value: Any, *, key: str = "", depth: int = 0) -> Any:
+            if key and _SENSITIVE_INPUT_KEY_RE.search(key):
+                return "[REDACTED]"
+            if depth > 3:
+                return "[truncated]"
+            if isinstance(value, str):
+                return sanitize_evidence_text(value, 140)
+            if isinstance(value, (int, float, bool)) or value is None:
+                return value
+            if isinstance(value, (Mapping, list, tuple)):
+                identity = id(value)
+                if identity in seen:
+                    return "[cycle]"
+                seen.add(identity)
+            if isinstance(value, Mapping):
+                result: dict[str, Any] = {}
+                try:
+                    items = sorted(
+                        list(value.items())[:16],
+                        key=lambda item: str(item[0]),
+                    )
+                except Exception:
+                    return "[unreadable]"
+                for nested_key, nested in items:
+                    key_text = sanitize_evidence_text(nested_key, 80)
+                    result[key_text] = walk(
+                        nested,
+                        key=key_text,
+                        depth=depth + 1,
+                    )
+                return result
+            if isinstance(value, (list, tuple)):
+                return [walk(item, depth=depth + 1) for item in value[:16]]
+            return sanitize_evidence_text(value, 140)
+
+        sanitized = walk(payload)
+        return sanitized if isinstance(sanitized, dict) else {}
+
+    @staticmethod
+    def _operational_resource_keys(invocation: str) -> tuple[str, ...]:
+        """Return path fingerprints stable across absolute/relative retries."""
+        candidates = re.findall(
+            r"(?:[A-Za-z]:)?(?:\.{0,2}/|/)?"
+            r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+",
+            invocation,
+        )
+        keys: list[str] = []
+        for candidate in candidates[: EVIDENCE_MAX_LIST_ITEMS * 2]:
+            normalized = _normalize_path(candidate).strip("'\"`.,;:()[]{}").lower()
+            parts = [part for part in normalized.split("/") if part and part != "."]
+            if not parts:
+                continue
+            basename = parts[-1]
+            if basename in _OPERATIONAL_RESOURCE_NOISE:
+                continue
+            keys.append(basename)
+            if len(parts) >= 2 and parts[-2] not in _OPERATIONAL_RESOURCE_NOISE:
+                keys.append("/".join(parts[-2:]))
+        return _ordered_unique(keys)
+
+    @staticmethod
+    def _operational_engine_keys(tool_name: str, invocation: str) -> tuple[str, ...]:
+        lowered = f"{tool_name} {invocation}".lower()
+        engines = [
+            engine
+            for engine in sorted(_OPERATIONAL_ENGINES)
+            if re.search(rf"(?<![a-z0-9_-]){re.escape(engine)}(?![a-z0-9_-])", lowered)
+        ]
+        if _normalize_name(tool_name) == "test_runner":
+            engines.append("pytest")
+        return _ordered_unique(engines)
+
+    def _call_target(self, tool_name: str, sources: list[_Event]) -> str:
+        """Name what a call acted on, so a retry of *the same thing* is detectable.
+
+        Empty when nothing identifies the target; such a call is never matched,
+        because pairing two calls that merely share a tool name would invent
+        recoveries between unrelated work.
+        """
+        paths: list[str] = []
+        for source in sources:
+            raw_files = _safe_get(source.raw, "files", [])
+            if isinstance(raw_files, list):
+                paths.extend(
+                    sanitize_evidence_text(item, 200)
+                    for item in raw_files[:EVIDENCE_MAX_LIST_ITEMS]
+                    if isinstance(item, str)
+                )
+        paths = sorted({item for item in paths if item})
+        if paths:
+            return "|".join(paths)
+        for source in sources:
+            for command in _find_key_values(source.raw, {"command"}).get("command", []):
+                if not isinstance(command, str):
+                    continue
+                # Flags vary between a failing run and its passing retry
+                # (`-q`, `--lf`); the executable and its operands do not.
+                tokens = [
+                    token
+                    for token in sanitize_evidence_text(command, 400).split()
+                    if not token.startswith("-")
+                ]
+                if tokens:
+                    return " ".join(tokens[:6])
+        return ""
+
+    def _changed_file_positions(
+        self, events: list[_Event], files: list[FileEvidence]
+    ) -> list[tuple[str, int, tuple[str, ...]]]:
+        """Locate each changed file in the trace, with the events that changed it."""
+        positions = {event.event_id: event.index for event in events}
+        changed: list[tuple[str, int, tuple[str, ...]]] = []
+        for item in files:
+            if item.role != "changed":
+                continue
+            known = [event_id for event_id in item.event_ids if event_id in positions]
+            if known:
+                changed.append((item.path, min(positions[event_id] for event_id in known), tuple(known)))
+        return changed
 
     def _extract_recovery_suggestions(
         self, events: list[_Event], errors: list[ErrorEvidence]
@@ -870,7 +1999,35 @@ class TraceEvidenceExtractor:
         self, events: list[_Event], files: list[FileEvidence]
     ) -> list[LibraryEvidence]:
         records: dict[str, dict[str, Any]] = {}
+        local_modules: set[str] = set()
+        for file in files:
+            normalized_path = file.path.replace("\\", "/").strip("/")
+            if not normalized_path.lower().endswith(".py"):
+                continue
+            parts = [part for part in normalized_path.split("/") if part]
+            if not parts:
+                continue
+            stem = parts[-1][:-3].lower().replace("_", "-")
+            if stem and stem != "__init__" and not stem.startswith("test-"):
+                local_modules.add(stem)
+            if "src" in parts:
+                src_index = parts.index("src")
+                if src_index + 1 < len(parts):
+                    local_modules.add(
+                        parts[src_index + 1].lower().replace("_", "-")
+                    )
+            if parts[-1] == "__init__.py" and len(parts) >= 2:
+                local_modules.add(parts[-2].lower().replace("_", "-"))
         call_ids = self._call_event_ids(events)
+        successful_call_ids = {
+            event.call_id
+            for event in events
+            if event.call_id
+            and event.event_type == "tool_result"
+            and not bool(_safe_get(event.raw, "is_error"))
+            and str(_safe_get(event.raw, "status", "")).strip().lower()
+            in {"success", "succeeded", "ok", "passed", "completed"}
+        }
         paths_by_call: dict[str, set[str]] = defaultdict(set)
         for file in files:
             if file.call_id:
@@ -903,9 +2060,13 @@ class TraceEvidenceExtractor:
         for event in events:
             text = self._event_text(event)
             lowered = text.lower()
+            successful_result = (
+                event.event_type == "tool_result"
+                and event.call_id in successful_call_ids
+            )
             evidence_ids = call_ids.get(event.call_id, (event.event_id,)) if event.call_id else (event.event_id,)
             structured = _safe_get(event.raw, "structured_result")
-            if isinstance(structured, Mapping):
+            if isinstance(structured, Mapping) and successful_result:
                 for key in ("dependencies", "devDependencies", "optionalDependencies"):
                     values = _safe_get(structured, key)
                     if isinstance(values, Mapping):
@@ -922,7 +2083,7 @@ class TraceEvidenceExtractor:
 
             manifest_paths = paths_by_call.get(event.call_id or "", set())
             basenames = {re.split(r"[/\\]", path)[-1] for path in manifest_paths}
-            if event.event_type == "tool_result" and basenames & _MANIFEST_NAMES:
+            if successful_result and basenames & _MANIFEST_NAMES:
                 if any(name.startswith("requirements") for name in basenames):
                     for line in text.splitlines()[:EVIDENCE_MAX_LIST_ITEMS]:
                         match = re.match(r"\s*([A-Za-z0-9][A-Za-z0-9_.-]*)\s*(?:\[|[<>=!~]|$)", line)
@@ -935,10 +2096,13 @@ class TraceEvidenceExtractor:
                             if name.lower() not in {"python"}:
                                 add(name, "confirmed", (event.event_id,))
 
-            if event.event_type == "tool_result":
+            if successful_result:
                 for match in re.finditer(r"(?m)^\s*(?:from|import)\s+([A-Za-z_][\w.]*)", text):
                     import_name = match.group(1).split(".", 1)[0].lower()
-                    if import_name not in _STANDARD_LIBRARY_IMPORTS:
+                    if (
+                        import_name not in _STANDARD_LIBRARY_IMPORTS
+                        and import_name.replace("_", "-") not in local_modules
+                    ):
                         add(
                             _IMPORT_ALIASES.get(import_name, import_name),
                             "confirmed",
@@ -964,14 +2128,27 @@ class TraceEvidenceExtractor:
                     None,
                 )
                 if install_index is not None:
+                    install_status: Literal["confirmed", "weak_mention"] = (
+                        "confirmed"
+                        if event.call_id in successful_call_ids
+                        else "weak_mention"
+                    )
                     for token in tokens[install_index + 1 : install_index + 1 + EVIDENCE_MAX_LIST_ITEMS]:
                         if token.startswith("-") or _looks_like_local_file(token):
                             continue
                         package = re.split(r"[<>=!~@\[]", token, maxsplit=1)[0]
                         if re.match(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$", package):
-                            add(package, "confirmed", evidence_ids)
+                            add(package, install_status, evidence_ids)
                 if lowered_tokens[:2] == ["ruff", "format"] or lowered_tokens[:2] == ["ruff", "check"]:
-                    add("ruff", "confirmed", evidence_ids)
+                    add(
+                        "ruff",
+                        (
+                            "confirmed"
+                            if event.call_id in successful_call_ids
+                            else "weak_mention"
+                        ),
+                        evidence_ids,
+                    )
 
             if event.event_type == "existing_memory" and re.search(r"(?i)\bruff\s+format\b", text):
                 add("ruff", "confirmed", (event.event_id,))
@@ -1014,6 +2191,24 @@ class TraceEvidenceExtractor:
             return "compile"
         if tool in {"build"}:
             return "build"
+        # ``run_command`` commonly wraps project tools in ``bash -lc`` or
+        # invokes them through a virtual-environment path.  Prefix-only token
+        # checks miss both shapes; a real Ruff success was consequently tagged
+        # as a test merely because its output contained "passed".
+        if re.search(
+            r"(?:^|[/\\\s'\"])(?:ruff|eslint)(?:\.exe)?\s+check(?:\s|$)",
+            command_lower,
+        ) or "all checks passed" in output_lower:
+            return "lint"
+        if re.search(
+            r"(?:^|[/\\\s'\"])(?:pytest|unittest)(?:\.exe)?(?:\s|$)",
+            command_lower,
+        ) or re.search(
+            r"(?:^|[/\\\s'\"])(?:python|python3)(?:\.exe)?\s+-m\s+"
+            r"(?:pytest|unittest)(?:\s|$)",
+            command_lower,
+        ):
+            return "test"
         try:
             command_tokens = shlex.split(command_lower)
         except ValueError:
@@ -1044,6 +2239,16 @@ class TraceEvidenceExtractor:
         lowered = output.lower()
         if status in {"error", "failed", "failure"}:
             return "failed"
+        # Shell pipelines can return ``tail``'s zero exit status while pytest
+        # itself failed before collection.  Such an output must never verify a
+        # recovery lesson, even when the generic tool status says success.
+        if (
+            "no tests ran" in lowered
+            or re.search(r"\bcollected\s+0\s+items?\b", lowered)
+            or re.search(r"\bran\s+0\s+tests?\b", lowered)
+            or re.search(r"\berror:\s+file or directory not found\b", lowered)
+        ):
+            return "failed"
         if re.search(r"\b[1-9]\d*\s+(?:\w+\s+)?failed\b", lowered) or "测试失败" in output or "测试未通过" in output:
             return "failed"
         if re.search(r"\b(?:passed|succeeded|successful|success|no errors?)\b", lowered) or "测试通过" in output:
@@ -1062,6 +2267,70 @@ class TraceEvidenceExtractor:
         ) or "一致性测试" in output:
             return "targeted"
         return "unknown"
+
+    def _extract_recovery_verifications(
+        self,
+        events: list[_Event],
+        recoveries: list[RecoveryEvidence],
+        existing: list[VerificationEvidence],
+    ) -> list[VerificationEvidence]:
+        """Promote directly linked successful ToolResults to recovery checks."""
+        existing_calls = {item.call_id for item in existing if item.call_id}
+        requested_calls = {
+            call_id
+            for recovery in recoveries
+            for call_id in recovery.verification_call_ids
+            if call_id and call_id not in existing_calls
+        }
+        if not requested_calls:
+            return []
+        inputs: dict[str, _Event] = {}
+        results: dict[str, _Event] = {}
+        for event in events:
+            if not event.call_id or event.call_id not in requested_calls:
+                continue
+            if event.event_type == "tool_call":
+                inputs.setdefault(event.call_id, event)
+            elif event.event_type == "tool_result":
+                results.setdefault(event.call_id, event)
+
+        verification: list[VerificationEvidence] = []
+        for call_id in sorted(
+            requested_calls,
+            key=lambda item: results[item].index if item in results else len(events),
+        ):
+            result = results.get(call_id)
+            if result is None:
+                continue
+            status = _normalize_name(_safe_get(result.raw, "status", ""))
+            if _safe_get(result.raw, "is_error"):
+                status = "error"
+            output = self._event_text(result)
+            if self._verification_result(status, output) != "passed":
+                continue
+            input_event = inputs.get(call_id)
+            event_ids = (
+                (input_event.event_id, result.event_id)
+                if input_event is not None
+                else (result.event_id,)
+            )
+            verification.append(
+                VerificationEvidence(
+                    verification_id=(
+                        f"verify-{len(existing) + len(verification) + 1:06d}"
+                    ),
+                    tool_name=result.tool_name or (
+                        input_event.tool_name if input_event is not None else None
+                    ),
+                    call_id=call_id,
+                    command_kind="tool_recovery",
+                    scope="targeted",
+                    result="passed",
+                    event_ids=event_ids,
+                    summary=output,
+                )
+            )
+        return verification
 
     def _extract_verification(self, events: list[_Event]) -> list[VerificationEvidence]:
         call_events_by_id: dict[str, list[_Event]] = defaultdict(list)
@@ -1083,11 +2352,22 @@ class TraceEvidenceExtractor:
                 for command in _find_key_values(candidate.raw, {"command"}).get("command", []):
                     if isinstance(command, str):
                         command_values.append(sanitize_evidence_text(command))
-            command = command_values[0] if command_values else ""
+            tool_name = event.tool_name or (call_events[0].tool_name if call_events else "")
+            # Prefer the rendered structured invocation so args such as
+            # ``["check", "src", "|", "tail"]`` participate in verifier
+            # classification.  Looking only at ``command`` reduced that real
+            # failed call to the single token "ruff" and erased the red side
+            # of the later verified recovery.
+            command = self._call_invocation(
+                _normalize_name(tool_name),
+                [event, *call_events],
+            )
+            if not command:
+                command = command_values[0] if command_values else ""
             output = self._event_text(event)
             status = _normalize_name(_safe_get(event.raw, "status", ""))
             kind = _normalize_name(_safe_get(event.raw, "command_kind", "")) or self._verification_kind(
-                event.tool_name or (call_events[0].tool_name if call_events else ""),
+                tool_name,
                 command,
                 output,
             )
@@ -1158,12 +2438,65 @@ class TraceEvidenceExtractor:
                     "kind": event.event_type,
                 })
                 continue
+            if (
+                event.event_type == "tool_result"
+                and event.tool_name == "read_file"
+                and not bool(_safe_get(event.raw, "is_error"))
+                and _normalize_name(_safe_get(event.raw, "status", ""))
+                in {"success", "succeeded", "ok", "passed", "completed"}
+            ):
+                roles = extract_tool_file_roles(
+                    event.tool_name,
+                    event.raw,
+                    event_type=event.event_type,
+                )
+                policy_paths = [
+                    path
+                    for path in roles["files_read"]
+                    if re.split(r"[/\\]", path)[-1].lower()
+                    in _POLICY_BASENAMES
+                ]
+                if policy_paths:
+                    for statement in _policy_constraint_statements(text):
+                        candidates.append({
+                            "statement": statement,
+                            "rationale": f"Declared in {policy_paths[0]}",
+                            "event_ids": [event.event_id],
+                            "status": "confirmed",
+                            "kind": "config_constraint",
+                        })
+                    if any(
+                        candidate["event_ids"] == [event.event_id]
+                        and candidate["kind"] == "config_constraint"
+                        for candidate in candidates
+                    ):
+                        continue
             if event.event_type == "tool_result" and "requires-python" in text.lower():
-                version = re.search(r"(?:>=|~=|==|>)\s*([0-9]+(?:\.[0-9]+)+)", text)
+                # Only the declaration is the constraint. Pasting the whole
+                # tool result carried the read_file header, the rest of the
+                # manifest and whatever the model said next into a durable
+                # claim, which then read "Project constraint: Python 3.11
+                # project constraint: FILE: pyproject.toml OFFSET: 0 ...
+                # This is very revealing. There was a memory entry ...".
+                declaration = next(
+                    (
+                        line.strip()
+                        for line in text.splitlines()
+                        if "requires-python" in line.lower()
+                    ),
+                    "",
+                )[:_CONSTRAINT_MAX_CHARS]
+                version = re.search(
+                    r"(?:>=|~=|==|>)\s*([0-9]+(?:\.[0-9]+)+)", declaration or text
+                )
                 version_text = version.group(1) if version else "unknown"
                 candidates.append({
-                    "statement": f"Python {version_text} project constraint: {text}",
-                    "rationale": text,
+                    "statement": (
+                        f"Python {version_text} is required: {declaration}"
+                        if declaration
+                        else f"Python {version_text} is required."
+                    ),
+                    "rationale": declaration or text,
                     "event_ids": [event.event_id],
                     "status": "confirmed",
                     "kind": "config_constraint",
@@ -1183,11 +2516,16 @@ class TraceEvidenceExtractor:
             if not explicit or re.search(r"\broot cause is not yet known\b", lowered):
                 continue
             rationale: str | None = None
-            choice = text
-            if " because " in lowered:
-                split_at = lowered.index(" because ")
-                choice = text[:split_at].strip()
-                rationale = text[split_at + len(" because ") :].strip()
+            # Only the sentence that states the decision; the rest of the turn
+            # is the model working out loud.
+            choice = _decision_sentence(text)
+            if not choice:
+                continue
+            choice_lowered = choice.lower()
+            if " because " in choice_lowered:
+                split_at = choice_lowered.index(" because ")
+                rationale = choice[split_at + len(" because ") :].strip()
+                choice = choice[:split_at].strip()
             candidate = {
                 "statement": choice,
                 "rationale": rationale,
@@ -1206,7 +2544,11 @@ class TraceEvidenceExtractor:
                     continue
                 overlap = self._decision_tokens(existing["statement"]) & self._decision_tokens(text)
                 if len(overlap) >= 2 or ("3.11" in existing["statement"] and "3.11" in text):
-                    existing["statement"] = f"{existing['statement']} {text}"
+                    # Append the decision sentence, not the whole turn: this
+                    # merge is what grew a constraint claim into "Project
+                    # constraint: Python 3.11 ... This is very revealing.
+                    # There was a memory entry describing a root cause: ...".
+                    existing["statement"] = f"{existing['statement']} {choice}"
                     existing["event_ids"].append(event.event_id)
                     existing["rationale"] = rationale or existing["rationale"]
                     merged = True

@@ -357,25 +357,66 @@ def _reason_review_is_unsafe(reason: str) -> bool:
     return any(_contains_sensitive_review_value(token) for token in tokens)
 
 
-def _command_review_is_unsafe(command: str, args: list[str], reason: str) -> bool:
+def _workspace_relative_text(value: str, workspace: Path) -> str:
+    """Rewrite absolute paths inside the workspace to workspace-relative form.
+
+    A path under the workspace tells the reviewer nothing they do not already
+    know -- it is their own project -- so it is not a disclosure and must not
+    make the review unapprovable. Paths anywhere else are left untouched and
+    still count.
+    """
+    workspace_text = str(workspace)
+    if not workspace_text or workspace_text not in value:
+        return value
+    return value.replace(f"{workspace_text}/", "").replace(workspace_text, ".")
+
+
+def _command_review_is_unsafe(
+    command: str, args: list[str], reason: str, *, workspace: Path
+) -> bool:
     structured_values = [command, *args]
+    # Checked against the workspace-relative form: treating an in-workspace
+    # absolute path as a disclosure hid the whole review, leaving the reviewer
+    # a Reject button and nothing to read, for commands as ordinary as
+    # "pytest <workspace>/tests".
+    local = [_workspace_relative_text(value, workspace) for value in structured_values]
     return bool(
         _is_complex_shell_review(command, args)
         or any(_contains_sensitive_review_value(value) for value in structured_values)
-        or any(_contains_local_absolute_path(value) for value in structured_values)
+        or any(_contains_local_absolute_path(value) for value in local)
         or _reason_review_is_unsafe(reason)
-        or _contains_local_absolute_path(reason)
+        or _contains_local_absolute_path(_workspace_relative_text(reason, workspace))
     )
 
 
-def _redact_review_text(value: str, *, workspace: Path) -> tuple[str, bool]:
+def _redact_review_text(
+    value: str, *, workspace: Path, rewrite_workspace: bool = False
+) -> tuple[str, bool]:
+    """Redact a review string, reporting whether anything had to be withheld.
+
+    ``rewrite_workspace`` is set only for command review. There the workspace
+    path is structural -- it names where the command runs -- and rewriting it
+    to a relative form discloses nothing to the reviewer, who owns the
+    workspace. In a file diff the same text is *content* being written, so it
+    stays subject to the strict rule.
+    """
     redacted = value
     changed = False
-    replacements = [str(workspace), str(Path.home().expanduser().resolve())]
-    for sensitive_path in replacements:
-        if sensitive_path and sensitive_path in redacted:
-            redacted = redacted.replace(sensitive_path, "[LOCAL_PATH]")
-            changed = True
+    # The workspace path is rewritten, not redacted. The reviewer owns this
+    # workspace, so seeing its own path discloses nothing to them -- but
+    # counting it as a disclosure marked the review `redacted`, which the UI
+    # treats as unapprovable. Every command naming an absolute path inside the
+    # project, which is how an agent normally writes them, became impossible
+    # to approve. Rewriting to a workspace-relative form is also simply easier
+    # to read.
+    if rewrite_workspace:
+        redacted = _workspace_relative_text(redacted, workspace)
+    # Anything still pointing into the home directory is outside the
+    # workspace, and that is worth flagging.
+    home_text = str(Path.home().expanduser().resolve())
+    if home_text and home_text in redacted:
+        redacted = redacted.replace(home_text, "[LOCAL_PATH]")
+        changed = True
     if (
         _contains_sensitive_review_value(redacted)
         or _contains_local_absolute_path(redacted)
@@ -552,7 +593,7 @@ def _project_request(workspace: Path, request: object) -> _ProjectedRequest:
                 False,
                 {"outsideWorkspace": True},
             )
-        unsafe = _command_review_is_unsafe(command, args, reason)
+        unsafe = _command_review_is_unsafe(command, args, reason, workspace=workspace)
         if unsafe:
             preview = _REDACTED_REVIEW
             safe_reason = _UNAVAILABLE_COMMAND_REASON
@@ -561,12 +602,20 @@ def _project_request(workspace: Path, request: object) -> _ProjectedRequest:
         else:
             preview = shlex.join([command, *args])
             preview, command_redacted = _redact_review_text(
-                preview, workspace=workspace
+                preview, workspace=workspace, rewrite_workspace=True
             )
             safe_reason, reason_redacted = _redact_review_text(
-                reason, workspace=workspace
+                reason, workspace=workspace, rewrite_workspace=True
             )
-            if command_redacted or reason_redacted:
+            # Only hide the whole review when redaction could not produce
+            # something safe to show. Substituting the workspace or home path
+            # for "[LOCAL_PATH]" *is* redaction succeeding, and blanking the
+            # preview afterwards left the reviewer with nothing to judge and
+            # only a Reject button -- so every command naming an absolute
+            # path, which is how an agent normally writes them, became
+            # unapprovable. Withholding the text does not make the decision
+            # safer; it removes the reviewer's ability to make one.
+            if _REDACTED_REVIEW in (preview, safe_reason):
                 preview = _REDACTED_REVIEW
                 safe_reason = _UNAVAILABLE_COMMAND_REASON
                 command_redacted = True

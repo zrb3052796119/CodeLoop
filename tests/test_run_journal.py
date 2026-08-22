@@ -139,6 +139,39 @@ def test_append_transition_and_terminal_idempotency_preserve_one_writer(
     assert "sk-test-secret" not in persisted
 
 
+def test_context_compaction_failure_is_a_canonical_run_event(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(
+        workspace,
+        data_dir=tmp_path / "home" / ".mini-code",
+    )
+    record = journal.create_run(title="Compaction failure", source="headless")
+    journal.transition(record.id, "running")
+
+    observed = journal.append_event(
+        record.id,
+        "context.compaction.failed",
+        payload={
+            "contextVersion": 1,
+            "contextOperationId": "ctxop_" + "a" * 32,
+            "path": "in_loop_compactor",
+            "trigger": "auto",
+            "strategy": "full",
+            "effective": False,
+            "attempted": True,
+            "reason": "no_token_reduction",
+            "consecutiveFailures": 2,
+            "circuitBreakerTripped": False,
+        },
+    )
+
+    assert observed.type == "context.compaction.failed"
+    assert journal.list_events(record.id).items[-1].payload["reason"] == (
+        "no_token_reduction"
+    )
+
+
 def test_run_journal_accepts_loaded_skill_observation(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     workspace.mkdir()

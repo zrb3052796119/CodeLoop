@@ -50,15 +50,18 @@ def test_validate_provider_runtime_accepts_openrouter_prefixed_model() -> None:
     assert errors == []
 
 
-def test_runtime_config_defaults_reflection_synthesis_to_rule(monkeypatch) -> None:
+def test_runtime_config_defaults_reflection_synthesis_to_shadow(monkeypatch) -> None:
     monkeypatch.setattr(
         "minicode.config.load_effective_settings",
         lambda cwd=None: {"model": "claude-test", "env": {"ANTHROPIC_API_KEY": "test"}},
     )
+    monkeypatch.delenv("MINI_CODE_REFLECTION_SYNTHESIZER_MODE", raising=False)
 
     runtime = load_runtime_config()
 
-    assert runtime["reflectionSynthesizerMode"] == "rule"
+    # Shadow is the default: rule output stays durable while the LLM runs
+    # alongside for comparison. Explicit rule stays honoured via env/config.
+    assert runtime["reflectionSynthesizerMode"] == "llm_shadow"
     assert runtime["reflectionModel"] is None
     assert runtime["allowRemoteReflectionModel"] is False
     assert runtime["reflectionLLMTimeoutSeconds"] == 15.0
@@ -133,3 +136,139 @@ def test_runtime_config_reads_reflection_prompt_version_from_env(monkeypatch) ->
     runtime = load_runtime_config()
 
     assert runtime["reflectionPromptVersion"] == "baseline"
+
+
+def test_runtime_config_reads_shared_agent_turn_budget(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "minicode.config.load_effective_settings",
+        lambda cwd=None: {
+            "model": "claude-test",
+            "env": {"ANTHROPIC_API_KEY": "test"},
+            "agentTurnBudget": {
+                "maxTokens": 120000,
+                "maxModelCalls": 12,
+                "maxCostUsd": "2.50",
+            },
+        },
+    )
+
+    runtime = load_runtime_config()
+
+    assert runtime["agentTurnBudget"]["maxTokens"] == 120000
+    assert runtime["agentTurnBudget"]["maxModelCalls"] == 12
+    assert runtime["agentTurnBudget"]["maxCostUsd"] == "2.50"
+
+
+def test_runtime_config_reads_evidence_gated_memory_hybrid_settings(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "minicode.config.load_effective_settings",
+        lambda cwd=None: {
+            "model": "claude-test",
+            "env": {"ANTHROPIC_API_KEY": "test"},
+            "memoryHybrid": {
+                "enabled": True,
+                "embeddingProvider": "qwen",
+                "allowRemoteEmbedding": True,
+                "modelPath": "/models/e5",
+                "evidencePath": "/evidence/promotion.json",
+                "verifierModel": "deepseek-chat",
+            },
+        },
+    )
+
+    runtime = load_runtime_config()
+
+    assert runtime["memoryHybridEnabled"] is True
+    assert runtime["memoryHybridEmbeddingProvider"] == "qwen"
+    assert runtime["allowRemoteMemoryEmbedding"] is True
+    assert runtime["memoryHybridModelPath"] == "/models/e5"
+    assert runtime["memoryHybridEvidencePath"] == "/evidence/promotion.json"
+    assert runtime["memoryHybridVerifierModel"] == "deepseek-chat"
+
+
+def test_memory_hybrid_env_can_explicitly_disable_config(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "minicode.config.load_effective_settings",
+        lambda cwd=None: {
+            "model": "claude-test",
+            "env": {
+                "ANTHROPIC_API_KEY": "test",
+                "MINI_CODE_MEMORY_HYBRID_ENABLED": "false",
+            },
+            "memoryHybrid": {"enabled": True},
+        },
+    )
+
+    runtime = load_runtime_config()
+
+    assert runtime["memoryHybridEnabled"] is False
+
+
+def test_qwen_hybrid_uses_qwen_evidence_default(tmp_path, monkeypatch) -> None:
+    evidence = (
+        tmp_path
+        / "artifacts"
+        / "memory-retrieval-hybrid-qwen-v1-production-evidence.json"
+    )
+    evidence.parent.mkdir()
+    evidence.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(
+        "minicode.config.load_effective_settings",
+        lambda cwd=None: {
+            "model": "claude-test",
+            "env": {"ANTHROPIC_API_KEY": "test"},
+            "memoryHybrid": {
+                "enabled": True,
+                "embeddingProvider": "qwen",
+                "allowRemoteEmbedding": True,
+            },
+        },
+    )
+
+    runtime = load_runtime_config(tmp_path)
+
+    assert runtime["memoryHybridEvidencePath"] == str(evidence)
+
+
+def test_remote_memory_embedding_env_overrides_settings(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "minicode.config.load_effective_settings",
+        lambda cwd=None: {
+            "model": "claude-test",
+            "env": {
+                "ANTHROPIC_API_KEY": "test",
+                "MINI_CODE_MEMORY_HYBRID_EMBEDDING_PROVIDER": "qwen",
+                "MINI_CODE_ALLOW_REMOTE_MEMORY_EMBEDDING": "true",
+            },
+            "memoryHybrid": {
+                "embeddingProvider": "local-e5",
+                "allowRemoteEmbedding": False,
+            },
+        },
+    )
+
+    runtime = load_runtime_config()
+
+    assert runtime["memoryHybridEmbeddingProvider"] == "qwen"
+    assert runtime["allowRemoteMemoryEmbedding"] is True
+
+
+def test_agent_turn_budget_env_overrides_settings(monkeypatch) -> None:
+    from minicode.agent_budget import AgentTurnBudget
+
+    monkeypatch.setenv("MINI_CODE_TURN_BUDGET_TOKENS", "999")
+    monkeypatch.setenv("MINI_CODE_TURN_BUDGET_MODEL_CALLS", "7")
+
+    budget = AgentTurnBudget.from_runtime(
+        {
+            "agentTurnBudget": {
+                "maxTokens": "120000",
+                "maxModelCalls": "12",
+            }
+        }
+    )
+
+    assert budget.max_total_tokens == 999
+    assert budget.max_model_calls == 7

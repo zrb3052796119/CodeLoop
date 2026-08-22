@@ -247,6 +247,8 @@ def evaluate_compaction_fidelity(dataset_path: str | Path) -> dict[str, object]:
     chain_hits = 0
     pair_hits = 0
     savings_hits = 0
+    ledger_cases = 0
+    ledger_hits = 0
     failed_case_ids: list[str] = []
     case_results: list[dict[str, object]] = []
 
@@ -258,6 +260,7 @@ def evaluate_compaction_fidelity(dataset_path: str | Path) -> dict[str, object]:
         markers = raw_case.get("historyMarkers")
         latest_user_marker = raw_case.get("latestUserMarker")
         loaded_skill_marker = raw_case.get("loadedSkillMarker")
+        task_ledger_markers = raw_case.get("taskLedgerMarkers", [])
         if (
             not isinstance(case_id, str)
             or not case_id
@@ -272,6 +275,12 @@ def evaluate_compaction_fidelity(dataset_path: str | Path) -> dict[str, object]:
             or _QUALITY_MARKER_RE.fullmatch(latest_user_marker) is None
             or not isinstance(loaded_skill_marker, str)
             or _QUALITY_MARKER_RE.fullmatch(loaded_skill_marker) is None
+            or not isinstance(task_ledger_markers, list)
+            or not all(
+                isinstance(marker, str)
+                and _QUALITY_MARKER_RE.fullmatch(marker)
+                for marker in task_ledger_markers
+            )
         ):
             raise ValueError(f"invalid compaction fidelity case {case_id or index}")
 
@@ -284,6 +293,15 @@ def evaluate_compaction_fidelity(dataset_path: str | Path) -> dict[str, object]:
         current: list[dict[str, object]] = [
             {"role": "system", "content": "Offline quality-gate fixture."}
         ]
+        if task_ledger_markers:
+            ledger_cases += 1
+            current.append(
+                {
+                    "role": "system",
+                    "content": " ".join(task_ledger_markers),
+                    "_task_ledger": True,
+                }
+            )
         round_results = []
         for round_index in range(rounds):
             current.extend(
@@ -316,6 +334,15 @@ def evaluate_compaction_fidelity(dataset_path: str | Path) -> dict[str, object]:
         )
         chain_retained = rounds == 1 or summarizer.chain_observations >= rounds - 1
         pairs_intact = _tool_pairs_intact(current)
+        task_ledger_retained = not task_ledger_markers or any(
+            message.get("role") == "system"
+            and message.get("_task_ledger") is True
+            and all(
+                marker in str(message.get("content", ""))
+                for marker in task_ledger_markers
+            )
+            for message in current
+        )
         nonnegative_savings = all(
             result.effective and result.tokens_freed >= 0
             for result in round_results
@@ -325,6 +352,8 @@ def evaluate_compaction_fidelity(dataset_path: str | Path) -> dict[str, object]:
         chain_hits += int(chain_retained)
         pair_hits += int(pairs_intact)
         savings_hits += int(nonnegative_savings)
+        if task_ledger_markers:
+            ledger_hits += int(task_ledger_retained)
         passed = all(
             (
                 case_marker_hits == len(markers),
@@ -333,6 +362,7 @@ def evaluate_compaction_fidelity(dataset_path: str | Path) -> dict[str, object]:
                 chain_retained,
                 pairs_intact,
                 nonnegative_savings,
+                task_ledger_retained,
             )
         )
         if not passed:
@@ -347,6 +377,7 @@ def evaluate_compaction_fidelity(dataset_path: str | Path) -> dict[str, object]:
                 "summaryChainRetained": chain_retained,
                 "toolPairsIntact": pairs_intact,
                 "nonNegativeSavings": nonnegative_savings,
+                "taskLedgerRetained": task_ledger_retained,
             }
         )
 
@@ -361,6 +392,7 @@ def evaluate_compaction_fidelity(dataset_path: str | Path) -> dict[str, object]:
         "summaryChainRate": _ratio(chain_hits, count),
         "toolPairIntegrityRate": _ratio(pair_hits, count),
         "nonNegativeSavingsRate": _ratio(savings_hits, count),
+        "taskLedgerRetentionRate": _ratio(ledger_hits, ledger_cases),
         "failedCaseIds": failed_case_ids,
         "cases": case_results,
     }
@@ -589,13 +621,18 @@ def evaluate_quality_suite(
     fixture_root: str | Path,
     *,
     include_cases: bool = False,
+    north_star_manifest_path: str | Path | None = None,
     north_star_results_path: str | Path | None = None,
 ) -> dict[str, object]:
     """Run every deterministic Tier 0 evaluator behind one small interface."""
     root = Path(fixture_root)
     skill_path = root / "skill-routing.json"
     compaction_path = root / "compaction-fidelity.json"
-    north_star_manifest_path = root / "north-star-manifest.json"
+    resolved_north_star_manifest_path = (
+        Path(north_star_manifest_path)
+        if north_star_manifest_path is not None
+        else root / "north-star-manifest.json"
+    )
     resolved_north_star_results_path = (
         Path(north_star_results_path)
         if north_star_results_path is not None
@@ -606,7 +643,7 @@ def evaluate_quality_suite(
         for path in (
             skill_path,
             compaction_path,
-            north_star_manifest_path,
+            resolved_north_star_manifest_path,
             resolved_north_star_results_path,
         )
     ):
@@ -615,7 +652,7 @@ def evaluate_quality_suite(
     skill_report = evaluate_skill_routing(skill_path)
     compaction_report = evaluate_compaction_fidelity(compaction_path)
     north_star_report = evaluate_north_star(
-        north_star_manifest_path,
+        resolved_north_star_manifest_path,
         resolved_north_star_results_path,
     )
     if not include_cases:
@@ -633,7 +670,9 @@ def evaluate_quality_suite(
         "datasets": {
             "skillRoutingSha256": _sha256(skill_path),
             "compactionFidelitySha256": _sha256(compaction_path),
-            "northStarManifestSha256": _sha256(north_star_manifest_path),
+            "northStarManifestSha256": _sha256(
+                resolved_north_star_manifest_path
+            ),
             "northStarResultsSha256": _sha256(resolved_north_star_results_path),
         },
         "skillRouting": skill_report,

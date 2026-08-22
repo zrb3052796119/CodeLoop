@@ -90,7 +90,8 @@ def test_manifest_import_install_and_weak_mentions_have_distinct_strength() -> N
         {"event_id": "e2", "call_id": "req", "type": "tool_result", "tool_name": "read_file", "status": "success", "output_summary": "fastapi==0.115\nuvicorn>=0.31"},
         {"event_id": "e3", "call_id": "src", "type": "tool_result", "tool_name": "read_file", "status": "success", "files": ["src/model.py"], "output_summary": "from sklearn.model_selection import train_test_split"},
         {"event_id": "e4", "call_id": "pip", "type": "tool_call", "tool_name": "run_command", "command": "python -m pip install pytest"},
-        {"event_id": "e5", "type": "assistant_step", "content": "Changing behavior; consider Django, but src/react.py is local."},
+        {"event_id": "e5", "call_id": "pip", "type": "tool_result", "tool_name": "run_command", "status": "success", "is_error": False, "output_summary": "Successfully installed pytest"},
+        {"event_id": "e6", "type": "assistant_step", "content": "Changing behavior; consider Django, but src/react.py is local."},
     ]
 
     evidence = _extract(trace)
@@ -101,6 +102,18 @@ def test_manifest_import_install_and_weak_mentions_have_distinct_strength() -> N
     assert by_name["django"].status == "weak_mention"
     assert "gin" not in by_name
     assert "react" not in by_name
+
+
+def test_failed_install_command_never_confirms_dependency() -> None:
+    evidence = _extract(
+        [
+            {"event_id": "e1", "call_id": "pip", "type": "tool_call", "tool_name": "run_command", "command": "python -m pip install bogus_pkg"},
+            {"event_id": "e2", "call_id": "pip", "type": "tool_result", "tool_name": "run_command", "status": "error", "is_error": True, "output_summary": "No matching distribution found"},
+        ]
+    )
+
+    by_name = {item.name: item for item in evidence.libraries}
+    assert by_name["bogus-pkg"].status == "weak_mention"
 
 
 def test_structured_package_manifest_dependencies_are_confirmed() -> None:

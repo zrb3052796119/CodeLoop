@@ -186,9 +186,17 @@ def test_task_registry_inherits_dependency_and_disposes_exactly_once(
         "minicode.permissions.PermissionManager",
         lambda *_args, **_kwargs: SimpleNamespace(),
     )
+    def successful_nested_turn(**kwargs):
+        from minicode.task_outcome import canonicalize_task_outcome
+
+        kwargs["outcome_capture"].record(
+            canonicalize_task_outcome("success", 0)
+        )
+        return [{"role": "assistant", "content": "nested result"}]
+
     monkeypatch.setattr(
         "minicode.tools.task.run_agent_turn",
-        lambda **_kwargs: [{"role": "assistant", "content": "nested result"}],
+        successful_nested_turn,
     )
 
     result = task_tool.run(

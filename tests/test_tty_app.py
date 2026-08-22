@@ -13,7 +13,8 @@ from minicode.permissions import PermissionManager
 from minicode.tooling import ToolRegistry
 from minicode.tui.runtime_control import _ThrottledRenderer as RuntimeThrottledRenderer
 from minicode.tui.event_flow import _handle_event
-from minicode.tui.input_parser import KeyEvent
+from minicode.tui.input_parser import KeyEvent, TextEvent, parse_input_chunk
+from minicode.tui.session_flow import install_permission_prompt
 from minicode.tui.state import ScreenState, TtyAppArgs
 from minicode.tui.transcript import format_transcript_text
 from minicode.tui.types import TranscriptEntry
@@ -21,6 +22,60 @@ from minicode.tui.types import TranscriptEntry
 
 def test_tty_app_uses_runtime_control_throttled_renderer() -> None:
     assert _ThrottledRenderer is RuntimeThrottledRenderer
+
+
+def test_permission_prompt_does_not_lose_decision_during_rerender(tmp_path) -> None:
+    import threading
+
+    state = ScreenState()
+    args = TtyAppArgs(
+        runtime=None,
+        tools=ToolRegistry([]),
+        model=None,
+        messages=[],
+        cwd=str(tmp_path),
+        permissions=PermissionManager(str(tmp_path)),
+    )
+    approval_event = None
+    approval_result = None
+
+    def rerender() -> None:
+        assert approval_event is not None
+        assert approval_result is not None
+        approval_result.clear()
+        approval_result["decision"] = "allow_once"
+        approval_event.set()
+
+    approval_event, approval_result, handler = install_permission_prompt(
+        args, state, rerender
+    )
+    outcome: list[dict] = []
+    worker = threading.Thread(
+        target=lambda: outcome.append(
+            handler(
+                {
+                    "kind": "command",
+                    "choices": [
+                        {
+                            "key": "y",
+                            "label": "allow once",
+                            "decision": "allow_once",
+                        }
+                    ],
+                }
+            )
+        )
+    )
+    worker.start()
+    worker.join(timeout=0.2)
+    decision_was_lost = worker.is_alive()
+    if decision_was_lost:
+        approval_event.set()
+        worker.join(timeout=1)
+
+    assert decision_was_lost is False
+    assert outcome == [{"decision": "allow_once"}]
+    assert state.pending_approval is None
 
 
 def test_summarize_tool_output_prefers_first_meaningful_line() -> None:
@@ -150,6 +205,82 @@ def test_empty_tty_return_does_not_start_input_handler(tmp_path) -> None:
 
     assert "handle_input" not in calls
     assert state.input == ""
+
+
+def test_ctrl_j_parses_as_a_newline_text_event() -> None:
+    parsed = parse_input_chunk("\n")
+
+    assert parsed.rest == ""
+    assert parsed.events == [TextEvent(text="\n", ctrl=False, meta=False)]
+
+
+def test_bracketed_paste_is_one_safe_text_event() -> None:
+    parsed = parse_input_chunk("\x1b[200~first\nsecond\tline\x1b[201~")
+
+    assert parsed.rest == ""
+    assert parsed.events == [
+        TextEvent(text="first\nsecond\tline", ctrl=False, meta=False)
+    ]
+
+
+def test_exact_slash_command_enter_submits_instead_of_recompleting(tmp_path) -> None:
+    submitted: list[str] = []
+    state = ScreenState(input="/help", cursor_offset=5)
+    args = TtyAppArgs(
+        runtime=None,
+        tools=ToolRegistry([]),
+        model=None,
+        messages=[],
+        cwd=str(tmp_path),
+        permissions=PermissionManager(str(tmp_path)),
+    )
+
+    def handle_input(_args, _state, _rerender, submitted_text):
+        submitted.append(submitted_text)
+        return False
+
+    _handle_event(
+        args,
+        state,
+        KeyEvent(name="return", ctrl=False, meta=False),
+        lambda: None,
+        __import__("threading").Event(),
+        {},
+        handle_input,
+    )
+
+    assert submitted == ["/help"]
+    assert state.input == ""
+
+
+def test_partial_slash_command_enter_completes_without_submitting(tmp_path) -> None:
+    submitted: list[str] = []
+    state = ScreenState(input="/he", cursor_offset=3)
+    args = TtyAppArgs(
+        runtime=None,
+        tools=ToolRegistry([]),
+        model=None,
+        messages=[],
+        cwd=str(tmp_path),
+        permissions=PermissionManager(str(tmp_path)),
+    )
+
+    def handle_input(_args, _state, _rerender, submitted_text):
+        submitted.append(submitted_text)
+        return False
+
+    _handle_event(
+        args,
+        state,
+        KeyEvent(name="return", ctrl=False, meta=False),
+        lambda: None,
+        __import__("threading").Event(),
+        {},
+        handle_input,
+    )
+
+    assert submitted == []
+    assert state.input == "/help"
 
 
 def test_tty_input_passes_and_persists_context_manager(tmp_path, monkeypatch) -> None:

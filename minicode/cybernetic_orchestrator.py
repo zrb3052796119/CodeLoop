@@ -103,6 +103,7 @@ class CyberneticOrchestrator:
         self.reflection = None
         self._last_model: Any | None = None
         self._workspace: str | None = None
+        self._runtime: dict[str, Any] = {}
 
         self._initialized = False
 
@@ -116,6 +117,7 @@ class CyberneticOrchestrator:
     ) -> None:
         """Initialize all controllers. Call once at task start."""
         self._last_model = model
+        self._runtime = dict(runtime or {})
         feedback_root = Path(self._workspace) if self._workspace else Path.cwd()
         self._workspace = str(feedback_root)
         self.feedback = FeedbackController()
@@ -222,12 +224,40 @@ class CyberneticOrchestrator:
         from minicode.memory_pipeline import MemoryPipeline
 
         self.memory_pipeline = MemoryPipeline(memory_mgr)
-        # Pass model adapter if available for reranker
         model_for_pipeline = getattr(self, '_last_model', None)
+        runtime = dict(getattr(self, "_runtime", {}) or {})
+        hybrid_enabled = bool(runtime.get("memoryHybridEnabled", False))
+        verifier_model = str(runtime.get("memoryHybridVerifierModel") or "").strip()
+        current_model = str(getattr(model_for_pipeline, "model_id", "") or "").strip()
+        if hybrid_enabled and verifier_model and verifier_model != current_model:
+            try:
+                from minicode.model_registry import create_model_adapter
+
+                verifier_runtime = dict(runtime, model=verifier_model)
+                model_for_pipeline = create_model_adapter(
+                    verifier_model,
+                    None,
+                    verifier_runtime,
+                )
+            except Exception:
+                model_for_pipeline = None
+                logger.warning(
+                    "Hybrid memory verifier model initialization failed; "
+                    "canonical lexical retrieval remains active"
+                )
         self.memory_pipeline.initialize(
             model_adapter=model_for_pipeline,
             workspace_path=getattr(self, '_workspace', None),
             reflection_engine=self.reflection,
+            enable_vector=hybrid_enabled,
+            hybrid_model_path=runtime.get("memoryHybridModelPath") or None,
+            hybrid_evidence_path=runtime.get("memoryHybridEvidencePath") or None,
+            hybrid_embedding_provider=str(
+                runtime.get("memoryHybridEmbeddingProvider") or "local-e5"
+            ),
+            allow_remote_memory_embedding=bool(
+                runtime.get("allowRemoteMemoryEmbedding", False)
+            ),
         )
 
     def wire_healing(
@@ -471,11 +501,33 @@ class CyberneticOrchestrator:
 
         return summary
 
-    def task_end(self) -> dict[str, Any] | None:
+    def task_end(
+        self,
+        *,
+        agent_budget: Any = None,
+        event_sink: Any = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
+    ) -> dict[str, Any] | None:
         """Advance task-scoped maintenance exactly once at task finalization."""
         if not self.memory_pipeline:
             return None
-        return self.memory_pipeline.maintain()
+        if all(
+            value is None
+            for value in (
+                agent_budget,
+                event_sink,
+                cancellation_token,
+                deadline_monotonic,
+            )
+        ):
+            return self.memory_pipeline.maintain()
+        return self.memory_pipeline.maintain(
+            agent_budget=agent_budget,
+            event_sink=event_sink,
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
+        )
 
     # ── MEMORY INJECTION ────────────────────────────────────────────
 
@@ -483,6 +535,11 @@ class CyberneticOrchestrator:
         self, task_description: str, current_messages: list[dict],
         current_files: list[str] | None = None,
         context_usage: float = 0.5,
+        *,
+        agent_budget: Any = None,
+        event_sink: Any = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
     ) -> list[dict]:
         """Inject relevant memories via unified pipeline."""
         if not self.memory_pipeline:
@@ -492,6 +549,10 @@ class CyberneticOrchestrator:
             current_files,
             current_messages,
             context_usage=context_usage,
+            agent_budget=agent_budget,
+            event_sink=event_sink,
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
         )
 
     # ── REFLECTION ──────────────────────────────────────────────────
@@ -499,10 +560,21 @@ class CyberneticOrchestrator:
     def reflect_on_task(
         self, task_description: str, step: int, tool_error_count: int,
         execution_trace: list[dict[str, Any]] | None = None,
-    ) -> None:
-        """Post-task reflection via unified pipeline."""
+        *,
+        agent_budget: Any = None,
+        event_sink: Any = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
+        provenance: dict[str, Any] | None = None,
+    ) -> str | None:
+        """Post-task reflection via unified pipeline.
+
+        Returns the Memory entry this task produced, if any, so the caller can
+        bind it to the Run. A later explicit user signal needs that binding to
+        reach the lesson the turn wrote.
+        """
         if not self.memory_pipeline:
-            return
+            return None
         from minicode.reflection_evidence import append_trace_event
 
         has_structured_trace = execution_trace is not None
@@ -512,7 +584,15 @@ class CyberneticOrchestrator:
             append_trace_event(trace, {"type": "assistant", "steps": step})
         if tool_error_count > 0 and not has_structured_trace:
             append_trace_event(trace, {"type": "error", "count": tool_error_count})
-        self.memory_pipeline.write(task_description, trace)
+        return self.memory_pipeline.write(
+            task_description,
+            trace,
+            agent_budget=agent_budget,
+            event_sink=event_sink,
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
+            provenance=provenance,
+        )
 
     # ── MODEL ROUTING ───────────────────────────────────────────────
 

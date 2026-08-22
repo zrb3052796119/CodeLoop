@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from minicode.tooling import ToolDefinition, ToolResult
-from minicode.workspace import resolve_tool_path
+from minicode.workspace import INTERNAL_WORKSPACE_STORE_NAMES, resolve_tool_path
 
 
 # ---------------------------------------------------------------------------
@@ -97,7 +97,10 @@ def _build_tree(
 ) -> list[str]:
     """Build file tree with proper formatting."""
     if ignore_dirs is None:
-        ignore_dirs = {'.git', '__pycache__', 'venv', 'env', '.tox', 'node_modules', '.mypy_cache', '.pytest_cache'}
+        ignore_dirs = {
+            '.git', '__pycache__', 'venv', 'env', '.tox', 'node_modules',
+            '.mypy_cache', '.pytest_cache', *INTERNAL_WORKSPACE_STORE_NAMES,
+        }
     
     lines = []
     
@@ -112,7 +115,12 @@ def _build_tree(
     
     # Filter ignored directories
     if path.is_dir():
-        entries = [e for e in entries if not (e.is_dir() and e.name in ignore_dirs)]
+        entries = [
+            e
+            for e in entries
+            if e.name not in INTERNAL_WORKSPACE_STORE_NAMES
+            and not (e.is_dir() and e.name in ignore_dirs)
+        ]
     
     for i, entry in enumerate(entries):
         is_last_entry = (i == len(entries) - 1)

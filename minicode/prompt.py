@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
+from minicode.memory_retrieval import MEMORY_USE_POLICY
 from minicode.prompt_pipeline import PromptPipeline, read_file_cached
 
 
@@ -126,6 +127,31 @@ def build_system_prompt(
     cwd_path = Path(cwd)
     permission_summary = permission_summary or []
     extras = extras or {}
+    user_interaction_available = bool(
+        extras.get("user_interaction_available", True)
+    )
+    if user_interaction_available:
+        interaction_rule = (
+            "If progress is impossible without new information or a decision "
+            "from the user, call the ask_user tool with one concise question "
+            "and wait for the reply. Never use ask_user to deliver an answer, "
+            "result, status update, or confirmation. Do not ask blocking "
+            "clarifying questions as plain assistant text."
+        )
+        structured_interaction_rule = (
+            "- Use ask_user only when new user information is required; that "
+            "tool ends the turn and waits for user input."
+        )
+    else:
+        interaction_rule = (
+            "ask_user is unavailable in this non-interactive execution. Work "
+            "from the supplied context and make safe, explicit assumptions "
+            "when possible. Return results through the assistant final response."
+        )
+        structured_interaction_rule = (
+            "- User interaction is unavailable; return the result through the "
+            "assistant final response and do not attempt to pause for input."
+        )
 
     pipeline = PromptPipeline()
 
@@ -139,7 +165,8 @@ def build_system_prompt(
         "You can inspect or modify paths outside the current cwd when the user asks, but tool permissions may pause for approval first.\n"
         "When making code changes, keep them minimal, practical, and working-oriented.\n"
         "If the user clearly asked you to build, modify, optimize, or generate something, do the work instead of stopping at a plan.\n"
-        "If you need user clarification, call the ask_user tool with one concise question and wait for the user reply. Do not ask clarifying questions as plain assistant text.\n"
+        f"Persistent {MEMORY_USE_POLICY}\n"
+        f"{interaction_rule}\n"
         "Do not choose subjective preferences such as colors, visual style, copy tone, or naming unless the user explicitly told you to decide yourself.\n"
         "When using read_file, pay attention to the header fields. If it says TRUNCATED: yes, continue reading with a larger offset before concluding that the file itself is cut off.\n"
         "If the user names a skill or clearly asks for a workflow that matches a listed skill, call load_skill before following it.\n"
@@ -152,13 +179,16 @@ def build_system_prompt(
         "- You need to explore a large codebase without bloating the main context (agent_type='explore')\n"
         "- You need thorough analysis of a codebase area before acting (agent_type='plan')\n"
         "- You need to do multi-step work that benefits from isolation (agent_type='general')\n"
+        "- You need a bounded plan -> execute -> review pipeline with isolated phases (agent_type='workflow')\n"
         "Do NOT use the task tool for simple lookups — use read_file/grep_files directly.\n"
         "Do NOT use the task tool just to avoid work — use it when it genuinely improves efficiency.\n"
+        "Sub-agents can exchange bounded notes through subagent_note_write / subagent_note_read / subagent_note_list. "
+        "Use those tools instead of putting another agent's raw output into a prompt.\n"
         "\n"
         "Structured response protocol:\n"
         "- When you are still working and will continue with more tool calls, start your text with <progress>.\n"
         "- Only when the task is actually complete and you are ready to hand control back, start your text with <final>.\n"
-        "- Use ask_user when clarification is required; that tool ends the turn and waits for user input.\n"
+        f"{structured_interaction_rule}\n"
         "- Do not stop after a progress update. After a <progress> message, continue the task in the next step.\n"
         "- Plain assistant text without <progress> is treated as a completed assistant message for this turn.",
     )
@@ -195,6 +225,7 @@ def build_system_prompt(
                 used_fallback = bool(getattr(skill_routing, "used_fallback", False))
                 selected_directories = getattr(skill_routing, "selected_directories", [])
 
+            abstained = skill_routing is not None and used_fallback
             if skill_routing is not None and not used_fallback:
                 if isinstance(skill_routing, dict):
                     intent_type = skill_routing.get("intent_type", "unknown")
@@ -222,6 +253,13 @@ def build_system_prompt(
                             dir_description = getattr(directory, "description", "")
                         lines.append(f"- {dir_name}: {dir_description}")
                 lines.extend(["", "Routed skills:"])
+            elif abstained:
+                # Router abstained: keep a compact name-only inventory so the
+                # model still knows Skills exist, without spending the context
+                # budget on every description/tool list for an off-topic task.
+                lines = [
+                    "Available skills (no routing evidence; names only):"
+                ]
             else:
                 lines = ["Available skills:"]
             for skill in skills:
@@ -232,6 +270,8 @@ def build_system_prompt(
                     lines.append(f"- {skill_name}: {skill_description}")
                     if tools:
                         lines.append("  likely tools: " + ", ".join(str(tool) for tool in tools))
+                elif abstained:
+                    lines.append(f"- {skill_name}")
                 else:
                     lines.append(f"- {skill_name}: {skill_description}")
             if skill_routing is not None and not used_fallback:
@@ -241,6 +281,14 @@ def build_system_prompt(
                     "- These are the top routed skills for the current task.",
                     "- If a routed skill matches your workflow, call load_skill with its qualified name before following it.",
                     "- If none of the routed skills applies, proceed with normal tools and reasoning.",
+                ])
+            elif abstained:
+                lines.extend([
+                    "",
+                    "SKILL USAGE GUIDE:",
+                    "- No skill matched this request with enough routing evidence.",
+                    "- The names above are inventory only; load one only if the user explicitly asks for it or the task clearly matches its name.",
+                    "- Otherwise proceed with normal tools and reasoning.",
                 ])
             else:
                 lines.extend([

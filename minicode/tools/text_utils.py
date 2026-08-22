@@ -199,7 +199,7 @@ def _run_line_count(input_data: dict, context: ToolContext) -> ToolResult:
     
     lines = content.split("\n")
     total = len(lines)
-    non_empty = len([l for l in lines if l.strip()])
+    non_empty = len([line for line in lines if line.strip()])
     empty = total - non_empty
     
     output = f"""Lines:

@@ -10,6 +10,7 @@ Provides post-task reflection to improve future performance:
 from __future__ import annotations
 
 import json
+import inspect
 import time
 from dataclasses import dataclass, field, replace
 from typing import Any
@@ -105,6 +106,7 @@ class ReflectionResult:
             "tags": self._build_tags(),
             "domains": domains,
             "metadata": {
+                "task_summary": self.task_summary[:300],
                 "confidence": self.confidence,
                 "key_decisions": self.key_decisions,
                 "errors": self.errors_encountered,
@@ -192,23 +194,15 @@ class ReflectionResult:
 
     def _format_content(self) -> str:
         if self.reflection_candidate is not None:
-            parts = [f"Task Context: {self.task_summary}"]
+            parts: list[str] = []
             for claim in self.structured_claims:
-                parts.extend(
-                    [
-                        "",
-                        "Claim:",
-                        f"  Type: {claim.claim_type}",
-                        f"  Statement: {claim.statement}",
-                        f"  Evidence: {', '.join(claim.evidence_ids)}",
-                    ]
-                )
+                if parts:
+                    parts.append("")
+                parts.append(claim.statement)
                 if claim.applies_when:
-                    parts.append(f"  Applies when: {claim.applies_when}")
+                    parts.append(f"Applies when: {claim.applies_when}")
                 if claim.limitations:
-                    parts.append(f"  Limitations: {'; '.join(claim.limitations)}")
-                if claim.verification_ids:
-                    parts.append(f"  Verification: {', '.join(claim.verification_ids)}")
+                    parts.append(f"Limitations: {'; '.join(claim.limitations)}")
             return "\n".join(parts)
 
         # Readable legacy adapter. Legacy results are default-denied by the
@@ -283,6 +277,10 @@ class ReflectionEngine:
         metrics: Any | None = None,
         *,
         defer_shadow: bool = False,
+        agent_budget: Any | None = None,
+        event_sink: Any | None = None,
+        cancellation_token: Any | None = None,
+        deadline_monotonic: float | None = None,
     ) -> ReflectionResult:
         """Generate reflection from execution trace.
 
@@ -377,6 +375,10 @@ class ReflectionEngine:
                     rule_candidate,
                     rule_validation,
                     rule_value,
+                    agent_budget,
+                    event_sink=event_sink,
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
                 )
                 comparison = path.comparison
                 fallback_reason = path.fallback_reason
@@ -499,7 +501,13 @@ class ReflectionEngine:
             )
 
         if self._llm_config.mode == "llm_shadow" and not defer_shadow:
-            self.complete_shadow(reflection)
+            self.complete_shadow(
+                reflection,
+                agent_budget=agent_budget,
+                event_sink=event_sink,
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+            )
 
         return reflection
 
@@ -510,6 +518,11 @@ class ReflectionEngine:
         rule_candidate: ReflectionCandidate,
         rule_validation: ClaimValidationResult,
         rule_value: ReflectionValueDecision,
+        agent_budget: Any | None = None,
+        *,
+        event_sink: Any | None = None,
+        cancellation_token: Any | None = None,
+        deadline_monotonic: float | None = None,
     ) -> _LLMPathResult:
         eligibility = self._llm_eligibility.evaluate(
             evidence,
@@ -538,9 +551,18 @@ class ReflectionEngine:
             if not sampled:
                 fallback_reason = "sampled_out"
         if eligibility.eligible and sampled and self._llm_synthesizer is not None:
-            attempt = self._llm_synthesizer.attempt(task_description, evidence)
-            fallback_reason = attempt.failure_code if not attempt.success else None
-            if attempt.success and attempt.candidate is not None:
+            attempt = self._attempt_synthesis(
+                task_description,
+                evidence,
+                agent_budget=agent_budget,
+                event_sink=event_sink,
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+            )
+            fallback_reason = (
+                attempt.failure_code if not attempt.success else None
+            )
+            if attempt is not None and attempt.success and attempt.candidate is not None:
                 llm_candidate = attempt.candidate
                 llm_validation = self._claim_validator.validate(
                     llm_candidate, evidence
@@ -639,7 +661,46 @@ class ReflectionEngine:
             replace_regression=replace_regression,
         )
 
-    def complete_shadow(self, reflection: ReflectionResult) -> ShadowComparisonResult | None:
+    def _attempt_synthesis(
+        self,
+        task_description: str,
+        evidence: TaskEvidence,
+        **call_context: Any,
+    ) -> Any:
+        """Pass production controls only to synthesizers that support them."""
+        assert self._llm_synthesizer is not None
+        kwargs: dict[str, Any] = {}
+        try:
+            parameters = inspect.signature(
+                self._llm_synthesizer.attempt
+            ).parameters.values()
+            accepts_kwargs = any(
+                parameter.kind == inspect.Parameter.VAR_KEYWORD
+                for parameter in parameters
+            )
+            names = {parameter.name for parameter in parameters}
+            kwargs = {
+                name: value
+                for name, value in call_context.items()
+                if accepts_kwargs or name in names
+            }
+        except (TypeError, ValueError):
+            pass
+        return self._llm_synthesizer.attempt(
+            task_description,
+            evidence,
+            **kwargs,
+        )
+
+    def complete_shadow(
+        self,
+        reflection: ReflectionResult,
+        *,
+        agent_budget: Any | None = None,
+        event_sink: Any | None = None,
+        cancellation_token: Any | None = None,
+        deadline_monotonic: float | None = None,
+    ) -> ShadowComparisonResult | None:
         """Evaluate the non-production LLM branch at most once."""
         if (
             self._llm_config.mode != "llm_shadow"
@@ -655,6 +716,10 @@ class ReflectionEngine:
             reflection.reflection_candidate,
             reflection.claim_validation,
             reflection.value_decision,
+            agent_budget,
+            event_sink=event_sink,
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
         )
         comparison = path.comparison
         reflection.shadow_comparison = comparison

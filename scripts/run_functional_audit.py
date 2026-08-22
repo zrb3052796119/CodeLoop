@@ -851,9 +851,150 @@ def _probe_memory_boundaries(workspace: Path) -> dict[str, Any]:
         if error_entry is not None
         else []
     )
+    # A retried network failure: two byte-identical web_search errors in one
+    # trace. This satisfies the recurrence escape hatch that lifts
+    # `single_observation_error_pattern`, so it is the shape that actually
+    # reached the shipped store. It must still be suppressed, on the grounds
+    # that it describes the host's egress rather than the project.
+    unreachable = (
+        "error[search_unavailable]: Web search is unavailable. Providers: "
+        "bing=redirect_blocked, baidu=redirect_blocked, duckduckgo=redirect_blocked."
+    )
+    retry_trace: list[dict[str, Any]] = []
+    for index, call in enumerate((1, 2), start=5):
+        retry_trace.extend(
+            [
+                {
+                    "event_id": f"event-{index * 2}",
+                    "call_id": f"call-{call}",
+                    "type": "tool_result",
+                    "tool_name": "web_search",
+                    "status": "error",
+                    "is_error": True,
+                    "output_summary": unreachable,
+                },
+                {
+                    "event_id": f"event-{index * 2 + 1}",
+                    "call_id": f"call-{call}",
+                    "type": "error",
+                    "tool_name": "web_search",
+                    "error_type": "ToolError",
+                    "message": unreachable,
+                },
+            ]
+        )
+    retry_trace.append(
+        {
+            "event_id": "event-99",
+            "type": "task_result",
+            "status": "failed",
+            "had_errors": True,
+            "tool_error_count": 2,
+        }
+    )
+    retry_id = pipeline.write("Search the web for a name", retry_trace)
+    retry_entry = (
+        manager.memories[MemoryScope.PROJECT]._id_index.get(retry_id)
+        if retry_id
+        else None
+    )
+    # The fix-verified loop: a command fails, a file changes, the same command
+    # passes. No runtime event reports it, so this is derived from the trace.
+    # It is the only path that yields `verified_solution`, and it stayed dead
+    # in production until that derivation existed.
+    pytest_command = "pytest tests/test_lease.py -q"
+    fix_trace: list[dict[str, Any]] = [
+        {
+            "event_id": "event-20",
+            "call_id": "call-10",
+            "type": "tool_call",
+            "tool_name": "run_command",
+            "input": {"command": pytest_command},
+        },
+        {
+            "event_id": "event-21",
+            "call_id": "call-10",
+            "type": "tool_result",
+            "tool_name": "run_command",
+            "status": "error",
+            "is_error": True,
+            "output_summary": "FAILED tests/test_lease.py::test_renew - StaleToken",
+        },
+        {
+            "event_id": "event-22",
+            "call_id": "call-10",
+            "type": "error",
+            "tool_name": "run_command",
+            "error_type": "CommandError",
+            "message": "FAILED tests/test_lease.py::test_renew - StaleToken not refreshed",
+        },
+        {
+            "event_id": "event-23",
+            "call_id": "call-11",
+            "type": "tool_call",
+            "tool_name": "edit_file",
+            "input": {"path": "src/lease.py"},
+            "files": ["src/lease.py"],
+            "files_changed": ["src/lease.py"],
+        },
+        {
+            "event_id": "event-24",
+            "call_id": "call-11",
+            "type": "tool_result",
+            "tool_name": "edit_file",
+            "status": "success",
+            "output_summary": "edited",
+            "files": ["src/lease.py"],
+            "files_changed": ["src/lease.py"],
+        },
+        {
+            "event_id": "event-25",
+            "call_id": "call-12",
+            "type": "tool_call",
+            "tool_name": "run_command",
+            "input": {"command": pytest_command},
+        },
+        {
+            "event_id": "event-26",
+            "call_id": "call-12",
+            "type": "tool_result",
+            "tool_name": "run_command",
+            "status": "success",
+            "output_summary": "1 passed in 0.4s",
+        },
+        {
+            "event_id": "event-27",
+            "type": "task_result",
+            "status": "success",
+            "had_errors": True,
+            "errors_recovered": True,
+            "tool_error_count": 1,
+        },
+    ]
+    from minicode.reflection_evidence import TraceEvidenceExtractor
+    from minicode.reflection_synthesis import (
+        ReflectionClaimValidator,
+        ReflectionValueGate,
+        RuleReflectionSynthesizer,
+    )
+
+    fix_task = "Fix the failing lease test"
+    fix_evidence = TraceEvidenceExtractor().extract(fix_task, fix_trace)
+    fix_candidate = RuleReflectionSynthesizer().synthesize(fix_task, fix_evidence)
+    fix_decision = ReflectionValueGate().evaluate(
+        fix_candidate,
+        ReflectionClaimValidator().validate(fix_candidate, fix_evidence),
+        fix_evidence,
+    )
     return {
         "ordinaryFactPersisted": bool(fact_id or fact_hits),
         "singleErrorPatternSuppressed": error_entry is None and not claim_types,
+        "environmentErrorSuppressed": retry_entry is None,
+        "verifiedRecoveryPersisted": bool(
+            fix_evidence.recoveries
+            and fix_decision.accepted
+            and "verified_solution" in fix_decision.durable_signals
+        ),
     }
 
 
@@ -1605,23 +1746,12 @@ def _build_issues(
                 recommended_batch="Reliability 1B-2: File/command Tool correctness",
                 red_test="Table-driven schema/validator conformance must reject every omitted required field and wrong scalar type.",
             ),
-            _issue(
-                "MEM-001",
-                "P1",
-                "memory.conversation_fact",
-                "Ordinary user facts are not persisted/retrievable across Sessions.",
-                "Submit the isolated phrase 小花是我唯一的好朋友。 through the current Memory write path, then search 小花.",
-                "A declared conversational fact intake path should create an approved/reviewable durable fact with scope and provenance.",
-                "No fact entry or search hit was produced; the separate one-off web_search failure was correctly suppressed as non-recurrent.",
-                ["minicode/memory_pipeline.py", "docs/minicode-dashboard-batch-9-roadmap.md", "scripts/run_functional_audit.py"],
-                environment_dependent=False,
-                recommended_batch="Reliability 1B-3: Session/Memory persistence gaps",
-                red_test="Two isolated Sessions must prove the exact ordinary fact is persisted, approved, retrieved and injected.",
-            ),
         ]
     )
-    assert memory["ordinaryFactPersisted"] is False
+    assert memory["ordinaryFactPersisted"] is True
     assert memory["singleErrorPatternSuppressed"] is True
+    assert memory["environmentErrorSuppressed"] is True
+    assert memory["verifiedRecoveryPersisted"] is True
     return issues
 
 

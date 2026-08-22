@@ -1,13 +1,23 @@
 from __future__ import annotations
 
 import concurrent.futures
-import inspect
+import json
 import re
 import time
+from pathlib import Path
 from typing import Any, Callable
 
+from minicode.agent_budget import (
+    AgentBudgetExceeded,
+    AgentTurnBudget,
+    record_budgeted_model_call,
+)
 from minicode.context_manager import ContextManager, estimate_message_tokens
 from minicode.logging_config import get_logger
+from minicode.model_call_control import (
+    ModelCallDeadlineExceeded,
+    call_model_next,
+)
 from minicode.permissions import PermissionManager
 from minicode.pricing import (
     pricing_failure_event_payload,
@@ -17,6 +27,7 @@ from minicode.run_events import (
     AgentEventSink,
     SkillUsageTracker,
     VerificationTracker,
+    emit_context_compaction_failure_safely,
     emit_context_compaction_safely,
     emit_event_safely,
     emit_memory_result_safely,
@@ -29,9 +40,18 @@ from minicode.run_events import (
     new_model_operation_id,
     project_model_duration_ms,
     project_model_usage,
+    record_written_memory_ids_safely,
 )
 from minicode.state import Store, AppState, increment_tool_calls, set_busy, set_idle
-from minicode.tooling import ToolContext, ToolRegistry, ToolResult
+from minicode.subagent_mailbox import SubagentMailbox
+from minicode.subagent_lifecycle import AsyncSubagentLifecycle
+from minicode.task_ledger import TaskLedger
+from minicode.tooling import (
+    ToolContext,
+    ToolExecutionAbandoned,
+    ToolRegistry,
+    ToolResult,
+)
 from minicode.turn_cancellation import (
     TurnCancellationRequested,
     TurnCancellationToken,
@@ -55,7 +75,7 @@ from minicode.working_memory import get_working_memory, protect_context
 # Work chain integration
 from minicode.intent_parser import parse_intent
 from minicode.task_object import build_task, TaskObject, TaskState
-from minicode.task_outcome import canonicalize_task_outcome
+from minicode.task_outcome import AgentOutcomeCapture, canonicalize_task_outcome
 from minicode.pipeline_engine import get_pipeline_engine
 from minicode.capability_registry import register_tool_capabilities
 from minicode.layered_context import ContextBuilder, LayeredContext
@@ -97,6 +117,11 @@ from minicode.context_cybernetics import ContextCyberneticsOrchestrator
 from minicode.cost_control import CostControlLoop
 from minicode.memory import MemoryManager
 
+
+class AgentTurnDeadlineExceeded(RuntimeError):
+    """A caller-owned monotonic deadline expired at an Agent boundary."""
+
+
 logger = get_logger("agent_loop")
 
 # 甯搁噺锛氶伩鍏嶉噸澶嶇殑鎻愮ず鏂囨湰
@@ -110,6 +135,12 @@ NUDGE_AFTER_TOOL_RESULT = (
     "You have received tool results. Review them briefly, then take the next "
     "concrete action: call another tool, edit code, or give an explicit <final> "
     "answer only if the task is truly complete. Do not restate what you just saw."
+)
+
+NUDGE_AFTER_UNFINISHED_ACTION = (
+    "Your last message described the next action but did not perform it. "
+    "Continue now with the concrete tool call. Give an explicit <final> answer "
+    "only after the requested result is actually available."
 )
 
 NUDGE_AFTER_EMPTY_RESPONSE = (
@@ -153,16 +184,29 @@ _TRACE_SECRET_KEYS = {
 
 
 def _redact_trace_text(text: str, limit: int = _TRACE_MAX_FIELD_CHARS) -> str:
-    redacted = re.sub(
-        r"(?i)(api[_-]?key|secret[_-]?key|token|secret|password|credential|authorization)"
-        r"\s*[:=]\s*[^\s,;]+",
-        r"\1=[REDACTED]",
-        text,
+    """Redact and bound one trace field.
+
+    This runs before the evidence layer sees anything, so it -- not
+    ``sanitize_evidence_text`` -- decides what a durable memory can ever
+    contain. It reuses the evidence layer's rules rather than keeping a second
+    copy: the local copy redacted every assignment unconditionally, which is
+    how a correct root-cause explanation reached memory as
+    "sets `_token=[REDACTED] BEFORE the increment".
+    """
+    from minicode.reflection_evidence import (
+        _BEARER_RE,
+        _SECRET_ASSIGNMENT_RE,
+        _redact_secret_assignment,
+        bound_keeping_both_ends,
     )
-    redacted = re.sub(r"(?i)bearer\s+[a-z0-9._\-]+", "Bearer [REDACTED]", redacted)
-    if len(redacted) > limit:
-        return redacted[:limit] + "...[truncated]"
-    return redacted
+
+    redacted = _SECRET_ASSIGNMENT_RE.sub(_redact_secret_assignment, text)
+    redacted = _BEARER_RE.sub("Bearer [REDACTED]", redacted)
+    # Elide the middle rather than the tail. This bound runs before the
+    # evidence layer sees anything, so tail-truncation here discarded pytest's
+    # closing "FAILED tests/... - StaleTokenError" for good, and the memory
+    # built from it could only say "fails with lease.transfer".
+    return bound_keeping_both_ends(redacted, limit)
 
 
 def _sanitize_trace_value(value: Any, depth: int = 0) -> Any:
@@ -271,8 +315,16 @@ def _is_empty_assistant_response(content: str) -> bool:
 
 
 def _extract_task_description(messages: list[ChatMessage]) -> str:
-    """Extract the original task description from messages."""
-    for msg in messages:
+    """Extract the task currently being worked on.
+
+    Scans backwards. Scanning forwards returned the session's *first* user
+    message, so in any multi-turn conversation every task -- and every memory
+    written from it -- was filed under whatever was asked first: a run that
+    fixed a failing test was stored as "你能用网络搜索小红是谁嘛？". Retrieval
+    matches on that text, so those memories were also unfindable by their
+    real subject.
+    """
+    for msg in reversed(messages):
         if msg.get("role") == "user" and msg.get("content"):
             content = str(msg["content"])
             if not content.startswith("Continue") and not content.startswith("Your last"):
@@ -353,6 +405,10 @@ def _execute_single_tool(
     verification_tracker: VerificationTracker | None = None,
     agent_depth: int = 0,
     presentation: Any | None = None,
+    agent_budget: Any | None = None,
+    subagent_mailbox: Any | None = None,
+    subagent_lifecycle: Any | None = None,
+    allow_user_interaction: bool = True,
 ) -> ToolResult:
     """Execute a single tool call with hooks, state updates, and crash protection.
     
@@ -376,10 +432,15 @@ def _execute_single_tool(
         if store:
             store.set_state(set_busy(tool_name))
         
-        # Execute the tool with timeout protection
+        # Execute the tool with timeout protection. The timeout cannot kill
+        # the worker thread, so it sets a shared abandonment event instead;
+        # nested loops that receive this context can then unwind at their
+        # next checkpoint.
         import concurrent.futures
         import contextvars
         import os
+        import threading
+        abandoned_event = threading.Event()
         _base_timeout = int(os.environ.get("MINICODE_TOOL_TIMEOUT", "120"))
         TOOL_TIMEOUT = (
             int(getattr(tool_scheduler, '_force_tool_timeout', _base_timeout))
@@ -388,6 +449,15 @@ def _execute_single_tool(
         )
         def execute_tool() -> ToolResult:
             raise_if_cancelled(cancellation_token)
+            if tool_name == "ask_user" and not allow_user_interaction:
+                return ToolResult(
+                    ok=False,
+                    output=(
+                        "User interaction is unavailable in this execution "
+                        "mode. Continue using the available context and return "
+                        "the result through the assistant final response."
+                    ),
+                )
             executed = tools.execute(
                 tool_name, tool_input,
                 ToolContext(
@@ -400,28 +470,49 @@ def _execute_single_tool(
                     _cancellation_token=cancellation_token,
                     _agent_depth=agent_depth,
                     _presentation=presentation,
+                    _agent_budget=agent_budget,
+                    _tool_abandoned=abandoned_event,
+                    _subagent_mailbox=subagent_mailbox,
+                    _subagent_lifecycle=subagent_lifecycle,
                 ),
             )
             raise_if_cancelled(cancellation_token)
             return executed
 
-        execution_context = contextvars.copy_context()
-        pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-        try:
-            future = pool.submit(execution_context.run, execute_tool)
-            try:
-                result = future.result(timeout=TOOL_TIMEOUT)
-            except concurrent.futures.TimeoutError:
-                result = ToolResult(
-                    ok=False,
-                    output=f"Tool '{tool_name}' timed out after {TOOL_TIMEOUT}s",
+        tool_definition = tools.find(tool_name)
+        abandon_safe = bool(
+            tool_definition is not None
+            and (
+                tool_definition.is_read_only
+                or (
+                    tool_name == "task"
+                    and tool_definition.call_is_concurrency_safe(tool_input)
                 )
-        finally:
-            # Never block on a possibly-hung worker thread: a `with` block
-            # (or wait=True) would call shutdown(wait=True) and stall until
-            # the tool actually finishes, defeating the timeout entirely.
-            # The abandoned thread cannot be killed, but the loop moves on.
-            pool.shutdown(wait=False, cancel_futures=True)
+            )
+        )
+        if not abandon_safe:
+            # Python cannot kill a running thread. Returning a timeout while a
+            # write-capable tool continues would let it mutate files/Memory
+            # after the parent has moved on. Writers therefore run in the
+            # owning thread and must enforce their own cancellable timeout.
+            result = execute_tool()
+        else:
+            execution_context = contextvars.copy_context()
+            pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+            try:
+                future = pool.submit(execution_context.run, execute_tool)
+                try:
+                    result = future.result(timeout=TOOL_TIMEOUT)
+                except concurrent.futures.TimeoutError:
+                    abandoned_event.set()
+                    result = ToolResult(
+                        ok=False,
+                        output=f"Tool '{tool_name}' timed out after {TOOL_TIMEOUT}s",
+                    )
+            finally:
+                # Only side-effect-free work may outlive this timeout. Writers
+                # never enter this branch.
+                pool.shutdown(wait=False, cancel_futures=True)
         # Any exception raised by execute_tool() propagates: cancellation is
         # re-raised below, everything else is converted to an error result by
         # the outer safety net. (The previous blind `execute_tool()` fallback
@@ -451,7 +542,12 @@ def _execute_single_tool(
         
         return result
     
-    except (KeyboardInterrupt, SystemExit, TurnCancellationRequested):
+    except (
+        KeyboardInterrupt,
+        SystemExit,
+        TurnCancellationRequested,
+        ToolExecutionAbandoned,
+    ):
         # Always propagate these
         raise
     except Exception as exc:  # noqa: BLE001
@@ -498,14 +594,44 @@ def _is_recoverable_thinking_stop(*, is_empty: bool, stop_reason: str | None, ig
     return "thinking" in (ignored_block_types or [])
 
 
-def _should_treat_assistant_as_progress(*, kind: str | None, content: str, saw_tool_result: bool) -> bool:
+_UNFINISHED_ENGLISH_ACTION_TAIL = re.compile(
+    r"(?:^|[.!?]\s+)(?:let\s+me|i(?:['’]ll|\s+will|\s+shall|\s+am\s+going\s+to)|"
+    r"(?:next|now),?\s+i(?:['’]ll|\s+will))\s+(?:first\s+)?"
+    r"(?:read|inspect|check|open|run|search|locate|try|fix|edit|verify|test|"
+    r"continue|look(?:\s+at)?)\b[^.!?]*(?:[.!?])?\s*$",
+    re.IGNORECASE,
+)
+_UNFINISHED_CHINESE_ACTION_TAIL = re.compile(
+    r"(?:^|[。！？]\s*)(?:让我|我(?:先|现在|接下来|来|会|将|准备))\s*"
+    r"(?:读取|检查|查看|打开|运行|搜索|查找|尝试|修复|编辑|验证|测试|继续)"
+    r"[^。！？]*(?:[。！？])?\s*$"
+)
+
+
+def _looks_like_unfinished_action(content: str) -> bool:
+    normalized = content.strip()
+    if not normalized or len(normalized) > 600 or "```" in normalized:
+        return False
+    return bool(
+        _UNFINISHED_ENGLISH_ACTION_TAIL.search(normalized)
+        or _UNFINISHED_CHINESE_ACTION_TAIL.search(normalized)
+    )
+
+
+def _should_treat_assistant_as_progress(
+    *,
+    kind: str | None,
+    content: str,
+    saw_tool_result: bool,
+    unfinished_retry_count: int,
+) -> bool:
     if kind == "progress":
         return True
     if kind == "final":
         return False
     if not saw_tool_result:
         return False
-    return False
+    return unfinished_retry_count < 2 and _looks_like_unfinished_action(content)
 
 
 def _model_next(
@@ -515,25 +641,107 @@ def _model_next(
     on_stream_chunk: Callable[[str], None] | None,
     on_thinking_chunk: Callable[[str], None] | None = None,
     store: Store[AppState] | None,
+    cancellation_token: TurnCancellationToken | None = None,
+    deadline_monotonic: float | None = None,
 ) -> AgentStep:
     """Call provider adapters with store/thinking support while preserving test doubles."""
-    kwargs: dict[str, Any] = {"on_stream_chunk": on_stream_chunk}
-
     try:
-        sig = inspect.signature(model.next)
-        param_names = set(sig.parameters.keys())
-        has_kwargs = any(
-            p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+        return call_model_next(
+            model,
+            messages,
+            optional_kwargs={
+                "on_stream_chunk": on_stream_chunk,
+                "on_thinking_delta": on_thinking_chunk,
+                "store": store,
+            },
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
         )
-        if has_kwargs or "on_thinking_delta" in param_names:
-            kwargs["on_thinking_delta"] = on_thinking_chunk
-        if has_kwargs or "store" in param_names:
-            kwargs["store"] = store
-    except (TypeError, ValueError):
-        # Can't inspect signature (e.g. some mock objects) — be conservative
-        pass
+    except ModelCallDeadlineExceeded as error:
+        raise AgentTurnDeadlineExceeded(str(error)) from error
 
-    return model.next(messages, **kwargs)
+
+def _record_context_token_observation(
+    context_manager: ContextManager | None,
+    current_messages: list[dict],
+    next_step: Any,
+) -> None:
+    """Feed provider-reported input tokens back into the context estimator.
+
+    The adapters already return ``usage`` on every successful step; without
+    this call ContextManager's calibration EMA was dead code and compaction
+    thresholds relied solely on the character heuristic, which is especially
+    wrong for CJK and tool-heavy contexts.
+    """
+    if context_manager is None:
+        return
+    try:
+        usage = getattr(next_step, "usage", None)
+        observed = getattr(usage, "input_tokens", None)
+        if (
+            isinstance(observed, int)
+            and not isinstance(observed, bool)
+            and observed > 0
+        ):
+            context_manager.messages = current_messages
+            context_manager.record_observed_tokens(observed)
+    except Exception as exc:  # noqa: BLE001 - calibration is optional
+        logger.warning(
+            "Context token calibration skipped: %s",
+            exc,
+        )
+
+
+def _estimated_context_tokens(messages: list[dict]) -> int:
+    try:
+        return sum(estimate_message_tokens(message) for message in messages)
+    except Exception:  # noqa: BLE001 - estimate is advisory
+        return len(messages) * 128
+
+
+def _record_agent_budget_usage(
+    agent_budget: Any,
+    next_step: Any,
+    *,
+    reservation: Any = None,
+    model: Any,
+    usage_observation: dict[str, object],
+    cost_payload: dict[str, object] | None,
+) -> None:
+    """Charge one completed model response against the shared turn budget."""
+    if agent_budget is None:
+        return
+    try:
+        if not usage_observation:
+            usage_observation = project_model_usage(
+                getattr(next_step, "usage", None)
+            )
+        record_budgeted_model_call(
+            agent_budget,
+            model=model,
+            usage=usage_observation,
+            reservation=reservation,
+            cost_payload=cost_payload,
+        )
+    except Exception as exc:  # noqa: BLE001 - budget accounting is advisory
+        logger.warning("Agent budget usage recording failed: %s", exc)
+
+
+def _fail_agent_budget_reservation(
+    agent_budget: Any,
+    reservation: Any,
+    *,
+    charge_estimate: bool = False,
+) -> None:
+    """Release a failed provider call's pending token lease, best effort."""
+    if agent_budget is None or reservation is None:
+        return
+    try:
+        settle = getattr(agent_budget, "fail_model_call", None)
+        if callable(settle):
+            settle(reservation, charge_estimate=charge_estimate)
+    except Exception as exc:  # noqa: BLE001 - accounting cannot mask provider errors
+        logger.warning("Agent budget failure settlement failed: %s", exc)
 
 
 def _start_model_observation_clock() -> float | None:
@@ -632,6 +840,61 @@ def _new_context_operation_observation(
         return None
 
 
+def _emit_failed_context_compaction(
+    event_sink: AgentEventSink | None,
+    result: object | None,
+    context_compactor: ContextCompactor | None,
+    *,
+    path: str,
+    step: int | None = None,
+) -> None:
+    """Observe a real ineffective attempt, excluding cheap policy skips."""
+    if event_sink is None or result is None or context_compactor is None:
+        return
+    if getattr(result, "effective", None) is not False:
+        return
+    if getattr(result, "error", "") in {
+        "Compaction retry suppressed for unchanged message state",
+        "Compaction circuit breaker is open",
+    }:
+        return
+    operation_id = _new_context_operation_observation(event_sink)
+    if operation_id is None:
+        return
+    dispatcher = context_compactor.auto_compact
+    emit_context_compaction_failure_safely(
+        event_sink,
+        result,
+        step=step,
+        context_operation_id=operation_id,
+        path=path,
+        consecutive_failures=dispatcher.consecutive_failures,
+        circuit_breaker_tripped=dispatcher.is_tripped,
+    )
+
+
+def _looks_like_context_overflow(error_str: str) -> bool:
+    """Match context-overflow API errors across providers.
+
+    Anthropic says "prompt is too long: N tokens > ... maximum"; OpenAI says
+    "context_length_exceeded" / "maximum context length"; other compatible
+    providers say "input tokens exceed ...". String matching stays the last
+    resort after the pre-request pipeline, so it must at least speak every
+    dialect.
+    """
+    lowered = error_str.lower()
+    if "prompt" in lowered and ("too long" in lowered or "exceeds" in lowered):
+        return True
+    if "context" in lowered and any(
+        marker in lowered
+        for marker in ("length", "window", "limit", "exceed")
+    ):
+        return True
+    return "input tokens" in lowered and any(
+        marker in lowered for marker in ("exceed", "limit", "maximum")
+    )
+
+
 def _apply_control_signal(
     *,
     control_signal: Any,
@@ -641,6 +904,9 @@ def _apply_control_signal(
     context_compactor: ContextCompactor | None,
     model_switcher: Any | None,
     feedback_controller: Any | None = None,
+    current_messages: list[dict] | None = None,
+    context_manager: Any | None = None,
+    event_sink: AgentEventSink | None = None,
 ) -> int | None:
     """Apply FeedbackController output to live runtime knobs."""
     if not control_signal or control_signal.confidence <= 0.6:
@@ -753,17 +1019,48 @@ def _apply_control_signal(
                 control_signal.promote_pattern,
             )
 
-    if control_signal.force_compaction and context_compactor:
+    if control_signal.force_compaction and context_compactor and current_messages is not None:
         try:
-            compacted = context_compactor.compact_messages()
-            logger.info(
-                "FeedbackController: forced compaction completed (%d messages)",
-                len(compacted) if compacted else 0,
-            )
+            compacted = context_compactor.compact_messages(current_messages, force=True)
+            if compacted is not None and len(compacted) < len(current_messages):
+                previous_count = len(current_messages)
+                current_messages[:] = compacted
+                if context_manager is not None:
+                    context_manager.messages = list(compacted)
+                logger.info(
+                    "FeedbackController: forced compaction %d -> %d messages",
+                    previous_count, len(compacted),
+                )
+            else:
+                _emit_failed_context_compaction(
+                    event_sink,
+                    context_compactor.last_result,
+                    context_compactor,
+                    path="feedback_forced",
+                )
         except Exception as exc:
             logger.warning("FeedbackController: forced compaction failed: %s", exc)
 
     return max_steps
+
+
+_REQUIRED_SKILL_MIN_STEPS = 15
+
+
+def _preemptive_step_cap(
+    *,
+    max_steps: int,
+    recommended_steps: int,
+    required_skill_count: int,
+) -> int:
+    """Keep Skill load-and-apply work from being classified into starvation."""
+    effective_recommendation = recommended_steps
+    if required_skill_count > 0:
+        effective_recommendation = max(
+            effective_recommendation,
+            _REQUIRED_SKILL_MIN_STEPS,
+        )
+    return min(max_steps, effective_recommendation)
 
 
 def run_agent_turn(
@@ -789,14 +1086,47 @@ def run_agent_turn(
     enable_work_chain: bool = True,
     memory_manager: MemoryManager | None = None,
     event_sink: AgentEventSink | None = None,
+    on_memory_written: Callable[[str], None] | None = None,
+    agent_budget: Any | None = None,
+    budget_exhausted_policy: str = "fallback",
+    abandoned_event: Any | None = None,
+    subagent_mailbox: Any | None = None,
+    subagent_lifecycle: Any | None = None,
     cancellation_token: TurnCancellationToken | None = None,
+    deadline_monotonic: float | None = None,
     agent_depth: int = 0,
     presentation: Any | None = None,
+    outcome_capture: AgentOutcomeCapture | None = None,
+    required_skill_names: list[str] | None = None,
+    allow_user_interaction: bool = True,
 ) -> list[ChatMessage]:
     current_messages = list(messages)
+    task_ledger = TaskLedger.from_messages(current_messages)
+
+    def reconcile_task_ledger(
+        candidate: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        return (
+            task_ledger.reconcile(candidate)
+            if task_ledger is not None
+            else list(candidate)
+        )
+
+    def observable_message_count(candidate: list[dict[str, Any]]) -> int:
+        return sum(not message.get("_task_ledger") for message in candidate)
+
+    current_messages = reconcile_task_ledger(current_messages)
+    if agent_budget is None and runtime is not None:
+        agent_budget = AgentTurnBudget.from_runtime(runtime)
+    if subagent_mailbox is None:
+        subagent_mailbox = SubagentMailbox()
+    if budget_exhausted_policy not in {"fallback", "raise"}:
+        budget_exhausted_policy = "fallback"
+    tool_abandoned = False
     saw_tool_result = False
     empty_response_retry_count = 0
     recoverable_thinking_retry_count = 0
+    unfinished_action_retry_count = 0
     tool_error_count = 0
     recovery_guard = RecoveryGuard()
     turn_started_at = time.perf_counter()
@@ -806,14 +1136,138 @@ def run_agent_turn(
     total_tool_call_count = 0
     completed_tool_step_count = 0
     failed_tool_step_count = 0
+    skill_requirement_nudged = False
     step = 0
     turn_outcome = "unknown"
     execution_trace: list[dict[str, Any]] = []
     memory_mgr = memory_manager
 
     tool_scheduler = ToolScheduler(metrics_collector=metrics_collector)
-    skill_usage_tracker = SkillUsageTracker() if event_sink is not None else None
+    # Loading is execution authority, not merely an optional event. Keep the
+    # tracker even without an event sink so routed-Skill enforcement works on
+    # every entrypoint.
+    skill_usage_tracker = SkillUsageTracker()
     verification_tracker = VerificationTracker()
+    required_skills = {
+        str(name).strip()
+        for name in (required_skill_names or [])
+        if str(name).strip()
+    }
+
+    def raise_if_deadline_exceeded() -> None:
+        if (
+            deadline_monotonic is not None
+            and time.monotonic() >= deadline_monotonic
+        ):
+            raise AgentTurnDeadlineExceeded("agent turn deadline exceeded")
+
+    def enforce_skill_load_before_final() -> str:
+        """Return ``ok``, ``retry``, or a terminal failure message."""
+        nonlocal skill_requirement_nudged
+        loaded, _truncated = skill_usage_tracker.snapshot()
+        loaded_names = {
+            str(item.get("qualifiedName") or "") for item in loaded
+        }
+        missing = sorted(required_skills - loaded_names)
+        if not missing:
+            return "ok"
+        if not skill_requirement_nudged:
+            skill_requirement_nudged = True
+            current_messages.append(
+                {
+                    "role": "user",
+                    "content": (
+                        "The routed Skill contract is not satisfied. Before "
+                        "answering, call load_skill for: " + ", ".join(missing)
+                    ),
+                }
+            )
+            return "retry"
+        return (
+            "The turn stopped because required routed Skills were not loaded: "
+            + ", ".join(missing)
+        )
+
+    def enforce_subagent_completion_before_final(content: str) -> bool:
+        """Keep assistant final closed until owned async results are visible."""
+        barrier = getattr(subagent_lifecycle, "finalization_barrier", None)
+        if not callable(barrier):
+            return False
+        try:
+            try:
+                state = barrier(wait_seconds=0.25)
+            except TypeError:
+                # Compatibility for an externally supplied lifecycle that
+                # implemented the original no-argument barrier seam.
+                state = barrier()
+        except Exception:  # noqa: BLE001 - lifecycle authority fails closed
+            logger.warning(
+                "Async sub-agent finalization barrier failed",
+                exc_info=True,
+            )
+            current_messages.append(
+                {
+                    "role": "user",
+                    "content": (
+                        "The asynchronous sub-agent lifecycle could not be "
+                        "verified. Do not finalize; use task poll or cancel "
+                        "for every spawned sub-agent first."
+                    ),
+                }
+            )
+            return True
+        if bool(state.get("ready")):
+            return False
+
+        if content:
+            if on_progress_message:
+                on_progress_message(content)
+            current_messages.append(
+                {"role": "assistant_progress", "content": content}
+            )
+            _append_trace_event(
+                execution_trace,
+                {
+                    "type": "assistant_step",
+                    "step": step,
+                    "content_kind": "subagent_finalization_blocked",
+                    "content": _redact_trace_text(content),
+                },
+            )
+
+        pending = state.get("pending")
+        completed = state.get("completed")
+        if isinstance(completed, list) and completed:
+            instruction = (
+                "One or more sub-agent results are now available. Review and "
+                "synthesize these bounded results before giving the final answer."
+            )
+        else:
+            instruction = (
+                "One or more owned sub-agents are still running. Do not finalize. "
+                "Use the task tool to poll or cancel every pending sub-agent, "
+                "then synthesize their terminal results."
+            )
+        projection = {
+            "lifecycleVersion": state.get("lifecycleVersion"),
+            "pending": pending if isinstance(pending, list) else [],
+            "completed": completed if isinstance(completed, list) else [],
+        }
+        current_messages.append(
+            {
+                "role": "user",
+                "content": (
+                    instruction
+                    + "\nLifecycle snapshot: "
+                    + json.dumps(
+                        projection,
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    )
+                ),
+            }
+        )
+        return True
 
     # Initialize work chain if enabled
     task: TaskObject | None = None
@@ -902,10 +1356,14 @@ def run_agent_turn(
             )
             # Apply feedforward preemptive config to execution parameters
             if preemptive_config.confidence > 0.6:
-                max_steps = min(max_steps, preemptive_config.max_turn_steps)
+                max_steps = _preemptive_step_cap(
+                    max_steps=max_steps,
+                    recommended_steps=preemptive_config.max_turn_steps,
+                    required_skill_count=len(required_skills),
+                )
                 logger.info(
                     "Feedforward: max_steps=%d model=%s timeout=%.1fs",
-                    preemptive_config.max_turn_steps,
+                    max_steps,
                     preemptive_config.recommended_model,
                     preemptive_config.tool_timeout_seconds,
                 )
@@ -960,38 +1418,121 @@ def run_agent_turn(
                             current_messages,
                             current_files=current_files,
                             context_usage=context_usage,
+                            agent_budget=agent_budget,
+                            event_sink=event_sink,
+                            cancellation_token=cancellation_token,
+                            deadline_monotonic=deadline_monotonic,
                         )
                         if event_sink is not None:
                             emit_memory_result_safely(
                                 event_sink,
                                 orch.memory_pipeline.last_retrieval_result,
                             )
+                    except ModelCallDeadlineExceeded as exc:
+                        raise AgentTurnDeadlineExceeded(str(exc)) from exc
+                    except TurnCancellationRequested:
+                        raise
                     except Exception as exc:
                         logger.warning("Memory injection failed safely: %s", exc)
         if context_manager:
-            compact_config = AutoCompactConfig(
-                threshold_ratio=0.85,
-                circuit_breaker_limit=3,
-                session_memory_enabled=True,
+            # Reuse the session-owned controllers when the model identity is
+            # unchanged. Rebuilding ContextCompactor/ContextCybernetics every
+            # turn discarded PID, predictor, adaptive threshold, dedup and
+            # microcompact state, so cross-turn control was effectively
+            # turn-local even though the ContextManager itself lived on.
+            model_key = str(
+                getattr(model, "model_id", None)
+                or (runtime or {}).get("model", "")
+                or type(model).__name__
             )
-            context_compactor = ContextCompactor(
-                context_window=context_manager.context_window,
-                workspace=cwd,
-                memory_manager=memory_mgr,
-                estimate_fn=estimate_message_tokens,
-                config=compact_config,
+            cached_compactor = getattr(
+                context_manager, "_context_compactor", None
             )
-            context_cybernetics = ContextCyberneticsOrchestrator(
-                context_compactor,
-                kp=2.0, ki=0.15, kd=0.3,
-                pid_setpoint=0.70,
-                base_threshold=0.85,
-                safety_margin_turns=3,
-                enabled=True,
+            cached_cybernetics = getattr(
+                context_manager, "_context_cybernetics", None
             )
+            cached_model = getattr(context_manager, "_controller_model", "")
+            if (
+                cached_compactor is not None
+                and cached_cybernetics is not None
+                and cached_model == model_key
+            ):
+                context_compactor = cached_compactor
+                context_cybernetics = cached_cybernetics
+                # Refresh the bindings that can change while the ContextManager
+                # survives (window size, workspace, memory store, model adapter
+                # used for LLM summaries).
+                context_compactor._context_window = (
+                    context_manager.context_window
+                )
+                context_compactor._workspace = Path(cwd)
+                if hasattr(context_compactor, "_auto_compact"):
+                    from minicode.context_compactor import LLMSummaryGenerator
+
+                    context_compactor._auto_compact._memory = memory_mgr
+                    context_compactor._auto_compact._session_memory_engine._memory = (
+                        memory_mgr
+                    )
+                    context_compactor._auto_compact._summary_generator = (
+                        LLMSummaryGenerator(
+                            model,
+                            agent_budget=agent_budget,
+                            event_sink=event_sink,
+                            cancellation_token=cancellation_token,
+                            deadline_monotonic=deadline_monotonic,
+                        )
+                        if model is not None
+                        else None
+                    )
+                logger.info(
+                    "ContextCybernetics reused across turns (model=%s)",
+                    model_key,
+                )
+            else:
+                compact_config = AutoCompactConfig(
+                    threshold_ratio=0.85,
+                    circuit_breaker_limit=3,
+                    session_memory_enabled=True,
+                )
+                from minicode.context_compactor import LLMSummaryGenerator
+
+                context_compactor = ContextCompactor(
+                    context_window=context_manager.context_window,
+                    workspace=cwd,
+                    memory_manager=memory_mgr,
+                    estimate_fn=estimate_message_tokens,
+                    config=compact_config,
+                    # Model-generated summaries when compacting, with the
+                    # heuristic inventory as the always-available floor.
+                    summary_generator=(
+                        LLMSummaryGenerator(
+                            model,
+                            agent_budget=agent_budget,
+                            event_sink=event_sink,
+                            cancellation_token=cancellation_token,
+                            deadline_monotonic=deadline_monotonic,
+                        )
+                    if model is not None
+                    else None
+                    ),
+                )
+                context_cybernetics = ContextCyberneticsOrchestrator(
+                    context_compactor,
+                    kp=2.0, ki=0.15, kd=0.3,
+                    pid_setpoint=0.70,
+                    base_threshold=0.85,
+                    safety_margin_turns=3,
+                    enabled=True,
+                )
+                context_manager._context_compactor = context_compactor
+                context_manager._context_cybernetics = context_cybernetics
+                context_manager._controller_model = model_key
+                logger.info(
+                    "ContextCybernetics initialized: PID control loop + "
+                    "predictive guard"
+                )
             if task and hasattr(task, 'parsed_intent') and task.parsed_intent:
                 context_cybernetics.set_intent(str(task.parsed_intent.intent_type))
-            logger.info("ContextCybernetics initialized: PID control loop + predictive guard")
             if orch:
                 orch.context_compactor = context_compactor
                 orch.context_cybernetics = context_cybernetics
@@ -1045,16 +1586,18 @@ def run_agent_turn(
                     )
 
             context_messages_before = (
-                len(current_messages) if event_sink is not None else None
+                observable_message_count(current_messages)
+                if event_sink is not None
+                else None
             )
             cyber_messages, cyber_result, cyber_action = context_cybernetics.run_cycle(
                 current_messages,
                 error_rate=float(tool_error_count) / max(step, 1) if step > 0 else 0.0,
-                avg_latency=step * 2.0,
+                avg_latency=last_step_duration_seconds,
                 turn_id=step,
             )
             if cyber_result and cyber_result.effective:
-                current_messages = cyber_messages
+                current_messages = reconcile_task_ledger(cyber_messages)
                 context_manager.messages = current_messages
                 context_operation_id = _new_context_operation_observation(event_sink)
                 if (
@@ -1067,7 +1610,7 @@ def run_agent_turn(
                         context_operation_id=context_operation_id,
                         path="pre_request_cybernetic",
                         messages_before=context_messages_before,
-                        messages_after=len(current_messages),
+                        messages_after=observable_message_count(current_messages),
                     )
                 logger.info(
                     "Cybernetics[%s]: %s intensity=%.2f freed=%d tokens [%s]",
@@ -1077,13 +1620,24 @@ def run_agent_turn(
                     cyber_result.tokens_freed,
                     cyber_result.summary_text[:80] if cyber_result.summary_text else "",
                 )
+            elif cyber_result is not None:
+                _emit_failed_context_compaction(
+                    event_sink,
+                    cyber_result,
+                    context_compactor,
+                    path="pre_request_cybernetic",
+                )
         elif context_compactor:
             context_messages_before = (
-                len(current_messages) if event_sink is not None else None
+                observable_message_count(current_messages)
+                if event_sink is not None
+                else None
             )
             compaction_result = context_compactor.process_request(current_messages)
             if compaction_result.effective:
-                current_messages = compaction_result.messages
+                current_messages = reconcile_task_ledger(
+                    compaction_result.messages
+                )
                 context_manager.messages = current_messages
                 context_operation_id = _new_context_operation_observation(event_sink)
                 if (
@@ -1096,7 +1650,7 @@ def run_agent_turn(
                         context_operation_id=context_operation_id,
                         path="pre_request_compactor",
                         messages_before=context_messages_before,
-                        messages_after=len(current_messages),
+                        messages_after=observable_message_count(current_messages),
                     )
                 logger.info(
                     "ContextCompactor: %s freed %d tokens [%s]",
@@ -1104,36 +1658,28 @@ def run_agent_turn(
                     compaction_result.tokens_freed,
                     compaction_result.summary_text[:80],
                 )
-        elif context_manager.should_auto_compact():
-            logger.warning("Context near limit, auto-compacting...")
-            context_messages_before = current_messages if event_sink is not None else None
-            context_messages_before_count = (
-                len(current_messages) if event_sink is not None else None
-            )
-            current_messages = context_manager.compact_messages()
-            if (
-                context_messages_before is not None
-                and context_messages_before_count is not None
-                and current_messages != context_messages_before
-            ):
-                context_operation_id = _new_context_operation_observation(event_sink)
-                if context_operation_id is not None:
-                    emit_context_compaction_safely(
-                        event_sink,
-                        None,
-                        context_operation_id=context_operation_id,
-                        path="context_manager_auto",
-                        trigger="auto",
-                        strategy="context_manager",
-                        messages_before=context_messages_before_count,
-                        messages_after=len(current_messages),
-                    )
-            if on_assistant_message:
-                on_assistant_message(context_manager.get_context_summary())
+            else:
+                _emit_failed_context_compaction(
+                    event_sink,
+                    context_compactor.last_result,
+                    context_compactor,
+                    path="pre_request_compactor",
+                )
+
+    owns_subagent_lifecycle = subagent_lifecycle is None
+    if subagent_lifecycle is None:
+        subagent_lifecycle = AsyncSubagentLifecycle()
 
     try:
         while max_steps is None or step < max_steps:
             raise_if_cancelled(cancellation_token)
+            raise_if_deadline_exceeded()
+            if abandoned_event is not None and abandoned_event.is_set():
+                turn_outcome = "failed"
+                tool_abandoned = True
+                raise ToolExecutionAbandoned(
+                    "tool execution was abandoned after timeout"
+                )
             step += 1
             step_started_at = time.perf_counter()
 
@@ -1156,11 +1702,20 @@ def run_agent_turn(
                 if state_observer:
                     measurement = MeasurementVector(
                         timestamp=time.time(),
-                        response_time=step * 2.0,  # 估算响应时间
-                        success_rate=1.0 - (tool_error_count / max(step, 1)),
+                        response_time=last_step_duration_seconds,
+                        success_rate=max(
+                            0.0,
+                            min(
+                                1.0,
+                                1.0
+                                - last_step_tool_error_count
+                                / max(last_step_tool_call_count, 1),
+                            ),
+                        ),
                         context_length=context_manager.get_stats().total_tokens if context_manager else 0,
-                        error_count=tool_error_count,
-                        tool_calls=0,
+                        error_count=last_step_tool_error_count,
+                        retry_count=last_step_tool_error_count,
+                        tool_calls=last_step_tool_call_count,
                     )
                     observed_state = state_observer.update(measurement)
 
@@ -1200,11 +1755,30 @@ def run_agent_turn(
                                 getattr(action, 'horizon', 'unknown'),
                             )
                             # Execute predictive actions via dispatch
+                            def _predictive_compaction() -> None:
+                                # Proactive compaction: run the pre-request
+                                # pipeline (not the reactive engine, whose
+                                # retry quota is reserved for real API
+                                # overflow errors) and apply its output.
+                                if not context_compactor:
+                                    return
+                                compacted = context_compactor.compact_messages(
+                                    current_messages, force=True
+                                )
+                                if compacted is not None and len(compacted) < len(current_messages):
+                                    previous_count = len(current_messages)
+                                    current_messages[:] = reconcile_task_ledger(
+                                        compacted
+                                    )
+                                    if context_manager is not None:
+                                        context_manager.messages = list(current_messages)
+                                    logger.info(
+                                        "Predictive: compaction applied %d -> %d messages",
+                                        previous_count, len(compacted),
+                                    )
+
                             dispatch: dict[str, Callable[[], None]] = {
-                                "trigger_compaction": lambda: (
-                                    context_cybernetics.try_reactive_recover(current_messages, "predictive")
-                                    if context_cybernetics else None
-                                ),
+                                "trigger_compaction": _predictive_compaction,
                                 "enable_safe_mode": lambda: logger.info(
                                     "Predictive: safe_mode recommended (reduce concurrency, extend timeouts)"
                                 ),
@@ -1234,34 +1808,96 @@ def run_agent_turn(
                 metrics_collector.start_turn(step)
 
             next_step: AgentStep
-            model_operation_id = (
-                new_model_operation_id() if event_sink is not None else ""
-            )
-            if event_sink is not None:
-                emit_event_safely(
-                    event_sink,
-                    "model.started",
-                    step=step,
-                    payload={"operationId": model_operation_id},
+            need_model_observation = (
+                event_sink is not None
+                or (
+                    agent_budget is not None
+                    and agent_budget.max_cost_usd is not None
                 )
+            )
+            model_operation_id = (
+                new_model_operation_id()
+                if need_model_observation
+                else ""
+            )
             model_started_at = (
                 _start_model_observation_clock()
                 if event_sink is not None
                 else None
             )
+            model_budget_reservation = None
             try:
                 raise_if_cancelled(cancellation_token)
+                raise_if_deadline_exceeded()
+                if agent_budget is not None:
+                    model_budget_reservation = agent_budget.reserve_model_call(
+                        _estimated_context_tokens(current_messages)
+                    )
+                if event_sink is not None:
+                    emit_event_safely(
+                        event_sink,
+                        "model.started",
+                        step=step,
+                        payload={"operationId": model_operation_id},
+                    )
                 next_step = _model_next(
                     model,
                     current_messages,
                     on_stream_chunk=on_assistant_stream_chunk,
                     on_thinking_chunk=on_thinking_chunk,
                     store=store,
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
                 )
                 raise_if_cancelled(cancellation_token)
+                raise_if_deadline_exceeded()
+                if abandoned_event is not None and abandoned_event.is_set():
+                    turn_outcome = "failed"
+                    tool_abandoned = True
+                    raise ToolExecutionAbandoned(
+                        "tool execution was abandoned after timeout"
+                    )
+            except AgentTurnDeadlineExceeded:
+                _fail_agent_budget_reservation(
+                    agent_budget,
+                    model_budget_reservation,
+                )
+                raise
+            except AgentBudgetExceeded as error:
+                _fail_agent_budget_reservation(
+                    agent_budget,
+                    model_budget_reservation,
+                )
+                raise_if_cancelled(cancellation_token)
+                if budget_exhausted_policy == "raise":
+                    turn_outcome = "failed"
+                    raise
+                fallback = (
+                    f"error[turn_budget_exceeded]: {error.reason}. "
+                    "The shared turn budget is exhausted; simplify the task "
+                    "or raise the budget limit."
+                )
+                logger.warning("Agent turn budget exceeded: %s", error.reason)
+                if on_assistant_message:
+                    on_assistant_message(fallback)
+                current_messages.append(
+                    {"role": "assistant", "content": fallback}
+                )
+                if metrics_collector:
+                    metrics_collector.end_turn(total_tokens=0)
+                turn_outcome = "failed"
+                return current_messages
             except TurnCancellationRequested:
+                _fail_agent_budget_reservation(
+                    agent_budget,
+                    model_budget_reservation,
+                )
                 raise
             except (KeyboardInterrupt, SystemExit):
+                _fail_agent_budget_reservation(
+                    agent_budget,
+                    model_budget_reservation,
+                )
                 model_duration_ms = (
                     _finish_model_observation_clock(model_started_at)
                     if event_sink is not None
@@ -1282,6 +1918,10 @@ def run_agent_turn(
                     )
                 raise
             except ConnectionError as error:
+                _fail_agent_budget_reservation(
+                    agent_budget,
+                    model_budget_reservation,
+                )
                 raise_if_cancelled(cancellation_token)
                 model_duration_ms = (
                     _finish_model_observation_clock(model_started_at)
@@ -1311,6 +1951,11 @@ def run_agent_turn(
                     metrics_collector.end_turn(total_tokens=0)
                 return current_messages
             except TimeoutError as error:
+                _fail_agent_budget_reservation(
+                    agent_budget,
+                    model_budget_reservation,
+                    charge_estimate=True,
+                )
                 raise_if_cancelled(cancellation_token)
                 model_duration_ms = (
                     _finish_model_observation_clock(model_started_at)
@@ -1340,6 +1985,10 @@ def run_agent_turn(
                     metrics_collector.end_turn(total_tokens=0)
                 return current_messages
             except Exception as error:
+                _fail_agent_budget_reservation(
+                    agent_budget,
+                    model_budget_reservation,
+                )
                 raise_if_cancelled(cancellation_token)
                 model_duration_ms = (
                     _finish_model_observation_clock(model_started_at)
@@ -1366,13 +2015,13 @@ def run_agent_turn(
 
                 # Reactive Compact: 控制论恢复路径
                 error_str = str(error).lower()
-                needs_recovery = "prompt" in error_str and ("too long" in error_str or "exceeds" in error_str)
+                needs_recovery = _looks_like_context_overflow(error_str)
                 if context_cybernetics and needs_recovery:
                     context_operation_id = _new_context_operation_observation(
                         event_sink
                     )
                     recovery_messages_before = (
-                        len(current_messages)
+                        observable_message_count(current_messages)
                         if context_operation_id is not None
                         else None
                     )
@@ -1385,7 +2034,9 @@ def run_agent_turn(
                         )
                     recovered_messages, recovery_result = context_cybernetics.try_reactive_recover(current_messages, error_str)
                     if recovery_result and recovery_result.effective:
-                        current_messages = recovered_messages
+                        current_messages = reconcile_task_ledger(
+                            recovered_messages
+                        )
                         if context_manager:
                             context_manager.messages = current_messages
                         if (
@@ -1399,7 +2050,9 @@ def run_agent_turn(
                                 context_operation_id=context_operation_id,
                                 path="reactive_cybernetic",
                                 messages_before=recovery_messages_before,
-                                messages_after=len(current_messages),
+                                messages_after=observable_message_count(
+                                    current_messages
+                                ),
                             )
                             emit_recovery_completed_safely(
                                 event_sink,
@@ -1408,7 +2061,9 @@ def run_agent_turn(
                                 context_operation_id=context_operation_id,
                                 kind="cybernetic",
                                 messages_before=recovery_messages_before,
-                                messages_after=len(current_messages),
+                                messages_after=observable_message_count(
+                                    current_messages
+                                ),
                             )
                         logger.info(
                             "Cybernetics Reactive recovered: freed %d tokens",
@@ -1426,14 +2081,16 @@ def run_agent_turn(
                             context_operation_id=context_operation_id,
                             kind="cybernetic",
                             messages_before=recovery_messages_before,
-                            messages_after=len(recovered_messages),
+                            messages_after=observable_message_count(
+                                recovered_messages
+                            ),
                         )
                 elif context_compactor and needs_recovery:
                     context_operation_id = _new_context_operation_observation(
                         event_sink
                     )
                     recovery_messages_before = (
-                        len(current_messages)
+                        observable_message_count(current_messages)
                         if context_operation_id is not None
                         else None
                     )
@@ -1446,7 +2103,9 @@ def run_agent_turn(
                         )
                     recovery_result = context_compactor.reactive_recover(current_messages, error_str)
                     if recovery_result and recovery_result.effective:
-                        current_messages = recovery_result.messages
+                        current_messages = reconcile_task_ledger(
+                            recovery_result.messages
+                        )
                         if context_manager:
                             context_manager.messages = current_messages
                         if (
@@ -1460,7 +2119,9 @@ def run_agent_turn(
                                 context_operation_id=context_operation_id,
                                 path="reactive_compactor",
                                 messages_before=recovery_messages_before,
-                                messages_after=len(current_messages),
+                                messages_after=observable_message_count(
+                                    current_messages
+                                ),
                             )
                             emit_recovery_completed_safely(
                                 event_sink,
@@ -1469,7 +2130,9 @@ def run_agent_turn(
                                 context_operation_id=context_operation_id,
                                 kind="compactor",
                                 messages_before=recovery_messages_before,
-                                messages_after=len(current_messages),
+                                messages_after=observable_message_count(
+                                    current_messages
+                                ),
                             )
                         logger.info(
                             "Reactive Compact recovered: freed %d tokens",
@@ -1520,8 +2183,34 @@ def run_agent_turn(
                 if event_sink is not None
                 else None
             )
+            _record_context_token_observation(
+                context_manager,
+                current_messages,
+                next_step,
+            )
+            usage_observation = (
+                _model_usage_observation(next_step)
+                if need_model_observation
+                else {}
+            )
+            cost_payload = (
+                _model_cost_observation(
+                    model,
+                    usage_observation,
+                    model_operation_id,
+                )
+                if need_model_observation
+                else None
+            )
+            _record_agent_budget_usage(
+                agent_budget,
+                next_step,
+                reservation=model_budget_reservation,
+                model=model,
+                usage_observation=usage_observation,
+                cost_payload=cost_payload,
+            )
             if event_sink is not None:
-                usage_observation = _model_usage_observation(next_step)
                 emit_event_safely(
                     event_sink,
                     "model.completed",
@@ -1543,11 +2232,6 @@ def run_agent_turn(
                         model_duration_ms,
                     ),
                 )
-                cost_payload = _model_cost_observation(
-                    model,
-                    usage_observation,
-                    model_operation_id,
-                )
                 if cost_payload is not None:
                     emit_event_safely(
                         event_sink,
@@ -1562,11 +2246,19 @@ def run_agent_turn(
                     kind=getattr(next_step, 'kind', None),
                     content=next_step.content,
                     saw_tool_result=saw_tool_result,
+                    unfinished_retry_count=unfinished_action_retry_count,
                 ):
+                    explicit_progress = getattr(next_step, 'kind', None) == "progress"
+                    if not explicit_progress:
+                        unfinished_action_retry_count += 1
                     _append_trace_event(execution_trace, {
                         "type": "assistant_step",
                         "step": step,
-                        "content_kind": getattr(next_step, 'kind', None) or "progress",
+                        "content_kind": (
+                            "progress"
+                            if explicit_progress
+                            else "unfinished_action"
+                        ),
                         "content": _redact_trace_text(next_step.content),
                     })
                     if on_progress_message:
@@ -1576,8 +2268,8 @@ def run_agent_turn(
                         {
                             "role": "user",
                             "content": (
-                                NUDGE_AFTER_TOOL_RESULT
-                                if saw_tool_result and getattr(next_step, 'kind', None) != "progress"
+                                NUDGE_AFTER_UNFINISHED_ACTION
+                                if not explicit_progress
                                 else NUDGE_CONTINUE
                             ),
                         }
@@ -1660,6 +2352,22 @@ def run_agent_turn(
                     turn_outcome = "unknown"
                     return current_messages
 
+                if enforce_subagent_completion_before_final(next_step.content):
+                    continue
+
+                skill_contract = enforce_skill_load_before_final()
+                if skill_contract == "retry":
+                    continue
+                if skill_contract != "ok":
+                    raise_if_cancelled(cancellation_token)
+                    if on_assistant_message:
+                        on_assistant_message(skill_contract)
+                    current_messages.append(
+                        {"role": "assistant", "content": skill_contract}
+                    )
+                    turn_outcome = "failed"
+                    return current_messages
+
                 raise_if_cancelled(cancellation_token)
                 if on_assistant_message:
                     on_assistant_message(next_step.content)
@@ -1679,6 +2387,14 @@ def run_agent_turn(
                 )
                 _working_memory_observation(event_sink, step=step)
                 return current_messages
+
+            if (
+                not next_step.calls
+                and next_step.content
+                and next_step.contentKind != "progress"
+                and enforce_subagent_completion_before_final(next_step.content)
+            ):
+                continue
 
             if next_step.content:
                 role = "assistant_progress" if next_step.contentKind == "progress" else "assistant"
@@ -1704,6 +2420,18 @@ def run_agent_turn(
                     current_messages.append({"role": role, "content": next_step.content})
 
             if not next_step.calls and next_step.content and next_step.contentKind != "progress":
+                skill_contract = enforce_skill_load_before_final()
+                if skill_contract == "retry":
+                    continue
+                if skill_contract != "ok":
+                    raise_if_cancelled(cancellation_token)
+                    if on_assistant_message:
+                        on_assistant_message(skill_contract)
+                    current_messages.append(
+                        {"role": "assistant", "content": skill_contract}
+                    )
+                    turn_outcome = "failed"
+                    return current_messages
                 raise_if_cancelled(cancellation_token)
                 turn_outcome = "success"
                 return current_messages
@@ -1712,8 +2440,8 @@ def run_agent_turn(
             # Classify calls into concurrent-safe (read-only) vs serial (writes/commands)
             calls = next_step.calls
             _results: list[tuple[dict, ToolResult]] = []
+            concurrent_call_ids: set[str] = set()
             suppressed_call_ids: set[str] = set()
-            executed_outcomes: list[bool] = []
             raise_if_cancelled(cancellation_token)
 
             executable_calls: list[dict] = []
@@ -1730,6 +2458,12 @@ def run_agent_turn(
             if len(executable_calls) == 1:
                 # Single call — no benefit from concurrency, run directly
                 call = executable_calls[0]
+                fire_hook_sync(
+                    HookEvent.PRE_TOOL_USE,
+                    tool_name=call["toolName"],
+                    tool_input=call["input"],
+                    step=step,
+                )
                 if metrics_collector:
                     metrics_collector.start_tool(call["toolName"])
                 result = _execute_single_tool(
@@ -1740,14 +2474,21 @@ def run_agent_turn(
                     verification_tracker,
                     agent_depth,
                     presentation,
+                    agent_budget,
+                    subagent_mailbox,
+                    subagent_lifecycle,
+                    allow_user_interaction,
                 )
                 if metrics_collector:
                     metrics_collector.end_tool(
                         success=result.ok,
                         error=result.output if not result.ok else "",
                     )
-                recovery_guard.observe(call, ok=result.ok, output=result.output)
-                executed_outcomes.append(result.ok)
+                recovery_guard.observe(
+                    call,
+                    ok=result.ok,
+                    output=result.output,
+                )
                 _results.append((call, result))
             elif len(executable_calls) > 1:
                 # Multiple calls — use ToolScheduler for intelligent partitioning
@@ -1758,10 +2499,21 @@ def run_agent_turn(
                 # Phase 1: Run all concurrent-safe tools in parallel
                 if concurrent_calls:
                     raise_if_cancelled(cancellation_token)
+                    # Pre-tool hooks fire on the main thread before dispatch:
+                    # every call must pass through PRE_TOOL_USE regardless of
+                    # its concurrency classification, and before it executes.
+                    for call in concurrent_calls:
+                        fire_hook_sync(
+                            HookEvent.PRE_TOOL_USE,
+                            tool_name=call["toolName"],
+                            tool_input=call["input"],
+                            step=step,
+                        )
+                    concurrent_call_ids = {call["id"] for call in concurrent_calls}
                     max_workers = tool_scheduler.get_recommended_max_workers(
                         concurrent_calls,
                         error_rate=tool_error_count / max(step, 1),
-                        avg_latency=step * 2.0,
+                        avg_latency=last_step_duration_seconds,
                         recent_failures=tool_error_count,
                     )
                     # Apply cybernetic concurrency cap if FeedbackController reduced parallelism
@@ -1790,6 +2542,10 @@ def run_agent_turn(
                                 verification_tracker,
                                 agent_depth,
                                 presentation,
+                                agent_budget,
+                                subagent_mailbox,
+                                subagent_lifecycle,
+                                allow_user_interaction,
                             ): call
                             for call in concurrent_calls
                         }
@@ -1802,9 +2558,10 @@ def run_agent_turn(
                             except Exception as exc:
                                 result = ToolResult(ok=False, output=f"Concurrent execution error: {exc}")
                             recovery_guard.observe(
-                                call, ok=result.ok, output=result.output
+                                call,
+                                ok=result.ok,
+                                output=result.output,
                             )
-                            executed_outcomes.append(result.ok)
                             _results.append((call, result))
 
                 # Phase 2: Run serial tools sequentially (in original order)
@@ -1823,6 +2580,12 @@ def run_agent_turn(
                                 )
                             )
                             continue
+                        fire_hook_sync(
+                            HookEvent.PRE_TOOL_USE,
+                            tool_name=call["toolName"],
+                            tool_input=call["input"],
+                            step=step,
+                        )
                         if metrics_collector:
                             metrics_collector.start_tool(call["toolName"])
                         result = _execute_single_tool(
@@ -1833,6 +2596,10 @@ def run_agent_turn(
                             verification_tracker,
                             agent_depth,
                             presentation,
+                            agent_budget,
+                            subagent_mailbox,
+                            subagent_lifecycle,
+                            allow_user_interaction,
                         )
                         if metrics_collector:
                             metrics_collector.end_tool(
@@ -1840,9 +2607,10 @@ def run_agent_turn(
                                 error=result.output if not result.ok else "",
                             )
                         recovery_guard.observe(
-                            call, ok=result.ok, output=result.output
+                            call,
+                            ok=result.ok,
+                            output=result.output,
                         )
-                        executed_outcomes.append(result.ok)
                         _results.append((call, result))
                         # If a serial tool awaits user, return immediately
                         if result.awaitUser:
@@ -1854,29 +2622,25 @@ def run_agent_turn(
             # Process all results and build messages (preserve original call order)
             call_order = {call["id"]: idx for idx, call in enumerate(calls)}
             _results.sort(key=lambda pair: call_order.get(pair[0]["id"], 999))
-            
+            await_user_output: str | None = None
+            ledger_changed = False
+            executed_outcomes: list[bool] = []
+
             for call, result in _results:
-                was_suppressed = call["id"] in suppressed_call_ids
-                # Fire hooks and UI callbacks for concurrent calls (deferred)
-                tool_def = tools.find(call["toolName"])
-                is_concurrent = tool_def and tool_def.is_concurrency_safe and len(calls) > 1
-                
-                if is_concurrent and not was_suppressed:
-                    # Deferred UI callbacks for concurrent tools
+                suppressed = call["id"] in suppressed_call_ids
+                if not suppressed:
+                    executed_outcomes.append(result.ok)
+                # Deferred AppState updates for tools that ran with store=None
+                # (the concurrent batch). Gating on actual batch membership —
+                # not on the static tool attribute — avoids double-counting
+                # serial executions, which already updated the store.
+                if call["id"] in concurrent_call_ids:
                     if store:
                         store.set_state(set_busy(call["toolName"]))
                         store.set_state(increment_tool_calls())
                         store.set_state(set_idle())
-                    # Hook: pre-tool-use (fire after the fact for concurrent tools)
-                    fire_hook_sync(
-                        HookEvent.PRE_TOOL_USE,
-                        tool_name=call["toolName"],
-                        tool_input=call["input"],
-                        step=step,
-                    )
-                
-                if not was_suppressed:
-                    # Hook: post-tool-use
+                # Hook: post-tool-use
+                if not suppressed:
                     fire_hook_sync(
                         HookEvent.POST_TOOL_USE,
                         tool_name=call["toolName"],
@@ -1886,7 +2650,7 @@ def run_agent_turn(
                     )
                 
                 saw_tool_result = True
-                if was_suppressed:
+                if suppressed:
                     result_output = result.output
                     recovery_note = None
                 elif not result.ok:
@@ -1894,10 +2658,12 @@ def run_agent_turn(
                     # Use ErrorClassifier for intelligent error handling
                     classified = ErrorClassifier.classify(result.output, tool_name=call["toolName"])
                     prior_retries = max(
-                        0, recovery_guard.denial_count(call) - 1
+                        0,
+                        recovery_guard.denial_count(call) - 1,
                     )
                     nudge = NudgeGenerator.generate(
-                        classified, retry_count=prior_retries
+                        classified,
+                        retry_count=prior_retries,
                     )
                     # Append nudge to tool result content for model context
                     result_output = result.output + "\n\n[System note: " + nudge + "]"
@@ -1914,8 +2680,29 @@ def run_agent_turn(
                         )
                         result_output = result.output + "\n\n[System note: " + success_nudge + "]"
 
+                if task_ledger is not None and not suppressed:
+                    normalized_ledger_verification = normalize_tool_verification(
+                        call["toolName"],
+                        result.verification,
+                    )
+                    if normalized_ledger_verification is not None:
+                        ledger_changed = (
+                            task_ledger.record_verification(
+                                normalized_ledger_verification
+                            )
+                            or ledger_changed
+                        )
+                    if not result.ok:
+                        ledger_changed = (
+                            task_ledger.record_failed_attempt(
+                                call["toolName"],
+                                result.output,
+                            )
+                            or ledger_changed
+                        )
+
                 # Record conflicts between concurrent tools if both failed
-                if not result.ok and len(calls) > 1:
+                if not suppressed and not result.ok and len(calls) > 1:
                     for other_call, other_result in _results:
                         if other_call["id"] == call["id"]:
                             continue
@@ -1931,12 +2718,33 @@ def run_agent_turn(
                     file_path = call.get("input", {}).get("path", "")
                     if file_path:
                         dedup_mgr = context_compactor.read_dedup
-                        if dedup_mgr.should_dedup(file_path, result_output):
+                        # Register the ORIGINAL content hash: registering the
+                        # stub would make the next read of the same file look
+                        # like new content and defeat the dedup cache.
+                        original_output = result_output
+                        if dedup_mgr.should_dedup(file_path, original_output):
                             result_output = dedup_mgr.get_stub(file_path)
                             logger.debug("ReadDedup replaced content for %s (stub)", file_path)
-                        dedup_mgr.register_read(file_path, result_output, len(current_messages))
+                        # The assistant_tool_call is appended first; the full
+                        # read result therefore lives at the following index.
+                        dedup_mgr.register_read(
+                            file_path,
+                            original_output,
+                            len(current_messages) + 1,
+                        )
 
-                if not was_suppressed:
+                if suppressed:
+                    _append_trace_event(
+                        execution_trace,
+                        {
+                            "type": "recovery_suppression",
+                            "step": step,
+                            "call_id": call["id"],
+                            "tool_name": call["toolName"],
+                            "reason": "equivalent_denied_action",
+                        },
+                    )
+                else:
                     _append_tool_trace_events(
                         execution_trace,
                         call,
@@ -1962,14 +2770,8 @@ def run_agent_turn(
                         "isError": not result.ok,
                     }
                 )
-                if result.awaitUser:
-                    if on_assistant_message:
-                        on_assistant_message(result_output)
-                    current_messages.append({"role": "assistant", "content": result_output})
-                    if metrics_collector:
-                        metrics_collector.end_turn(total_tokens=0)
-                    turn_outcome = "unknown"
-                    return current_messages
+                if result.awaitUser and await_user_output is None:
+                    await_user_output = result_output
 
             strategy_switch_nudge = recovery_guard.complete_step(executed_outcomes)
             step_tool_call_count = len(executed_outcomes)
@@ -1986,7 +2788,6 @@ def run_agent_turn(
             last_step_duration_seconds = max(
                 0.0, time.perf_counter() - step_started_at
             )
-
             if strategy_switch_nudge is not None:
                 for message in reversed(current_messages):
                     if message.get("role") == "tool_result":
@@ -1997,6 +2798,19 @@ def run_agent_turn(
                             + "]"
                         )
                         break
+                _append_trace_event(
+                    execution_trace,
+                    {
+                        "type": "recovery_strategy_switch",
+                        "step": step,
+                        "reason": "consecutive_tool_failures",
+                    },
+                )
+
+            if task_ledger is not None and ledger_changed:
+                current_messages = task_ledger.reconcile(current_messages)
+                if context_manager is not None:
+                    context_manager.messages = list(current_messages)
 
             recovery_stop = recovery_guard.stop_decision()
             if recovery_stop is not None:
@@ -2022,6 +2836,57 @@ def run_agent_turn(
                 turn_outcome = "failed"
                 return current_messages
 
+            if await_user_output is not None:
+                # Every completed result has been appended above; ending the
+                # turn here no longer discards results that finished after
+                # the awaiting call.
+                if on_assistant_message:
+                    on_assistant_message(await_user_output)
+                current_messages.append({"role": "assistant", "content": await_user_output})
+                if metrics_collector:
+                    metrics_collector.end_turn(total_tokens=0)
+                turn_outcome = "unknown"
+                return current_messages
+
+            # In-loop high-water check: one turn can run dozens of tool steps,
+            # and pre-request compaction alone lets the context grow unbounded
+            # until the API rejects it. Every 10 steps re-check the threshold;
+            # the O(n) estimate is cheap compared to a rejected request.
+            if (
+                step > 0
+                and step % 10 == 0
+                and context_compactor is not None
+                and context_compactor.auto_compact.should_trigger(current_messages)
+            ):
+                try:
+                    in_loop_result = context_compactor.process_request(
+                        current_messages,
+                        enable_tool_budget=False,
+                        enable_read_dedup=False,
+                    )
+                    if in_loop_result.effective:
+                        current_messages = reconcile_task_ledger(
+                            in_loop_result.messages
+                        )
+                        if context_manager is not None:
+                            context_manager.messages = current_messages
+                        logger.info(
+                            "InLoopCompact[%d]: freed %d tokens [%s]",
+                            step,
+                            in_loop_result.tokens_freed,
+                            in_loop_result.strategy.value,
+                        )
+                    else:
+                        _emit_failed_context_compaction(
+                            event_sink,
+                            context_compactor.last_result,
+                            context_compactor,
+                            path="in_loop_compactor",
+                            step=step,
+                        )
+                except Exception as exc:  # noqa: BLE001 - never break the loop
+                    logger.warning("In-loop compaction failed safely: %s", exc)
+
             # 工具执行完成后的控制论反馈
             if enable_work_chain:
                 # 多变量解耦：消除工具间的耦合影响
@@ -2029,7 +2894,7 @@ def run_agent_turn(
                     decoupling_controller.record_measurement({
                         "token_usage_to_latency": (
                             context_manager.get_stats().usage_percentage / 100.0 if context_manager else 0.0,
-                            step * 2.0 / 60.0,
+                            last_step_duration_seconds / 60.0,
                         ),
                         "context_pressure_to_errors": (
                             context_manager.get_stats().usage_percentage / 100.0 if context_manager else 0.0,
@@ -2039,6 +2904,16 @@ def run_agent_turn(
                     decoupling_controller.compute_decoupling_matrix()
 
                 if orch:
+                    verification_passed, verification_failed = (
+                        verification_tracker.snapshot()
+                    )
+                    tests_passed = (
+                        False
+                        if verification_failed > 0
+                        else True
+                        if verification_passed > 0
+                        else None
+                    )
                     step_summary = orch.step_end(
                         tool_scheduler=tool_scheduler,
                         context_manager=context_manager,
@@ -2053,11 +2928,7 @@ def run_agent_turn(
                         elapsed_seconds=max(
                             0.0, time.perf_counter() - turn_started_at
                         ),
-                        tests_passed=(
-                            verification_tracker.snapshot()[1] == 0
-                            if verification_tracker.snapshot()[0] > 0
-                            else None
-                        ),
+                        tests_passed=tests_passed,
                     )
                     max_steps = _apply_control_signal(
                         control_signal=step_summary.get("control_signal"),
@@ -2067,10 +2938,20 @@ def run_agent_turn(
                         context_compactor=context_compactor,
                         model_switcher=model_switcher,
                         feedback_controller=feedback_controller,
+                        current_messages=current_messages,
+                        context_manager=context_manager,
+                        event_sink=event_sink,
                     )
+                    current_messages = reconcile_task_ledger(current_messages)
+                    if context_manager is not None:
+                        context_manager.messages = list(current_messages)
                 else:
                     # 自愈检测：检测并修复故障
                     if self_healing_engine:
+                        # Keep the healing engine's message reference fresh —
+                        # compaction reassigns current_messages, and a stale
+                        # reference makes CONTEXT_OVERFLOW recovery a no-op.
+                        self_healing_engine.set_current_messages(current_messages)
                         metrics_for_healing = {
                             "error_rate": tool_error_count / max(step, 1),
                             "context_usage": context_manager.get_stats().usage_percentage / 100.0 if context_manager else 0.0,
@@ -2083,13 +2964,22 @@ def run_agent_turn(
                     # 进度控制：检测任务是否卡住或完成
                     if progress_controller:
                         progress_signal = ProgressSignal(
-                            total_steps=max_steps,
-                            completed_steps=step - tool_error_count,
-                            failed_steps=tool_error_count,
-                            tool_calls=step,
+                            total_steps=step,
+                            completed_steps=completed_tool_step_count,
+                            failed_steps=failed_tool_step_count,
+                            tool_calls=total_tool_call_count,
                             tool_errors=tool_error_count,
-                            output_changed=saw_tool_result,
-                            elapsed_seconds=step * 2.0,
+                            output_changed=step_made_progress,
+                            tests_passed=(
+                                False
+                                if verification_tracker.snapshot()[1] > 0
+                                else True
+                                if verification_tracker.snapshot()[0] > 0
+                                else None
+                            ),
+                            elapsed_seconds=max(
+                                0.0, time.perf_counter() - turn_started_at
+                            ),
                             max_steps=max_steps,
                         )
                         progress_decision = progress_controller.decide(progress_signal)
@@ -2119,15 +3009,37 @@ def run_agent_turn(
         current_messages.append({"role": "assistant", "content": fallback})
         turn_outcome = "failed"
         return current_messages
+    except AgentTurnDeadlineExceeded:
+        turn_outcome = "failed"
+        # A partial timed-out run must not write lessons or reinforce injected
+        # memories in the finalization path.
+        tool_abandoned = True
+        enable_work_chain = False
+        raise
     except TurnCancellationRequested:
         turn_outcome = "cancelled"
         enable_work_chain = False
         raise
     finally:
+        if owns_subagent_lifecycle:
+            try:
+                subagent_lifecycle.shutdown()
+            except Exception:  # noqa: BLE001 - finalization stays best-effort
+                logger.warning(
+                    "Failed to shut down asynchronous sub-agent lifecycle",
+                    exc_info=True,
+                )
+        verification_passed_count, verification_failed_count = (
+            verification_tracker.snapshot()
+        )
         canonical_outcome = canonicalize_task_outcome(
             turn_outcome,
             tool_error_count,
+            verification_passed=verification_passed_count,
+            verification_failed=verification_failed_count,
         )
+        if outcome_capture is not None:
+            outcome_capture.record(canonical_outcome)
         emit_task_outcome_safely(
             event_sink,
             canonical_outcome,
@@ -2150,7 +3062,7 @@ def run_agent_turn(
         if enable_work_chain and task:
             final_state = (
                 TaskState.COMPLETED
-                if canonical_outcome.goal_achieved
+                if canonical_outcome.completion_succeeded
                 else TaskState.CANCELLED
                 if canonical_outcome.status == "cancelled"
                 else TaskState.FAILED
@@ -2164,7 +3076,7 @@ def run_agent_turn(
             if auditor:
                 outcome = (
                     DecisionOutcome.SUCCESS
-                    if canonical_outcome.goal_achieved
+                    if canonical_outcome.completion_succeeded
                     else DecisionOutcome.FAILURE
                 )
                 auditor.complete_decision(
@@ -2172,7 +3084,7 @@ def run_agent_turn(
                     step * 100.0,
                     task.result_summary,
                     task.error_message
-                    if not canonical_outcome.goal_achieved
+                    if not canonical_outcome.completion_succeeded
                     else "",
                 )
 
@@ -2188,45 +3100,103 @@ def run_agent_turn(
                 "step": step,
                 "status": canonical_outcome.status,
                 "final_outcome": canonical_outcome.status,
+                "completion_succeeded": canonical_outcome.completion_succeeded,
+                "verification_status": canonical_outcome.verification_status,
+                "goal_achieved": canonical_outcome.goal_achieved,
                 "had_errors": canonical_outcome.had_tool_errors,
                 "errors_recovered": canonical_outcome.errors_recovered,
                 "tool_error_count": tool_error_count,
                 "summary": _redact_trace_text(task.result_summary),
             })
-            if orch and task:
+            if orch and task and not tool_abandoned:
                 try:
-                    orch.reflect_on_task(
+                    written_memory_id = orch.reflect_on_task(
                         task_description=task.raw_input if hasattr(task, 'raw_input') else str(task.id),
                         step=step,
                         tool_error_count=tool_error_count,
                         execution_trace=structured_trace,
+                        agent_budget=agent_budget,
+                        event_sink=event_sink,
+                        cancellation_token=cancellation_token,
+                        deadline_monotonic=deadline_monotonic,
+                        provenance={
+                            "run_id": getattr(event_sink, "run_id", None),
+                            "turn_id": next(
+                                (
+                                    message.get("_conversation_turn_id")
+                                    for message in reversed(current_messages)
+                                    if message.get("role") == "user"
+                                    and message.get("_conversation_turn_id")
+                                ),
+                                None,
+                            ),
+                            "agent_depth": agent_depth,
+                        },
                     )
+                    written_memory_ids = tuple(
+                        dict.fromkeys(
+                            entry_id
+                            for entry_id in getattr(
+                                getattr(orch, "memory_pipeline", None),
+                                "last_written_ids",
+                                (),
+                            )
+                            if isinstance(entry_id, str) and entry_id
+                        )
+                    )
+                    if not written_memory_ids and isinstance(written_memory_id, str):
+                        written_memory_ids = (written_memory_id,)
+                    # Bind the lesson to this Run so a later "this was wrong"
+                    # from the user can reach it. Purely observational: it
+                    # must never affect the turn's outcome. Nested loops pass
+                    # an explicit recorder because forwarding their event sink
+                    # would inject their lifecycle events into the parent Run.
+                    if on_memory_written is not None:
+                        for entry_id in written_memory_ids:
+                            on_memory_written(entry_id)
+                    else:
+                        record_written_memory_ids_safely(
+                            event_sink, written_memory_ids
+                        )
+                except TurnCancellationRequested:
+                    raise
                 except Exception:
                     pass
-            elif reflection_engine and task:
+            elif reflection_engine and task and not tool_abandoned:
                 try:
                     reflection = reflection_engine.reflect(
                         task_description=task.raw_input if hasattr(task, 'raw_input') else str(task.id),
                         execution_trace=structured_trace,
+                        agent_budget=agent_budget,
+                        event_sink=event_sink,
+                        cancellation_token=cancellation_token,
+                        deadline_monotonic=deadline_monotonic,
                     )
                     logger.info(
                         "AgentReflection: success=%s confidence=%.2f lessons=%d improvements=%d",
                         reflection.success, reflection.confidence,
                         len(reflection.lessons_learned), len(reflection.suggested_improvements),
                     )
+                except TurnCancellationRequested:
+                    raise
                 except Exception:
                     pass
 
             # 记忆质量反馈：只反馈给本轮实际注入的 entry_id。
-            if orch and getattr(orch, "memory_pipeline", None) is not None:
+            if (
+                not tool_abandoned
+                and orch
+                and getattr(orch, "memory_pipeline", None) is not None
+            ):
                 try:
-                    _verification_passed, _verification_failed = (
-                        verification_tracker.snapshot()
-                    )
                     orch.memory_pipeline.feedback(
-                        canonical_outcome.status,
-                        verification_passed=_verification_passed,
-                        verification_failed=_verification_failed,
+                        (
+                            canonical_outcome.learning_success
+                            if canonical_outcome.learning_success is not None
+                            else "unknown"
+                        ),
+                        verification_passed=verification_passed_count,
+                        verification_failed=verification_failed_count,
                     )
                 except Exception:
                     pass
@@ -2243,13 +3213,20 @@ def run_agent_turn(
                 and task
                 and routing_model_id is not None
                 and canonical_outcome.learning_success is not None
+                # Parallel sub-agents each own a SmartRouter loaded from the
+                # same feedback file; concurrent flushes overwrite each other.
+                # Only the top-level turn persists routing feedback.
+                and agent_depth == 0
             ):
                 try:
                     outcome = TaskOutcome(
                         task_text=task.raw_input if hasattr(task, 'raw_input') else str(task.id),
                         assigned_model=routing_model_id,
                         success=canonical_outcome.learning_success,
-                        duration_ms=step * 2000.0,
+                        duration_ms=max(
+                            0.0,
+                            (time.perf_counter() - turn_started_at) * 1000.0,
+                        ),
                         cost_usd=0.0,
                         tool_errors=tool_error_count,
                         model_switches=model_switcher.switch_count if model_switcher else 0,
@@ -2261,7 +3238,14 @@ def run_agent_turn(
 
             if orch:
                 try:
-                    orch.task_end()
+                    orch.task_end(
+                        agent_budget=agent_budget,
+                        event_sink=event_sink,
+                        cancellation_token=cancellation_token,
+                        deadline_monotonic=deadline_monotonic,
+                    )
+                except TurnCancellationRequested:
+                    raise
                 except Exception:
                     pass
 
@@ -2283,7 +3267,9 @@ def run_agent_turn(
             snapshot = MetricSnapshot(
                 timestamp=time.time(),
                 error_rate=float(tool_error_count) / max(step, 1),
-                avg_latency=step * 2.0,  # 简化估算
+                avg_latency=max(
+                    0.0, time.perf_counter() - turn_started_at
+                ) / max(step, 1),
                 context_usage=context_manager.get_stats().usage_percentage if context_manager else 0.0,
                 active_tasks=1,
             )
@@ -2453,11 +3439,26 @@ def run_agent_turn(
 
                 if control_signal.force_compaction and context_compactor:
                     try:
-                        compacted = context_compactor.compact_messages()
-                        logger.info(
-                            "FeedbackController: forced compaction (%d messages)",
-                            len(compacted) if compacted else 0,
+                        compacted = context_compactor.compact_messages(
+                            current_messages, force=True
                         )
+                        if compacted is not None and len(compacted) < len(current_messages):
+                            previous_count = len(current_messages)
+                            current_messages[:] = reconcile_task_ledger(compacted)
+                            if context_manager is not None:
+                                context_manager.messages = list(current_messages)
+                            logger.info(
+                                "FeedbackController: forced compaction %d → %d messages",
+                                previous_count, len(compacted),
+                            )
+                        else:
+                            _emit_failed_context_compaction(
+                                event_sink,
+                                context_compactor.last_result,
+                                context_compactor,
+                                path="feedback_forced",
+                                step=step,
+                            )
                     except Exception as exc:
                         logger.warning("FeedbackController: forced compaction failed: %s", exc)
 

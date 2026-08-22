@@ -1,0 +1,49 @@
+{
+  "schema_version": "2.0",
+  "protocol_version": "contrastive-pair-v2",
+  "calibration_split": "phase3a_analysis",
+  "sealed_or_holdout_case_ids_read": [],
+  "prompt": {
+    "version": "hybrid-relevance-v2.1",
+    "sha256": "a3c7b784dd90b93319c9337d84cb68030f996a5c1e8b192066784e8028628eda"
+  },
+  "candidate_generation": {
+    "model_id": "Xenova/multilingual-e5-small",
+    "model_revision": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+    "model_fingerprint": "cb55c8134bf02eeff414a6fcb53a88e5160e45cf74e7a7cf1befbc5a9fa2b230",
+    "representation_version": "structured-v1",
+    "dense_top_k": 20,
+    "max_union_candidates": 32
+  },
+  "relevance_decision": {
+    "model_id": "deepseek-chat",
+    "temperature": 0,
+    "minimum_confidence": 0.85,
+    "fail_closed": true
+  },
+  "datasets": {
+    "analysis_manifest_sha256": "59638f40dc76df881c63804275eda5cf137679b77b72916694635b5c51ac9f8b",
+    "v2_holdout_manifest_sha256": "ed85536b03fbdd5920a7261308f7ab335807c93495d2a74b61150afb7033c859"
+  },
+  "analysis_result": {
+    "report_fingerprint": "40b84e31ace086c26bb9721584e94e024fa29b3b3309172076dc00fd0db165c9",
+    "pair_count": 68,
+    "positive_recall": 0.9791666666666666,
+    "precision": 1.0,
+    "hard_negative_accept_rate": 0.0,
+    "model_call_count": 4,
+    "input_tokens": 8297,
+    "output_tokens": 2517
+  },
+  "promotion_thresholds": {
+    "candidate_recall_at_20_min": 0.9,
+    "post_decision_positive_recall_min": 0.8,
+    "rendered_positive_recall_min": 0.75,
+    "rendered_precision_min": 0.95,
+    "hard_negative_render_rate_max": 0.05,
+    "lifecycle_safety_leakage_max": 0,
+    "counter_feedback_disagreement_max": 0
+  },
+  "production_enablement_allowed": false,
+  "reason": "awaiting untouched v2 holdout"
+}

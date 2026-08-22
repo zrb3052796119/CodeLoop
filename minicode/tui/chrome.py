@@ -260,10 +260,10 @@ def empty_panel_row(width: int) -> str:
     return panel_row("", width)
 
 
-def wrap_panel_body_line(line: str, width: int) -> list[str]:
-    """Wrap long lines for panel, CJK aware."""
-    inner_width = width - 4
-    if string_display_width(line) <= inner_width:
+def wrap_display_line(line: str, width: int) -> list[str]:
+    """Wrap one ANSI-styled line to a positive display width."""
+    content_width = max(1, width)
+    if string_display_width(line) <= content_width:
         return [line]
 
     ansi_spans: list[tuple[int, int]] = []
@@ -286,7 +286,7 @@ def wrap_panel_body_line(line: str, width: int) -> list[str]:
 
         char = line[i]
         cw = char_display_width(char)
-        if current_w + cw > inner_width:
+        if current_w + cw > content_width:
             lines.append(current_line)
             current_line = ""
             current_w = 0
@@ -299,6 +299,11 @@ def wrap_panel_body_line(line: str, width: int) -> list[str]:
     if current_line:
         lines.append(current_line)
     return lines
+
+
+def wrap_panel_body_line(line: str, width: int) -> list[str]:
+    """Wrap long lines for a bordered panel, CJK aware."""
+    return wrap_display_line(line, width - 4)
 
 
 _PANEL_ICONS: dict[str, str] = {
@@ -367,6 +372,42 @@ def render_panel(
     return "\n".join(res)
 
 
+def render_section(
+    title: str,
+    body: str,
+    right_title: str | None = None,
+    min_body_lines: int = 0,
+) -> str:
+    """Render a quiet, borderless section for the primary conversation flow."""
+    t = theme()
+    width, _ = _cached_terminal_size()
+    width = max(20, width)
+
+    left = f"{t.bold}{title}{t.reset}" if title else ""
+    right = f"{t.subtle}{right_title}{t.reset}" if right_title else ""
+    if right:
+        right_width = string_display_width(right)
+        left = truncate_plain(left, max(1, width - right_width - 1))
+        gap = max(1, width - string_display_width(left) - right_width)
+        heading = f"{left}{' ' * gap}{right}"
+    else:
+        heading = truncate_plain(left, width)
+
+    lines: list[str] = []
+    if heading:
+        lines.append(heading)
+    lines.append(f"{t.border_dim}{ICON_DIVIDER * width}{t.reset}")
+
+    body_lines = body.splitlines() if body else []
+    wrapped_lines: list[str] = []
+    for body_line in body_lines:
+        wrapped_lines.extend(wrap_display_line(body_line, width))
+    while len(wrapped_lines) < min_body_lines:
+        wrapped_lines.append("")
+    lines.extend(wrapped_lines)
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Banner / header — aligned with Rust's build_header_lines
 # ---------------------------------------------------------------------------
@@ -378,16 +419,10 @@ def render_banner(
     session: dict[str, int],
     compact: bool = False,
 ) -> str:
-    """Render the workspace header panel.
-
-    Layout matches Rust's build_header_lines:
-      Line 1: project <cwd>   provider <host>   model <name>   auth <kind>
-      Line 2: session messages=N events=N tools=N skills=N mcp=N
-      Line 3: permissions info
-
-    When compact=True (small terminal), all info is compressed into one line.
-    """
+    """Render a bounded, conversation-first application header."""
     t = theme()
+    width, _ = _cached_terminal_size()
+    width = max(20, width)
 
     model = runtime.get("model", "(unconfigured)") if runtime else "(unconfigured)"
 
@@ -401,76 +436,36 @@ def render_banner(
             .split("/")[0]
         )
 
-    # Auth kind
-    auth = "none"
-    if runtime:
-        if runtime.get("authToken"):
-            auth = "auth_token"
-        elif runtime.get("apiKey"):
-            auth = "api_key"
-
     msg_count = session.get("messageCount", 0)
-    evt_count = session.get("transcriptCount", 0)
     skill_count = session.get("skillCount", 0)
     mcp_count = session.get("mcpCount", 0)
+    project = os.path.basename(os.path.normpath(cwd)) or cwd
 
-    if compact:
-        # Single-line compact header for small terminals
-        import os as _os
-        cwd_short = _os.path.basename(cwd) or cwd
-        body = (
-            f"{t.header_label_info}{t.bold}project{t.reset} {cwd_short}"
-            f"  {t.header_label_info}{t.bold}model{t.reset} {model}"
-            f"  {t.header_label_session}{t.bold}msgs{t.reset} {msg_count}"
+    primary = (
+        f"{t.header_label_info}{t.bold}CodeLoop{t.reset}"
+        f"  {t.bold}{project}{t.reset}"
+        f"  {t.subtle}{model}{t.reset}"
+    )
+    lines = [truncate_plain(primary, width)]
+
+    if not compact and width >= 64:
+        secondary = (
+            f"{t.subtle}{provider}"
+            f"  {ICON_DOT}  {msg_count} msg"
+            f"  {ICON_DOT}  {skill_count} skills"
+            f"  {ICON_DOT}  {mcp_count} mcp{t.reset}"
         )
-        return render_panel("Workspace", body)
-
-    # Line 1 — project / provider / model / auth
-    line1 = (
-        f"{t.header_label_info}{t.bold}project{t.reset} {cwd}"
-        f"   {t.header_label_info}{t.bold}provider{t.reset} {provider}"
-        f"   {t.header_label_info}{t.bold}model{t.reset} {model}"
-        f"   {t.header_label_info}{t.bold}auth{t.reset} {auth}"
-    )
-
-    # Line 2 — session stats
-    line2 = (
-        f"{t.header_label_session}{t.bold}session{t.reset}"
-        f" messages={msg_count}"
-        f" events={evt_count}"
-        f" skills={skill_count}"
-        f" mcp={mcp_count}"
-    )
-
-    body = "\n".join([line1, line2])
-    return render_panel("Workspace", body)
+        lines.append(truncate_plain(secondary, width))
+    lines.append(f"{t.border_dim}{ICON_DIVIDER * width}{t.reset}")
+    return "\n".join(lines)
 
 
 def render_status_line(status: str | None) -> str:
-    """Render the status line with shimmer animation during thinking/waiting states."""
+    """Render a stable status label without attention-grabbing animation."""
     t = theme()
     if status:
-        import time as _time
-        # Shimmer: animate a traveling highlight across the status text when thinking
-        is_thinking = "Thinking" in status
-        if is_thinking:
-            tick = int(_time.monotonic() * 3)  # 3 Hz shimmer sweep
-            plain = f"  {status}"
-            width = len(plain)
-            if width > 3:
-                pos = tick % (width + 6) - 3  # Sweep from -3 to width
-                shimmered = ""
-                for i, ch in enumerate(plain):
-                    dist = abs(i - pos)
-                    if dist == 0:
-                        shimmered += f"{t.bold}{t.assistant}{ch}{t.reset}"
-                    elif dist == 1:
-                        shimmered += f"{t.assistant}{ch}{t.reset}"
-                    else:
-                        shimmered += f"{t.tool}{ch}{t.reset}"
-                return f"{t.bold}{ICON_RUNNING}{t.reset}{shimmered}"
-        return f"{t.tool}{t.bold}{ICON_RUNNING} {status}{t.reset}"
-    return f"{t.assistant}{ICON_SUCCESS} Ready{t.reset}"
+        return f"{t.progress}{ICON_PROGRESS} {status}{t.reset}"
+    return f"{t.subtle}Ready{t.reset}"
 
 
 def render_tool_panel(
@@ -512,40 +507,48 @@ def render_footer_bar(
     width, _ = _cached_terminal_size()
     left = render_status_line(status)
 
-    bg_info = ""
+    right_parts: list[str] = []
     if background_tasks:
-        bg_info = f" {ICON_BG} {t.progress}{len(background_tasks)} bg{t.reset} {t.subtle}│{t.reset}"
-
-    tools_indicator = f"{t.assistant}{ICON_SUCCESS}{t.reset}" if tools_enabled else f"{t.tool_error}{ICON_ERROR}{t.reset}"
-    skills_indicator = f"{t.assistant}{ICON_SUCCESS}{t.reset}" if skills_enabled else f"{t.tool_error}{ICON_ERROR}{t.reset}"
-
-    right = (
-        f"{bg_info} {ICON_TOOL} {t.subtle}tools{t.reset} {tools_indicator}"
-        f" {t.subtle}│{t.reset} {ICON_SKILL} {t.subtle}skills{t.reset} {skills_indicator}"
-    )
+        right_parts.append(f"{t.progress}{len(background_tasks)} background{t.reset}")
+    if not tools_enabled:
+        right_parts.append(f"{t.tool_error}tools unavailable{t.reset}")
+    if not skills_enabled:
+        right_parts.append(f"{t.subtle}no skills{t.reset}")
+    right = f" {t.subtle}{ICON_DOT}{t.reset} ".join(right_parts)
+    if not right:
+        return left
     gap = max(1, width - string_display_width(left) - string_display_width(right))
-    return f"{left}{' ' * gap}{right}"
+    return truncate_plain(f"{left}{' ' * gap}{right}", width)
 
 
 def render_slash_menu(commands: list[Any], selected_index: int) -> str:
-    """Render slash command menu with highlight."""
+    """Render a bounded command palette with a stable selection marker."""
     t = theme()
     if not commands:
         return f"{t.subtle}no commands{t.reset}"
-    width, _ = _cached_terminal_size()
-    rows = [f"{ACCENT}{ICON_ARROW}{RESET} {t.dim}commands{t.reset}"]
-    for i, cmd in enumerate(commands):
+    width, terminal_rows = _cached_terminal_size()
+    # Keep the palette inside the same viewport as the transcript and
+    # composer. Four choices are enough to scan on a 24-row terminal; taller
+    # terminals can progressively reveal more without taking over the screen.
+    max_visible = 4 if terminal_rows <= 28 else 6 if terminal_rows <= 36 else 8
+    selected_index = max(0, min(selected_index, len(commands) - 1))
+    start = max(0, min(selected_index - max_visible // 2, len(commands) - max_visible))
+    visible = commands[start : start + max_visible]
+    rows = [f"{t.subtle}Commands{t.reset}"]
+    for offset, cmd in enumerate(visible):
+        i = start + offset
         usage = pad_plain(getattr(cmd, "usage", str(cmd)), 14)
         desc = getattr(cmd, "description", "")
         if i == selected_index:
-            line = (
-                f"  {t.command_highlight_bg}{BRIGHT_CYAN}{ICON_ARROW}{RESET}"
-                f"{t.command_highlight_bg} {BRIGHT_WHITE}{t.bold}{usage}{RESET}"
-                f"{t.command_highlight_bg} {desc} {RESET}"
-            )
+            line = f"{ACCENT}{ICON_ARROW}{RESET} {t.bold}{usage}{RESET} {desc}"
         else:
-            line = f"   {t.subtle}{ICON_DOT}{t.reset} {usage} {t.subtle}{desc}{t.reset}"
+            line = f"  {usage} {t.subtle}{desc}{t.reset}"
         rows.append(truncate_plain(line, width))
+    hidden = len(commands) - len(visible)
+    if hidden:
+        rows.append(
+            f"{t.subtle}{hidden} more · ↑↓ navigate · Tab complete{t.reset}"
+        )
     return "\n".join(rows)
 
 

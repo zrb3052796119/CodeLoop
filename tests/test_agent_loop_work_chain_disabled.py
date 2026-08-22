@@ -145,25 +145,19 @@ def test_work_chain_disabled_uses_plain_context_manager_without_controllers(
     assert model.calls == 1
 
 
-def test_work_chain_disabled_reaches_plain_auto_compact_fallback(
+def test_work_chain_disabled_does_not_reenter_removed_legacy_compact_path(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     model = AssistantModel()
     context_manager = ContextManager(model="test")
     calls: list[str] = []
-    compacted: list[ChatMessage] = [
-        {"role": "system", "content": "compacted system"},
-        {"role": "user", "content": "compacted user"},
-    ]
-
     def should_auto_compact() -> bool:
         calls.append("should_auto_compact")
         return True
 
     def compact_messages() -> list[ChatMessage]:
         calls.append("compact_messages")
-        context_manager.messages = compacted
-        return compacted
+        return context_manager.messages
 
     monkeypatch.setattr(context_manager, "should_auto_compact", should_auto_compact)
     monkeypatch.setattr(context_manager, "compact_messages", compact_messages)
@@ -194,15 +188,24 @@ def test_work_chain_disabled_reaches_plain_auto_compact_fallback(
         on_assistant_message=summaries.append,
     )
 
-    assert calls == ["should_auto_compact", "compact_messages"]
-    expected_compacted = [
-        {"role": "system", "content": "compacted system"},
-        {"role": "user", "content": "compacted user"},
+    assert calls == []
+    model_ledgers = [
+        message
+        for message in model.received_messages[0]
+        if message.get("_task_ledger")
     ]
-    assert model.received_messages == [expected_compacted]
-    assert result == [*expected_compacted, {"role": "assistant", "content": "ok"}]
+    assert len(model_ledgers) == 1
+    assert [
+        message
+        for message in model.received_messages[0]
+        if not message.get("_task_ledger")
+    ] == _messages()
+    assert [
+        message for message in result if not message.get("_task_ledger")
+    ] == [*_messages(), {"role": "assistant", "content": "ok"}]
+    assert len([message for message in result if message.get("_task_ledger")]) == 1
     assert context_manager.messages is result
-    assert summaries == ["controlled compact summary", "ok"]
+    assert summaries == ["ok"]
 
 
 def test_work_chain_disabled_preserves_canonical_usage_and_duration_events(

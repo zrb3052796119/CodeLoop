@@ -8,14 +8,19 @@ from __future__ import annotations
 
 import json
 import os
-import time
 import urllib.error
 import urllib.request
 from typing import Any, Callable
 
 from minicode.api_retry import RETRYABLE_STATUS, calculate_backoff
 from minicode.cost_tracker import calculate_cost
+from minicode.model_call_control import (
+    bounded_request_timeout,
+    checkpoint_model_call,
+    controlled_retry_sleep,
+)
 from minicode.state import Store, AppState, add_cost, record_api_error, update_context_usage
+from minicode.tls import open_verified_url
 from minicode.types import AgentStep, ModelUsage, StepDiagnostics
 
 DEFAULT_MAX_RETRIES = 4
@@ -41,6 +46,8 @@ def _is_openai_model(model: str) -> bool:
 
 def _get_openai_base_url(runtime: dict) -> str:
     """Get OpenAI-compatible base URL."""
+    if runtime.get("_isolatedOpenAIConfig") is True:
+        return str(runtime.get("openaiBaseUrl") or "").rstrip("/")
     return (
         os.environ.get("OPENAI_BASE_URL", "")
         or os.environ.get("OPENAI_API_BASE", "")
@@ -51,10 +58,22 @@ def _get_openai_base_url(runtime: dict) -> str:
 
 def _get_openai_api_key(runtime: dict) -> str:
     """Get OpenAI API key."""
+    if runtime.get("_isolatedOpenAIConfig") is True:
+        return str(runtime.get("openaiApiKey") or "")
     return (
         os.environ.get("OPENAI_API_KEY", "")
         or runtime.get("openaiApiKey", "")
     )
+
+
+def _chat_completions_url(base_url: str) -> str:
+    """Join root or already-versioned OpenAI-compatible base URLs safely."""
+    normalized = str(base_url).rstrip("/")
+    if normalized.endswith("/chat/completions"):
+        return normalized
+    if normalized.endswith("/v1"):
+        return f"{normalized}/chat/completions"
+    return f"{normalized}/v1/chat/completions"
 
 
 def _to_openai_messages(messages: list[dict[str, Any]]) -> tuple[str, list[dict[str, Any]]]:
@@ -168,6 +187,8 @@ class OpenAIModelAdapter:
         on_stream_chunk: Callable[[str], None] | None = None,
         on_thinking_delta: Callable[[str], None] | None = None,
         store: Store[AppState] | None = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
     ) -> AgentStep:
         system_message, converted_messages = _to_openai_messages(messages)
         
@@ -212,7 +233,7 @@ class OpenAIModelAdapter:
                 request_body[k] = v
 
         request = urllib.request.Request(
-            url=f"{base_url}/v1/chat/completions",
+            url=_chat_completions_url(base_url),
             data=json.dumps(request_body).encode("utf-8"),
             headers=headers,
             method="POST",
@@ -223,11 +244,19 @@ class OpenAIModelAdapter:
         response = None
         for attempt in range(max_retries + 1):
             try:
-                timeout = float(
-                    self.runtime.get("modelTimeoutSeconds")
-                    or os.environ.get("MINICODE_MODEL_TIMEOUT", "120")
+                timeout = bounded_request_timeout(
+                    float(
+                        self.runtime.get("modelTimeoutSeconds")
+                        or os.environ.get("MINICODE_MODEL_TIMEOUT", "120")
+                    ),
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
                 )
-                response = urllib.request.urlopen(request, timeout=timeout)
+                response = open_verified_url(request, timeout=timeout)
+                checkpoint_model_call(
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                )
                 break
             except urllib.error.HTTPError as error:
                 response = error
@@ -236,12 +265,20 @@ class OpenAIModelAdapter:
                 from minicode.api_retry import classify_error
                 category = classify_error(error)
                 wait = calculate_backoff(attempt, category=category)
-                time.sleep(wait)
+                controlled_retry_sleep(
+                    wait,
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                )
             except urllib.error.URLError:
                 if attempt >= max_retries:
                     raise
                 wait = calculate_backoff(attempt)
-                time.sleep(wait)
+                controlled_retry_sleep(
+                    wait,
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                )
         
         if response is None:
             raise RuntimeError("OpenAI request failed before receiving a response")
@@ -249,6 +286,10 @@ class OpenAIModelAdapter:
         if not on_stream_chunk:
             # Non-streaming response
             data = json.loads(response.read().decode("utf-8"))
+            checkpoint_model_call(
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+            )
             status = getattr(response, "status", getattr(response, "code", 200))
             
             if status >= 400:
@@ -356,6 +397,10 @@ class OpenAIModelAdapter:
         stream_usage_seen = False
         
         for line in response:
+            checkpoint_model_call(
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+            )
             line_str = line.decode("utf-8").strip()
             if not line_str.startswith("data: "):
                 continue

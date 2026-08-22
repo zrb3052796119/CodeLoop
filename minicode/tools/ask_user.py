@@ -16,9 +16,13 @@ def _run(input_data: dict, _context) -> ToolResult:
 
 ask_user_tool = ToolDefinition(
     name="ask_user",
-    description="Pause the turn and ask the user a clarifying question.",
+    description=(
+        "Pause an interactive turn to request new information or a decision "
+        "that is required before work can continue. Never use this tool to "
+        "deliver an answer, result, status update, or confirmation of work "
+        "already completed; return those in the assistant final response."
+    ),
     input_schema={"type": "object", "properties": {"question": {"type": "string"}}, "required": ["question"]},
     validator=_validate,
     run=_run,
 )
-

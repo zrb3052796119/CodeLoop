@@ -178,6 +178,7 @@ _TRACE_CONTEXT_PATHS = frozenset(
     {
         "pre_request_cybernetic",
         "pre_request_compactor",
+        "in_loop_compactor",
         "context_manager_auto",
         "reactive_cybernetic",
         "reactive_compactor",
@@ -718,7 +719,7 @@ def _run_event_details(
             event_type, payload
         )
         return normalized_permission or {}
-    if event_type in {"context.compacted", "recovery.started", "recovery.completed", "working_memory.observed"}:
+    if event_type in {"context.compacted", "context.compaction.failed", "recovery.started", "recovery.completed", "working_memory.observed"}:
         return project_context_event_detail(event_type, payload)
     if event_type == "model.costed":
         return project_cost_event_detail(payload)
@@ -865,6 +866,7 @@ def _run_event_details(
                 directory = raw_item.get("directory")
                 score = raw_item.get("score")
                 content_digest = raw_item.get("contentDigest")
+                evidence_adjustment = raw_item.get("evidenceAdjustment")
                 if (
                     not isinstance(qualified_name, str)
                     or not _TRACE_SKILL_NAME_RE.fullmatch(qualified_name)
@@ -896,6 +898,13 @@ def _run_event_details(
                 }
                 if routing_version == 2:
                     item["contentDigest"] = content_digest
+                if (
+                    isinstance(evidence_adjustment, (int, float))
+                    and not isinstance(evidence_adjustment, bool)
+                    and math.isfinite(float(evidence_adjustment))
+                    and 0 < abs(float(evidence_adjustment)) <= 0.25
+                ):
+                    item["evidenceAdjustment"] = float(evidence_adjustment)
                 selected.append(item)
         details["selected"] = selected
         if "selectedCount" in details:
@@ -933,12 +942,14 @@ def _run_event_details(
             "contentDigest": content_digest,
         }
     if event_type == "skill.attributed":
-        if (
-            payload.get("attributionVersion") != 1
-            or payload.get("attributionKind") != "task_correlation"
-        ):
+        attribution_version = payload.get("attributionVersion")
+        if attribution_version not in {1, 2} or payload.get(
+            "attributionKind"
+        ) != "task_correlation":
             return details
         outcome_status = payload.get("outcomeStatus")
+        completion_succeeded = payload.get("completionSucceeded")
+        verification_status = payload.get("verificationStatus")
         goal_achieved = payload.get("goalAchieved")
         had_tool_errors = payload.get("hadToolErrors")
         errors_recovered = payload.get("errorsRecovered")
@@ -946,17 +957,40 @@ def _run_event_details(
         loaded_skill_count = payload.get("loadedSkillCount")
         loaded_skills_value = payload.get("loadedSkills")
         loaded_skills_truncated = payload.get("loadedSkillsTruncated")
+        expected_completion = outcome_status == "success"
+        expected_goal = (
+            expected_completion and verification_status == "verified"
+            if attribution_version == 2
+            else expected_completion
+        )
         if (
             outcome_status not in _TRACE_TASK_OUTCOME_STATUSES
+            or (
+                attribution_version == 2
+                and (
+                    not isinstance(completion_succeeded, bool)
+                    or completion_succeeded != expected_completion
+                    or verification_status
+                    not in {"verified", "failed", "unverified"}
+                )
+            )
             or not isinstance(goal_achieved, bool)
-            or goal_achieved != (outcome_status == "success")
+            or goal_achieved != expected_goal
             or not isinstance(had_tool_errors, bool)
             or not isinstance(errors_recovered, bool)
             or isinstance(tool_error_count, bool)
             or not isinstance(tool_error_count, int)
             or not 0 <= tool_error_count <= _MAX_TRACE_ROUTING_SKILLS
             or had_tool_errors != (tool_error_count > 0)
-            or errors_recovered != (had_tool_errors and goal_achieved)
+            or errors_recovered
+            != (
+                had_tool_errors
+                and (
+                    completion_succeeded
+                    if attribution_version == 2
+                    else goal_achieved
+                )
+            )
             or isinstance(loaded_skill_count, bool)
             or not isinstance(loaded_skill_count, int)
             or not 1 <= loaded_skill_count <= _MAX_TRACE_SELECTED_SKILLS
@@ -996,9 +1030,17 @@ def _run_event_details(
                 }
             )
         return {
-            "attributionVersion": 1,
+            "attributionVersion": attribution_version,
             "attributionKind": "task_correlation",
             "outcomeStatus": outcome_status,
+            **(
+                {
+                    "completionSucceeded": completion_succeeded,
+                    "verificationStatus": verification_status,
+                }
+                if attribution_version == 2
+                else {}
+            ),
             "goalAchieved": goal_achieved,
             "hadToolErrors": had_tool_errors,
             "errorsRecovered": errors_recovered,
@@ -1719,6 +1761,7 @@ class DashboardReadModel:
             "memory.rendered": "Memory rendering recorded",
             "working_memory.observed": "Working memory observed",
             "context.compacted": "Context compacted",
+            "context.compaction.failed": "Context compaction failed",
             "recovery.started": "Recovery started",
             "recovery.completed": "Recovery completed",
         }

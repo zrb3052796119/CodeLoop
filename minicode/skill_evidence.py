@@ -56,7 +56,12 @@ class SkillEvidenceLedger:
         self._journal = journal
 
     def snapshot(self) -> dict[str, object]:
-        """Return a bounded aggregate that has no live-routing authority."""
+        """Return a bounded shadow aggregate with no direct routing authority.
+
+        The separate ``SkillRoutingFeedback`` adapter may grant a fixed,
+        ranking-only adjustment after stronger verification and user-signal
+        gates. This ledger itself never selects, promotes, or mutates a Skill.
+        """
         records, runs_truncated, journal_diagnostics = self._scan_runs()
         exclusions = {
             "nonCompleted": 0,
@@ -64,6 +69,7 @@ class SkillEvidenceLedger:
             "eventReadIncomplete": 0,
             "missingOrInvalidOutcome": 0,
             "nonBinaryOutcome": 0,
+            "unverifiedOutcome": 0,
             "missingOrInvalidRouting": 0,
             "legacyRouting": 0,
             "ambiguousSkillUse": 0,
@@ -222,6 +228,14 @@ class SkillEvidenceLedger:
             and stored_user_signal.signal in {"accept", "correct", "reject"}
             else None
         )
+        # A v2 successful completion without independent verification is not
+        # positive or negative Skill evidence. Exclude it from both cohorts
+        # instead of silently counting "unverified" as a failed goal.
+        if (
+            outcome.get("outcomeVersion") == 2
+            and outcome.get("learningSuccess") is None
+        ):
+            return None, "unverifiedOutcome", diagnostics
         loaded_events = [
             event for event in events if event.type == "skill.loaded"
         ]
@@ -403,8 +417,11 @@ def _normalize_attribution(
 ) -> tuple[SkillIdentity, ...] | None:
     loaded_count = payload.get("loadedSkillCount")
     loaded_skills = payload.get("loadedSkills")
+    attribution_version = payload.get("attributionVersion")
+    outcome_version = outcome.get("outcomeVersion")
     if (
-        payload.get("attributionVersion") != 1
+        attribution_version not in {1, 2}
+        or attribution_version != outcome_version
         or payload.get("attributionKind") != "task_correlation"
         or payload.get("outcomeStatus") != outcome["outcomeStatus"]
         or payload.get("goalAchieved") is not outcome["goalAchieved"]
@@ -417,6 +434,13 @@ def _normalize_attribution(
         or not isinstance(loaded_skills, list)
         or len(loaded_skills) != loaded_count
         or payload.get("loadedSkillsTruncated") is not False
+    ):
+        return None
+    if attribution_version == 2 and (
+        payload.get("completionSucceeded")
+        is not outcome.get("completionSucceeded")
+        or payload.get("verificationStatus")
+        != outcome.get("verificationStatus")
     ):
         return None
     identities = tuple(

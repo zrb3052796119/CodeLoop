@@ -79,7 +79,10 @@ def _validate(input_data: dict) -> dict:
 
 
 def _run(input_data: dict, context) -> ToolResult:
-    target = resolve_tool_path(context, input_data["path"], "read")
+    try:
+        target = resolve_tool_path(context, input_data["path"], "read")
+    except PermissionError as error:
+        return ToolResult(ok=False, output=f"error[permission_denied]: {error}")
 
     try:
         # 使用缓存读取
@@ -125,4 +128,3 @@ read_file_tool = ToolDefinition(
     validator=_validate,
     run=_run,
 )
-

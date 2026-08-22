@@ -1,55 +1,41 @@
 {
   "schemaVersion": 1,
-  "baselineGrade": "B",
-  "description": "Recorded Tier 0 baseline; the current profile prevents regression while the a profile remains intentionally unmet.",
+  "baselineGrade": "A",
+  "description": "Accepted A-grade baseline: expanded deterministic routing and compaction suites plus a fully evidenced 50-task live north-star suite.",
   "mode": "offline-deterministic",
   "remoteCallCount": 0,
   "datasets": {
-    "skillRoutingSha256": "40a30fed29781d5fd1ef63dab563eeb7860705b38b80102ecfa090ad95ed2b72",
-    "compactionFidelitySha256": "a50a9a653c4c5086520c13a56b4e658a889ffb3230a2c371c1de931c14bf5730",
-    "northStarManifestSha256": "4a972b27b90e7f5f5af9618ab07f1aff5dcc251ee96bcbc7c2f994069b46adfd",
-    "northStarResultsSha256": "d06649ee6afcf24e633e722adbfc8dd35f5d9a42f7ebc6e383ca8b3f7c449c53"
+    "skillRoutingSha256": "736698d6060b90bb632e7c4076290fab69147b07dcc9e64da81da5b80ae3ce31",
+    "compactionFidelitySha256": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1",
+    "northStarManifestSha256": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362",
+    "northStarResultsSha256": "8daf943a37c2f2ef202e744ffe5724f23ac9581ce7e857be24d43eafab33efb8"
   },
   "skillRouting": {
-    "caseCount": 36,
-    "positiveCount": 24,
-    "abstainCount": 12,
-    "top1Accuracy": 0.541667,
-    "abstainAccuracy": 0.833333,
-    "requiredExactMatchRate": 0.944444,
-    "forbiddenSelectionRate": 0.055556,
-    "failedCaseIds": [
-      "positive-pytest-02",
-      "positive-architecture-02",
-      "positive-docs-02",
-      "positive-frontend-01",
-      "positive-context-01",
-      "positive-agents-01",
-      "positive-git-01",
-      "positive-profile-01",
-      "positive-zh-context-01",
-      "positive-zh-agent-01",
-      "positive-zh-security-01",
-      "explicit-memory",
-      "hard-negative-negated-skill",
-      "hard-negative-name-overlap"
-    ]
+    "caseCount": 60,
+    "positiveCount": 40,
+    "abstainCount": 20,
+    "top1Accuracy": 1.0,
+    "abstainAccuracy": 1.0,
+    "requiredExactMatchRate": 1.0,
+    "forbiddenSelectionRate": 0.0,
+    "failedCaseIds": []
   },
   "compactionFidelity": {
-    "caseCount": 8,
+    "caseCount": 12,
     "markerRecall": 1.0,
     "latestUserRetentionRate": 1.0,
     "loadedSkillRetentionRate": 1.0,
     "summaryChainRate": 1.0,
     "toolPairIntegrityRate": 1.0,
     "nonNegativeSavingsRate": 1.0,
+    "taskLedgerRetentionRate": 1.0,
     "failedCaseIds": []
   },
   "northStar": {
-    "suiteId": "minicode-north-star-seed-2026-08-19",
-    "caseCount": 4,
-    "categoryCount": 4,
-    "writeCaseCount": 1,
+    "suiteId": "minicode-north-star-live-50-2026-08-20-v2",
+    "caseCount": 50,
+    "categoryCount": 10,
+    "writeCaseCount": 30,
     "taskSuccessRate": 1.0,
     "verifiedSuccessRate": 1.0,
     "oraclePassRate": 1.0,
@@ -57,11 +43,11 @@
     "unsafeActionRate": 0.0,
     "interventionRate": 0.0,
     "inconclusiveRate": 0.0,
-    "evidenceCompleteRate": 0.75,
-    "durationTelemetryCoverageRate": 0.0,
-    "modelCallTelemetryCoverageRate": 0.0,
-    "tokenTelemetryCoverageRate": 0.0,
+    "evidenceCompleteRate": 1.0,
+    "durationTelemetryCoverageRate": 1.0,
+    "modelCallTelemetryCoverageRate": 1.0,
+    "tokenTelemetryCoverageRate": 1.0,
     "failedCaseIds": []
   },
-  "evaluationPayloadSha256": "ec42234356fba214740e70732ea0b8a5b35431f13a236e051edab7293ef04fa4"
+  "evaluationPayloadSha256": "190fe36082d10c6e5e4421945024a5f58958690125dd6eff0cbd70e0cfd0d5aa"
 }

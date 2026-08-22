@@ -128,8 +128,9 @@ def test_safe_durable_reflection_persists_structured_claims_and_reloads(
 
     assert entry_id is not None
     entry = manager.memories[MemoryScope.PROJECT]._id_index[entry_id]
-    assert entry.approval_status == "pending"
-    assert not entry.is_active
+    # Verified recovery auto-approves; the re-run pass is the authority.
+    assert entry.approval_status == "approved"
+    assert entry.is_active
     structured = entry.metadata["structured_reflection"]
     assert structured["value_decision"]["accepted"] is True
     assert structured["claims"][0]["claim_type"] == "recovery"
@@ -138,7 +139,7 @@ def test_safe_durable_reflection_persists_structured_claims_and_reloads(
     reloaded = MemoryManager(project_root=Path(pipeline._workspace))
     loaded = reloaded.memories[MemoryScope.PROJECT]._id_index[entry_id]
     assert loaded.metadata["structured_reflection"] == structured
-    assert loaded.approval_status == "pending"
+    assert loaded.approval_status == "approved"
 
 
 def test_suspicious_trace_routes_safe_durable_claim_to_pending(

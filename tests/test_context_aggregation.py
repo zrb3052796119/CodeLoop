@@ -245,6 +245,39 @@ def test_timeline_projection_uses_same_strict_validator_and_hides_operation_id()
     assert wm["scope"] == "process"
 
 
+def test_timeline_projects_bounded_compaction_failure_without_error_text() -> None:
+    details = project_context_event_detail(
+        "context.compaction.failed",
+        {
+            "contextVersion": 1,
+            "contextOperationId": ctx("f"),
+            "path": "in_loop_compactor",
+            "trigger": "auto",
+            "strategy": "full",
+            "effective": False,
+            "attempted": True,
+            "reason": "no_token_reduction",
+            "consecutiveFailures": 2,
+            "circuitBreakerTripped": False,
+            "error": "password=secret",
+        },
+    )
+
+    assert details == {
+        "contextVersion": 1,
+        "path": "in_loop_compactor",
+        "trigger": "auto",
+        "strategy": "full",
+        "effective": False,
+        "attempted": True,
+        "reason": "no_token_reduction",
+        "consecutiveFailures": 2,
+        "circuitBreakerTripped": False,
+    }
+    assert "secret" not in json.dumps(details)
+    assert "ctxop_" not in json.dumps(details)
+
+
 def test_breakdown_is_bounded_enum_only() -> None:
     aggregate = aggregate_run_context(
         [

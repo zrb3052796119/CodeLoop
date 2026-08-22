@@ -5,27 +5,60 @@ through this single entry point. No scattered ad-hoc calls.
 
 Architecture:
   MemoryPipeline
-    ├── read(task, files) → DomainClassifier → BM25 → Reranker → [memories]
+    ├── read(task, files) → DomainClassifier → canonical BM25 retrieval
     ├── inject(task, files, messages) → read + append to system prompt
     ├── write(task, trace) → ReflectionEngine → TaskContext → MemoryManager
     └── maintain() → CuratorAgent → consolidate/validate/promote/link
 
 Sub-components (internal, not exposed):
   - DomainClassifier: auto-detects active domains from files/intent
-  - MemoryReranker: LLM curation of BM25 results
   - MemoryInjector: PID-controlled injection into prompt
   - MemoryCuratorAgent: background optimization during idle
-  - VectorMemoryStore: optional parallel semantic search
+
+Hybrid retrieval is evidence-gated. A request with missing, stale, malformed,
+or failing promotion evidence stays on the byte-equivalent lexical path.
 """
 from __future__ import annotations
 
 import time
+from pathlib import Path
 from typing import Any
 
 from minicode.logging_config import get_logger
+from minicode.model_call_control import ModelCallDeadlineExceeded
 from minicode.run_events import verification_corroboration
+from minicode.turn_cancellation import TurnCancellationRequested
 
 logger = get_logger("memory_pipeline")
+
+
+# Durable signals that carry their own independent verification chain.
+# Lessons wearing one of these are auto-approved on write; the rest still
+# wait for explicit user review.
+_CONVERSATION_FACT_TECHNICAL_TERMS = frozenset(
+    {
+        "代码", "文件", "函数", "类", "模块", "项目", "测试", "修复", "实现",
+        "添加", "删除", "运行", "安装", "配置", "部署", "重构", "优化",
+        "调试", "报错", "错误", "bug", "api", "python", "javascript",
+        "typescript", "react", "docker", "git", "pytest", "sql",
+    }
+)
+_CONVERSATION_FACT_ZH_MARKERS = (
+    "是", "喜欢", "不喜欢", "讨厌", "爱", "住在", "在", "来自", "叫",
+    "有", "想", "希望", "偏好", "使用", "唯一", "最好", "工作",
+)
+
+_STRONG_DURABLE_SIGNALS = frozenset(
+    {
+        "confirmed_error_recovery_verified",
+        "verified_solution",
+        "verified_approach",
+        "stable_project_constraint",
+        "stable_verification_rule",
+        "user_correction",
+        "old_memory_disproved",
+    }
+)
 
 
 def assess_trace_memory_safety(execution_trace: list[dict[str, Any]]):
@@ -46,6 +79,13 @@ def assess_trace_memory_safety(execution_trace: list[dict[str, Any]]):
 
     for event in execution_trace[:200]:
         for text in iter_strings(event):
+            # Empty strings in structured tool input represent an omitted or
+            # root/default argument (for example ``list_files(path="")``).
+            # They contain no untrusted instruction text to assess.  Keep the
+            # stricter empty-content rejection in ``assess_memory_safety`` for
+            # actual durable Memory bodies.
+            if not text.strip():
+                continue
             safety = assess_memory_safety(text, source="trace")
             if not safety.allowed:
                 return MemorySafetyResult(
@@ -74,7 +114,12 @@ class MemoryPipeline:
         report = pipeline.maintain()
     """
 
-    def __init__(self, memory_manager: Any | None = None):
+    def __init__(
+        self,
+        memory_manager: Any | None = None,
+        *,
+        hybrid_provider_factory: Any | None = None,
+    ):
         self._memory = memory_manager
         self._model: Any = None
         self._workspace: str | None = None
@@ -94,8 +139,12 @@ class MemoryPipeline:
         self._write_count = 0
         self._maintain_count = 0
         self._last_injected_ids: list[str] = []
+        self._last_written_ids: list[str] = []
         self._last_retrieval_result: Any = None
         self._feedback_recorded = False
+        self._project_facts: Any = None
+        self._hybrid_activation: Any = None
+        self._hybrid_provider_factory = hybrid_provider_factory
 
     # ── Lifecycle ──────────────────────────────────────────────────
 
@@ -106,24 +155,81 @@ class MemoryPipeline:
         enable_reranker: bool = False,
         enable_vector: bool = False,
         reflection_engine: Any | None = None,
+        hybrid_model_path: str | Path | None = None,
+        hybrid_evidence_path: str | Path | None = None,
+        hybrid_embedding_provider: str = "local-e5",
+        allow_remote_memory_embedding: bool = False,
     ) -> None:
         """Initialize all subsystems. Call once after MemoryManager is ready."""
+        if enable_reranker:
+            raise ValueError(
+                "enable_reranker cannot be enabled: it is not part of "
+                "canonical retrieval"
+            )
+        from minicode.memory_hybrid import assess_hybrid_activation
+
+        self._hybrid_activation = assess_hybrid_activation(
+            requested=enable_vector,
+            evidence_path=hybrid_evidence_path,
+            model_path=hybrid_model_path,
+            embedding_provider=hybrid_embedding_provider,
+            allow_remote_embedding=allow_remote_memory_embedding,
+        )
         self._model = model_adapter
         self._workspace = workspace_path
 
-        # Reranker (LLM curation on read)
-        if enable_reranker:
-            from minicode.memory_reranker import MemoryReranker
-            self._reranker = MemoryReranker(model_adapter=model_adapter)
+        # Deterministic project facts live outside the lesson pipeline.
+        if workspace_path:
+            from minicode.project_facts import ProjectFactsStore
+            self._project_facts = ProjectFactsStore(workspace_path)
 
         # Injector (PID-controlled injection)
         if self._memory:
             from minicode.memory_injector import MemoryInjector
             self._injector = MemoryInjector(
                 memory_manager=self._memory,
-                reranker=self._reranker if self._reranker and self._reranker.enabled else None,
+                reranker=None,
             )
             self._retriever = self._injector.retriever
+            if self._hybrid_activation.active:
+                from dataclasses import replace
+                from minicode.memory_retrieval import CanonicalMemoryRetriever
+
+                factory = self._hybrid_provider_factory
+                if factory is None:
+                    try:
+                        from minicode.memory_hybrid_runtime import (
+                            create_hybrid_candidate_provider,
+                        )
+
+                        factory = create_hybrid_candidate_provider
+                    except Exception:
+                        factory = None
+                try:
+                    provider = (
+                        factory(
+                            activation=self._hybrid_activation,
+                            model_adapter=model_adapter,
+                            workspace_path=workspace_path,
+                        )
+                        if factory is not None
+                        else None
+                    )
+                except Exception:
+                    provider = None
+                if provider is None:
+                    self._hybrid_activation = replace(
+                        self._hybrid_activation,
+                        active=False,
+                        reason="provider_initialization_failed",
+                    )
+                else:
+                    self._retriever = CanonicalMemoryRetriever(
+                        self._memory,
+                        controller=self._injector._controller,
+                        hybrid_provider=provider,
+                    )
+                    self._injector._retriever = self._retriever
 
         # Curator (background optimization)
         from minicode.memory_curator_agent import MemoryCuratorAgent
@@ -141,36 +247,11 @@ class MemoryPipeline:
 
             self._reflection = ReflectionEngine(memory_manager=None)
 
-        # Vector store — sparse TF-IDF always available, optional sentence-transformers
-        if enable_vector:
-            try:
-                from minicode.vector_memory import SparseVectorStore, VectorMemoryStore
-                self._vector_store = SparseVectorStore()  # Zero-dependency, always works
-                # Also try the optional dense backend
-                self._dense_store = VectorMemoryStore()
-                if self._memory:
-                    all_entries = []
-                    from minicode.memory import MemoryScope
-                    for scope in MemoryScope:
-                        if scope in self._memory.memories:
-                            all_entries.extend(self._memory.memories[scope].entries)
-                    if all_entries:
-                        n = self._vector_store.index_entries(all_entries)
-                        logger.info("SparseVectorStore: indexed %d entries", n)
-                        if self._dense_store.enabled:
-                            self._dense_store.index_entries(all_entries)
-            except Exception:
-                pass
-
         self._initialized = True
         self._last_injected_ids: list[str] = []
         self._last_retrieval_result = None
         self._feedback_recorded = False
-        logger.info(
-            "MemoryPipeline initialized: reranker=%s vector=%s",
-            self._reranker.enabled if self._reranker else False,
-            self._vector_store is not None and self._vector_store.enabled if self._vector_store else False,
-        )
+        logger.info("MemoryPipeline initialized: canonical_retrieval=true")
 
         # Restore persisted state
         self._load_state()
@@ -192,7 +273,17 @@ class MemoryPipeline:
         try:
             import json
             import os
-            os.makedirs(os.path.dirname(path), exist_ok=True)
+            import tempfile
+
+            target = Path(path)
+            parent = target.parent
+            if target.is_symlink() or parent.is_symlink():
+                logger.warning(
+                    "MemoryPipeline save_state skipped: unsafe symlink path %s",
+                    target,
+                )
+                return
+            os.makedirs(parent, exist_ok=True)
             state = {
                 "read_count": self._read_count,
                 "write_count": self._write_count,
@@ -202,8 +293,21 @@ class MemoryPipeline:
                 "curator_history": self._curator.get_history() if self._curator else [],
                 "timestamp": time.time(),
             }
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(state, f, indent=2)
+            fd, tmp_path = tempfile.mkstemp(
+                dir=str(parent),
+                prefix=".pipeline_state.",
+                suffix=".tmp",
+            )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump(state, f, indent=2)
+                os.replace(tmp_path, target)
+            except BaseException:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+                raise
         except Exception as e:
             logger.debug("MemoryPipeline save_state failed: %s", e)
 
@@ -243,6 +347,17 @@ class MemoryPipeline:
             "reranker_enabled": self._reranker.enabled if self._reranker else False,
             "reranker_cache_hit_rate": self._reranker.cache_hit_rate if self._reranker else 0.0,
             "vector_enabled": self._vector_store is not None and self._vector_store.enabled if self._vector_store else False,
+            "hybrid_requested": bool(
+                self._hybrid_activation and self._hybrid_activation.requested
+            ),
+            "hybrid_active": bool(
+                self._hybrid_activation and self._hybrid_activation.active
+            ),
+            "hybrid_inactive_reason": (
+                self._hybrid_activation.reason
+                if self._hybrid_activation and not self._hybrid_activation.active
+                else ""
+            ),
         }
 
     # ── READ: Memory retrieval ─────────────────────────────────────
@@ -261,6 +376,10 @@ class MemoryPipeline:
         source_entrypoint: Any = None,
         recent_failure: bool = False,
         _record_retrieval: bool = True,
+        agent_budget: Any = None,
+        event_sink: Any = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
     ) -> list[dict[str, Any]]:
         """Run canonical retrieval without modifying a prompt or recording injection."""
         if not self._memory or not self._retriever:
@@ -293,7 +412,11 @@ class MemoryPipeline:
                 min_relevance=relevance,
                 source_entrypoint=source,
                 recent_failure=recent_failure,
-            )
+            ),
+            agent_budget=agent_budget,
+            event_sink=event_sink,
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
         )
         self._last_retrieval_result = result
         self._feedback_recorded = False
@@ -347,27 +470,64 @@ class MemoryPipeline:
         max_tokens_per_memory: int | None = None,
         min_relevance: float | None = None,
         recent_failure: bool = False,
+        agent_budget: Any = None,
+        event_sink: Any = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
     ) -> list[dict]:
         """Read memories and inject into system prompt with adaptive cooldown.
 
         Adaptive cooldown (T1): τ_cool = τ_base × (1 - context_pressure).
         Returns modified messages with memory context appended to system message.
         """
-        if not self._initialized or not self._memory:
+        if not self._initialized:
             return messages
         self._last_injected_ids = []
         self._last_retrieval_result = None
         self._feedback_recorded = False
+
+        # Project Facts are deterministic workspace inventory, not retrieved
+        # lessons. They remain available when no MemoryManager exists and
+        # while adaptive lesson injection is cooling down.
+        facts_block = self._render_project_facts()
+
+        def inject_facts_only() -> list[dict]:
+            if not facts_block:
+                return messages
+            system_index = next(
+                (
+                    index
+                    for index, message in enumerate(messages)
+                    if message.get("role") == "system"
+                ),
+                None,
+            )
+            if system_index is None:
+                return messages
+            existing = str(messages[system_index].get("content", ""))
+            if facts_block in existing:
+                return messages
+            messages[system_index] = {
+                **messages[system_index],
+                "content": existing + "\n" + facts_block,
+            }
+            return messages
+
+        if not self._memory:
+            return inject_facts_only()
 
         # Adaptive cooldown check
         now = time.time()
         cooldown = self._adaptive_cooldown(context_usage)
         if context_usage < 0.90 and hasattr(self, '_last_inject_time'):
             if now - self._last_inject_time < cooldown:
-                return messages  # Still in cooldown
+                return inject_facts_only()  # Lessons are still in cooldown.
         self._last_inject_time = now
 
-        from minicode.memory_retrieval import RetrievalSource
+        from minicode.memory_retrieval import (
+            MEMORY_DIRECT_VERIFICATION_POLICY,
+            RetrievalSource,
+        )
 
         effective_max_memories = (
             max_memories
@@ -397,9 +557,25 @@ class MemoryPipeline:
                 source_entrypoint=RetrievalSource.PIPELINE_INJECT,
                 recent_failure=recent_failure,
                 _record_retrieval=False,
+                agent_budget=agent_budget,
+                event_sink=event_sink,
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
             )
             result = self._last_retrieval_result
-            if result is None or not result.prompt_text:
+            lesson_block = result.prompt_text if result is not None else ""
+            if lesson_block:
+                from minicode.context_manager import estimate_tokens
+
+                policy_candidate = (
+                    f"{lesson_block}\n\n{MEMORY_DIRECT_VERIFICATION_POLICY}"
+                )
+                if estimate_tokens(policy_candidate) <= effective_total_tokens:
+                    lesson_block = policy_candidate
+            prompt_blocks = [
+                block for block in (lesson_block, facts_block) if block
+            ]
+            if not prompt_blocks:
                 if result is not None and result.selected_ids:
                     self._memory.record_retrievals(list(result.selected_ids))
                 return messages
@@ -408,25 +584,46 @@ class MemoryPipeline:
                 None,
             )
             if system_index is None:
-                if result.selected_ids:
+                if result is not None and result.selected_ids:
                     self._memory.record_retrievals(list(result.selected_ids))
-                self._last_retrieval_result = result.without_rendered("system_message_missing")
+                if result is not None:
+                    self._last_retrieval_result = result.without_rendered(
+                        "system_message_missing"
+                    )
                 return messages
+            prompt_addition = "\n\n".join(prompt_blocks)
             messages[system_index] = {
                 **messages[system_index],
-                "content": str(messages[system_index].get("content", "")) + "\n" + result.prompt_text,
+                "content": str(messages[system_index].get("content", "")) + "\n" + prompt_addition,
             }
-            self._last_injected_ids = list(result.rendered_ids)
-            self._memory.record_retrievals_and_injections(
-                list(result.selected_ids),
-                self._last_injected_ids,
-            )
+            if result is not None:
+                self._last_injected_ids = list(result.rendered_ids)
+                if lesson_block:
+                    self._memory.record_retrievals_and_injections(
+                        list(result.selected_ids),
+                        self._last_injected_ids,
+                    )
+                elif result.selected_ids:
+                    self._memory.record_retrievals(list(result.selected_ids))
             logger.info(
-                "MemoryPipeline: injected %d memories (mode=%s)",
+                "MemoryPipeline: injected %d memories, project_facts=%s (mode=%s)",
                 len(self._last_injected_ids),
-                result.controller_decision.get("mode", "none"),
+                bool(facts_block),
+                (
+                    result.controller_decision.get("mode", "none")
+                    if result is not None
+                    else "none"
+                ),
             )
         except Exception as exc:
+            from minicode.model_call_control import ModelCallDeadlineExceeded
+            from minicode.turn_cancellation import TurnCancellationRequested
+
+            if isinstance(
+                exc,
+                (TurnCancellationRequested, ModelCallDeadlineExceeded),
+            ):
+                raise
             logger.warning("MemoryPipeline injection failed safely: %s", exc)
             if self._last_retrieval_result is not None and not self._last_injected_ids:
                 self._last_retrieval_result = self._last_retrieval_result.without_rendered(
@@ -441,6 +638,12 @@ class MemoryPipeline:
         self,
         task_description: str,
         execution_trace: list[dict[str, Any]],
+        *,
+        agent_budget: Any = None,
+        event_sink: Any = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
+        provenance: dict[str, Any] | None = None,
     ) -> str | None:
         """Write task reflection as structured memory.
 
@@ -448,9 +651,11 @@ class MemoryPipeline:
         and domain tags. Returns the created memory entry ID or None.
         """
         if not self._reflection or not self._memory:
+            self._last_written_ids = []
             return None
 
         self._write_count += 1
+        self._last_written_ids = []
 
         result = None
         try:
@@ -459,6 +664,10 @@ class MemoryPipeline:
                 task_description,
                 execution_trace,
                 defer_shadow=True,
+                agent_budget=agent_budget,
+                event_sink=event_sink,
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
             )
             value_decision = getattr(result, "value_decision", None) if result else None
             claim_validation = getattr(result, "claim_validation", None) if result else None
@@ -474,14 +683,67 @@ class MemoryPipeline:
                     "MemoryPipeline: skipped reflection write reasons=%s",
                     ",".join(str(code) for code in reason_codes[:8]),
                 )
+                fact_id = self._try_persist_conversation_fact(
+                    task_description,
+                    execution_trace,
+                    result,
+                    provenance=provenance,
+                )
+                if fact_id is not None:
+                    self._last_written_ids = [fact_id]
+                    self.save_state()
+                    return fact_id
                 self.save_state()
                 return None
             if result:
-                mem_data = result.to_memory_entry()
+                from dataclasses import replace as _replace
+
                 from minicode.memory import (
                     MemoryApprovalPolicy,
                     MemoryScope,
                     MemoryTier,
+                )
+
+                # ── Layer 1: deterministic project facts ─────────────────
+                # Dependencies are inventory, not lessons: they leave the
+                # approval-bound memory store for the static facts store.
+                self._persist_project_facts(
+                    result,
+                    task_description=task_description,
+                    execution_trace=execution_trace,
+                    provenance=provenance,
+                )
+                lesson_claims = [
+                    claim
+                    for claim in (getattr(result, "structured_claims", []) or [])
+                    if claim.claim_type != "dependency"
+                ]
+                if not lesson_claims:
+                    logger.info(
+                        "MemoryPipeline: reflection carried only project facts; "
+                        "no lesson entry queued for review"
+                    )
+                    fact_id = self._try_persist_conversation_fact(
+                        task_description,
+                        execution_trace,
+                        result,
+                        provenance=provenance,
+                    )
+                    if fact_id is not None:
+                        self._last_written_ids = [fact_id]
+                        self.save_state()
+                        return fact_id
+                    self.save_state()
+                    return None
+                if len(lesson_claims) != len(getattr(result, "structured_claims", []) or []):
+                    result = _replace(result, structured_claims=lesson_claims)
+
+                # ── Layer 2/3: one claim, one authority lifecycle ────────
+                # Entry-level approval is safe only when every entry contains
+                # one independently evidenced claim. This prevents a verified
+                # recovery from auto-approving a weak/inferred neighbor.
+                strong_signals = _STRONG_DURABLE_SIGNALS.intersection(
+                    value_decision.durable_signals or []
                 )
                 safety_kwargs = {}
                 if not trace_safety.allowed:
@@ -489,48 +751,149 @@ class MemoryPipeline:
                         "safety_status": trace_safety.status,
                         "safety_reason": trace_safety.reason,
                     }
-                entry = self._memory.add_entry(
-                    scope=MemoryScope.PROJECT,
-                    category=mem_data["category"],
-                    content=mem_data["content"],
-                    tags=mem_data["tags"],
-                    domains=mem_data.get("domains", []),
-                    metadata=mem_data.get("metadata", {}),
-                    tier=MemoryTier.SHORT_TERM,
-                    source="reflection",
-                    provenance={
+                written_ids: list[str] = []
+                event_ids = [
+                    str(event.get("event_id"))
+                    for event in execution_trace
+                    if isinstance(event, dict) and event.get("event_id")
+                ][:64]
+                for claim in lesson_claims:
+                    existing_id, existing_rejected, same_statement = (
+                        self._find_recurred_lesson(claim)
+                    )
+                    if existing_id is not None and same_statement:
+                        if not existing_rejected:
+                            self._memory.reinforce_reflection_entry(existing_id)
+                        written_ids.append(existing_id)
+                        continue
+
+                    claim_has_own_strong_evidence = (
+                        claim.epistemic_status == "confirmed"
+                        and (
+                            bool(claim.verification_ids)
+                            or claim.claim_type in {"correction", "constraint"}
+                        )
+                    )
+                    approval_policy = (
+                        MemoryApprovalPolicy.AUTO_APPROVE_VERIFIED
+                        if strong_signals
+                        and trace_safety.allowed
+                        and claim_has_own_strong_evidence
+                        else MemoryApprovalPolicy.USER_REVIEW_REQUIRED
+                    )
+                    single_result = _replace(
+                        result,
+                        structured_claims=[claim],
+                        claim_validation=_replace(
+                            result.claim_validation,
+                            valid_claims=[claim],
+                            rejected_claims=[],
+                            issues=[
+                                issue
+                                for issue in result.claim_validation.issues
+                                if issue.claim_id in {None, claim.claim_id}
+                            ],
+                        ),
+                        value_decision=_replace(
+                            value_decision,
+                            accepted_claim_ids=[claim.claim_id],
+                        ),
+                    )
+                    mem_data = single_result.to_memory_entry()
+                    metadata = dict(mem_data.get("metadata", {}))
+                    metadata["claim_identity"] = {
+                        "claim_id": claim.claim_id,
+                        "semantic_key": claim.semantic_key,
+                    }
+                    if existing_id is not None:
+                        metadata["supersedes"] = [existing_id]
+                    entry_provenance = {
+                        **dict(provenance or {}),
                         "task": task_description[:300],
                         "trace_events": len(execution_trace),
+                        "event_ids": event_ids,
+                        "claim_id": claim.claim_id,
+                        "semantic_key": claim.semantic_key,
                         "success": result.success,
                         "confidence": result.confidence,
                         "value_reason_codes": list(value_decision.reason_codes),
                         "durable_signals": list(value_decision.durable_signals),
-                    },
-                    approval_policy=MemoryApprovalPolicy.USER_REVIEW_REQUIRED,
-                    **safety_kwargs,
-                )
-                if entry is None:
+                        "approval_basis": (
+                            ",".join(sorted(str(s) for s in strong_signals))
+                            if approval_policy
+                            == MemoryApprovalPolicy.AUTO_APPROVE_VERIFIED
+                            else "user_review"
+                        ),
+                    }
+                    entry = self._memory.add_entry(
+                        scope=MemoryScope.PROJECT,
+                        category=mem_data["category"],
+                        content=mem_data["content"],
+                        tags=mem_data["tags"],
+                        domains=mem_data.get("domains", []),
+                        metadata=metadata,
+                        tier=MemoryTier.SHORT_TERM,
+                        source="reflection",
+                        provenance=entry_provenance,
+                        approval_policy=approval_policy,
+                        **safety_kwargs,
+                    )
+                    if entry is None:
+                        continue
+                    written_ids.append(entry.id)
+                    if entry.is_active and existing_id is not None:
+                        self._memory.apply_reflection_supersession(entry.id)
+                if not written_ids:
                     self.save_state()
                     return None
                 logger.info(
-                    "MemoryPipeline: wrote reflection success=%s confidence=%.2f signals=%s",
-                    result.success,
-                    result.confidence,
-                    ",".join(value_decision.durable_signals),
+                    "MemoryPipeline: wrote/reinforced %d claim entries",
+                    len(written_ids),
                 )
+                self._last_written_ids = list(dict.fromkeys(written_ids))
                 self.save_state()
-                return getattr(entry, 'id', None)
+                return self._last_written_ids[0]
+        except TurnCancellationRequested:
+            raise
+        except ModelCallDeadlineExceeded:
+            logger.info("MemoryPipeline: reflection skipped at Agent deadline")
         except Exception:
-            pass
+            logger.exception(
+                "MemoryPipeline: reflection write failed for task=%r",
+                task_description[:120],
+            )
         finally:
             if result is not None and hasattr(self._reflection, "complete_shadow"):
                 try:
-                    self._reflection.complete_shadow(result)
+                    self._reflection.complete_shadow(
+                        result,
+                        agent_budget=agent_budget,
+                        event_sink=event_sink,
+                        cancellation_token=cancellation_token,
+                        deadline_monotonic=deadline_monotonic,
+                    )
+                except TurnCancellationRequested:
+                    raise
+                except ModelCallDeadlineExceeded:
+                    logger.info(
+                        "MemoryPipeline: shadow reflection stopped at Agent deadline"
+                    )
                 except Exception:
                     logger.info("MemoryPipeline: shadow comparison failed safely")
 
         self.save_state()
         return None
+
+    @property
+    def last_written_ids(self) -> tuple[str, ...]:
+        """All entries produced or reinforced by the latest ``write`` call.
+
+        ``write`` keeps its historical single-ID return value for callers that
+        only need a representative entry. Run provenance must use this complete
+        snapshot so a later user verdict reaches every independently persisted
+        claim from the turn.
+        """
+        return tuple(self._last_written_ids)
 
     def _trace_memory_assessment(
         self, execution_trace: list[dict[str, Any]]
@@ -542,6 +905,236 @@ class MemoryPipeline:
         rather than becoming injectable automatically.
         """
         return assess_trace_memory_safety(execution_trace)
+    def _try_persist_conversation_fact(
+        self,
+        task_description: str,
+        execution_trace: list[dict[str, Any]],
+        result: Any,
+        *,
+        provenance: dict[str, Any] | None = None,
+    ) -> str | None:
+        """Persist an ordinary user statement as a pending review candidate.
+
+        This is the deterministic conversation-fact intake behind MEM-001.
+        It is deliberately separate from reflection: no tool evidence, error,
+        recovery or code decision is required. The candidate is always
+        USER_REVIEW_REQUIRED, so a statement can never silently become
+        injectable context.
+        """
+        fact = self._conversation_fact_text(task_description)
+        if fact is None:
+            return None
+        if self._trace_has_technical_work(execution_trace, result):
+            return None
+        try:
+            from minicode.memory import (
+                MemoryApprovalPolicy,
+                MemoryScope,
+                MemoryTier,
+            )
+
+            entry = self._memory.add_entry(
+                scope=MemoryScope.USER,
+                category="conversation_fact",
+                content=fact,
+                tags=["conversation-fact", "user-statement"],
+                domains=["memory"],
+                tier=MemoryTier.SHORT_TERM,
+                source="conversation_fact",
+                provenance={
+                    **dict(provenance or {}),
+                    "task": task_description[:300],
+                    "trace_events": len(execution_trace),
+                    "event_ids": [
+                        str(event.get("event_id"))
+                        for event in execution_trace
+                        if isinstance(event, dict) and event.get("event_id")
+                    ][:64],
+                    "intake": "deterministic_conversation_fact",
+                    "approval_basis": "user_review",
+                    "scope_basis": "personal_fact",
+                },
+                metadata={
+                    "confidence": 0.6,
+                    "evidence_kind": "user_statement",
+                },
+                approval_policy=MemoryApprovalPolicy.USER_REVIEW_REQUIRED,
+            )
+            if entry is None:
+                return None
+            logger.info(
+                "MemoryPipeline: queued conversation fact for review id=%s",
+                entry.id,
+            )
+            return entry.id
+        except Exception:
+            logger.warning(
+                "MemoryPipeline: conversation fact intake failed safely"
+            )
+            return None
+
+    @staticmethod
+    def _conversation_fact_text(task_description: str) -> str | None:
+        import re
+
+        text = str(task_description or "").strip()
+        if not 2 <= len(text) <= 200:
+            return None
+        lowered = text.lower()
+        if any(term in lowered for term in _CONVERSATION_FACT_TECHNICAL_TERMS):
+            return None
+        if re.search(r"(?:帮我|请|帮忙|修复|实现|添加|删除|创建|生成)", text):
+            return None
+        is_zh_fact = "我" in text and any(
+            marker in text for marker in _CONVERSATION_FACT_ZH_MARKERS
+        )
+        is_en_fact = bool(
+            re.search(
+                r"(?i)(?:^|[.!?]\s*)(?:i am|i'm|my |our |i like|i prefer|"
+                r"i use|i live in|i live|i work|i want|i need)\b",
+                text,
+            )
+        )
+        if not (is_zh_fact or is_en_fact):
+            return None
+        return text.rstrip("。.!！?？ ")
+
+    @staticmethod
+    def _trace_has_technical_work(
+        execution_trace: list[dict[str, Any]],
+        result: Any,
+    ) -> bool:
+        evidence = getattr(result, "task_evidence", None) if result else None
+        if evidence is not None:
+            if any(
+                (
+                    getattr(evidence, "tool_calls", []),
+                    getattr(evidence, "files_read", []),
+                    getattr(evidence, "files_changed", []),
+                    getattr(evidence, "referenced_files", []),
+                    getattr(evidence, "errors", []),
+                    getattr(evidence, "recoveries", []),
+                    getattr(evidence, "decisions", []),
+                    getattr(evidence, "libraries", []),
+                    getattr(evidence, "verification", []),
+                )
+            ):
+                return True
+            return False
+        for event in execution_trace or []:
+            if not isinstance(event, dict):
+                continue
+            if event.get("type") in {
+                "tool_call",
+                "tool_result",
+                "error",
+                "recovery",
+                "decision",
+            }:
+                return True
+            if event.get("tool_name"):
+                return True
+        return False
+
+
+    def _persist_project_facts(
+        self,
+        result: Any,
+        *,
+        task_description: str,
+        execution_trace: list[dict[str, Any]],
+        provenance: dict[str, Any] | None,
+    ) -> None:
+        """Move confirmed dependency names into the static facts store."""
+        if self._project_facts is None or not bool(getattr(result, "success", False)):
+            return
+        claims = getattr(result, "structured_claims", []) or []
+        if not any(claim.claim_type == "dependency" for claim in claims):
+            return
+        evidence = getattr(result, "task_evidence", None)
+        names = [
+            item.name
+            for item in (getattr(evidence, "libraries", []) or [])
+            if getattr(item, "status", "") == "confirmed"
+        ]
+        if not names:
+            return
+        evidence_by_name = {
+            item.name: list(getattr(item, "event_ids", ()) or ())
+            for item in (getattr(evidence, "libraries", []) or [])
+            if getattr(item, "status", "") == "confirmed"
+        }
+        try:
+            added = self._project_facts.observe_dependencies(
+                names,
+                provenance={
+                    **dict(provenance or {}),
+                    "source": "reflection_evidence",
+                    "task": task_description[:300],
+                    "outcome": "success" if result.success else "failed",
+                    "event_ids": [
+                        str(event.get("event_id"))
+                        for event in execution_trace
+                        if isinstance(event, dict) and event.get("event_id")
+                    ][:64],
+                    "dependency_evidence": evidence_by_name,
+                },
+            )
+            if added:
+                logger.info(
+                    "MemoryPipeline: recorded %d project fact(s): %s",
+                    added,
+                    ", ".join(sorted(names)[:6]),
+                )
+        except Exception:  # noqa: BLE001 - facts are advisory
+            logger.warning("MemoryPipeline: project facts write failed safely")
+
+    def _find_recurred_lesson(
+        self, claim: Any
+    ) -> tuple[str | None, bool, bool]:
+        """Find an existing claim with the same semantic identity.
+
+        Returns ``(entry_id, rejected, same_statement)``. A same-key changed
+        statement is a correction candidate, not recurrence.
+        """
+        semantic_key = str(getattr(claim, "semantic_key", "") or "")
+        statement = str(getattr(claim, "statement", "") or "").strip()
+        if not semantic_key or not self._memory:
+            return None, False, False
+        from minicode.memory import MemoryScope
+
+        try:
+            entries = self._memory.memories[MemoryScope.PROJECT].entries
+        except Exception:  # noqa: BLE001
+            return None, False, False
+        for entry in entries:
+            metadata = entry.metadata if isinstance(entry.metadata, dict) else {}
+            reflection = metadata.get("structured_reflection")
+            if not isinstance(reflection, dict):
+                continue
+            claims = reflection.get("claims")
+            if not isinstance(claims, list):
+                continue
+            for claim in claims:
+                if not isinstance(claim, dict):
+                    continue
+                if claim.get("semantic_key") == semantic_key:
+                    rejected = (
+                        getattr(entry, "approval_status", "") == "rejected"
+                        or getattr(entry, "lifecycle_status", "") == "rejected"
+                    )
+                    same_statement = str(claim.get("statement", "")).strip() == statement
+                    return entry.id, rejected, same_statement
+        return None, False, False
+
+    def _render_project_facts(self) -> str:
+        """Bounded prompt block of deterministic project facts."""
+        if self._project_facts is None:
+            return ""
+        try:
+            return self._project_facts.render_markdown()
+        except Exception:  # noqa: BLE001
+            return ""
 
     def _trace_contains_unsafe_memory_payload(
         self, execution_trace: list[dict[str, Any]]
@@ -607,7 +1200,15 @@ class MemoryPipeline:
 
     # ── MAINTAIN: Background optimization ───────────────────────────
 
-    def maintain(self, force: bool = False) -> dict[str, Any] | None:
+    def maintain(
+        self,
+        force: bool = False,
+        *,
+        agent_budget: Any = None,
+        event_sink: Any = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
+    ) -> dict[str, Any] | None:
         """Run background memory optimization.
 
         Consolidates insights, archives duplicates, validates against codebase,
@@ -625,9 +1226,17 @@ class MemoryPipeline:
 
         self._maintain_count += 1
         try:
-            report = self._curator.run_cycle(force=True)
+            report = self._curator.run_cycle(
+                force=True,
+                agent_budget=agent_budget,
+                event_sink=event_sink,
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+            )
             self.save_state()
             return report.to_dict()
+        except TurnCancellationRequested:
+            raise
         except Exception:
             return None
 

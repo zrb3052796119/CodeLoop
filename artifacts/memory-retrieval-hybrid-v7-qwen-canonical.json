@@ -1,0 +1,848 @@
+{
+  "acceptance_gate": {
+    "checks": {
+      "candidate_recall_at_20": true,
+      "frozen_holdout": true,
+      "hard_negative_render_rate": true,
+      "lifecycle_safety_leakage": true,
+      "post_decision_positive_recall": true,
+      "provider_fallback_count": true,
+      "rendered_positive_recall": true,
+      "rendered_precision": true,
+      "unsafe_indexed_count": true
+    },
+    "passed": true
+  },
+  "candidate_corpus_protocol": "global_39_eligible_memories",
+  "canonical": {
+    "cases": [
+      {
+        "case_id": "v7-pos-01",
+        "hybrid_diagnostics": {
+          "accepted_count": 1,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2486,
+            "model_call_count": 2,
+            "output_tokens": 784,
+            "preliminary_accepted_count": 1,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [
+          "v7-pos-01-memory"
+        ],
+        "selected_ids": [
+          "v7-pos-01-memory"
+        ],
+        "target_candidate": {
+          "dense_score": 0.78539130444166,
+          "reason_codes": [
+            "multiple_informative_terms",
+            "domain_with_lexical_evidence",
+            "domain_match",
+            "semantic_constraint",
+            "challenge_no_disqualifier",
+            "hybrid_semantic_admission"
+          ],
+          "semantic_score": 0.95
+        },
+        "target_id": "v7-pos-01-memory"
+      },
+      {
+        "case_id": "v7-pos-02",
+        "hybrid_diagnostics": {
+          "accepted_count": 1,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2430,
+            "model_call_count": 2,
+            "output_tokens": 784,
+            "preliminary_accepted_count": 1,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [
+          "v7-pos-02-memory"
+        ],
+        "selected_ids": [
+          "v7-pos-02-memory"
+        ],
+        "target_candidate": {
+          "dense_score": 0.817478024803338,
+          "reason_codes": [
+            "project_exact_tag_object",
+            "semantic_recovery",
+            "challenge_unsupported_relation",
+            "hybrid_semantic_admission"
+          ],
+          "semantic_score": 0.95
+        },
+        "target_id": "v7-pos-02-memory"
+      },
+      {
+        "case_id": "v7-pos-03",
+        "hybrid_diagnostics": {
+          "accepted_count": 1,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2395,
+            "model_call_count": 2,
+            "output_tokens": 785,
+            "preliminary_accepted_count": 1,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [
+          "v7-pos-03-memory"
+        ],
+        "selected_ids": [
+          "v7-pos-03-memory"
+        ],
+        "target_candidate": {
+          "dense_score": 0.8487713780393541,
+          "reason_codes": [
+            "insufficient_relevance_evidence",
+            "domain_match",
+            "semantic_semantic_equivalence",
+            "challenge_different_object",
+            "hybrid_semantic_admission"
+          ],
+          "semantic_score": 0.95
+        },
+        "target_id": "v7-pos-03-memory"
+      },
+      {
+        "case_id": "v7-pos-04",
+        "hybrid_diagnostics": {
+          "accepted_count": 1,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2454,
+            "model_call_count": 2,
+            "output_tokens": 783,
+            "preliminary_accepted_count": 1,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [
+          "v7-pos-04-memory"
+        ],
+        "selected_ids": [
+          "v7-pos-04-memory"
+        ],
+        "target_candidate": {
+          "dense_score": 0.7719000525602913,
+          "reason_codes": [
+            "multiple_informative_terms",
+            "domain_with_lexical_evidence",
+            "domain_match",
+            "semantic_cause",
+            "challenge_no_disqualifier",
+            "hybrid_semantic_admission"
+          ],
+          "semantic_score": 0.95
+        },
+        "target_id": "v7-pos-04-memory"
+      },
+      {
+        "case_id": "v7-pos-05",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2127,
+            "model_call_count": 1,
+            "output_tokens": 748,
+            "preliminary_accepted_count": 0,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.7485373005163538,
+          "reason_codes": [
+            "insufficient_relevance_evidence",
+            "domain_match",
+            "semantic_different_object",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.6
+        },
+        "target_id": "v7-pos-05-memory"
+      },
+      {
+        "case_id": "v7-pos-06",
+        "hybrid_diagnostics": {
+          "accepted_count": 1,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2513,
+            "model_call_count": 2,
+            "output_tokens": 784,
+            "preliminary_accepted_count": 1,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [
+          "v7-pos-06-memory"
+        ],
+        "selected_ids": [
+          "v7-pos-06-memory"
+        ],
+        "target_candidate": {
+          "dense_score": 0.7549396749136356,
+          "reason_codes": [
+            "insufficient_relevance_evidence",
+            "semantic_preference",
+            "challenge_no_disqualifier",
+            "hybrid_semantic_admission"
+          ],
+          "semantic_score": 1.0
+        },
+        "target_id": "v7-pos-06-memory"
+      },
+      {
+        "case_id": "v7-pos-07",
+        "hybrid_diagnostics": {
+          "accepted_count": 1,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2601,
+            "model_call_count": 2,
+            "output_tokens": 783,
+            "preliminary_accepted_count": 1,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [
+          "v7-pos-07-memory"
+        ],
+        "selected_ids": [
+          "v7-pos-07-memory"
+        ],
+        "target_candidate": {
+          "dense_score": 0.8682086324788051,
+          "reason_codes": [
+            "file_match",
+            "multiple_informative_terms",
+            "high_token_coverage",
+            "semantic_rename",
+            "challenge_no_disqualifier",
+            "hybrid_semantic_admission"
+          ],
+          "semantic_score": 1.0
+        },
+        "target_id": "v7-pos-07-memory"
+      },
+      {
+        "case_id": "v7-pos-08",
+        "hybrid_diagnostics": {
+          "accepted_count": 1,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2457,
+            "model_call_count": 2,
+            "output_tokens": 783,
+            "preliminary_accepted_count": 1,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "positive",
+        "rendered_ids": [
+          "v7-pos-08-memory"
+        ],
+        "selected_ids": [
+          "v7-pos-08-memory"
+        ],
+        "target_candidate": {
+          "dense_score": 0.9034402433087747,
+          "reason_codes": [
+            "file_match",
+            "semantic_cause",
+            "challenge_query_underspecified",
+            "hybrid_semantic_admission"
+          ],
+          "semantic_score": 0.95
+        },
+        "target_id": "v7-pos-08-memory"
+      },
+      {
+        "case_id": "v7-neg-01",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 1919,
+            "model_call_count": 1,
+            "output_tokens": 747,
+            "preliminary_accepted_count": 0,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.7560444274042974,
+          "reason_codes": [
+            "insufficient_relevance_evidence",
+            "semantic_different_object",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.95
+        },
+        "target_id": "v7-neg-01-memory"
+      },
+      {
+        "case_id": "v7-neg-02",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 1,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2362,
+            "model_call_count": 2,
+            "output_tokens": 786,
+            "preliminary_accepted_count": 1,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.8842297129291353,
+          "reason_codes": [
+            "multiple_informative_terms",
+            "high_token_coverage",
+            "semantic_semantic_equivalence",
+            "challenge_contradictory_order",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 1.0
+        },
+        "target_id": "v7-neg-02-memory"
+      },
+      {
+        "case_id": "v7-neg-03",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 1999,
+            "model_call_count": 1,
+            "output_tokens": 747,
+            "preliminary_accepted_count": 0,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.9010726149716297,
+          "reason_codes": [
+            "multiple_informative_terms",
+            "high_token_coverage",
+            "semantic_opposite",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 1.0
+        },
+        "target_id": "v7-neg-03-memory"
+      },
+      {
+        "case_id": "v7-neg-04",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2110,
+            "model_call_count": 1,
+            "output_tokens": 747,
+            "preliminary_accepted_count": 0,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.7788187174154266,
+          "reason_codes": [
+            "file_match",
+            "multiple_informative_terms",
+            "high_token_coverage",
+            "semantic_different_object",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.95
+        },
+        "target_id": "v7-neg-04-memory"
+      },
+      {
+        "case_id": "v7-neg-05",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2062,
+            "model_call_count": 1,
+            "output_tokens": 747,
+            "preliminary_accepted_count": 0,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.7382387862687679,
+          "reason_codes": [
+            "insufficient_relevance_evidence",
+            "semantic_different_object",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.9
+        },
+        "target_id": "v7-neg-05-memory"
+      },
+      {
+        "case_id": "v7-neg-06",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 2038,
+            "model_call_count": 1,
+            "output_tokens": 746,
+            "preliminary_accepted_count": 0,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.0,
+          "reason_codes": [
+            "insufficient_relevance_evidence"
+          ],
+          "semantic_score": 0.0
+        },
+        "target_id": "v7-neg-06-memory"
+      },
+      {
+        "case_id": "v7-neg-07",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 21,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 1,
+            "input_tokens": 1994,
+            "model_call_count": 1,
+            "output_tokens": 746,
+            "preliminary_accepted_count": 0,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.0,
+          "reason_codes": [
+            "multiple_informative_terms",
+            "domain_with_lexical_evidence",
+            "domain_match",
+            "hybrid_ineligible_exact_gate",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.0
+        },
+        "target_id": "v7-neg-07-memory"
+      },
+      {
+        "case_id": "v7-neg-08",
+        "hybrid_diagnostics": {
+          "accepted_count": 0,
+          "active": true,
+          "candidate_count": 20,
+          "failure_reason": "",
+          "fallback": false,
+          "provider": {
+            "adjudicated_count": 20,
+            "cache_hit": false,
+            "challenged_count": 0,
+            "dense_candidate_count": 20,
+            "exact_gate_rejected_count": 0,
+            "input_tokens": 1994,
+            "model_call_count": 1,
+            "output_tokens": 747,
+            "preliminary_accepted_count": 0,
+            "provider": "qwen_strict_llm_v2"
+          }
+        },
+        "hybrid_fallback": false,
+        "ineligible_rendered_ids": [],
+        "polarity": "hard_negative",
+        "rendered_ids": [],
+        "selected_ids": [],
+        "target_candidate": {
+          "dense_score": 0.7349488748237663,
+          "reason_codes": [
+            "project_exact_tag_object",
+            "semantic_different_object",
+            "hybrid_semantic_rejection"
+          ],
+          "semantic_score": 0.95
+        },
+        "target_id": "v7-neg-08-memory"
+      }
+    ],
+    "confusion": {
+      "fn": 1,
+      "fp": 0,
+      "tp": 7
+    },
+    "metrics": {
+      "hard_negative_render_rate": 0.0,
+      "lifecycle_safety_leakage": 0,
+      "post_decision_positive_recall": 0.875,
+      "provider_fallback_count": 0,
+      "rendered_positive_recall": 0.875,
+      "rendered_precision": 1.0,
+      "unsafe_indexed_count": 0
+    },
+    "unsafe_indexed_ids": []
+  },
+  "canonical_corpus_protocol": "case_target_plus_24_shared_background",
+  "challenger": {
+    "minimum_confidence": 0.8,
+    "mode": "high-confidence-conflict-veto-v1",
+    "model_id": "deepseek-chat",
+    "prompt_sha256": "f8215617432ea1d081208d205b51c48ee5d4ef79360f1b251def251e1d927819",
+    "prompt_version": "hybrid-admission-challenger-v1",
+    "veto_reason_codes": [
+      "contradictory_order",
+      "contradictory_polarity",
+      "path_conflict"
+    ]
+  },
+  "dataset": {
+    "expected_manifest_sha256": "d3bfde05c1652f6498cb529dd69148165da1eaea44cca4e5f1e48a64a454d97e",
+    "manifest_sha256": "d3bfde05c1652f6498cb529dd69148165da1eaea44cca4e5f1e48a64a454d97e",
+    "matches": true,
+    "mismatches": {}
+  },
+  "dense": {
+    "cases": [
+      {
+        "case_id": "v7-pos-01",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "d49bf4a928d4511457220c2dffae7d576ffb05678decaeb031dcff915b6905ec"
+      },
+      {
+        "case_id": "v7-pos-02",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "79dbeb7730f1706dfdf6a7bb013385b073f8ef1e930359f3777b1ebd299a21d2"
+      },
+      {
+        "case_id": "v7-pos-03",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "7de9172481de0c88c076c6fe0140658a69bc9a88f4210a0db2f2925e55740c59"
+      },
+      {
+        "case_id": "v7-pos-04",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "5a02aab64fb0b31d4f289f8de7a5d49fab84bdf1e93ab72aae038ef32f649aee"
+      },
+      {
+        "case_id": "v7-pos-05",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 5,
+        "top_20_ids_sha256": "ff66c07cf98389b5daefbab381c3df6b087bd65cfcbc509f7e8dd7286e6c50dd"
+      },
+      {
+        "case_id": "v7-pos-06",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "4a94fb71d5a5f0fe31d16c6db3e3ede3ad5d8969019e332e0d4005eb47b07f63"
+      },
+      {
+        "case_id": "v7-pos-07",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "241487eb1238ba937c35f72a1044c08482902aa7b45914423810ce5b686a4a32"
+      },
+      {
+        "case_id": "v7-pos-08",
+        "polarity": "positive",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "d179d0abee9e97557d10a2ad155f68f006e9102585eddb4a5fd00d686b423468"
+      },
+      {
+        "case_id": "v7-neg-01",
+        "polarity": "hard_negative",
+        "target_in_top_20": true,
+        "target_rank": 6,
+        "top_20_ids_sha256": "ff6e9d208443890f66cc94326ff070dbe8b0d731ad835ad3725a6d74a99fceb8"
+      },
+      {
+        "case_id": "v7-neg-02",
+        "polarity": "hard_negative",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "004959b338a41c56e641b6b5a3a04e1516eb0b5e01afbfd5445c57785fad0553"
+      },
+      {
+        "case_id": "v7-neg-03",
+        "polarity": "hard_negative",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "c471548d3ad048ef0f9b664019ba167ca76ca13daba8f28ec5abfba24974da00"
+      },
+      {
+        "case_id": "v7-neg-04",
+        "polarity": "hard_negative",
+        "target_in_top_20": true,
+        "target_rank": 1,
+        "top_20_ids_sha256": "2438f19a657b4afa92e75404a2fb9009ce4c5c264eb4c6d09bd9c05828bdec0a"
+      },
+      {
+        "case_id": "v7-neg-05",
+        "polarity": "hard_negative",
+        "target_in_top_20": true,
+        "target_rank": 3,
+        "top_20_ids_sha256": "ced42020acec4560807188781ee45652c4f78a92aa8dba1a888d4ba657d22d08"
+      },
+      {
+        "case_id": "v7-neg-06",
+        "polarity": "hard_negative",
+        "target_in_top_20": false,
+        "target_rank": 39,
+        "top_20_ids_sha256": "d1a1a4851733321d274cbf5a9a00d87121cdbc0433288781a2ec468144a609df"
+      },
+      {
+        "case_id": "v7-neg-07",
+        "polarity": "hard_negative",
+        "target_in_top_20": false,
+        "target_rank": null,
+        "top_20_ids_sha256": "84b88c6281b69f1283b5ee70d909126e93014cd433fc70ea4e78a444b130e917"
+      },
+      {
+        "case_id": "v7-neg-08",
+        "polarity": "hard_negative",
+        "target_in_top_20": true,
+        "target_rank": 6,
+        "top_20_ids_sha256": "662c6ec71ac2fcd8a662b696381e875d9629108d426ccbafd44195c04778fab1"
+      }
+    ],
+    "eligible_corpus_size": 39,
+    "positive_hits": 8,
+    "positive_recall_at_20": 1.0,
+    "positive_total": 8
+  },
+  "dense_top_k": 20,
+  "embedding_provider": "qwen",
+  "holdout_version": "v7-qwen",
+  "max_union_candidates": 32,
+  "model": {
+    "canary_fingerprint": "cd9799ab5a5f6456d4c46e1a3bff8de0462a2b945b02f603c43e33d5bf9a702b",
+    "canary_version": "embedding-canary-v1",
+    "dimension": 1024,
+    "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings",
+    "model_id": "text-embedding-v3",
+    "provider": "qwen",
+    "representation_version": "memory-structured-v1"
+  },
+  "one_shot": true,
+  "protocol_version": "hybrid-canonical-v4",
+  "remote_memory_authorized": true,
+  "report_fingerprint": "27f8ac6cc058ed5c7158b6dfab456889e252d3a42bf8ecc0bebd8c441724f246",
+  "schema_version": "2.0",
+  "synthetic_data": true,
+  "thresholds": {
+    "candidate_recall_at_20_min": 0.9,
+    "hard_negative_render_rate_max": 0.05,
+    "lifecycle_safety_leakage_max": 0,
+    "post_decision_positive_recall_min": 0.8,
+    "rendered_positive_recall_min": 0.75,
+    "rendered_precision_min": 0.95
+  },
+  "verifier": {
+    "minimum_confidence": 0.85,
+    "model_id": "deepseek-chat",
+    "prompt_sha256": "a3c7b784dd90b93319c9337d84cb68030f996a5c1e8b192066784e8028628eda",
+    "prompt_version": "hybrid-relevance-v2.1"
+  }
+}

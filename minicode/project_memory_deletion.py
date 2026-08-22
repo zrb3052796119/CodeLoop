@@ -424,10 +424,11 @@ class ProjectMemoryDeletionAuthority:
                             related for related in entry.related_to if related != memory_id
                         ]
                 deleted["entries"] = int(memory_file.delete_entry(memory_id))
-                if deleted["entries"] or deleted["backlinks"]:
+                if any(int(value) for value in deleted.values()):
+                    # memory.json is the single authority for entries and
+                    # approval audit. Commit both mutations together; the
+                    # Markdown/audit files are best-effort projections only.
                     manager._save_scope(MemoryScope.PROJECT)
-                if deleted["approvalAuditRecords"]:
-                    manager._save_approval_audit(MemoryScope.PROJECT)
 
                 verification, _, _ = self._plan(memory_id, fence=current_fence)
                 remaining = dict(verification["affected"])

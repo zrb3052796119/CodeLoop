@@ -191,6 +191,34 @@ class TestStateObserver:
         assert "internal_load" in summary
         assert "hidden_errors" in summary
 
+    def test_zero_bootstrap_sample_does_not_poison_latency_baseline(self):
+        observer = StateObserver()
+        observer.update(
+            MeasurementVector(
+                timestamp=time.time(),
+                response_time=0.0,
+                success_rate=1.0,
+                error_count=0,
+                tool_calls=0,
+            )
+        )
+
+        for _ in range(20):
+            state = observer.update(
+                MeasurementVector(
+                    timestamp=time.time(),
+                    response_time=0.25,
+                    success_rate=1.0,
+                    error_count=0,
+                    tool_calls=1,
+                )
+            )
+
+        assert observer._response_time_baseline == pytest.approx(0.25)
+        assert state.internal_load < 0.45
+        assert state.context_pressure < 0.1
+        assert state.system_degradation < 0.1
+
     def test_state_prediction(self):
         observer = StateObserver()
 

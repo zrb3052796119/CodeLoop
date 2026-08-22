@@ -118,3 +118,31 @@ def test_refresh_is_a_noop_inside_an_open_write_transaction(workspace: Path) -> 
     with manager._store.transaction():
         assert manager.in_write_transaction is True
         assert manager.refresh_if_stale() == ()
+
+
+def test_symlinked_authority_root_fails_closed_without_stale_injection(
+    workspace: Path,
+) -> None:
+    manager = MemoryManager(project_root=workspace)
+    entry = manager.add_entry(
+        MemoryScope.PROJECT,
+        "convention",
+        "SENTINEL never inject from an unsafe root",
+        tags=["unsafe-root"],
+    )
+    assert entry is not None
+    pipeline = _pipeline(manager, workspace)
+
+    authority = workspace / ".mini-code-memory"
+    moved = workspace / "detached-memory-authority"
+    authority.rename(moved)
+    authority.symlink_to(moved, target_is_directory=True)
+
+    messages = pipeline.inject(
+        "unsafe root sentinel",
+        [],
+        [{"role": "system", "content": "S"}],
+        context_usage=0.4,
+    )
+
+    assert messages == [{"role": "system", "content": "S"}]

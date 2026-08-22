@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import ssl
 
 from minicode.anthropic_adapter import AnthropicModelAdapter
 from minicode.openai_adapter import OpenAIModelAdapter
@@ -73,6 +74,37 @@ def test_openai_adapter_omits_tools_for_tool_free_calls(monkeypatch) -> None:
     assert "tools" not in captured
     assert captured["temperature"] == 0
     assert captured["timeout"] == 7.0
+
+
+def test_openai_adapter_uses_a_verified_tls_context(monkeypatch) -> None:
+    captured: dict = {}
+
+    def fake_urlopen(request, timeout=60, context=None):
+        captured["context"] = context
+        return DummyResponse(
+            {
+                "choices": [
+                    {"message": {"content": "{}"}, "finish_reason": "stop"}
+                ]
+            }
+        )
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    adapter = OpenAIModelAdapter(
+        {
+            "model": "deepseek-chat",
+            "openaiBaseUrl": "https://api.deepseek.com",
+            "openaiApiKey": "test",
+            "modelMaxRetries": 0,
+        },
+        None,
+    )
+
+    adapter.next([{"role": "user", "content": "json"}])
+
+    assert isinstance(captured["context"], ssl.SSLContext)
+    assert captured["context"].verify_mode == ssl.CERT_REQUIRED
+    assert captured["context"].check_hostname is True
 
 
 def test_anthropic_adapter_omits_tools_for_tool_free_calls(monkeypatch) -> None:

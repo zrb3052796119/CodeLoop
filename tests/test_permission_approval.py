@@ -213,7 +213,6 @@ def test_command_review_redacts_split_sensitive_reason_without_echo(
     [
         lambda workspace, outside, home: (str(outside / "tool"), ["inspect"]),
         lambda workspace, outside, home: ("tool", [str(outside / "input.txt")]),
-        lambda workspace, outside, home: ("tool", [str(workspace / "inside.txt")]),
         lambda workspace, outside, home: ("tool", [str(home / "profile.txt")]),
         lambda workspace, outside, home: (
             "tool",
@@ -262,6 +261,59 @@ def test_command_review_never_serializes_local_absolute_paths(
         assert item["review"]["redacted"] is True
         for local_path in (workspace, outside, home):
             assert str(local_path) not in serialized
+        broker.decide(
+            permission_id=item["permissionId"],
+            turn_id=turn_id,
+            decision="deny_once",
+        )
+    finally:
+        broker.close()
+        thread.join(timeout=1)
+
+
+def test_an_in_workspace_absolute_path_stays_reviewable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A path under the workspace is rewritten, not hidden.
+
+    Hiding it satisfied "no absolute path is serialized" by blanking the whole
+    review, which left the reviewer a Reject button and nothing to read -- and
+    an agent writes in-workspace absolute paths routinely, so ordinary
+    commands became unapprovable. Rewriting to a workspace-relative form keeps
+    the serialization guarantee below while restoring the decision.
+    """
+    workspace = tmp_path / "workspace"
+    home = tmp_path / "home"
+    workspace.mkdir()
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    turn_id = "turn_" + "c" * 32
+    broker = PermissionApprovalBroker(workspace, timeout_seconds=2)
+    session = broker.begin_turn(
+        turn_id=turn_id,
+        run_id=None,
+        cancellation_token=TurnCancellationToken(turn_id),
+    )
+    manager = PermissionManager(str(workspace), prompt=session.prompt)
+    thread, _outcome = _start_command_check(
+        workspace=workspace,
+        session=session,
+        manager=manager,
+        command="tool",
+        args=[str(workspace / "inside.txt")],
+    )
+    try:
+        item = _pending_item(broker)
+        serialized = json.dumps(broker.snapshot(), ensure_ascii=False)
+
+        assert item["reviewable"] is True
+        assert item["review"]["redacted"] is False
+        assert item["review"]["commandPreview"] == "tool inside.txt"
+        # The guarantee the blanket rule existed to provide, kept intact.
+        for local_path in (workspace, home):
+            assert str(local_path) not in serialized
+
         broker.decide(
             permission_id=item["permissionId"],
             turn_id=turn_id,

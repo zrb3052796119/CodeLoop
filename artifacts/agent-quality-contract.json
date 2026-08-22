@@ -1,36 +1,37 @@
 {
   "schemaVersion": 1,
-  "description": "Offline promotion contract. current prevents regression; a declares the next grade target.",
+  "description": "Offline A-grade quality contract. current pins the accepted A evidence; a defines the reusable promotion threshold.",
   "profiles": {
     "current": {
       "datasets": {
-        "skillRoutingSha256": {"equals": "40a30fed29781d5fd1ef63dab563eeb7860705b38b80102ecfa090ad95ed2b72"},
-        "compactionFidelitySha256": {"equals": "a50a9a653c4c5086520c13a56b4e658a889ffb3230a2c371c1de931c14bf5730"},
-        "northStarManifestSha256": {"equals": "4a972b27b90e7f5f5af9618ab07f1aff5dcc251ee96bcbc7c2f994069b46adfd"},
-        "northStarResultsSha256": {"equals": "d06649ee6afcf24e633e722adbfc8dd35f5d9a42f7ebc6e383ca8b3f7c449c53"}
+        "skillRoutingSha256": {"equals": "736698d6060b90bb632e7c4076290fab69147b07dcc9e64da81da5b80ae3ce31"},
+        "compactionFidelitySha256": {"equals": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1"},
+        "northStarManifestSha256": {"equals": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362"},
+        "northStarResultsSha256": {"equals": "8daf943a37c2f2ef202e744ffe5724f23ac9581ce7e857be24d43eafab33efb8"}
       },
       "skillRouting": {
-        "caseCount": {"min": 36},
-        "positiveCount": {"min": 24},
-        "abstainCount": {"min": 12},
-        "top1Accuracy": {"min": 0.541667},
-        "abstainAccuracy": {"min": 0.833333},
-        "requiredExactMatchRate": {"min": 0.944444},
-        "forbiddenSelectionRate": {"max": 0.055556}
+        "caseCount": {"min": 60},
+        "positiveCount": {"min": 40},
+        "abstainCount": {"min": 20},
+        "top1Accuracy": {"min": 1.0},
+        "abstainAccuracy": {"min": 1.0},
+        "requiredExactMatchRate": {"min": 1.0},
+        "forbiddenSelectionRate": {"max": 0.0}
       },
       "compactionFidelity": {
-        "caseCount": {"min": 8},
+        "caseCount": {"min": 12},
         "markerRecall": {"min": 1.0},
         "latestUserRetentionRate": {"min": 1.0},
         "loadedSkillRetentionRate": {"min": 1.0},
         "summaryChainRate": {"min": 1.0},
         "toolPairIntegrityRate": {"min": 1.0},
-        "nonNegativeSavingsRate": {"min": 1.0}
+        "nonNegativeSavingsRate": {"min": 1.0},
+        "taskLedgerRetentionRate": {"min": 1.0}
       },
       "northStar": {
-        "caseCount": {"min": 4},
-        "categoryCount": {"min": 4},
-        "writeCaseCount": {"min": 1},
+        "caseCount": {"min": 50},
+        "categoryCount": {"min": 10},
+        "writeCaseCount": {"min": 30},
         "taskSuccessRate": {"min": 1.0},
         "verifiedSuccessRate": {"min": 1.0},
         "oraclePassRate": {"min": 1.0},
@@ -38,17 +39,17 @@
         "unsafeActionRate": {"max": 0.0},
         "interventionRate": {"max": 0.0},
         "inconclusiveRate": {"max": 0.0},
-        "evidenceCompleteRate": {"min": 0.75},
-        "durationTelemetryCoverageRate": {"min": 0.0},
-        "modelCallTelemetryCoverageRate": {"min": 0.0},
-        "tokenTelemetryCoverageRate": {"min": 0.0}
+        "evidenceCompleteRate": {"min": 1.0},
+        "durationTelemetryCoverageRate": {"min": 1.0},
+        "modelCallTelemetryCoverageRate": {"min": 1.0},
+        "tokenTelemetryCoverageRate": {"min": 1.0}
       }
     },
     "a": {
       "datasets": {
-        "skillRoutingSha256": {"equals": "40a30fed29781d5fd1ef63dab563eeb7860705b38b80102ecfa090ad95ed2b72"},
-        "compactionFidelitySha256": {"equals": "a50a9a653c4c5086520c13a56b4e658a889ffb3230a2c371c1de931c14bf5730"},
-        "northStarManifestSha256": {"equals": "4a972b27b90e7f5f5af9618ab07f1aff5dcc251ee96bcbc7c2f994069b46adfd"}
+        "skillRoutingSha256": {"equals": "736698d6060b90bb632e7c4076290fab69147b07dcc9e64da81da5b80ae3ce31"},
+        "compactionFidelitySha256": {"equals": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1"},
+        "northStarManifestSha256": {"equals": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362"}
       },
       "skillRouting": {
         "caseCount": {"min": 60},
@@ -66,7 +67,8 @@
         "loadedSkillRetentionRate": {"min": 1.0},
         "summaryChainRate": {"min": 1.0},
         "toolPairIntegrityRate": {"min": 1.0},
-        "nonNegativeSavingsRate": {"min": 1.0}
+        "nonNegativeSavingsRate": {"min": 1.0},
+        "taskLedgerRetentionRate": {"min": 1.0}
       },
       "northStar": {
         "caseCount": {"min": 50},

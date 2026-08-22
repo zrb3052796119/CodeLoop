@@ -9,7 +9,7 @@ from minicode.capability_registry import (
 from minicode.intent_parser import ActionType, IntentType, ParsedIntent, parse_intent
 from minicode.prompt import build_system_prompt
 from minicode.run_events import project_skill_routing_event
-from minicode.skill_router import SkillRouter
+from minicode.skill_router import SkillRouter, required_skill_names_for_routing
 
 
 def _skill(name: str, description: str, source: str = "project", **extra) -> dict:
@@ -102,7 +102,14 @@ def test_available_capabilities_do_not_create_relevance_for_unknown_intent() -> 
 
 
 def test_top_k_limits_selected_skills() -> None:
-    skills = [_skill(f"explain-skill-{i}", "Explain code and file structure") for i in range(10)]
+    skills = [
+        _skill(
+            f"explain-skill-{i}",
+            "Explain code and file structure",
+            keywords=["agent_loop"],
+        )
+        for i in range(10)
+    ]
     intent = parse_intent("explain how agent_loop.py handles tool calls")
     registry = _registry(("read_file", CapabilityDomain.FILE, CapabilityScope.READONLY))
 
@@ -110,6 +117,60 @@ def test_top_k_limits_selected_skills() -> None:
 
     assert not result.used_fallback
     assert len(result.selected) == 5
+
+
+def test_explicit_skill_reference_outranks_semantic_recommendations() -> None:
+    skills = [
+        _skill(
+            "minicode-study",
+            "Fix code, inspect inventory modules, and run project tests",
+            source="user",
+            qualified_name="code-skills/minicode-study",
+            keywords=["fix", "code", "inventory", "tests"],
+        ),
+        _skill(
+            "acceptance-review",
+            "Review a focused acceptance change",
+            qualified_name="acceptance-review",
+        ),
+    ]
+
+    routing = SkillRouter().route(
+        skills,
+        parse_intent(
+            "Use the acceptance-review Skill to fix code in inventory.py and run tests"
+        ),
+        _registry(),
+        top_k=2,
+    )
+
+    assert routing.selected[0].qualified_name == "acceptance-review"
+    assert routing.selected[0].explicitly_requested
+    assert required_skill_names_for_routing(routing) == ["acceptance-review"]
+    assert not routing.selected[1].explicitly_requested
+
+
+def test_semantic_skill_recommendations_are_advisory_not_final_blockers() -> None:
+    routing = SkillRouter().route(
+        [_skill("pytest-debugging", "Debug pytest failures", keywords=["pytest"])],
+        parse_intent("debug a pytest failure"),
+        _registry(),
+    )
+
+    assert not routing.used_fallback
+    assert required_skill_names_for_routing(routing) == []
+    projected = routing.to_dict()
+    assert projected["selected_skills"][0]["explicitly_requested"] is False
+    assert required_skill_names_for_routing(projected) == []
+
+
+def test_legacy_routing_without_explicit_markers_keeps_old_required_projection() -> None:
+    legacy = {
+        "used_fallback": False,
+        "selected": [{"qualified_name": "legacy/demo"}],
+    }
+
+    assert required_skill_names_for_routing(legacy) == ["legacy/demo"]
 
 
 def test_fallback_abstains_when_no_task_evidence_matches() -> None:
@@ -441,6 +502,7 @@ def test_read_task_penalizes_destructive_tool_affinity() -> None:
             qualified_name="code-understanding/read-only-explanation",
             directory="code-understanding",
             directory_description="Read and explain code",
+            keywords=["agent_loop"],
             domains=["code", "file", "search"],
             scopes=["readonly"],
             tools=["read_file", "grep_files"],
@@ -454,6 +516,7 @@ def test_read_task_penalizes_destructive_tool_affinity() -> None:
             domains=["code", "file", "execution"],
             scopes=["readonly", "destructive"],
             tools=["read_file", "run_command"],
+            keywords=["agent_loop"],
         ),
     ]
     intent = parse_intent("explain agent_loop.py")
@@ -471,7 +534,11 @@ def test_read_task_penalizes_destructive_tool_affinity() -> None:
 
 def test_prompt_uses_routed_skill_section() -> None:
     skills = [
-        _skill("codebase-explanation", "Explain code architecture and file flow"),
+        _skill(
+            "codebase-explanation",
+            "Explain code architecture and file flow",
+            keywords=["agent_loop"],
+        ),
         _skill("pytest-debugging", "Debug pytest failures"),
         _skill("systematic-debugging", "Debug runtime errors with a structured workflow"),
     ]
@@ -577,3 +644,124 @@ def test_production_routing_observation_identifies_the_exact_skill_digest() -> N
     assert payload["selected"][0]["contentDigest"] == hashlib.sha256(
         content.encode("utf-8")
     ).hexdigest()
+
+
+def test_router_accepts_public_discover_skills_dataclass_shape() -> None:
+    from minicode.skills import SkillSummary
+
+    skill = SkillSummary(
+        name="pytest-debugging",
+        description="Debug pytest failures and test automation",
+        path="/tmp/pytest-debugging/SKILL.md",
+        source="project",
+        qualified_name="debugging/pytest-debugging",
+        directory="debugging",
+        keywords=["pytest", "debug"],
+        content_digest="a" * 64,
+    )
+    result = SkillRouter().route(
+        [skill],
+        parse_intent("debug a pytest failure"),
+        _registry(),
+        top_k=1,
+    )
+
+    assert not result.used_fallback
+    assert result.selected[0].name == "pytest-debugging"
+
+
+def test_low_confidence_intent_cannot_create_routing_signal_alone() -> None:
+    skills = [
+        _skill(
+            "pytest-debugging",
+            "Debug pytest failures and test automation",
+            keywords=["pytest"],
+        )
+    ]
+    low_confidence = ParsedIntent(
+        raw_input="unclear request",
+        intent_type=IntentType.TEST,
+        action_type=ActionType.EXECUTE,
+        confidence=0.2,
+        entities={},
+        keywords=[],
+    )
+    high_confidence = ParsedIntent(
+        raw_input="run the test suite",
+        intent_type=IntentType.TEST,
+        action_type=ActionType.EXECUTE,
+        confidence=0.9,
+        entities={},
+        keywords=[],
+    )
+
+    assert SkillRouter().route(skills, low_confidence, _registry()).used_fallback
+    assert SkillRouter().route(skills, high_confidence, _registry()).used_fallback
+
+
+def test_classified_coding_intent_needs_specific_skill_evidence() -> None:
+    skills = [
+        _skill(
+            "structural-rename",
+            "Rename modules and update code references",
+            domains=["code", "file", "search"],
+            scopes=["readonly", "write"],
+            tools=["read_file", "grep_files"],
+        ),
+        _skill(
+            "readme-authoring",
+            "Write project README documentation",
+            domains=["code", "file"],
+            scopes=["readonly", "write"],
+            tools=["read_file", "grep_files"],
+        ),
+        _skill(
+            "test-driven-development",
+            "Write tests before implementation",
+            domains=["code", "file"],
+            scopes=["readonly", "write"],
+            tools=["read_file"],
+        ),
+    ]
+    intent = parse_intent(
+        "Use exactly two parallel explore agents to trace login -> authenticate "
+        "-> find_session and identify shared mutable test-state risks. "
+        "Do not modify files."
+    )
+    registry = _registry(
+        ("read_file", CapabilityDomain.FILE, CapabilityScope.READONLY),
+        ("grep_files", CapabilityDomain.SEARCH, CapabilityScope.READONLY),
+    )
+
+    result = SkillRouter().route(skills, intent, registry, top_k=5)
+
+    assert intent.intent_type == IntentType.CODE
+    assert result.used_fallback
+    assert result.selected == []
+
+
+def test_single_weak_lexical_signal_emits_fewer_than_top_k_candidates() -> None:
+    skills = [
+        _skill(
+            f"trace-helper-{index}",
+            "Trace control flow in an existing module",
+            keywords=["trace"],
+        )
+        for index in range(5)
+    ]
+
+    result = SkillRouter().route(
+        skills,
+        ParsedIntent(
+            raw_input="trace the request path",
+            intent_type=IntentType.REVIEW,
+            action_type=ActionType.ANALYZE,
+            confidence=0.9,
+            keywords=["trace"],
+        ),
+        _registry(),
+        top_k=5,
+    )
+
+    assert not result.used_fallback
+    assert len(result.selected) == 1

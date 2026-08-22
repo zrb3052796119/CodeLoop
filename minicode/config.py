@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Mapping
 from pathlib import Path
 from urllib.parse import urlparse
 from typing import Any
@@ -45,6 +46,18 @@ KNOWN_MODELS = [
     "qwen/qwen3-235b-a22b",
     "minimax/minimax-m1",
 ]
+
+
+def _as_bool(value: Any, default: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+    return default
 
 
 def _suggest_model_name(typed: str) -> str:
@@ -150,7 +163,8 @@ def save_mini_code_settings(updates: dict[str, Any]) -> None:
 
 def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
     effective = load_effective_settings(cwd)
-    env = {**dict(effective.get("env", {})), **os.environ}
+    settings_env = dict(effective.get("env", {}))
+    env = {**settings_env, **os.environ}
     model = (
         os.environ.get("MINI_CODE_MODEL")
         or effective.get("model")
@@ -256,6 +270,125 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
 
     reflection_config = ReflectionLLMConfig.from_runtime(reflection_values)
 
+    # Shared Agent Turn budget, inherited by every nested `task` sub-agent.
+    # Values are optional; a default model-call ceiling is applied by
+    # AgentTurnBudget.from_runtime even when token/cost limits are unset.
+    budget_settings = effective.get("agentTurnBudget", {})
+    if not isinstance(budget_settings, dict):
+        budget_settings = {}
+    agent_turn_budget = {
+        "maxTokens": env.get("MINI_CODE_TURN_BUDGET_TOKENS")
+        or budget_settings.get("maxTokens"),
+        "maxModelCalls": env.get("MINI_CODE_TURN_BUDGET_MODEL_CALLS")
+        or budget_settings.get("maxModelCalls"),
+        "maxCostUsd": env.get("MINI_CODE_TURN_BUDGET_COST_USD")
+        or budget_settings.get("maxCostUsd"),
+    }
+
+    # Child-agent model routing is independent from the parent provider. The
+    # dedicated key is never inferred from the parent credential: adding it is
+    # the explicit act that enables the default remote Qwen route.
+    subagent_settings = effective.get("subagentRouting", {})
+    if not isinstance(subagent_settings, dict):
+        subagent_settings = {}
+    # A workspace .env may configure the child route only when it owns the
+    # dedicated child credential too. This source binding prevents an
+    # untrusted workspace from overriding only the endpoint while borrowing a
+    # key from global settings. Process environment overrides remain trusted.
+    from minicode.env_file import read_env_files
+
+    workspace_subagent_env = (
+        read_env_files([Path(cwd) / ".env"])
+        if cwd is not None
+        else {}
+    )
+    workspace_owns_subagent_key = bool(
+        str(workspace_subagent_env.get("MINI_CODE_SUBAGENT_API_KEY") or "").strip()
+    )
+    bound_workspace_env = (
+        workspace_subagent_env if workspace_owns_subagent_key else {}
+    )
+
+    def subagent_env_value(name: str) -> Any:
+        return (
+            os.environ.get(name)
+            or bound_workspace_env.get(name)
+            or settings_env.get(name)
+        )
+
+    configured_subagent_models = subagent_settings.get("models", {})
+    if not isinstance(configured_subagent_models, dict):
+        configured_subagent_models = {}
+    subagent_api_key = str(
+        subagent_env_value("MINI_CODE_SUBAGENT_API_KEY")
+        or subagent_settings.get("apiKey")
+        or ""
+    ).strip()
+    subagent_enabled_value = (
+        subagent_env_value("MINI_CODE_SUBAGENT_ROUTING_ENABLED")
+        if subagent_env_value("MINI_CODE_SUBAGENT_ROUTING_ENABLED")
+        not in (None, "")
+        else subagent_settings.get("enabled", bool(subagent_api_key))
+    )
+    default_subagent_model = str(
+        subagent_env_value("MINI_CODE_SUBAGENT_MODEL")
+        or subagent_settings.get("defaultModel")
+        or configured_subagent_models.get("default")
+        or "qwen3.6-flash"
+    ).strip()
+    subagent_models = {"default": default_subagent_model}
+    # A workflow is an orchestrator, not a model-bearing agent. Its actual
+    # explore/plan/general phases resolve their own role-specific models.
+    for agent_type in ("explore", "plan", "general"):
+        env_name = f"MINI_CODE_SUBAGENT_{agent_type.upper()}_MODEL"
+        subagent_models[agent_type] = str(
+            subagent_env_value(env_name)
+            or configured_subagent_models.get(agent_type)
+            or default_subagent_model
+        ).strip()
+
+    hybrid_settings = effective.get("memoryHybrid", {})
+    if not isinstance(hybrid_settings, dict):
+        hybrid_settings = {}
+    enabled_value = (
+        env["MINI_CODE_MEMORY_HYBRID_ENABLED"]
+        if env.get("MINI_CODE_MEMORY_HYBRID_ENABLED") not in (None, "")
+        else hybrid_settings.get("enabled", False)
+    )
+    memory_hybrid_embedding_provider = str(
+        env.get("MINI_CODE_MEMORY_HYBRID_EMBEDDING_PROVIDER")
+        or hybrid_settings.get("embeddingProvider")
+        or "local-e5"
+    ).strip().lower()
+    allow_remote_memory_embedding_value = (
+        env["MINI_CODE_ALLOW_REMOTE_MEMORY_EMBEDDING"]
+        if env.get("MINI_CODE_ALLOW_REMOTE_MEMORY_EMBEDDING") not in (None, "")
+        else hybrid_settings.get("allowRemoteEmbedding", False)
+    )
+    default_hybrid_evidence_name = (
+        "memory-retrieval-hybrid-qwen-v1-production-evidence.json"
+        if memory_hybrid_embedding_provider == "qwen"
+        else "memory-retrieval-hybrid-v4-production-evidence.json"
+    )
+    default_hybrid_evidence = (
+        Path(cwd or Path.cwd()) / "artifacts" / default_hybrid_evidence_name
+    )
+    memory_hybrid_model_path = str(
+        env.get("MINI_CODE_MEMORY_HYBRID_MODEL_PATH")
+        or hybrid_settings.get("modelPath")
+        or ""
+    ).strip()
+    memory_hybrid_evidence_path = str(
+        env.get("MINI_CODE_MEMORY_HYBRID_EVIDENCE_PATH")
+        or hybrid_settings.get("evidencePath")
+        or (default_hybrid_evidence if default_hybrid_evidence.is_file() else "")
+    ).strip()
+    memory_hybrid_verifier_model = str(
+        env.get("MINI_CODE_MEMORY_HYBRID_VERIFIER_MODEL")
+        or hybrid_settings.get("verifierModel")
+        or model
+    ).strip()
+
     return {
         "model": model,
         "baseUrl": base_url,
@@ -288,6 +421,28 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
         "reflectionShadowMaxFileBytes": reflection_config.shadow_max_file_bytes,
         "reflectionPromptVersion": reflection_config.prompt_version,
         "reflectionLLMSelectionStrategy": reflection_config.selection_strategy,
+        "agentTurnBudget": agent_turn_budget,
+        "subagentRoutingEnabled": _as_bool(subagent_enabled_value),
+        "subagentProvider": str(
+            subagent_env_value("MINI_CODE_SUBAGENT_PROVIDER")
+            or subagent_settings.get("provider")
+            or "openai-compatible"
+        ).strip().lower(),
+        "subagentBaseUrl": str(
+            subagent_env_value("MINI_CODE_SUBAGENT_BASE_URL")
+            or subagent_settings.get("baseUrl")
+            or "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        ).strip().rstrip("/"),
+        "subagentApiKey": subagent_api_key,
+        "subagentModels": subagent_models,
+        "memoryHybridEnabled": _as_bool(enabled_value),
+        "memoryHybridEmbeddingProvider": memory_hybrid_embedding_provider,
+        "allowRemoteMemoryEmbedding": _as_bool(
+            allow_remote_memory_embedding_value
+        ),
+        "memoryHybridModelPath": memory_hybrid_model_path,
+        "memoryHybridEvidencePath": memory_hybrid_evidence_path,
+        "memoryHybridVerifierModel": memory_hybrid_verifier_model,
         "toolProfile": str(
             os.environ.get("MINI_CODE_TOOL_PROFILE")
             or effective.get("toolProfile", "")
@@ -302,6 +457,53 @@ def _is_valid_http_url(value: str | None) -> bool:
         return False
     parsed = urlparse(str(value))
     return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+
+def safe_runtime_summary(runtime: Mapping[str, Any]) -> dict[str, Any]:
+    """Return an explicit, credential-free runtime diagnostic projection."""
+    from minicode.agent_budget import AgentTurnBudget
+
+    values = runtime if isinstance(runtime, Mapping) else {}
+    budget = AgentTurnBudget.from_runtime(values).snapshot()
+    subagent_models = values.get("subagentModels")
+    safe_models: dict[str, str] = {}
+    if isinstance(subagent_models, Mapping):
+        for key in ("default", "explore", "plan", "general", "workflow"):
+            value = subagent_models.get(key)
+            if isinstance(value, str) and value.strip():
+                safe_models[key] = value.strip()[:160]
+    return {
+        "model": str(values.get("model") or "")[:160],
+        "toolProfile": str(values.get("toolProfile") or "core")[:80],
+        "subagentRoutingEnabled": bool(values.get("subagentRoutingEnabled")),
+        "subagentProvider": str(values.get("subagentProvider") or "")[:80],
+        "subagentModels": safe_models,
+        "memoryHybridEnabled": bool(values.get("memoryHybridEnabled")),
+        "memoryHybridEmbeddingProvider": str(
+            values.get("memoryHybridEmbeddingProvider") or ""
+        )[:80],
+        "reflectionSynthesizerMode": str(
+            values.get("reflectionSynthesizerMode") or ""
+        )[:80],
+        "credentials": {
+            "primaryConfigured": any(
+                bool(values.get(key))
+                for key in (
+                    "apiKey",
+                    "authToken",
+                    "openaiApiKey",
+                    "openrouterApiKey",
+                    "customApiKey",
+                )
+            ),
+            "subagentConfigured": bool(values.get("subagentApiKey")),
+        },
+        "effectiveTurnBudget": {
+            "maxTokens": budget.limit_total_tokens,
+            "maxModelCalls": budget.limit_model_calls,
+            "maxCostUsd": budget.limit_cost_usd,
+        },
+    }
 
 
 def validate_provider_runtime(runtime: dict[str, Any]) -> list[str]:

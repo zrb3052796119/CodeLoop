@@ -1,4 +1,4 @@
-"""Morandi color theme for MiniCode TUI.
+"""Restrained slate-indigo color theme for the MiniCode TUI.
 
 A low-saturation palette inspired by the Rust version's ColorTheme.
 All colors are expressed as ANSI 256-color or 24-bit (RGB) escape codes.
@@ -21,7 +21,7 @@ def _rgb_bg(r: int, g: int, b: int) -> str:
 
 @dataclass(frozen=True)
 class ColorTheme:
-    """Morandi-inspired color theme (muted, low-saturation tones)."""
+    """High-contrast terminal palette with one primary accent family."""
 
     # Section borders / frames
     header: str        # Workspace header border
@@ -64,30 +64,30 @@ class ColorTheme:
 
 
 def _default_theme() -> ColorTheme:
-    """Build the default Morandi color theme."""
+    """Build the default slate-indigo terminal theme."""
     return ColorTheme(
-        # Section borders — Morandi tones
-        header=_rgb(120, 150, 140),      # muted teal
-        session=_rgb(140, 120, 160),     # muted purple
-        input=_rgb(130, 160, 100),       # muted sage green
-        approval=_rgb(170, 110, 110),    # muted mauve
+        # Structural chrome uses one quiet accent family.
+        header=_rgb(95, 115, 165),
+        session=_rgb(95, 115, 165),
+        input=_rgb(125, 145, 210),
+        approval=_rgb(205, 110, 110),
 
-        # Message kinds
-        user=_rgb(160, 130, 100),        # muted warm brown
-        assistant=_rgb(100, 150, 150),   # muted teal-cyan
-        progress=_rgb(170, 150, 90),     # muted mustard
-        tool=_rgb(140, 100, 160),        # muted purple-plum
-        tool_error=_rgb(180, 100, 100),  # muted rose
+        # Color remains semantic inside the conversation.
+        user=_rgb(130, 170, 230),
+        assistant=_rgb(165, 190, 215),
+        progress=_rgb(210, 170, 90),
+        tool=_rgb(145, 165, 210),
+        tool_error=_rgb(220, 100, 100),
 
         # UI chrome
-        command_highlight_bg=_rgb_bg(100, 110, 140),  # muted slate-blue bg
-        expandable=_rgb(110, 150, 150),  # muted cyan-gray
+        command_highlight_bg=_rgb_bg(75, 90, 130),
+        expandable=_rgb(145, 165, 210),
 
         # Header labels
-        header_label_info=_rgb(170, 150, 100),        # muted ochre
-        header_label_session=_rgb(160, 120, 100),     # muted terracotta
-        header_label_permissions=_rgb(130, 100, 160), # muted plum
-        header_label_recent=_rgb(130, 100, 160),      # same as permissions
+        header_label_info=_rgb(125, 145, 210),
+        header_label_session=_rgb(145, 165, 210),
+        header_label_permissions=_rgb(205, 110, 110),
+        header_label_recent=_rgb(145, 165, 210),
     )
 
 

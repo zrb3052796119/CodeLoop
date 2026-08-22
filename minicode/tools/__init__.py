@@ -24,6 +24,11 @@ from minicode.tools.patch_file import patch_file_tool
 from minicode.tools.propose_skill import create_propose_skill_tool
 from minicode.tools.read_file import read_file_tool
 from minicode.tools.run_command import run_command_tool
+from minicode.tools.subagent_notes import (
+    subagent_note_list_tool,
+    subagent_note_read_tool,
+    subagent_note_write_tool,
+)
 from minicode.tools.test_runner import test_runner_tool
 from minicode.tools.todo_write import todo_write_tool
 from minicode.tools.web_fetch import web_fetch_tool
@@ -60,6 +65,10 @@ _CORE_TOOLS = [
     todo_write_tool,
     # Sub-agent
     task_tool,
+    # Explicit sub-agent collaboration notes
+    subagent_note_write_tool,
+    subagent_note_read_tool,
+    subagent_note_list_tool,
     # Git workflow
     git_tool,
     # Code intelligence
@@ -141,25 +150,42 @@ def create_default_tool_registry(
     runtime: dict | None = None,
     *,
     mcp_current_state_registry: McpCurrentStateRegistry | None = None,
+    include_mcp: bool = True,
+    include_user_interaction: bool = True,
 ) -> ToolRegistry:
     skills = [asdict(skill) for skill in discover_skills(cwd)]
     observe_skill_catalog_safely(cwd, skills)
-    mcp_servers = dict(runtime.get("mcpServers", {})) if runtime else {}
-    if mcp_current_state_registry is None:
-        mcp = create_mcp_backed_tools(cwd=cwd, mcp_servers=mcp_servers)
+    if include_mcp:
+        mcp_servers = dict(runtime.get("mcpServers", {})) if runtime else {}
+        if mcp_current_state_registry is None:
+            mcp = create_mcp_backed_tools(cwd=cwd, mcp_servers=mcp_servers)
+        else:
+            mcp = create_mcp_backed_tools(
+                cwd=cwd,
+                mcp_servers=mcp_servers,
+                state_registry=mcp_current_state_registry,
+            )
     else:
-        mcp = create_mcp_backed_tools(
-            cwd=cwd,
-            mcp_servers=mcp_servers,
-            state_registry=mcp_current_state_registry,
-        )
+        # Read-only sub-agents never expose MCP tools; constructing the MCP
+        # client layer here would still eagerly start every configured server
+        # per sub-agent (and per parallel sub-agent), amplifying processes and
+        # cost for no functional benefit.
+        mcp = {
+            "tools": [],
+            "servers": [],
+            "dispose": lambda: None,
+        }
     profile = _resolve_tool_profile(runtime)
-    tools = list(_CORE_TOOLS)
+    tools = [
+        tool
+        for tool in _CORE_TOOLS
+        if include_user_interaction or tool.name != "ask_user"
+    ]
     if _is_full_tool_profile(profile):
         tools.extend(_load_utility_wrapper_tools())
     tools.extend(
         [
-            create_load_skill_tool(cwd),
+            create_load_skill_tool(cwd, skills),
             create_propose_skill_tool(cwd),
             *mcp["tools"],
         ]

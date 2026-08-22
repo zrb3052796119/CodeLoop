@@ -207,7 +207,9 @@ const permissionStore = {
 const CHAT_STREAM_SCHEMA_VERSION = 1;
 const CHAT_STREAM_MAX_FRAME_BYTES = 4 * 1024;
 const CHAT_STREAM_MAX_TAIL_BYTES = 8 * 1024;
-const CHAT_STREAM_TOOL_NAME_PATTERN = /^[A-Za-z0-9_.:-]{1,128}$/;
+// The "▸" separator prefixes sub-agent tool names ("explore▸read_file") so
+// parallel sub-agents stay distinguishable in the stream.
+const CHAT_STREAM_TOOL_NAME_PATTERN = /^[A-Za-z0-9_.:\u25b8-]{1,128}$/;
 const CHAT_STREAM_TOOL_ID_PATTERN = /^toolstream_[0-9a-f]{32}$/;
 const CHAT_STREAM_RUN_ID_PATTERN = /^run_[0-9a-f]{32}$/;
 const CHAT_STREAM_ERROR_CODES = new Set([

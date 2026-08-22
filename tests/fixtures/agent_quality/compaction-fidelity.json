@@ -6,56 +6,96 @@
       "rounds": 2,
       "historyMarkers": ["QG_GOAL_KEEP_API_STABLE", "QG_FACT_TESTS_PASSED", "QG_REJECTED_GLOBAL_CACHE"],
       "loadedSkillMarker": "QG_SKILL_REQUIRES_RUFF",
-      "latestUserMarker": "QG_LATEST_DO_NOT_EDIT_TESTS"
+      "latestUserMarker": "QG_LATEST_DO_NOT_EDIT_TESTS",
+      "taskLedgerMarkers": ["QG_LEDGER_API_GOAL", "QG_LEDGER_API_TESTS"]
     },
     {
       "id": "three-round-schema-migration",
       "rounds": 3,
       "historyMarkers": ["QG_GOAL_MIGRATE_SCHEMA_V2", "QG_FACT_BACKUP_VERIFIED", "QG_REJECTED_INPLACE_REWRITE"],
       "loadedSkillMarker": "QG_SKILL_REQUIRES_ROLLBACK",
-      "latestUserMarker": "QG_LATEST_PRESERVE_OLD_READERS"
+      "latestUserMarker": "QG_LATEST_PRESERVE_OLD_READERS",
+      "taskLedgerMarkers": ["QG_LEDGER_SCHEMA_GOAL", "QG_LEDGER_SCHEMA_BACKUP"]
     },
     {
       "id": "two-round-security-fix",
       "rounds": 2,
       "historyMarkers": ["QG_GOAL_CLOSE_AUTH_BYPASS", "QG_FACT_EXPLOIT_REPRODUCED", "QG_REJECTED_DISABLE_TLS"],
       "loadedSkillMarker": "QG_SKILL_REQUIRES_FAIL_CLOSED",
-      "latestUserMarker": "QG_LATEST_NO_SECRET_LOGGING"
+      "latestUserMarker": "QG_LATEST_NO_SECRET_LOGGING",
+      "taskLedgerMarkers": ["QG_LEDGER_AUTH_GOAL", "QG_LEDGER_AUTH_EXPLOIT"]
     },
     {
       "id": "three-round-concurrency-fix",
       "rounds": 3,
       "historyMarkers": ["QG_GOAL_REMOVE_DATA_RACE", "QG_FACT_RACE_TEST_FAILED", "QG_REJECTED_GLOBAL_MUTEX"],
       "loadedSkillMarker": "QG_SKILL_REQUIRES_COUNTEREXAMPLE",
-      "latestUserMarker": "QG_LATEST_KEEP_PARALLELISM"
+      "latestUserMarker": "QG_LATEST_KEEP_PARALLELISM",
+      "taskLedgerMarkers": ["QG_LEDGER_RACE_GOAL", "QG_LEDGER_RACE_TEST"]
     },
     {
       "id": "two-round-memory-retrieval",
       "rounds": 2,
       "historyMarkers": ["QG_GOAL_REDUCE_FALSE_INJECTION", "QG_FACT_HARD_NEGATIVE_FOUND", "QG_REJECTED_THRESHOLD_FLIP"],
       "loadedSkillMarker": "QG_SKILL_REQUIRES_PROVENANCE",
-      "latestUserMarker": "QG_LATEST_KEEP_LEXICAL_FALLBACK"
+      "latestUserMarker": "QG_LATEST_KEEP_LEXICAL_FALLBACK",
+      "taskLedgerMarkers": ["QG_LEDGER_MEMORY_GOAL", "QG_LEDGER_MEMORY_NEGATIVE"]
     },
     {
       "id": "three-round-subagent-lifecycle",
       "rounds": 3,
       "historyMarkers": ["QG_GOAL_ASYNC_SUBAGENTS", "QG_FACT_JOURNAL_HAS_IDS", "QG_REJECTED_SECOND_REGISTRY"],
       "loadedSkillMarker": "QG_SKILL_REQUIRES_IDEMPOTENT_CANCEL",
-      "latestUserMarker": "QG_LATEST_NO_POST_CANCEL_WRITES"
+      "latestUserMarker": "QG_LATEST_NO_POST_CANCEL_WRITES",
+      "taskLedgerMarkers": ["QG_LEDGER_AGENT_GOAL", "QG_LEDGER_AGENT_IDS"]
     },
     {
       "id": "two-round-cli-repair",
       "rounds": 2,
       "historyMarkers": ["QG_GOAL_RESTORE_CLI_ENTRY", "QG_FACT_ENTRY_PROBE_FAILED", "QG_REJECTED_HIDE_EXCEPTION"],
       "loadedSkillMarker": "QG_SKILL_REQUIRES_ENTRY_TEST",
-      "latestUserMarker": "QG_LATEST_PRESERVE_EXIT_CODES"
+      "latestUserMarker": "QG_LATEST_PRESERVE_EXIT_CODES",
+      "taskLedgerMarkers": ["QG_LEDGER_CLI_GOAL", "QG_LEDGER_CLI_PROBE"]
     },
     {
       "id": "three-round-packaging-fix",
       "rounds": 3,
       "historyMarkers": ["QG_GOAL_REPRODUCIBLE_WHEEL", "QG_FACT_FRESH_INSTALL_PASSED", "QG_REJECTED_BUNDLE_TEST_TREE"],
       "loadedSkillMarker": "QG_SKILL_REQUIRES_MANIFEST_AUDIT",
-      "latestUserMarker": "QG_LATEST_SUPPORT_PYTHON_311"
+      "latestUserMarker": "QG_LATEST_SUPPORT_PYTHON_311",
+      "taskLedgerMarkers": ["QG_LEDGER_WHEEL_GOAL", "QG_LEDGER_WHEEL_INSTALL"]
+    },
+    {
+      "id": "four-round-provider-migration",
+      "rounds": 4,
+      "historyMarkers": ["QG_GOAL_MOVE_PROVIDER_SAFELY", "QG_FACT_CANARY_PASSED", "QG_REJECTED_GLOBAL_KEY_COPY"],
+      "loadedSkillMarker": "QG_SKILL_REQUIRES_FAIL_CLOSED_PROVIDER",
+      "latestUserMarker": "QG_LATEST_KEEP_PROVIDER_FALLBACK",
+      "taskLedgerMarkers": ["QG_LEDGER_PROVIDER_GOAL", "QG_LEDGER_PROVIDER_CANARY"]
+    },
+    {
+      "id": "one-round-small-context",
+      "rounds": 1,
+      "historyMarkers": ["QG_GOAL_PRESERVE_SMALL_CONTEXT", "QG_FACT_TOKEN_COUNT_VERIFIED", "QG_REJECTED_BLIND_TRUNCATION"],
+      "loadedSkillMarker": "QG_SKILL_REQUIRES_TOKEN_ACCOUNTING",
+      "latestUserMarker": "QG_LATEST_KEEP_USER_INSTRUCTION",
+      "taskLedgerMarkers": ["QG_LEDGER_CONTEXT_GOAL", "QG_LEDGER_CONTEXT_COUNT"]
+    },
+    {
+      "id": "five-round-release-recovery",
+      "rounds": 5,
+      "historyMarkers": ["QG_GOAL_RECOVER_RELEASE_STATE", "QG_FACT_ROLLBACK_TESTED", "QG_REJECTED_UNPINNED_RETRY"],
+      "loadedSkillMarker": "QG_SKILL_REQUIRES_RELEASE_FENCE",
+      "latestUserMarker": "QG_LATEST_PRESERVE_ROLLBACK_POINT",
+      "taskLedgerMarkers": ["QG_LEDGER_RELEASE_GOAL", "QG_LEDGER_RELEASE_ROLLBACK"]
+    },
+    {
+      "id": "four-round-memory-correction",
+      "rounds": 4,
+      "historyMarkers": ["QG_GOAL_APPLY_MEMORY_CORRECTION", "QG_FACT_USER_CORRECTION_VERIFIED", "QG_REJECTED_REINFORCE_OLD_CLAIM"],
+      "loadedSkillMarker": "QG_SKILL_REQUIRES_NEGATIVE_FEEDBACK",
+      "latestUserMarker": "QG_LATEST_HIDE_REJECTED_MEMORY",
+      "taskLedgerMarkers": ["QG_LEDGER_MEMORY_CORRECTION", "QG_LEDGER_MEMORY_REJECTION"]
     }
   ]
 }

@@ -14,6 +14,7 @@ from minicode.run_journal import EventPage, RunJournal
 from minicode.run_lifecycle import observe_run
 from minicode.skill_router import SkillRouter
 from minicode.skill_evidence import SkillEvidenceLedger
+from minicode.skill_feedback import SkillRoutingFeedback
 from minicode.skills import discover_skills
 from minicode.tooling import ToolRegistry
 from minicode.tools.load_skill import create_load_skill_tool
@@ -641,7 +642,7 @@ def test_ledger_pages_across_run_journal_without_losing_controls(
     assert snapshot["evaluations"][0]["shadowStatus"] == "positive_signal"
 
 
-def test_production_equivalent_runs_build_the_shadow_cohort(
+def test_production_equivalent_unverified_runs_do_not_build_shadow_evidence(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -703,13 +704,10 @@ def test_production_equivalent_runs_build_the_shadow_cohort(
     snapshot = SkillEvidenceLedger(journal).snapshot()
 
     assert snapshot["scannedRuns"] == 10
-    assert snapshot["eligibleTreatmentRuns"] == 5, snapshot["excludedRuns"]
+    assert snapshot["eligibleTreatmentRuns"] == 0
     assert snapshot["eligibleControlRuns"] == 5
-    evaluation = snapshot["evaluations"][0]
-    assert evaluation["treatment"]["goalAchievements"] == 5
-    assert evaluation["control"]["goalAchievements"] == 0
-    assert evaluation["shadowStatus"] == "positive_signal"
-    assert evaluation["promotionEligible"] is False
+    assert snapshot["excludedRuns"]["unverifiedOutcome"] == 5
+    assert snapshot["evaluations"] == []
     assert "private-task" not in str(snapshot)
 
 
@@ -828,3 +826,52 @@ def test_ledger_excludes_runs_with_incomplete_event_reads(
     assert snapshot["excludedRuns"]["eventReadIncomplete"] == 1
     assert snapshot["journalDiagnostics"] == 1
     assert "private-diagnostic" not in str(snapshot)
+
+
+def test_strong_real_ledger_snapshot_authorizes_only_digest_bound_rank_hint(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(
+        workspace,
+        data_dir=tmp_path / "home" / ".mini-code",
+    )
+    for _index in range(20):
+        _record_experience(
+            journal,
+            loaded=True,
+            success=True,
+            verification_outcomes=("passed",),
+            user_signal="accept",
+        )
+        _record_experience(
+            journal,
+            loaded=False,
+            success=False,
+            verification_outcomes=("failed",),
+            user_signal="correct",
+        )
+
+    feedback = SkillRoutingFeedback.from_snapshot(
+        SkillEvidenceLedger(journal).snapshot()
+    )
+
+    decision = feedback.decision(
+        qualified_name=_SKILL["qualifiedName"],
+        source=_SKILL["source"],
+        directory=_SKILL["directory"],
+        content_digest=_SKILL["contentDigest"],
+        intent_type="review",
+        action_type="analyze",
+    )
+    assert decision is not None
+    assert decision.adjustment == 0.25
+    assert feedback.decision(
+        qualified_name=_SKILL["qualifiedName"],
+        source=_SKILL["source"],
+        directory=_SKILL["directory"],
+        content_digest="f" * 64,
+        intent_type="review",
+        action_type="analyze",
+    ) is None

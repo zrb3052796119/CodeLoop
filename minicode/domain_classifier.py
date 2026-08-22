@@ -147,6 +147,7 @@ INTENT_KW_DOMAIN_MAP: dict[str, list[tuple[DomainType, float]]] = {
     "coverage": [(DomainType.TESTING, 0.8)],
     # Security keywords
     "auth": [(DomainType.SECURITY, 0.8), (DomainType.BACKEND, 0.4)],
+    "audit": [(DomainType.SECURITY, 0.7)],
     "token": [(DomainType.SECURITY, 0.7), (DomainType.BACKEND, 0.4)],
     "jwt": [(DomainType.SECURITY, 0.9), (DomainType.BACKEND, 0.3)],
     "oauth": [(DomainType.SECURITY, 0.9)],

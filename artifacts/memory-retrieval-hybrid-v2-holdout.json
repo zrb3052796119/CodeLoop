@@ -1,0 +1,270 @@
+{
+  "confusion": {
+    "fn": 0,
+    "fp": 0,
+    "tn": 13,
+    "tp": 16
+  },
+  "decisions": [
+    {
+      "confidence": 0.95,
+      "decision": "relevant",
+      "id": "v2-pos-01",
+      "objectMatch": true,
+      "reasonCode": "semantic_equivalence",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.9,
+      "decision": "relevant",
+      "id": "v2-pos-02",
+      "objectMatch": true,
+      "reasonCode": "semantic_equivalence",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.95,
+      "decision": "relevant",
+      "id": "v2-pos-03",
+      "objectMatch": true,
+      "reasonCode": "cause",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.9,
+      "decision": "relevant",
+      "id": "v2-pos-04",
+      "objectMatch": true,
+      "reasonCode": "recovery",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.95,
+      "decision": "relevant",
+      "id": "v2-pos-05",
+      "objectMatch": true,
+      "reasonCode": "semantic_equivalence",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.95,
+      "decision": "relevant",
+      "id": "v2-pos-06",
+      "objectMatch": true,
+      "reasonCode": "configuration",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.95,
+      "decision": "relevant",
+      "id": "v2-pos-07",
+      "objectMatch": true,
+      "reasonCode": "preference",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.95,
+      "decision": "relevant",
+      "id": "v2-pos-08",
+      "objectMatch": true,
+      "reasonCode": "preference",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.9,
+      "decision": "relevant",
+      "id": "v2-pos-09",
+      "objectMatch": true,
+      "reasonCode": "cause",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.9,
+      "decision": "relevant",
+      "id": "v2-pos-10",
+      "objectMatch": true,
+      "reasonCode": "constraint",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.95,
+      "decision": "relevant",
+      "id": "v2-pos-11",
+      "objectMatch": true,
+      "reasonCode": "configuration",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.95,
+      "decision": "relevant",
+      "id": "v2-pos-12",
+      "objectMatch": true,
+      "reasonCode": "semantic_equivalence",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.95,
+      "decision": "relevant",
+      "id": "v2-pos-13",
+      "objectMatch": true,
+      "reasonCode": "correction",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.95,
+      "decision": "relevant",
+      "id": "v2-pos-14",
+      "objectMatch": true,
+      "reasonCode": "semantic_equivalence",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.95,
+      "decision": "relevant",
+      "id": "v2-pos-15",
+      "objectMatch": true,
+      "reasonCode": "rename",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.95,
+      "decision": "relevant",
+      "id": "v2-pos-16",
+      "objectMatch": true,
+      "reasonCode": "preference",
+      "relationSupported": true
+    },
+    {
+      "confidence": 0.95,
+      "decision": "irrelevant",
+      "id": "v2-neg-01",
+      "objectMatch": true,
+      "reasonCode": "opposite",
+      "relationSupported": false
+    },
+    {
+      "confidence": 1.0,
+      "decision": "irrelevant",
+      "id": "v2-neg-02",
+      "objectMatch": true,
+      "reasonCode": "opposite",
+      "relationSupported": false
+    },
+    {
+      "confidence": 0.95,
+      "decision": "irrelevant",
+      "id": "v2-neg-03",
+      "objectMatch": false,
+      "reasonCode": "different_object",
+      "relationSupported": false
+    },
+    {
+      "confidence": 1.0,
+      "decision": "irrelevant",
+      "id": "v2-neg-04",
+      "objectMatch": false,
+      "reasonCode": "path_conflict",
+      "relationSupported": false
+    },
+    {
+      "confidence": 0.9,
+      "decision": "irrelevant",
+      "id": "v2-neg-05",
+      "objectMatch": false,
+      "reasonCode": "different_object",
+      "relationSupported": false
+    },
+    {
+      "confidence": 0.95,
+      "decision": "irrelevant",
+      "id": "v2-neg-06",
+      "objectMatch": false,
+      "reasonCode": "different_object",
+      "relationSupported": false
+    },
+    {
+      "confidence": 0.9,
+      "decision": "irrelevant",
+      "id": "v2-neg-07",
+      "objectMatch": false,
+      "reasonCode": "underspecified",
+      "relationSupported": false
+    },
+    {
+      "confidence": 1.0,
+      "decision": "irrelevant",
+      "id": "v2-neg-10",
+      "objectMatch": false,
+      "reasonCode": "unrelated",
+      "relationSupported": false
+    },
+    {
+      "confidence": 1.0,
+      "decision": "irrelevant",
+      "id": "v2-neg-11",
+      "objectMatch": true,
+      "reasonCode": "opposite",
+      "relationSupported": false
+    },
+    {
+      "confidence": 1.0,
+      "decision": "irrelevant",
+      "id": "v2-neg-12",
+      "objectMatch": false,
+      "reasonCode": "different_object",
+      "relationSupported": false
+    },
+    {
+      "confidence": 1.0,
+      "decision": "irrelevant",
+      "id": "v2-neg-14",
+      "objectMatch": false,
+      "reasonCode": "path_conflict",
+      "relationSupported": false
+    },
+    {
+      "confidence": 0.95,
+      "decision": "irrelevant",
+      "id": "v2-neg-15",
+      "objectMatch": false,
+      "reasonCode": "different_object",
+      "relationSupported": false
+    },
+    {
+      "confidence": 0.9,
+      "decision": "irrelevant",
+      "id": "v2-neg-16",
+      "objectMatch": false,
+      "reasonCode": "different_root",
+      "relationSupported": false
+    }
+  ],
+  "failures": [],
+  "metrics": {
+    "hard_negative_accept_rate": 0.0,
+    "positive_recall": 1.0,
+    "precision": 1.0
+  },
+  "min_confidence": 0.85,
+  "model_id": "deepseek-chat",
+  "pair_count": 29,
+  "promotion_thresholds": {
+    "candidate_recall_at_20_min": 0.9,
+    "counter_feedback_disagreement_max": 0,
+    "hard_negative_render_rate_max": 0.05,
+    "lifecycle_safety_leakage_max": 0,
+    "post_decision_positive_recall_min": 0.8,
+    "rendered_positive_recall_min": 0.75,
+    "rendered_precision_min": 0.95
+  },
+  "prompt_version": "hybrid-relevance-v2.1",
+  "report_fingerprint": "4850205e57a47142dd93773c14f0a6dc4d7e7e92faba97cd0567b1e812d86e00",
+  "schema_version": "2.0",
+  "split": "v2-holdout",
+  "synthetic_data": true,
+  "usage": {
+    "input_tokens": 3567,
+    "model_call_count": 2,
+    "output_tokens": 1068
+  }
+}

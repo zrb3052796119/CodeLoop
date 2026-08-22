@@ -135,12 +135,15 @@ def test_context_manager_persistence(tmp_path):
         manager = ContextManager(model="claude-sonnet-4-20250514")
         manager.add_message({"role": "user", "content": "Test"})
         
+        manager._token_calibration = 1.4
         save_context_state(manager)
         loaded = load_context_state()
         
         assert loaded is not None
         assert loaded.model == "claude-sonnet-4-20250514"
         assert len(loaded.messages) == 1
+        assert loaded.messages[0]["content"] == "Test"
+        assert loaded._token_calibration == 1.4
 
 
 # ---------------------------------------------------------------------------
