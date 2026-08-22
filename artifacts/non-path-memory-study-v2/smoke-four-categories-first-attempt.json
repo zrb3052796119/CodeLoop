@@ -1,0 +1,109 @@
+{
+  "recordedAt": "2026-08-21T16:26:17Z",
+  "results": [
+    {
+      "durationMs": 46608,
+      "id": "npmem-b1-parser-verification-rule-warm",
+      "inputTokens": 215690,
+      "modelCalls": 28,
+      "outputTokens": 3917,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "lesson-written",
+        "lesson-injected",
+        "target-content",
+        "target-verifier",
+        "target-marker"
+      ],
+      "relatedRunIds": [
+        "run_ade0a60e34e64a0f8d2b46190ca631b4"
+      ],
+      "runId": "run_c616c0482bd14aceba3773c4c502d52d",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    },
+    {
+      "durationMs": 27725,
+      "id": "npmem-b1-expired-session-repair-warm",
+      "inputTokens": 91714,
+      "modelCalls": 14,
+      "outputTokens": 2462,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "learning-failure",
+        "lesson-written",
+        "lesson-injected",
+        "target-content",
+        "target-verifier",
+        "target-marker"
+      ],
+      "relatedRunIds": [
+        "run_24487de04e8b4305aaba9b3dc4f8ec2f"
+      ],
+      "runId": "run_d6d620aca43b47db835abdfa339eadc5",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 16450,
+      "id": "npmem-b1-release-command-warm",
+      "inputTokens": 71304,
+      "modelCalls": 11,
+      "outputTokens": 1164,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "no-source-edits",
+        "learning-failure",
+        "lesson-written",
+        "lesson-injected",
+        "target-verifier",
+        "target-marker"
+      ],
+      "relatedRunIds": [
+        "run_2b83c62d31dc43429bc7452a0def4093"
+      ],
+      "runId": "run_7e60d68724634e2c8fcbe7800aeea148",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 30076,
+      "id": "npmem-b1-optional-field-constraint-warm",
+      "inputTokens": 139006,
+      "modelCalls": 20,
+      "outputTokens": 2617,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "lesson-written",
+        "lesson-injected",
+        "target-content",
+        "target-verifier",
+        "target-marker"
+      ],
+      "relatedRunIds": [
+        "run_4d2a7151bea54920a3000b730de52fb9"
+      ],
+      "runId": "run_0d7f9638546b4f2088d7ff36eb053dfc",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceReport": "artifacts/non-path-memory-study-v2/manifest.json",
+  "suiteId": "minicode-non-path-memory-live-2026-08-22-v2"
+}

@@ -1,0 +1,27 @@
+{
+  "recordedAt": "2026-08-21T02:48:11Z",
+  "results": [
+    {
+      "durationMs": 6409,
+      "id": "context-alpha-continuity",
+      "inputTokens": 11734,
+      "modelCalls": 1,
+      "outputTokens": 9,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "context-compacted",
+        "marker-retained"
+      ],
+      "runId": "run_c47a839149f34cdc88bbfb06bbc5ed1b",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceReport": "tests/fixtures/agent_quality/north-star-manifest.json",
+  "suiteId": "minicode-north-star-live-50-2026-08-20-v2"
+}

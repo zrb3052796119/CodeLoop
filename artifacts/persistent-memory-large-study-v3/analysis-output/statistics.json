@@ -1,0 +1,1238 @@
+{
+  "blockEffects": {
+    "1": {
+      "task_input_tokens": {
+        "max": 33699.0,
+        "mean": 21764.6875,
+        "median": 26238.5,
+        "min": 6530.0,
+        "n": 16,
+        "q1": 19831.5,
+        "q3": 26854.75,
+        "sd": 8369.707415983348
+      },
+      "task_model_calls": {
+        "max": 5.0,
+        "mean": 3.25,
+        "median": 4.0,
+        "min": 1.0,
+        "n": 16,
+        "q1": 3.0,
+        "q3": 4.0,
+        "sd": 1.2382783747337807
+      },
+      "tool_calls": {
+        "max": 7.0,
+        "mean": 4.5625,
+        "median": 5.0,
+        "min": 2.0,
+        "n": 16,
+        "q1": 3.75,
+        "q3": 6.0,
+        "sd": 1.631716887208072
+      }
+    },
+    "2": {
+      "task_input_tokens": {
+        "max": 26802.0,
+        "mean": 16537.5,
+        "median": 16399.5,
+        "min": 6334.0,
+        "n": 16,
+        "q1": 6529.75,
+        "q3": 26614.5,
+        "sd": 9189.773823839918
+      },
+      "task_model_calls": {
+        "max": 4.0,
+        "mean": 2.5,
+        "median": 2.5,
+        "min": 1.0,
+        "n": 16,
+        "q1": 1.0,
+        "q3": 4.0,
+        "sd": 1.3662601021279464
+      },
+      "tool_calls": {
+        "max": 6.0,
+        "mean": 3.625,
+        "median": 3.5,
+        "min": 2.0,
+        "n": 16,
+        "q1": 2.0,
+        "q3": 5.0,
+        "sd": 1.408308678285174
+      }
+    },
+    "3": {
+      "task_input_tokens": {
+        "max": 34591.0,
+        "mean": 17124.5,
+        "median": 16756.5,
+        "min": 6394.0,
+        "n": 16,
+        "q1": 6499.0,
+        "q3": 26666.5,
+        "sd": 9408.277093425058
+      },
+      "task_model_calls": {
+        "max": 5.0,
+        "mean": 2.5625,
+        "median": 2.5,
+        "min": 1.0,
+        "n": 16,
+        "q1": 1.0,
+        "q3": 4.0,
+        "sd": 1.3647344063956182
+      },
+      "tool_calls": {
+        "max": 6.0,
+        "mean": 3.6875,
+        "median": 3.5,
+        "min": 1.0,
+        "n": 16,
+        "q1": 2.0,
+        "q3": 5.0,
+        "sd": 1.778341924377874
+      }
+    }
+  },
+  "blockPairDirections": {
+    "duration_ms": {
+      "negative": 0,
+      "positive": 48,
+      "ties": 0
+    },
+    "task_input_tokens": {
+      "negative": 0,
+      "positive": 48,
+      "ties": 0
+    },
+    "task_model_calls": {
+      "negative": 0,
+      "positive": 48,
+      "ties": 0
+    },
+    "task_output_tokens": {
+      "negative": 0,
+      "positive": 48,
+      "ties": 0
+    },
+    "tool_calls": {
+      "negative": 0,
+      "positive": 48,
+      "ties": 0
+    },
+    "tool_failures": {
+      "negative": 0,
+      "positive": 1,
+      "ties": 47
+    }
+  },
+  "bootstrap": {
+    "method": "family-cluster percentile bootstrap",
+    "samples": 20000,
+    "seed": 20260821
+  },
+  "conditionOrderEffects": {
+    "cold_first": {
+      "task_input_tokens": {
+        "max": 27662.0,
+        "mean": 18047.041666666668,
+        "median": 19863.5,
+        "min": 6413.0,
+        "n": 24,
+        "q1": 13044.75,
+        "q3": 26539.25,
+        "sd": 7858.118026043633
+      },
+      "task_model_calls": {
+        "max": 4.0,
+        "mean": 2.7083333333333335,
+        "median": 3.0,
+        "min": 1.0,
+        "n": 24,
+        "q1": 2.0,
+        "q3": 4.0,
+        "sd": 1.1601786469133204
+      },
+      "tool_calls": {
+        "max": 7.0,
+        "mean": 3.9166666666666665,
+        "median": 4.0,
+        "min": 1.0,
+        "n": 24,
+        "q1": 2.75,
+        "q3": 5.0,
+        "sd": 1.5857152183236398
+      }
+    },
+    "warm_first": {
+      "task_input_tokens": {
+        "max": 34591.0,
+        "mean": 18904.083333333332,
+        "median": 23236.5,
+        "min": 6334.0,
+        "n": 24,
+        "q1": 6517.75,
+        "q3": 26806.0,
+        "sd": 10381.058117789706
+      },
+      "task_model_calls": {
+        "max": 5.0,
+        "mean": 2.8333333333333335,
+        "median": 3.5,
+        "min": 1.0,
+        "n": 24,
+        "q1": 1.0,
+        "q3": 4.0,
+        "sd": 1.522773975253762
+      },
+      "tool_calls": {
+        "max": 6.0,
+        "mean": 4.0,
+        "median": 4.0,
+        "min": 1.0,
+        "n": 24,
+        "q1": 2.0,
+        "q3": 6.0,
+        "sd": 1.7194539072421904
+      }
+    }
+  },
+  "conditionSummary": {
+    "cold": {
+      "case_oracle_successes": 47,
+      "direct_first": 0,
+      "duration_ms": {
+        "max": 11799.0,
+        "mean": 6828.104166666667,
+        "median": 6628.0,
+        "min": 3633.0,
+        "n": 48,
+        "q1": 5293.0,
+        "q3": 8469.5,
+        "sd": 1865.8085605611097
+      },
+      "memory_injections": 0,
+      "target_successes": 47,
+      "target_turns": 48,
+      "task_input_tokens": {
+        "max": 47878.0,
+        "mean": 32077.875,
+        "median": 33344.0,
+        "min": 19639.0,
+        "n": 48,
+        "q1": 19929.25,
+        "q3": 39984.75,
+        "sd": 8954.945826190129
+      },
+      "task_model_calls": {
+        "max": 7.0,
+        "mean": 4.8125,
+        "median": 5.0,
+        "min": 3.0,
+        "n": 48,
+        "q1": 3.0,
+        "q3": 6.0,
+        "sd": 1.315314864011413
+      },
+      "task_output_tokens": {
+        "max": 521.0,
+        "mean": 289.875,
+        "median": 278.5,
+        "min": 149.0,
+        "n": 48,
+        "q1": 218.75,
+        "q3": 329.5,
+        "sd": 85.1703237199037
+      },
+      "tool_calls": {
+        "max": 8.0,
+        "mean": 5.0,
+        "median": 5.0,
+        "min": 2.0,
+        "n": 48,
+        "q1": 3.75,
+        "q3": 6.0,
+        "sd": 1.624283802892963
+      },
+      "tool_failures": {
+        "max": 1.0,
+        "mean": 0.020833333333333332,
+        "median": 0.0,
+        "min": 0.0,
+        "n": 48,
+        "q1": 0.0,
+        "q3": 0.0,
+        "sd": 0.14433756729740643
+      }
+    },
+    "warm": {
+      "case_oracle_successes": 48,
+      "direct_first": 48,
+      "duration_ms": {
+        "max": 4841.0,
+        "mean": 3137.4375,
+        "median": 3207.0,
+        "min": 1837.0,
+        "n": 48,
+        "q1": 2720.25,
+        "q3": 3482.0,
+        "sd": 644.3058249082018
+      },
+      "memory_injections": 48,
+      "target_successes": 48,
+      "target_turns": 48,
+      "task_input_tokens": {
+        "max": 20249.0,
+        "mean": 13602.3125,
+        "median": 13331.0,
+        "min": 13245.0,
+        "n": 48,
+        "q1": 13266.75,
+        "q3": 13367.0,
+        "sd": 1385.8119389199933
+      },
+      "task_model_calls": {
+        "max": 3.0,
+        "mean": 2.0416666666666665,
+        "median": 2.0,
+        "min": 2.0,
+        "n": 48,
+        "q1": 2.0,
+        "q3": 2.0,
+        "sd": 0.20194093652345885
+      },
+      "task_output_tokens": {
+        "max": 227.0,
+        "mean": 114.45833333333333,
+        "median": 110.0,
+        "min": 59.0,
+        "n": 48,
+        "q1": 91.75,
+        "q3": 133.75,
+        "sd": 31.102410341933535
+      },
+      "tool_calls": {
+        "max": 2.0,
+        "mean": 1.0416666666666667,
+        "median": 1.0,
+        "min": 1.0,
+        "n": 48,
+        "q1": 1.0,
+        "q3": 1.0,
+        "sd": 0.20194093652345885
+      },
+      "tool_failures": {
+        "max": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "n": 48,
+        "q1": 0.0,
+        "q3": 0.0,
+        "sd": 0.0
+      }
+    }
+  },
+  "familyCount": 16,
+  "inferentialUnit": "family",
+  "learningSummary": {
+    "caseOracleSuccesses": 24,
+    "descriptiveConservativeBreakEvenReuses": {
+      "endToEndInputTokens": 2.027703132770784,
+      "interpretation": "Treats the whole useful recovery Turn as Memory overhead; therefore conservative and descriptive, not an inferential endpoint.",
+      "taskInputTokens": 1.933505706170715
+    },
+    "lessonCreationTurns": 24,
+    "taskInputTokens": {
+      "max": 49782.0,
+      "mean": 39228.333333333336,
+      "median": 41465.5,
+      "min": 27671.0,
+      "n": 24,
+      "q1": 34703.75,
+      "q3": 48686.75,
+      "sd": 8048.608454756078
+    },
+    "taskModelCalls": {
+      "max": 7.0,
+      "mean": 5.625,
+      "median": 6.0,
+      "min": 4.0,
+      "n": 24,
+      "q1": 5.0,
+      "q3": 7.0,
+      "sd": 1.1349200316590018
+    },
+    "toolCalls": {
+      "max": 8.0,
+      "mean": 5.166666666666667,
+      "median": 5.0,
+      "min": 3.0,
+      "n": 24,
+      "q1": 4.0,
+      "q3": 7.0,
+      "sd": 1.5788456616111677
+    },
+    "totalInputTokens": {
+      "max": 51995.0,
+      "mean": 41281.416666666664,
+      "median": 43414.5,
+      "min": 29509.0,
+      "n": 24,
+      "q1": 36598.5,
+      "q3": 50886.5,
+      "sd": 8178.912928281227
+    },
+    "verifiedRecoveries": 24
+  },
+  "lessonModeCounts": {
+    "learned": 8,
+    "seeded": 8
+  },
+  "manifestSha256": "923272933307127ab0a99e45e1e8449f10ee8a121810baf05e71196d195f6e0d",
+  "metrics": {
+    "duration_ms": {
+      "cold_family_summary": {
+        "max": 9247.333333333334,
+        "mean": 6828.104166666667,
+        "median": 6997.333333333333,
+        "min": 4378.0,
+        "n": 16,
+        "q1": 5856.333333333333,
+        "q3": 7412.583333333333,
+        "sd": 1336.7899955227185
+      },
+      "direction": "positive savings favor Memory",
+      "family_cluster_bootstrap": {
+        "absolute": {
+          "ci95": [
+            3064.4770833333337,
+            4296.981770833332
+          ],
+          "estimate": 3690.666666666667
+        },
+        "relative_percent": {
+          "ci95": [
+            49.230852390066644,
+            57.973926868483154
+          ],
+          "estimate": 54.051118386326124
+        },
+        "samples": 20000,
+        "seed": 20260821
+      },
+      "hodges_lehmann_saving": 3691.166666666666,
+      "label": "Elapsed duration (ms)",
+      "saving_family_summary": {
+        "max": 5970.333333333334,
+        "mean": 3690.6666666666665,
+        "median": 3896.5,
+        "min": 1261.0,
+        "n": 16,
+        "q1": 2854.0,
+        "q3": 4675.916666666667,
+        "sd": 1306.7712883286042
+      },
+      "sign_test_exact": {
+        "n_nonzero": 16,
+        "negative": 0,
+        "p_two_sided": 3.0517578125e-05,
+        "positive": 16,
+        "zero": 0
+      },
+      "warm_family_summary": {
+        "max": 3710.6666666666665,
+        "mean": 3137.4375,
+        "median": 3118.333333333333,
+        "min": 2561.0,
+        "n": 16,
+        "q1": 2977.8333333333335,
+        "q3": 3393.5,
+        "sd": 308.19740472265136
+      },
+      "wilcoxon_exact": {
+        "n_nonzero": 16,
+        "p_two_sided": 3.0517578125e-05,
+        "rank_biserial": 1.0,
+        "statistic": 0.0,
+        "w_minus": 0.0,
+        "w_plus": 136.0
+      },
+      "wilcoxon_holm_p_exploratory_family": 0.0001220703125
+    },
+    "task_input_tokens": {
+      "cold_family_summary": {
+        "max": 39991.0,
+        "mean": 32077.875,
+        "median": 33268.83333333333,
+        "min": 19737.0,
+        "n": 16,
+        "q1": 28830.833333333332,
+        "q3": 37807.666666666664,
+        "sd": 6196.77646292663
+      },
+      "direction": "positive savings favor Memory",
+      "family_cluster_bootstrap": {
+        "absolute": {
+          "ci95": [
+            15377.633854166666,
+            21412.038020833323
+          ],
+          "estimate": 18475.5625
+        },
+        "relative_percent": {
+          "ci95": [
+            52.807301935780494,
+            61.403406820687614
+          ],
+          "estimate": 57.59596762566099
+        },
+        "samples": 20000,
+        "seed": 20260821
+      },
+      "hodges_lehmann_saving": 18096.25,
+      "label": "Task input tokens",
+      "saving_family_summary": {
+        "max": 26646.0,
+        "mean": 18475.5625,
+        "median": 18947.833333333336,
+        "min": 6482.666666666666,
+        "n": 16,
+        "q1": 15500.833333333332,
+        "q3": 24465.5,
+        "sd": 6381.992762880805
+      },
+      "sign_test_exact": {
+        "n_nonzero": 16,
+        "negative": 0,
+        "p_two_sided": 3.0517578125e-05,
+        "positive": 16,
+        "zero": 0
+      },
+      "warm_family_summary": {
+        "max": 15664.666666666666,
+        "mean": 13602.3125,
+        "median": 13347.666666666668,
+        "min": 13254.333333333334,
+        "n": 16,
+        "q1": 13271.416666666666,
+        "q3": 13368.833333333334,
+        "sd": 783.6881888320218
+      },
+      "wilcoxon_exact": {
+        "n_nonzero": 16,
+        "p_two_sided": 3.0517578125e-05,
+        "rank_biserial": 1.0,
+        "statistic": 0.0,
+        "w_minus": 0.0,
+        "w_plus": 136.0
+      },
+      "wilcoxon_holm_p_primary_family": 6.103515625e-05
+    },
+    "task_model_calls": {
+      "cold_family_summary": {
+        "max": 6.0,
+        "mean": 4.8125,
+        "median": 5.0,
+        "min": 3.0,
+        "n": 16,
+        "q1": 4.333333333333333,
+        "q3": 5.666666666666667,
+        "sd": 0.9186846474615115
+      },
+      "direction": "positive savings favor Memory",
+      "family_cluster_bootstrap": {
+        "absolute": {
+          "ci95": [
+            2.3125,
+            3.2083333333333335
+          ],
+          "estimate": 2.7708333333333335
+        },
+        "relative_percent": {
+          "ci95": [
+            52.857142857142854,
+            61.354581673306775
+          ],
+          "estimate": 57.575757575757585
+        },
+        "samples": 20000,
+        "seed": 20260821
+      },
+      "hodges_lehmann_saving": 2.666666666666667,
+      "label": "Task model calls",
+      "saving_family_summary": {
+        "max": 4.0,
+        "mean": 2.770833333333333,
+        "median": 2.833333333333333,
+        "min": 1.0,
+        "n": 16,
+        "q1": 2.333333333333333,
+        "q3": 3.666666666666667,
+        "sd": 0.9484392637575889
+      },
+      "sign_test_exact": {
+        "n_nonzero": 16,
+        "negative": 0,
+        "p_two_sided": 3.0517578125e-05,
+        "positive": 16,
+        "zero": 0
+      },
+      "warm_family_summary": {
+        "max": 2.3333333333333335,
+        "mean": 2.0416666666666665,
+        "median": 2.0,
+        "min": 2.0,
+        "n": 16,
+        "q1": 2.0,
+        "q3": 2.0,
+        "sd": 0.11385500851066226
+      },
+      "wilcoxon_exact": {
+        "n_nonzero": 16,
+        "p_two_sided": 3.0517578125e-05,
+        "rank_biserial": 1.0,
+        "statistic": 0.0,
+        "w_minus": 0.0,
+        "w_plus": 136.0
+      },
+      "wilcoxon_holm_p_exploratory_family": 0.0001220703125
+    },
+    "task_output_tokens": {
+      "cold_family_summary": {
+        "max": 362.3333333333333,
+        "mean": 289.875,
+        "median": 295.66666666666663,
+        "min": 172.0,
+        "n": 16,
+        "q1": 276.25,
+        "q3": 320.4166666666667,
+        "sd": 50.85606049320856
+      },
+      "direction": "positive savings favor Memory",
+      "family_cluster_bootstrap": {
+        "absolute": {
+          "ci95": [
+            150.29114583333333,
+            197.41666666666669
+          ],
+          "estimate": 175.41666666666669
+        },
+        "relative_percent": {
+          "ci95": [
+            56.028696255353466,
+            63.8956020434618
+          ],
+          "estimate": 60.514589621963495
+        },
+        "samples": 20000,
+        "seed": 20260821
+      },
+      "hodges_lehmann_saving": 182.83333333333331,
+      "label": "Task output tokens",
+      "saving_family_summary": {
+        "max": 245.0,
+        "mean": 175.41666666666666,
+        "median": 189.5,
+        "min": 65.66666666666669,
+        "n": 16,
+        "q1": 156.33333333333331,
+        "q3": 208.08333333333331,
+        "sd": 50.06773190167273
+      },
+      "sign_test_exact": {
+        "n_nonzero": 16,
+        "negative": 0,
+        "p_two_sided": 3.0517578125e-05,
+        "positive": 16,
+        "zero": 0
+      },
+      "warm_family_summary": {
+        "max": 149.66666666666666,
+        "mean": 114.45833333333333,
+        "median": 108.16666666666666,
+        "min": 90.0,
+        "n": 16,
+        "q1": 101.66666666666667,
+        "q3": 125.58333333333334,
+        "sd": 17.839147546482852
+      },
+      "wilcoxon_exact": {
+        "n_nonzero": 16,
+        "p_two_sided": 3.0517578125e-05,
+        "rank_biserial": 1.0,
+        "statistic": 0.0,
+        "w_minus": 0.0,
+        "w_plus": 136.0
+      },
+      "wilcoxon_holm_p_exploratory_family": 0.0001220703125
+    },
+    "tool_calls": {
+      "cold_family_summary": {
+        "max": 6.666666666666667,
+        "mean": 5.0,
+        "median": 5.166666666666666,
+        "min": 2.6666666666666665,
+        "n": 16,
+        "q1": 4.333333333333333,
+        "q3": 5.75,
+        "sd": 1.1547005383792515
+      },
+      "direction": "positive savings favor Memory",
+      "family_cluster_bootstrap": {
+        "absolute": {
+          "ci95": [
+            3.375,
+            4.479166666666666
+          ],
+          "estimate": 3.958333333333333
+        },
+        "relative_percent": {
+          "ci95": [
+            76.12612612612612,
+            81.29503267614915
+          ],
+          "estimate": 79.16666666666666
+        },
+        "samples": 20000,
+        "seed": 20260821
+      },
+      "hodges_lehmann_saving": 4.0,
+      "label": "Repository tool calls",
+      "saving_family_summary": {
+        "max": 5.333333333333334,
+        "mean": 3.9583333333333335,
+        "median": 4.166666666666666,
+        "min": 1.6666666666666665,
+        "n": 16,
+        "q1": 3.333333333333333,
+        "q3": 4.75,
+        "sd": 1.1603000888978232
+      },
+      "sign_test_exact": {
+        "n_nonzero": 16,
+        "negative": 0,
+        "p_two_sided": 3.0517578125e-05,
+        "positive": 16,
+        "zero": 0
+      },
+      "warm_family_summary": {
+        "max": 1.3333333333333333,
+        "mean": 1.0416666666666667,
+        "median": 1.0,
+        "min": 1.0,
+        "n": 16,
+        "q1": 1.0,
+        "q3": 1.0,
+        "sd": 0.11385500851066217
+      },
+      "wilcoxon_exact": {
+        "n_nonzero": 16,
+        "p_two_sided": 3.0517578125e-05,
+        "rank_biserial": 1.0,
+        "statistic": 0.0,
+        "w_minus": 0.0,
+        "w_plus": 136.0
+      },
+      "wilcoxon_holm_p_primary_family": 6.103515625e-05
+    },
+    "tool_failures": {
+      "cold_family_summary": {
+        "max": 0.3333333333333333,
+        "mean": 0.020833333333333332,
+        "median": 0.0,
+        "min": 0.0,
+        "n": 16,
+        "q1": 0.0,
+        "q3": 0.0,
+        "sd": 0.08333333333333333
+      },
+      "direction": "positive savings favor Memory",
+      "family_cluster_bootstrap": {
+        "absolute": {
+          "ci95": [
+            0.0,
+            0.0625
+          ],
+          "estimate": 0.020833333333333332
+        },
+        "relative_percent": {
+          "ci95": [
+            99.99999999999999,
+            100.0
+          ],
+          "estimate": 99.99999999999999
+        },
+        "samples": 20000,
+        "seed": 20260821
+      },
+      "hodges_lehmann_saving": 0.0,
+      "label": "Tool failures",
+      "saving_family_summary": {
+        "max": 0.3333333333333333,
+        "mean": 0.020833333333333332,
+        "median": 0.0,
+        "min": 0.0,
+        "n": 16,
+        "q1": 0.0,
+        "q3": 0.0,
+        "sd": 0.08333333333333333
+      },
+      "sign_test_exact": {
+        "n_nonzero": 1,
+        "negative": 0,
+        "p_two_sided": 1.0,
+        "positive": 1,
+        "zero": 15
+      },
+      "warm_family_summary": {
+        "max": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "n": 16,
+        "q1": 0.0,
+        "q3": 0.0,
+        "sd": 0.0
+      },
+      "wilcoxon_exact": {
+        "n_nonzero": 1,
+        "p_two_sided": 1.0,
+        "rank_biserial": 1.0,
+        "statistic": 0.0,
+        "w_minus": 0.0,
+        "w_plus": 1.0
+      },
+      "wilcoxon_holm_p_exploratory_family": 1.0
+    }
+  },
+  "nestedBlocksPerFamily": 3,
+  "pairCount": 48,
+  "resultSha256": "6cb06e4ce0aca747f837a678b8f678ceb7b5249ba6ae4e078664c55adbaed592",
+  "schemaVersion": 1,
+  "stratumCounts": {
+    "application-security": 4,
+    "data-governance": 4,
+    "developer-platform": 4,
+    "operations": 4
+  },
+  "subgroupEffects": {
+    "learned": {
+      "task_input_tokens": {
+        "cold_family_summary": {
+          "max": 39991.0,
+          "mean": 33938.041666666664,
+          "median": 33711.66666666667,
+          "min": 24216.333333333332,
+          "n": 8,
+          "q1": 32195.916666666668,
+          "q3": 38310.833333333336,
+          "sd": 5454.785935414009
+        },
+        "direction": "positive savings favor Memory",
+        "family_cluster_bootstrap": {
+          "absolute": {
+            "ci95": [
+              16641.87291666667,
+              23750.124999999996
+            ],
+            "estimate": 20288.70833333333
+          },
+          "relative_percent": {
+            "ci95": [
+              54.8121067960509,
+              63.82584007204002
+            ],
+            "estimate": 59.781611834310795
+          },
+          "samples": 20000,
+          "seed": 20260821
+        },
+        "hodges_lehmann_saving": 20326.58333333333,
+        "label": "Task input tokens",
+        "saving_family_summary": {
+          "max": 26646.0,
+          "mean": 20288.708333333332,
+          "median": 20204.499999999996,
+          "min": 10860.666666666666,
+          "n": 8,
+          "q1": 17325.333333333336,
+          "q3": 24940.5,
+          "sd": 5532.316941756647
+        },
+        "sign_test_exact": {
+          "n_nonzero": 8,
+          "negative": 0,
+          "p_two_sided": 0.0078125,
+          "positive": 8,
+          "zero": 0
+        },
+        "warm_family_summary": {
+          "max": 15664.666666666666,
+          "mean": 13649.333333333334,
+          "median": 13362.166666666668,
+          "min": 13345.0,
+          "n": 8,
+          "q1": 13354.333333333334,
+          "q3": 13375.833333333334,
+          "sd": 814.4051680691726
+        },
+        "wilcoxon_exact": {
+          "n_nonzero": 8,
+          "p_two_sided": 0.0078125,
+          "rank_biserial": 1.0,
+          "statistic": 0.0,
+          "w_minus": 0.0,
+          "w_plus": 36.0
+        }
+      },
+      "task_model_calls": {
+        "cold_family_summary": {
+          "max": 6.0,
+          "mean": 5.083333333333333,
+          "median": 5.0,
+          "min": 3.6666666666666665,
+          "n": 8,
+          "q1": 4.833333333333333,
+          "q3": 5.75,
+          "sd": 0.8116219309075864
+        },
+        "direction": "positive savings favor Memory",
+        "family_cluster_bootstrap": {
+          "absolute": {
+            "ci95": [
+              2.5,
+              3.5416666666666674
+            ],
+            "estimate": 3.0416666666666665
+          },
+          "relative_percent": {
+            "ci95": [
+              54.95495495495495,
+              63.909774436090224
+            ],
+            "estimate": 59.83606557377049
+          },
+          "samples": 20000,
+          "seed": 20260821
+        },
+        "hodges_lehmann_saving": 3.0,
+        "label": "Task model calls",
+        "saving_family_summary": {
+          "max": 4.0,
+          "mean": 3.0416666666666665,
+          "median": 3.0,
+          "min": 1.6666666666666665,
+          "n": 8,
+          "q1": 2.583333333333333,
+          "q3": 3.75,
+          "sd": 0.8249579113843055
+        },
+        "sign_test_exact": {
+          "n_nonzero": 8,
+          "negative": 0,
+          "p_two_sided": 0.0078125,
+          "positive": 8,
+          "zero": 0
+        },
+        "warm_family_summary": {
+          "max": 2.3333333333333335,
+          "mean": 2.0416666666666665,
+          "median": 2.0,
+          "min": 2.0,
+          "n": 8,
+          "q1": 2.0,
+          "q3": 2.0,
+          "sd": 0.11785113019775798
+        },
+        "wilcoxon_exact": {
+          "n_nonzero": 8,
+          "p_two_sided": 0.0078125,
+          "rank_biserial": 1.0,
+          "statistic": 0.0,
+          "w_minus": 0.0,
+          "w_plus": 36.0
+        }
+      },
+      "tool_calls": {
+        "cold_family_summary": {
+          "max": 6.666666666666667,
+          "mean": 5.541666666666667,
+          "median": 5.833333333333334,
+          "min": 3.3333333333333335,
+          "n": 8,
+          "q1": 5.25,
+          "q3": 6.083333333333333,
+          "sd": 1.037969629797015
+        },
+        "direction": "positive savings favor Memory",
+        "family_cluster_bootstrap": {
+          "absolute": {
+            "ci95": [
+              3.791666666666667,
+              5.041666666666667
+            ],
+            "estimate": 4.5
+          },
+          "relative_percent": {
+            "ci95": [
+              78.63247863247862,
+              82.97872340425532
+            ],
+            "estimate": 81.203007518797
+          },
+          "samples": 20000,
+          "seed": 20260821
+        },
+        "hodges_lehmann_saving": 4.666666666666666,
+        "label": "Repository tool calls",
+        "saving_family_summary": {
+          "max": 5.333333333333334,
+          "mean": 4.5,
+          "median": 4.833333333333334,
+          "min": 2.3333333333333335,
+          "n": 8,
+          "q1": 4.25,
+          "q3": 5.083333333333333,
+          "sd": 0.9920317455237933
+        },
+        "sign_test_exact": {
+          "n_nonzero": 8,
+          "negative": 0,
+          "p_two_sided": 0.0078125,
+          "positive": 8,
+          "zero": 0
+        },
+        "warm_family_summary": {
+          "max": 1.3333333333333333,
+          "mean": 1.0416666666666667,
+          "median": 1.0,
+          "min": 1.0,
+          "n": 8,
+          "q1": 1.0,
+          "q3": 1.0,
+          "sd": 0.11785113019775789
+        },
+        "wilcoxon_exact": {
+          "n_nonzero": 8,
+          "p_two_sided": 0.0078125,
+          "rank_biserial": 1.0,
+          "statistic": 0.0,
+          "w_minus": 0.0,
+          "w_plus": 36.0
+        }
+      }
+    },
+    "seeded": {
+      "task_input_tokens": {
+        "cold_family_summary": {
+          "max": 39837.666666666664,
+          "mean": 30217.708333333332,
+          "median": 29028.0,
+          "min": 19737.0,
+          "n": 8,
+          "q1": 27622.0,
+          "q3": 34403.416666666664,
+          "sd": 6679.972522606494
+        },
+        "direction": "positive savings favor Memory",
+        "family_cluster_bootstrap": {
+          "absolute": {
+            "ci95": [
+              12115.655208333332,
+              21212.875
+            ],
+            "estimate": 16662.416666666664
+          },
+          "relative_percent": {
+            "ci95": [
+              46.690520753055154,
+              61.43662534953853
+            ],
+            "estimate": 55.14123203143851
+          },
+          "samples": 20000,
+          "seed": 20260821
+        },
+        "hodges_lehmann_saving": 16206.916666666666,
+        "label": "Task input tokens",
+        "saving_family_summary": {
+          "max": 26565.0,
+          "mean": 16662.416666666668,
+          "median": 15743.833333333332,
+          "min": 6482.666666666666,
+          "n": 8,
+          "q1": 13786.249999999998,
+          "q3": 21136.25,
+          "sd": 7011.23378348395
+        },
+        "sign_test_exact": {
+          "n_nonzero": 8,
+          "negative": 0,
+          "p_two_sided": 0.0078125,
+          "positive": 8,
+          "zero": 0
+        },
+        "warm_family_summary": {
+          "max": 15547.0,
+          "mean": 13555.291666666666,
+          "median": 13270.166666666666,
+          "min": 13254.333333333334,
+          "n": 8,
+          "q1": 13266.583333333334,
+          "q3": 13281.583333333334,
+          "sd": 804.8373282844179
+        },
+        "wilcoxon_exact": {
+          "n_nonzero": 8,
+          "p_two_sided": 0.0078125,
+          "rank_biserial": 1.0,
+          "statistic": 0.0,
+          "w_minus": 0.0,
+          "w_plus": 36.0
+        }
+      },
+      "task_model_calls": {
+        "cold_family_summary": {
+          "max": 6.0,
+          "mean": 4.541666666666667,
+          "median": 4.333333333333333,
+          "min": 3.0,
+          "n": 8,
+          "q1": 4.166666666666667,
+          "q3": 5.166666666666667,
+          "sd": 0.991031208965115
+        },
+        "direction": "positive savings favor Memory",
+        "family_cluster_bootstrap": {
+          "absolute": {
+            "ci95": [
+              1.833333333333333,
+              3.166666666666667
+            ],
+            "estimate": 2.5000000000000004
+          },
+          "relative_percent": {
+            "ci95": [
+              46.73913043478261,
+              61.29032258064516
+            ],
+            "estimate": 55.045871559633035
+          },
+          "samples": 20000,
+          "seed": 20260821
+        },
+        "hodges_lehmann_saving": 2.416666666666667,
+        "label": "Task model calls",
+        "saving_family_summary": {
+          "max": 4.0,
+          "mean": 2.5,
+          "median": 2.333333333333333,
+          "min": 1.0,
+          "n": 8,
+          "q1": 2.083333333333333,
+          "q3": 3.166666666666667,
+          "sd": 1.0389249632986395
+        },
+        "sign_test_exact": {
+          "n_nonzero": 8,
+          "negative": 0,
+          "p_two_sided": 0.0078125,
+          "positive": 8,
+          "zero": 0
+        },
+        "warm_family_summary": {
+          "max": 2.3333333333333335,
+          "mean": 2.0416666666666665,
+          "median": 2.0,
+          "min": 2.0,
+          "n": 8,
+          "q1": 2.0,
+          "q3": 2.0,
+          "sd": 0.11785113019775798
+        },
+        "wilcoxon_exact": {
+          "n_nonzero": 8,
+          "p_two_sided": 0.0078125,
+          "rank_biserial": 1.0,
+          "statistic": 0.0,
+          "w_minus": 0.0,
+          "w_plus": 36.0
+        }
+      },
+      "tool_calls": {
+        "cold_family_summary": {
+          "max": 5.666666666666667,
+          "mean": 4.458333333333333,
+          "median": 4.5,
+          "min": 2.6666666666666665,
+          "n": 8,
+          "q1": 4.083333333333333,
+          "q3": 5.166666666666667,
+          "sd": 1.0531509787903084
+        },
+        "direction": "positive savings favor Memory",
+        "family_cluster_bootstrap": {
+          "absolute": {
+            "ci95": [
+              2.666666666666667,
+              4.125
+            ],
+            "estimate": 3.416666666666666
+          },
+          "relative_percent": {
+            "ci95": [
+              70.96774193548387,
+              80.32786885245902
+            ],
+            "estimate": 76.63551401869158
+          },
+          "samples": 20000,
+          "seed": 20260821
+        },
+        "hodges_lehmann_saving": 3.416666666666667,
+        "label": "Repository tool calls",
+        "saving_family_summary": {
+          "max": 4.666666666666667,
+          "mean": 3.4166666666666665,
+          "median": 3.5,
+          "min": 1.6666666666666665,
+          "n": 8,
+          "q1": 3.0,
+          "q3": 4.166666666666667,
+          "sd": 1.1091252094144874
+        },
+        "sign_test_exact": {
+          "n_nonzero": 8,
+          "negative": 0,
+          "p_two_sided": 0.0078125,
+          "positive": 8,
+          "zero": 0
+        },
+        "warm_family_summary": {
+          "max": 1.3333333333333333,
+          "mean": 1.0416666666666667,
+          "median": 1.0,
+          "min": 1.0,
+          "n": 8,
+          "q1": 1.0,
+          "q3": 1.0,
+          "sd": 0.11785113019775789
+        },
+        "wilcoxon_exact": {
+          "n_nonzero": 8,
+          "p_two_sided": 0.0078125,
+          "rank_biserial": 1.0,
+          "statistic": 0.0,
+          "w_minus": 0.0,
+          "w_plus": 36.0
+        }
+      }
+    }
+  },
+  "suiteId": "minicode-persistent-memory-large-live-2026-08-21-v3",
+  "targetTurnCount": 96
+}

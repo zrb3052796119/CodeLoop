@@ -1,0 +1,29 @@
+{
+  "recordedAt": "2026-08-21T07:55:48Z",
+  "results": [
+    {
+      "durationMs": 8610,
+      "id": "memory-chain-auth",
+      "inputTokens": 46456,
+      "modelCalls": 7,
+      "outputTokens": 439,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "marker-retained"
+      ],
+      "relatedRunIds": [
+        "run_ecaa6516b2324f6c9cd9b5f45ee7718b"
+      ],
+      "runId": "run_da09f622f86445dd87c723a36bc3c65e",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceReport": "artifacts/north-star-memory-compaction-20-v2/manifest.json",
+  "suiteId": "minicode-memory-compaction-live-20-2026-08-21-v2"
+}

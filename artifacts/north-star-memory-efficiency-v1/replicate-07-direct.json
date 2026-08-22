@@ -1,0 +1,174 @@
+{
+  "recordedAt": "2026-08-21T11:14:06Z",
+  "results": [
+    {
+      "durationMs": 19628,
+      "id": "memory-chain-auth",
+      "inputTokens": 58687,
+      "modelCalls": 10,
+      "outputTokens": 1281,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-retained"
+      ],
+      "relatedRunIds": [
+        "run_5056fbc137e84d7da901d3a47f7f0ea4"
+      ],
+      "runId": "run_21ebace4da5a429c93020b9b59c3fefa",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6249,
+      "id": "memory-cold-auth",
+      "inputTokens": 26541,
+      "modelCalls": 4,
+      "outputTokens": 347,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_57031abd37d84ffe9496ed7d9d17d261",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 13408,
+      "id": "memory-chain-runtime",
+      "inputTokens": 42871,
+      "modelCalls": 7,
+      "outputTokens": 921,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-retained"
+      ],
+      "relatedRunIds": [
+        "run_c395948675a848a49f2dbe52f6999d54"
+      ],
+      "runId": "run_cb57ec56805849c08a8a64e4696f07f1",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 9633,
+      "id": "memory-cold-runtime",
+      "inputTokens": 41153,
+      "modelCalls": 6,
+      "outputTokens": 514,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_ba6b7e1ebf204eb89ab09a38adb89dd6",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 2852,
+      "id": "memory-warm-deploy",
+      "inputTokens": 13182,
+      "modelCalls": 2,
+      "outputTokens": 125,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_1b497bbdec5d4d799558c6d60b46c9d1",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5632,
+      "id": "memory-cold-deploy",
+      "inputTokens": 26420,
+      "modelCalls": 4,
+      "outputTokens": 231,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_3edd9559670748b59e89cd9aa438fe4a",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 3374,
+      "id": "memory-warm-schema",
+      "inputTokens": 13165,
+      "modelCalls": 2,
+      "outputTokens": 128,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_507a4a454268474eb6ddfbf81426ccda",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 7885,
+      "id": "memory-cold-schema",
+      "inputTokens": 33091,
+      "modelCalls": 5,
+      "outputTokens": 275,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_f3510a426a6049d3a34c7f1bf5e69cb7",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceReport": "artifacts/north-star-memory-compaction-20-v3/manifest.json",
+  "suiteId": "minicode-memory-compaction-live-20-2026-08-21-v3"
+}

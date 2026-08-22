@@ -1,0 +1,27 @@
+{
+  "recordedAt": "2026-08-21T05:00:00Z",
+  "results": [
+    {
+      "durationMs": 7694,
+      "id": "context-goal-retention",
+      "inputTokens": 9841,
+      "modelCalls": 1,
+      "outputTokens": 14,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "context-compacted",
+        "critical-state-retained"
+      ],
+      "runId": "run_93b8a1b8679a461ea3f12b9924d1b7c3",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceReport": "artifacts/north-star-memory-compaction-20/manifest.json",
+  "suiteId": "minicode-memory-compaction-live-20-2026-08-21-v1"
+}

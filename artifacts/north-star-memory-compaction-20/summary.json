@@ -1,0 +1,71 @@
+{
+  "addendum": {
+    "invalid_file_source_task": true,
+    "task_success": 3,
+    "tasks": 4,
+    "valid_required_tool_tasks": 3
+  },
+  "compaction": {
+    "retained": 10,
+    "retention_wilson_95": [
+      0.7224672001371107,
+      0.9999999999999999
+    ],
+    "tasks": 10,
+    "tasks_with_effective_compaction": 10,
+    "tokens_freed_total": 44879
+  },
+  "memory": {
+    "genuine_lessons_injected": 1,
+    "genuine_lessons_written": 2,
+    "intended_warm_injected": 3,
+    "learn_to_inject_wilson_95": [
+      0.09453120573423074,
+      0.9054687942657693
+    ],
+    "lesson_entries": [
+      {
+        "approval_policy": "auto_approve_verified",
+        "approval_status": "approved",
+        "case_id": "memory-chain-auth",
+        "entry_id": "project-1787280784202590000-cf298564",
+        "injection_count": 1,
+        "retrieval_count": 1,
+        "safety_reason": "",
+        "safety_status": "safe"
+      },
+      {
+        "approval_policy": "user_review_required",
+        "approval_status": "pending",
+        "case_id": "memory-chain-runtime",
+        "entry_id": "project-1787280803750562000-1a61db66",
+        "injection_count": 0,
+        "retrieval_count": 0,
+        "safety_reason": "trace contains untrusted unsafe-looking text: empty memory content",
+        "safety_status": "suspicious"
+      }
+    ],
+    "tool_call_differences": [
+      -1,
+      1,
+      -1,
+      0
+    ],
+    "tool_call_losses": 1,
+    "tool_call_mean_difference": -0.25,
+    "tool_call_median_difference": -0.5,
+    "tool_call_rank_biserial": 0.3333333333333333,
+    "tool_call_sign_test_p": 1.0,
+    "tool_call_wins": 2,
+    "warm_injection_wilson_95": [
+      0.30064184258240184,
+      0.9544127391902995
+    ]
+  },
+  "primary": {
+    "cases": 17,
+    "strict_cases_passed": 16,
+    "task_success": 20,
+    "tasks": 20
+  }
+}

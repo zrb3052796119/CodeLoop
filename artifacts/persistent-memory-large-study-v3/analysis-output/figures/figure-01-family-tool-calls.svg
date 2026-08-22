@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="880" viewBox="0 0 1180 880" role="img" aria-labelledby="title desc">
+<title id="title">Family-level repository tool calls</title>
+<desc id="desc">Generated from frozen study data.</desc>
+<rect width="100%" height="100%" fill="white"/>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#222}</style>
+<text x="235" y="35" font-size="24" font-weight="700">Persistent Memory reduces repository discovery calls</text>
+<text x="235" y="62" font-size="15">Each point is a family mean across three provider blocks; lines join paired conditions.</text>
+<line x1="235.0" y1="85" x2="235.0" y2="810" stroke="#ECECEC"/>
+<text x="235.0" y="834" font-size="13" text-anchor="middle">0</text>
+<line x1="346.2" y1="85" x2="346.2" y2="810" stroke="#ECECEC"/>
+<text x="346.2" y="834" font-size="13" text-anchor="middle">1</text>
+<line x1="457.5" y1="85" x2="457.5" y2="810" stroke="#ECECEC"/>
+<text x="457.5" y="834" font-size="13" text-anchor="middle">2</text>
+<line x1="568.8" y1="85" x2="568.8" y2="810" stroke="#ECECEC"/>
+<text x="568.8" y="834" font-size="13" text-anchor="middle">3</text>
+<line x1="680.0" y1="85" x2="680.0" y2="810" stroke="#ECECEC"/>
+<text x="680.0" y="834" font-size="13" text-anchor="middle">4</text>
+<line x1="791.2" y1="85" x2="791.2" y2="810" stroke="#ECECEC"/>
+<text x="791.2" y="834" font-size="13" text-anchor="middle">5</text>
+<line x1="902.5" y1="85" x2="902.5" y2="810" stroke="#ECECEC"/>
+<text x="902.5" y="834" font-size="13" text-anchor="middle">6</text>
+<line x1="1013.8" y1="85" x2="1013.8" y2="810" stroke="#ECECEC"/>
+<text x="1013.8" y="834" font-size="13" text-anchor="middle">7</text>
+<line x1="1125.0" y1="85" x2="1125.0" y2="810" stroke="#ECECEC"/>
+<text x="1125.0" y="834" font-size="13" text-anchor="middle">8</text>
+<text x="221" y="111.7" font-size="13" text-anchor="end">api-contract</text>
+<line x1="865.4" y1="107.7" x2="346.2" y2="107.7" stroke="#777" stroke-width="2"/>
+<circle cx="865.4" cy="107.7" r="6" fill="#E69F00"/>
+<circle cx="346.2" cy="107.7" r="6" fill="#0072B2"/>
+<text x="221" y="157.0" font-size="13" text-anchor="end">auth-policy</text>
+<line x1="605.8" y1="153.0" x2="346.2" y2="153.0" stroke="#777" stroke-width="2"/>
+<circle cx="605.8" cy="153.0" r="6" fill="#E69F00"/>
+<circle cx="346.2" cy="153.0" r="6" fill="#0072B2"/>
+<text x="221" y="202.3" font-size="13" text-anchor="end">billing-rules</text>
+<line x1="902.5" y1="198.3" x2="346.2" y2="198.3" stroke="#777" stroke-width="2"/>
+<circle cx="902.5" cy="198.3" r="6" fill="#E69F00"/>
+<circle cx="346.2" cy="198.3" r="6" fill="#0072B2"/>
+<text x="221" y="247.6" font-size="13" text-anchor="end">cache-policy</text>
+<line x1="717.1" y1="243.6" x2="346.2" y2="243.6" stroke="#777" stroke-width="2"/>
+<circle cx="717.1" cy="243.6" r="6" fill="#E69F00"/>
+<circle cx="346.2" cy="243.6" r="6" fill="#0072B2"/>
+<text x="221" y="292.9" font-size="13" text-anchor="end">deploy-runbook</text>
+<line x1="717.1" y1="288.9" x2="346.2" y2="288.9" stroke="#777" stroke-width="2"/>
+<circle cx="717.1" cy="288.9" r="6" fill="#E69F00"/>
+<circle cx="346.2" cy="288.9" r="6" fill="#0072B2"/>
+<text x="221" y="338.2" font-size="13" text-anchor="end">feature-flags</text>
+<line x1="605.8" y1="334.2" x2="383.3" y2="334.2" stroke="#777" stroke-width="2"/>
+<circle cx="605.8" cy="334.2" r="6" fill="#E69F00"/>
+<circle cx="383.3" cy="334.2" r="6" fill="#0072B2"/>
+<text x="221" y="383.5" font-size="13" text-anchor="end">migration-plan</text>
+<line x1="791.2" y1="379.5" x2="346.2" y2="379.5" stroke="#777" stroke-width="2"/>
+<circle cx="791.2" cy="379.5" r="6" fill="#E69F00"/>
+<circle cx="346.2" cy="379.5" r="6" fill="#0072B2"/>
+<text x="221" y="428.8" font-size="13" text-anchor="end">model-routing</text>
+<line x1="754.2" y1="424.8" x2="346.2" y2="424.8" stroke="#777" stroke-width="2"/>
+<circle cx="754.2" cy="424.8" r="6" fill="#E69F00"/>
+<circle cx="346.2" cy="424.8" r="6" fill="#0072B2"/>
+<text x="221" y="474.2" font-size="13" text-anchor="end">observability</text>
+<line x1="828.3" y1="470.2" x2="346.2" y2="470.2" stroke="#777" stroke-width="2"/>
+<circle cx="828.3" cy="470.2" r="6" fill="#E69F00"/>
+<circle cx="346.2" cy="470.2" r="6" fill="#0072B2"/>
+<text x="221" y="519.5" font-size="13" text-anchor="end">package-map</text>
+<line x1="865.4" y1="515.5" x2="346.2" y2="515.5" stroke="#777" stroke-width="2"/>
+<circle cx="865.4" cy="515.5" r="6" fill="#E69F00"/>
+<circle cx="346.2" cy="515.5" r="6" fill="#0072B2"/>
+<text x="221" y="564.8" font-size="13" text-anchor="end">plugin-registry</text>
+<line x1="531.7" y1="560.8" x2="346.2" y2="560.8" stroke="#777" stroke-width="2"/>
+<circle cx="531.7" cy="560.8" r="6" fill="#E69F00"/>
+<circle cx="346.2" cy="560.8" r="6" fill="#0072B2"/>
+<text x="221" y="610.1" font-size="13" text-anchor="end">queue-policy</text>
+<line x1="865.4" y1="606.1" x2="346.2" y2="606.1" stroke="#777" stroke-width="2"/>
+<circle cx="865.4" cy="606.1" r="6" fill="#E69F00"/>
+<circle cx="346.2" cy="606.1" r="6" fill="#0072B2"/>
+<text x="221" y="655.4" font-size="13" text-anchor="end">retention-policy</text>
+<line x1="939.6" y1="651.4" x2="346.2" y2="651.4" stroke="#777" stroke-width="2"/>
+<circle cx="939.6" cy="651.4" r="6" fill="#E69F00"/>
+<circle cx="346.2" cy="651.4" r="6" fill="#0072B2"/>
+<text x="221" y="700.7" font-size="13" text-anchor="end">runtime-config</text>
+<line x1="976.7" y1="696.7" x2="383.3" y2="696.7" stroke="#777" stroke-width="2"/>
+<circle cx="976.7" cy="696.7" r="6" fill="#E69F00"/>
+<circle cx="383.3" cy="696.7" r="6" fill="#0072B2"/>
+<text x="221" y="746.0" font-size="13" text-anchor="end">schema-contract</text>
+<line x1="791.2" y1="742.0" x2="346.2" y2="742.0" stroke="#777" stroke-width="2"/>
+<circle cx="791.2" cy="742.0" r="6" fill="#E69F00"/>
+<circle cx="346.2" cy="742.0" r="6" fill="#0072B2"/>
+<text x="221" y="791.3" font-size="13" text-anchor="end">test-matrix</text>
+<line x1="902.5" y1="787.3" x2="346.2" y2="787.3" stroke="#777" stroke-width="2"/>
+<circle cx="902.5" cy="787.3" r="6" fill="#E69F00"/>
+<circle cx="346.2" cy="787.3" r="6" fill="#0072B2"/>
+<circle cx="235" cy="860" r="6" fill="#0072B2"/>
+<text x="247" y="865" font-size="13">Memory</text>
+<circle cx="340" cy="860" r="6" fill="#E69F00"/>
+<text x="352" y="865" font-size="13">Cold control</text>
+<text x="680.0" y="840" font-size="14" text-anchor="middle">Repository tool calls per target Turn</text>
+</svg>

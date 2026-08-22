@@ -1,0 +1,27 @@
+{
+  "generated": {
+    "analysis-report.md": "d5a206bf27bdbcd3812120d7d9da5ecfe8c46d81ea42458c4304c741b5e2798a",
+    "family-summary.csv": "7a789d6fd1f10d2698016553cee2666d143090dff030351f37c54169d6422bbb",
+    "figure-catalog.md": "47d7279fc67c25fbc5c6db42d48700387819993819034f49b99869a15c680faa",
+    "figures/figure-01-family-tool-calls.svg": "dac2a6015c6e0a59e3dc5d007ae942c9fe95765d3c1c7ab054329108a6e1d2cd",
+    "figures/figure-02-relative-reduction.svg": "92f09be54ccf82a3684a5dbbcd99d70aa225c5b0c24909e6ff5249932f783ae7",
+    "figures/figure-03-target-success-heatmap.svg": "f7d93019fe431be7993ab77e9c55a5831816728f85336684184603c1ccb5d64a",
+    "learning-turn-level.csv": "ad819a6f129814b0c7a5cb20febef1f999f1416345060faae5b773f025fb80b4",
+    "pair-level.csv": "ca8f9c6c62ce59fe26f0ab0a64a90fa3ec933d3ff254a23caecfc6fd77a46a02",
+    "statistics.json": "f29c11d70bb9fcde11dc5237be891322ac3960900fc6f8c72a37bd0077ffbcf2",
+    "stats-appendix.md": "c32d5b579b777f5b5ad3d21a15af73df382c0432ae869a58b4e790e27006e312",
+    "turn-level.csv": "b1d75ac9dad6592402efd33acc5b50e8ebf399930424fed0df582de8bb148b7e"
+  },
+  "schemaVersion": 1,
+  "source": {
+    "manifest": {
+      "path": "artifacts/non-path-memory-study-v2/manifest.json",
+      "sha256": "26c1c63ccdf737860bbc3a287b7848827f26715207ba2e4ff1e1fdb06287b85f"
+    },
+    "result": {
+      "path": "artifacts/non-path-memory-study-v2/full-first-attempt.json",
+      "sha256": "56b7c9375ec26a693a3fcc37298fe4c6a75fbd7014d3deaa9ab6f1d218a2ca44"
+    }
+  },
+  "suiteId": "minicode-non-path-memory-live-2026-08-22-v2"
+}

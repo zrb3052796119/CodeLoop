@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="990" height="710" viewBox="0 0 990 710" role="img">
+<title>Target execution success matrix</title>
+<rect width="100%" height="100%" fill="white"/>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#222}</style>
+<text x="245" y="36" font-size="24" font-weight="700">Target execution success by block</text>
+<text x="245" y="62" font-size="14">Green: all target gates including an in-Turn successful verifier; red: at least one failed.</text>
+<text x="301.0" y="96" font-size="12" text-anchor="middle">B1 Memory</text>
+<text x="413.0" y="96" font-size="12" text-anchor="middle">B1 Cold</text>
+<text x="525.0" y="96" font-size="12" text-anchor="middle">B2 Memory</text>
+<text x="637.0" y="96" font-size="12" text-anchor="middle">B2 Cold</text>
+<text x="749.0" y="96" font-size="12" text-anchor="middle">B3 Memory</text>
+<text x="861.0" y="96" font-size="12" text-anchor="middle">B3 Cold</text>
+<text x="233" y="136.0" font-size="12" text-anchor="end">cache-verification-rule</text>
+<rect x="247" y="112" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="301.0" y="136.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="359" y="112" width="108" height="36" rx="3" fill="#D55E00"/>
+<text x="413.0" y="136.0" font-size="11" text-anchor="middle" fill="white">fail</text>
+<rect x="471" y="112" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="525.0" y="136.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="583" y="112" width="108" height="36" rx="3" fill="#D55E00"/>
+<text x="637.0" y="136.0" font-size="11" text-anchor="middle" fill="white">fail</text>
+<rect x="695" y="112" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="749.0" y="136.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="807" y="112" width="108" height="36" rx="3" fill="#D55E00"/>
+<text x="861.0" y="136.0" font-size="11" text-anchor="middle" fill="white">fail</text>
+<text x="233" y="176.0" font-size="12" text-anchor="end">cli-command</text>
+<rect x="247" y="152" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="301.0" y="176.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="359" y="152" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="413.0" y="176.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="471" y="152" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="525.0" y="176.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="583" y="152" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="637.0" y="176.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="695" y="152" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="749.0" y="176.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="807" y="152" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="861.0" y="176.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<text x="233" y="216.0" font-size="12" text-anchor="end">error-envelope-constraint</text>
+<rect x="247" y="192" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="301.0" y="216.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="359" y="192" width="108" height="36" rx="3" fill="#D55E00"/>
+<text x="413.0" y="216.0" font-size="11" text-anchor="middle" fill="white">fail</text>
+<rect x="471" y="192" width="108" height="36" rx="3" fill="#D55E00"/>
+<text x="525.0" y="216.0" font-size="11" text-anchor="middle" fill="white">fail</text>
+<rect x="583" y="192" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="637.0" y="216.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="695" y="192" width="108" height="36" rx="3" fill="#D55E00"/>
+<text x="749.0" y="216.0" font-size="11" text-anchor="middle" fill="white">fail</text>
+<rect x="807" y="192" width="108" height="36" rx="3" fill="#D55E00"/>
+<text x="861.0" y="216.0" font-size="11" text-anchor="middle" fill="white">fail</text>
+<text x="233" y="256.0" font-size="12" text-anchor="end">exclusive-window-repair</text>
+<rect x="247" y="232" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="301.0" y="256.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="359" y="232" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="413.0" y="256.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="471" y="232" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="525.0" y="256.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="583" y="232" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="637.0" y="256.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="695" y="232" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="749.0" y="256.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="807" y="232" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="861.0" y="256.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<text x="233" y="296.0" font-size="12" text-anchor="end">expired-session-repair</text>
+<rect x="247" y="272" width="108" height="36" rx="3" fill="#D55E00"/>
+<text x="301.0" y="296.0" font-size="11" text-anchor="middle" fill="white">fail</text>
+<rect x="359" y="272" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="413.0" y="296.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="471" y="272" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="525.0" y="296.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="583" y="272" width="108" height="36" rx="3" fill="#D55E00"/>
+<text x="637.0" y="296.0" font-size="11" text-anchor="middle" fill="white">fail</text>
+<rect x="695" y="272" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="749.0" y="296.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="807" y="272" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="861.0" y="296.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<text x="233" y="336.0" font-size="12" text-anchor="end">ledger-verification-rule</text>
+<rect x="247" y="312" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="301.0" y="336.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="359" y="312" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="413.0" y="336.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="471" y="312" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="525.0" y="336.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="583" y="312" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="637.0" y="336.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="695" y="312" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="749.0" y="336.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="807" y="312" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="861.0" y="336.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<text x="233" y="376.0" font-size="12" text-anchor="end">optional-field-constraint</text>
+<rect x="247" y="352" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="301.0" y="376.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="359" y="352" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="413.0" y="376.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="471" y="352" width="108" height="36" rx="3" fill="#D55E00"/>
+<text x="525.0" y="376.0" font-size="11" text-anchor="middle" fill="white">fail</text>
+<rect x="583" y="352" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="637.0" y="376.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="695" y="352" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="749.0" y="376.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="807" y="352" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="861.0" y="376.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<text x="233" y="416.0" font-size="12" text-anchor="end">parser-verification-rule</text>
+<rect x="247" y="392" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="301.0" y="416.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="359" y="392" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="413.0" y="416.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="471" y="392" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="525.0" y="416.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="583" y="392" width="108" height="36" rx="3" fill="#D55E00"/>
+<text x="637.0" y="416.0" font-size="11" text-anchor="middle" fill="white">fail</text>
+<rect x="695" y="392" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="749.0" y="416.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="807" y="392" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="861.0" y="416.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<text x="233" y="456.0" font-size="12" text-anchor="end">payload-command</text>
+<rect x="247" y="432" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="301.0" y="456.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="359" y="432" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="413.0" y="456.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="471" y="432" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="525.0" y="456.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="583" y="432" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="637.0" y="456.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="695" y="432" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="749.0" y="456.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="807" y="432" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="861.0" y="456.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<text x="233" y="496.0" font-size="12" text-anchor="end">registry-order-constraint</text>
+<rect x="247" y="472" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="301.0" y="496.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="359" y="472" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="413.0" y="496.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="471" y="472" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="525.0" y="496.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="583" y="472" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="637.0" y="496.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="695" y="472" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="749.0" y="496.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="807" y="472" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="861.0" y="496.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<text x="233" y="536.0" font-size="12" text-anchor="end">release-command</text>
+<rect x="247" y="512" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="301.0" y="536.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="359" y="512" width="108" height="36" rx="3" fill="#D55E00"/>
+<text x="413.0" y="536.0" font-size="11" text-anchor="middle" fill="white">fail</text>
+<rect x="471" y="512" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="525.0" y="536.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="583" y="512" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="637.0" y="536.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="695" y="512" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="749.0" y="536.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="807" y="512" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="861.0" y="536.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<text x="233" y="576.0" font-size="12" text-anchor="end">token-normalization-repair</text>
+<rect x="247" y="552" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="301.0" y="576.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="359" y="552" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="413.0" y="576.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="471" y="552" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="525.0" y="576.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="583" y="552" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="637.0" y="576.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="695" y="552" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="749.0" y="576.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+<rect x="807" y="552" width="108" height="36" rx="3" fill="#009E73"/>
+<text x="861.0" y="576.0" font-size="11" text-anchor="middle" fill="white">pass</text>
+</svg>

@@ -1,0 +1,27 @@
+{
+  "generated": {
+    "analysis-report.md": "536a1dc96bd0df707fae0f3263ec73f4cf47c9b0da75a0ed83d26b5ce8139e09",
+    "family-summary.csv": "1674388e955fb12d2bac099d69f35108e9fb500373edb27a379d566d150c8896",
+    "figure-catalog.md": "d11c0b644a7ad6d148e94514fe9929a624997dd752d6c1ffe1b7e5da76335818",
+    "figures/figure-01-family-tool-calls.svg": "90adc6b2c07104cc7bebf8eabc5e53cfb5b620329a27acd15d0717c7b1592e2a",
+    "figures/figure-02-relative-reduction.svg": "0ff90089c59d5a134cc6fbb124642fe4a085a4b6501b1497ef12bfbc7298a422",
+    "figures/figure-03-direct-first-heatmap.svg": "7a2796b473715e8f33df88c908370787963365e5f882ef1b92a942e5a6730b49",
+    "learning-turn-level.csv": "088dd04ee3f2b381afbba3f03e2ecab75c089ca2452eadc36dbe02428453c73f",
+    "pair-level.csv": "e930507de08d385e9c4461da983aa9cdd3c6d17b1206fe69e656a49a6a6cadea",
+    "statistics.json": "88dbe32444d005525dad3281b0463f014d99eee43766824664da4532a0bb691e",
+    "stats-appendix.md": "c1ec2cb75119bbc3303db5d4e6f01b96c0cc9041acebbb66b515cdb9aa0e0dd0",
+    "turn-level.csv": "c3ab5b0027033ee1d34fdab71b4b1fb0187264564fa568b432d26eb819a6d1d3"
+  },
+  "schemaVersion": 1,
+  "source": {
+    "manifest": {
+      "path": "artifacts/persistent-memory-large-study-v3/manifest.json",
+      "sha256": "923272933307127ab0a99e45e1e8449f10ee8a121810baf05e71196d195f6e0d"
+    },
+    "result": {
+      "path": "artifacts/persistent-memory-large-study-v3/full-results-initial.json",
+      "sha256": "6cb06e4ce0aca747f837a678b8f678ceb7b5249ba6ae4e078664c55adbaed592"
+    }
+  },
+  "suiteId": "minicode-persistent-memory-large-live-2026-08-21-v3"
+}

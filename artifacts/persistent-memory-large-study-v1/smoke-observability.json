@@ -1,0 +1,31 @@
+{
+  "recordedAt": "2026-08-21T15:13:34Z",
+  "results": [
+    {
+      "durationMs": 11339,
+      "id": "pmem-b1-observability-warm",
+      "inputTokens": 68013,
+      "modelCalls": 10,
+      "outputTokens": 574,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_fa8c9d943a8f40cfa983048f23bfd5e2"
+      ],
+      "runId": "run_0de35b73e1de451c90b870643af62e0a",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceReport": "artifacts/persistent-memory-large-study-v1/manifest.json",
+  "suiteId": "minicode-persistent-memory-large-live-2026-08-21-v1"
+}

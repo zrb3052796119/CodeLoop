@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="760" viewBox="0 0 1140 760" role="img">
+<title>Family-level target tool calls</title>
+<rect width="100%" height="100%" fill="white"/>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#222}</style>
+<text x="245" y="36" font-size="24" font-weight="700">Non-path Memory and target tool cost</text>
+<text x="245" y="62" font-size="14">Family means across three nested provider blocks; lower is better.</text>
+<line x1="245.0" y1="85" x2="245.0" y2="695" stroke="#ECECEC"/>
+<text x="245.0" y="718" font-size="12" text-anchor="middle">0</text>
+<line x1="277.1" y1="85" x2="277.1" y2="695" stroke="#ECECEC"/>
+<text x="277.1" y="718" font-size="12" text-anchor="middle">1</text>
+<line x1="309.2" y1="85" x2="309.2" y2="695" stroke="#ECECEC"/>
+<text x="309.2" y="718" font-size="12" text-anchor="middle">2</text>
+<line x1="341.3" y1="85" x2="341.3" y2="695" stroke="#ECECEC"/>
+<text x="341.3" y="718" font-size="12" text-anchor="middle">3</text>
+<line x1="373.5" y1="85" x2="373.5" y2="695" stroke="#ECECEC"/>
+<text x="373.5" y="718" font-size="12" text-anchor="middle">4</text>
+<line x1="405.6" y1="85" x2="405.6" y2="695" stroke="#ECECEC"/>
+<text x="405.6" y="718" font-size="12" text-anchor="middle">5</text>
+<line x1="437.7" y1="85" x2="437.7" y2="695" stroke="#ECECEC"/>
+<text x="437.7" y="718" font-size="12" text-anchor="middle">6</text>
+<line x1="469.8" y1="85" x2="469.8" y2="695" stroke="#ECECEC"/>
+<text x="469.8" y="718" font-size="12" text-anchor="middle">7</text>
+<line x1="501.9" y1="85" x2="501.9" y2="695" stroke="#ECECEC"/>
+<text x="501.9" y="718" font-size="12" text-anchor="middle">8</text>
+<line x1="534.0" y1="85" x2="534.0" y2="695" stroke="#ECECEC"/>
+<text x="534.0" y="718" font-size="12" text-anchor="middle">9</text>
+<line x1="566.2" y1="85" x2="566.2" y2="695" stroke="#ECECEC"/>
+<text x="566.2" y="718" font-size="12" text-anchor="middle">10</text>
+<line x1="598.3" y1="85" x2="598.3" y2="695" stroke="#ECECEC"/>
+<text x="598.3" y="718" font-size="12" text-anchor="middle">11</text>
+<line x1="630.4" y1="85" x2="630.4" y2="695" stroke="#ECECEC"/>
+<text x="630.4" y="718" font-size="12" text-anchor="middle">12</text>
+<line x1="662.5" y1="85" x2="662.5" y2="695" stroke="#ECECEC"/>
+<text x="662.5" y="718" font-size="12" text-anchor="middle">13</text>
+<line x1="694.6" y1="85" x2="694.6" y2="695" stroke="#ECECEC"/>
+<text x="694.6" y="718" font-size="12" text-anchor="middle">14</text>
+<line x1="726.7" y1="85" x2="726.7" y2="695" stroke="#ECECEC"/>
+<text x="726.7" y="718" font-size="12" text-anchor="middle">15</text>
+<line x1="758.8" y1="85" x2="758.8" y2="695" stroke="#ECECEC"/>
+<text x="758.8" y="718" font-size="12" text-anchor="middle">16</text>
+<line x1="791.0" y1="85" x2="791.0" y2="695" stroke="#ECECEC"/>
+<text x="791.0" y="718" font-size="12" text-anchor="middle">17</text>
+<line x1="823.1" y1="85" x2="823.1" y2="695" stroke="#ECECEC"/>
+<text x="823.1" y="718" font-size="12" text-anchor="middle">18</text>
+<line x1="855.2" y1="85" x2="855.2" y2="695" stroke="#ECECEC"/>
+<text x="855.2" y="718" font-size="12" text-anchor="middle">19</text>
+<line x1="887.3" y1="85" x2="887.3" y2="695" stroke="#ECECEC"/>
+<text x="887.3" y="718" font-size="12" text-anchor="middle">20</text>
+<line x1="919.4" y1="85" x2="919.4" y2="695" stroke="#ECECEC"/>
+<text x="919.4" y="718" font-size="12" text-anchor="middle">21</text>
+<line x1="951.5" y1="85" x2="951.5" y2="695" stroke="#ECECEC"/>
+<text x="951.5" y="718" font-size="12" text-anchor="middle">22</text>
+<line x1="983.7" y1="85" x2="983.7" y2="695" stroke="#ECECEC"/>
+<text x="983.7" y="718" font-size="12" text-anchor="middle">23</text>
+<line x1="1015.8" y1="85" x2="1015.8" y2="695" stroke="#ECECEC"/>
+<text x="1015.8" y="718" font-size="12" text-anchor="middle">24</text>
+<line x1="1047.9" y1="85" x2="1047.9" y2="695" stroke="#ECECEC"/>
+<text x="1047.9" y="718" font-size="12" text-anchor="middle">25</text>
+<line x1="1080.0" y1="85" x2="1080.0" y2="695" stroke="#ECECEC"/>
+<text x="1080.0" y="718" font-size="12" text-anchor="middle">26</text>
+<text x="233" y="114.4" font-size="12" text-anchor="end">cache-verification-rule</text>
+<line x1="844.5" y1="110.4" x2="501.9" y2="110.4" stroke="#777" stroke-width="2"/>
+<circle cx="844.5" cy="110.4" r="6" fill="#E69F00"/>
+<circle cx="501.9" cy="110.4" r="6" fill="#0072B2"/>
+<text x="233" y="165.2" font-size="12" text-anchor="end">cli-command</text>
+<line x1="480.5" y1="161.2" x2="277.1" y2="161.2" stroke="#777" stroke-width="2"/>
+<circle cx="480.5" cy="161.2" r="6" fill="#E69F00"/>
+<circle cx="277.1" cy="161.2" r="6" fill="#0072B2"/>
+<text x="233" y="216.1" font-size="12" text-anchor="end">error-envelope-constraint</text>
+<line x1="587.6" y1="212.1" x2="651.8" y2="212.1" stroke="#777" stroke-width="2"/>
+<circle cx="587.6" cy="212.1" r="6" fill="#E69F00"/>
+<circle cx="651.8" cy="212.1" r="6" fill="#0072B2"/>
+<text x="233" y="266.9" font-size="12" text-anchor="end">exclusive-window-repair</text>
+<line x1="534.0" y1="262.9" x2="512.6" y2="262.9" stroke="#777" stroke-width="2"/>
+<circle cx="534.0" cy="262.9" r="6" fill="#E69F00"/>
+<circle cx="512.6" cy="262.9" r="6" fill="#0072B2"/>
+<text x="233" y="317.8" font-size="12" text-anchor="end">expired-session-repair</text>
+<line x1="555.4" y1="313.8" x2="523.3" y2="313.8" stroke="#777" stroke-width="2"/>
+<circle cx="555.4" cy="313.8" r="6" fill="#E69F00"/>
+<circle cx="523.3" cy="313.8" r="6" fill="#0072B2"/>
+<text x="233" y="368.6" font-size="12" text-anchor="end">ledger-verification-rule</text>
+<line x1="587.6" y1="364.6" x2="491.2" y2="364.6" stroke="#777" stroke-width="2"/>
+<circle cx="587.6" cy="364.6" r="6" fill="#E69F00"/>
+<circle cx="491.2" cy="364.6" r="6" fill="#0072B2"/>
+<text x="233" y="419.4" font-size="12" text-anchor="end">optional-field-constraint</text>
+<line x1="619.7" y1="415.4" x2="630.4" y2="415.4" stroke="#777" stroke-width="2"/>
+<circle cx="619.7" cy="415.4" r="6" fill="#E69F00"/>
+<circle cx="630.4" cy="415.4" r="6" fill="#0072B2"/>
+<text x="233" y="470.2" font-size="12" text-anchor="end">parser-verification-rule</text>
+<line x1="1037.2" y1="466.2" x2="544.7" y2="466.2" stroke="#777" stroke-width="2"/>
+<circle cx="1037.2" cy="466.2" r="6" fill="#E69F00"/>
+<circle cx="544.7" cy="466.2" r="6" fill="#0072B2"/>
+<text x="233" y="521.1" font-size="12" text-anchor="end">payload-command</text>
+<line x1="394.9" y1="517.1" x2="341.3" y2="517.1" stroke="#777" stroke-width="2"/>
+<circle cx="394.9" cy="517.1" r="6" fill="#E69F00"/>
+<circle cx="341.3" cy="517.1" r="6" fill="#0072B2"/>
+<text x="233" y="571.9" font-size="12" text-anchor="end">registry-order-constraint</text>
+<line x1="587.6" y1="567.9" x2="544.7" y2="567.9" stroke="#777" stroke-width="2"/>
+<circle cx="587.6" cy="567.9" r="6" fill="#E69F00"/>
+<circle cx="544.7" cy="567.9" r="6" fill="#0072B2"/>
+<text x="233" y="622.8" font-size="12" text-anchor="end">release-command</text>
+<line x1="576.9" y1="618.8" x2="373.5" y2="618.8" stroke="#777" stroke-width="2"/>
+<circle cx="576.9" cy="618.8" r="6" fill="#E69F00"/>
+<circle cx="373.5" cy="618.8" r="6" fill="#0072B2"/>
+<text x="233" y="673.6" font-size="12" text-anchor="end">token-normalization-repair</text>
+<line x1="566.2" y1="669.6" x2="437.7" y2="669.6" stroke="#777" stroke-width="2"/>
+<circle cx="566.2" cy="669.6" r="6" fill="#E69F00"/>
+<circle cx="437.7" cy="669.6" r="6" fill="#0072B2"/>
+<circle cx="245" cy="742" r="6" fill="#0072B2"/>
+<text x="257" y="747" font-size="12">Memory</text>
+<circle cx="345" cy="742" r="6" fill="#E69F00"/>
+<text x="357" y="747" font-size="12">Cold</text>
+</svg>

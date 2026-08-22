@@ -1,0 +1,98 @@
+{
+  "recordedAt": "2026-08-21T11:22:53Z",
+  "results": [
+    {
+      "durationMs": 10919,
+      "id": "memory-chain-auth",
+      "inputTokens": 49980,
+      "modelCalls": 8,
+      "outputTokens": 751,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-retained"
+      ],
+      "relatedRunIds": [
+        "run_772489589c5c480a90671f7e6c25927f"
+      ],
+      "runId": "run_d57964f507f24b41bb549e8da94375dc",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 10330,
+      "id": "memory-chain-runtime",
+      "inputTokens": 42925,
+      "modelCalls": 7,
+      "outputTokens": 885,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-retained"
+      ],
+      "relatedRunIds": [
+        "run_833b9f6c4e094fcfbfd9d6a55f522adc"
+      ],
+      "runId": "run_8f88b1d5be524dc08644ffac5ec8f90d",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5743,
+      "id": "memory-warm-deploy",
+      "inputTokens": 34067,
+      "modelCalls": 5,
+      "outputTokens": 323,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_047cbf1668284e5896677b773670bd6f",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 2037,
+      "id": "memory-warm-schema",
+      "inputTokens": 13187,
+      "modelCalls": 2,
+      "outputTokens": 82,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_87e0496b82394983826653c90505a1d4",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceReport": "artifacts/north-star-memory-compaction-20-v3/manifest.json",
+  "suiteId": "minicode-memory-compaction-live-20-2026-08-21-v3"
+}

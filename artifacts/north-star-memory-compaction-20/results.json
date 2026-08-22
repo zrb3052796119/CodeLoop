@@ -1,0 +1,338 @@
+{
+  "recordedAt": "2026-08-21T02:57:33Z",
+  "results": [
+    {
+      "durationMs": 12757,
+      "id": "memory-chain-auth",
+      "inputTokens": 60653,
+      "modelCalls": 9,
+      "outputTokens": 500,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "lesson-written",
+        "lesson-injected",
+        "marker-retained"
+      ],
+      "relatedRunIds": [
+        "run_89964e3471fd4774a9a994c433349f72"
+      ],
+      "runId": "run_9a7906595e6b4efe9abed48a1be165dd",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5190,
+      "id": "memory-cold-auth",
+      "inputTokens": 33187,
+      "modelCalls": 5,
+      "outputTokens": 302,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "marker-found"
+      ],
+      "runId": "run_bd9f47a2fa4348dda34feded6bacb989",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 14459,
+      "id": "memory-chain-runtime",
+      "inputTokens": 74256,
+      "modelCalls": 11,
+      "outputTokens": 723,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "lesson-written",
+        "marker-retained"
+      ],
+      "relatedRunIds": [
+        "run_8503adde7d2c4a88929ecab277b0056a"
+      ],
+      "runId": "run_8685b703310e4403a5941253bb0f87b7",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    },
+    {
+      "durationMs": 5294,
+      "id": "memory-cold-runtime",
+      "inputTokens": 33183,
+      "modelCalls": 5,
+      "outputTokens": 255,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "marker-found"
+      ],
+      "runId": "run_c9b92df447cd474ba2e0a7677887e754",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 4682,
+      "id": "memory-warm-deploy",
+      "inputTokens": 33156,
+      "modelCalls": 5,
+      "outputTokens": 259,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_54d73be88a2b4dbab23f8a81e5bec00e",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5484,
+      "id": "memory-cold-deploy",
+      "inputTokens": 33193,
+      "modelCalls": 5,
+      "outputTokens": 269,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "marker-found"
+      ],
+      "runId": "run_3a67b1372ece4e5d8f916c1c904bbbc9",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5053,
+      "id": "memory-warm-schema",
+      "inputTokens": 33288,
+      "modelCalls": 5,
+      "outputTokens": 270,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_5eeeb4c1e6484bc4b797bcea923c0aed",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 4833,
+      "id": "memory-cold-schema",
+      "inputTokens": 33130,
+      "modelCalls": 5,
+      "outputTokens": 261,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "marker-found"
+      ],
+      "runId": "run_cc1bcfcab4ce414296fd275321dbfe4c",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6185,
+      "id": "context-goal-retention",
+      "inputTokens": 9860,
+      "modelCalls": 1,
+      "outputTokens": 6,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "context-compacted",
+        "critical-state-retained"
+      ],
+      "runId": "run_b84498bbc4d74c85a9320eaa4580cd16",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6578,
+      "id": "context-fact-retention",
+      "inputTokens": 9713,
+      "modelCalls": 1,
+      "outputTokens": 6,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "context-compacted",
+        "critical-state-retained"
+      ],
+      "runId": "run_3d7ca2180df240ab924a047851883bf8",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 7189,
+      "id": "context-rejected-retention",
+      "inputTokens": 9875,
+      "modelCalls": 1,
+      "outputTokens": 7,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "context-compacted",
+        "critical-state-retained"
+      ],
+      "runId": "run_919b6e20ebde4e50847177a0fb32e802",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6112,
+      "id": "context-constraint-retention",
+      "inputTokens": 9811,
+      "modelCalls": 1,
+      "outputTokens": 10,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "context-compacted",
+        "critical-state-retained"
+      ],
+      "runId": "run_b3141681e35d4f158cc7c31f1a42c3c5",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6520,
+      "id": "context-decision-retention",
+      "inputTokens": 9775,
+      "modelCalls": 1,
+      "outputTokens": 6,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "context-compacted",
+        "critical-state-retained"
+      ],
+      "runId": "run_7da2a2cfb9754f12956528678c6a8699",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6444,
+      "id": "context-combined-retention",
+      "inputTokens": 9780,
+      "modelCalls": 1,
+      "outputTokens": 32,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "context-compacted",
+        "critical-state-retained"
+      ],
+      "runId": "run_7f47fb630c0f4e5bb1cd01fec1765c04",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 153226,
+      "id": "context-large-file-result",
+      "inputTokens": 257088,
+      "modelCalls": 25,
+      "outputTokens": 9586,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "context-compacted",
+        "critical-state-retained"
+      ],
+      "runId": "run_71bd6298170b45a9978a8b6d48296430",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 12205,
+      "id": "context-loaded-skill-result",
+      "inputTokens": 21877,
+      "modelCalls": 2,
+      "outputTokens": 83,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "context-compacted",
+        "critical-state-retained",
+        "skill-loaded"
+      ],
+      "runId": "run_f0e476a64f2f4220a05f9242e8d87f15",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 12349,
+      "id": "context-two-round-continuity",
+      "inputTokens": 18323,
+      "modelCalls": 2,
+      "outputTokens": 26,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-compactions",
+        "cross-round-marker-retained"
+      ],
+      "relatedRunIds": [
+        "run_f09330d4e3c24ea38b77ce51f9a7adf7"
+      ],
+      "runId": "run_c46ef221697146c3800060f18976b1ef",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceReport": "artifacts/north-star-memory-compaction-20/manifest.json",
+  "suiteId": "minicode-memory-compaction-live-20-2026-08-21-v1"
+}

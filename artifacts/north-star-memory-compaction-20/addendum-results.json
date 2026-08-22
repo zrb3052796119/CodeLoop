@@ -1,0 +1,52 @@
+{
+  "recordedAt": "2026-08-21T03:02:02Z",
+  "results": [
+    {
+      "durationMs": 14842,
+      "id": "context-skill-cross-boundary",
+      "inputTokens": 41314,
+      "modelCalls": 4,
+      "outputTokens": 150,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-compactions",
+        "skill-loaded",
+        "skill-result-survived"
+      ],
+      "relatedRunIds": [
+        "run_a31d156e5aa2479e977065ac31951742"
+      ],
+      "runId": "run_40c88200f78741c29749d3d5fb7e738e",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 12625,
+      "id": "context-file-cross-boundary",
+      "inputTokens": 18439,
+      "modelCalls": 2,
+      "outputTokens": 17,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-compactions"
+      ],
+      "relatedRunIds": [
+        "run_02a6ae00aeba41bb8151f35f95479c4e"
+      ],
+      "runId": "run_18736b1982d649e2bc906f835f76d56e",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceReport": "artifacts/north-star-memory-compaction-20/addendum-manifest.json",
+  "suiteId": "minicode-memory-compaction-cross-boundary-4-2026-08-21-v1"
+}

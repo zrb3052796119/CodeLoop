@@ -1,0 +1,729 @@
+{
+  "bootstrap": {
+    "method": "family-cluster percentile bootstrap",
+    "samples": 20000,
+    "seed": 20260822
+  },
+  "conditionSummary": {
+    "cold": {
+      "caseChainSuccesses": 28,
+      "durationMs": {
+        "max": 151767.0,
+        "mean": 20500.0,
+        "median": 15657.0,
+        "min": 5266.0,
+        "n": 36,
+        "q1": 11637.0,
+        "q3": 21431.5,
+        "sd": 24035.908527510608
+      },
+      "failedTargetOracleCounts": {
+        "canonical-success": 1,
+        "target-content": 1,
+        "target-marker": 2,
+        "verification-ran": 7
+      },
+      "firstToolCounts": {
+        "file_tree": 1,
+        "grep_files": 1,
+        "list_files": 30,
+        "read_file": 4
+      },
+      "memoryInjections": 0,
+      "semanticTargetExecutionSuccesses": 29,
+      "successfulRunCommandTurns": 29,
+      "targetExecutionSuccesses": 28,
+      "targetOracleSuccesses": 28,
+      "targetTurns": 36,
+      "taskInputTokens": {
+        "max": 773101.0,
+        "mean": 85913.52777777778,
+        "median": 58120.0,
+        "min": 26635.0,
+        "n": 36,
+        "q1": 41873.75,
+        "q3": 80362.75,
+        "sd": 122514.76559255707
+      },
+      "taskModelCalls": {
+        "max": 50.0,
+        "mean": 9.972222222222221,
+        "median": 8.0,
+        "min": 4.0,
+        "n": 36,
+        "q1": 6.0,
+        "q3": 11.0,
+        "sd": 7.692245115740588
+      },
+      "taskOutputTokens": {
+        "max": 14681.0,
+        "mean": 1408.388888888889,
+        "median": 895.0,
+        "min": 341.0,
+        "n": 36,
+        "q1": 636.25,
+        "q3": 1141.25,
+        "sd": 2354.2702633758668
+      },
+      "toolCalls": {
+        "max": 53.0,
+        "mean": 11.5,
+        "median": 9.5,
+        "min": 3.0,
+        "n": 36,
+        "q1": 8.0,
+        "q3": 12.25,
+        "sd": 8.033856928204356
+      },
+      "toolFailures": {
+        "max": 31.0,
+        "mean": 2.4166666666666665,
+        "median": 1.0,
+        "min": 0.0,
+        "n": 36,
+        "q1": 0.0,
+        "q3": 2.0,
+        "sd": 5.325813150523187
+      }
+    },
+    "warm": {
+      "caseChainSuccesses": 32,
+      "durationMs": {
+        "max": 26140.0,
+        "mean": 11786.916666666666,
+        "median": 10356.5,
+        "min": 2469.0,
+        "n": 36,
+        "q1": 7348.0,
+        "q3": 15604.25,
+        "sd": 6332.25019979921
+      },
+      "failedTargetOracleCounts": {
+        "target-content": 1,
+        "verification-ran": 3
+      },
+      "firstToolCounts": {
+        "grep_files": 3,
+        "list_files": 10,
+        "read_file": 17,
+        "run_command": 5,
+        "todo_write": 1
+      },
+      "memoryInjections": 36,
+      "semanticTargetExecutionSuccesses": 33,
+      "successfulRunCommandTurns": 33,
+      "targetExecutionSuccesses": 32,
+      "targetOracleSuccesses": 32,
+      "targetTurns": 36,
+      "taskInputTokens": {
+        "max": 108393.0,
+        "mean": 51631.583333333336,
+        "median": 49674.0,
+        "min": 13215.0,
+        "n": 36,
+        "q1": 40234.0,
+        "q3": 66120.0,
+        "sd": 24126.84494958735
+      },
+      "taskModelCalls": {
+        "max": 13.0,
+        "mean": 7.027777777777778,
+        "median": 7.0,
+        "min": 2.0,
+        "n": 36,
+        "q1": 5.75,
+        "q3": 9.0,
+        "sd": 2.932440340263779
+      },
+      "taskOutputTokens": {
+        "max": 2063.0,
+        "mean": 769.0277777777778,
+        "median": 602.0,
+        "min": 134.0,
+        "n": 36,
+        "q1": 510.5,
+        "q3": 1022.0,
+        "sd": 461.22077057126256
+      },
+      "toolCalls": {
+        "max": 16.0,
+        "mean": 7.5,
+        "median": 7.0,
+        "min": 1.0,
+        "n": 36,
+        "q1": 5.75,
+        "q3": 10.0,
+        "sd": 3.8877095717511763
+      },
+      "toolFailures": {
+        "max": 6.0,
+        "mean": 0.8333333333333334,
+        "median": 0.0,
+        "min": 0.0,
+        "n": 36,
+        "q1": 0.0,
+        "q3": 1.0,
+        "sd": 1.5766148184367308
+      }
+    }
+  },
+  "familyCount": 12,
+  "inferentialUnit": "family",
+  "learningSummary": {
+    "conservativeBreakEvenReuses": 1.0998998376755313,
+    "lessonCreationTurns": 24,
+    "lessonsWritten": 24,
+    "taskInputTokens": {
+      "max": 72721.0,
+      "mean": 41728.458333333336,
+      "median": 41405.0,
+      "min": 27255.0,
+      "n": 24,
+      "q1": 35323.75,
+      "q3": 48534.5,
+      "sd": 9284.779274280108
+    },
+    "toolCalls": {
+      "max": 13.0,
+      "mean": 6.791666666666667,
+      "median": 6.0,
+      "min": 4.0,
+      "n": 24,
+      "q1": 5.0,
+      "q3": 8.0,
+      "sd": 2.225917820793826
+    },
+    "verifiedLearningTurns": 24
+  },
+  "lessonModeCounts": {
+    "learned": 8,
+    "seeded": 4
+  },
+  "manifestSha256": "26c1c63ccdf737860bbc3a287b7848827f26715207ba2e4ff1e1fdb06287b85f",
+  "metrics": {
+    "duration_ms": {
+      "cold_family_summary": {
+        "max": 59235.666666666664,
+        "mean": 20500.0,
+        "median": 15166.666666666668,
+        "min": 7962.333333333333,
+        "n": 12,
+        "q1": 14320.0,
+        "q3": 19171.083333333332,
+        "sd": 13964.659953474042
+      },
+      "direction": "positive savings favor Memory",
+      "family_cluster_bootstrap": {
+        "absolute": {
+          "ci95": [
+            2083.9361111111148,
+            17180.20555555555
+          ],
+          "estimate": 8713.083333333334
+        },
+        "relative_percent": {
+          "ci95": [
+            13.741524587051467,
+            61.10447148701113
+          ],
+          "estimate": 42.50284552845529
+        },
+        "samples": 20000,
+        "seed": 20260822
+      },
+      "hodges_lehmann_saving": 5623.75,
+      "label": "Elapsed duration (ms)",
+      "saving_family_summary": {
+        "max": 45421.33333333333,
+        "mean": 8713.083333333334,
+        "median": 2658.166666666667,
+        "min": -4914.333333333332,
+        "n": 12,
+        "q1": 803.0833333333344,
+        "q3": 11828.75,
+        "sd": 14079.828714469073
+      },
+      "sign_test_exact": {
+        "n_nonzero": 12,
+        "negative": 2,
+        "p_two_sided": 0.03857421875,
+        "positive": 10,
+        "zero": 0
+      },
+      "warm_family_summary": {
+        "max": 22926.0,
+        "mean": 11786.916666666666,
+        "median": 12645.0,
+        "min": 2819.3333333333335,
+        "n": 12,
+        "q1": 8212.333333333334,
+        "q3": 13864.916666666666,
+        "sd": 5481.888248605768
+      },
+      "wilcoxon_exact": {
+        "n_nonzero": 12,
+        "p_two_sided": 0.01611328125,
+        "rank_biserial": 0.7692307692307693,
+        "statistic": 9.0,
+        "w_minus": 9.0,
+        "w_plus": 69.0
+      },
+      "wilcoxon_holm_p_exploratory_family": 0.064453125
+    },
+    "task_input_tokens": {
+      "cold_family_summary": {
+        "max": 300561.3333333333,
+        "mean": 85913.52777777777,
+        "median": 62286.166666666664,
+        "min": 33716.333333333336,
+        "n": 12,
+        "q1": 57085.916666666664,
+        "q3": 68212.83333333333,
+        "sd": 73497.77407382647
+      },
+      "direction": "positive savings favor Memory",
+      "family_cluster_bootstrap": {
+        "absolute": {
+          "ci95": [
+            4221.561805555557,
+            77963.8993055555
+          ],
+          "estimate": 34281.94444444443
+        },
+        "relative_percent": {
+          "ci95": [
+            7.239227704718311,
+            60.25787059903377
+          ],
+          "estimate": 39.902848051028045
+        },
+        "samples": 20000,
+        "seed": 20260822
+      },
+      "hodges_lehmann_saving": 13541.916666666668,
+      "label": "Task input tokens",
+      "saving_family_summary": {
+        "max": 235874.3333333333,
+        "mean": 34281.944444444445,
+        "median": 8552.333333333334,
+        "min": -15201.0,
+        "n": 12,
+        "q1": -3949.916666666668,
+        "q3": 32785.0,
+        "sd": 70076.1139846421
+      },
+      "sign_test_exact": {
+        "n_nonzero": 12,
+        "negative": 4,
+        "p_two_sided": 0.3876953125,
+        "positive": 8,
+        "zero": 0
+      },
+      "warm_family_summary": {
+        "max": 83135.33333333333,
+        "mean": 51631.583333333336,
+        "median": 55930.5,
+        "min": 13280.666666666666,
+        "n": 12,
+        "q1": 39174.833333333336,
+        "q3": 63548.75,
+        "sd": 20442.80350030348
+      },
+      "wilcoxon_exact": {
+        "n_nonzero": 12,
+        "p_two_sided": 0.05224609375,
+        "rank_biserial": 0.6410256410256411,
+        "statistic": 14.0,
+        "w_minus": 14.0,
+        "w_plus": 64.0
+      },
+      "wilcoxon_holm_p_primary_family": 0.05224609375
+    },
+    "task_model_calls": {
+      "cold_family_summary": {
+        "max": 22.333333333333332,
+        "mean": 9.972222222222223,
+        "median": 8.5,
+        "min": 5.0,
+        "n": 12,
+        "q1": 8.0,
+        "q3": 9.333333333333334,
+        "sd": 4.831417244721531
+      },
+      "direction": "positive savings favor Memory",
+      "family_cluster_bootstrap": {
+        "absolute": {
+          "ci95": [
+            0.6944444444444455,
+            5.666666666666667
+          ],
+          "estimate": 2.9444444444444455
+        },
+        "relative_percent": {
+          "ci95": [
+            8.50340136054421,
+            45.95309273306863
+          ],
+          "estimate": 29.526462395543184
+        },
+        "samples": 20000,
+        "seed": 20260822
+      },
+      "hodges_lehmann_saving": 1.9999999999999996,
+      "label": "Task model calls",
+      "saving_family_summary": {
+        "max": 13.999999999999998,
+        "mean": 2.944444444444444,
+        "median": 1.1666666666666672,
+        "min": -1.666666666666666,
+        "n": 12,
+        "q1": -0.3333333333333339,
+        "q3": 4.5,
+        "sd": 4.627177801940877
+      },
+      "sign_test_exact": {
+        "n_nonzero": 12,
+        "negative": 4,
+        "p_two_sided": 0.3876953125,
+        "positive": 8,
+        "zero": 0
+      },
+      "warm_family_summary": {
+        "max": 11.0,
+        "mean": 7.027777777777778,
+        "median": 7.666666666666667,
+        "min": 2.0,
+        "n": 12,
+        "q1": 5.583333333333333,
+        "q3": 8.416666666666666,
+        "sd": 2.5759506760654185
+      },
+      "wilcoxon_exact": {
+        "n_nonzero": 12,
+        "p_two_sided": 0.0400390625,
+        "rank_biserial": 0.6666666666666666,
+        "statistic": 13.0,
+        "w_minus": 13.0,
+        "w_plus": 65.0
+      },
+      "wilcoxon_holm_p_exploratory_family": 0.1201171875
+    },
+    "task_output_tokens": {
+      "cold_family_summary": {
+        "max": 5460.333333333333,
+        "mean": 1408.388888888889,
+        "median": 905.3333333333334,
+        "min": 416.6666666666667,
+        "n": 12,
+        "q1": 797.3333333333334,
+        "q3": 1190.3333333333333,
+        "sd": 1380.7595101667143
+      },
+      "direction": "positive savings favor Memory",
+      "family_cluster_bootstrap": {
+        "absolute": {
+          "ci95": [
+            51.63680555555558,
+            1479.4451388888888
+          ],
+          "estimate": 639.3611111111111
+        },
+        "relative_percent": {
+          "ci95": [
+            5.749543920601448,
+            66.79112479029226
+          ],
+          "estimate": 45.39663129659579
+        },
+        "samples": 20000,
+        "seed": 20260822
+      },
+      "hodges_lehmann_saving": 282.66666666666674,
+      "label": "Task output tokens",
+      "saving_family_summary": {
+        "max": 4548.0,
+        "mean": 639.3611111111112,
+        "median": 87.33333333333337,
+        "min": -391.0,
+        "n": 12,
+        "q1": -15.999999999999943,
+        "q3": 697.1666666666666,
+        "sd": 1359.326426025619
+      },
+      "sign_test_exact": {
+        "n_nonzero": 12,
+        "negative": 3,
+        "p_two_sided": 0.14599609375,
+        "positive": 9,
+        "zero": 0
+      },
+      "warm_family_summary": {
+        "max": 1486.0,
+        "mean": 769.0277777777778,
+        "median": 789.8333333333333,
+        "min": 163.0,
+        "n": 12,
+        "q1": 569.9166666666666,
+        "q3": 933.6666666666666,
+        "sd": 365.38803113903896
+      },
+      "wilcoxon_exact": {
+        "n_nonzero": 12,
+        "p_two_sided": 0.12939453125,
+        "rank_biserial": 0.5128205128205128,
+        "statistic": 19.0,
+        "w_minus": 19.0,
+        "w_plus": 59.0
+      },
+      "wilcoxon_holm_p_exploratory_family": 0.2587890625
+    },
+    "tool_calls": {
+      "cold_family_summary": {
+        "max": 24.666666666666668,
+        "mean": 11.5,
+        "median": 10.5,
+        "min": 4.666666666666667,
+        "n": 12,
+        "q1": 9.5,
+        "q3": 10.916666666666666,
+        "sd": 5.257990552146766
+      },
+      "direction": "positive savings favor Memory",
+      "family_cluster_bootstrap": {
+        "absolute": {
+          "ci95": [
+            1.5555555555555554,
+            6.88888888888889
+          ],
+          "estimate": 4.0
+        },
+        "relative_percent": {
+          "ci95": [
+            15.505477528089896,
+            50.439184259169124
+          ],
+          "estimate": 34.78260869565217
+        },
+        "samples": 20000,
+        "seed": 20260822
+      },
+      "hodges_lehmann_saving": 3.4999999999999996,
+      "label": "Repository tool calls",
+      "saving_family_summary": {
+        "max": 15.333333333333334,
+        "mean": 4.0,
+        "median": 2.333333333333333,
+        "min": -2.0,
+        "n": 12,
+        "q1": 0.9166666666666665,
+        "q3": 6.333333333333334,
+        "sd": 4.974683381630911
+      },
+      "sign_test_exact": {
+        "n_nonzero": 12,
+        "negative": 2,
+        "p_two_sided": 0.03857421875,
+        "positive": 10,
+        "zero": 0
+      },
+      "warm_family_summary": {
+        "max": 12.666666666666666,
+        "mean": 7.5,
+        "median": 8.166666666666668,
+        "min": 1.0,
+        "n": 12,
+        "q1": 5.5,
+        "q3": 9.333333333333334,
+        "sd": 3.477198454346414
+      },
+      "wilcoxon_exact": {
+        "n_nonzero": 12,
+        "p_two_sided": 0.00927734375,
+        "rank_biserial": 0.8205128205128205,
+        "statistic": 7.0,
+        "w_minus": 7.0,
+        "w_plus": 71.0
+      },
+      "wilcoxon_holm_p_primary_family": 0.0185546875
+    },
+    "tool_failures": {
+      "cold_family_summary": {
+        "max": 10.333333333333334,
+        "mean": 2.4166666666666665,
+        "median": 1.3333333333333333,
+        "min": 0.0,
+        "n": 12,
+        "q1": 0.6666666666666666,
+        "q3": 2.666666666666667,
+        "sd": 2.913309756509551
+      },
+      "direction": "positive savings favor Memory",
+      "family_cluster_bootstrap": {
+        "absolute": {
+          "ci95": [
+            0.05555555555555558,
+            3.5000000000000004
+          ],
+          "estimate": 1.583333333333333
+        },
+        "relative_percent": {
+          "ci95": [
+            4.255319148936172,
+            90.39999999999999
+          ],
+          "estimate": 65.51724137931033
+        },
+        "samples": 20000,
+        "seed": 20260822
+      },
+      "hodges_lehmann_saving": 0.9166666666666667,
+      "label": "Tool failures",
+      "saving_family_summary": {
+        "max": 10.0,
+        "mean": 1.5833333333333333,
+        "median": 0.3333333333333333,
+        "min": -2.0,
+        "n": 12,
+        "q1": 0.08333333333333329,
+        "q3": 2.166666666666667,
+        "sd": 3.2415391032001692
+      },
+      "sign_test_exact": {
+        "n_nonzero": 12,
+        "negative": 3,
+        "p_two_sided": 0.14599609375,
+        "positive": 9,
+        "zero": 0
+      },
+      "warm_family_summary": {
+        "max": 4.0,
+        "mean": 0.8333333333333334,
+        "median": 0.3333333333333333,
+        "min": 0.0,
+        "n": 12,
+        "q1": 0.0,
+        "q3": 1.0,
+        "sd": 1.2018504251546631
+      },
+      "wilcoxon_exact": {
+        "n_nonzero": 12,
+        "p_two_sided": 0.150390625,
+        "rank_biserial": 0.48717948717948717,
+        "statistic": 20.0,
+        "w_minus": 20.0,
+        "w_plus": 58.0
+      },
+      "wilcoxon_holm_p_exploratory_family": 0.2587890625
+    }
+  },
+  "nestedBlocksPerFamily": 3,
+  "pairCount": 36,
+  "pairDirections": {
+    "duration_ms": {
+      "negative": 9,
+      "positive": 27,
+      "ties": 0
+    },
+    "task_input_tokens": {
+      "negative": 12,
+      "positive": 24,
+      "ties": 0
+    },
+    "task_model_calls": {
+      "negative": 7,
+      "positive": 22,
+      "ties": 7
+    },
+    "task_output_tokens": {
+      "negative": 9,
+      "positive": 27,
+      "ties": 0
+    },
+    "tool_calls": {
+      "negative": 5,
+      "positive": 28,
+      "ties": 3
+    },
+    "tool_failures": {
+      "negative": 6,
+      "positive": 18,
+      "ties": 12
+    }
+  },
+  "resultSha256": "56b7c9375ec26a693a3fcc37298fe4c6a75fbd7014d3deaa9ab6f1d218a2ca44",
+  "schemaVersion": 1,
+  "stratumCounts": {
+    "code-repair": 3,
+    "command-recovery": 3,
+    "project-constraint": 3,
+    "verification-rule": 3
+  },
+  "stratumSummary": {
+    "code-repair": {
+      "cold": {
+        "meanTaskInputTokens": 58096.666666666664,
+        "meanToolCalls": 9.555555555555555,
+        "meanToolFailures": 1.2222222222222223,
+        "n": 9,
+        "successes": 8
+      },
+      "warm": {
+        "meanTaskInputTokens": 55116.22222222222,
+        "meanToolCalls": 7.666666666666667,
+        "meanToolFailures": 0.4444444444444444,
+        "n": 9,
+        "successes": 8
+      }
+    },
+    "command-recovery": {
+      "cold": {
+        "meanTaskInputTokens": 48895.666666666664,
+        "meanToolCalls": 7.444444444444445,
+        "meanToolFailures": 2.111111111111111,
+        "n": 9,
+        "successes": 8
+      },
+      "warm": {
+        "meanTaskInputTokens": 22722.11111111111,
+        "meanToolCalls": 2.6666666666666665,
+        "meanToolFailures": 0.0,
+        "n": 9,
+        "successes": 9
+      }
+    },
+    "project-constraint": {
+      "cold": {
+        "meanTaskInputTokens": 64464.666666666664,
+        "meanToolCalls": 11.0,
+        "meanToolFailures": 1.3333333333333333,
+        "n": 9,
+        "successes": 7
+      },
+      "warm": {
+        "meanTaskInputTokens": 69838.66666666667,
+        "meanToolCalls": 11.333333333333334,
+        "meanToolFailures": 2.2222222222222223,
+        "n": 9,
+        "successes": 6
+      }
+    },
+    "verification-rule": {
+      "cold": {
+        "meanTaskInputTokens": 172197.11111111112,
+        "meanToolCalls": 18.0,
+        "meanToolFailures": 5.0,
+        "n": 9,
+        "successes": 5
+      },
+      "warm": {
+        "meanTaskInputTokens": 58849.333333333336,
+        "meanToolCalls": 8.333333333333334,
+        "meanToolFailures": 0.6666666666666666,
+        "n": 9,
+        "successes": 9
+      }
+    }
+  },
+  "suiteId": "minicode-non-path-memory-live-2026-08-22-v2",
+  "targetTurnCount": 72
+}

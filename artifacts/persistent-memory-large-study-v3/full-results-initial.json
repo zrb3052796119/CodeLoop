@@ -1,0 +1,1999 @@
+{
+  "recordedAt": "2026-08-21T15:30:11Z",
+  "results": [
+    {
+      "durationMs": 2364,
+      "id": "pmem-b1-schema-contract-warm",
+      "inputTokens": 13273,
+      "modelCalls": 2,
+      "outputTokens": 103,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_0af6d49dba794bea83636577ada44c1d",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5523,
+      "id": "pmem-b1-schema-contract-cold",
+      "inputTokens": 33146,
+      "modelCalls": 5,
+      "outputTokens": 279,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_1addeef8f84e47fd86bf504f6136f439",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 4057,
+      "id": "pmem-b1-feature-flags-cold",
+      "inputTokens": 19807,
+      "modelCalls": 3,
+      "outputTokens": 187,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_40afcf5031cb4880988ce28db168ba29",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 2157,
+      "id": "pmem-b1-feature-flags-warm",
+      "inputTokens": 13277,
+      "modelCalls": 2,
+      "outputTokens": 138,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_13a3e6f9cc12448f9a3bbef35c0b136d",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 2313,
+      "id": "pmem-b1-api-contract-warm",
+      "inputTokens": 13266,
+      "modelCalls": 2,
+      "outputTokens": 117,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_2f247f3973e04b319d733626aa65c856",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 8541,
+      "id": "pmem-b1-api-contract-cold",
+      "inputTokens": 46965,
+      "modelCalls": 7,
+      "outputTokens": 418,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_084640cfb85d4d959a15167ec3ac34de",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6927,
+      "id": "pmem-b1-observability-cold",
+      "inputTokens": 41026,
+      "modelCalls": 6,
+      "outputTokens": 425,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_af0873081e8e497d81693f6d52601c41",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 13069,
+      "id": "pmem-b1-observability-warm",
+      "inputTokens": 65359,
+      "modelCalls": 10,
+      "outputTokens": 1010,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_036012f379f44791b64efbe58bdd6d03"
+      ],
+      "runId": "run_ea3d8778282f4ad3bce3ed340734de9c",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 11025,
+      "id": "pmem-b1-migration-plan-warm",
+      "inputTokens": 42853,
+      "modelCalls": 7,
+      "outputTokens": 760,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_0fd623b56cae4c0f88a886d1ee043e59"
+      ],
+      "runId": "run_1458a5a8b1bb4d4e99bdff7c4e4cdf57",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6082,
+      "id": "pmem-b1-migration-plan-cold",
+      "inputTokens": 40162,
+      "modelCalls": 6,
+      "outputTokens": 360,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_7e8ceca098d8403facc5f35d6cd8a271",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 7212,
+      "id": "pmem-b1-runtime-config-cold",
+      "inputTokens": 34121,
+      "modelCalls": 5,
+      "outputTokens": 488,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_55cb0e606aed4ecfae305d5ae269dd90",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 11535,
+      "id": "pmem-b1-runtime-config-warm",
+      "inputTokens": 50229,
+      "modelCalls": 8,
+      "outputTokens": 851,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_6511fa8631aa417e854bc19b3fb841cd"
+      ],
+      "runId": "run_d315b3db02a648a9ac7c7526328fe4e8",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 13063,
+      "id": "pmem-b1-auth-policy-warm",
+      "inputTokens": 56812,
+      "modelCalls": 9,
+      "outputTokens": 832,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_589e8d07a4934c8e9f2eb668891c1373"
+      ],
+      "runId": "run_c40582fd5e9f4ce0b7c1691fe0e1e930",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5386,
+      "id": "pmem-b1-auth-policy-cold",
+      "inputTokens": 33065,
+      "modelCalls": 5,
+      "outputTokens": 241,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_a9b898b3efb84865af031525e5198fe0",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 3642,
+      "id": "pmem-b1-plugin-registry-cold",
+      "inputTokens": 19797,
+      "modelCalls": 3,
+      "outputTokens": 194,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_00c96ea642544696b5af53c58f652849",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 2496,
+      "id": "pmem-b1-plugin-registry-warm",
+      "inputTokens": 13245,
+      "modelCalls": 2,
+      "outputTokens": 81,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_8141ddedd1b04d3ea9a8b0dfe78938fd",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 10576,
+      "id": "pmem-b1-retention-policy-warm",
+      "inputTokens": 49968,
+      "modelCalls": 8,
+      "outputTokens": 740,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_e5da9c3c1a3d40559ae7ac9506649419"
+      ],
+      "runId": "run_87bd8c7775a54258a471ed3e1c4799ad",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6596,
+      "id": "pmem-b1-retention-policy-cold",
+      "inputTokens": 39819,
+      "modelCalls": 6,
+      "outputTokens": 274,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_23764cfe51b944c6a0b767b9846d4bd4",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6678,
+      "id": "pmem-b1-billing-rules-cold",
+      "inputTokens": 39594,
+      "modelCalls": 6,
+      "outputTokens": 301,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_0b3f3a5488d34f1e8473f75243237d59",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 17757,
+      "id": "pmem-b1-billing-rules-warm",
+      "inputTokens": 57559,
+      "modelCalls": 9,
+      "outputTokens": 962,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_26d3cdd2248d4bcd8d26c80242abe48c"
+      ],
+      "runId": "run_d65f2948636e4355a4cdc8ede9f3fdb2",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 2434,
+      "id": "pmem-b1-cache-policy-warm",
+      "inputTokens": 13264,
+      "modelCalls": 2,
+      "outputTokens": 82,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_9add1537efe2426f8bfd1df43cbf91f4",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 4398,
+      "id": "pmem-b1-cache-policy-cold",
+      "inputTokens": 19804,
+      "modelCalls": 3,
+      "outputTokens": 178,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_aa43bb6d952749dc994cee226d2d27d3",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 9362,
+      "id": "pmem-b1-deploy-runbook-cold",
+      "inputTokens": 40484,
+      "modelCalls": 6,
+      "outputTokens": 433,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_a1fecd0ff00e4c35b7536f9145701baf",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 3467,
+      "id": "pmem-b1-deploy-runbook-warm",
+      "inputTokens": 13315,
+      "modelCalls": 2,
+      "outputTokens": 189,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_1e96cafce77a4c449d4d3deeeb528f09",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 14678,
+      "id": "pmem-b1-package-map-warm",
+      "inputTokens": 50369,
+      "modelCalls": 8,
+      "outputTokens": 904,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_6649f6f63fd34e2d8c62e960a9699a77"
+      ],
+      "runId": "run_e9eb3f38afef4dc1a823bb336d66f7d5",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 8774,
+      "id": "pmem-b1-package-map-cold",
+      "inputTokens": 40322,
+      "modelCalls": 6,
+      "outputTokens": 375,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_7deb83e3449a4c0fadf5f9e47da98ca7",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 9154,
+      "id": "pmem-b1-test-matrix-cold",
+      "inputTokens": 39981,
+      "modelCalls": 6,
+      "outputTokens": 302,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_9686c0c92dba4e458ec002e197c35351",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 18294,
+      "id": "pmem-b1-test-matrix-warm",
+      "inputTokens": 64455,
+      "modelCalls": 10,
+      "outputTokens": 1019,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_b83b74120ec94b018f2f8c1b32a6759c"
+      ],
+      "runId": "run_ca4860dc8c024d518bcccd06a757743b",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 3363,
+      "id": "pmem-b1-queue-policy-warm",
+      "inputTokens": 13264,
+      "modelCalls": 2,
+      "outputTokens": 92,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_2a8dc416e957470592ff5b809b0b6997",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 8912,
+      "id": "pmem-b1-queue-policy-cold",
+      "inputTokens": 39528,
+      "modelCalls": 6,
+      "outputTokens": 274,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_5166d43b4e4a4eaca4e40f4db24cd589",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 7491,
+      "id": "pmem-b1-model-routing-cold",
+      "inputTokens": 33671,
+      "modelCalls": 5,
+      "outputTokens": 390,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_564c7ce9758e4924bf49d2251e9c4557",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 3321,
+      "id": "pmem-b1-model-routing-warm",
+      "inputTokens": 13264,
+      "modelCalls": 2,
+      "outputTokens": 99,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_886aeee6b4f7496d93acae6e7056f389",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 9080,
+      "id": "pmem-b2-billing-rules-cold",
+      "inputTokens": 39996,
+      "modelCalls": 6,
+      "outputTokens": 331,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_cb7801aa865446d38299b9e90f580338",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 12838,
+      "id": "pmem-b2-billing-rules-warm",
+      "inputTokens": 42955,
+      "modelCalls": 7,
+      "outputTokens": 784,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_814a07a2269f4f148101400513923b6c"
+      ],
+      "runId": "run_22346ebf597547c286a71a63825e7875",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 13824,
+      "id": "pmem-b2-test-matrix-warm",
+      "inputTokens": 50357,
+      "modelCalls": 8,
+      "outputTokens": 726,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_713a2d7571e64ca79ebb299a71fdab62"
+      ],
+      "runId": "run_c88626a020cd41e9b70bfb0e644e9f74",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 9297,
+      "id": "pmem-b2-test-matrix-cold",
+      "inputTokens": 39971,
+      "modelCalls": 6,
+      "outputTokens": 319,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_a8e2cee0dba047acb7fbe3bd8275294c",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 7877,
+      "id": "pmem-b2-runtime-config-cold",
+      "inputTokens": 33378,
+      "modelCalls": 5,
+      "outputTokens": 321,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_4cc9c989391c4292bc89d624070e683a",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 17612,
+      "id": "pmem-b2-runtime-config-warm",
+      "inputTokens": 64274,
+      "modelCalls": 10,
+      "outputTokens": 984,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_1343c1b9048b4d798cc1063d9a7ccc9f"
+      ],
+      "runId": "run_774952930b774266852a62c72899a98c",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 13420,
+      "id": "pmem-b2-migration-plan-warm",
+      "inputTokens": 43269,
+      "modelCalls": 7,
+      "outputTokens": 850,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_457332afdd124834ac7a91104872cc42"
+      ],
+      "runId": "run_a7e9263fe761424f96f530f560e08b20",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5063,
+      "id": "pmem-b2-migration-plan-cold",
+      "inputTokens": 19964,
+      "modelCalls": 3,
+      "outputTokens": 218,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_b773fe15938c426d976695d5ed3076a6",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 8688,
+      "id": "pmem-b2-queue-policy-cold",
+      "inputTokens": 40015,
+      "modelCalls": 6,
+      "outputTokens": 356,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_7e10f44ed9d94567949edfbf835b5b69",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 3221,
+      "id": "pmem-b2-queue-policy-warm",
+      "inputTokens": 13264,
+      "modelCalls": 2,
+      "outputTokens": 91,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_186bcc5923654c45a67157be3c6fb3f5",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 3026,
+      "id": "pmem-b2-cache-policy-warm",
+      "inputTokens": 13286,
+      "modelCalls": 2,
+      "outputTokens": 101,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_69876044d46c418d93512fb0adbbf2ee",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5338,
+      "id": "pmem-b2-cache-policy-cold",
+      "inputTokens": 19825,
+      "modelCalls": 3,
+      "outputTokens": 239,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_1c18b4f16d8542e4a0e04c6d790b4f58",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 7247,
+      "id": "pmem-b2-schema-contract-cold",
+      "inputTokens": 33062,
+      "modelCalls": 5,
+      "outputTokens": 246,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_d51b6998271d424eacee556a1bb276d2",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 3347,
+      "id": "pmem-b2-schema-contract-warm",
+      "inputTokens": 13264,
+      "modelCalls": 2,
+      "outputTokens": 115,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_8e54d3f207944082a00f218b89071abe",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 4625,
+      "id": "pmem-b2-feature-flags-warm",
+      "inputTokens": 20100,
+      "modelCalls": 3,
+      "outputTokens": 227,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_4687257ea2aa45b497659ca0628b120c",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6443,
+      "id": "pmem-b2-feature-flags-cold",
+      "inputTokens": 26434,
+      "modelCalls": 4,
+      "outputTokens": 251,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_d9699b32a2484a299ed3732d1c634d7c",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6132,
+      "id": "pmem-b2-deploy-runbook-cold",
+      "inputTokens": 26481,
+      "modelCalls": 4,
+      "outputTokens": 240,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_7449f6c3fa374a6582800634ab8067cb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 3866,
+      "id": "pmem-b2-deploy-runbook-warm",
+      "inputTokens": 13270,
+      "modelCalls": 2,
+      "outputTokens": 140,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_931d980deb1d41c1a30ac78f075cc928",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 15379,
+      "id": "pmem-b2-retention-policy-warm",
+      "inputTokens": 57003,
+      "modelCalls": 9,
+      "outputTokens": 823,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_f257f447b7ef48eda9e910889fbd936b"
+      ],
+      "runId": "run_d97d75b4b3c14b7bac2ebe805b4af1ce",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 8276,
+      "id": "pmem-b2-retention-policy-cold",
+      "inputTokens": 40169,
+      "modelCalls": 6,
+      "outputTokens": 318,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_960f4c494b2e45fbaa8aa5f32fd91fe0",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 8973,
+      "id": "pmem-b2-package-map-cold",
+      "inputTokens": 39872,
+      "modelCalls": 6,
+      "outputTokens": 302,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_73a83b5111324040898746acbeb21964",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 16831,
+      "id": "pmem-b2-package-map-warm",
+      "inputTokens": 64744,
+      "modelCalls": 10,
+      "outputTokens": 932,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_64b24a4d2bca46189410b59eb4c285e5"
+      ],
+      "runId": "run_d40175b931cd469e9998b8541da39f47",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 11180,
+      "id": "pmem-b2-observability-warm",
+      "inputTokens": 42904,
+      "modelCalls": 7,
+      "outputTokens": 762,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_d1239f4f0f8a496f851080a0b5d35e88"
+      ],
+      "runId": "run_533418a5a59f485bafc6146150ad874d",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5194,
+      "id": "pmem-b2-observability-cold",
+      "inputTokens": 19800,
+      "modelCalls": 3,
+      "outputTokens": 215,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_d97fdbd2be614deaaf86accae1f6ee11",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 4611,
+      "id": "pmem-b2-plugin-registry-cold",
+      "inputTokens": 19775,
+      "modelCalls": 3,
+      "outputTokens": 173,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_72df218317b54ac3a587421215180a8d",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 4324,
+      "id": "pmem-b2-plugin-registry-warm",
+      "inputTokens": 13273,
+      "modelCalls": 2,
+      "outputTokens": 104,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_6e543531e78f41ddba45a6b81de6411c",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 13501,
+      "id": "pmem-b2-auth-policy-warm",
+      "inputTokens": 56743,
+      "modelCalls": 9,
+      "outputTokens": 860,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_4507bbd29f574810b3a43c8c18ed9372"
+      ],
+      "runId": "run_34387c336ee1440b8fb250cefab4a2af",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 4692,
+      "id": "pmem-b2-auth-policy-cold",
+      "inputTokens": 19789,
+      "modelCalls": 3,
+      "outputTokens": 219,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_83ed163bbc09416aadf9a62f3443c8f4",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5455,
+      "id": "pmem-b2-model-routing-cold",
+      "inputTokens": 32854,
+      "modelCalls": 5,
+      "outputTokens": 266,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_5183580513d340588af997fc73371465",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 2169,
+      "id": "pmem-b2-model-routing-warm",
+      "inputTokens": 13266,
+      "modelCalls": 2,
+      "outputTokens": 111,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_dfafd6cd531c4ef6a096ddcc54a36ee9",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 2643,
+      "id": "pmem-b2-api-contract-warm",
+      "inputTokens": 13267,
+      "modelCalls": 2,
+      "outputTokens": 118,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_447f8d785c1041d4a4c60aadd2cb94bf",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 7149,
+      "id": "pmem-b2-api-contract-cold",
+      "inputTokens": 39979,
+      "modelCalls": 6,
+      "outputTokens": 321,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_b9f941ee957e48d8a892257f2b217292",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 14189,
+      "id": "pmem-b3-billing-rules-warm",
+      "inputTokens": 64602,
+      "modelCalls": 10,
+      "outputTokens": 963,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_1b115b3a0ce84e2daedaf503753f6097"
+      ],
+      "runId": "run_0a4089886dde4a709f78dea779be7059",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 6253,
+      "id": "pmem-b3-billing-rules-cold",
+      "inputTokens": 40246,
+      "modelCalls": 6,
+      "outputTokens": 363,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_657917d251f449ddabf708bcab04de37",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5063,
+      "id": "pmem-b3-runtime-config-cold",
+      "inputTokens": 33302,
+      "modelCalls": 5,
+      "outputTokens": 278,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_697f0d8b06884b5da26007583389f265",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 15896,
+      "id": "pmem-b3-runtime-config-warm",
+      "inputTokens": 57598,
+      "modelCalls": 9,
+      "outputTokens": 971,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_37e3f8f5925b4436b37f20c6b4f67606"
+      ],
+      "runId": "run_55fddcf3d60149d495a8c3eea589a359",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 3852,
+      "id": "pmem-b3-queue-policy-warm",
+      "inputTokens": 13290,
+      "modelCalls": 2,
+      "outputTokens": 137,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_e552ef34d0ea499f8e02b791350b003e",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 8460,
+      "id": "pmem-b3-queue-policy-cold",
+      "inputTokens": 39970,
+      "modelCalls": 6,
+      "outputTokens": 310,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_7c3408bc49e243feb33477735504dec8",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 4812,
+      "id": "pmem-b3-model-routing-cold",
+      "inputTokens": 19780,
+      "modelCalls": 3,
+      "outputTokens": 179,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_4431657fc4f3449a89609242f4831a26",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 3553,
+      "id": "pmem-b3-model-routing-warm",
+      "inputTokens": 13266,
+      "modelCalls": 2,
+      "outputTokens": 115,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_5d78d035cd464578992e30234e1be8f8",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 2565,
+      "id": "pmem-b3-plugin-registry-warm",
+      "inputTokens": 13245,
+      "modelCalls": 2,
+      "outputTokens": 85,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_55a2ed8f256f43bfb80265c8bffb9892",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 4911,
+      "id": "pmem-b3-plugin-registry-cold",
+      "inputTokens": 19639,
+      "modelCalls": 3,
+      "outputTokens": 149,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_e293b89f6fbc4c46aeb12f9a1ebe86d9",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 4705,
+      "id": "pmem-b3-deploy-runbook-cold",
+      "inputTokens": 19696,
+      "modelCalls": 3,
+      "outputTokens": 177,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_a8158f41a194465eaf45de2f4f91c603",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 2996,
+      "id": "pmem-b3-deploy-runbook-warm",
+      "inputTokens": 13283,
+      "modelCalls": 2,
+      "outputTokens": 94,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_48941f6c88d64680b2ce2257ea4a7e12",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 17590,
+      "id": "pmem-b3-package-map-warm",
+      "inputTokens": 64520,
+      "modelCalls": 10,
+      "outputTokens": 912,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_cf81d13a5a1e45a1b8f1bcc5d5c012b9"
+      ],
+      "runId": "run_63a3408e83544fe2a4d7ff4af5a519ab",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 7136,
+      "id": "pmem-b3-package-map-cold",
+      "inputTokens": 21418,
+      "modelCalls": 4,
+      "outputTokens": 370,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read"
+      ],
+      "runId": "run_c1d42f5ef7694f2993234ce92a82e8f9",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    },
+    {
+      "durationMs": 6153,
+      "id": "pmem-b3-api-contract-cold",
+      "inputTokens": 26854,
+      "modelCalls": 4,
+      "outputTokens": 270,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_997e60208ea44e4f8da3577c9f6ba848",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 2758,
+      "id": "pmem-b3-api-contract-warm",
+      "inputTokens": 13270,
+      "modelCalls": 2,
+      "outputTokens": 137,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_3cab0caf2e0e4dca889bda1e0542727d",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 3220,
+      "id": "pmem-b3-schema-contract-warm",
+      "inputTokens": 13264,
+      "modelCalls": 2,
+      "outputTokens": 109,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_75a0768b1f3d4507a41482646d6183f2",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 7726,
+      "id": "pmem-b3-schema-contract-cold",
+      "inputTokens": 33473,
+      "modelCalls": 5,
+      "outputTokens": 285,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_61d2632e49d44a24889df4fb538b9644",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5373,
+      "id": "pmem-b3-feature-flags-cold",
+      "inputTokens": 26308,
+      "modelCalls": 4,
+      "outputTokens": 208,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_b2208e2bfd534c4fa7333cba008e0bac",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 3392,
+      "id": "pmem-b3-feature-flags-warm",
+      "inputTokens": 13264,
+      "modelCalls": 2,
+      "outputTokens": 84,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_ad671e5f70e440b0b23a04b41b530a76",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 3929,
+      "id": "pmem-b3-cache-policy-warm",
+      "inputTokens": 13287,
+      "modelCalls": 2,
+      "outputTokens": 104,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_951ace436bf648a6a5d5cdc0bf8dc24d",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 11809,
+      "id": "pmem-b3-cache-policy-cold",
+      "inputTokens": 47878,
+      "modelCalls": 7,
+      "outputTokens": 521,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_d7def96583fc4abca7fce1a454a94241",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 5977,
+      "id": "pmem-b3-migration-plan-cold",
+      "inputTokens": 26429,
+      "modelCalls": 4,
+      "outputTokens": 263,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_44fbffdf83d84d89878142f4270cffc4",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 15150,
+      "id": "pmem-b3-migration-plan-warm",
+      "inputTokens": 49933,
+      "modelCalls": 8,
+      "outputTokens": 900,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_fa375a5ce20a439f9738d4c124a856e9"
+      ],
+      "runId": "run_080b3f417ae54bbab8bed45789ef9377",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 16813,
+      "id": "pmem-b3-observability-warm",
+      "inputTokens": 64519,
+      "modelCalls": 10,
+      "outputTokens": 900,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_690b550608154c2b91b9300c270bdb44"
+      ],
+      "runId": "run_426bd198f5a44c44896dbfb3870823ae",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 10141,
+      "id": "pmem-b3-observability-cold",
+      "inputTokens": 40643,
+      "modelCalls": 6,
+      "outputTokens": 407,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_cefc36e95eae4a8d9af6a269f07aa109",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 7408,
+      "id": "pmem-b3-retention-policy-cold",
+      "inputTokens": 33310,
+      "modelCalls": 5,
+      "outputTokens": 302,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_161e7612ef93473482cafd87537ad319",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 14284,
+      "id": "pmem-b3-retention-policy-warm",
+      "inputTokens": 50289,
+      "modelCalls": 8,
+      "outputTokens": 855,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_987c8569253240268b9b0d0db3139a98"
+      ],
+      "runId": "run_b81972a21ffb4d289e5d895185f9b9b5",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 12994,
+      "id": "pmem-b3-auth-policy-warm",
+      "inputTokens": 42850,
+      "modelCalls": 7,
+      "outputTokens": 737,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_f8d0b21f603c4d21a8681ab11bad4e13"
+      ],
+      "runId": "run_577e88d05372418ab30367dbc6800c45",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 4722,
+      "id": "pmem-b3-auth-policy-cold",
+      "inputTokens": 19795,
+      "modelCalls": 3,
+      "outputTokens": 216,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_605809d54b334576abb8c877c3e373b5",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 9319,
+      "id": "pmem-b3-test-matrix-cold",
+      "inputTokens": 40021,
+      "modelCalls": 6,
+      "outputTokens": 329,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "marker-found"
+      ],
+      "runId": "run_19ea89f4dabb4bab85a7660e32b8be40",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 19460,
+      "id": "pmem-b3-test-matrix-warm",
+      "inputTokens": 64174,
+      "modelCalls": 10,
+      "outputTokens": 989,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_cb3a213851d04b0b8f28ecd7ed49108e"
+      ],
+      "runId": "run_cee61441316249f7bd1cdd382dab3c9a",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceReport": "artifacts/persistent-memory-large-study-v3/manifest.json",
+  "suiteId": "minicode-persistent-memory-large-live-2026-08-21-v3"
+}

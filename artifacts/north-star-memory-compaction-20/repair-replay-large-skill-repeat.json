@@ -1,0 +1,28 @@
+{
+  "recordedAt": "2026-08-21T05:34:36Z",
+  "results": [
+    {
+      "durationMs": 15885,
+      "id": "context-loaded-skill-result",
+      "inputTokens": 21756,
+      "modelCalls": 2,
+      "outputTokens": 69,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "context-compacted",
+        "critical-state-retained",
+        "skill-loaded"
+      ],
+      "runId": "run_5c615afbeb01468490d091e8efbb2ee0",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceReport": "artifacts/north-star-memory-compaction-20/manifest.json",
+  "suiteId": "minicode-memory-compaction-live-20-2026-08-21-v1"
+}
