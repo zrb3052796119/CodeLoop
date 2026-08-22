@@ -73,6 +73,8 @@ _DNS_RESOLVER = BoundedResolver()
 class NetworkSafetyError(ValueError):
     """Low-cardinality network error that never contains request content."""
 
+    _model_safe_tool_output = True
+
     def __init__(self, code: str) -> None:
         self.code = code if code in _ERROR_MESSAGES else "invalid_request"
         super().__init__(self.code)

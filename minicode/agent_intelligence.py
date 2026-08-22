@@ -1,6 +1,9 @@
 from enum import Enum
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from minicode.agent_metrics import AgentMetricsCollector
 
 
 class ErrorCategory(Enum):
@@ -219,10 +222,11 @@ class NudgeGenerator:
         },
         ErrorCategory.PERMISSION: {
             RecoveryStrategy.REQUEST_PERMISSION: (
-                "Permission denied. You don't have sufficient privileges for this operation. "
-                "Consider: (1) running with elevated permissions if appropriate, "
-                "(2) using a different approach that doesn't require elevated access, or "
-                "(3) asking the user for permission to proceed."
+                "Permission denied. Do not retry the same action through a shell wrapper or "
+                "privilege escalation. Use a materially different action that is already "
+                "authorized; for commands, prefer an explicit executable and argument list "
+                "with an in-workspace working directory. If no authorized alternative exists, "
+                "stop and report the blocker."
             ),
             RecoveryStrategy.FALLBACK_ALTERNATIVE: (
                 "Access was denied. Try an alternative approach that works with current permissions."
@@ -282,7 +286,10 @@ class NudgeGenerator:
         # Add tool-specific hints
         tool_name = classified_error.context.get("tool_name", "")
         if tool_name == "run_command" and category == ErrorCategory.PERMISSION:
-            base_message += " For command execution, consider using 'sudo' only if explicitly approved by the user."
+            base_message += (
+                " Do not add sudo, pipes, redirection, cd, or bash/zsh wrappers; "
+                "do not repeat an equivalent denied command."
+            )
         elif tool_name in ["write_file", "edit_file"] and category == ErrorCategory.LOGIC:
             base_message += " For file operations, verify the path exists and you have write permissions."
         elif tool_name == "grep_files" and category == ErrorCategory.LOGIC:

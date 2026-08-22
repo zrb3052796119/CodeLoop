@@ -3342,6 +3342,12 @@ function runEventSummary(event) {
     const lengthLabel = Number.isInteger(contentLength) && contentLength >= 0 ? `${esc(contentLength)} chars` : '';
     return `<span class="run-event-detail"><span>${base}</span>${lengthLabel ? `<small>${lengthLabel}</small>` : ''}</span>`;
   }
+  if (event.type === 'execution.stopped') {
+    const reason = event.details?.reasonCode;
+    const failures = event.details?.consecutiveFailedSteps;
+    const action = event.details?.userActionRequired === true ? 'user action required' : '';
+    return `<span class="run-event-detail runtime-event"><span>${base}</span>${reason ? `<code>${esc(reason)}</code>` : ''}${Number.isInteger(failures) ? `<small>${esc(failures)} consecutive failed steps</small>` : ''}${action ? `<small>${esc(action)}</small>` : ''}</span>`;
+  }
   if (event.type === 'task.outcome') {
     const outcomeStatus = event.details?.outcomeStatus;
     const toolErrorCount = event.details?.toolErrorCount;

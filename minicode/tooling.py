@@ -384,7 +384,10 @@ class ToolRegistry:
                 parsed = tool.validator(input_data)
             except (ValueError, TypeError, KeyError) as ve:
                 safe_projection = getattr(ve, "tool_output", None)
-                if callable(safe_projection):
+                if (
+                    getattr(ve, "_model_safe_tool_output", False) is True
+                    and callable(safe_projection)
+                ):
                     projected = safe_projection()
                     if (
                         isinstance(projected, str)
@@ -420,6 +423,33 @@ class ToolRegistry:
         except Exception as error:  # noqa: BLE001
             # Global safety net: convert any unhandled exception to error result
             # This prevents a single buggy tool from crashing the entire session
+            safe_projection = getattr(error, "tool_output", None)
+            if (
+                getattr(error, "_model_safe_tool_output", False) is True
+                and callable(safe_projection)
+            ):
+                try:
+                    projected = safe_projection(tool_name)
+                except Exception:  # noqa: BLE001 - projection is best-effort
+                    projected = None
+                projected_match = (
+                    re.match(r"^error\[([a-z_]{1,64})\]: ", projected)
+                    if isinstance(projected, str)
+                    else None
+                )
+                if (
+                    projected_match is not None
+                    and len(projected.encode("utf-8")) <= 1_024
+                    and "\n" not in projected
+                    and "\r" not in projected
+                ):
+                    _logger.info(
+                        "Tool %s returned controlled error[%s].",
+                        tool_name,
+                        projected_match.group(1),
+                    )
+                    return ToolResult(ok=False, output=projected)
+
             import traceback
             tb_lines = traceback.format_exception(type(error), error, error.__traceback__)
             # Include last 5 lines of traceback for debugging

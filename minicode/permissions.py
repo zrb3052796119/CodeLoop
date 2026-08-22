@@ -39,6 +39,39 @@ class NetworkPermissionError(RuntimeError):
         super().__init__(code)
 
 
+class PermissionDeniedError(RuntimeError):
+    """Permission denial with a safe, model-visible recovery projection."""
+
+    _model_safe_tool_output = True
+
+    def __init__(self, message: str, *, code: str) -> None:
+        self.code = code
+        super().__init__(message)
+
+    def tool_output(self, tool_name: str = "tool") -> str:
+        if self.code.startswith("command"):
+            guidance = (
+                "Use a materially different direct command request with explicit "
+                "args and an in-workspace cwd; do not add shell wrappers, pipes, "
+                "redirections, sudo, or other privilege escalation."
+            )
+        elif self.code.startswith("path"):
+            guidance = (
+                "Use a workspace-relative target or an already-authorized path; "
+                "do not retry the denied outside-workspace target."
+            )
+        else:
+            guidance = (
+                "Use an already-authorized target or stop and report the blocker; "
+                "do not retry the denied edit through another tool."
+            )
+        safe_tool = re.sub(r"[^a-zA-Z0-9_.-]", "", str(tool_name))[:64] or "tool"
+        return (
+            f"error[permission_denied]: Tool {safe_tool} request was denied by "
+            f"workspace policy ({self.code}). {guidance}"
+        )
+
+
 _NETWORK_REVIEW_FIELDS = {
     "reviewVersion",
     "method",
@@ -440,7 +473,10 @@ class PermissionManager:
         
         # Check denial sets first (fail fast)
         if normalized_target in self.session_denied_paths or _matches_directory_prefix(normalized_target, self.denied_directory_prefixes):
-            raise RuntimeError(f"Access denied for path outside cwd: {normalized_target}")
+            raise PermissionDeniedError(
+                f"Access denied for path outside cwd: {normalized_target}",
+                code="path_outside_workspace",
+            )
         
         # Check approval sets
         if normalized_target in self.session_allowed_paths or _matches_directory_prefix(normalized_target, self.allowed_directory_prefixes):
@@ -454,8 +490,9 @@ class PermissionManager:
             return
         
         if self.prompt is None:
-            raise RuntimeError(
-                f"Path {normalized_target} is outside cwd {self.workspace_root}. Start minicode in TTY mode to approve it."
+            raise PermissionDeniedError(
+                f"Path {normalized_target} is outside cwd {self.workspace_root}. Start minicode in TTY mode to approve it.",
+                code="path_requires_approval",
             )
 
         scope_directory = normalized_target if intent in {"list", "command_cwd"} else str(Path(normalized_target).parent)
@@ -487,7 +524,10 @@ class PermissionManager:
         if decision == "allow_operation":
             return
         if decision == "deny_operation":
-            raise RuntimeError(f"Access denied for path outside cwd: {normalized_target}")
+            raise PermissionDeniedError(
+                f"Access denied for path outside cwd: {normalized_target}",
+                code="path_outside_workspace",
+            )
         if decision == "allow_once":
             self.session_allowed_paths.add(normalized_target)
             return
@@ -500,7 +540,10 @@ class PermissionManager:
             self._persist()
         else:
             self.session_denied_paths.add(normalized_target)
-        raise RuntimeError(f"Access denied for path outside cwd: {normalized_target}")
+        raise PermissionDeniedError(
+            f"Access denied for path outside cwd: {normalized_target}",
+            code="path_outside_workspace",
+        )
 
     def ensure_command(
         self,
@@ -520,13 +563,19 @@ class PermissionManager:
                 return
             if assessment.action == "block":
                 get_mode_state().record_decision("block")
-                raise RuntimeError(f"Command blocked by auto mode: {assessment.reason}")
+                raise PermissionDeniedError(
+                    f"Command blocked by auto mode: {assessment.reason}",
+                    code="command_blocked",
+                )
             # action == "prompt" — fall through to the normal approval flow
             # below instead of silently allowing the command.
             reason = assessment.reason or "approval required"
         signature = _format_command_signature(command, args)
         if signature in self.session_denied_commands or signature in self.denied_command_patterns:
-            raise RuntimeError(f"Command denied: {signature}")
+            raise PermissionDeniedError(
+                f"Command denied: {signature}",
+                code="command_denied",
+            )
         if signature in self.session_allowed_commands or signature in self.allowed_command_patterns:
             return
 
@@ -539,10 +588,16 @@ class PermissionManager:
                 return
             if assessment.action == "block":
                 get_mode_state().record_decision("block")
-                raise RuntimeError(f"Command blocked by auto mode: {assessment.reason}")
+                raise PermissionDeniedError(
+                    f"Command blocked by auto mode: {assessment.reason}",
+                    code="command_blocked",
+                )
 
         if self.prompt is None:
-            raise RuntimeError(f"Command requires approval: {signature}. Start minicode in TTY mode to approve it.")
+            raise PermissionDeniedError(
+                f"Command requires approval: {signature}. Start minicode in TTY mode to approve it.",
+                code="command_requires_approval",
+            )
         # Distinguish forced prompts (external trigger) from dangerous commands
         summary = (
             "mini-code wants to run a dangerous command"
@@ -574,7 +629,10 @@ class PermissionManager:
         if decision == "allow_operation":
             return
         if decision == "deny_operation":
-            raise RuntimeError(f"Command denied: {signature}")
+            raise PermissionDeniedError(
+                f"Command denied: {signature}",
+                code="command_denied",
+            )
         if decision == "allow_once":
             self.session_allowed_commands.add(signature)
             return
@@ -587,7 +645,10 @@ class PermissionManager:
             self._persist()
         else:
             self.session_denied_commands.add(signature)
-        raise RuntimeError(f"Command denied: {signature}")
+        raise PermissionDeniedError(
+            f"Command denied: {signature}",
+            code="command_denied",
+        )
 
     def ensure_edit(self, target_path: str, diff_preview: str) -> None:
         normalized_target = _normalize_path(target_path)
@@ -595,7 +656,10 @@ class PermissionManager:
             normalized_target in self.session_denied_edits
             or normalized_target in self.denied_edit_patterns
         ):
-            raise RuntimeError(f"Edit denied: {normalized_target}")
+            raise PermissionDeniedError(
+                f"Edit denied: {normalized_target}",
+                code="edit_denied",
+            )
         if (
             normalized_target in self.session_allowed_edits
             or normalized_target in self.turn_allowed_edits
@@ -612,10 +676,16 @@ class PermissionManager:
             return
         if assessment.action == "block":
             get_mode_state().record_decision("block")
-            raise RuntimeError(f"Edit blocked by auto mode: {assessment.reason}")
+            raise PermissionDeniedError(
+                f"Edit blocked by auto mode: {assessment.reason}",
+                code="edit_blocked",
+            )
         
         if self.prompt is None:
-            raise RuntimeError(f"Edit requires approval: {normalized_target}. Start minicode in TTY mode to review it.")
+            raise PermissionDeniedError(
+                f"Edit requires approval: {normalized_target}. Start minicode in TTY mode to review it.",
+                code="edit_requires_approval",
+            )
         result = self.prompt(
             {
                 "schemaVersion": 1,
@@ -642,7 +712,10 @@ class PermissionManager:
         if decision == "allow_operation":
             return
         if decision == "deny_operation":
-            raise RuntimeError(f"Edit denied: {normalized_target}")
+            raise PermissionDeniedError(
+                f"Edit denied: {normalized_target}",
+                code="edit_denied",
+            )
         if decision == "allow_once":
             self.session_allowed_edits.add(normalized_target)
             return
@@ -659,13 +732,19 @@ class PermissionManager:
         if decision == "deny_with_feedback":
             guidance = str(result.get("feedback", "")).strip()
             if guidance:
-                raise RuntimeError(f"Edit denied: {normalized_target}\nUser guidance: {guidance}")
+                raise PermissionDeniedError(
+                    f"Edit denied: {normalized_target}\nUser guidance: {guidance}",
+                    code="edit_denied_with_feedback",
+                )
         if decision == "deny_always":
             self.denied_edit_patterns.add(normalized_target)
             self._persist()
         else:
             self.session_denied_edits.add(normalized_target)
-        raise RuntimeError(f"Edit denied: {normalized_target}")
+        raise PermissionDeniedError(
+            f"Edit denied: {normalized_target}",
+            code="edit_denied",
+        )
 
 
 class PermissionGate:

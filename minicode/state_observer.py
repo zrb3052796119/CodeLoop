@@ -123,6 +123,7 @@ class StateObserver:
         self._max_history = 100
 
         self._response_time_baseline: float = 0.0
+        self._response_time_baseline_samples: list[float] = []
         self._sample_count: int = 0
 
     def update(self, measurement: MeasurementVector) -> ObservedState:
@@ -131,8 +132,20 @@ class StateObserver:
             self._measurement_history.pop(0)
 
         self._sample_count += 1
-        if self._sample_count == 1:
-            self._response_time_baseline = measurement.response_time
+        if (
+            math.isfinite(measurement.response_time)
+            and measurement.response_time > 0.0
+            and len(self._response_time_baseline_samples) < 5
+        ):
+            self._response_time_baseline_samples.append(measurement.response_time)
+            ordered = sorted(self._response_time_baseline_samples)
+            midpoint = len(ordered) // 2
+            if len(ordered) % 2:
+                self._response_time_baseline = ordered[midpoint]
+            else:
+                self._response_time_baseline = (
+                    ordered[midpoint - 1] + ordered[midpoint]
+                ) / 2.0
 
         internal_load = self._estimate_internal_load(measurement)
         hidden_errors = self._estimate_hidden_errors(measurement)
@@ -288,3 +301,4 @@ class StateObserver:
         self._state_history = []
         self._sample_count = 0
         self._response_time_baseline = 0.0
+        self._response_time_baseline_samples = []

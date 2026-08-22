@@ -793,6 +793,39 @@ def _run_event_details(
         if kind == "returned_assistant":
             details["kind"] = kind
         return details
+    if event_type == "execution.stopped":
+        reason_code = payload.get("reasonCode")
+        step_count = _trace_bounded_count(
+            payload.get("stepCount"), maximum=_MAX_TRACE_ROUTING_SKILLS
+        )
+        tool_error_count = _trace_bounded_count(
+            payload.get("toolErrorCount"), maximum=_MAX_TRACE_ROUTING_SKILLS
+        )
+        consecutive_failed_steps = _trace_bounded_count(
+            payload.get("consecutiveFailedSteps"),
+            maximum=_MAX_TRACE_ROUTING_SKILLS,
+        )
+        user_action_required = payload.get("userActionRequired")
+        if (
+            reason_code
+            not in {
+                "repeated_denied_action",
+                "consecutive_tool_failures",
+                "failure_window_exhausted",
+            }
+            or step_count is None
+            or tool_error_count is None
+            or consecutive_failed_steps is None
+            or not isinstance(user_action_required, bool)
+        ):
+            return {}
+        return {
+            "reasonCode": reason_code,
+            "stepCount": step_count,
+            "toolErrorCount": tool_error_count,
+            "consecutiveFailedSteps": consecutive_failed_steps,
+            "userActionRequired": user_action_required,
+        }
     if event_type == "task.outcome":
         return normalize_task_outcome_payload(payload) or details
     if event_type == "skill.routed":
@@ -1677,6 +1710,7 @@ class DashboardReadModel:
             "permission.requested": "Permission requested",
             "permission.decided": "Permission decided",
             "assistant.completed": "Assistant response completed",
+            "execution.stopped": "Execution recovery circuit opened",
             "task.outcome": "Canonical task outcome recorded",
             "skill.routed": "Skill routing recorded",
             "skill.loaded": "Skill loaded",

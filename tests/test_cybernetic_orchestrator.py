@@ -4,6 +4,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 from minicode.cybernetic_orchestrator import CyberneticOrchestrator
+from minicode.progress_controller import ProgressAction, ProgressDecision
 from minicode.reflection_llm import StructuredClientFactoryResult
 
 
@@ -187,3 +188,38 @@ class TestOrchestratorInit:
         orch.task_end()
 
         orch.memory_pipeline.maintain.assert_called_once_with()
+
+    def test_step_end_projects_real_progress_measurements_into_summary(self):
+        orch = CyberneticOrchestrator()
+        orch.progress = MagicMock()
+        orch.progress.decide.return_value = ProgressDecision(
+            action=ProgressAction.CONTINUE,
+            health_score=0.8,
+            stall_score=0.1,
+            reasons=["healthy"],
+        )
+
+        summary = orch.step_end(
+            MagicMock(),
+            context_manager=None,
+            step=5,
+            tool_error_count=2,
+            saw_tool_result=True,
+            max_steps=50,
+            completed_step_count=3,
+            failed_step_count=2,
+            tool_call_count=7,
+            step_made_progress=False,
+            elapsed_seconds=4.25,
+            tests_passed=None,
+        )
+
+        signal = orch.progress.decide.call_args.args[0]
+        assert signal.total_steps == 5
+        assert signal.completed_steps == 3
+        assert signal.failed_steps == 2
+        assert signal.tool_calls == 7
+        assert signal.tool_errors == 2
+        assert signal.output_changed is False
+        assert signal.elapsed_seconds == 4.25
+        assert summary["progress_decision"]["action"] == "continue"

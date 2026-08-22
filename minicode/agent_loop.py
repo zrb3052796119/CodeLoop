@@ -49,6 +49,7 @@ from minicode.hooks import HookEvent, fire_hook_sync
 # Intelligence integration
 from minicode.agent_metrics import AgentMetricsCollector
 from minicode.agent_intelligence import ErrorClassifier, NudgeGenerator, ToolScheduler
+from minicode.recovery_control import RecoveryGuard
 from minicode.working_memory import get_working_memory, protect_context
 
 # Work chain integration
@@ -797,6 +798,14 @@ def run_agent_turn(
     empty_response_retry_count = 0
     recoverable_thinking_retry_count = 0
     tool_error_count = 0
+    recovery_guard = RecoveryGuard()
+    turn_started_at = time.perf_counter()
+    last_step_duration_seconds = 0.0
+    last_step_tool_call_count = 0
+    last_step_tool_error_count = 0
+    total_tool_call_count = 0
+    completed_tool_step_count = 0
+    failed_tool_step_count = 0
     step = 0
     turn_outcome = "unknown"
     execution_trace: list[dict[str, Any]] = []
@@ -1126,6 +1135,7 @@ def run_agent_turn(
         while max_steps is None or step < max_steps:
             raise_if_cancelled(cancellation_token)
             step += 1
+            step_started_at = time.perf_counter()
 
             # Hook: agent turn started
             fire_hook_sync(HookEvent.AGENT_START, step=step, cwd=cwd)
@@ -1137,6 +1147,9 @@ def run_agent_turn(
                     step=step,
                     tool_error_count=tool_error_count,
                     saw_tool_result=saw_tool_result,
+                    response_time_seconds=last_step_duration_seconds,
+                    recent_tool_error_count=last_step_tool_error_count,
+                    recent_tool_call_count=last_step_tool_call_count,
                 )
             elif enable_work_chain:
                 # 状态观测：通过可测量输出估计系统内部状态
@@ -1699,11 +1712,24 @@ def run_agent_turn(
             # Classify calls into concurrent-safe (read-only) vs serial (writes/commands)
             calls = next_step.calls
             _results: list[tuple[dict, ToolResult]] = []
+            suppressed_call_ids: set[str] = set()
+            executed_outcomes: list[bool] = []
             raise_if_cancelled(cancellation_token)
 
-            if len(calls) <= 1:
+            executable_calls: list[dict] = []
+            for call in calls:
+                suppression = recovery_guard.suppression_for(call)
+                if suppression is None:
+                    executable_calls.append(call)
+                    continue
+                suppressed_call_ids.add(call["id"])
+                _results.append(
+                    (call, ToolResult(ok=False, output=suppression.message))
+                )
+
+            if len(executable_calls) == 1:
                 # Single call — no benefit from concurrency, run directly
-                call = calls[0]
+                call = executable_calls[0]
                 if metrics_collector:
                     metrics_collector.start_tool(call["toolName"])
                 result = _execute_single_tool(
@@ -1720,12 +1746,14 @@ def run_agent_turn(
                         success=result.ok,
                         error=result.output if not result.ok else "",
                     )
+                recovery_guard.observe(call, ok=result.ok, output=result.output)
+                executed_outcomes.append(result.ok)
                 _results.append((call, result))
-            else:
+            elif len(executable_calls) > 1:
                 # Multiple calls — use ToolScheduler for intelligent partitioning
-                concurrent_calls, serial_calls = tool_scheduler.schedule_calls(calls, tools)
-
-                _results.clear()  # Reuse outer declaration
+                concurrent_calls, serial_calls = tool_scheduler.schedule_calls(
+                    executable_calls, tools
+                )
 
                 # Phase 1: Run all concurrent-safe tools in parallel
                 if concurrent_calls:
@@ -1773,11 +1801,28 @@ def run_agent_turn(
                                 raise
                             except Exception as exc:
                                 result = ToolResult(ok=False, output=f"Concurrent execution error: {exc}")
+                            recovery_guard.observe(
+                                call, ok=result.ok, output=result.output
+                            )
+                            executed_outcomes.append(result.ok)
                             _results.append((call, result))
 
                 # Phase 2: Run serial tools sequentially (in original order)
                 if serial_calls:
                     for call in serial_calls:
+                        late_suppression = recovery_guard.suppression_for(call)
+                        if late_suppression is not None:
+                            suppressed_call_ids.add(call["id"])
+                            _results.append(
+                                (
+                                    call,
+                                    ToolResult(
+                                        ok=False,
+                                        output=late_suppression.message,
+                                    ),
+                                )
+                            )
+                            continue
                         if metrics_collector:
                             metrics_collector.start_tool(call["toolName"])
                         result = _execute_single_tool(
@@ -1794,6 +1839,10 @@ def run_agent_turn(
                                 success=result.ok,
                                 error=result.output if not result.ok else "",
                             )
+                        recovery_guard.observe(
+                            call, ok=result.ok, output=result.output
+                        )
+                        executed_outcomes.append(result.ok)
                         _results.append((call, result))
                         # If a serial tool awaits user, return immediately
                         if result.awaitUser:
@@ -1807,11 +1856,12 @@ def run_agent_turn(
             _results.sort(key=lambda pair: call_order.get(pair[0]["id"], 999))
             
             for call, result in _results:
+                was_suppressed = call["id"] in suppressed_call_ids
                 # Fire hooks and UI callbacks for concurrent calls (deferred)
                 tool_def = tools.find(call["toolName"])
                 is_concurrent = tool_def and tool_def.is_concurrency_safe and len(calls) > 1
                 
-                if is_concurrent:
+                if is_concurrent and not was_suppressed:
                     # Deferred UI callbacks for concurrent tools
                     if store:
                         store.set_state(set_busy(call["toolName"]))
@@ -1825,21 +1875,30 @@ def run_agent_turn(
                         step=step,
                     )
                 
-                # Hook: post-tool-use
-                fire_hook_sync(
-                    HookEvent.POST_TOOL_USE,
-                    tool_name=call["toolName"],
-                    tool_output=result.output,
-                    is_error=not result.ok,
-                    step=step,
-                )
+                if not was_suppressed:
+                    # Hook: post-tool-use
+                    fire_hook_sync(
+                        HookEvent.POST_TOOL_USE,
+                        tool_name=call["toolName"],
+                        tool_output=result.output,
+                        is_error=not result.ok,
+                        step=step,
+                    )
                 
                 saw_tool_result = True
-                if not result.ok:
+                if was_suppressed:
+                    result_output = result.output
+                    recovery_note = None
+                elif not result.ok:
                     tool_error_count += 1
                     # Use ErrorClassifier for intelligent error handling
                     classified = ErrorClassifier.classify(result.output, tool_name=call["toolName"])
-                    nudge = NudgeGenerator.generate(classified, retry_count=tool_error_count)
+                    prior_retries = max(
+                        0, recovery_guard.denial_count(call) - 1
+                    )
+                    nudge = NudgeGenerator.generate(
+                        classified, retry_count=prior_retries
+                    )
                     # Append nudge to tool result content for model context
                     result_output = result.output + "\n\n[System note: " + nudge + "]"
                     recovery_note = nudge
@@ -1877,13 +1936,14 @@ def run_agent_turn(
                             logger.debug("ReadDedup replaced content for %s (stub)", file_path)
                         dedup_mgr.register_read(file_path, result_output, len(current_messages))
 
-                _append_tool_trace_events(
-                    execution_trace,
-                    call,
-                    result,
-                    step,
-                    recovery_note=recovery_note,
-                )
+                if not was_suppressed:
+                    _append_tool_trace_events(
+                        execution_trace,
+                        call,
+                        result,
+                        step,
+                        recovery_note=recovery_note,
+                    )
 
                 current_messages.append(
                     {
@@ -1911,6 +1971,57 @@ def run_agent_turn(
                     turn_outcome = "unknown"
                     return current_messages
 
+            strategy_switch_nudge = recovery_guard.complete_step(executed_outcomes)
+            step_tool_call_count = len(executed_outcomes)
+            step_tool_error_count = sum(not outcome for outcome in executed_outcomes)
+            step_made_progress = any(executed_outcomes)
+            total_tool_call_count += step_tool_call_count
+            if step_tool_call_count > 0:
+                if step_made_progress:
+                    completed_tool_step_count += 1
+                else:
+                    failed_tool_step_count += 1
+            last_step_tool_call_count = step_tool_call_count
+            last_step_tool_error_count = step_tool_error_count
+            last_step_duration_seconds = max(
+                0.0, time.perf_counter() - step_started_at
+            )
+
+            if strategy_switch_nudge is not None:
+                for message in reversed(current_messages):
+                    if message.get("role") == "tool_result":
+                        message["content"] = (
+                            str(message.get("content") or "")
+                            + "\n\n[System note: "
+                            + strategy_switch_nudge
+                            + "]"
+                        )
+                        break
+
+            recovery_stop = recovery_guard.stop_decision()
+            if recovery_stop is not None:
+                emit_event_safely(
+                    event_sink,
+                    "execution.stopped",
+                    step=step,
+                    payload={
+                        "reasonCode": recovery_stop.reason_code,
+                        "stepCount": step,
+                        "toolErrorCount": tool_error_count,
+                        "consecutiveFailedSteps": (
+                            recovery_stop.consecutive_failed_steps
+                        ),
+                        "userActionRequired": recovery_stop.user_action_required,
+                    },
+                )
+                if on_assistant_message:
+                    on_assistant_message(recovery_stop.message)
+                current_messages.append(
+                    {"role": "assistant", "content": recovery_stop.message}
+                )
+                turn_outcome = "failed"
+                return current_messages
+
             # 工具执行完成后的控制论反馈
             if enable_work_chain:
                 # 多变量解耦：消除工具间的耦合影响
@@ -1935,6 +2046,18 @@ def run_agent_turn(
                         tool_error_count=tool_error_count,
                         saw_tool_result=saw_tool_result,
                         max_steps=max_steps,
+                        completed_step_count=completed_tool_step_count,
+                        failed_step_count=failed_tool_step_count,
+                        tool_call_count=total_tool_call_count,
+                        step_made_progress=step_made_progress,
+                        elapsed_seconds=max(
+                            0.0, time.perf_counter() - turn_started_at
+                        ),
+                        tests_passed=(
+                            verification_tracker.snapshot()[1] == 0
+                            if verification_tracker.snapshot()[0] > 0
+                            else None
+                        ),
                     )
                     max_steps = _apply_control_signal(
                         control_signal=step_summary.get("control_signal"),

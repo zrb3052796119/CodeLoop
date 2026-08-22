@@ -103,6 +103,7 @@ EVENT_TYPES = frozenset(
         "tool.finished",
         "assistant.completed",
         "task.outcome",
+        "execution.stopped",
         VERIFICATION_EVENT_TYPE,
         "skill.routed",
         "skill.loaded",

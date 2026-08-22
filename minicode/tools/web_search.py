@@ -29,6 +29,8 @@ _ERROR_MESSAGES = {
 class SearchError(ValueError):
     """Low-cardinality search error that never stores request content."""
 
+    _model_safe_tool_output = True
+
     def __init__(self, code: str) -> None:
         self.code = code if code in _ERROR_MESSAGES else "invalid_search_request"
         super().__init__(self.code)

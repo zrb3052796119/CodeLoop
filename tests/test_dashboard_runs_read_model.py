@@ -497,6 +497,31 @@ def test_run_detail_strictly_projects_canonical_task_outcome() -> None:
     assert "response-secret" not in serialized
 
 
+def test_run_detail_strictly_projects_execution_stop_without_content() -> None:
+    payload = {
+        "reasonCode": "consecutive_tool_failures",
+        "stepCount": 5,
+        "toolErrorCount": 5,
+        "consecutiveFailedSteps": 5,
+        "userActionRequired": True,
+        "command": "password=task-secret",
+        "error": "Bearer response-secret",
+    }
+
+    details = _run_event_details("execution.stopped", payload)
+
+    assert details == {
+        "reasonCode": "consecutive_tool_failures",
+        "stepCount": 5,
+        "toolErrorCount": 5,
+        "consecutiveFailedSteps": 5,
+        "userActionRequired": True,
+    }
+    serialized = json.dumps(details)
+    assert "task-secret" not in serialized
+    assert "response-secret" not in serialized
+
+
 def test_run_detail_projects_versioned_skill_routing_digests() -> None:
     payload = {
         "routingVersion": 2,

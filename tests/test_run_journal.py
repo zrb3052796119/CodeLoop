@@ -192,6 +192,31 @@ def test_run_journal_accepts_canonical_task_outcome(tmp_path: Path) -> None:
     assert event.payload == payload
 
 
+def test_run_journal_accepts_content_free_execution_stop(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(workspace, data_dir=tmp_path / "home" / ".mini-code")
+    record = journal.create_run(title="Stop a stalled task", source="headless")
+    journal.transition(record.id, "running")
+    payload = {
+        "reasonCode": "consecutive_tool_failures",
+        "stepCount": 5,
+        "toolErrorCount": 5,
+        "consecutiveFailedSteps": 5,
+        "userActionRequired": True,
+    }
+
+    event = journal.append_event(
+        record.id,
+        "execution.stopped",
+        step=5,
+        payload=payload,
+    )
+
+    assert event.type == "execution.stopped"
+    assert event.payload == payload
+
+
 def test_run_journal_accepts_only_canonical_verification_observation(
     tmp_path: Path,
 ) -> None:

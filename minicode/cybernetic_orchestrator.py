@@ -250,22 +250,43 @@ class CyberneticOrchestrator:
         step: int,
         tool_error_count: int,
         saw_tool_result: bool,
+        *,
+        response_time_seconds: float | None = None,
+        recent_tool_error_count: int | None = None,
+        recent_tool_call_count: int | None = None,
     ) -> None:
         """Called at the start of each step (before model call)."""
         if not self._initialized:
             return
+        recent_errors = max(
+            0,
+            recent_tool_error_count
+            if recent_tool_error_count is not None
+            else tool_error_count,
+        )
+        recent_calls = max(
+            0,
+            recent_tool_call_count
+            if recent_tool_call_count is not None
+            else step - 1,
+        )
+        recent_success_rate = max(
+            0.0,
+            min(1.0, 1.0 - recent_errors / max(recent_calls, 1)),
+        )
 
         # StateObserver: Kalman estimation
         if self.state_observer:
             measurement = MeasurementVector(
                 timestamp=time.time(),
-                response_time=step * 2.0,
-                success_rate=1.0 - (tool_error_count / max(step, 1)),
+                response_time=max(0.0, response_time_seconds or 0.0),
+                success_rate=recent_success_rate,
                 context_length=(
                     context_manager.get_stats().total_tokens if context_manager else 0
                 ),
-                error_count=tool_error_count,
-                tool_calls=0,
+                error_count=recent_errors,
+                retry_count=recent_errors,
+                tool_calls=recent_calls,
             )
             observed = self.state_observer.update(measurement)
             if observed.confidence > 0.4 and observed.system_degradation > 0.4:
@@ -279,7 +300,9 @@ class CyberneticOrchestrator:
             if context_manager:
                 stats = context_manager.get_stats()
                 self.predictive.update("context_usage", stats.usage_percentage / 100.0)
-            self.predictive.update("error_rate", tool_error_count / max(step, 1))
+            self.predictive.update(
+                "error_rate", recent_errors / max(recent_calls, 1)
+            )
             if step > 2:
                 actions = self.predictive.generate_predictive_actions()
                 if actions and actions[0].urgency > 0.7:
@@ -295,9 +318,39 @@ class CyberneticOrchestrator:
         tool_error_count: int,
         saw_tool_result: bool,
         max_steps: int,
+        *,
+        completed_step_count: int | None = None,
+        failed_step_count: int | None = None,
+        tool_call_count: int | None = None,
+        step_made_progress: bool | None = None,
+        elapsed_seconds: float | None = None,
+        tests_passed: bool | None = None,
     ) -> dict[str, Any]:
         """Called at end of step (finally block). Returns a summary dict."""
         summary: dict[str, Any] = {}
+        actual_tool_calls = max(
+            0,
+            tool_call_count if tool_call_count is not None else step,
+        )
+        actual_completed_steps = max(
+            0,
+            completed_step_count
+            if completed_step_count is not None
+            else step - tool_error_count,
+        )
+        actual_failed_steps = max(
+            0,
+            failed_step_count
+            if failed_step_count is not None
+            else min(step, tool_error_count),
+        )
+        actual_elapsed = max(0.0, elapsed_seconds or 0.0)
+        actual_progress = (
+            step_made_progress
+            if step_made_progress is not None
+            else saw_tool_result
+        )
+        error_rate = float(tool_error_count) / max(actual_tool_calls, 1)
 
         # Feedback pattern recording
         if self.feedback:
@@ -310,8 +363,8 @@ class CyberneticOrchestrator:
         if self.stability:
             snapshot = MetricSnapshot(
                 timestamp=time.time(),
-                error_rate=float(tool_error_count) / max(step, 1),
-                avg_latency=step * 2.0,
+                error_rate=error_rate,
+                avg_latency=actual_elapsed / max(step, 1),
                 context_usage=(
                     context_manager.get_stats().usage_percentage
                     if context_manager else 0.0
@@ -325,16 +378,18 @@ class CyberneticOrchestrator:
         # Progress controller
         if self.progress:
             progress_signal = ProgressSignal(
-                total_steps=max_steps,
-                completed_steps=step - tool_error_count,
-                failed_steps=tool_error_count,
-                tool_calls=step,
+                total_steps=step,
+                completed_steps=actual_completed_steps,
+                failed_steps=actual_failed_steps,
+                tool_calls=actual_tool_calls,
                 tool_errors=tool_error_count,
-                output_changed=saw_tool_result,
-                elapsed_seconds=step * 2.0,
+                output_changed=actual_progress,
+                tests_passed=tests_passed,
+                elapsed_seconds=actual_elapsed,
                 max_steps=max_steps,
             )
             decision = self.progress.decide(progress_signal)
+            summary["progress_decision"] = decision.to_dict()
             if decision.action in (ProgressAction.STOP, ProgressAction.REQUEST_CONFIRMATION):
                 logger.warning(
                     "ProgressController: action=%s health=%.2f stall=%.2f",
@@ -345,7 +400,7 @@ class CyberneticOrchestrator:
         if self.healing:
             occ_idx = self.feedback._compute_oscillation() if self.feedback else 0.0
             self.healing.detect_and_heal({
-                "error_rate": tool_error_count / max(step, 1),
+                "error_rate": error_rate,
                 "context_usage": (
                     context_manager.get_stats().usage_percentage / 100.0
                     if context_manager else 0.0

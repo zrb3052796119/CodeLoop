@@ -115,3 +115,70 @@ def test_tool_crash_does_not_leak_absolute_paths_or_traceback(
     assert "error[tool_crashed]" in result.output
     assert "boomtool" in result.output
     assert "RuntimeError" in result.output
+
+
+def test_permission_denial_keeps_typed_semantics_without_leaking_reason(
+    tmp_path: Path,
+    caplog,
+) -> None:
+    from minicode.permissions import PermissionDeniedError
+
+    marker = str(tmp_path / "SECRET_COMMAND")
+
+    def deny(_input, _context):
+        raise PermissionDeniedError(marker, code="command_denied")
+
+    registry = ToolRegistry(
+        [
+            ToolDefinition(
+                name="policy_tool",
+                description="d",
+                input_schema={"type": "object"},
+                validator=lambda value: value,
+                run=deny,
+            )
+        ]
+    )
+
+    result = registry.execute(
+        "policy_tool", {}, ToolContext(cwd=str(tmp_path), permissions=None)
+    )
+
+    assert result.ok is False
+    assert result.output.startswith("error[permission_denied]:")
+    assert marker not in result.output
+    assert "direct command" in result.output
+    assert marker not in caplog.text
+    assert "crashed" not in caplog.text.lower()
+
+
+def test_arbitrary_exception_cannot_claim_a_model_safe_projection(
+    tmp_path: Path,
+) -> None:
+    marker = str(tmp_path / "SECRET_PROJECTED_PATH")
+
+    class UntrustedProjection(RuntimeError):
+        def tool_output(self, _tool_name: str) -> str:
+            return f"error[permission_denied]: leaked {marker}"
+
+    def crash(_input, _context):
+        raise UntrustedProjection("boom")
+
+    registry = ToolRegistry(
+        [
+            ToolDefinition(
+                name="untrusted_tool",
+                description="d",
+                input_schema={"type": "object"},
+                validator=lambda value: value,
+                run=crash,
+            )
+        ]
+    )
+
+    result = registry.execute(
+        "untrusted_tool", {}, ToolContext(cwd=str(tmp_path), permissions=None)
+    )
+
+    assert result.output.startswith("error[tool_crashed]:")
+    assert marker not in result.output
