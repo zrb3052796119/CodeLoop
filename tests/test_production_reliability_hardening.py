@@ -64,6 +64,24 @@ def test_request_timeout_is_bounded_by_remaining_agent_deadline() -> None:
         )
 
 
+def test_request_timeout_never_exceeds_a_sub_millisecond_deadline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import minicode.model_call_control as control_module
+
+    clock = SimpleNamespace(monotonic=lambda: 1_000.0)
+    remaining = 2**-11
+    monkeypatch.setattr(control_module, "time", clock)
+
+    timeout = bounded_request_timeout(
+        120.0,
+        deadline_monotonic=clock.monotonic() + remaining,
+        cancellation_token=None,
+    )
+
+    assert timeout == remaining
+
+
 def test_model_next_forwards_control_only_to_supporting_adapter() -> None:
     token = TurnCancellationToken("turn_" + "a" * 32)
     deadline = time.monotonic() + 10
@@ -100,15 +118,32 @@ def test_openai_adapter_bounds_socket_and_retry_backoff_by_deadline(
 ) -> None:
     import urllib.error
 
+    import minicode.model_call_control as control_module
     import minicode.openai_adapter as adapter_module
     from minicode.openai_adapter import OpenAIModelAdapter
 
     observed_timeouts: list[float] = []
 
+    class Clock:
+        now = 1_000.0
+
+        def __init__(self) -> None:
+            self.sleeps: list[float] = []
+
+        def monotonic(self) -> float:
+            return self.now
+
+        def sleep(self, seconds: float) -> None:
+            self.sleeps.append(seconds)
+            self.now += seconds
+
+    clock = Clock()
+
     def fail_request(_request, *, timeout):
         observed_timeouts.append(timeout)
         raise urllib.error.URLError("synthetic outage")
 
+    monkeypatch.setattr(control_module, "time", clock)
     monkeypatch.setattr(adapter_module, "open_verified_url", fail_request)
     monkeypatch.setattr(adapter_module, "calculate_backoff", lambda *_args, **_kwargs: 1.0)
     adapter = OpenAIModelAdapter(
@@ -126,11 +161,11 @@ def test_openai_adapter_bounds_socket_and_retry_backoff_by_deadline(
     with pytest.raises(ModelCallDeadlineExceeded):
         adapter.next(
             [{"role": "user", "content": "probe"}],
-            deadline_monotonic=time.monotonic() + 0.01,
+            deadline_monotonic=clock.monotonic() + 0.03125,
         )
 
-    assert len(observed_timeouts) == 1
-    assert 0 < observed_timeouts[0] <= 0.01
+    assert observed_timeouts == [0.03125]
+    assert clock.sleeps == [0.03125]
 
 
 def test_provider_adapter_checks_cancel_before_transmitting(

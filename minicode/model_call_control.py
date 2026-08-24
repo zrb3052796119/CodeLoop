@@ -53,7 +53,7 @@ def bounded_request_timeout(
     remaining = float(deadline_monotonic) - time.monotonic()
     if remaining <= 0:
         raise ModelCallDeadlineExceeded("model call deadline exceeded")
-    return max(0.001, min(configured, remaining))
+    return min(configured, remaining)
 
 
 def controlled_retry_sleep(
