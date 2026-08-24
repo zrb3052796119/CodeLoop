@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from minicode import advisory_lock as lock_module
+from minicode import deletion_store as deletion_store_module
 from minicode.advisory_lock import WINDOWS_LOCK_SENTINEL
 from minicode.deletion_store import DeletionLedger
 from minicode.memory_store import MemoryStoreCoordinator
@@ -96,3 +97,33 @@ def test_durable_store_lock_uses_platform_contract(
             assert stat.S_IMODE(info.st_mode) == 0o600
 
     assert lock_path.read_bytes() == expected_payload
+
+
+def test_deletion_receipt_closes_temporary_descriptor_before_atomic_replace(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    ledger = DeletionLedger(workspace, data_dir=tmp_path / "data")
+    opened_descriptors: list[int] = []
+    real_mkstemp = deletion_store_module.tempfile.mkstemp
+    real_replace = deletion_store_module.os.replace
+
+    def tracked_mkstemp(*args, **kwargs):
+        descriptor, path = real_mkstemp(*args, **kwargs)
+        opened_descriptors.append(descriptor)
+        return descriptor, path
+
+    def windows_style_replace(source, target) -> None:
+        assert opened_descriptors
+        with pytest.raises(OSError):
+            os.fstat(opened_descriptors[-1])
+        real_replace(source, target)
+
+    monkeypatch.setattr(deletion_store_module.tempfile, "mkstemp", tracked_mkstemp)
+    monkeypatch.setattr(deletion_store_module.os, "replace", windows_style_replace)
+
+    ledger.complete("conversation", "session_01", "delrev_" + "a" * 64)
+
+    assert ledger.read_receipt("conversation", "session_01") is not None

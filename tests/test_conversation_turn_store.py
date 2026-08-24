@@ -62,6 +62,34 @@ def test_windows_turn_write_does_not_require_fchmod(
     assert store.get(TURN_ID) == claim.record
 
 
+def test_turn_write_closes_temporary_descriptor_before_atomic_replace(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _store(tmp_path)
+    opened_descriptors: list[int] = []
+    real_mkstemp = turn_store_module.tempfile.mkstemp
+    real_replace = turn_store_module.os.replace
+
+    def tracked_mkstemp(*args, **kwargs):
+        descriptor, path = real_mkstemp(*args, **kwargs)
+        opened_descriptors.append(descriptor)
+        return descriptor, path
+
+    def windows_style_replace(source, target) -> None:
+        assert opened_descriptors
+        with pytest.raises(OSError):
+            os.fstat(opened_descriptors[-1])
+        real_replace(source, target)
+
+    monkeypatch.setattr(turn_store_module.tempfile, "mkstemp", tracked_mkstemp)
+    monkeypatch.setattr(turn_store_module.os, "replace", windows_style_replace)
+
+    claim = store.claim(turn_id=TURN_ID, fingerprint=_fingerprint(store))
+
+    assert claim.disposition == "claimed"
+
+
 def test_turn_id_and_fingerprint_are_closed_secure_hash_contracts(tmp_path: Path) -> None:
     store = _store(tmp_path)
 

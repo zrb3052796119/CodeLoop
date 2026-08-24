@@ -506,10 +506,16 @@ class ConversationTurnStore:
             )
             if _platform_name() == "posix":
                 os.fchmod(descriptor, 0o600)
-            with os.fdopen(descriptor, "wb", closefd=False) as handle:
+            # Windows refuses to rename/replace a file while its descriptor is
+            # still open.  Let fdopen own the descriptor and mark it consumed
+            # before the atomic replace; POSIX happened to tolerate the old
+            # close-after-replace ordering, which hid this in local tests.
+            handle = os.fdopen(descriptor, "wb", closefd=True)
+            descriptor = -1
+            with handle:
                 handle.write(encoded)
                 handle.flush()
-                os.fsync(descriptor)
+                os.fsync(handle.fileno())
             if path.exists() and path.is_symlink():
                 raise OSError("unsafe turn record")
             os.replace(temporary, path)

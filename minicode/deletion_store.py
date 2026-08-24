@@ -314,10 +314,14 @@ class DeletionLedger:
         try:
             if os.name == "posix":
                 os.fchmod(descriptor, 0o600)
-            with os.fdopen(descriptor, "wb", closefd=False) as handle:
+            # Atomic replacement must happen after the temporary descriptor is
+            # closed: Windows does not permit replacing an open file.
+            handle = os.fdopen(descriptor, "wb", closefd=True)
+            descriptor = -1
+            with handle:
                 handle.write(encoded)
                 handle.flush()
-                os.fsync(descriptor)
+                os.fsync(handle.fileno())
             os.replace(temporary, path)
             temporary = ""
         finally:
