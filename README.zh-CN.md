@@ -5,14 +5,16 @@
 </p>
 
 <p align="center">
-  把经过验证的失败恢复沉淀为跨会话经验；让长任务在多轮压缩后仍保留关键状态；
-  用显式生命周期、共享预算和结构化结果约束子 Agent。
+  先用多层 Skill 路由缩小决策空间；让长任务在多轮压缩后保留关键状态；
+  用有边界的子 Agent 扩展执行；把满足证据策略的恢复沉淀为跨会话经验。
 </p>
 
 <p align="center">
   <a href="./README.md">English</a>
   ·
   <a href="./docs/PORTFOLIO_CASE_STUDY.md">3 分钟案例</a>
+  ·
+  <a href="./docs/CONTRIBUTION_AUDIT.md">完整贡献图谱</a>
   ·
   <a href="./CONTRIBUTIONS.md">贡献边界</a>
   ·
@@ -29,12 +31,16 @@ CodeLoop 是 [MiniCode Python](https://github.com/QUSETIONS/MiniCode-Python)
 的深度衍生版本，**不是从零实现的 Coding Agent**。项目保留了兼容的
 `minicode` 导入路径与 `minicode-py` 命令，在此基础上重点重构和扩展了四条链路：
 
-1. 一次已经验证的工具失败，能否安全地变成下一次新对话可复用的经验？
+1. Skill 能否经过“目录/能力上下文 → 词法与实体 → 双语 alias → 可选 embedding → 有界历史证据”多层路由，并在证据不足时真正弃权？
 2. 多轮上下文压缩后，目标、已验证事实、被否方案、工具调用完整性和最新指令能否继续保真？
 3. 主 Agent 能否把任务交给子 Agent，同时仍掌握生命周期、归因和共享预算？
-4. Skill 路由能否从跨 Run 证据中变准，同时避免过期或不相关反馈劫持路由？
+4. 一次已经验证的工具失败，能否安全地变成下一次新对话可复用的经验？
 
 在已测试范围内，答案是“可以”；超出实验范围的部分则明确列在本文末尾。这个项目追求的是**可检查的运行证据、可复现的质量门和失败时的保守退化**，而不是宽泛的能力口号。
+
+这四条是并列的 Runtime 工程主线。本文中的 3 分钟 Memory 案例只是因为它具备
+最完整的 warm/cold 配对数据而被选作一个纵切面，**不代表项目只改了持久化记忆**。
+另有一层评测、配置、隐私和跨平台可靠性作为横向工程支撑，不算第五条能力主线。
 
 > **复用提示：**这个衍生仓库当前没有根目录 LICENSE，检查到的 Python
 > 上游也没有公开许可证。代码可以在此查看和评审，但公开可见不等于获得重新分发
@@ -46,24 +52,34 @@ CodeLoop 是 [MiniCode Python](https://github.com/QUSETIONS/MiniCode-Python)
 | --- | --- |
 | 角色 | 维护者与导入后的主要 Git 作者；部分提交带 AI co-author trailer，因此不宣称“完全独立完成”或个人占比。初始导入没有记录精确上游 revision，不能精确复原 upstream diff。 |
 | 时间 | 2026-07-27 至今 |
-| 主要负责 | 持久化经验的证据闭环、上下文保真修复、有边界子 Agent 生命周期/模型路由、Skill 反馈和评测发布纪律。 |
+| 主要负责 | Skill 多层路由与有界反馈、上下文保真修复、有边界子 Agent 生命周期/模型路由、持久化经验闭环，以及评测发布纪律。 |
 | 当前状态 | 可实际使用本地 CLI 的工程/研究原型；不宣称达到生产安全或通用 benchmark 领先。 |
-| 最难设计决策 | 严格区分 Memory 的“检索候选”“实际渲染”“得到因果佐证”，避免一次成功错误奖励所有搜索候选。 |
+| 最难设计决策 | 让学习信号有用但不夺权：Skill 历史证据只能重排已独立准入的候选；Memory 反馈只能归因到当轮实际渲染的条目。 |
 
 ## 30 秒看懂证据
 
-下表中的 **Memory / warm** 指一个注入相关已批准经验的新 Run；**cold**
-指相同任务不提供这条经验。
+先看四条主线和横向支撑各自受什么合同约束：
 
-| 证据 | 结果 | 能说明什么，不能说明什么 |
+| 系统证据 | 结果 | 能说明什么，不能说明什么 |
 | --- | ---: | --- |
 | [仓库回归测试](./.github/workflows/ci.yml) | **4,474 passed, 2 skipped** | 2026-08-24 在 Python 3.12 对 [Runtime/测试提交 `4f7b53d`](https://github.com/zrb3052796119/CodeLoop/commit/4f7b53d) 完成的本地发布验收；说明已实现行为受到回归保护，不代表通用 Agent 智能。推送后 CI 会在 3 OS × 2 Python 矩阵重跑。 |
-| [内部 A 档评估](./docs/agent-quality-gates.md) | **Skill 60/60**、**压缩 12/12**、**记录任务 50/50** | 完全离线且 `remoteCallCount=0`。fixture/manifest 有哈希；与 `current` 不同，`a` 有意允许同 manifest 的新结果，不固定某一份 result 哈希。不是第三方认证。 |
+| [Skill 路由门禁](./docs/agent-quality-gates.md) | **60/60** | 40 个正例/显式调用 + 20 个弃权/对抗负例；top-1、弃权和 required exact 均为 1.0。离线、`remoteCallCount=0`，不是 live Qwen 或第三方 benchmark。 |
+| [重复压缩门禁](./docs/agent-quality-gates.md) | **12/12** | 对 1–5 轮强制压缩检查摘要链、被否方案、任务账本、最新指令、已加载 Skill 和工具轮次。证明冻结合同，不证明任意长会话都无语义漂移。 |
+| [记录任务门禁](./docs/agent-quality-gates.md) | **50/50** | 10 类、30 个写任务的真实模型/Runtime 运行记录来自隔离合成仓库；当前命令只离线复验冻结记录，`a` 接受同 manifest 的新结果，不会自动重跑 provider，也不是第三方认证。 |
+| [主/子模型 live 路由](./docs/model-routing-live-acceptance-2026-08-23.md) | **4/4 actors × 2 轮** | Parent、Explore、Plan、General 每轮各一次 HTTP 请求，出站与 provider 回报 model 一致；这是脱敏策展投影，不是 provider 签名回执。 |
+
+### Memory 效率纵切面
+
+这里的 **Memory / warm** 指一个注入相关已批准经验的新 Run；**cold** 指相同任务
+不提供这条经验。Memory 拥有目前最完整的成对效率数据，因此单独列出：
+
+| 配对/回放证据 | 结果 | 能说明什么，不能说明什么 |
+| --- | ---: | --- |
 | [路径恢复配对实验](./docs/2026-08-21--persistent-memory-large-study--r1--robustness-check.md) | **48 对 Memory / cold** | 仅比较复用阶段的目标 Turn：工具调用 50 vs 240（**-79.2%**）；输入 token 652,911 vs 1,539,738（**-57.6%**）。首次学习有前置成本；任务仅为合成、只读恢复。 |
 | [非路径经验配对实验](./docs/2026-08-22--non-path-persistent-memory--r1--robustness-check.md) | **36 对 Memory / cold** | 平均工具 7.50 vs 11.50（**-34.8%**）；严格成功 32/36 vs 28/36。不同经验类别差异明显。 |
-| [大文件修复回放](./docs/north-star-memory-compaction-repairs-2026-08-21.md) | **5/5 外部检查** | 单次随机回放中模型调用 25→5、输入 token 257,088→49,541；说明故障环消失，不能当作稳定因果效应。 |
+| [大文件修复回放](./docs/north-star-memory-compaction-repairs-2026-08-21.md) | **5/5 Run 外本地 oracle** | 单次随机回放中模型调用 25→5、输入 token 257,088→49,541；oracle 位于 Agent Run 外但不是第三方认证，结果说明故障环消失，不能当作稳定因果效应。 |
 
-如果只看一个材料，先看 [3 分钟完整案例](./docs/PORTFOLIO_CASE_STUDY.md)：
+如果只看一个运行链路，先看 [3 分钟 Memory 案例](./docs/PORTFOLIO_CASE_STUDY.md)：
 它串起了“错误工具调用 → 找到正确方法 → 验证 → 生成经验 → 新对话检索注入 →
 减少重复探索”的完整证据链，然后再链接到更大规模的配对实验。公开的 entry-ID
 join 是经过策展、带源哈希的 attestation；隐私 sidecar 未公开，因此它不是一份可由
@@ -77,20 +93,30 @@ task/子 Agent 工具。这些不能被描述成 CodeLoop 从零新增的模块�
 
 | 方向 | 导入基线之后的 CodeLoop 工作 | 证据面 |
 | --- | --- | --- |
-| 持久化经验 | 在基线已有反思/审批之上，强化 corroborated/idempotent 反馈、隔离与投影卫生、通用操作恢复、canonical Hybrid 检索和验收归因。 | warm/cold 配对实验、V1–V5 验收合同、Memory 回归矩阵。 |
+| Skill 多层路由 | 在基线已有目录/Skill 确定性评分器之上，新增真正弃权、双语意图与 alias、可选 Qwen/OpenAI-compatible embedding、严格显式点名语法、候选幅度门、digest 绑定加载，以及只对已独立准入候选生效的跨 Run 有界重排。 | 冻结的 60 例中英双语/显式调用/弃权/对抗门禁；router、semantic cache/degradation、显式语法、digest loader 和 evidence tests。 |
 | 上下文保真 | summary-of-summary 摘要链；保存目标/显式约束/typed fact/失败码的压缩免疫账本；原子 provider 工具轮次、usage 校准、未变化状态重试身份；让强制路径遵守基线已有熔断器。 | 重复压缩门禁和大文件回放。 |
-| 多 Agent Runtime | 只读 `spawn` / `poll` / `cancel`、结构化结果、`subagentId` 日志 join、共享 Turn 预算、deadline 与按角色模型路由。 | 生命周期、取消、结果协议、路由、日志与预算测试。 |
-| Skill 反馈 | 将跨 Run 证据账本接回有界在线排序；证据绑定 Skill source/directory/content digest 和 intent/action context，并受样本量、置信度与最大调整幅度约束。 | 冻结的中英双语/对抗路由集和证据账本测试。 |
-| 发布纪律 | 在基线已有 3 OS × 2 Python CI 上增加全局凭据边界、隐私安全失败投影、确定性质量档位、冻结 manifest、外部 oracle 与公开证据完整性检查。 | CI、本地全量验证和 clean-checkout 检查。 |
+| 多 Agent Runtime | 面向只读 `explore/plan` 的异步 `spawn` / `poll` / `cancel`、结构化结果、`subagentId` 日志 join、共享 Turn 预算、deadline 与按角色模型路由。 | 生命周期、取消、结果协议、路由、日志与预算测试。 |
+| 持久化经验 | 在基线已有存储、通用恢复合成、sanitizer、审批、词法检索/重排、内容哈希和渲染反馈之上，强化 corroborated/idempotent 反馈、隔离与投影卫生、操作恢复、canonical Hybrid 检索和验收归因。 | warm/cold 配对实验、V1–V5 确定性合同（V5 live/provider 运行待执行）和 Memory 回归矩阵。 |
+| 横向工程支撑（非第五条能力主线） | 在基线已有 3 OS × 2 Python CI、CLI/TUI/Dashboard 和权限流上，增加全局凭据边界、隐私安全失败投影、确定性质量档位、冻结 manifest、外部 oracle，并持续修复 Windows/并发/期限问题。 | CI、本地全量验证、clean-checkout 和 live 路由检查。 |
 
 更细的继承/新增/实质重构清单与提交谱系见
+[完整贡献图谱](./docs/CONTRIBUTION_AUDIT.md)和
 [CONTRIBUTIONS.md](./CONTRIBUTIONS.md)。
 
 ## 系统如何协作
 
 ```mermaid
 flowchart LR
-    User["当前仓库中的用户任务"] --> Loop["Agent Loop"]
+    User["当前仓库中的用户任务"] --> Intent["意图 / 动作 / 实体"]
+    SkillCatalog["作用域目录 + Skill 元数据"] --> SkillRoute["多层 Skill 路由"]
+    Intent --> SkillRoute
+    Semantics["双语 alias + 可选 embedding"] --> SkillRoute
+    SkillEvidence["有界跨 Run 证据"] --> SkillRoute
+    SkillRoute --> Prompt["候选元数据 / 显式加载约束"]
+    Prompt --> Loop["Agent Loop"]
+    Loop --> SkillLoad["digest 绑定的 load_skill"]
+    SkillLoad --> Loop
+
     Loop --> Tools["文件 · 搜索 · 编辑 · 命令"]
     Tools --> Obs["有边界的结构化观测"]
     Obs --> Loop
@@ -110,29 +136,42 @@ flowchart LR
     Evidence --> Store["项目 / 用户 Memory"]
     Store --> Retrieve["BM25 + 证据门控 Hybrid 检索"]
     Retrieve --> Loop
-
-    SkillCatalog["Skill 元数据"] --> SkillRoute["意图 + 语义路由"]
-    SkillEvidence["有边界的证据账本"] --> SkillRoute
-    SkillRoute --> Loop
 ```
 
 模型仍然负责选择下一步允许的工具。外围 Runtime 负责记录结构化观测、约束重试与委派，并且只把满足强证据条件的结果变成长期状态。
 
 ## 四项核心能力
 
-### 1. 有真实证据链的持久化经验
+### 1. 会弃权、可审计的多层 Skill 路由
 
-Memory 写入不是“把模型总结存下来”。一条可持久化的恢复经验必须能从结构化事件中证明：某个动作失败，随后出现了与它对应的修正动作，并且修正结果满足恢复策略。只有强恢复信号能够自动批准；模糊 claim 保持 pending 或被拒绝。这里的 verified recovery 可能指 targeted corrected-tool evidence，并不总是独立测试命令，案例文档会明确区分。条目会做内容哈希绑定、安全清洗和审计，后续还可以根据负反馈降权、拒绝或隔离。
+当前决策链不是“正则命中就把 Skill 全文塞进 prompt”。Runtime 先发现 project、
+user 和兼容目录中的 Skill 元数据，再解析意图、动作、实体与中英关键词；目录、能力、
+工具和来源只提供粗粒度排序上下文，真正准入还必须来自与当前查询相关的词法、实体、
+双语 alias、达到阈值的 embedding，或用户的严格显式点名。弱证据只保留最强的一个
+建议；证据不足时路由结果为空，仅保留 name-only 目录帮助模型发现可用 Skill，不注入
+候选描述、工具等富元数据。
 
-读取侧的 canonical retrieval 将词法证据与可选 Hybrid 通道组合。远程 Memory embedding 需要单独显式授权，因为已批准的经验可能离开本机。每次真实渲染都会记录精确 entry ID，因此后续成功或用户纠偏能够归因到“当时到底注入了哪条经验”。
+可选语义层兼容 Qwen/DashScope 的 OpenAI-compatible embedding 接口。Skill 向量按
+内容 digest 缓存；provider 失败后走共享冷却并退化到本地 alias，而不是拖垮每一轮路由。
+显式 `$skill`、`Use ... Skill` 与中英文调用语法拥有最高优先级，否定句和普通同名词不获得
+这项权限。被显式点名的 Skill 在最终回答前必须 `load_skill`；加载路径绑定发现快照中的
+source、目录、文件和 SHA-256 digest，避免 route-old/load-new 漂移、歧义名和符号链接逃逸。
 
-继续阅读：[Hybrid Memory 检索](./docs/memory-hybrid-retrieval.md)、
-[路径恢复大样本](./docs/2026-08-21--persistent-memory-large-study--r1--robustness-check.md)、
-[非路径经验实验](./docs/2026-08-22--non-path-persistent-memory--r1--robustness-check.md)。
+跨 Run 证据只能在严格样本、验证、用户信号和置信门通过后，对**已经独立准入**的候选做
+有上限的排序调整；它不能制造相关性、打破弃权、覆盖显式请求、改写 Skill 正文或自动晋升
+新版本。冻结的 60 例门禁覆盖 40 个正例/显式调用和 20 个弃权/对抗负例，当前记录为
+60/60、`remoteCallCount=0`。因此它验证的是确定性路由合同，不应被表述为 CI 真实调用了
+Qwen；远程路径由 transport mock、cache/degradation 测试和单独 smoke 覆盖。
+
+继续阅读：[Skill 路由反馈](./docs/skill-routing-feedback.md)、
+[完整贡献图谱](./docs/CONTRIBUTION_AUDIT.md)。
 
 ### 2. 不丢任务状态的上下文压缩
 
 CodeLoop 使用一条 canonical 压缩路径。它不会拆开 provider 原生的工具调用/结果对；每一轮新摘要都会吸收上一轮摘要，并重新插入最新用户指令。父 Agent 持有的任务账本将有界目标、显式约束、typed verification fact 和失败工具错误码放在有损摘要周期之外；它不会语义推断完整计划或任意 open work。provider 返回真实 usage 时，本地 token 估计会据此校准。
+
+冻结门禁还把“被否方案”作为摘要保真 sentinel 跨多轮检查；它由摘要链保存，
+不被夸大成任务账本会自动推断和维护任意方案历史。
 
 压缩失败会按“策略 + 未变化的消息状态”去重，并受熔断器限制；内容发生实质变化后才允许重试，原地不变的状态不能无限振荡。
 
@@ -159,11 +198,15 @@ CodeLoop 使用一条 canonical 压缩路径。它不会拆开 provider 原生�
 验收覆盖的是 `qwen3.7-plus` 与 `qwen3.7-max`，不是这个示例。详见
 [子 Agent 模型路由](./docs/subagent-model-routing.md)。
 
-### 4. 带有界反馈的 Skill 路由
+### 4. 有真实证据链的持久化经验
 
-Skill 发现综合显式名称、意图、元数据、中英别名和可选语义信号。用户明确点名的 Skill 必须在最终回答前加载。跨 Run 结果可以改变排序，但证据必须匹配当前 Skill source/directory/content digest 和 intent/action context，并通过样本量/置信门；调整幅度有上限且可审计。证据不能静默改写 Skill 正文，也不能自动晋升新版本。
+Memory 写入不是“把模型总结存下来”。一条可持久化的恢复经验必须能从结构化事件中证明：某个动作失败，随后出现了与它对应的修正动作，并且修正结果满足恢复策略。只有强恢复信号能够自动批准；模糊 claim 保持 pending 或被拒绝。这里的 verified recovery 可能指 targeted corrected-tool evidence，并不总是独立测试命令，案例文档会明确区分。条目会做内容哈希绑定、安全清洗和审计，后续还可以根据负反馈降权、拒绝或隔离。
 
-继续阅读：[Skill 路由反馈](./docs/skill-routing-feedback.md)。
+读取侧的 canonical retrieval 将词法证据与可选 Hybrid 通道组合。远程 Memory embedding 需要单独显式授权，因为已批准的经验可能离开本机。每次真实渲染都会记录精确 entry ID，因此后续成功或用户纠偏能够归因到“当时到底注入了哪条经验”。
+
+继续阅读：[Hybrid Memory 检索](./docs/memory-hybrid-retrieval.md)、
+[路径恢复大样本](./docs/2026-08-21--persistent-memory-large-study--r1--robustness-check.md)、
+[非路径经验实验](./docs/2026-08-22--non-path-persistent-memory--r1--robustness-check.md)。
 
 ## 快速开始
 
@@ -294,16 +337,18 @@ GitHub Actions 会在 Linux、macOS、Windows 和 Python 3.11/3.12 矩阵上执�
 
 推荐入口：
 
+- [四条主线完整贡献图谱](./docs/CONTRIBUTION_AUDIT.md)
 - [3 分钟作品集案例](./docs/PORTFOLIO_CASE_STUDY.md)
 - [贡献和上游边界](./CONTRIBUTIONS.md)
 - [使用指南](./docs/USAGE_GUIDE.md)
 - [Agent 质量门](./docs/agent-quality-gates.md)
-- [持久化 Memory 修复验收](./docs/persistent-memory-repair-acceptance-2026-08-23.md)
+- [持久化 Memory 修复合同历史（V5 live 待执行）](./docs/persistent-memory-repair-acceptance-2026-08-23.md)
 - [模型路由 live 验收](./docs/model-routing-live-acceptance-2026-08-23.md)
 - [优化历史](./docs/OPTIMIZATION_SUMMARY.md)
 
 ## 诚实的限制
 
+- 60 例 Skill 门禁是冻结的离线路由合同，不调用远程 embedding，也不是 60 个真实项目任务；可选 Qwen embedding 路径不能据此宣传为 live benchmark。
 - 最强的效率数据来自合成仓库。它们在受控条件下证明了机制，但不是对所有真实编码任务的生产力承诺。
 - 路径恢复经验在已测范围内最成熟；命令恢复和验证规则证据较强；抽象项目约束在当前配对实验中仍是负结果。
 - V5 修复后的 provider 验收尚未执行。确定性测试已通过；最近完成的 V4 provider 运行是 7/10 case、84/91 oracle、10/10 精确 Memory 归因。

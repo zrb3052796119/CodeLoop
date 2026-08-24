@@ -8,8 +8,10 @@ repository” with “authored from scratch here.”
 > 中文摘要：CodeLoop 是 MiniCode Python 的深度衍生项目。初始版本已经拥有主
 > Agent Loop、工具、TUI、上下文压缩、Memory、Skill 路由和同步子 Agent。
 > 初始 Memory 也已经具备通用恢复合成、sanitizer、内容哈希审批和渲染 ID
-> 反馈。后续主要工作是强化反馈/隔离/检索边界，修复多轮压缩保真，扩展有边界
-> 协作，并建立可复现实验。下表给出可从 Git 历史和测试中核对的边界。
+> 反馈；初始 Skill 路由也已经具备规则意图解析和目录/Skill 分层评分。后续工作
+> 不是只围绕 Memory：它并列覆盖 Skill 的弃权/双语语义/显式加载/digest 绑定/
+> 有界证据回流、长上下文保真、有边界多 Agent 生命周期，以及持久化经验和可复现
+> 评测。下表给出可从 Git 历史和测试中核对的边界。
 
 ## Classification Method
 
@@ -48,13 +50,13 @@ Representative, reviewable commits through the current release:
 
 | Commit | Change represented |
 | --- | --- |
-| [`d1fa2e2`](https://github.com/zrb3052796119/CodeLoop/commit/d1fa2e2) | Memory corroboration channels and fixes found through real agent use. |
+| [`d1fa2e2`](https://github.com/zrb3052796119/CodeLoop/commit/d1fa2e2) | Skill abstention, digest-bound attribution/evidence ledgers, Memory corroboration, and fixes found through real agent use. |
 | [`4290b7c`](https://github.com/zrb3052796119/CodeLoop/commit/4290b7c) | Sub-agent containment, capability boundaries, and visibility. |
 | [`b43a0d8`](https://github.com/zrb3052796119/CodeLoop/commit/b43a0d8) | Parallel read-only sub-agents and streamed progress. |
 | [`df0482e`](https://github.com/zrb3052796119/CodeLoop/commit/df0482e) + [`fb6f3a8`](https://github.com/zrb3052796119/CodeLoop/commit/fb6f3a8) | Memory workspace and revocation/persistence boundaries. |
-| [`3b9f6f1`](https://github.com/zrb3052796119/CodeLoop/commit/3b9f6f1) | Frozen quality-promotion gates. |
+| [`3b9f6f1`](https://github.com/zrb3052796119/CodeLoop/commit/3b9f6f1) | Frozen Skill-routing, compaction, and task quality-promotion gates. |
 | [`6c65df8`](https://github.com/zrb3052796119/CodeLoop/commit/6c65df8) | Bounded recovery loops and stopping conditions. |
-| [`f2772f7`](https://github.com/zrb3052796119/CodeLoop/commit/f2772f7) | A-profile runtime integrations across Memory, compaction, Skill, and agents. |
+| [`f2772f7`](https://github.com/zrb3052796119/CodeLoop/commit/f2772f7) | Bilingual/embedding Skill routing and bounded feedback, plus A-profile runtime integrations across compaction, agents, and Memory. |
 | [`4d61d0a`](https://github.com/zrb3052796119/CodeLoop/commit/4d61d0a) | Paired Memory acceptance studies and their reports. |
 | [`ae6c646`](https://github.com/zrb3052796119/CodeLoop/commit/ae6c646) | Evidence-driven Runtime hardening, acceptance contracts, and release tests. |
 | [`e1a4b17`](https://github.com/zrb3052796119/CodeLoop/commit/e1a4b17) | Portable persistence locks and Windows-safe storage/read/observation paths. |
@@ -84,65 +86,87 @@ credited to MiniCode Python and its contributors.
 
 ## CodeLoop Work After the Baseline
 
-### 1. Persistent Memory: from storage to an evidence-controlled loop
+Sections 1–4 are peer runtime contribution tracks. Section 5 is a
+cross-cutting engineering support layer, not a fifth agent capability.
 
-**Classification: extended + hardened.**
+### 1. Multi-layer Skill routing: from heuristic fallback to bounded admission
 
-CodeLoop connects the full cycle:
+**Classification: inherited foundation; rebuilt decision, loading, and
+feedback paths.**
+
+The imported baseline already had regex intent parsing, scoped Skill discovery,
+directory-then-Skill scoring, capability/tool affinity, source priority, top-k
+metadata injection, and `load_skill`. CodeLoop must not claim those primitives
+as from-scratch work. It materially changed what constitutes authority and how
+one routing decision survives through loading and later feedback:
 
 ```text
-structured failure
-  → corrected action
-  → successful corrected-tool result
-  → targeted recovery classification
-  → recovery claim
-  → safety/approval decision
-  → persistent entry
-  → canonical retrieval
-  → exact rendered-entry attribution
-  → positive/negative feedback or quarantine
+scoped Skill catalog
+  → bilingual intent / action / entity parsing
+  → directory + capability ranking context
+  → query-specific lexical / entity / alias evidence
+  → optional thresholded embedding evidence
+  → explicit-invocation authority or evidence-based admission
+  → margin / top-k selection
+  → bounded cross-Run reranking of admitted candidates only
+  → catalog-snapshot + digest-bound load_skill
+  → loaded-Skill attribution and evidence ledger
 ```
 
-Material work includes:
+Material post-baseline work includes:
 
-- broader operational recovery synthesis, recovery suggestions, root-cause
-  summaries, and stop-condition handling on top of the inherited generic
-  reflection path;
-- hardening of the inherited sanitizer/content-hash/approval lifecycle with
-  persistence-boundary checks and projection hygiene;
-- corroborated user-correction and independent-verification feedback,
-  idempotent observation receipts, automatic downgrade/rejection, and
-  quarantine, restricted to entries actually rendered for the turn;
-- canonical hybrid retrieval with promotion evidence and an explicit privacy
-  gate for remote Memory embeddings (an optional LLM verifier/challenger has a
-  separate data-egress boundary);
-- V1–V5 frozen manifests and acceptance contracts that preserve failed
-  attempts instead of silently replacing them.
+- replacing the baseline “all Skills as fallback” behavior with an empty
+  router selection when evidence is insufficient; the prompt deliberately
+  keeps only a name-only inventory, not rich candidate metadata;
+- hardening English intent patterns and adding Chinese terms/aliases while
+  preserving `UNKNOWN` as a real no-signal state;
+- an always-on, zero-dependency bilingual concept matcher plus optional
+  OpenAI-compatible embeddings with Qwen/DashScope-calibrated defaults,
+  digest-keyed vector caching, provider-identity invalidation, bounded batching,
+  and shared failure cooldown;
+- admission boundaries: broad intent, directory, capability, tool, and source
+  bonuses may rank but cannot independently admit; weak evidence is limited to
+  one suggestion; unknown intent faces a stricter semantic threshold;
+- a strict explicit-invocation grammar for `$skill`, English, and Chinese
+  forms, including negation handling, followed by an agent-loop
+  load-before-final contract;
+- catalog-snapshot loading bound to qualified name, source root, canonical
+  path, and SHA-256 content digest, rejecting ambiguous bare names, path
+  traversal, symlink escape, and route-old/load-new drift;
+- `skill.loaded` / attribution observations and a cross-Run evidence ledger;
+  live feedback requires exact Skill digest and intent/action identity,
+  treatment/control sample gates, independent verification, user signals, and
+  separated confidence intervals before applying a fixed capped rank delta;
+- evidence remains ranking-only: it cannot create relevance, break abstention,
+  override an explicit request, rewrite Skill content, or promote a version.
 
-In the featured `auth-policy` case, “verified” in
-`auto_approve_verified` means that the Runtime classified a successful
-corrected `read_file` as targeted tool-recovery evidence. No independent test
-command ran inside that learning Run; the experiment's external marker/tool
-oracle was evaluated after the Run. The
-[sanitized attribution artifact](./artifacts/persistent-memory-large-study-v3/auth-policy-attribution.json)
-makes this distinction machine-readable.
+The frozen offline gate contains 40 positive/explicit and 20
+abstention/adversarial bilingual cases. It currently records 60/60 with
+`remoteCallCount=0`; this verifies the deterministic routing contract, not a
+live Qwen endpoint or an external benchmark. The remote adapter boundary has
+transport-mock, caching, degradation, and separate smoke coverage.
 
 Representative production paths:
 
-- `minicode/reflection_evidence.py`
-- `minicode/reflection_synthesis.py`
-- `minicode/memory.py`
-- `minicode/memory_approval.py`
-- `minicode/memory_pipeline.py`
-- `minicode/memory_hybrid.py`
-- `minicode/memory_hybrid_runtime.py`
+- `minicode/intent_parser.py`
+- `minicode/skill_router.py`
+- `minicode/skill_semantics.py`
+- `minicode/skill_evidence.py`
+- `minicode/skill_feedback.py`
+- `minicode/skills.py`
+- `minicode/tools/load_skill.py`
+- explicit-load enforcement in `minicode/agent_loop.py`
 
-Representative evidence:
+Representative tests and evidence:
 
-- [3-minute end-to-end case](./docs/PORTFOLIO_CASE_STUDY.en.md)
-- [48-pair path-recovery study](./docs/2026-08-21--persistent-memory-large-study--r1--robustness-check.md)
-- [36-pair non-path study](./docs/2026-08-22--non-path-persistent-memory--r1--robustness-check.md)
-- [Final repair acceptance](./docs/persistent-memory-repair-acceptance-2026-08-23.md)
+- `tests/test_skill_router.py`
+- `tests/test_skill_semantics.py`
+- `tests/test_skill_explicit_reference_grammar.py`
+- `tests/test_skill_evidence_ledger.py`
+- `tests/test_skill_routing_feedback.py`
+- `tests/test_skills.py`
+- [bounded feedback contract](./docs/skill-routing-feedback.md)
+- `tests/fixtures/agent_quality/skill-routing.json`
 
 ### 2. Context fidelity and bounded recovery
 
@@ -185,7 +209,8 @@ The baseline had a synchronous nested task tool. CodeLoop added:
 - stable `subagentId` values on completion events so journals, results, and
   parent work can be joined;
 - role-specific OpenAI-compatible model routing with isolated credentials and
-  fail-closed fallback behavior;
+  an explicit boundary: an enabled but invalid route fails closed, while an
+  absent route inherits the parent model for compatibility;
 - versioned workflow-review verdicts that become inconclusive when malformed.
 
 Important boundary: asynchronous lifecycle is not a process supervisor. It is
@@ -198,27 +223,72 @@ Representative paths: task/sub-agent tooling, `minicode/subagent_result.py`,
 Evidence: [sub-agent model routing](./docs/subagent-model-routing.md) and
 [live routing acceptance](./docs/model-routing-live-acceptance-2026-08-23.md).
 
-### 4. Skill evidence feedback
+### 4. Persistent Memory: from storage to an evidence-controlled loop
 
-**Classification: extended.**
+**Classification: extended + hardened.**
 
-The imported baseline already routed Skills. CodeLoop connected cross-run
-evidence to live ranking while bounding its authority:
+The imported baseline already contained persistent storage, generic recovery
+synthesis, sanitization, content-hash approval, retrieval, and rendered-entry
+feedback. CodeLoop must not claim Memory itself as a new invention. The
+post-baseline work connects and hardens this full cycle:
 
-- optional remote embedding signals with local alias fallback;
-- evidence qualified by Skill source, directory, content digest, intent type,
-  and action type;
-- minimum sample/confidence requirements and capped rank deltas;
-- explicit-name load-before-final contract;
-- audit records and rollback controls; no automatic Skill-body rewrite or
-  version promotion.
+```text
+structured failure
+  → corrected action
+  → successful corrected-tool result
+  → targeted recovery classification
+  → recovery claim
+  → safety/approval decision
+  → persistent entry
+  → canonical retrieval
+  → exact rendered-entry attribution
+  → positive/negative feedback or quarantine
+```
 
-Representative paths: `minicode/skill_router.py`,
-`minicode/skill_evidence.py`, `minicode/skill_semantics.py`, and Skill version
-handling. Evidence: [Skill routing feedback](./docs/skill-routing-feedback.md)
-and the sealed 60-case routing fixture used by the quality gate.
+Material work includes:
 
-### 5. Configuration, privacy, and evaluation discipline
+- broader operational recovery synthesis, recovery suggestions, root-cause
+  summaries, and stop-condition handling on top of the inherited generic
+  reflection path;
+- hardening of the inherited sanitizer/content-hash/approval lifecycle with
+  persistence-boundary checks and projection hygiene;
+- corroborated user-correction and independent-verification feedback,
+  idempotent observation receipts, automatic downgrade/rejection, and
+  quarantine, restricted to entries actually rendered for the turn;
+- canonical hybrid retrieval with promotion evidence and an explicit privacy
+  gate for remote Memory embeddings (an optional LLM verifier/challenger has a
+  separate data-egress boundary);
+- V1–V5 frozen manifests and deterministic acceptance contracts that preserve
+  failed attempts instead of silently replacing them; the V5 live/provider
+  execution remains pending.
+
+In the featured `auth-policy` case, “verified” in
+`auto_approve_verified` means that the Runtime classified a successful
+corrected `read_file` as targeted tool-recovery evidence. No independent test
+command ran inside that learning Run; the experiment's external marker/tool
+oracle was evaluated after the Run. The
+[sanitized attribution artifact](./artifacts/persistent-memory-large-study-v3/auth-policy-attribution.json)
+makes this distinction machine-readable. This case is one evidence-rich
+vertical slice, not the whole CodeLoop contribution.
+
+Representative production paths:
+
+- `minicode/reflection_evidence.py`
+- `minicode/reflection_synthesis.py`
+- `minicode/memory.py`
+- `minicode/memory_approval.py`
+- `minicode/memory_pipeline.py`
+- `minicode/memory_hybrid.py`
+- `minicode/memory_hybrid_runtime.py`
+
+Representative evidence:
+
+- [3-minute end-to-end case](./docs/PORTFOLIO_CASE_STUDY.en.md)
+- [48-pair path-recovery study](./docs/2026-08-21--persistent-memory-large-study--r1--robustness-check.md)
+- [36-pair non-path study](./docs/2026-08-22--non-path-persistent-memory--r1--robustness-check.md)
+- [Repair contract/acceptance history; V5 live pending](./docs/persistent-memory-repair-acceptance-2026-08-23.md)
+
+### 5. Cross-cutting configuration, privacy, and evaluation discipline
 
 **Classification: added + extended.**
 
@@ -248,8 +318,12 @@ Representative paths: `minicode/config.py`, `minicode/config_migration.py`,
 The following wording matches checked-in evidence:
 
 - “I extended an existing Python coding-agent runtime with an evidence-gated
-  persistent-learning loop, long-context fidelity controls, bounded sub-agent
-  lifecycle, and reproducible acceptance gates.”
+  multi-layer Skill router, long-context fidelity controls, bounded sub-agent
+  lifecycle, persistent-learning loop, and reproducible acceptance gates.”
+- “On top of the inherited directory/Skill scorer, I added bilingual
+  evidence-based admission, optional OpenAI-compatible embeddings,
+  load-before-final and digest-bound loading contracts, and bounded cross-Run
+  reranking. The frozen offline routing gate currently passes 60/60 cases.”
 - “In a controlled 48-pair synthetic path-recovery study, relevant approved
   Memory reduced repository tool calls by 79.2% and task input tokens by 57.6%.”
 - “Non-path lessons showed category-dependent results: command recovery and
@@ -265,6 +339,8 @@ Do not describe the project as:
 - proven to reduce all coding-task cost by 57%–79%;
 - production-safe or OS-sandboxed;
 - a fully asynchronous process-isolated multi-agent platform;
+- a Skill router built entirely from scratch, automatically self-improving on
+  every use, or live-Qwen-validated by the offline 60-case gate;
 - generally superior to another agent based on the internal A profile;
 - licensed under MIT/Apache unless a valid root license and upstream reuse
   basis are established.

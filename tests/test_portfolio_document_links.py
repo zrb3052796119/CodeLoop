@@ -12,6 +12,7 @@ DOCUMENTS = (
     ROOT / "README.md",
     ROOT / "README.zh-CN.md",
     ROOT / "CONTRIBUTIONS.md",
+    ROOT / "docs" / "CONTRIBUTION_AUDIT.md",
     ROOT / "docs" / "PORTFOLIO_CASE_STUDY.md",
     ROOT / "docs" / "PORTFOLIO_CASE_STUDY.en.md",
 )

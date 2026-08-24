@@ -4,6 +4,12 @@
 > [sanitized attribution projection](../artifacts/persistent-memory-large-study-v3/auth-policy-attribution.json) ·
 > [full paired-study report](./2026-08-21--persistent-memory-large-study--r1--robustness-check.md)
 
+> **Scope:** this is one Memory vertical slice selected from four peer
+> contribution tracks because it has complete cross-Run attribution and paired
+> warm/cold evidence. It does not mean Memory is the whole project. See the
+> [full contribution map](./CONTRIBUTION_AUDIT.md) for the Skill-routing,
+> context-fidelity, multi-agent, and persistent-learning code/test/commit map.
+
 ## The 3-Minute Version
 
 Here, **warm / Memory** means a new Run receives the relevant approved lesson;
