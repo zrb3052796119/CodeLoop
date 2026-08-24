@@ -1,13 +1,52 @@
-# MiniCode Python - 使用指南
+# CodeLoop 使用指南
 
-> 版本: v0.2.0
-> 更新时间: 2026-04-05
+> 包版本：以 `pyproject.toml` 为准（当前 `0.1.0`）
+>
+> 更新时间：2026-08-24
+>
+> 说明：CodeLoop 是 MiniCode Python 的衍生版本，完整继承与贡献边界见
+> [CONTRIBUTIONS.md](../CONTRIBUTIONS.md)。
 
 ---
 
 ## 🚀 快速开始
 
-### 1. 安装（首次使用）
+### 0. 安装
+
+macOS / Linux：
+
+```bash
+git clone https://github.com/zrb3052796119/CodeLoop.git
+cd CodeLoop
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+```
+
+Windows PowerShell：
+
+```powershell
+git clone https://github.com/zrb3052796119/CodeLoop.git
+Set-Location CodeLoop
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+```
+
+### 1. 配置主模型（首次使用）
+
+推荐把模型、端点和密钥统一放在用户级配置中，这样从任意项目目录启动
+CodeLoop 都使用同一份配置：
+
+```bash
+mkdir -p ~/.mini-code
+chmod 700 ~/.mini-code
+cp .env.example ~/.mini-code/.env
+chmod 600 ~/.mini-code/.env
+# 然后编辑 ~/.mini-code/.env，替换示例模型和密钥。
+```
+
+也可以使用交互式安装向导：
 
 ```bash
 # 运行交互式安装向导
@@ -16,19 +55,28 @@ python -m minicode.main --install
 
 安装向导会要求输入：
 - **Model name**: 模型名称（如 `claude-sonnet-4-20250514`）
-- **ANTHROPIC_BASE_URL**: API 地址（默认 `https://api.anthropic.com`）
-- **ANTHROPIC_AUTH_TOKEN**: API 密钥
+- **Provider**: `anthropic`、`openai`、`openrouter` 或 `custom`
+- 对应 provider 的 **Base URL** 与 **API key**（密钥输入不回显）
 
-配置会保存到 `~/.mini-code/settings.json`
+安装向导会把模型配置保存到 `~/.mini-code/.env`。
 
 ### 2. 启动
+
+macOS / Linux：
 
 ```bash
 # 正常启动
 python -m minicode.main
 
 # 或使用 mock 模式（无需 API，用于测试）
-set MINI_CODE_MODEL_MODE=mock
+export MINI_CODE_MODEL_MODE=mock
+python -m minicode.main
+```
+
+Windows PowerShell：
+
+```powershell
+$env:MINI_CODE_MODEL_MODE = "mock"
 python -m minicode.main
 ```
 
@@ -38,11 +86,11 @@ python -m minicode.main
 
 ```
 ╭──────────────────────────────────────────────────────────────╮
-│ MiniCode                  │ provider                         │
+│ CodeLoop                  │ provider                         │
 │                                                                  │
-│ Terminal coding assistant for MiniCode.                        │
+│ Evidence-driven local coding assistant.                        │
 │                                                                  │
-│ minicode                  │ .../Desktop/minicode/py-src        │
+│ minicode                  │ .../your-target-project            │
 │ [provider] offline  [model] mock  [msgs] 0  [events] 0        │
 │ cwd: ...                                                           │
 ╰──────────────────────────────────────────────────────────────╯
@@ -308,14 +356,46 @@ target: D:\project\main.py
 
 ## ⚙️ 配置
 
-### 配置文件优先级
+### 主模型配置优先级
 
-1. `~/.mini-code/settings.json` - 用户级设置
-2. `~/.mini-code/mcp.json` - 用户级 MCP 配置
-3. `.mcp.json` - 项目级 MCP 配置
-4. 环境变量
+从高到低：
 
-### 示例配置
+1. 真实进程环境变量（例如 shell 中的 `export`）
+2. `~/.mini-code/.env` - 推荐的用户级模型、端点和密钥配置
+3. `~/.mini-code/settings.json` - 仅供旧版本配置兼容回退
+4. `~/.claude/settings.json` - Claude 兼容回退
+
+成功运行 `config migrate-env` 后会写入迁移标记并关闭第 3、4 项的模型凭据
+回退，避免删除新 env 中的 key 后旧 secret 又被静默启用。
+
+目标项目中的普通 `.env` **不参与任何远程模型、embedding 或子代理的认证与
+端点路由**。这可以防止项目文件借用全局密钥并把请求重定向到其他端点。
+
+MCP 配置与主模型配置分开管理，来源包括
+`~/.mini-code/settings.json`、`~/.mini-code/mcp.json` 和项目 `.mcp.json`。
+运行 `/config-paths` 可以查看当前用户级配置路径。
+
+### 推荐的全局 `.env` 示例
+
+`~/.mini-code/.env`:
+
+```dotenv
+MINI_CODE_MODEL=claude-sonnet-4-20250514
+MINI_CODE_PROVIDER=anthropic
+ANTHROPIC_BASE_URL=https://api.anthropic.com
+ANTHROPIC_API_KEY=replace-with-your-key
+```
+
+从旧版本升级时可一次性迁移；第二个选项只导入并清理项目 `.env` 中专用的
+embedding/subagent 配置，不会导入项目的主模型凭据：
+
+```bash
+minicode-py config migrate-env \
+  --import-workspace-env .env \
+  --scrub-workspace
+```
+
+### 兼容的旧配置示例
 
 `~/.mini-code/settings.json`:
 
@@ -338,12 +418,16 @@ target: D:\project\main.py
 
 无需 API 密钥，用于测试和开发：
 
-```bash
-# Windows
-set MINI_CODE_MODEL_MODE=mock
-python -m minicode.main
+Windows PowerShell：
 
-# Unix/Linux/macOS
+```powershell
+$env:MINI_CODE_MODEL_MODE = "mock"
+python -m minicode.main
+```
+
+macOS / Linux：
+
+```bash
 export MINI_CODE_MODEL_MODE=mock
 python -m minicode.main
 ```
@@ -357,8 +441,10 @@ Mock 模式会：
 ### 运行测试
 
 ```bash
-cd py-src
-python -m pytest tests/ -v
+python -m compileall -q minicode scripts
+python -m ruff check minicode/ --select=E,F --ignore=E501
+python scripts/evaluate_agent_quality.py --profile current
+python -m pytest -q
 ```
 
 ---
@@ -381,13 +467,23 @@ tools on | skills on
 
 ### 问题：启动报错 "No model configured"
 
-**解决**: 运行安装向导或手动配置：
+**解决**: 优先创建全局模型配置：
+
+```bash
+mkdir -p ~/.mini-code
+chmod 700 ~/.mini-code
+cp .env.example ~/.mini-code/.env
+chmod 600 ~/.mini-code/.env
+```
+
+编辑 `~/.mini-code/.env` 并填写模型与对应 provider 的密钥。也可以运行兼容的
+安装向导：
 
 ```bash
 python -m minicode.main --install
 ```
 
-或创建 `~/.mini-code/settings.json`：
+或继续创建兼容的 `~/.mini-code/settings.json`：
 
 ```json
 {
@@ -428,7 +524,7 @@ cat ~/.mini-code/sessions_index.json
 
 ## 🎉 享受使用！
 
-MiniCode Python 是一个轻量级但功能完整的终端编码助手。
+CodeLoop 是一个基于 MiniCode Python、强调证据闭环与运行时边界的终端编码助手。
 
 **主要特性**:
 - ✅ 完整的 Agent Loop
@@ -437,6 +533,6 @@ MiniCode Python 是一个轻量级但功能完整的终端编码助手。
 - ✅ 权限管理系统
 - ✅ MCP 集成
 - ✅ Skills 系统
-- ✅ 零外部依赖
+- ✅ 可选择多个模型 provider
 
 有问题？欢迎反馈！

@@ -44,7 +44,7 @@ files changed.
 | Upstream precision | The imported baseline did not record a source revision, so an exact upstream commit-to-commit delta cannot be reconstructed from this Git history. |
 | Product status | Engineering/research prototype with a usable local CLI; not an OS-sandboxed or externally benchmarked production agent. |
 
-Representative, reviewable commits before the current release:
+Representative, reviewable commits through the current release:
 
 | Commit | Change represented |
 | --- | --- |
@@ -56,6 +56,7 @@ Representative, reviewable commits before the current release:
 | [`6c65df8`](https://github.com/zrb3052796119/CodeLoop/commit/6c65df8) | Bounded recovery loops and stopping conditions. |
 | [`f2772f7`](https://github.com/zrb3052796119/CodeLoop/commit/f2772f7) | A-profile runtime integrations across Memory, compaction, Skill, and agents. |
 | [`4d61d0a`](https://github.com/zrb3052796119/CodeLoop/commit/4d61d0a) | Paired Memory acceptance studies and their reports. |
+| [`ae6c646`](https://github.com/zrb3052796119/CodeLoop/commit/ae6c646) | Evidence-driven Runtime hardening, acceptance contracts, and release tests. |
 
 These commits establish the post-import repository work. They do not repair the
 missing exact upstream revision or licensing grant; those remain explicit
