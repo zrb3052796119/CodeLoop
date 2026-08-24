@@ -57,7 +57,7 @@ CodeLoop 是 [MiniCode Python](https://github.com/QUSETIONS/MiniCode-Python)
 
 | 证据 | 结果 | 能说明什么，不能说明什么 |
 | --- | ---: | --- |
-| [仓库回归测试](./.github/workflows/ci.yml) | **4,474 passed, 2 skipped** | 2026-08-24 在 Python 3.12 对 [Runtime/测试提交 `594e7db`](https://github.com/zrb3052796119/CodeLoop/commit/594e7db) 完成的本地发布验收；说明已实现行为受到回归保护，不代表通用 Agent 智能。推送后 CI 会在 3 OS × 2 Python 矩阵重跑。 |
+| [仓库回归测试](./.github/workflows/ci.yml) | **4,474 passed, 2 skipped** | 2026-08-24 在 Python 3.12 对 [Runtime/测试提交 `b2bcfee`](https://github.com/zrb3052796119/CodeLoop/commit/b2bcfee) 完成的本地发布验收；说明已实现行为受到回归保护，不代表通用 Agent 智能。推送后 CI 会在 3 OS × 2 Python 矩阵重跑。 |
 | [内部 A 档评估](./docs/agent-quality-gates.md) | **Skill 60/60**、**压缩 12/12**、**记录任务 50/50** | 完全离线且 `remoteCallCount=0`。fixture/manifest 有哈希；与 `current` 不同，`a` 有意允许同 manifest 的新结果，不固定某一份 result 哈希。不是第三方认证。 |
 | [路径恢复配对实验](./docs/2026-08-21--persistent-memory-large-study--r1--robustness-check.md) | **48 对 Memory / cold** | 仅比较复用阶段的目标 Turn：工具调用 50 vs 240（**-79.2%**）；输入 token 652,911 vs 1,539,738（**-57.6%**）。首次学习有前置成本；任务仅为合成、只读恢复。 |
 | [非路径经验配对实验](./docs/2026-08-22--non-path-persistent-memory--r1--robustness-check.md) | **36 对 Memory / cold** | 平均工具 7.50 vs 11.50（**-34.8%**）；严格成功 32/36 vs 28/36。不同经验类别差异明显。 |
