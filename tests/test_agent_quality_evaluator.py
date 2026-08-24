@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from scripts.agent_quality_evaluator import (
+    _sha256,
     _tool_pairs_intact,
     evaluate_compaction_fidelity,
     evaluate_gate,
@@ -12,6 +13,17 @@ from scripts.agent_quality_evaluator import (
     evaluate_skill_routing,
 )
 from scripts.evaluate_agent_quality import main as quality_cli_main
+
+
+def test_quality_dataset_digest_is_cross_platform_line_ending_stable(
+    tmp_path,
+) -> None:
+    lf_path = tmp_path / "lf.json"
+    crlf_path = tmp_path / "crlf.json"
+    lf_path.write_bytes(b'{\n  "schemaVersion": 1\n}\n')
+    crlf_path.write_bytes(b'{\r\n  "schemaVersion": 1\r\n}\r\n')
+
+    assert _sha256(lf_path) == _sha256(crlf_path)
 
 
 def test_skill_routing_evaluator_measures_positive_and_abstain_cases(tmp_path) -> None:

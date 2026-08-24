@@ -32,7 +32,11 @@ def _load_document(path: str | Path) -> dict[str, Any]:
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    # Quality fixtures are text contracts. Git may expose their line endings
+    # differently on Windows, but that checkout representation must not turn
+    # an otherwise identical frozen dataset into a failed promotion gate.
+    canonical = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def evaluate_skill_routing(dataset_path: str | Path) -> dict[str, object]:

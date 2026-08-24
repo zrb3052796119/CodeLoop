@@ -2635,7 +2635,11 @@ finally:
         errors="replace",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        timeout=30,
+        # The installed-wheel smoke intentionally exercises a broad runtime
+        # surface. Hosted macOS runners can take more than 30 seconds even
+        # when every assertion succeeds, so keep a real wall-clock ceiling
+        # without treating runner startup variance as a product failure.
+        timeout=90,
         check=False,
     )
     assert completed.returncode == 0, completed.stderr

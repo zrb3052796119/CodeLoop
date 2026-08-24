@@ -1,0 +1,11 @@
+# Frozen text fixtures use content hashes and must retain one checkout form on
+# every CI runner. Binary files remain untouched by Git's text conversion.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.zip binary
+*.whl binary
