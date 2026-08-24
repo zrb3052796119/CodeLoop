@@ -26,6 +26,31 @@ def test_quality_dataset_digest_is_cross_platform_line_ending_stable(
     assert _sha256(lf_path) == _sha256(crlf_path)
 
 
+def test_current_gate_accepts_crlf_checkout_of_frozen_quality_suite(
+    tmp_path,
+) -> None:
+    source_root = Path("tests/fixtures/agent_quality")
+    crlf_root = tmp_path / "agent_quality"
+    crlf_root.mkdir()
+    for source in source_root.glob("*.json"):
+        canonical = source.read_bytes().replace(b"\r\n", b"\n").replace(
+            b"\r", b"\n"
+        )
+        (crlf_root / source.name).write_bytes(canonical.replace(b"\n", b"\r\n"))
+
+    canonical_report = evaluate_quality_suite(source_root)
+    crlf_report = evaluate_quality_suite(crlf_root)
+    gate = evaluate_gate(
+        crlf_report,
+        "artifacts/agent-quality-contract.json",
+        profile="current",
+    )
+
+    assert crlf_report["datasets"] == canonical_report["datasets"]
+    assert crlf_report["payloadSha256"] == canonical_report["payloadSha256"]
+    assert gate["passed"] is True
+
+
 def test_skill_routing_evaluator_measures_positive_and_abstain_cases(tmp_path) -> None:
     dataset_path = tmp_path / "skill-routing.json"
     dataset_path.write_text(
