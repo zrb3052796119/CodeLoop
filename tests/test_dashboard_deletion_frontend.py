@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
+
+from tests.node_harness import run_node
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -151,12 +152,7 @@ const partial = {
 };
 assert.equal(validateDeletionResult(partial, 'conversation', 'session-safe-1', revision), partial);
 """
-    subprocess.run(
-        ["node", "-e", _deletion_helpers_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_deletion_helpers_source() + "\n" + harness)
 
 
 def test_deletion_ui_contract_is_independent_accessible_and_transport_bounded() -> None:
@@ -217,12 +213,7 @@ keydown({ key: 'Escape', shiftKey: false, preventDefault() { prevented += 1; } }
 assert.equal(closed, 1);
 assert.equal(prevented, 3);
 """
-    subprocess.run(
-        ["node", "-e", _deletion_focus_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_deletion_focus_source() + "\n" + harness)
 
 
 def test_preview_target_switch_and_close_generation_drop_old_responses() -> None:
@@ -266,12 +257,7 @@ async function reconcileDeletionCollections() {}
   assert.equal(await loadDeletionPreview(store, 'manual'), false);
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        ["node", "-e", _deletion_transport_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_deletion_transport_source() + "\n" + harness)
 
 
 def test_stale_partial_and_lost_post_never_auto_repost() -> None:
@@ -353,17 +339,14 @@ async function loadDeletionPreview(value, reason) {
   assert.equal(store.outcomeUnconfirmed, true);
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        ["node", "-e", _deletion_helpers_source() + "\n" + APP.read_text(encoding="utf-8")[
+    run_node(
+        _deletion_helpers_source() + "\n" + APP.read_text(encoding="utf-8")[
             APP.read_text(encoding="utf-8").index("function fixedDeletionError") :
             APP.read_text(encoding="utf-8").index("\nfunction ensureDeletionDialogHost")
         ] + "\n" + APP.read_text(encoding="utf-8")[
             APP.read_text(encoding="utf-8").index("async function submitDeletion") :
             APP.read_text(encoding="utf-8").index("\nfunction wireDeletionDialog")
-        ] + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
+        ] + "\n" + harness
     )
 
 
@@ -422,12 +405,7 @@ assert.equal(memoryApprovalStore.actionGeneration, 13);
 assert.equal(JSON.stringify(memoryStore.filters), filters);
 assert.equal(projectMemoryDeletionTombstones.has('mem-gone'), true);
 """
-    subprocess.run(
-        ["node", "-e", _deletion_convergence_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_deletion_convergence_source() + "\n" + harness)
 
 
 def test_deletion_source_never_persists_revisions_or_renders_sensitive_copies() -> None:

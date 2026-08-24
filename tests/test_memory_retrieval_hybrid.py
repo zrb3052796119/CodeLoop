@@ -215,14 +215,16 @@ def test_holdout_schema_counts_and_frozen_hash() -> None:
     manifest_path = HOLDOUT_ROOT / "frozen.sha256"
     assert hashlib.sha256(manifest_path.read_bytes()).hexdigest() == HOLDOUT_MANIFEST_SHA256
     expected = {}
-    for line in manifest_path.read_text().splitlines():
+    for line in manifest_path.read_text(encoding="utf-8").splitlines():
         digest, filename = line.split("  ", 1)
         expected[filename] = digest
     assert all(
         hashlib.sha256((HOLDOUT_ROOT / filename).read_bytes()).hexdigest() == digest
         for filename, digest in expected.items()
     )
-    cases = json.loads((HOLDOUT_ROOT / "cases.json").read_text())["cases"]
+    cases = json.loads(
+        (HOLDOUT_ROOT / "cases.json").read_text(encoding="utf-8")
+    )["cases"]
     assert len(cases) == 60
     assert sum(case["polarity"] == "positive" for case in cases) == 36
     assert sum(case["polarity"] == "hard_negative" for case in cases) == 24

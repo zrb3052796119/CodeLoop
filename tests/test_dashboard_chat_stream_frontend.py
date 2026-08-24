@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
+
+from tests.node_harness import run_node
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -137,12 +138,7 @@ assert.equal(malformed.store.turnId, turn);
 assert.equal(malformed.store.detached, true);
 assert.equal(malformed.store.incomplete, true);
 """
-    subprocess.run(
-        ["node", "-e", _stream_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_stream_source() + "\n" + harness)
 
 
 def test_formal_chat_stream_is_connection_scoped_and_never_persisted() -> None:
@@ -213,12 +209,7 @@ scheduleChatStreamRender(2);
 jobs[2]();
 assert.deepEqual(renders, [false, true]); // stale generation cannot render
 """
-    subprocess.run(
-        ["node", "-e", _presentation_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_presentation_source() + "\n" + harness)
 
 
 def test_terminal_refresh_is_deduplicated_and_removes_partial_only_after_rest() -> None:
@@ -276,12 +267,7 @@ const completed = {
   assert.equal(chatStore.activeTurnId, null);
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        ["node", "-e", _terminal_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_terminal_source() + "\n" + harness)
 
 
 def test_failed_final_rest_refresh_keeps_partial_and_recovery_identity() -> None:
@@ -323,12 +309,7 @@ function renderConversationDock() {}
   assert.equal(chatStore.terminalTurnId, null); // a manual status check may retry REST
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        ["node", "-e", _terminal_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_terminal_source() + "\n" + harness)
 
 
 def test_chat_stream_ui_copy_and_global_transport_count_are_current() -> None:
@@ -436,9 +417,4 @@ global.fetch = async (_url, options) => {
   assert.ok(chatStore.error.includes('不会自动重发'));
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        ["node", "-e", _submit_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_submit_source() + "\n" + harness)

@@ -19,7 +19,7 @@ import uuid
 from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
+from pathlib import Path, PurePath, PureWindowsPath
 from typing import Any, Callable, Literal
 from urllib.parse import urlsplit
 
@@ -29,7 +29,6 @@ from minicode.turn_cancellation import (
     TurnCancellationRequested,
     TurnCancellationToken,
 )
-
 
 PermissionStatus = Literal[
     "pending", "allowed", "denied", "expired", "cancelled", "closed"
@@ -67,6 +66,9 @@ _WINDOWS_ABSOLUTE_PATH_RE = re.compile(
     r"(?i)(?<![A-Za-z0-9._~%+\-])[a-z]:[\\/]"
 )
 _WINDOWS_UNC_PATH_RE = re.compile(r"(?<![A-Za-z0-9._~%+\-])\\\\[^\\\s]+")
+_WINDOWS_ROOTED_PATH_RE = re.compile(
+    r"(?<![A-Za-z0-9._~%+\-])\\(?!\\)[^\\\s]+"
+)
 _HOME_PATH_RE = re.compile(r"(?<![A-Za-z0-9._~%+\-])~(?:/|$)")
 _ENV_ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 _SHELL_META_RE = re.compile(r"[|&;<>()$`\r\n]")
@@ -326,6 +328,11 @@ def _contains_local_absolute_path(value: str) -> bool:
     )
 
 
+def _contains_windows_rooted_path(value: str) -> bool:
+    without_web_urls = _WEB_URL_RE.sub("[WEB_URL]", value)
+    return _WINDOWS_ROOTED_PATH_RE.search(without_web_urls) is not None
+
+
 def _is_complex_shell_review(command: str, args: list[str]) -> bool:
     if (
         not command
@@ -357,7 +364,48 @@ def _reason_review_is_unsafe(reason: str) -> bool:
     return any(_contains_sensitive_review_value(token) for token in tokens)
 
 
-def _workspace_relative_text(value: str, workspace: Path) -> str:
+def _relative_path_stays_in_workspace(value: str, *, windows: bool) -> bool:
+    """Return whether a lexical relative path cannot climb above its root."""
+    components = re.split(r"[\\/]" if windows else r"/", value)
+    depth = 0
+    for component in components:
+        if component in {"", "."}:
+            continue
+        if component == "..":
+            if depth == 0:
+                return False
+            depth -= 1
+            continue
+        depth += 1
+    return True
+
+
+def _workspace_path_pattern(workspace: PurePath, *, windows: bool) -> re.Pattern[str]:
+    rendered = str(workspace)
+    if windows:
+        # Windows accepts either separator at every component boundary. The
+        # match span still points into the original text, so only the review
+        # projection is normalized; the actual argv remains untouched.
+        expression = "".join(
+            r"[\\/]" if character in "\\/" else re.escape(character)
+            for character in rendered
+        )
+        if (
+            workspace.is_absolute()
+            and workspace.parent == workspace
+            and workspace.drive.startswith("\\\\")
+            and rendered.endswith(("\\", "/"))
+        ):
+            # ``PureWindowsPath`` renders a UNC share root with a trailing
+            # separator, while Windows also accepts the same share root
+            # without it. This optionality applies only to a complete UNC
+            # anchor; drive roots such as ``C:`` and ``C:\\`` are distinct.
+            expression = expression[: -len(r"[\\/]")] + r"(?:[\\/])?"
+        return re.compile(expression, re.IGNORECASE)
+    return re.compile(re.escape(rendered))
+
+
+def _workspace_relative_text(value: str, workspace: PurePath) -> str:
     """Rewrite absolute paths inside the workspace to workspace-relative form.
 
     A path under the workspace tells the reviewer nothing they do not already
@@ -365,10 +413,69 @@ def _workspace_relative_text(value: str, workspace: Path) -> str:
     make the review unapprovable. Paths anywhere else are left untouched and
     still count.
     """
-    workspace_text = str(workspace)
-    if not workspace_text or workspace_text not in value:
-        return value
-    return value.replace(f"{workspace_text}/", "").replace(workspace_text, ".")
+    windows_semantics = isinstance(workspace, PureWindowsPath)
+    separators = ("/", "\\") if windows_semantics else ("/",)
+    workspace_is_root = workspace.is_absolute() and workspace.parent == workspace
+    pattern = _workspace_path_pattern(workspace, windows=windows_semantics)
+    # Structured command arguments commonly consist of exactly one path. Do
+    # this before ``shlex.join`` so a Windows backslash does not cause quoting
+    # that remains after the absolute prefix is removed.
+    leading = pattern.match(value)
+    if leading is not None:
+        end = leading.end()
+        if end == len(value):
+            return "."
+        separator = value[end : end + 1]
+        if workspace_is_root or separator in separators:
+            relative_start = end if workspace_is_root else end + 1
+            relative = value[relative_start:]
+            if _relative_path_stays_in_workspace(
+                relative,
+                windows=windows_semantics,
+            ):
+                if not relative:
+                    return "."
+                return relative.replace("\\", "/") if windows_semantics else relative
+
+    rewritten = value
+    search_from = 0
+    while True:
+        match = pattern.search(rewritten, search_from)
+        if match is None:
+            break
+        start, end = match.span()
+        if any(
+            url.start() <= start < url.end()
+            for url in _WEB_URL_RE.finditer(rewritten)
+        ):
+            search_from = end
+            continue
+        left_is_boundary = (
+            start == 0
+            or rewritten[start - 1].isspace()
+            or rewritten[start - 1] in "=:([]{'\"`,;<>+-"
+        )
+        separator = rewritten[end : end + 1]
+        exact_at_end = end == len(rewritten)
+        has_child = workspace_is_root or separator in separators
+        if not left_is_boundary or not (exact_at_end or has_child):
+            search_from = start + 1
+            continue
+        relative_start = end if workspace_is_root else end + (1 if has_child else 0)
+        relative = rewritten[relative_start:]
+        if has_child and not _relative_path_stays_in_workspace(
+            relative,
+            windows=windows_semantics,
+        ):
+            search_from = start + 1
+            continue
+        # Only a complete workspace path component is rewritten. A sibling
+        # such as ``workspace-escape`` remains absolute so the caller marks
+        # the request deny-only instead of hiding the external path.
+        replacement = "." if exact_at_end or not relative else ""
+        rewritten = rewritten[:start] + replacement + rewritten[relative_start:]
+        search_from = start + len(replacement)
+    return rewritten
 
 
 def _command_review_is_unsafe(
@@ -380,12 +487,17 @@ def _command_review_is_unsafe(
     # a Reject button and nothing to read, for commands as ordinary as
     # "pytest <workspace>/tests".
     local = [_workspace_relative_text(value, workspace) for value in structured_values]
+    local_reason = _workspace_relative_text(reason, workspace)
+    windows_rooted = isinstance(workspace, PureWindowsPath) and any(
+        _contains_windows_rooted_path(value) for value in [*local, local_reason]
+    )
     return bool(
         _is_complex_shell_review(command, args)
         or any(_contains_sensitive_review_value(value) for value in structured_values)
         or any(_contains_local_absolute_path(value) for value in local)
+        or windows_rooted
         or _reason_review_is_unsafe(reason)
-        or _contains_local_absolute_path(_workspace_relative_text(reason, workspace))
+        or _contains_local_absolute_path(local_reason)
     )
 
 
@@ -600,7 +712,12 @@ def _project_request(workspace: Path, request: object) -> _ProjectedRequest:
             command_redacted = True
             reason_redacted = True
         else:
-            preview = shlex.join([command, *args])
+            preview = shlex.join(
+                [
+                    _workspace_relative_text(value, workspace)
+                    for value in (command, *args)
+                ]
+            )
             preview, command_redacted = _redact_review_text(
                 preview, workspace=workspace, rewrite_workspace=True
             )

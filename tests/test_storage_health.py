@@ -414,7 +414,7 @@ def test_oversized_files_and_global_entry_budget_are_bounded(
     )
 
 
-def test_symlink_escape_and_special_files_are_never_followed(
+def test_symlink_escape_is_never_followed(
     tmp_path: Path,
 ) -> None:
     from minicode.storage_health import PersistenceHealthReader
@@ -440,21 +440,31 @@ def test_symlink_escape_and_special_files_are_never_followed(
         encoding="utf-8",
     )
     (workspace / ".mini-code-memory").symlink_to(outside, target_is_directory=True)
-    tool_results = workspace / ".mini-code-tool-results"
-    tool_results.mkdir()
-    fifo = tool_results / "result.pipe"
-    os.mkfifo(fifo)
 
     snapshot = PersistenceHealthReader(workspace, data_dir=data_dir).snapshot()
 
     assert _store(snapshot, "memory-project")["status"] == "unavailable"
     assert _store(snapshot, "memory-project")["recordCount"] is None
-    assert _store(snapshot, "tool-results")["status"] == "partial"
     assert "OUTSIDE_ESCAPE_SECRET" not in json.dumps(snapshot)
-    assert {item["code"] for item in snapshot["diagnostics"]} >= {
-        "root_unsafe",
-        "entry_unsafe",
-    }
+    assert "root_unsafe" in {item["code"] for item in snapshot["diagnostics"]}
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="named FIFOs are POSIX-only")
+def test_special_files_are_never_followed(tmp_path: Path) -> None:
+    from minicode.storage_health import PersistenceHealthReader
+
+    workspace = (tmp_path / "workspace").resolve()
+    data_dir = tmp_path / "data"
+    workspace.mkdir()
+    data_dir.mkdir()
+    tool_results = workspace / ".mini-code-tool-results"
+    tool_results.mkdir()
+    os.mkfifo(tool_results / "result.pipe")
+
+    snapshot = PersistenceHealthReader(workspace, data_dir=data_dir).snapshot()
+
+    assert _store(snapshot, "tool-results")["status"] == "partial"
+    assert "entry_unsafe" in {item["code"] for item in snapshot["diagnostics"]}
 
 
 def test_directory_failure_is_isolated_from_other_sources(

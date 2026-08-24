@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
+
+from tests.node_harness import run_node
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -377,12 +378,7 @@ async function queueCheck(name, callback) {
 })().catch((error) => { console.error(error); process.exit(1); });
 """
 
-    completed = subprocess.run(
-        ["node", "-e", _realtime_source() + "\n" + harness],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    completed = run_node(_realtime_source() + "\n" + harness, check=False)
 
     assert completed.returncode == 0, completed.stderr
     assert "validation=25 queue=10 controller=" in completed.stdout

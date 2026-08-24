@@ -85,7 +85,7 @@ def _claim_output(task_summary: str, outcome: str, claims: list[dict]) -> str:
 def _holdout_case(case_id: str) -> dict:
     fixture_root = Path(__file__).parent / "fixtures" / "reflection_llm_holdout" / "cases"
     for path in sorted(fixture_root.glob("*.json")):
-        for case in json.loads(path.read_text())["cases"]:
+        for case in json.loads(path.read_text(encoding="utf-8"))["cases"]:
             if case["case_id"] == case_id:
                 return case
     raise AssertionError(f"missing fixture case: {case_id}")

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
+
+from tests.node_harness import run_node
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -137,12 +138,7 @@ for (const review of [
   assert.equal(canApproveMemory(boundedDeny.items[0]), false);
 }
 """
-    subprocess.run(
-        ["node", "-e", _approval_helpers_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_approval_helpers_source() + "\n" + harness)
 
 
 def test_memory_approval_decision_validator_binds_identity_revision_and_result() -> None:
@@ -164,12 +160,7 @@ assert.equal(validMemoryApprovalDecisionPayload({ ...result, decisionAccepted: 1
 assert.equal(validMemoryApprovalDecisionPayload({ ...result, extra: true }, expected), false);
 assert.equal(validMemoryApprovalDecisionPayload(result, { ...expected, reviewRevision: 'bad' }), false);
 """
-    subprocess.run(
-        ["node", "-e", _approval_helpers_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_approval_helpers_source() + "\n" + harness)
 
 
 def test_memory_approval_actions_are_single_flight_authoritative_and_never_reposted() -> None:
@@ -236,12 +227,7 @@ global.fetch = async (url, options = {}) => { calls.push([url, options]); return
   assert.equal(calls.filter(([, options]) => options.method === 'POST').length, 1);
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        ["node", "-e", _approval_action_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_approval_action_source() + "\n" + harness)
 
 
 def test_memory_approval_get_renders_after_read_single_flight_is_released() -> None:
@@ -356,12 +342,7 @@ global.fetch = async () => ({ ok: true, async text() { return JSON.stringify(mal
   assert.deepEqual(memoryApprovalStore.items, [item]);
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        ["node", "-e", _approval_action_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_approval_action_source() + "\n" + harness)
 
 
 def test_conflicts_reload_authority_while_busy_and_network_never_retry_post() -> None:
@@ -445,9 +426,4 @@ const conflictCodes = [
   assert.match(memoryApprovalStore.error, /不会自动重发/);
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        ["node", "-e", _approval_action_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_approval_action_source() + "\n" + harness)

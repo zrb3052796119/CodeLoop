@@ -413,7 +413,8 @@ score 或 memory tier 更可能改善 Agent 的实际表现。
    时立即 flush 并清除评分缓存，避免任务文本和模型统计跨项目污染。持久化结果
    会在重启后参与同一静态 tier 内的重排，但只有至少两个候选在相似任务画像上
    各有 3 条观测时才生效；forced model、tier 和可用模型边界不被学习器越权。
-   文件使用原子替换和 owner-only `0600` 权限，未知模型结果不进入学习集。
+   文件使用原子替换；POSIX 使用 owner-only `0600` 权限。Windows 沿用父目录
+   ACL，本评审未独立验证 owner-only DACL。未知模型结果不进入学习集。
 
 生产等价探针结果：
 
@@ -553,7 +554,8 @@ P2B 已建立一等、项目级、内容安全的 Skill version ledger，但仍�
    cross-Skill parent、重复 ID、乱序或损坏历史都会让账本 fail closed，运行时
    不会用新数据覆盖可疑历史。
 3. 存储位于项目 `.mini-code/skill_versions.json`，采用进程锁、POSIX 文件锁、
-   临时文件 `fsync + replace`、`0600` 权限、1000 版本和 2 MiB 上限。符号链接
+   临时文件 `fsync + replace`、1000 版本和 2 MiB 上限。POSIX 文件使用 `0600`
+   权限；Windows 沿用父目录 ACL，本评审未独立验证 owner-only DACL。符号链接
    根/文件、非目录根和非普通文件均被拒绝，避免状态被重定向到 Workspace 外。
 4. P2A cohort 新增精确 Cost/latency coverage。Cost 只接受每个完成模型操作的
    唯一 canonical priced 事件；latency 只接受完整 started/terminal 配对和有界

@@ -116,9 +116,9 @@ def build_manifest() -> dict[str, Any]:
         raise ValueError("unexpected V4 verification oracle count")
     document["supersedes"] = {
         "suiteId": source.get("suiteId"),
-        "manifest": str(V4_MANIFEST.relative_to(ROOT)),
+        "manifest": V4_MANIFEST.relative_to(ROOT).as_posix(),
         "manifestSha256": V4_MANIFEST_SHA256,
-        "firstAttemptResult": str(V4_RESULT.relative_to(ROOT)),
+        "firstAttemptResult": V4_RESULT.relative_to(ROOT).as_posix(),
         "firstAttemptResultSha256": V4_RESULT_SHA256,
         "firstAttemptPassedCases": 7,
         "firstAttemptTotalCases": 10,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import stat
 from pathlib import Path
 
@@ -128,10 +129,11 @@ def test_snapshot_copies_current_state_with_secure_permissions_and_matching_hash
     assert result.all_hashes_match is True
     assert manifest["snapshot_kind"] == "current_post_contamination_state"
     assert all(item["source_hash"] == item["backup_hash"] for item in manifest["files"])
-    assert stat.S_IMODE(result.backup_dir.stat().st_mode) == 0o700
-    assert stat.S_IMODE(result.manifest_path.stat().st_mode) == 0o600
-    for source in source_paths.values():
-        assert stat.S_IMODE((result.backup_dir / source.name).stat().st_mode) == 0o600
+    if os.name == "posix":
+        assert stat.S_IMODE(result.backup_dir.stat().st_mode) == 0o700
+        assert stat.S_IMODE(result.manifest_path.stat().st_mode) == 0o600
+        for source in source_paths.values():
+            assert stat.S_IMODE((result.backup_dir / source.name).stat().st_mode) == 0o600
 
 
 def test_confirmed_memory_requires_two_independent_evidence_groups() -> None:

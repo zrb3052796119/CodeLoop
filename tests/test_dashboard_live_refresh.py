@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
+
+from tests.node_harness import run_node
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -207,12 +208,7 @@ function fixture(fetchChanges) {
 })().catch((error) => { console.error(error); process.exit(1); });
 """
 
-    subprocess.run(
-        ["node", "-e", _controller_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_controller_source() + "\n" + harness)
 
 
 def test_live_refresh_restores_only_state_reset_by_rendering() -> None:
@@ -267,12 +263,7 @@ assert.equal(input.focused, 1);
 assert.deepEqual(input.selection, [2, 4, 'forward']);
 """
 
-    subprocess.run(
-        ["node", "-e", _interaction_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_interaction_source() + "\n" + harness)
 
 
 def test_live_refresh_ui_is_restrained_and_honest() -> None:

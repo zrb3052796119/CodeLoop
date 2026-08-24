@@ -54,7 +54,7 @@ def test_windows_turn_write_does_not_require_fchmod(
         raise AssertionError("fchmod called")
 
     monkeypatch.setattr(turn_store_module, "_platform_name", lambda: "nt")
-    monkeypatch.setattr(turn_store_module.os, "fchmod", fail_fchmod)
+    monkeypatch.setattr(turn_store_module.os, "fchmod", fail_fchmod, raising=False)
 
     claim = store.claim(turn_id=TURN_ID, fingerprint=_fingerprint(store))
 

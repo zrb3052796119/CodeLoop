@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from collections import Counter
 from copy import deepcopy
 from dataclasses import replace
@@ -1267,7 +1268,7 @@ def test_resume_rejects_changed_private_evidence_bytes(
         )
 
 
-def test_private_evidence_is_minimal_and_owner_only(
+def test_private_evidence_is_minimal_and_uses_posix_owner_only_modes(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1298,8 +1299,9 @@ def test_private_evidence_is_minimal_and_owner_only(
     evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
 
     assert "responses" not in evidence
-    assert stat.S_IMODE(evidence_path.stat().st_mode) == 0o600
-    assert stat.S_IMODE(evidence_path.parent.stat().st_mode) == 0o700
+    if os.name == "posix":
+        assert stat.S_IMODE(evidence_path.stat().st_mode) == 0o600
+        assert stat.S_IMODE(evidence_path.parent.stat().st_mode) == 0o700
 
 
 @pytest.mark.parametrize("target", ["case", "envelope"])

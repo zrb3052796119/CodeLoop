@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import http.client
 import json
-import subprocess
 import threading
 from collections.abc import Iterator
 from http.server import ThreadingHTTPServer
@@ -16,6 +15,7 @@ from minicode.run_journal import RunJournal
 from minicode.session import SessionMetadata
 from minicode.skills import SkillSummary
 from minicode.web.read_model import DashboardReadModel
+from tests.node_harness import run_node
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -152,12 +152,7 @@ def test_cost_formatter_preserves_exact_nano_usd_strings_in_javascript() -> None
         "console.log(JSON.stringify(values.map(formatNanoUsd)));"
     )
 
-    completed = subprocess.run(
-        ["node", "-e", script, str(formatter)],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    completed = run_node(script, formatter)
 
     assert json.loads(completed.stdout) == [
         "$0.000000",
@@ -178,12 +173,7 @@ def test_cost_formatter_rejects_noncanonical_or_unsafe_values() -> None:
         "console.log(JSON.stringify(values.map(formatNanoUsd)));"
     )
 
-    completed = subprocess.run(
-        ["node", "-e", script, str(formatter)],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    completed = run_node(script, formatter)
 
     assert json.loads(completed.stdout) == ["—"] * 8
 
@@ -1492,12 +1482,7 @@ function accepted(turnId, runId, signal) {
   assert.ok(renderCalls >= 3);
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        ["node", "-e", functions + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(functions + "\n" + harness)
 
 
 def test_chat_manual_status_recovery_and_stale_response_behavior() -> None:
@@ -1637,12 +1622,7 @@ function response(payload, status = 200) {
   assert.ok(renderCalls > 0);
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        ["node", "-e", functions + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(functions + "\n" + harness)
 
 
 def test_skills_connections_and_system_frontend_use_real_independent_stores() -> None:

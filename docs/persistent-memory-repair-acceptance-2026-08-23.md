@@ -113,12 +113,14 @@ passes: 15 behavioral cases plus one taxonomy-integrity check.
   the V4 registry false negative without weakening the test requirement.
 - Public results bind the raw manifest SHA-256, a canonical per-case contract
   SHA-256, and a credential-free MiniCode source-tree snapshot SHA-256.
-  Every case also binds the exact bytes of an owner-only private evidence file;
+  Every case also binds the exact bytes of a private evidence file;
   resume loads that byte snapshot once, validates its manifest/source/case/run/
   oracle/runtime identities, re-derives every public status and counter, and
   rejects a coherent public-only rewrite. Private V5 evidence is written
-  before the public result, with directory mode 0700 and file mode 0600, and
-  no longer stores raw model responses or provider exception messages.
+  before the public result. POSIX hosts enforce owner-only directory mode 0700
+  and file mode 0600. Windows hosts inherit the parent directory ACL; this
+  acceptance does not independently verify an owner-only DACL. The evidence no
+  longer stores raw model responses or provider exception messages.
   `--resume` rejects a
   changed prompt, fixture, oracle, source tree, duplicate result or missing
   identity before executing any case. The manifest is parsed and hashed from a

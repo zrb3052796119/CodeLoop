@@ -77,11 +77,12 @@ def test_tool_registry_injects_current_state_dependency_only_when_present() -> N
 def test_run_gateway_owns_exactly_one_registry_for_server_lifetime(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    scoped_key = mcp_server_key("/workspace", "configured")
+    workspace = Path("/workspace").expanduser().resolve()
+    scoped_key = mcp_server_key(workspace, "configured")
     created_registries: list[object] = []
     created_servers: list[object] = []
     captured_loaders: list[object] = []
-    read_model = SimpleNamespace(workspace=Path("/workspace"))
+    read_model = SimpleNamespace(workspace=workspace)
 
     class FakeRegistry:
         def __init__(self) -> None:
@@ -135,7 +136,7 @@ def test_run_gateway_owns_exactly_one_registry_for_server_lifetime(
     assert server.address == ("127.0.0.1", 8765)
     assert server.mcp_current_state_registry is created_registries[0]
     assert server.dashboard_read_model is read_model
-    assert server.conversation_turn_service.workspace == Path("/workspace")
+    assert server.conversation_turn_service.workspace == workspace
     assert (
         server.conversation_turn_service._mcp_current_state_registry
         is created_registries[0]

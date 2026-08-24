@@ -15,6 +15,7 @@ import pytest
 
 import minicode.memory as memory_mod
 import minicode.memory_approval as memory_approval_mod
+from minicode.advisory_lock import WINDOWS_LOCK_SENTINEL
 from minicode.gateway import MiniCodeGatewayHandler
 from minicode.memory import MemoryApprovalPolicy, MemoryManager, MemoryScope
 from minicode.memory_approval import MemoryApprovalAuthority, MemoryApprovalError
@@ -29,14 +30,30 @@ def _tree_entries(root: Path) -> set[str]:
     }
 
 
-def _file_state(root: Path) -> dict[str, tuple[str, int, int]]:
+def _file_state(
+    root: Path,
+    *,
+    allow_locked_memory_store: bool = False,
+) -> dict[str, tuple[str, int, int]]:
     state: dict[str, tuple[str, int, int]] = {}
     for path in root.rglob("*"):
         if path.is_file() and not path.is_symlink():
-            content = path.read_bytes()
             stat_result = path.stat()
+            try:
+                content_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+            except PermissionError:
+                if (
+                    not allow_locked_memory_store
+                    or os.name != "nt"
+                    or path.name != "memory-store.lock"
+                ):
+                    raise
+                # A Windows byte-range lock denies a second handle access to
+                # the sentinel byte. Preserve size/mtime side-effect coverage
+                # without weakening the production coordination lock.
+                content_hash = "<windows-byte-range-locked>"
             state[path.relative_to(root).as_posix()] = (
-                hashlib.sha256(content).hexdigest(),
+                content_hash,
                 stat_result.st_size,
                 stat_result.st_mtime_ns,
             )
@@ -515,7 +532,18 @@ def test_symlinked_minicode_data_root_fails_closed_without_writes(
     assert list(external.iterdir()) == []
 
 
-@pytest.mark.parametrize("kind", ["directory", "fifo"])
+@pytest.mark.parametrize(
+    "kind",
+    [
+        "directory",
+        pytest.param(
+            "fifo",
+            marks=pytest.mark.skipif(
+                not hasattr(os, "mkfifo"), reason="named FIFOs are POSIX-only"
+            ),
+        ),
+    ],
+)
 def test_non_regular_memory_source_fails_closed_without_blocking_or_writing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -578,7 +606,11 @@ def test_snapshot_is_not_a_writer_while_another_process_holds_commit_lock(
     )
     process.start()
     assert ready.wait(timeout=10)
-    before_snapshot = _file_state(tmp_path)
+    lock_path = mini_code_dir / "memory-store.lock"
+    before_snapshot = _file_state(
+        tmp_path,
+        allow_locked_memory_store=True,
+    )
 
     old_snapshot = MemoryApprovalAuthority(
         workspace,
@@ -586,11 +618,16 @@ def test_snapshot_is_not_a_writer_while_another_process_holds_commit_lock(
     ).snapshot()
 
     assert old_snapshot["items"][0]["review"]["contentPreview"] == original_content
-    assert _file_state(tmp_path) == before_snapshot
+    assert _file_state(
+        tmp_path,
+        allow_locked_memory_store=True,
+    ) == before_snapshot
     release.set()
     process.join(timeout=10)
     assert process.exitcode == 0
     assert result.get(timeout=2) == (True, None)
+    expected_lock_payload = WINDOWS_LOCK_SENTINEL if os.name == "nt" else b""
+    assert lock_path.read_bytes() == expected_lock_payload
     new_snapshot = MemoryApprovalAuthority(workspace).snapshot()
     assert new_snapshot["items"][0]["review"]["contentPreview"] == updated_content
     assert old_snapshot["revision"] != new_snapshot["revision"]

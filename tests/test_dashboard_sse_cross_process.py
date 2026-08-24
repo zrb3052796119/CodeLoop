@@ -152,6 +152,7 @@ for raw in sys.stdin:
 """
     environment = dict(os.environ)
     environment["HOME"] = str(home)
+    environment["USERPROFILE"] = str(home)
     process = subprocess.Popen(
         [sys.executable, "-c", writer_script, str(workspace), str(data_dir)],
         cwd=workspace,

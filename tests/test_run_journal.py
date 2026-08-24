@@ -308,7 +308,8 @@ def test_rendered_memory_ids_are_recorded_while_running_and_readable_after_compl
         / record.id
         / "memory_rendered.json"
     )
-    assert rendered_path.stat().st_mode & 0o777 == 0o600
+    if os.name == "posix":
+        assert rendered_path.stat().st_mode & 0o777 == 0o600
     persisted = rendered_path.read_text(encoding="utf-8")
     assert "Answer a user" not in persisted
 
@@ -328,7 +329,7 @@ def test_windows_sidecars_do_not_require_fchmod(
         raise AssertionError("fchmod called")
 
     monkeypatch.setattr(run_journal_module, "_platform_name", lambda: "nt")
-    monkeypatch.setattr(run_journal_module.os, "fchmod", fail_fchmod)
+    monkeypatch.setattr(run_journal_module.os, "fchmod", fail_fchmod, raising=False)
 
     entry_id = "project-1785082406796413000-b6ecf281"
     journal.record_rendered_memory_ids(record.id, [entry_id])
@@ -458,7 +459,8 @@ def test_completed_run_user_signal_is_immutable_private_and_restart_safe(
         / record.id
         / "user_signal.json"
     )
-    assert signal_path.stat().st_mode & 0o777 == 0o600
+    if os.name == "posix":
+        assert signal_path.stat().st_mode & 0o777 == 0o600
     persisted = signal_path.read_text(encoding="utf-8")
     assert record.id not in persisted
     assert "Answer a user" not in persisted

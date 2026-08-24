@@ -3502,6 +3502,17 @@ def canonical_manifest_text(manifest: dict[str, Any]) -> str:
     )
 
 
+def _write_canonical_manifest_stdout(manifest: dict[str, Any]) -> None:
+    """Write canonical UTF-8 bytes without platform newline translation."""
+    payload = canonical_manifest_text(manifest).encode("utf-8")
+    binary_stdout = getattr(sys.stdout, "buffer", None)
+    if binary_stdout is None:
+        # StringIO-style test doubles do not translate newlines.
+        sys.stdout.write(payload.decode("utf-8"))
+        return
+    binary_stdout.write(payload)
+
+
 def write_v2_manifest(*, project_root: Path = PROJECT_ROOT) -> Path:
     """Return the immutable pinned v2 target without rewriting history."""
     root = Path(project_root).resolve()
@@ -3553,9 +3564,8 @@ def write_v7_manifest(*, project_root: Path = PROJECT_ROOT) -> Path:
     target = _manifest_path("v7", root)
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_suffix(".json.tmp")
-    temporary.write_text(
-        canonical_manifest_text(build_v7_candidate(project_root=root)),
-        encoding="utf-8",
+    temporary.write_bytes(
+        canonical_manifest_text(build_v7_candidate(project_root=root)).encode("utf-8")
     )
     temporary.replace(target)
     return target
@@ -3567,9 +3577,8 @@ def write_v8_manifest(*, project_root: Path = PROJECT_ROOT) -> Path:
     target = _manifest_path("v8", root)
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_suffix(".json.tmp")
-    temporary.write_text(
-        canonical_manifest_text(build_v8_candidate(project_root=root)),
-        encoding="utf-8",
+    temporary.write_bytes(
+        canonical_manifest_text(build_v8_candidate(project_root=root)).encode("utf-8")
     )
     temporary.replace(target)
     return target
@@ -3851,9 +3860,8 @@ def write_v39_manifest(*, project_root: Path = PROJECT_ROOT) -> Path:
     target = _manifest_path("v39", root)
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_suffix(".json.tmp")
-    temporary.write_text(
-        canonical_manifest_text(build_v39_candidate(project_root=root)),
-        encoding="utf-8",
+    temporary.write_bytes(
+        canonical_manifest_text(build_v39_candidate(project_root=root)).encode("utf-8")
     )
     temporary.replace(target)
     return target
@@ -4247,226 +4255,226 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.print_v2:
-            sys.stdout.write(canonical_manifest_text(build_v2_candidate()))
+            _write_canonical_manifest_stdout(build_v2_candidate())
             return 0
         if args.write_v2:
             write_v2_manifest()
         if args.print_v3:
-            sys.stdout.write(canonical_manifest_text(build_v3_candidate()))
+            _write_canonical_manifest_stdout(build_v3_candidate())
             return 0
         if args.write_v3:
             write_v3_manifest()
         if args.print_v4:
-            sys.stdout.write(canonical_manifest_text(build_v4_candidate()))
+            _write_canonical_manifest_stdout(build_v4_candidate())
             return 0
         if args.write_v4:
             write_v4_manifest()
         if args.print_v5:
-            sys.stdout.write(canonical_manifest_text(build_v5_candidate()))
+            _write_canonical_manifest_stdout(build_v5_candidate())
             return 0
         if args.write_v5:
             write_v5_manifest()
             return 0
         if args.print_v6:
-            sys.stdout.write(canonical_manifest_text(build_v6_candidate()))
+            _write_canonical_manifest_stdout(build_v6_candidate())
             return 0
         if args.write_v6:
             write_v6_manifest()
             return 0
         if args.print_v7:
-            sys.stdout.write(canonical_manifest_text(build_v7_candidate()))
+            _write_canonical_manifest_stdout(build_v7_candidate())
             return 0
         if args.write_v7:
             write_v7_manifest()
             return 0
         if args.print_v8:
-            sys.stdout.write(canonical_manifest_text(build_v8_candidate()))
+            _write_canonical_manifest_stdout(build_v8_candidate())
             return 0
         if args.write_v8:
             write_v8_manifest()
             return 0
         if args.print_v9:
-            sys.stdout.write(canonical_manifest_text(build_v9_candidate()))
+            _write_canonical_manifest_stdout(build_v9_candidate())
             return 0
         if args.write_v9:
             write_v9_manifest()
             return 0
         if args.print_v10:
-            sys.stdout.write(canonical_manifest_text(build_v10_candidate()))
+            _write_canonical_manifest_stdout(build_v10_candidate())
             return 0
         if args.write_v10:
             write_v10_manifest()
             return 0
         if args.print_v11:
-            sys.stdout.write(canonical_manifest_text(build_v11_candidate()))
+            _write_canonical_manifest_stdout(build_v11_candidate())
             return 0
         if args.write_v11:
             write_v11_manifest()
             return 0
         if args.print_v12:
-            sys.stdout.write(canonical_manifest_text(build_v12_candidate()))
+            _write_canonical_manifest_stdout(build_v12_candidate())
             return 0
         if args.write_v12:
             write_v12_manifest()
             return 0
         if args.print_v13:
-            sys.stdout.write(canonical_manifest_text(build_v13_candidate()))
+            _write_canonical_manifest_stdout(build_v13_candidate())
             return 0
         if args.write_v13:
             write_v13_manifest()
             return 0
         if args.print_v14:
-            sys.stdout.write(canonical_manifest_text(build_v14_candidate()))
+            _write_canonical_manifest_stdout(build_v14_candidate())
             return 0
         if args.write_v14:
             write_v14_manifest()
             return 0
         if args.print_v15:
-            sys.stdout.write(canonical_manifest_text(build_v15_candidate()))
+            _write_canonical_manifest_stdout(build_v15_candidate())
             return 0
         if args.write_v15:
             write_v15_manifest()
             return 0
         if args.print_v16:
-            sys.stdout.write(canonical_manifest_text(build_v16_candidate()))
+            _write_canonical_manifest_stdout(build_v16_candidate())
             return 0
         if args.write_v16:
             write_v16_manifest()
             return 0
         if args.print_v17:
-            sys.stdout.write(canonical_manifest_text(build_v17_candidate()))
+            _write_canonical_manifest_stdout(build_v17_candidate())
             return 0
         if args.write_v17:
             write_v17_manifest()
             return 0
         if args.print_v18:
-            sys.stdout.write(canonical_manifest_text(build_v18_candidate()))
+            _write_canonical_manifest_stdout(build_v18_candidate())
             return 0
         if args.write_v18:
             write_v18_manifest()
             return 0
         if args.print_v19:
-            sys.stdout.write(canonical_manifest_text(build_v19_candidate()))
+            _write_canonical_manifest_stdout(build_v19_candidate())
             return 0
         if args.write_v19:
             write_v19_manifest()
             return 0
         if args.print_v20:
-            sys.stdout.write(canonical_manifest_text(build_v20_candidate()))
+            _write_canonical_manifest_stdout(build_v20_candidate())
             return 0
         if args.write_v20:
             write_v20_manifest()
             return 0
         if args.print_v21:
-            sys.stdout.write(canonical_manifest_text(build_v21_candidate()))
+            _write_canonical_manifest_stdout(build_v21_candidate())
             return 0
         if args.write_v21:
             write_v21_manifest()
             return 0
         if args.print_v22:
-            sys.stdout.write(canonical_manifest_text(build_v22_candidate()))
+            _write_canonical_manifest_stdout(build_v22_candidate())
             return 0
         if args.write_v22:
             write_v22_manifest()
             return 0
         if args.print_v23:
-            sys.stdout.write(canonical_manifest_text(build_v23_candidate()))
+            _write_canonical_manifest_stdout(build_v23_candidate())
             return 0
         if args.write_v23:
             write_v23_manifest()
             return 0
         if args.print_v24:
-            sys.stdout.write(canonical_manifest_text(build_v24_candidate()))
+            _write_canonical_manifest_stdout(build_v24_candidate())
             return 0
         if args.write_v24:
             write_v24_manifest()
             return 0
         if args.print_v25:
-            sys.stdout.write(canonical_manifest_text(build_v25_candidate()))
+            _write_canonical_manifest_stdout(build_v25_candidate())
             return 0
         if args.write_v25:
             write_v25_manifest()
             return 0
         if args.print_v26:
-            sys.stdout.write(canonical_manifest_text(build_v26_candidate()))
+            _write_canonical_manifest_stdout(build_v26_candidate())
             return 0
         if args.write_v26:
             write_v26_manifest()
             return 0
         if args.print_v27:
-            sys.stdout.write(canonical_manifest_text(build_v27_candidate()))
+            _write_canonical_manifest_stdout(build_v27_candidate())
             return 0
         if args.write_v27:
             write_v27_manifest()
             return 0
         if args.print_v28:
-            sys.stdout.write(canonical_manifest_text(build_v28_candidate()))
+            _write_canonical_manifest_stdout(build_v28_candidate())
             return 0
         if args.write_v28:
             write_v28_manifest()
             return 0
         if args.print_v29:
-            sys.stdout.write(canonical_manifest_text(build_v29_candidate()))
+            _write_canonical_manifest_stdout(build_v29_candidate())
             return 0
         if args.write_v29:
             write_v29_manifest()
             return 0
         if args.print_v30:
-            sys.stdout.write(canonical_manifest_text(build_v30_candidate()))
+            _write_canonical_manifest_stdout(build_v30_candidate())
             return 0
         if args.write_v30:
             write_v30_manifest()
             return 0
         if args.print_v31:
-            sys.stdout.write(canonical_manifest_text(build_v31_candidate()))
+            _write_canonical_manifest_stdout(build_v31_candidate())
             return 0
         if args.write_v31:
             write_v31_manifest()
             return 0
         if args.print_v32:
-            sys.stdout.write(canonical_manifest_text(build_v32_candidate()))
+            _write_canonical_manifest_stdout(build_v32_candidate())
             return 0
         if args.write_v32:
             write_v32_manifest()
             return 0
         if args.print_v33:
-            sys.stdout.write(canonical_manifest_text(build_v33_candidate()))
+            _write_canonical_manifest_stdout(build_v33_candidate())
             return 0
         if args.write_v33:
             write_v33_manifest()
             return 0
         if args.print_v34:
-            sys.stdout.write(canonical_manifest_text(build_v34_candidate()))
+            _write_canonical_manifest_stdout(build_v34_candidate())
             return 0
         if args.write_v34:
             write_v34_manifest()
             return 0
         if args.print_v35:
-            sys.stdout.write(canonical_manifest_text(build_v35_candidate()))
+            _write_canonical_manifest_stdout(build_v35_candidate())
             return 0
         if args.write_v35:
             write_v35_manifest()
             return 0
         if args.print_v36:
-            sys.stdout.write(canonical_manifest_text(build_v36_candidate()))
+            _write_canonical_manifest_stdout(build_v36_candidate())
             return 0
         if args.write_v36:
             write_v36_manifest()
             return 0
         if args.print_v37:
-            sys.stdout.write(canonical_manifest_text(build_v37_candidate()))
+            _write_canonical_manifest_stdout(build_v37_candidate())
             return 0
         if args.write_v37:
             write_v37_manifest()
             return 0
         if args.print_v38:
-            sys.stdout.write(canonical_manifest_text(build_v38_candidate()))
+            _write_canonical_manifest_stdout(build_v38_candidate())
             return 0
         if args.write_v38:
             write_v38_manifest()
             return 0
         if args.print_v39:
-            sys.stdout.write(canonical_manifest_text(build_v39_candidate()))
+            _write_canonical_manifest_stdout(build_v39_candidate())
             return 0
         if args.write_v39:
             write_v39_manifest()

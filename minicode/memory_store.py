@@ -66,6 +66,29 @@ _REGISTRY_GUARD = threading.Lock()
 _LOCK_REGISTRY: dict[str, _ProcessLockState] = {}
 
 
+def _platform_name() -> str:
+    return os.name
+
+
+def _is_windows_reparse_point(metadata: os.stat_result) -> bool:
+    if _platform_name() != "nt":
+        return False
+    reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+    return bool(getattr(metadata, "st_file_attributes", 0) & reparse_flag)
+
+
+def _windows_path_has_reparse_component(path: Path) -> bool:
+    if _platform_name() != "nt":
+        return False
+    absolute = Path(os.path.abspath(os.fspath(path)))
+    components = (*reversed(absolute.parents), absolute)
+    for component in components:
+        metadata = os.lstat(component)
+        if stat.S_ISLNK(metadata.st_mode) or _is_windows_reparse_point(metadata):
+            return True
+    return False
+
+
 def _process_lock_state(path: Path) -> _ProcessLockState:
     key = os.path.abspath(os.fspath(path))
     with _REGISTRY_GUARD:
@@ -95,9 +118,12 @@ class MemoryStoreCoordinator:
         try:
             self._root.mkdir(parents=True, exist_ok=True, mode=0o700)
             root_path_stat = os.lstat(self._root)
-            if not stat.S_ISDIR(root_path_stat.st_mode):
+            if (
+                not stat.S_ISDIR(root_path_stat.st_mode)
+                or _windows_path_has_reparse_component(self._root)
+            ):
                 raise MemoryStoreUnavailable("unsafe Memory store root")
-            if os.name == "posix":
+            if _platform_name() == "posix":
                 root_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
                 root_flags |= getattr(os, "O_CLOEXEC", 0)
                 root_flags |= getattr(os, "O_NOFOLLOW", 0)
@@ -109,10 +135,6 @@ class MemoryStoreCoordinator:
                     or root_path_stat.st_ino != root_fd_stat.st_ino
                 ):
                     raise MemoryStoreUnavailable("unsafe Memory store root")
-            elif os.path.normcase(os.path.realpath(self._root)) != os.path.normcase(
-                os.path.abspath(self._root)
-            ):
-                raise MemoryStoreUnavailable("unsafe Memory store root")
             flags = os.O_RDWR | os.O_CREAT
             flags |= getattr(os, "O_CLOEXEC", 0)
             flags |= getattr(os, "O_NOFOLLOW", 0)
@@ -122,6 +144,7 @@ class MemoryStoreCoordinator:
             if (
                 not stat.S_ISREG(path_stat.st_mode)
                 or not stat.S_ISREG(fd_stat.st_mode)
+                or _is_windows_reparse_point(path_stat)
                 or path_stat.st_dev != fd_stat.st_dev
                 or path_stat.st_ino != fd_stat.st_ino
             ):

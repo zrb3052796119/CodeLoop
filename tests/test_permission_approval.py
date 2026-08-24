@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
+import shlex
 import threading
 import time
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from types import SimpleNamespace
 
 import pytest
@@ -12,12 +14,14 @@ import minicode.permissions as permissions_module
 from minicode.permission_approval import (
     MAX_COMMAND_PREVIEW_BYTES,
     PermissionApprovalBroker,
+    _command_review_is_unsafe,
     _truncate_utf8,
+    _workspace_relative_text,
 )
 from minicode.permissions import PermissionManager
 from minicode.tooling import ToolContext
-from minicode.tools.write_file import write_file_tool
 from minicode.tools.run_command import run_command_tool
+from minicode.tools.write_file import write_file_tool
 from minicode.turn_cancellation import TurnCancellationRequested, TurnCancellationToken
 
 
@@ -314,6 +318,260 @@ def test_an_in_workspace_absolute_path_stays_reviewable(
         for local_path in (workspace, home):
             assert str(local_path) not in serialized
 
+        broker.decide(
+            permission_id=item["permissionId"],
+            turn_id=turn_id,
+            decision="deny_once",
+        )
+    finally:
+        broker.close()
+        thread.join(timeout=1)
+
+
+def test_workspace_path_rewrite_uses_native_separator_semantics() -> None:
+    posix_workspace = PurePosixPath("/tmp/workspace")
+    windows_workspace = PureWindowsPath("C:/workspace")
+
+    assert _workspace_relative_text(
+        "/tmp/workspace/nested/inside.txt", posix_workspace
+    ) == "nested/inside.txt"
+    assert _workspace_relative_text(
+        r"C:\workspace\nested\inside.txt", windows_workspace
+    ) == "nested/inside.txt"
+    assert _workspace_relative_text(
+        r"C:/workspace/nested\inside.txt", windows_workspace
+    ) == "nested/inside.txt"
+
+
+def test_windows_workspace_path_rewrite_is_case_insensitive() -> None:
+    workspace = PureWindowsPath("C:/Users/Alice/Repo")
+
+    assert _workspace_relative_text(
+        r"c:\users\ALICE\repo/tests\inside.txt",
+        workspace,
+    ) == "tests/inside.txt"
+
+
+def test_unc_workspace_preserves_double_leading_separator_boundary() -> None:
+    workspace = PureWindowsPath(r"\\server\share\workspace")
+    inside = r"\\SERVER\share\WORKSPACE\inside.txt"
+    single_rooted = r"\server\share\workspace\outside.txt"
+
+    assert _workspace_relative_text(inside, workspace) == "inside.txt"
+    assert _workspace_relative_text(single_rooted, workspace) == single_rooted
+    assert _command_review_is_unsafe(
+        "tool", [single_rooted], "Inspect the requested file.", workspace=workspace
+    ) is True
+
+
+def test_unc_share_root_rewrites_exact_root_and_children() -> None:
+    workspace = PureWindowsPath(r"\\server\share")
+
+    assert _workspace_relative_text(r"\\SERVER\SHARE", workspace) == "."
+    assert _workspace_relative_text(
+        r"\\SERVER/share\nested\inside.txt",
+        workspace,
+    ) == "nested/inside.txt"
+
+
+@pytest.mark.parametrize(
+    ("workspace", "value", "expected"),
+    [
+        (PurePosixPath("/"), "/tmp/inside.txt", "tmp/inside.txt"),
+        (PureWindowsPath("C:/"), r"c:\tmp\inside.txt", "tmp/inside.txt"),
+        (
+            PurePosixPath("/tmp/workspace"),
+            "--root=/tmp/workspace",
+            "--root=.",
+        ),
+        (
+            PureWindowsPath("C:/workspace"),
+            r"--root=c:\WORKSPACE",
+            "--root=.",
+        ),
+    ],
+)
+def test_workspace_root_and_embedded_exact_path_are_rewritten(
+    workspace: PurePosixPath | PureWindowsPath,
+    value: str,
+    expected: str,
+) -> None:
+    assert _workspace_relative_text(value, workspace) == expected
+
+
+def test_workspace_rewrite_does_not_change_web_urls() -> None:
+    url = "https://example.invalid/?root=/tmp/workspace/file.txt"
+
+    assert _workspace_relative_text(url, PurePosixPath("/")) == url
+    assert _workspace_relative_text(url, PurePosixPath("/tmp/workspace")) == url
+
+
+@pytest.mark.parametrize(
+    ("workspace", "escaping", "inside"),
+    [
+        (
+            PurePosixPath("/tmp/workspace"),
+            "/tmp/workspace/../outside.txt",
+            "/tmp/workspace/sub/../inside.txt",
+        ),
+        (
+            PureWindowsPath("C:/workspace"),
+            r"c:\WORKSPACE/..\outside.txt",
+            r"c:\WORKSPACE/sub\..\inside.txt",
+        ),
+        (
+            PureWindowsPath("C:/workspace"),
+            r"C:/workspace/sub\../..\outside.txt",
+            r"C:/workspace/sub\../inside.txt",
+        ),
+    ],
+)
+def test_workspace_rewrite_rejects_traversal_but_keeps_normalized_children(
+    workspace: PurePosixPath | PureWindowsPath,
+    escaping: str,
+    inside: str,
+) -> None:
+    assert _workspace_relative_text(escaping, workspace) == escaping
+    embedded_escaping = f"--output={escaping}"
+    assert _workspace_relative_text(embedded_escaping, workspace) == embedded_escaping
+    assert _command_review_is_unsafe(
+        "tool", [escaping], "Inspect the requested file.", workspace=workspace
+    ) is True
+    assert _command_review_is_unsafe(
+        "tool", [embedded_escaping], "Inspect the requested file.", workspace=workspace
+    ) is True
+    assert _workspace_relative_text(inside, workspace).replace("\\", "/") == (
+        "sub/../inside.txt"
+    )
+    assert _command_review_is_unsafe(
+        "tool", [inside], "Inspect the requested file.", workspace=workspace
+    ) is False
+
+
+def test_posix_literal_backslash_is_preserved_and_sibling_is_not_hidden() -> None:
+    workspace = PurePosixPath("/tmp/workspace")
+    in_workspace = r"/tmp/workspace/foo\bar"
+    sibling = r"/tmp/workspace\escape/secret.txt"
+
+    assert _workspace_relative_text(in_workspace, workspace) == r"foo\bar"
+    assert _workspace_relative_text(sibling, workspace) == sibling
+    assert _command_review_is_unsafe(
+        "tool", [sibling], "Inspect the requested file.", workspace=workspace
+    ) is True
+
+
+@pytest.mark.skipif(os.name == "nt", reason="literal backslash is a Windows separator")
+def test_posix_literal_backslash_preview_matches_the_actual_argument(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    argument = f"{workspace}/foo\\bar"
+    turn_id = "turn_" + "e" * 32
+    broker = PermissionApprovalBroker(workspace, timeout_seconds=2)
+    session = broker.begin_turn(
+        turn_id=turn_id,
+        run_id=None,
+        cancellation_token=TurnCancellationToken(turn_id),
+    )
+    manager = PermissionManager(str(workspace), prompt=session.prompt)
+    thread, _outcome = _start_command_check(
+        workspace=workspace,
+        session=session,
+        manager=manager,
+        command="tool",
+        args=[argument],
+    )
+    try:
+        item = _pending_item(broker)
+
+        assert item["reviewable"] is True
+        assert item["review"]["commandPreview"] == shlex.join(["tool", r"foo\bar"])
+        broker.decide(
+            permission_id=item["permissionId"],
+            turn_id=turn_id,
+            decision="deny_once",
+        )
+    finally:
+        broker.close()
+        thread.join(timeout=1)
+
+
+def test_workspace_prefix_sibling_absolute_path_is_deny_only(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    sibling = tmp_path / "workspace-escape"
+    workspace.mkdir()
+    sibling.mkdir()
+    external = str(sibling / "secret.txt")
+    turn_id = "turn_" + "f" * 32
+    broker = PermissionApprovalBroker(workspace, timeout_seconds=2)
+    session = broker.begin_turn(
+        turn_id=turn_id,
+        run_id=None,
+        cancellation_token=TurnCancellationToken(turn_id),
+    )
+    manager = PermissionManager(str(workspace), prompt=session.prompt)
+    thread, _outcome = _start_command_check(
+        workspace=workspace,
+        session=session,
+        manager=manager,
+        command="tool",
+        args=[external],
+    )
+    try:
+        item = _pending_item(broker)
+        serialized = json.dumps(broker.snapshot(), ensure_ascii=False)
+
+        assert _workspace_relative_text(external, workspace) == external
+        assert item["reviewable"] is False
+        assert item["choices"] == ["deny_once"]
+        assert item["review"]["commandPreview"] == "[REDACTED SENSITIVE REVIEW]"
+        assert external not in serialized
+        with pytest.raises(Exception) as blocked:
+            broker.decide(
+                permission_id=item["permissionId"],
+                turn_id=turn_id,
+                decision="allow_once",
+            )
+        assert getattr(blocked.value, "code", None) == "permission_not_reviewable"
+        broker.decide(
+            permission_id=item["permissionId"],
+            turn_id=turn_id,
+            decision="deny_once",
+        )
+    finally:
+        broker.close()
+        thread.join(timeout=1)
+
+
+def test_in_workspace_path_in_reason_is_rewritten_without_losing_reviewability(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    turn_id = "turn_" + "0" * 32
+    broker = PermissionApprovalBroker(workspace, timeout_seconds=2)
+    session = broker.begin_turn(
+        turn_id=turn_id,
+        run_id=None,
+        cancellation_token=TurnCancellationToken(turn_id),
+    )
+    manager = PermissionManager(str(workspace), prompt=session.prompt)
+    thread, _outcome = _start_command_check(
+        workspace=workspace,
+        session=session,
+        manager=manager,
+        command="tool",
+        args=["inspect"],
+        reason=f"Inspect {workspace / 'inside.txt'} before running.",
+    )
+    try:
+        item = _pending_item(broker)
+
+        assert item["reviewable"] is True
+        assert item["review"]["reason"] == "Inspect inside.txt before running."
         broker.decide(
             permission_id=item["permissionId"],
             turn_id=turn_id,

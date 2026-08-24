@@ -53,7 +53,7 @@ def test_guard_detects_new_file_anywhere_under_protected_tree(tmp_path: Path) ->
     unexpected.parent.mkdir()
     unexpected.write_text("{}\n", encoding="utf-8")
 
-    with pytest.raises(FormalStateChanged, match=r"tasks/unexpected\.json.*created"):
+    with pytest.raises(FormalStateChanged, match=r"tasks[\\/]unexpected\.json.*created"):
         guard.assert_unchanged()
     assert unexpected.exists()
 
@@ -68,7 +68,11 @@ def test_snapshot_comparison_reports_only_path_and_change_types(tmp_path: Path) 
     changes = compare_snapshots(before, snapshot_paths([protected]))
     serialized = json.dumps(changes, sort_keys=True)
 
-    assert changes == [{"path": str(protected), "changes": ["content_hash", "size", "mtime_ns"]}]
+    assert len(changes) == 1
+    assert changes[0]["path"] == str(protected)
+    change_types = set(changes[0]["changes"])
+    assert {"content_hash", "size"} <= change_types
+    assert change_types <= {"content_hash", "size", "mtime_ns"}
     assert private_value not in serialized
     assert "changed-private-value" not in serialized
 
@@ -104,8 +108,9 @@ def test_isolated_home_uses_process_worker_and_minimal_secret_free_config(tmp_pa
     assert "ANTHROPIC_API_KEY" not in env
     assert env["ANTHROPIC_AUTH_TOKEN"] == "pytest-mock-auth-not-a-secret"
     assert settings == {"model": "claude-sonnet-4-20250514", "toolProfile": "core"}
-    assert stat.S_IMODE(isolation.home.stat().st_mode) == 0o700
-    assert stat.S_IMODE(isolation.settings_path.stat().st_mode) == 0o600
+    if os.name == "posix":
+        assert stat.S_IMODE(isolation.home.stat().st_mode) == 0o700
+        assert stat.S_IMODE(isolation.settings_path.stat().st_mode) == 0o600
 
 
 def test_isolated_home_reset_preserves_only_minimal_config(tmp_path: Path) -> None:

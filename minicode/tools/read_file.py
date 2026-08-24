@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import stat
 import time
 from pathlib import Path
 
@@ -34,8 +35,10 @@ def _get_cached_file_content(target: Path) -> str:
     exist" from "this file is empty" and would act on the wrong one.
     """
     try:
-        stat = target.stat()
-        mtime = stat.st_mtime
+        file_stat = target.stat()
+        if not stat.S_ISREG(file_stat.st_mode):
+            raise _ReadFailure("not_a_file", "Path is not a regular file.")
+        mtime = file_stat.st_mtime
         cache_key = (str(target), mtime)
 
         if cache_key in _file_cache:

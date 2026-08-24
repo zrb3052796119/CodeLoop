@@ -92,7 +92,11 @@ def test_durable_store_lock_uses_platform_contract(
         info = lock_path.lstat()
         expected_payload = WINDOWS_LOCK_SENTINEL if os.name == "nt" else b""
         assert stat.S_ISREG(info.st_mode)
-        assert lock_path.read_bytes() == expected_payload
+        if os.name == "nt":
+            with pytest.raises(PermissionError):
+                lock_path.read_bytes()
+        else:
+            assert lock_path.read_bytes() == expected_payload
         if os.name == "posix":
             assert stat.S_IMODE(info.st_mode) == 0o600
 

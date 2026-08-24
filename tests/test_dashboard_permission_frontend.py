@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
+
+from tests.node_harness import run_node
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -194,12 +195,7 @@ assert.ok(validatePermissionPendingPayload(command));
 assert.equal(canAllowPermission(command.items[0]), true);
 assert.equal(canAllowPermission({ ...command.items[0], kind: 'unknown' }), false);
 """
-    subprocess.run(
-        ["node", "-e", _permission_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_permission_source() + "\n" + harness)
 
 
 def test_network_permission_review_is_strict_allowable_or_deny_only() -> None:
@@ -269,12 +265,7 @@ denyOnly.choices = ['deny_once'];
 assert.ok(validPermissionItem(denyOnly));
 assert.equal(canAllowPermission(denyOnly), false);
 """
-    subprocess.run(
-        ["node", "-e", _permission_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_permission_source() + "\n" + harness)
 
 
 def test_network_permission_dom_contains_only_safe_review_fields() -> None:
@@ -310,12 +301,7 @@ assert.doesNotMatch(html, /\[object Object\]/);
 const denyOnly = permissionReviewHtml({ kind: 'network', reviewable: false, review: {} });
 assert.match(denyOnly, /只能拒绝/);
 """
-    subprocess.run(
-        ["node", "-e", _permission_action_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_permission_action_source() + "\n" + harness)
 
 
 def test_schema_v2_events_accept_permissions_and_reject_old_or_wrong_order() -> None:
@@ -362,12 +348,7 @@ assert.equal(validChangeSnapshot(change), true);
 const wrongOrder = { ...change, resources: { permissions: resources.permissions, ...resources } };
 assert.equal(validChangeSnapshot(wrongOrder), false);
 """
-    subprocess.run(
-        ["node", "-e", _permission_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_permission_source() + "\n" + harness)
 
 
 def test_permission_actions_are_single_flight_fenced_and_never_auto_retry() -> None:
@@ -477,12 +458,7 @@ global.fetch = (...args) => fetchImpl(...args);
   assert.equal(calls.filter(([, options]) => options.method === 'POST').length, 1);
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        ["node", "-e", _permission_action_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_permission_action_source() + "\n" + harness)
 
 
 def test_terminal_cancel_retires_permissions_before_identity_clear_and_fences_stale_get() -> None:
@@ -559,15 +535,8 @@ const response = (payload) => ({ ok: true, status: 200, async text() { return JS
   assert.equal(gets.some(({ options }) => options.method === 'POST'), false);
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        [
-            "node",
-            "-e",
-            _permission_action_source() + "\n" + _cancel_finish_source() + "\n" + harness,
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
+    run_node(
+        _permission_action_source() + "\n" + _cancel_finish_source() + "\n" + harness
     )
 
 
@@ -653,15 +622,8 @@ const pendingOther = {
   assert.equal(calls.filter(({ options }) => options.method === 'POST').length, 1);
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        [
-            "node",
-            "-e",
-            _permission_action_source() + "\n" + _cancel_finish_source() + "\n" + harness,
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
+    run_node(
+        _permission_action_source() + "\n" + _cancel_finish_source() + "\n" + harness
     )
 
 
@@ -824,15 +786,8 @@ const statusPayload = (status, extra = {}) => ({
   assert.equal(chatStore.phase, 'success');
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        [
-            "node",
-            "-e",
-            _permission_action_source() + "\n" + _chat_terminal_source() + "\n" + harness,
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
+    run_node(
+        _permission_action_source() + "\n" + _chat_terminal_source() + "\n" + harness
     )
 
 
@@ -990,21 +945,14 @@ async function assertRetired(turnId, item) {
   assert.equal(chatStore.phase, 'interrupted');
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        [
-            "node",
-            "-e",
-            _permission_action_source()
-            + "\n"
-            + _cancel_finish_source()
-            + "\n"
-            + _submit_chat_source()
-            + "\n"
-            + harness,
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
+    run_node(
+        _permission_action_source()
+        + "\n"
+        + _cancel_finish_source()
+        + "\n"
+        + _submit_chat_source()
+        + "\n"
+        + harness
     )
 
 
@@ -1089,12 +1037,7 @@ global.fetch = async (url, options = {}) => {
   assert.equal(panel.innerHTML.includes('<img onerror='), false);
 })().catch((error) => { console.error(error); process.exit(1); });
 """
-    subprocess.run(
-        ["node", "-e", _permission_action_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_permission_action_source() + "\n" + harness)
 
 
 def test_permission_ui_escapes_reviews_is_deny_only_and_never_steals_focus() -> None:
@@ -1167,12 +1110,7 @@ renderPermissionPanel();
 assert.ok(panel.innerHTML.includes('绝对路径不会显示'));
 assert.equal(panel.innerHTML.includes('仅允许这一次'), false);
 """
-    subprocess.run(
-        ["node", "-e", _permission_action_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_permission_action_source() + "\n" + harness)
 
     javascript = APP.read_text(encoding="utf-8")
     render_body = javascript[

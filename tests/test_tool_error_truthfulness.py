@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 
 from minicode.tooling import ToolContext, ToolDefinition, ToolRegistry
 from minicode.tools.read_file import read_file_tool
@@ -41,18 +42,26 @@ def test_missing_file_is_not_reported_as_an_empty_file(tmp_path: Path) -> None:
     assert missing.output != empty.output
 
 
-def test_directory_and_unreadable_paths_get_distinct_codes(tmp_path: Path) -> None:
+def test_directory_and_unreadable_paths_get_distinct_codes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     (tmp_path / "adir").mkdir()
     blocked = tmp_path / "blocked.py"
     blocked.write_text("secret", encoding="utf-8")
-    blocked.chmod(0o000)
-    try:
-        assert "error[not_a_file]" in _read(tmp_path, "adir").output
-        result = _read(tmp_path, "blocked.py")
-        assert result.ok is False
-        assert "error[permission_denied]" in result.output
-    finally:
-        blocked.chmod(0o644)
+    original_read_text = Path.read_text
+
+    def permission_denied(path: Path, *args, **kwargs) -> str:
+        if path == blocked:
+            raise PermissionError("synthetic unreadable file")
+        return original_read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", permission_denied)
+
+    assert "error[not_a_file]" in _read(tmp_path, "adir").output
+    result = _read(tmp_path, "blocked.py")
+    assert result.ok is False
+    assert "error[permission_denied]" in result.output
 
 
 def test_binary_file_is_refused_with_a_stable_code(tmp_path: Path) -> None:

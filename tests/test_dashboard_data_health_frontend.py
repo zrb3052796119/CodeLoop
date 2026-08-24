@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
+
+from tests.node_harness import run_node
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -120,12 +121,7 @@ oversized.workspace.name = 'x'.repeat(DATA_HEALTH_MAX_BYTES);
 assert.equal(validateDataHealthPayload(oversized), null);
 """
     )
-    subprocess.run(
-        ["node", "-e", _contract_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_contract_source() + "\n" + harness)
 
 
 def test_data_health_loading_empty_live_partial_error_retry_and_stale_transport() -> (
@@ -195,12 +191,7 @@ assert.equal(methods.every((item) => item.headers.Accept === 'application/json')
 })();
 """
     )
-    subprocess.run(
-        ["node", "-e", _transport_source() + "\n" + harness],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    run_node(_transport_source() + "\n" + harness)
 
 
 def test_data_health_ui_is_read_only_and_reuses_existing_refresh_transport() -> None:

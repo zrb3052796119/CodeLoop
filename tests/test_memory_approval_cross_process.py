@@ -4,10 +4,12 @@ import multiprocessing
 import os
 import stat
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 import minicode.memory as memory_mod
+import minicode.memory_store as memory_store_mod
 from minicode.advisory_lock import WINDOWS_LOCK_SENTINEL
 from minicode.memory import MemoryApprovalPolicy, MemoryManager, MemoryScope
 from minicode.memory_approval import MemoryApprovalAuthority, MemoryApprovalError
@@ -327,7 +329,11 @@ def test_coordination_lock_has_platform_payload_and_is_persistent(tmp_path: Path
         if os.name == "posix":
             assert stat.S_IMODE(lock_stat.st_mode) == 0o600
         assert lock_stat.st_size == len(expected_payload)
-        assert lock_path.read_bytes() == expected_payload
+        if os.name == "nt":
+            with pytest.raises(PermissionError):
+                lock_path.read_bytes()
+        else:
+            assert lock_path.read_bytes() == expected_payload
 
     assert lock_path.is_file()
     assert lock_path.read_bytes() == expected_payload
@@ -338,6 +344,61 @@ def test_coordination_lock_refuses_symlinked_store_root(tmp_path: Path) -> None:
     external.mkdir()
     root = tmp_path / "memory-root"
     root.symlink_to(external, target_is_directory=True)
+
+    with pytest.raises(MemoryStoreUnavailable):
+        with MemoryStoreCoordinator(root).transaction():
+            pass
+
+
+def test_windows_final_path_alias_is_not_treated_as_a_reparse_point(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "memory-root"
+    root.mkdir()
+    monkeypatch.setattr(memory_store_mod, "_platform_name", lambda: "nt")
+
+    def unexpected_realpath(_path: object) -> str:
+        raise AssertionError("Windows root safety must not compare path spellings")
+
+    monkeypatch.setattr(memory_store_mod.os.path, "realpath", unexpected_realpath)
+
+    with MemoryStoreCoordinator(root).transaction():
+        assert (root / "memory-store.lock").is_file()
+
+
+@pytest.mark.parametrize("target_kind", ["ancestor", "root", "lock"])
+def test_windows_reparse_store_targets_and_ancestors_fail_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    target_kind: str,
+) -> None:
+    ancestor = tmp_path / "memory-parent"
+    ancestor.mkdir()
+    root = ancestor / "memory-root"
+    root.mkdir()
+    lock_path = root / "memory-store.lock"
+    real_lstat = memory_store_mod.os.lstat
+    reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+    target = {
+        "ancestor": ancestor,
+        "root": root,
+        "lock": lock_path,
+    }[target_kind]
+
+    def reparse_lstat(path: object) -> os.stat_result | SimpleNamespace:
+        metadata = real_lstat(path)
+        if Path(path) != target:
+            return metadata
+        return SimpleNamespace(
+            st_mode=metadata.st_mode,
+            st_dev=metadata.st_dev,
+            st_ino=metadata.st_ino,
+            st_file_attributes=reparse_flag,
+        )
+
+    monkeypatch.setattr(memory_store_mod, "_platform_name", lambda: "nt")
+    monkeypatch.setattr(memory_store_mod.os, "lstat", reparse_lstat)
 
     with pytest.raises(MemoryStoreUnavailable):
         with MemoryStoreCoordinator(root).transaction():
