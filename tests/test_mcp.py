@@ -1,3 +1,4 @@
+import threading
 from pathlib import Path
 
 import pytest
@@ -86,11 +87,21 @@ def test_oversized_payload_is_rejected_without_leaking_pending_request(
     client = _client(tmp_path, mode="oversized_payload")
     client.start()
     monkeypatch.setattr(mcp_module, "MAX_MCP_PAYLOAD_BYTES", 64)
+    oversized_seen = threading.Event()
+
+    class SignalingDiagnostics(list[str]):
+        def append(self, line: str) -> None:
+            super().append(line)
+            if "payload too large" in line:
+                oversized_seen.set()
+
+    client.stderr_lines = SignalingDiagnostics()
 
     with pytest.raises(RuntimeError, match="request timed out"):
         client.request("tools/call", {"name": "echo", "arguments": {"text": "hi"}}, timeout_seconds=0.1)
 
     assert client._pending == {}
+    assert oversized_seen.wait(timeout=1)
     assert any("payload too large" in line for line in client.stderr_lines)
     client.close()
 

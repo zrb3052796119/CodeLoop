@@ -137,10 +137,12 @@ def test_permission_lifecycle_invalidates_only_permissions(
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     turn_id = "turn_" + {"allow": "1", "deny": "2", "cancel": "3", "timeout": "4"}[terminal] * 32
+    monotonic_time = [0.0]
     broker = PermissionApprovalBroker(
         workspace,
         timeout_seconds=0.04 if terminal == "timeout" else 2,
         poll_interval=0.005,
+        monotonic=lambda: monotonic_time[0],
     )
     feed = DashboardChangeFeed(
         workspace,
@@ -191,6 +193,9 @@ def test_permission_lifecycle_invalidates_only_permissions(
         )
     elif terminal == "cancel":
         broker.cancel_turn(turn_id)
+    else:
+        monotonic_time[0] = 1.0
+        assert broker.snapshot()["items"] == []
     worker.join(timeout=1)
     assert not worker.is_alive()
     decided = _revisions(feed)

@@ -704,10 +704,12 @@ def test_sensitive_real_command_never_starts_subprocess(
     workspace.mkdir()
     turn_id = "turn_" + {"deny": "d", "timeout": "e", "cancel": "f"}[terminal] * 32
     token = TurnCancellationToken(turn_id)
+    monotonic_time = [1_000.0]
     broker = PermissionApprovalBroker(
         workspace,
-        timeout_seconds=0.05 if terminal == "timeout" else 2,
+        timeout_seconds=2,
         poll_interval=0.005,
+        monotonic=lambda: monotonic_time[0],
     )
     session = broker.begin_turn(
         turn_id=turn_id,
@@ -756,6 +758,9 @@ def test_sensitive_real_command_never_starts_subprocess(
             turn_id=turn_id,
             decision="deny_once",
         )
+    elif terminal == "timeout":
+        monotonic_time[0] += 3
+        assert broker.snapshot()["items"] == []
     elif terminal == "cancel":
         token.request()
     thread.join(timeout=1)

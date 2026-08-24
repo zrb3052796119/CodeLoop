@@ -1445,10 +1445,12 @@ def test_invisible_control_terminal_paths_never_write(
     target = workspace / "unsafe.txt"
     dangerous_character = "\u202e"
     turn_id = "turn_" + "6" * 32
+    monotonic_time = [0.0]
     broker = PermissionApprovalBroker(
         workspace,
         timeout_seconds=0.08 if terminal == "timeout" else 2,
         poll_interval=0.005,
+        monotonic=lambda: monotonic_time[0],
     )
     session = broker.begin_turn(
         turn_id=turn_id,
@@ -1487,7 +1489,8 @@ def test_invisible_control_terminal_paths_never_write(
         if terminal == "cancel":
             broker.cancel_turn(turn_id)
         elif terminal == "timeout":
-            worker.join(timeout=1)
+            monotonic_time[0] = 1.0
+            assert broker.snapshot()["items"] == []
         else:
             permission_id = str(item["permissionId"])
             broker.close()
