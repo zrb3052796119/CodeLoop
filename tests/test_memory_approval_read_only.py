@@ -14,6 +14,7 @@ from typing import Iterator
 import pytest
 
 import minicode.memory as memory_mod
+import minicode.memory_approval as memory_approval_mod
 from minicode.gateway import MiniCodeGatewayHandler
 from minicode.memory import MemoryApprovalPolicy, MemoryManager, MemoryScope
 from minicode.memory_approval import MemoryApprovalAuthority, MemoryApprovalError
@@ -95,6 +96,46 @@ def _locked_update_worker(
         result.put((changed, None))
     except BaseException as error:  # pragma: no cover - reported to parent
         result.put((False, type(error).__name__))
+
+
+def test_windows_read_branch_uses_a_verified_full_file_path(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "memory"
+    root.mkdir()
+    source = root / "memory.json"
+    payload = b'{"schema_version":1,"entries":[]}\n'
+    source.write_bytes(payload)
+    opened: list[tuple[Path, dict[str, object]]] = []
+    original_open = memory_approval_mod.os.open
+
+    def tracked_open(path, flags, *args, **kwargs):
+        opened.append((Path(path), dict(kwargs)))
+        return original_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(memory_approval_mod, "_platform_name", lambda: "nt")
+    monkeypatch.setattr(memory_approval_mod.os, "open", tracked_open)
+
+    assert MemoryApprovalAuthority._read_regular_file(root, "memory.json") == payload
+    assert opened == [(source, {})]
+
+
+def test_windows_read_branch_rejects_a_symlinked_source(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "memory"
+    root.mkdir()
+    outside = tmp_path / "outside.json"
+    outside.write_text('{"schema_version":1,"entries":[]}\n', encoding="utf-8")
+    (root / "memory.json").symlink_to(outside)
+    monkeypatch.setattr(memory_approval_mod, "_platform_name", lambda: "nt")
+
+    with pytest.raises(MemoryApprovalError) as captured:
+        MemoryApprovalAuthority._read_regular_file(root, "memory.json")
+
+    assert captured.value.code == "memory_approval_unavailable"
 
 
 def test_empty_store_snapshot_does_not_create_any_files_or_directories(

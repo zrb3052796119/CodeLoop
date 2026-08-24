@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import multiprocessing
+import os
 import stat
 from pathlib import Path
 
 import pytest
 
 import minicode.memory as memory_mod
+from minicode.advisory_lock import WINDOWS_LOCK_SENTINEL
 from minicode.memory import MemoryApprovalPolicy, MemoryManager, MemoryScope
 from minicode.memory_approval import MemoryApprovalAuthority, MemoryApprovalError
 from minicode.memory_store import MemoryStoreCoordinator, MemoryStoreUnavailable
@@ -313,7 +315,7 @@ def test_spawned_lock_timeout_returns_fixed_busy_error(
     assert outcome == (None, None, "memory_store_busy")
 
 
-def test_coordination_lock_is_persistent_empty_regular_and_private(tmp_path: Path) -> None:
+def test_coordination_lock_has_platform_payload_and_is_persistent(tmp_path: Path) -> None:
     root = tmp_path / "home" / ".mini-code"
     coordinator = MemoryStoreCoordinator(root)
 
@@ -321,12 +323,14 @@ def test_coordination_lock_is_persistent_empty_regular_and_private(tmp_path: Pat
         lock_path = root / "memory-store.lock"
         lock_stat = lock_path.lstat()
         assert stat.S_ISREG(lock_stat.st_mode)
-        assert stat.S_IMODE(lock_stat.st_mode) == 0o600
-        assert lock_stat.st_size == 0
-        assert lock_path.read_bytes() == b""
+        expected_payload = WINDOWS_LOCK_SENTINEL if os.name == "nt" else b""
+        if os.name == "posix":
+            assert stat.S_IMODE(lock_stat.st_mode) == 0o600
+        assert lock_stat.st_size == len(expected_payload)
+        assert lock_path.read_bytes() == expected_payload
 
     assert lock_path.is_file()
-    assert lock_path.read_bytes() == b""
+    assert lock_path.read_bytes() == expected_payload
 
 
 def test_coordination_lock_refuses_symlinked_store_root(tmp_path: Path) -> None:

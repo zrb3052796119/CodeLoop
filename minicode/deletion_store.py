@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import errno
 import hashlib
 import json
 import os
@@ -17,10 +16,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, Iterator
 
-try:
-    import fcntl
-except ImportError:  # pragma: no cover - local Dashboard supports POSIX
-    fcntl = None  # type: ignore[assignment]
+from minicode.advisory_lock import (
+    acquire_advisory_lock,
+    prepare_advisory_lock_file,
+    release_advisory_lock,
+)
 
 
 _TARGET_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,159}")
@@ -160,8 +160,6 @@ class DeletionLedger:
             raise DeletionStoreUnavailable("deletion store unavailable") from error
 
     def _open_lock(self) -> int:
-        if fcntl is None:
-            raise DeletionStoreUnavailable("deletion store unavailable")
         self._ensure_root()
         flags = os.O_RDWR | os.O_CREAT | getattr(os, "O_CLOEXEC", 0)
         flags |= getattr(os, "O_NOFOLLOW", 0)
@@ -176,7 +174,7 @@ class DeletionLedger:
                 or info.st_ino != path_info.st_ino
             ):
                 raise OSError("unsafe deletion lock")
-            os.fchmod(descriptor, 0o600)
+            prepare_advisory_lock_file(descriptor, mode=0o600)
             return descriptor
         except OSError as error:
             try:
@@ -195,22 +193,21 @@ class DeletionLedger:
             descriptor = self._open_lock()
             while True:
                 try:
-                    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                    break
+                    if acquire_advisory_lock(descriptor):
+                        break
                 except OSError as error:
-                    if error.errno not in {errno.EACCES, errno.EAGAIN}:
-                        raise DeletionStoreUnavailable(
-                            "deletion store unavailable"
-                        ) from error
-                    remaining = deadline - time.monotonic()
-                    if remaining <= 0:
-                        raise DeletionStoreBusy("deletion store busy") from error
-                    time.sleep(min(0.01, remaining))
+                    raise DeletionStoreUnavailable(
+                        "deletion store unavailable"
+                    ) from error
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise DeletionStoreBusy("deletion store busy")
+                time.sleep(min(0.01, remaining))
             yield
         finally:
             if descriptor is not None:
                 try:
-                    fcntl.flock(descriptor, fcntl.LOCK_UN)
+                    release_advisory_lock(descriptor)
                 except OSError:
                     pass
                 os.close(descriptor)
@@ -315,7 +312,8 @@ class DeletionLedger:
             prefix=".deletion-", suffix=".tmp", dir=self.root
         )
         try:
-            os.fchmod(descriptor, 0o600)
+            if os.name == "posix":
+                os.fchmod(descriptor, 0o600)
             with os.fdopen(descriptor, "wb", closefd=False) as handle:
                 handle.write(encoded)
                 handle.flush()

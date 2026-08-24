@@ -3,11 +3,13 @@ from __future__ import annotations
 import json
 import os
 import re
+import stat
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
+from minicode.advisory_lock import WINDOWS_LOCK_SENTINEL
 from minicode.skill_versions import (
     SkillVersionLedger,
     SkillVersionLedgerError,
@@ -171,9 +173,14 @@ def test_catalog_observation_persists_immutable_digest_lineage(
     assert snapshot["evaluation"]["promotionCandidateCount"] == 0
 
     storage = workspace / ".mini-code" / "skill_versions.json"
+    lock_path = workspace / ".mini-code" / ".skill_versions.lock"
     assert storage.exists()
+    assert lock_path.read_bytes() == (
+        WINDOWS_LOCK_SENTINEL if os.name == "nt" else b""
+    )
     if os.name != "nt":
         assert storage.stat().st_mode & 0o777 == 0o600
+        assert stat.S_IMODE(lock_path.stat().st_mode) == 0o600
     serialized = storage.read_text(encoding="utf-8")
     json.loads(serialized)
     assert "password=skill-secret" not in serialized

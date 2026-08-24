@@ -100,6 +100,10 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _platform_name() -> str:
+    return os.name
+
+
 def _iso_time(value: datetime | float) -> str:
     if isinstance(value, bool):
         raise TypeError("bool is not a timestamp")
@@ -208,24 +212,58 @@ class MemoryApprovalAuthority:
         root_fd: int | None = None
         file_fd: int | None = None
         try:
-            root_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
-            root_flags |= getattr(os, "O_CLOEXEC", 0)
-            root_flags |= getattr(os, "O_NOFOLLOW", 0)
-            root_fd = os.open(root, root_flags)
-            root_fd_stat = os.fstat(root_fd)
-            if (
-                not stat.S_ISDIR(root_fd_stat.st_mode)
-                or root_fd_stat.st_dev != root_stat.st_dev
-                or root_fd_stat.st_ino != root_stat.st_ino
-            ):
-                raise MemoryApprovalError("memory_approval_unavailable")
             flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
             flags |= getattr(os, "O_NOFOLLOW", 0)
             flags |= getattr(os, "O_NONBLOCK", 0)
-            try:
-                file_fd = os.open(filename, flags, dir_fd=root_fd)
-            except FileNotFoundError:
-                return None
+            if _platform_name() == "posix":
+                root_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+                root_flags |= getattr(os, "O_CLOEXEC", 0)
+                root_flags |= getattr(os, "O_NOFOLLOW", 0)
+                root_fd = os.open(root, root_flags)
+                root_fd_stat = os.fstat(root_fd)
+                if (
+                    not stat.S_ISDIR(root_fd_stat.st_mode)
+                    or root_fd_stat.st_dev != root_stat.st_dev
+                    or root_fd_stat.st_ino != root_stat.st_ino
+                ):
+                    raise MemoryApprovalError("memory_approval_unavailable")
+                try:
+                    file_fd = os.open(filename, flags, dir_fd=root_fd)
+                except FileNotFoundError:
+                    return None
+            else:
+                if os.path.normcase(os.path.realpath(root)) != os.path.normcase(
+                    os.path.abspath(root)
+                ):
+                    raise MemoryApprovalError("memory_approval_unavailable")
+                path = root / filename
+                try:
+                    path_stat = os.lstat(path)
+                except FileNotFoundError:
+                    return None
+                if (
+                    not stat.S_ISREG(path_stat.st_mode)
+                    or path_stat.st_size > _MAX_SOURCE_FILE_BYTES
+                ):
+                    raise MemoryApprovalError("memory_approval_unavailable")
+                try:
+                    file_fd = os.open(path, flags)
+                except FileNotFoundError:
+                    return None
+                current_root_stat = os.lstat(root)
+                current_path_stat = os.lstat(path)
+                opened_path_stat = os.fstat(file_fd)
+                if (
+                    not stat.S_ISDIR(current_root_stat.st_mode)
+                    or current_root_stat.st_dev != root_stat.st_dev
+                    or current_root_stat.st_ino != root_stat.st_ino
+                    or not stat.S_ISREG(current_path_stat.st_mode)
+                    or current_path_stat.st_dev != path_stat.st_dev
+                    or current_path_stat.st_ino != path_stat.st_ino
+                    or opened_path_stat.st_dev != path_stat.st_dev
+                    or opened_path_stat.st_ino != path_stat.st_ino
+                ):
+                    raise MemoryApprovalError("memory_approval_unavailable")
             file_stat = os.fstat(file_fd)
             if (
                 not stat.S_ISREG(file_stat.st_mode)

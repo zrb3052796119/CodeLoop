@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from minicode.advisory_lock import WINDOWS_LOCK_SENTINEL
 from minicode.session import (
     AutosaveManager,
     SessionData,
@@ -509,7 +510,19 @@ def test_operating_system_releases_lock_after_holder_exits_without_cleanup(
     assert (data_dir / "session-store.lock").exists()
 
 
-@pytest.mark.parametrize("target_kind", ["symlink", "directory", "fifo"])
+@pytest.mark.parametrize(
+    "target_kind",
+    [
+        "symlink",
+        "directory",
+        pytest.param(
+            "fifo",
+            marks=pytest.mark.skipif(
+                os.name == "nt", reason="named FIFO targets are POSIX-only"
+            ),
+        ),
+    ],
+)
 def test_unsafe_lock_targets_fail_without_following_or_writing(
     tmp_path: Path,
     monkeypatch,
@@ -567,7 +580,7 @@ def test_lock_open_failure_is_safe_and_low_information(
     assert not (data_dir / "sessions_index.json").exists()
 
 
-def test_lock_file_is_empty_private_persistent_and_not_a_session(
+def test_lock_file_has_platform_payload_is_persistent_and_not_a_session(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -585,8 +598,10 @@ def test_lock_file_is_empty_private_persistent_and_not_a_session(
         save_session(session, force_full=True)
 
     lock_path = data_dir / "session-store.lock"
-    assert lock_path.read_bytes() == b""
-    assert stat.S_IMODE(lock_path.stat().st_mode) == 0o600
+    expected_payload = WINDOWS_LOCK_SENTINEL if os.name == "nt" else b""
+    assert lock_path.read_bytes() == expected_payload
+    if os.name == "posix":
+        assert stat.S_IMODE(lock_path.stat().st_mode) == 0o600
     assert all(item.session_id != lock_path.name for item in list_sessions())
     dashboard = DashboardReadModel(workspace, data_dir=data_dir).sessions(limit=100)
     assert lock_path.name not in json.dumps(dashboard)
@@ -596,7 +611,7 @@ def test_lock_file_is_empty_private_persistent_and_not_a_session(
     assert len(remaining) == 1
     assert delete_session(remaining[0].session_id) is True
     assert lock_path.exists()
-    assert lock_path.read_bytes() == b""
+    assert lock_path.read_bytes() == expected_payload
 
 
 def test_stale_writer_autosave_stays_dirty_without_rolling_back_winner(
@@ -645,7 +660,9 @@ def test_each_transaction_uses_the_current_minicode_dir_for_its_lock(
         session = create_new_session(str(tmp_path / "workspace"))
         session.messages = [{"role": "user", "content": f"root {index}"}]
         save_session(session, force_full=True)
-        assert (root / "session-store.lock").read_bytes() == b""
+        assert (root / "session-store.lock").read_bytes() == (
+            WINDOWS_LOCK_SENTINEL if os.name == "nt" else b""
+        )
 
     assert all((root / "sessions_index.json").exists() for root in roots)
 
@@ -655,18 +672,20 @@ def test_each_transaction_uses_the_current_minicode_dir_for_its_lock(
     [KeyboardInterrupt("stop"), SystemExit("stop")],
     ids=["keyboard-interrupt", "system-exit"],
 )
+@pytest.mark.skipif(os.name != "posix", reason="fcntl fault injection is POSIX-only")
 def test_lock_acquisition_preserves_control_flow_identity(
     tmp_path: Path,
     monkeypatch,
     control_flow: BaseException,
 ) -> None:
+    from minicode import advisory_lock as lock_module
     from minicode import session_store as store_module
 
     def interrupt(*_args, **_kwargs):
         raise control_flow
 
-    assert store_module.fcntl is not None
-    monkeypatch.setattr(store_module.fcntl, "flock", interrupt)
+    assert lock_module.fcntl is not None
+    monkeypatch.setattr(lock_module.fcntl, "flock", interrupt)
     caught: BaseException | None = None
     try:
         with store_module.session_store_transaction(tmp_path):
@@ -677,17 +696,19 @@ def test_lock_acquisition_preserves_control_flow_identity(
     assert caught is control_flow
 
 
+@pytest.mark.skipif(os.name != "posix", reason="fcntl fault injection is POSIX-only")
 def test_busy_timeout_uses_injected_monotonic_clock_without_real_sleep(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
+    from minicode import advisory_lock as lock_module
     from minicode import session_store as store_module
 
     def always_busy(*_args, **_kwargs):
         raise BlockingIOError("busy")
 
-    assert store_module.fcntl is not None
-    monkeypatch.setattr(store_module.fcntl, "flock", always_busy)
+    assert lock_module.fcntl is not None
+    monkeypatch.setattr(lock_module.fcntl, "flock", always_busy)
     readings = iter((10.0, 10.2))
     waits: list[float] = []
 

@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+import minicode.conversation_turn_store as turn_store_module
 from minicode.conversation_turn_store import (
     ConversationTurnStore,
     TurnStoreCorruptError,
@@ -41,6 +42,24 @@ def _fingerprint(store: ConversationTurnStore, message: str = "safe request") ->
         session_id=None,
         message=message,
     )
+
+
+def test_windows_turn_write_does_not_require_fchmod(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _store(tmp_path)
+
+    def fail_fchmod(*_args) -> None:
+        raise AssertionError("fchmod called")
+
+    monkeypatch.setattr(turn_store_module, "_platform_name", lambda: "nt")
+    monkeypatch.setattr(turn_store_module.os, "fchmod", fail_fchmod)
+
+    claim = store.claim(turn_id=TURN_ID, fingerprint=_fingerprint(store))
+
+    assert claim.disposition == "claimed"
+    assert store.get(TURN_ID) == claim.record
 
 
 def test_turn_id_and_fingerprint_are_closed_secure_hash_contracts(tmp_path: Path) -> None:

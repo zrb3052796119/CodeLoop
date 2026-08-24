@@ -1076,7 +1076,7 @@ installed_index = json.loads(
 assert set(cross_process_session_ids).issubset(installed_index)
 assert (
     Path(config_module.MINI_CODE_DIR) / SESSION_STORE_LOCK_NAME
-).read_bytes() == b""
+).read_bytes() == (b"0" if os.name == "nt" else b"")
 for session_id in cross_process_session_ids:
     assert delete_session(session_id) is True
 for path in [cross_process_start, *cross_process_ready]:
@@ -2623,6 +2623,7 @@ finally:
     isolated_workspace = tmp_path / "workspace"
     isolated_workspace.mkdir()
     env["HOME"] = str(isolated_home)
+    env["USERPROFILE"] = str(isolated_home)
     env["MINI_CODE_DASHBOARD_WORKSPACE"] = str(isolated_workspace)
     env["PYTHONPATH"] = str(installed)
     env["PYTHONNOUSERSITE"] = "1"

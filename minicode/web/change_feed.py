@@ -52,6 +52,10 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _platform_name() -> str:
+    return os.name
+
+
 def _iso_time(value: datetime) -> str:
     if not isinstance(value, datetime) or value.tzinfo is None:
         raise ValueError("clock must return an aware datetime")
@@ -267,15 +271,32 @@ class DashboardChangeFeed:
         children: list[Path] = []
         descriptor: int | None = None
         try:
-            flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
-            flags |= getattr(os, "O_NOFOLLOW", 0)
-            descriptor = os.open(root, flags)
-            with os.scandir(descriptor) as entries:
+            if _platform_name() == "posix":
+                flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+                flags |= getattr(os, "O_NOFOLLOW", 0)
+                descriptor = os.open(root, flags)
+                scan_target: int | Path = descriptor
+            else:
+                if os.path.normcase(os.path.realpath(root)) != os.path.normcase(
+                    os.path.abspath(root)
+                ):
+                    observation.add_diagnostic("unsafe_symlink")
+                    return []
+                scan_target = root
+            with os.scandir(scan_target) as entries:
                 for entry in entries:
                     if not budget.consume():
                         observation.add_diagnostic("scan_limit_reached")
                         return []
                     children.append(root / entry.name)
+            current_root_stat = os.lstat(root)
+            if (
+                not stat.S_ISDIR(current_root_stat.st_mode)
+                or current_root_stat.st_dev != root_stat.st_dev
+                or current_root_stat.st_ino != root_stat.st_ino
+            ):
+                observation.add_diagnostic("scan_unavailable")
+                return []
         except OSError:
             observation.add_diagnostic("scan_unavailable")
             return []

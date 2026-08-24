@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+import minicode.run_journal as run_journal_module
 from minicode.deletion_store import DeletionLedger
 from minicode.run_journal import (
     RunEvent,
@@ -310,6 +311,32 @@ def test_rendered_memory_ids_are_recorded_while_running_and_readable_after_compl
     assert rendered_path.stat().st_mode & 0o777 == 0o600
     persisted = rendered_path.read_text(encoding="utf-8")
     assert "Answer a user" not in persisted
+
+
+def test_windows_sidecars_do_not_require_fchmod(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    record = journal.create_run(title="Windows sidecars", source="gateway")
+    journal.transition(record.id, "running")
+
+    def fail_fchmod(*_args) -> None:
+        raise AssertionError("fchmod called")
+
+    monkeypatch.setattr(run_journal_module, "_platform_name", lambda: "nt")
+    monkeypatch.setattr(run_journal_module.os, "fchmod", fail_fchmod)
+
+    entry_id = "project-1785082406796413000-b6ecf281"
+    journal.record_rendered_memory_ids(record.id, [entry_id])
+    journal.transition(record.id, "completed")
+    signal = journal.record_user_signal(record.id, "accept")
+
+    assert journal.get_rendered_memory_ids(record.id) == (entry_id,)
+    assert journal.get_user_signal(record.id) == signal
 
 
 def test_rendered_memory_ids_reject_invalid_entries_oversized_lists_and_duplicates(

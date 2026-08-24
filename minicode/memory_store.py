@@ -1,12 +1,11 @@
 """Cooperative transaction lock for MiniCode's local Memory store.
 
-The lock coordinates cooperating MiniCode processes on macOS/Linux.  It is not
-a distributed lock and makes no claim for Windows, NFS, or multi-host storage.
+The lock coordinates cooperating MiniCode processes on one local filesystem.
+It is not a distributed lock and makes no claim for NFS or multi-host storage.
 """
 
 from __future__ import annotations
 
-import errno
 import os
 import stat
 import threading
@@ -16,10 +15,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator
 
-try:  # POSIX-only by design.
-    import fcntl
-except ImportError:  # pragma: no cover - exercised only on unsupported hosts
-    fcntl = None  # type: ignore[assignment]
+from minicode.advisory_lock import (
+    acquire_advisory_lock,
+    prepare_advisory_lock_file,
+    release_advisory_lock,
+)
 
 
 class MemoryStoreError(RuntimeError):
@@ -73,7 +73,7 @@ def _process_lock_state(path: Path) -> _ProcessLockState:
 
 
 class MemoryStoreCoordinator:
-    """Own the RLock -> flock boundary shared by every durable Memory writer."""
+    """Own the process/advisory-lock boundary for every durable Memory writer."""
 
     def __init__(self, root: str | Path, *, timeout: float = 5.0) -> None:
         if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
@@ -90,30 +90,33 @@ class MemoryStoreCoordinator:
         return int(getattr(self._state.local, "depth", 0)) > 0
 
     def _open_lock_file(self) -> int:
-        if fcntl is None:
-            raise MemoryStoreUnavailable("POSIX file locking is unavailable")
         root_fd: int | None = None
         fd: int | None = None
         try:
             self._root.mkdir(parents=True, exist_ok=True, mode=0o700)
-            root_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
-            root_flags |= getattr(os, "O_CLOEXEC", 0)
-            root_flags |= getattr(os, "O_NOFOLLOW", 0)
-            root_fd = os.open(self._root, root_flags)
             root_path_stat = os.lstat(self._root)
-            root_fd_stat = os.fstat(root_fd)
-            if (
-                not stat.S_ISDIR(root_path_stat.st_mode)
-                or not stat.S_ISDIR(root_fd_stat.st_mode)
-                or root_path_stat.st_dev != root_fd_stat.st_dev
-                or root_path_stat.st_ino != root_fd_stat.st_ino
+            if not stat.S_ISDIR(root_path_stat.st_mode):
+                raise MemoryStoreUnavailable("unsafe Memory store root")
+            if os.name == "posix":
+                root_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+                root_flags |= getattr(os, "O_CLOEXEC", 0)
+                root_flags |= getattr(os, "O_NOFOLLOW", 0)
+                root_fd = os.open(self._root, root_flags)
+                root_fd_stat = os.fstat(root_fd)
+                if (
+                    not stat.S_ISDIR(root_fd_stat.st_mode)
+                    or root_path_stat.st_dev != root_fd_stat.st_dev
+                    or root_path_stat.st_ino != root_fd_stat.st_ino
+                ):
+                    raise MemoryStoreUnavailable("unsafe Memory store root")
+            elif os.path.normcase(os.path.realpath(self._root)) != os.path.normcase(
+                os.path.abspath(self._root)
             ):
                 raise MemoryStoreUnavailable("unsafe Memory store root")
             flags = os.O_RDWR | os.O_CREAT
             flags |= getattr(os, "O_CLOEXEC", 0)
             flags |= getattr(os, "O_NOFOLLOW", 0)
             fd = os.open(self._lock_path, flags, 0o600)
-            os.fchmod(fd, 0o600)
             path_stat = os.lstat(self._lock_path)
             fd_stat = os.fstat(fd)
             if (
@@ -123,6 +126,7 @@ class MemoryStoreCoordinator:
                 or path_stat.st_ino != fd_stat.st_ino
             ):
                 raise MemoryStoreUnavailable("unsafe Memory lock file")
+            prepare_advisory_lock_file(fd, mode=0o600)
             return fd
         except MemoryStoreUnavailable:
             if fd is not None:
@@ -165,22 +169,23 @@ class MemoryStoreCoordinator:
             fd = self._open_lock_file()
             while True:
                 try:
-                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                    break
+                    if acquire_advisory_lock(fd):
+                        break
                 except OSError as error:
-                    if error.errno not in {errno.EACCES, errno.EAGAIN}:
-                        raise MemoryStoreUnavailable("Memory store lock failed") from error
-                    remaining = deadline - time.monotonic()
-                    if remaining <= 0:
-                        raise MemoryStoreBusy("Memory store is busy") from error
-                    time.sleep(min(0.01, remaining))
+                    raise MemoryStoreUnavailable("Memory store lock failed") from error
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise MemoryStoreBusy("Memory store is busy")
+                time.sleep(min(0.01, remaining))
             self._state.local.depth = 1
             yield
         finally:
             self._state.local.depth = 0
             if fd is not None:
                 try:
-                    fcntl.flock(fd, fcntl.LOCK_UN)
+                    release_advisory_lock(fd)
+                except OSError:
+                    pass
                 finally:
                     os.close(fd)
             self._state.lock.release()

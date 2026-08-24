@@ -1,4 +1,4 @@
-"""POSIX transaction coordination for the local Session store.
+"""Cross-process transaction coordination for the local Session store.
 
 The lock is advisory: every MiniCode Session writer must cooperate by entering
 this transaction seam. It is intentionally scoped to one local filesystem and
@@ -7,7 +7,6 @@ does not provide distributed, NFS, lease, heartbeat, or ownership semantics.
 
 from __future__ import annotations
 
-import errno
 import math
 import os
 import stat
@@ -16,10 +15,11 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-try:
-    import fcntl
-except ImportError:  # pragma: no cover - Batch 6A.2 supports POSIX only
-    fcntl = None  # type: ignore[assignment]
+from minicode.advisory_lock import (
+    acquire_advisory_lock,
+    prepare_advisory_lock_file,
+    release_advisory_lock,
+)
 
 
 SESSION_STORE_LOCK_NAME = "session-store.lock"
@@ -89,7 +89,7 @@ def _open_lock_file(data_dir: str | Path) -> tuple[Path, int]:
         raise SessionStoreLockError("session store lock unavailable") from error
     try:
         _validate_lock_target(path, file_descriptor)
-        os.fchmod(file_descriptor, 0o600)
+        prepare_advisory_lock_file(file_descriptor, mode=0o600)
     except BaseException:
         _close_lock_file(file_descriptor)
         raise
@@ -104,23 +104,16 @@ def _acquire_lock(
     monotonic: Callable[[], float],
     wait: Callable[[float], None],
 ) -> None:
-    if fcntl is None:
-        raise SessionStoreLockError("session store lock unavailable")
     deadline = monotonic() + timeout
     while True:
         try:
-            fcntl.flock(file_descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            _validate_lock_target(path, file_descriptor)
-            return
-        except BlockingIOError:
-            pass
+            if acquire_advisory_lock(file_descriptor):
+                _validate_lock_target(path, file_descriptor)
+                return
         except InterruptedError:
             pass
         except OSError as error:
-            if error.errno not in {errno.EACCES, errno.EAGAIN}:
-                raise SessionStoreLockError(
-                    "session store lock unavailable"
-                ) from error
+            raise SessionStoreLockError("session store lock unavailable") from error
         remaining = deadline - monotonic()
         if remaining <= 0:
             raise SessionStoreBusyError("session store is busy")
@@ -128,11 +121,10 @@ def _acquire_lock(
 
 
 def _release_lock(file_descriptor: int) -> None:
-    if fcntl is not None:
-        try:
-            fcntl.flock(file_descriptor, fcntl.LOCK_UN)
-        except OSError:
-            pass
+    try:
+        release_advisory_lock(file_descriptor)
+    except OSError:
+        pass
     _close_lock_file(file_descriptor)
 
 
@@ -144,7 +136,7 @@ def session_store_transaction(
     monotonic: Callable[[], float] | None = None,
     wait: Callable[[float], None] | None = None,
 ) -> Iterator[None]:
-    """Hold one bounded exclusive POSIX advisory lock for a storage transaction."""
+    """Hold one bounded exclusive advisory lock for a storage transaction."""
     timeout_value = (
         SESSION_STORE_LOCK_TIMEOUT_SECONDS if timeout is None else timeout
     )

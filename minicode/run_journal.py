@@ -200,6 +200,10 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _platform_name() -> str:
+    return os.name
+
+
 def _iso_time(value: datetime) -> str:
     if value.tzinfo is None:
         value = value.replace(tzinfo=timezone.utc)
@@ -1672,7 +1676,8 @@ class RunJournal:
         target = run_dir / _USER_SIGNAL_FILE
         try:
             with os.fdopen(fd, "wb") as handle:
-                os.fchmod(handle.fileno(), 0o600)
+                if _platform_name() == "posix":
+                    os.fchmod(handle.fileno(), 0o600)
                 handle.write(encoded)
                 handle.flush()
                 os.fsync(handle.fileno())
@@ -1786,7 +1791,8 @@ class RunJournal:
         target = run_dir / filename
         try:
             with os.fdopen(fd, "wb") as handle:
-                os.fchmod(handle.fileno(), 0o600)
+                if _platform_name() == "posix":
+                    os.fchmod(handle.fileno(), 0o600)
                 handle.write(encoded)
                 handle.flush()
                 os.fsync(handle.fileno())

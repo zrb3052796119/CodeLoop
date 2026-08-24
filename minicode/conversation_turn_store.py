@@ -193,6 +193,10 @@ def _root_lock(path: Path) -> threading.RLock:
         return lock
 
 
+def _platform_name() -> str:
+    return os.name
+
+
 def create_turn_id() -> str:
     """Create a cryptographically strong closed-format turn identifier."""
     return f"turn_{secrets.token_hex(16)}"
@@ -500,7 +504,8 @@ class ConversationTurnStore:
             descriptor, temporary = tempfile.mkstemp(
                 prefix=".turn-", suffix=".tmp", dir=self._turns_root
             )
-            os.fchmod(descriptor, 0o600)
+            if _platform_name() == "posix":
+                os.fchmod(descriptor, 0o600)
             with os.fdopen(descriptor, "wb", closefd=False) as handle:
                 handle.write(encoded)
                 handle.flush()

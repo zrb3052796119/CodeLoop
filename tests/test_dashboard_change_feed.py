@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 import minicode.memory as memory_mod
+import minicode.web.change_feed as change_feed_mod
 from minicode.memory import MemoryApprovalPolicy, MemoryManager, MemoryScope
 from minicode.memory_approval import MemoryApprovalAuthority
 from minicode.mcp_current_state import McpCurrentStateRegistry
@@ -338,6 +339,34 @@ def test_only_legal_skill_summaries_change_skills_revision(tmp_path) -> None:
     (skill / "SKILL.md").write_text("# private body", encoding="utf-8")
     after = _revisions(feed)
     _assert_only_changed(without_summary, after, "skills")
+
+
+def test_windows_skill_scan_uses_paths_and_observes_skill_changes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    feed = _feed(tmp_path)
+    skills_root = tmp_path / "workspace" / ".mini-code" / "skills"
+    skills_root.mkdir(parents=True)
+    scanned: list[Path] = []
+    original_scandir = change_feed_mod.os.scandir
+
+    def tracked_scandir(path):
+        assert not isinstance(path, int)
+        scanned.append(Path(path))
+        return original_scandir(path)
+
+    monkeypatch.setattr(change_feed_mod, "_platform_name", lambda: "nt")
+    monkeypatch.setattr(change_feed_mod.os, "scandir", tracked_scandir)
+    before = _revisions(feed)
+
+    skill = skills_root / "alpha" / "SKILL.md"
+    skill.parent.mkdir()
+    skill.write_text("# Alpha\n", encoding="utf-8")
+    after = _revisions(feed)
+
+    _assert_only_changed(before, after, "skills")
+    assert skills_root in scanned
 
 
 def test_connection_config_and_stable_process_state_change_connections(

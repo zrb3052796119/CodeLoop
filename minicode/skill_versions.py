@@ -10,12 +10,18 @@ import re
 import stat
 import tempfile
 import threading
+import time
 from collections.abc import Callable, Iterable, Mapping
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterator
 
+from minicode.advisory_lock import (
+    acquire_advisory_lock,
+    prepare_advisory_lock_file,
+    release_advisory_lock,
+)
 from minicode.intent_parser import ActionType, IntentType
 
 logger = logging.getLogger(__name__)
@@ -188,7 +194,16 @@ def _storage_lock(path: Path) -> Iterator[None]:
         descriptor: int | None = None
         try:
             descriptor = os.open(path, flags, 0o600)
-            os.fchmod(descriptor, 0o600)
+            descriptor_stat = os.fstat(descriptor)
+            path_stat = os.lstat(path)
+            if (
+                not stat.S_ISREG(descriptor_stat.st_mode)
+                or not stat.S_ISREG(path_stat.st_mode)
+                or descriptor_stat.st_dev != path_stat.st_dev
+                or descriptor_stat.st_ino != path_stat.st_ino
+            ):
+                raise OSError("unsafe Skill version lock")
+            prepare_advisory_lock_file(descriptor, mode=0o600)
         except OSError as error:
             if descriptor is not None:
                 os.close(descriptor)
@@ -197,20 +212,21 @@ def _storage_lock(path: Path) -> Iterator[None]:
             ) from error
         assert descriptor is not None
         try:
-            try:
-                import fcntl
-
-                fcntl.flock(descriptor, fcntl.LOCK_EX)
-            except ImportError:  # pragma: no cover - non-POSIX fallback
-                pass
+            while True:
+                try:
+                    if acquire_advisory_lock(descriptor):
+                        break
+                except OSError as error:
+                    raise SkillVersionLedgerError(
+                        "Skill version lock is unavailable"
+                    ) from error
+                time.sleep(0.01)
             yield
         finally:
             try:
                 try:
-                    import fcntl
-
-                    fcntl.flock(descriptor, fcntl.LOCK_UN)
-                except ImportError:  # pragma: no cover - non-POSIX fallback
+                    release_advisory_lock(descriptor)
+                except OSError:
                     pass
             finally:
                 os.close(descriptor)
