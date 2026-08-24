@@ -23,6 +23,7 @@ from unittest.mock import patch
 
 import jsonschema
 
+from minicode.advisory_lock import WINDOWS_LOCK_SENTINEL
 from scripts.memory_retrieval_phase2b_evaluator import (
     PHASE1_FROZEN_HASHES,
     PHASE2A_FROZEN_HASHES,
@@ -73,6 +74,10 @@ PHASE2B_FROZEN_HASHES = {
 }
 
 
+def _platform_name() -> str:
+    return os.name
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -108,7 +113,7 @@ def snapshot_tree(root: Path) -> dict[str, Any]:
             stat = path.stat()
             files.append(
                 {
-                    "path": str(path.relative_to(root)),
+                    "path": path.relative_to(root).as_posix(),
                     "sha256": sha256_file(path),
                     "size": stat.st_size,
                     "mtime_ns": stat.st_mtime_ns,
@@ -117,18 +122,41 @@ def snapshot_tree(root: Path) -> dict[str, Any]:
     return {"root": str(root), "file_count": len(files), "files": files}
 
 
+def _validate_memory_store_lock_artifact(lock_path: Path) -> None:
+    lock_stat = lock_path.lstat()
+    platform = _platform_name()
+    if platform == "posix":
+        expected_payload = b""
+    elif platform == "nt":
+        expected_payload = WINDOWS_LOCK_SENTINEL
+    else:
+        raise AssertionError("invalid memory-store coordination lock artifact")
+
+    reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+    is_windows_reparse = platform == "nt" and bool(
+        getattr(lock_stat, "st_file_attributes", 0) & reparse_flag
+    )
+    if (
+        not stat.S_ISREG(lock_stat.st_mode)
+        or is_windows_reparse
+        or (platform == "posix" and stat.S_IMODE(lock_stat.st_mode) != 0o600)
+        or lock_stat.st_size != len(expected_payload)
+    ):
+        raise AssertionError("invalid memory-store coordination lock artifact")
+    try:
+        actual_payload = lock_path.read_bytes()
+    except OSError as error:
+        raise AssertionError("invalid memory-store coordination lock artifact") from error
+    if actual_payload != expected_payload:
+        raise AssertionError("invalid memory-store coordination lock artifact")
+
+
 def snapshot_isolated_case_tree(root: Path) -> dict[str, Any]:
     """Snapshot authoritative case outputs, excluding derived store artifacts."""
     lock_relative = Path("home/.mini-code/memory-store.lock")
     lock_path = root / lock_relative
     if lock_path.exists() or lock_path.is_symlink():
-        lock_stat = lock_path.lstat()
-        if (
-            not stat.S_ISREG(lock_stat.st_mode)
-            or stat.S_IMODE(lock_stat.st_mode) != 0o600
-            or lock_stat.st_size != 0
-        ):
-            raise AssertionError("invalid memory-store coordination lock artifact")
+        _validate_memory_store_lock_artifact(lock_path)
     snapshot = snapshot_tree(root)
     files = [
         item

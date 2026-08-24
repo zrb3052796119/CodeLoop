@@ -1333,8 +1333,22 @@ def test_dns_resolution_is_bounded_by_the_total_deadline(
     assert network_calls == []
 
 
-def test_each_response_read_uses_only_the_remaining_total_deadline() -> None:
+def test_each_response_read_uses_only_the_remaining_total_deadline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     timeouts: list[float] = []
+
+    class Clock:
+        now = 1_000.0
+
+        def monotonic(self) -> float:
+            return self.now
+
+        def advance(self, seconds: float) -> None:
+            self.now += seconds
+
+    clock = Clock()
+    monkeypatch.setattr(network_safety, "time", clock)
 
     class TimedResponse:
         headers = {"Content-Type": "text/plain"}
@@ -1348,18 +1362,17 @@ def test_each_response_read_uses_only_the_remaining_total_deadline() -> None:
         def read(self, size: int) -> bytes:
             assert 0 < size <= 64 * 1024
             self.reads += 1
-            time.sleep(0.01)
+            clock.advance(0.0625)
             return b"bounded" if self.reads == 1 else b""
 
     payload = network_safety.read_bounded_response(
         TimedResponse(),
         method="GET",
-        deadline=time.monotonic() + 0.2,
+        deadline=clock.monotonic() + 0.25,
     )
 
     assert payload == b"bounded"
-    assert len(timeouts) == 2
-    assert 0 < timeouts[1] < timeouts[0] <= 0.2
+    assert timeouts == [0.25, 0.1875]
 
 
 def test_pinned_https_transport_connects_to_validated_ip_and_preserves_host(

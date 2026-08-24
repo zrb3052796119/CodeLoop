@@ -212,6 +212,7 @@ import minicode.memory as memory_module
 import minicode.model_registry as model_module
 import minicode.permissions as permissions_module
 import minicode.prompt as prompt_module
+import minicode.run_events as run_events_module
 import minicode.skill_router as skill_router_module
 import minicode.tools as tools_module
 import minicode.tools.http_utils as http_utils_module
@@ -246,6 +247,10 @@ class InstalledSink:
 class InstalledFailingSink:
     def emit(self, *_args, **_kwargs):
         raise RuntimeError("installed observer failure")
+
+class InstalledWarningLogger:
+    def __init__(self): self.messages = []
+    def warning(self, message): self.messages.append(message)
 
 def fail_disabled_constructor(*_args, **_kwargs):
     raise AssertionError("disabled installed path constructed Work Chain controls")
@@ -362,16 +367,25 @@ try:
     assert installed_sink.events[3][2]["entries"] <= installed_sink.events[3][2]["maxEntries"]
     assert installed_sink.events[3][2]["protectedTokens"] <= installed_sink.events[3][2]["maxTokens"]
     failing_sink_model = InstalledModel()
-    failing_sink_result = agent_loop_module.run_agent_turn(
-        model=failing_sink_model,
-        tools=ToolRegistry([]),
-        messages=base_messages,
-        cwd=".",
-        enable_work_chain=False,
-        event_sink=InstalledFailingSink(),
-    )
+    installed_warning_logger = InstalledWarningLogger()
+    original_run_events_logger = run_events_module._logger
+    try:
+        run_events_module._logger = installed_warning_logger
+        failing_sink_result = agent_loop_module.run_agent_turn(
+            model=failing_sink_model,
+            tools=ToolRegistry([]),
+            messages=base_messages,
+            cwd=".",
+            enable_work_chain=False,
+            event_sink=InstalledFailingSink(),
+        )
+    finally:
+        run_events_module._logger = original_run_events_logger
     assert failing_sink_result == no_context
     assert failing_sink_model.calls == no_context_model.calls == 1
+    assert installed_warning_logger.messages == [
+        "Agent event sink unavailable.",
+    ] * 5
 finally:
     agent_loop_module.time.monotonic = original_monotonic
     for name, value in original_symbols.items():
@@ -2528,7 +2542,11 @@ try:
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(chat_request, timeout=5) as response:
+    # A synchronous turn performs several coordinated durable writes.  Five
+    # seconds is not a product latency contract and is too tight for a hosted
+    # Windows runner under full-suite I/O load; keep a bounded request without
+    # turning ordinary filesystem jitter into a packaging failure.
+    with urllib.request.urlopen(chat_request, timeout=15) as response:
         chat = json.loads(response.read().decode("utf-8"))
         assert chat["ok"] is True
         assert chat["mode"] == "read-write"
