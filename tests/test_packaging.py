@@ -2627,8 +2627,13 @@ finally:
     env["MINI_CODE_DASHBOARD_WORKSPACE"] = str(isolated_workspace)
     env["PYTHONPATH"] = str(installed)
     env["PYTHONNOUSERSITE"] = "1"
+    # Windows CreateProcess has a much smaller command-line limit than POSIX.
+    # Keep this broad installed-wheel smoke intact, but execute it from a
+    # temporary file instead of passing thousands of lines through ``-c``.
+    smoke_path = tmp_path / "installed-wheel-smoke.py"
+    smoke_path.write_text(smoke_script, encoding="utf-8", newline="\n")
     completed = subprocess.run(
-        [sys.executable, "-c", smoke_script],
+        [sys.executable, str(smoke_path)],
         cwd=isolated_workspace,
         env=env,
         text=True,
