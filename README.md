@@ -60,7 +60,7 @@ contracts over broad capability claims.
 
 | Evidence | Result | What it does—and does not—show |
 | --- | ---: | --- |
-| [Repository regression suite](./.github/workflows/ci.yml) | **4,446 passed, 2 skipped** | Local Python 3.12 release run on 2026-08-24 against [runtime/test commit `e1a4b17`](https://github.com/zrb3052796119/CodeLoop/commit/e1a4b17); protects implemented behavior, not general agent intelligence. CI reruns the suite on a 3-OS × 2-Python matrix after push. |
+| [Repository regression suite](./.github/workflows/ci.yml) | **4,448 passed, 2 skipped** | Local Python 3.12 release run on 2026-08-24 against [runtime/test commit `5658aad`](https://github.com/zrb3052796119/CodeLoop/commit/5658aad); protects implemented behavior, not general agent intelligence. CI reruns the suite on a 3-OS × 2-Python matrix after push. |
 | [Internal A-profile evaluation](./docs/agent-quality-gates.md) | **60/60 Skill**, **12/12 compaction**, **50/50 recorded tasks** | Deterministic and offline with `remoteCallCount=0`. Fixtures/manifest are hash-bound; unlike `current`, profile `a` accepts fresh matching result files instead of pinning one result hash. Not an external certification. |
 | [Paired path-recovery study](./docs/2026-08-21--persistent-memory-large-study--r1--robustness-check.md) | **48 Memory / cold pairs** | Tools: 50 vs 240 (**-79.2%**); input tokens: 652,911 vs 1,539,738 (**-57.6%**). Synthetic, read-only recovery tasks only. |
 | [Paired non-path study](./docs/2026-08-22--non-path-persistent-memory--r1--robustness-check.md) | **36 Memory / cold pairs** | Mean tools: 7.50 vs 11.50 (**-34.8%**); strict success: 32/36 vs 28/36. Results vary materially by lesson category. |
