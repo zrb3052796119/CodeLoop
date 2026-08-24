@@ -57,6 +57,7 @@ Representative, reviewable commits through the current release:
 | [`f2772f7`](https://github.com/zrb3052796119/CodeLoop/commit/f2772f7) | A-profile runtime integrations across Memory, compaction, Skill, and agents. |
 | [`4d61d0a`](https://github.com/zrb3052796119/CodeLoop/commit/4d61d0a) | Paired Memory acceptance studies and their reports. |
 | [`ae6c646`](https://github.com/zrb3052796119/CodeLoop/commit/ae6c646) | Evidence-driven Runtime hardening, acceptance contracts, and release tests. |
+| [`e1a4b17`](https://github.com/zrb3052796119/CodeLoop/commit/e1a4b17) | Portable persistence locks and Windows-safe storage/read/observation paths. |
 
 These commits establish the post-import repository work. They do not repair the
 missing exact upstream revision or licensing grant; those remain explicit
