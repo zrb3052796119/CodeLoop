@@ -1281,9 +1281,13 @@ def test_dns_resolution_is_bounded_by_the_total_deadline(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     network_calls: list[object] = []
+    resolver_started = threading.Event()
+    release_resolver = threading.Event()
 
     def slow_resolver(_host: str, port: int, **_kwargs: object):
-        time.sleep(0.3)
+        resolver_started.set()
+        if not release_resolver.wait(timeout=5):
+            raise AssertionError("request waited for the resolver past its deadline")
         return [
             (
                 network_safety.socket.AF_INET,
@@ -1304,21 +1308,28 @@ def test_dns_resolution_is_bounded_by_the_total_deadline(
         forbidden_open,
     )
     started = time.monotonic()
-    result = http_request_tool.run(
-        http_request_tool.validator(
-            {
-                "url": "https://slow.public.example/deadline",
-                "method": "GET",
-                "timeout": 0.1,
-            }
-        ),
-        ToolContext(cwd=str(tmp_path), permissions=None),
-    )
-    elapsed = time.monotonic() - started
+    try:
+        result = http_request_tool.run(
+            http_request_tool.validator(
+                {
+                    "url": "https://slow.public.example/deadline",
+                    "method": "GET",
+                    "timeout": 0.1,
+                }
+            ),
+            ToolContext(cwd=str(tmp_path), permissions=None),
+        )
+        elapsed = time.monotonic() - started
+    finally:
+        release_resolver.set()
 
+    assert resolver_started.wait(timeout=1)
     assert result.ok is False
     assert result.output == "error[timeout]: The network request timed out."
-    assert elapsed < 0.2
+    # A loaded hosted runner may overshoot a 100 ms wait, so compare against
+    # the resolver's five-second blocking window instead of a 100 ms jitter
+    # allowance. Waiting on DNS would exceed this bound by several seconds.
+    assert elapsed < 1.0
     assert network_calls == []
 
 

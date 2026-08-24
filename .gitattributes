@@ -1,4 +1,8 @@
-# Frozen quality fixtures use content hashes and must retain one checkout form
-# on every CI runner. Keep this rule narrow: Windows launch shims and unrelated
-# project files should continue to use their repository/platform defaults.
-tests/fixtures/agent_quality/*.json text eol=lf
+# Byte-level release manifests require one text checkout form on every runner.
+# Windows launch shims retain their native line endings, and image bytes must
+# never pass through text normalization.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.png binary
+*.jpg binary

@@ -22,6 +22,45 @@ from minicode.types import AgentStep
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
+def test_tracked_files_have_one_cross_platform_checkout_form() -> None:
+    tracked = subprocess.check_output(
+        ["git", "ls-files", "-z"],
+        cwd=REPO_ROOT,
+    ).split(b"\0")
+    tracked = [path for path in tracked if path]
+    completed = subprocess.run(
+        ["git", "check-attr", "-z", "text", "eol", "--stdin"],
+        cwd=REPO_ROOT,
+        input=b"\0".join(tracked) + b"\0",
+        check=True,
+        capture_output=True,
+    )
+    fields = completed.stdout.split(b"\0")
+    if fields and not fields[-1]:
+        fields.pop()
+    assert len(fields) % 3 == 0
+
+    attributes: dict[str, dict[str, str]] = {}
+    for index in range(0, len(fields), 3):
+        path, name, value = (
+            field.decode("utf-8", errors="surrogateescape")
+            for field in fields[index : index + 3]
+        )
+        attributes.setdefault(path, {})[name] = value
+
+    assert set(attributes) == {
+        path.decode("utf-8", errors="surrogateescape") for path in tracked
+    }
+    for path, effective in attributes.items():
+        suffix = Path(path).suffix.casefold()
+        if suffix in {".png", ".jpg"}:
+            assert effective["text"] == "unset", path
+        elif suffix in {".cmd", ".ps1"}:
+            assert effective == {"text": "set", "eol": "crlf"}, path
+        else:
+            assert effective == {"text": "auto", "eol": "lf"}, path
+
+
 def _release_env(tmp_path: Path) -> dict[str, str]:
     home = tmp_path / "home"
     home.mkdir(exist_ok=True)

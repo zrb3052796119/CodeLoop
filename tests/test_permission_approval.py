@@ -842,11 +842,13 @@ def test_real_dangerous_command_starts_only_after_allow(
 def test_capacity_timeout_and_close_all_fail_closed(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
+    monotonic_time = [0.0]
     broker = PermissionApprovalBroker(
         workspace,
-        timeout_seconds=0.05,
+        timeout_seconds=10,
         max_pending=1,
         poll_interval=0.005,
+        monotonic=lambda: monotonic_time[0],
     )
     first_turn = "turn_" + "a" * 32
     second_turn = "turn_" + "b" * 32
@@ -880,6 +882,11 @@ def test_capacity_timeout_and_close_all_fail_closed(tmp_path: Path) -> None:
     assert isinstance(second_outcome.get("error"), RuntimeError)
     assert not (workspace / "demo.txt").exists()
 
+    # Advance the injected authority clock instead of racing a 50 ms real
+    # timeout against hosted-runner thread scheduling. snapshot() performs the
+    # same expiry transition and wakes the blocked operation deterministically.
+    monotonic_time[0] = 11.0
+    assert broker.snapshot()["items"] == []
     first.join(timeout=1)
     assert not first.is_alive()
     assert isinstance(first_outcome.get("error"), RuntimeError)
