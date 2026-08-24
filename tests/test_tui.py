@@ -38,6 +38,27 @@ def test_render_banner_includes_model() -> None:
     assert "api.anthropic.com" in rendered
 
 
+def test_render_banner_uses_selected_custom_provider_endpoint(monkeypatch) -> None:
+    monkeypatch.setattr(chrome_module, "_cached_terminal_size", lambda: (100, 24))
+
+    rendered = render_banner(
+        {
+            "model": "deepseek-chat",
+            "provider": "custom",
+            "baseUrl": "https://api.anthropic.com",
+            "customBaseUrl": "https://api.deepseek.com",
+            "customApiKey": "test-only-key",
+        },
+        "/tmp/demo",
+        [],
+        {"messageCount": 1, "skillCount": 2, "mcpCount": 3},
+    )
+
+    plain = strip_ansi(rendered)
+    assert "api.deepseek.com" in plain
+    assert "api.anthropic.com" not in plain
+
+
 def test_interactive_startup_has_no_legacy_prelude() -> None:
     rendered = _render_startup_prelude(
         {"model": "claude-test"},

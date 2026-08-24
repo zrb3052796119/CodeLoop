@@ -227,24 +227,69 @@ class CyberneticOrchestrator:
         model_for_pipeline = getattr(self, '_last_model', None)
         runtime = dict(getattr(self, "_runtime", {}) or {})
         hybrid_enabled = bool(runtime.get("memoryHybridEnabled", False))
-        verifier_model = str(runtime.get("memoryHybridVerifierModel") or "").strip()
-        current_model = str(getattr(model_for_pipeline, "model_id", "") or "").strip()
-        if hybrid_enabled and verifier_model and verifier_model != current_model:
+        configured_verifier = str(
+            runtime.get("memoryHybridVerifierModel") or ""
+        ).strip()
+        verifier_binding = "not_applicable"
+        expected_verifier = ""
+        activation = None
+        if hybrid_enabled:
             try:
-                from minicode.model_registry import create_model_adapter
+                from minicode.memory_hybrid import assess_hybrid_activation
 
-                verifier_runtime = dict(runtime, model=verifier_model)
-                model_for_pipeline = create_model_adapter(
-                    verifier_model,
-                    None,
-                    verifier_runtime,
+                activation = assess_hybrid_activation(
+                    requested=True,
+                    evidence_path=runtime.get("memoryHybridEvidencePath") or None,
+                    model_path=runtime.get("memoryHybridModelPath") or None,
+                    embedding_provider=str(
+                        runtime.get("memoryHybridEmbeddingProvider") or "local-e5"
+                    ),
+                    allow_remote_embedding=bool(
+                        runtime.get("allowRemoteMemoryEmbedding", False)
+                    ),
                 )
             except Exception:
-                model_for_pipeline = None
+                activation = None
+        if activation is not None and activation.active and activation.evidence:
+            verifier_evidence = activation.evidence.get("verifier", {})
+            if isinstance(verifier_evidence, dict):
+                expected_verifier = str(
+                    verifier_evidence.get("model_id") or ""
+                ).strip()
+            if configured_verifier and configured_verifier != expected_verifier:
                 logger.warning(
-                    "Hybrid memory verifier model initialization failed; "
-                    "canonical lexical retrieval remains active"
+                    "Hybrid verifier config differs from accepted promotion "
+                    "evidence; using evidence-bound model configured=%s evidence=%s",
+                    configured_verifier,
+                    expected_verifier,
                 )
+                verifier_binding = "evidence_bound_override"
+            elif configured_verifier:
+                verifier_binding = "configured_match"
+            else:
+                verifier_binding = "evidence_bound_dedicated"
+            if expected_verifier:
+                try:
+                    from minicode.memory_hybrid import (
+                        build_hybrid_promotion_verifier_runtime,
+                    )
+                    from minicode.model_registry import create_dedicated_model_adapter
+
+                    verifier_runtime = build_hybrid_promotion_verifier_runtime(runtime)
+                    model_for_pipeline = create_dedicated_model_adapter(
+                        expected_verifier,
+                        None,
+                        verifier_runtime,
+                    )
+                except Exception:
+                    model_for_pipeline = None
+                    verifier_binding = "verifier_adapter_unavailable"
+                    logger.warning(
+                        "Evidence-bound Hybrid verifier initialization failed; "
+                        "canonical lexical retrieval remains active"
+                    )
+        elif hybrid_enabled:
+            verifier_binding = "activation_unavailable"
         self.memory_pipeline.initialize(
             model_adapter=model_for_pipeline,
             workspace_path=getattr(self, '_workspace', None),
@@ -258,6 +303,7 @@ class CyberneticOrchestrator:
             allow_remote_memory_embedding=bool(
                 runtime.get("allowRemoteMemoryEmbedding", False)
             ),
+            hybrid_verifier_binding=verifier_binding,
         )
 
     def wire_healing(

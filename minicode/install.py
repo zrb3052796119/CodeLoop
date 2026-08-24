@@ -5,6 +5,7 @@ Configures model, API credentials, and installs launcher script.
 
 from __future__ import annotations
 
+import getpass
 import os
 import stat
 import sys
@@ -13,10 +14,12 @@ from pathlib import Path
 
 from minicode.config import (
     MINI_CODE_DIR,
+    MINI_CODE_ENV_PATH,
     MINI_CODE_SETTINGS_PATH,
+    USER_MODEL_ENV_KEYS,
     load_effective_settings,
-    save_mini_code_settings,
 )
+from minicode.env_file import read_private_env_file, update_private_env_file
 
 
 def _read_input(prompt: str, default: str | None = None) -> str:
@@ -37,6 +40,15 @@ def _require_input(prompt: str, default: str | None = None) -> str:
         if value:
             return value
         print("该项不能为空，请重新输入。")
+
+
+def _read_secret(prompt: str) -> str:
+    """Read a credential without terminal echo."""
+    try:
+        return getpass.getpass(f"{prompt}: ").strip()
+    except (EOFError, KeyboardInterrupt):
+        print("\n\nInstallation cancelled.")
+        sys.exit(0)
 
 
 def _mask_secret(secret: str | None) -> str:
@@ -146,7 +158,8 @@ def main() -> None:
     print("  MiniCode Python 安装向导")
     print("=" * 60)
     print()
-    print(f"配置会写入: {MINI_CODE_SETTINGS_PATH}")
+    print(f"模型配置会写入: {MINI_CODE_ENV_PATH}")
+    print(f"结构化设置保留在: {MINI_CODE_SETTINGS_PATH}")
     print("配置保存在独立目录中，不会影响其它本地工具配置。")
     print()
     
@@ -156,7 +169,17 @@ def main() -> None:
     except Exception:
         settings = {}
     
-    current_env = settings.get("env", {})
+    current_env = dict(settings.get("env", {}))
+    try:
+        current_env.update(
+            read_private_env_file(
+                MINI_CODE_ENV_PATH,
+                allowed_keys=USER_MODEL_ENV_KEYS,
+            )
+        )
+    except RuntimeError as error:
+        print(f"\n❌ 无法安全读取 {MINI_CODE_ENV_PATH}: {error}")
+        sys.exit(1)
     
     # Collect configuration
     print("📋 请输入配置信息：")
@@ -164,41 +187,63 @@ def main() -> None:
     
     model = _require_input(
         "Model name",
-        settings.get("model") or current_env.get("ANTHROPIC_MODEL", ""),
+        current_env.get("MINI_CODE_MODEL")
+        or current_env.get("ANTHROPIC_MODEL")
+        or settings.get("model", ""),
     )
-    
-    base_url = _require_input(
-        "ANTHROPIC_BASE_URL",
-        current_env.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com"),
-    )
-    
-    saved_auth_token = current_env.get("ANTHROPIC_AUTH_TOKEN", "")
-    token_status = _mask_secret(saved_auth_token)
-    token_input = _read_input(
-        f"ANTHROPIC_AUTH_TOKEN {token_status}",
-        None,
-    )
-    auth_token = token_input or saved_auth_token
-    
-    if not auth_token and not saved_auth_token:
-        print("\n❌ ANTHROPIC_AUTH_TOKEN 不能为空。")
+    providers = {"anthropic", "openai", "openrouter", "custom"}
+    provider = _require_input(
+        "Provider (anthropic/openai/openrouter/custom)",
+        current_env.get("MINI_CODE_PROVIDER")
+        or settings.get("provider")
+        or "anthropic",
+    ).lower()
+    if provider not in providers:
+        print(f"\n❌ 不支持的 provider: {provider}")
         sys.exit(1)
-    
-    auth_token = auth_token or saved_auth_token
+
+    provider_fields = {
+        "anthropic": (
+            "ANTHROPIC_BASE_URL",
+            "ANTHROPIC_API_KEY",
+            "https://api.anthropic.com",
+        ),
+        "openai": (
+            "OPENAI_BASE_URL",
+            "OPENAI_API_KEY",
+            "https://api.openai.com",
+        ),
+        "openrouter": (
+            "OPENROUTER_BASE_URL",
+            "OPENROUTER_API_KEY",
+            "https://openrouter.ai/api",
+        ),
+        "custom": ("CUSTOM_API_BASE_URL", "CUSTOM_API_KEY", ""),
+    }
+    base_name, key_name, default_base = provider_fields[provider]
+    base_url = _require_input(base_name, current_env.get(base_name) or default_base)
+    saved_key = str(current_env.get(key_name) or "")
+    key_input = _read_secret(f"{key_name} {_mask_secret(saved_key)}")
+    api_key = key_input or saved_key
+    if not api_key:
+        print(f"\n❌ {key_name} 不能为空。")
+        sys.exit(1)
     
     # Save configuration
     print("\n💾 保存配置...")
     try:
-        save_mini_code_settings({
-            "model": model,
-            "env": {
-                "ANTHROPIC_BASE_URL": base_url,
-                "ANTHROPIC_AUTH_TOKEN": auth_token,
-                "ANTHROPIC_MODEL": model,
+        update_private_env_file(
+            MINI_CODE_ENV_PATH,
+            {
+                "MINI_CODE_MODEL": model,
+                "MINI_CODE_PROVIDER": provider,
+                base_name: base_url,
+                key_name: api_key,
             },
-        })
-        print(f"✅ 配置已保存到: {MINI_CODE_SETTINGS_PATH}")
-    except OSError as e:
+            allowed_keys=USER_MODEL_ENV_KEYS,
+        )
+        print(f"✅ 配置已保存到: {MINI_CODE_ENV_PATH}")
+    except (OSError, RuntimeError) as e:
         print(f"\n❌ 保存配置失败: {e}")
         sys.exit(1)
     
@@ -248,7 +293,8 @@ def main() -> None:
     print("  安装完成！")
     print("=" * 60)
     print()
-    print("📁 配置文件:", MINI_CODE_SETTINGS_PATH)
+    print("📁 模型配置:", MINI_CODE_ENV_PATH)
+    print("📁 结构化设置:", MINI_CODE_SETTINGS_PATH)
     if launcher_result:
         launcher_path, launcher_command, _ = launcher_result
         print("🚀 启动命令:", launcher_command)

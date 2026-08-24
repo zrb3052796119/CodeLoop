@@ -16,6 +16,7 @@ dependencies = [
 dev = [
     "jsonschema>=4.0.0",
     "pytest>=8.0.0",
+    "ruff>=0.9.0,<1",
     "setuptools>=68",
     "wheel",
 ]

@@ -210,8 +210,10 @@ def main() -> None:
     cwd = str(Path.cwd())
     argv = remaining_argv
     
-    # Filter out our custom args before passing to management commands
-    management_argv = [a for a in argv if not a.startswith("--")]
+    # ``argparse`` already consumed top-level options. Preserve every
+    # remaining management option together with its value; dropping only the
+    # ``--name`` token turns ``--option value`` into a stray positional value.
+    management_argv = list(argv)
     if maybe_handle_management_command(cwd, management_argv):
         return
 
@@ -221,20 +223,20 @@ def main() -> None:
     except Exception as e:  # noqa: BLE001
         runtime = None
         print(
-            f"⚠️  Warning: Failed to load runtime config: {e}\n",
+            f"❌ Failed to load runtime config: {e}\n",
             file=sys.stderr,
         )
         print(
             "🔧 How to fix this:\n"
-            "  1. Set your model name: export ANTHROPIC_MODEL=claude-sonnet-4-20250514\n"
-            "  2. Set your API key: export ANTHROPIC_API_KEY=sk-ant-...\n"
-            "  3. Or edit ~/.mini-code/settings.json:\n"
-            '     {"model": "claude-sonnet-4-20250514", "env": {"ANTHROPIC_API_KEY": "sk-ant-..."}}\n'
+            "  1. Edit ~/.mini-code/.env\n"
+            "  2. Set MINI_CODE_MODEL, MINI_CODE_PROVIDER, and the matching API key\n"
+            "  3. Ensure ~/.mini-code is 0700 and ~/.mini-code/.env is 0600\n"
             "  4. Restart CodeLoop\n\n"
-            "📖 For more info: https://github.com/zrb3052796119/CodeLoop\n"
-            "   Falling back to mock model for now...\n",
+            "📖 For more info: https://github.com/zrb3052796119/CodeLoop\n",
             file=sys.stderr,
         )
+        if os.environ.get("MINI_CODE_MODEL_MODE", "").strip().lower() != "mock":
+            raise SystemExit(2) from e
 
     prompt_handler = _make_cli_permission_prompt() if sys.stdin.isatty() else None
     tools = create_default_tool_registry(cwd, runtime=runtime)

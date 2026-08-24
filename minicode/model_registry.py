@@ -15,6 +15,7 @@ import os
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
+from urllib.parse import urlparse
 
 
 
@@ -312,57 +313,99 @@ _register(ModelInfo("minimax/minimax-m1", Provider.OPENROUTER,
 # Provider detection
 # ---------------------------------------------------------------------------
 
-def detect_provider(model: str, runtime: dict | None = None) -> Provider:
-    """Auto-detect which provider to use based on model name and config.
+def infer_model_provider(model: str) -> Provider | None:
+    """Infer a provider only when the model identifier is unambiguous.
 
-    Priority:
-    1. OpenRouter — if OPENROUTER_API_KEY set or model starts with "openrouter/"
-    2. OpenAI — if model matches OpenAI patterns or OPENAI_API_KEY set
-    3. Custom — if CUSTOM_API_BASE_URL set
-    4. Anthropic — default
+    Unknown bare identifiers intentionally return ``None`` so callers that
+    manage a custom endpoint can retain their explicit provider profile.
     """
-    model_lower = model.lower()
+    normalized = str(model).strip()
+    model_lower = normalized.lower()
 
-    # 1. OpenRouter detection
-    if os.environ.get("OPENROUTER_API_KEY") or model_lower.startswith("openrouter/"):
+    registered = BUILTIN_MODELS.get(normalized)
+    if registered is None:
+        registered = next(
+            (
+                info
+                for name, info in BUILTIN_MODELS.items()
+                if name.lower() == model_lower
+            ),
+            None,
+        )
+    if registered is not None:
+        return registered.provider
+
+    if model_lower.startswith("openrouter/"):
         return Provider.OPENROUTER
-    # Also check provider prefix patterns like "anthropic/", "openai/", "google/"
-    for prefix in ("anthropic/", "openai/", "google/", "meta-llama/", "deepseek/",
-                   "qwen/", "minimax/", "mistralai/"):
+    for prefix in (
+        "anthropic/",
+        "openai/",
+        "google/",
+        "meta-llama/",
+        "deepseek/",
+        "qwen/",
+        "minimax/",
+        "mistralai/",
+    ):
         if model_lower.startswith(prefix):
-            if os.environ.get("OPENROUTER_API_KEY"):
-                return Provider.OPENROUTER
-            # Could also be a custom endpoint with this naming
-            if runtime and runtime.get("openaiBaseUrl"):
-                return Provider.CUSTOM
-            # Default to OpenRouter for vendor-prefixed models
             return Provider.OPENROUTER
 
-    # 2. DeepSeek direct API detection
-    if model_lower.startswith("deepseek") or "deepseek" in model_lower:
-        if os.environ.get("DEEPSEEK_API_KEY"):
-            return Provider.CUSTOM
-        # If registered as CUSTOM in BUILTIN_MODELS, use that
-        if model in BUILTIN_MODELS and BUILTIN_MODELS[model].provider == Provider.CUSTOM:
-            return Provider.CUSTOM
-
-    # 3. OpenAI detection
     openai_prefixes = ("gpt-4", "gpt-3.5", "o1-", "o3-", "chatgpt-")
-    openai_exact = {"gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "o1", "o1-mini", "o3-mini"}
-    if model_lower in openai_exact or any(model_lower.startswith(p) for p in openai_prefixes):
+    openai_exact = {
+        "gpt-4o",
+        "gpt-4o-mini",
+        "gpt-4-turbo",
+        "o1",
+        "o1-mini",
+        "o3-mini",
+    }
+    if model_lower in openai_exact or any(
+        model_lower.startswith(prefix) for prefix in openai_prefixes
+    ):
         return Provider.OPENAI
-    if os.environ.get("OPENAI_API_KEY") and not os.environ.get("ANTHROPIC_API_KEY"):
-        return Provider.OPENAI
+    if model_lower.startswith("claude-"):
+        return Provider.ANTHROPIC
+    return None
 
-    # 3. Custom endpoint detection
-    custom_base = (
-        os.environ.get("CUSTOM_API_BASE_URL", "")
-        or (runtime or {}).get("customBaseUrl", "")
-    )
-    if custom_base:
+
+def detect_provider(model: str, runtime: dict | None = None) -> Provider:
+    """Resolve a provider without using credential presence as a router.
+
+    ``load_runtime_config`` is the authority for process/file precedence.  The
+    registry consumes that frozen result so adding an unrelated provider key
+    cannot silently change where a request is sent.
+    """
+    runtime = runtime or {}
+
+    explicit = str(runtime.get("provider") or "").strip().lower()
+    if explicit:
+        if explicit == Provider.MOCK.value:
+            allowed = ", ".join(
+                provider.value for provider in Provider if provider != Provider.MOCK
+            )
+            raise RuntimeError(
+                f"Unsupported MINI_CODE_PROVIDER '{explicit}'. Expected one of: {allowed}."
+            )
+        try:
+            return Provider(explicit)
+        except ValueError as error:
+            allowed = ", ".join(
+                provider.value for provider in Provider if provider != Provider.MOCK
+            )
+            raise RuntimeError(
+                f"Unsupported MINI_CODE_PROVIDER '{explicit}'. Expected one of: {allowed}."
+            ) from error
+
+    inferred = infer_model_provider(model)
+    if inferred is not None:
+        return inferred
+
+    # A custom endpoint is an explicit routing signal.  This also preserves
+    # legacy DeepSeek setups whose model name is simply ``deepseek-chat``.
+    if str(runtime.get("customBaseUrl") or "").strip():
         return Provider.CUSTOM
 
-    # 4. Default: Anthropic
+    # Anthropic remains the compatibility default for unknown bare model IDs.
     return Provider.ANTHROPIC
 
 
@@ -398,7 +441,7 @@ class ProviderConfig:
     provider: Provider
     model: str
     base_url: str
-    api_key: str
+    api_key: str = field(repr=False)
     extra_headers: dict[str, str] = field(default_factory=dict)
     extra_params: dict[str, Any] = field(default_factory=dict)
 
@@ -406,6 +449,28 @@ class ProviderConfig:
     def is_openai_compatible(self) -> bool:
         """Whether this provider uses OpenAI Chat Completions API format."""
         return self.provider in (Provider.OPENAI, Provider.OPENROUTER, Provider.CUSTOM)
+
+
+def _validated_provider_base_url(value: str, provider: Provider) -> str:
+    normalized = str(value).strip().rstrip("/")
+    parsed = urlparse(normalized)
+    if (
+        not parsed.netloc
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise RuntimeError(f"{provider.value}_base_url_unsafe")
+    if parsed.scheme == "https":
+        return normalized
+    if parsed.scheme == "http" and parsed.hostname in {
+        "localhost",
+        "127.0.0.1",
+        "::1",
+    }:
+        return normalized
+    raise RuntimeError(f"{provider.value}_base_url_unsafe")
 
 
 def build_provider_config(model: str, runtime: dict | None = None) -> ProviderConfig:
@@ -419,30 +484,33 @@ def build_provider_config(model: str, runtime: dict | None = None) -> ProviderCo
     resolve_model_info(model, provider)
 
     if provider == Provider.OPENROUTER:
+        raw_transforms = str(runtime.get("openrouterTransforms") or "").strip()
         return ProviderConfig(
             provider=Provider.OPENROUTER,
             model=model,
-            base_url=os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api").rstrip("/"),
-            api_key=os.environ.get("OPENROUTER_API_KEY", ""),
+            base_url=_validated_provider_base_url(
+                str(runtime.get("openrouterBaseUrl") or "https://openrouter.ai/api"),
+                Provider.OPENROUTER,
+            ),
+            api_key=str(runtime.get("openrouterApiKey") or ""),
             extra_headers={
-                "HTTP-Referer": os.environ.get("OPENROUTER_REFERER", "https://github.com/minicode-py"),
-                "X-Title": os.environ.get("OPENROUTER_TITLE", "MiniCode Python"),
+                "HTTP-Referer": str(
+                    runtime.get("openrouterReferer") or "https://github.com/minicode-py"
+                ),
+                "X-Title": str(runtime.get("openrouterTitle") or "MiniCode Python"),
             },
             extra_params={
                 # OpenRouter supports provider-specific routing
-                "transforms": os.environ.get("OPENROUTER_TRANSFORMS", "").split(",")
-                if os.environ.get("OPENROUTER_TRANSFORMS") else None,
+                "transforms": raw_transforms.split(",") if raw_transforms else None,
             },
         )
 
     if provider == Provider.OPENAI:
-        base_url = (
-            os.environ.get("OPENAI_BASE_URL", "")
-            or os.environ.get("OPENAI_API_BASE", "")
-            or runtime.get("openaiBaseUrl", "")
-            or "https://api.openai.com"
-        ).rstrip("/")
-        api_key = os.environ.get("OPENAI_API_KEY", "") or runtime.get("openaiApiKey", "")
+        base_url = _validated_provider_base_url(
+            str(runtime.get("openaiBaseUrl") or "https://api.openai.com"),
+            Provider.OPENAI,
+        )
+        api_key = str(runtime.get("openaiApiKey") or "")
         return ProviderConfig(
             provider=Provider.OPENAI,
             model=model,
@@ -451,41 +519,28 @@ def build_provider_config(model: str, runtime: dict | None = None) -> ProviderCo
         )
 
     if provider == Provider.CUSTOM:
-        # Check for DeepSeek-specific env vars first
-        deepseek_key = os.environ.get("DEEPSEEK_API_KEY", "")
-        base_url = (
-            os.environ.get("CUSTOM_API_BASE_URL", "")
-            or (deepseek_key and "https://api.deepseek.com/v1" or "")
-            or runtime.get("customBaseUrl", "")
-        ).rstrip("/")
-        api_key = (
-            os.environ.get("CUSTOM_API_KEY", "")
-            or deepseek_key
-            or os.environ.get("OPENAI_API_KEY", "")
-            or runtime.get("customApiKey", "")
+        base_url = _validated_provider_base_url(
+            str(runtime.get("customBaseUrl") or ""),
+            Provider.CUSTOM,
         )
+        api_key = str(runtime.get("customApiKey") or "")
         return ProviderConfig(
             provider=Provider.CUSTOM,
             model=model,
             base_url=base_url,
             api_key=api_key,
-            extra_headers=_parse_extra_headers("CUSTOM_API_EXTRA_HEADERS"),
+            extra_headers=_parse_extra_headers(
+                str(runtime.get("customApiExtraHeaders") or "")
+            ),
         )
 
     # Default: Anthropic
-    base_url = (
-        os.environ.get("ANTHROPIC_BASE_URL", "")
-        or runtime.get("baseUrl", "")
-        or "https://api.anthropic.com"
-    ).rstrip("/")
-    api_key = (
-        os.environ.get("ANTHROPIC_API_KEY", "")
-        or runtime.get("apiKey", "")
+    base_url = _validated_provider_base_url(
+        str(runtime.get("baseUrl") or "https://api.anthropic.com"),
+        Provider.ANTHROPIC,
     )
-    auth_token = (
-        os.environ.get("ANTHROPIC_AUTH_TOKEN", "")
-        or runtime.get("authToken", "")
-    )
+    api_key = str(runtime.get("apiKey") or "")
+    auth_token = str(runtime.get("authToken") or "")
     # Anthropic uses x-api-key header, but we keep it in api_key for simplicity
     # The adapter will handle the difference
     return ProviderConfig(
@@ -497,9 +552,8 @@ def build_provider_config(model: str, runtime: dict | None = None) -> ProviderCo
     )
 
 
-def _parse_extra_headers(env_var: str) -> dict[str, str]:
-    """Parse 'Key1:Val1,Key2:Val2' from env var into dict."""
-    raw = os.environ.get(env_var, "")
+def _parse_extra_headers(raw: str) -> dict[str, str]:
+    """Parse ``Key1:Val1,Key2:Val2`` from a resolved runtime value."""
     if not raw:
         return {}
     headers: dict[str, str] = {}
@@ -546,6 +600,7 @@ def create_model_adapter(
         # Inject provider config into runtime so the adapter can use it
         enriched_runtime = dict(runtime or {})
         enriched_runtime["model"] = provider_config.model
+        enriched_runtime["_isolatedOpenAIConfig"] = True
         if provider_config.provider == Provider.OPENROUTER:
             enriched_runtime["openaiBaseUrl"] = provider_config.base_url
             enriched_runtime["openaiApiKey"] = provider_config.api_key
@@ -565,16 +620,91 @@ def create_model_adapter(
     enriched = dict(runtime or {})
     if "model" not in enriched:
         enriched["model"] = model
-    if "baseUrl" not in enriched:
-        enriched["baseUrl"] = os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
-    if "authToken" not in enriched and "apiKey" not in enriched:
-        token = os.environ.get("ANTHROPIC_AUTH_TOKEN", "") or os.environ.get("ANTHROPIC_API_KEY", "")
-        if token:
-            enriched["authToken"] = token
+    enriched["baseUrl"] = provider_config.base_url
+    if provider_config.extra_params.get("auth_token"):
+        enriched["authToken"] = provider_config.extra_params["auth_token"]
+    else:
+        enriched["apiKey"] = provider_config.api_key
     # Disable extended thinking for non-standard Anthropic endpoints (DeepSeek etc.)
     if "api.anthropic.com" not in enriched.get("baseUrl", ""):
         enriched["disableThinking"] = True
     return AnthropicModelAdapter(enriched, tools)
+
+
+def build_dedicated_model_runtime(
+    model: str,
+    runtime: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build an isolated transport runtime for an auxiliary model.
+
+    A main-agent ``provider=custom`` route is authority only for that main
+    model.  It must not be inherited when an evidence contract selects a
+    different verifier model, otherwise (for example) ``deepseek-chat`` can be
+    sent to the main Qwen endpoint with the main Qwen credential.
+
+    Only provider-neutral inference controls are copied.  Provider transport
+    and credentials are selected from the target model's dedicated fields.
+    Unknown bare custom models fail closed because their independent route
+    cannot be inferred safely.
+    """
+    source = dict(runtime or {})
+    isolated = {
+        key: source[key]
+        for key in (
+            "temperature",
+            "maxOutputTokens",
+            "modelTimeoutSeconds",
+            "modelMaxRetries",
+        )
+        if key in source
+    }
+    isolated["model"] = model
+    normalized = str(model).strip().lower()
+    if normalized == "deepseek-chat":
+        isolated.update(
+            {
+                "provider": Provider.CUSTOM.value,
+                "customBaseUrl": str(
+                    source.get("deepseekBaseUrl") or "https://api.deepseek.com"
+                ).strip(),
+                "customApiKey": str(source.get("deepseekApiKey") or "").strip(),
+            }
+        )
+        return isolated
+
+    provider = infer_model_provider(model)
+    if provider is None:
+        raise RuntimeError("dedicated_model_route_unavailable")
+    isolated["provider"] = provider.value
+    if provider == Provider.OPENAI:
+        isolated["openaiBaseUrl"] = source.get("openaiBaseUrl")
+        isolated["openaiApiKey"] = source.get("openaiApiKey")
+    elif provider == Provider.OPENROUTER:
+        isolated["openrouterBaseUrl"] = source.get("openrouterBaseUrl")
+        isolated["openrouterApiKey"] = source.get("openrouterApiKey")
+        isolated["openrouterReferer"] = source.get("openrouterReferer")
+        isolated["openrouterTitle"] = source.get("openrouterTitle")
+        isolated["openrouterTransforms"] = source.get("openrouterTransforms")
+    elif provider == Provider.ANTHROPIC:
+        isolated["baseUrl"] = source.get("baseUrl")
+        isolated["apiKey"] = source.get("apiKey")
+        isolated["authToken"] = source.get("authToken")
+    else:
+        raise RuntimeError("dedicated_model_route_unavailable")
+    return isolated
+
+
+def create_dedicated_model_adapter(
+    model: str,
+    tools: Any,
+    runtime: dict[str, Any] | None = None,
+) -> Any:
+    """Create an auxiliary adapter without inheriting the main transport."""
+    return create_model_adapter(
+        model,
+        tools,
+        build_dedicated_model_runtime(model, runtime),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -657,13 +787,13 @@ def format_model_status(model: str, runtime: dict | None = None) -> str:
         "Current Model",
         "=" * 50,
         f"  Model:    {info.display_name}",
-        f"  Provider: {info.provider.value}",
+        f"  Provider: {provider.value}",
         f"  Base URL: {pconfig.base_url}",
         f"  Context:  {info.context_window:,} tokens",
         f"  Pricing:  ${info.pricing_input:.2f} / ${info.pricing_output:.2f} (in/out per 1M)",
         f"  Tools:    {'Yes' if info.supports_tools else 'No'}",
         f"  Vision:   {'Yes' if info.supports_vision else 'No'}",
-        f"  API Key:  {'*' * 8}{pconfig.api_key[-4:]}" if len(pconfig.api_key) > 4 else "  API Key:  not set",
+        f"  API Key:  {'configured' if pconfig.api_key else 'not set'}",
         "",
         "Cybernetic Recommendation",
         f"  Model:    {recommendation.model}",

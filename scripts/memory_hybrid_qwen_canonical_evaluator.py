@@ -23,6 +23,7 @@ from minicode.memory_hybrid import (
     HYBRID_PROTOCOL_VERSION,
     HYBRID_QUERY_GATE_VERSION,
     HYBRID_SYSTEM_PROMPT,
+    build_hybrid_promotion_verifier_runtime,
     evidence_fingerprint,
 )
 from minicode.memory_hybrid_runtime import (
@@ -170,13 +171,8 @@ def main() -> None:
     ):
         raise SystemExit("Qwen promotion requires the pinned DashScope model identity")
 
-    runtime = dict(
-        load_runtime_config(ROOT),
-        model=args.verifier_model,
-        maxOutputTokens=6000,
-        temperature=0,
-        modelMaxRetries=1,
-        modelTimeoutSeconds=90,
+    runtime = build_hybrid_promotion_verifier_runtime(
+        dict(load_runtime_config(ROOT), model=args.verifier_model)
     )
     model = create_model_adapter(args.verifier_model, None, runtime)
     dataset, entries = load_corpus(fixture_root)

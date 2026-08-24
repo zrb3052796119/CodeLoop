@@ -1,0 +1,78 @@
+{
+  "recordedAt": "2026-08-23T12:49:41Z",
+  "results": [
+    {
+      "durationMs": 38396,
+      "id": "pmem-b1-auth-policy-warm",
+      "inputTokens": 62506,
+      "modelCalls": 14,
+      "outputTokens": 676,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_b3413208048e4360b5be7da73691d484"
+      ],
+      "runId": "run_0b12003bd9c24b7a969d226cb07f4311",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    },
+    {
+      "durationMs": 71794,
+      "id": "npmem-b1-ledger-verification-rule-warm",
+      "inputTokens": 98096,
+      "modelCalls": 20,
+      "outputTokens": 2136,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "lesson-written",
+        "lesson-injected",
+        "target-content",
+        "target-verifier",
+        "target-marker"
+      ],
+      "relatedRunIds": [
+        "run_d8c01a4bd1614b7a9b52669619a18348"
+      ],
+      "runId": "run_823fd8ffbbc74e85a79101f815336381",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "durationMs": 48535,
+      "id": "npmem-b1-error-envelope-constraint-warm",
+      "inputTokens": 54895,
+      "modelCalls": 12,
+      "outputTokens": 1567,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "lesson-injected",
+        "target-content",
+        "target-verifier",
+        "target-marker"
+      ],
+      "runId": "run_a0066310f0644954b38ec72a79de3f1f",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceReport": "artifacts/persistent-memory-repair-acceptance-v2/manifest.json",
+  "suiteId": "persistent-memory-repair-acceptance-2026-08-23-v2"
+}

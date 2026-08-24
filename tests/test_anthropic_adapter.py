@@ -2,7 +2,7 @@ import io
 import json
 import urllib.error
 
-from minicode.anthropic_adapter import AnthropicModelAdapter
+from minicode.anthropic_adapter import AnthropicModelAdapter, _to_anthropic_messages
 from minicode.tooling import ToolDefinition, ToolRegistry
 
 
@@ -32,6 +32,85 @@ def _tool_registry() -> ToolRegistry:
             )
         ]
     )
+
+
+def test_anthropic_replay_keeps_multi_tool_turn_atomic() -> None:
+    system, converted = _to_anthropic_messages(
+        [
+            {"role": "system", "content": "system"},
+            {"role": "user", "content": "inspect both"},
+            {
+                "role": "assistant_tool_call",
+                "toolUseId": "call-a",
+                "toolName": "read_file",
+                "input": {"path": "a.py"},
+                "content": "I will inspect both files.",
+                "assistantTurnId": "turn-shared",
+            },
+            {
+                "role": "tool_result",
+                "toolUseId": "call-a",
+                "content": "a-result",
+                "isError": False,
+            },
+            {
+                "role": "assistant_tool_call",
+                "toolUseId": "call-b",
+                "toolName": "read_file",
+                "input": {"path": "b.py"},
+                "assistantTurnId": "turn-shared",
+            },
+            {
+                "role": "tool_result",
+                "toolUseId": "call-b",
+                "content": "b-result",
+                "isError": False,
+            },
+        ]
+    )
+
+    assert system == "system"
+    assert converted == [
+        {
+            "role": "user",
+            "content": [{"type": "text", "text": "inspect both"}],
+        },
+        {
+            "role": "assistant",
+            "content": [
+                {"type": "text", "text": "I will inspect both files."},
+                {
+                    "type": "tool_use",
+                    "id": "call-a",
+                    "name": "read_file",
+                    "input": {"path": "a.py"},
+                },
+                {
+                    "type": "tool_use",
+                    "id": "call-b",
+                    "name": "read_file",
+                    "input": {"path": "b.py"},
+                },
+            ],
+        },
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "call-a",
+                    "content": "a-result",
+                    "is_error": False,
+                },
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "call-b",
+                    "content": "b-result",
+                    "is_error": False,
+                },
+            ],
+        },
+    ]
 
 
 def test_anthropic_adapter_parses_tool_use(monkeypatch) -> None:
@@ -106,4 +185,3 @@ def test_anthropic_adapter_retries_retryable_http_error(monkeypatch) -> None:
     assert len(attempts) == 2
     assert step.type == "assistant"
     assert step.content == "after retry"
-

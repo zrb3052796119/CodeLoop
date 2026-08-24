@@ -257,9 +257,10 @@ class EmbeddingSemanticMatcher:
     def from_environment(cls, workspace: str | Path) -> "EmbeddingSemanticMatcher | None":
         """Build a matcher from env vars or ``.env`` files, if configured.
 
-        Resolution order per setting: process environment > ``<workspace>/.env``
-        > ``~/.mini-code/.env`` > built-in default. An empty API key keeps
-        the matcher off entirely (alias matching still runs).
+        Resolution order per setting: process environment >
+        ``~/.mini-code/.env`` > built-in default. Workspace files never own
+        remote embedding credentials or endpoints. An empty API key keeps the
+        matcher off entirely (alias matching still runs).
         """
         client = create_openai_compatible_embedding_client(workspace)
         if client is None:

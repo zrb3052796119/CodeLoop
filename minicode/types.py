@@ -18,6 +18,8 @@ class ChatMessage(TypedDict, total=False):
     toolName: str
     input: Any
     isError: bool
+    reasoningContent: str
+    assistantTurnId: str
 
 
 class ToolCall(TypedDict):
@@ -51,6 +53,7 @@ class AgentStep:
     kind: Literal["final", "progress"] | None = None
     calls: list[ToolCall] = field(default_factory=list)
     contentKind: Literal["progress"] | None = None
+    reasoningContent: str | None = None
     diagnostics: StepDiagnostics | None = None
     usage: ModelUsage | None = None
 

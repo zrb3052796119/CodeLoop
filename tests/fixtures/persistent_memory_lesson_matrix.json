@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "path-auth-policy",
+      "family": "path_resource_recovery",
+      "category": "recovery",
+      "tag": "auth-policy-location",
+      "query": "Read the auth policy location before changing authentication",
+      "currentFiles": ["config/security/auth_policy.yaml"],
+      "content": "Verified path recovery: authentication policy is stored in config/security/auth_policy.yaml; read that file before changing authentication behavior."
+    },
+    {
+      "id": "path-invoice-schema",
+      "family": "path_resource_recovery",
+      "category": "recovery",
+      "tag": "invoice-schema-location",
+      "query": "Locate the invoice schema before editing invoice validation",
+      "currentFiles": ["schemas/billing/invoice.schema.json"],
+      "content": "Verified path recovery: invoice validation schema lives at schemas/billing/invoice.schema.json, not under src/billing."
+    },
+    {
+      "id": "path-release-manifest",
+      "family": "path_resource_recovery",
+      "category": "recovery",
+      "tag": "release-manifest-location",
+      "query": "Find the release manifest location before updating release metadata",
+      "currentFiles": ["ops/release/manifest.toml"],
+      "content": "Verified path recovery: release metadata is authoritative in ops/release/manifest.toml; do not edit the generated root manifest."
+    },
+    {
+      "id": "command-release-contract",
+      "family": "command_recovery",
+      "category": "recovery",
+      "tag": "release-contract-command",
+      "query": "Run the release contract command after changing release code",
+      "currentFiles": ["release/contracts.py"],
+      "content": "Verified command recovery: run `python -m pytest -q tests/contracts/test_release.py` from the repository root for release contract checks."
+    },
+    {
+      "id": "command-client-check",
+      "family": "command_recovery",
+      "category": "recovery",
+      "tag": "generated-client-check-command",
+      "query": "Use the generated client check command after API changes",
+      "currentFiles": ["api/openapi.yaml"],
+      "content": "Verified command recovery: after API schema changes run `python -m tools.generate_client --check`; invoking the script file directly misses package imports."
+    },
+    {
+      "id": "command-migration-check",
+      "family": "command_recovery",
+      "category": "recovery",
+      "tag": "migration-dry-run-command",
+      "query": "Run the migration dry run command before completing model changes",
+      "currentFiles": ["billing/models.py"],
+      "content": "Verified command recovery: validate model changes with `python manage.py makemigrations --check --dry-run` before running the test suite."
+    },
+    {
+      "id": "code-stable-sort",
+      "family": "code_fix_recovery",
+      "category": "verified_solution",
+      "tag": "invoice-stable-sort-fix",
+      "query": "Apply the invoice stable sort fix for equal timestamps",
+      "currentFiles": ["billing/sort.py"],
+      "content": "Verified code fix: invoice ordering must use `(created_at, invoice_id)` so equal timestamps remain deterministic."
+    },
+    {
+      "id": "code-cache-key",
+      "family": "code_fix_recovery",
+      "category": "verified_solution",
+      "tag": "tenant-cache-key-fix",
+      "query": "Apply the tenant cache key fix for mixed-case identifiers",
+      "currentFiles": ["cache/tenant.py"],
+      "content": "Verified code fix: normalize tenant identifiers with `casefold()` before constructing cache keys; normalizing after lookup leaves duplicate entries."
+    },
+    {
+      "id": "code-default-copy",
+      "family": "code_fix_recovery",
+      "category": "verified_solution",
+      "tag": "request-default-copy-fix",
+      "query": "Use the request default copy fix to prevent cross-request mutation",
+      "currentFiles": ["api/request_defaults.py"],
+      "content": "Verified code fix: copy request default dictionaries before merging overrides, because mutating the module-level default leaks state across requests."
+    },
+    {
+      "id": "verify-parser",
+      "family": "stable_verification_rule",
+      "category": "testing",
+      "tag": "parser-verification-rule",
+      "query": "Follow the parser verification rule after parser runtime changes",
+      "currentFiles": ["parser/runtime.py"],
+      "content": "Stable verification rule: after changing parser/runtime.py run `python -m pytest -q tests/test_parser_runtime.py` before completion."
+    },
+    {
+      "id": "verify-ledger-config",
+      "family": "stable_verification_rule",
+      "category": "testing",
+      "tag": "ledger-config-verification-rule",
+      "query": "Follow the ledger config verification rule after configuration changes",
+      "currentFiles": ["ledger/config.py"],
+      "content": "Stable verification rule: after changing ledger/config.py run `python -m unittest -v tests.test_ledger_config.LedgerConfigTests`."
+    },
+    {
+      "id": "verify-web-contract",
+      "family": "stable_verification_rule",
+      "category": "testing",
+      "tag": "web-contract-verification-rule",
+      "query": "Follow the web contract verification rule after TypeScript contract changes",
+      "currentFiles": ["web/src/contracts.ts"],
+      "content": "Stable verification rule: after editing web/src/contracts.ts run `npm test -- --runInBand contracts.test.ts` from the web directory."
+    },
+    {
+      "id": "constraint-no-network",
+      "family": "project_constraint_decision",
+      "category": "constraint",
+      "tag": "unit-test-network-constraint",
+      "query": "Respect the unit test network constraint when adding HTTP tests",
+      "currentFiles": ["tests/test_http_client.py"],
+      "content": "Stable project constraint: unit tests must not access external networks; use the repository transport fixture for HTTP behavior."
+    },
+    {
+      "id": "constraint-append-migrations",
+      "family": "project_constraint_decision",
+      "category": "decision",
+      "tag": "append-only-migration-constraint",
+      "query": "Respect the append only migration constraint for schema changes",
+      "currentFiles": ["migrations/0042_add_invoice_state.sql"],
+      "content": "Stable project decision: committed database migrations are append-only; add a new migration instead of editing an existing numbered file."
+    },
+    {
+      "id": "constraint-json-compat",
+      "family": "project_constraint_decision",
+      "category": "decision",
+      "tag": "public-json-compatibility-constraint",
+      "query": "Respect the public JSON compatibility constraint when adding API fields",
+      "currentFiles": ["api/serializers.py"],
+      "content": "Stable project decision: public JSON fields use camelCase and existing field names remain backward compatible across minor releases."
+    }
+  ]
+}

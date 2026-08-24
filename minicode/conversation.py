@@ -250,7 +250,17 @@ def _apply_corroborated_memory_feedback(
         from minicode.memory import MemoryManager
 
         manager = MemoryManager(project_root=workspace)
-        manager.record_corroborated_feedback(list(rendered_ids), signal == "accept")
+        source = {
+            "accept": "explicit_user_accept",
+            "correct": "explicit_user_correction",
+            "reject": "explicit_user_reject",
+        }[signal]
+        manager.record_corroborated_feedback(
+            list(rendered_ids),
+            signal == "accept",
+            source=source,
+            observation_id=run_id,
+        )
     except Exception:  # noqa: BLE001 - corroboration must not fail feedback
         pass
 
@@ -284,7 +294,12 @@ def _apply_written_memory_verdict(
 
         manager = MemoryManager(project_root=workspace)
         if signal == "accept":
-            manager.record_corroborated_feedback(list(written_ids), True)
+            manager.record_corroborated_feedback(
+                list(written_ids),
+                True,
+                source="explicit_user_accept",
+                observation_id=run_id,
+            )
             return
         for entry_id in written_ids:
             manager.reject_entry(
@@ -593,10 +608,6 @@ class ConversationTurnService:
                 if self._journal_factory is not None
                 else RunJournal(self.workspace)
             )
-            try:
-                previously_recorded = journal.get_user_signal(record.run_id) is not None
-            except Exception:  # noqa: BLE001 - corroboration is optional
-                previously_recorded = True
             stored = journal.record_user_signal(record.run_id, signal)
         except RunJournalUserSignalConflictError as error:
             raise ConversationFeedbackConflict() from error
@@ -604,13 +615,15 @@ class ConversationTurnService:
             raise ConversationFeedbackUnavailable() from error
         except Exception as error:  # noqa: BLE001 - fixed safe domain boundary
             raise ConversationFeedbackUnavailable() from error
-        if not previously_recorded:
-            _apply_corroborated_memory_feedback(
-                self.workspace, journal, record.run_id, stored.signal
-            )
-            _apply_written_memory_verdict(
-                self.workspace, journal, record.run_id, stored.signal
-            )
+        # Re-apply on every idempotent Run-signal replay. Memory owns a durable
+        # observation receipt, so this safely closes the crash window between
+        # the immutable journal write and its best-effort Memory side effect.
+        _apply_corroborated_memory_feedback(
+            self.workspace, journal, record.run_id, stored.signal
+        )
+        _apply_written_memory_verdict(
+            self.workspace, journal, record.run_id, stored.signal
+        )
         return ConversationFeedbackResult(
             turn_id=record.turn_id,
             run_id=record.run_id,

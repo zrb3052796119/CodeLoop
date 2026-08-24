@@ -235,6 +235,409 @@ def test_future_unknown_tool_uses_structured_input_not_a_tool_allowlist() -> Non
     assert decision.accepted is True
 
 
+def test_rate_limited_call_is_not_laundered_by_a_changed_input_success() -> None:
+    trace = [
+        *_attempt(
+            1,
+            "search-rate-limited",
+            "web_search",
+            {"query": "MiniCode memory retrieval status", "max_results": 5},
+            ok=False,
+            output="HTTP 429 Too Many Requests: rate limit exceeded",
+        ),
+        *_attempt(
+            10,
+            "search-passed",
+            "web_search",
+            {"query": "MiniCode memory retrieval implementation", "max_results": 5},
+            ok=True,
+            output="3 results",
+        ),
+        _done(20),
+    ]
+
+    evidence, candidate, decision = _evaluate(trace)
+
+    assert evidence.recoveries == []
+    assert not any(item.command_kind == "tool_recovery" for item in evidence.verification)
+    assert not any(claim.claim_type == "recovery" for claim in candidate.claims)
+    assert "verified_solution" not in decision.durable_signals
+
+
+def test_rate_limit_error_type_is_enough_to_block_changed_input_laundering() -> None:
+    failed = _attempt(
+        1,
+        "search-rate-limited",
+        "web_search",
+        {"query": "MiniCode memory retrieval status", "max_results": 5},
+        ok=False,
+        output="provider request rejected",
+    )
+    failed[-1]["error_type"] = "RateLimitError"
+    trace = [
+        *failed,
+        *_attempt(
+            10,
+            "search-passed",
+            "web_search",
+            {"query": "MiniCode memory retrieval implementation", "max_results": 5},
+            ok=True,
+            output="3 results",
+        ),
+        _done(20),
+    ]
+
+    evidence, candidate, decision = _evaluate(trace)
+
+    assert evidence.recoveries == []
+    assert not any(claim.claim_type == "recovery" for claim in candidate.claims)
+    assert "verified_solution" not in decision.durable_signals
+
+
+def test_network_timeout_is_not_laundered_by_a_changed_input_success() -> None:
+    trace = [
+        *_attempt(
+            1,
+            "search-timed-out",
+            "web_search",
+            {"query": "MiniCode memory retrieval status", "max_results": 5},
+            ok=False,
+            output="ReadTimeout: network connection timed out",
+        ),
+        *_attempt(
+            10,
+            "search-passed",
+            "web_search",
+            {"query": "MiniCode memory retrieval implementation", "max_results": 5},
+            ok=True,
+            output="3 results",
+        ),
+        _done(20),
+    ]
+
+    evidence, candidate, decision = _evaluate(trace)
+
+    assert evidence.recoveries == []
+    assert not any(item.command_kind == "tool_recovery" for item in evidence.verification)
+    assert not any(claim.claim_type == "recovery" for claim in candidate.claims)
+    assert "verified_solution" not in decision.durable_signals
+
+
+def test_connect_error_refusal_is_not_laundered_by_changed_input_success() -> None:
+    failed = _attempt(
+        1,
+        "search-connection-refused",
+        "web_search",
+        {"query": "MiniCode memory retrieval status", "max_results": 5},
+        ok=False,
+        output="[Errno 111] Connection refused",
+    )
+    failed[-1]["error_type"] = "ConnectError"
+    trace = [
+        *failed,
+        *_attempt(
+            10,
+            "search-passed",
+            "web_search",
+            {"query": "MiniCode memory retrieval implementation", "max_results": 5},
+            ok=True,
+            output="3 results",
+        ),
+        _done(20),
+    ]
+
+    evidence, candidate, decision = _evaluate(trace)
+
+    assert evidence.recoveries == []
+    assert not any(item.command_kind == "tool_recovery" for item in evidence.verification)
+    assert not any(claim.claim_type == "recovery" for claim in candidate.claims)
+    assert "verified_solution" not in decision.durable_signals
+
+
+def test_connection_error_dns_failure_is_not_laundered_by_changed_input() -> None:
+    failed = _attempt(
+        1,
+        "search-dns-failed",
+        "web_search",
+        {"query": "MiniCode memory retrieval status", "max_results": 5},
+        ok=False,
+        output="DNS resolution failed for provider host",
+    )
+    failed[-1]["error_type"] = "ConnectionError"
+    trace = [
+        *failed,
+        *_attempt(
+            10,
+            "search-passed",
+            "web_search",
+            {"query": "MiniCode memory retrieval implementation", "max_results": 5},
+            ok=True,
+            output="3 results",
+        ),
+        _done(20),
+    ]
+
+    evidence, candidate, decision = _evaluate(trace)
+
+    assert evidence.recoveries == []
+    assert not any(item.command_kind == "tool_recovery" for item in evidence.verification)
+    assert not any(claim.claim_type == "recovery" for claim in candidate.claims)
+    assert "verified_solution" not in decision.durable_signals
+
+
+def test_ssl_tls_handshake_failure_is_not_laundered_by_changed_input() -> None:
+    failed = _attempt(
+        1,
+        "search-tls-failed",
+        "web_search",
+        {"query": "MiniCode memory retrieval status", "max_results": 5},
+        ok=False,
+        output="TLS handshake failed while connecting to provider",
+    )
+    failed[-1]["error_type"] = "SSLError"
+    trace = [
+        *failed,
+        *_attempt(
+            10,
+            "search-passed",
+            "web_search",
+            {"query": "MiniCode memory retrieval implementation", "max_results": 5},
+            ok=True,
+            output="3 results",
+        ),
+        _done(20),
+    ]
+
+    evidence, candidate, decision = _evaluate(trace)
+
+    assert evidence.recoveries == []
+    assert not any(item.command_kind == "tool_recovery" for item in evidence.verification)
+    assert not any(claim.claim_type == "recovery" for claim in candidate.claims)
+    assert "verified_solution" not in decision.durable_signals
+
+
+def test_proxy_connection_failure_is_not_laundered_by_changed_input() -> None:
+    failed = _attempt(
+        1,
+        "search-proxy-failed",
+        "web_search",
+        {"query": "MiniCode memory retrieval status", "max_results": 5},
+        ok=False,
+        output="Cannot connect to proxy at synthetic-proxy.invalid",
+    )
+    failed[-1]["error_type"] = "ProxyError"
+    trace = [
+        *failed,
+        *_attempt(
+            10,
+            "search-passed",
+            "web_search",
+            {"query": "MiniCode memory retrieval implementation", "max_results": 5},
+            ok=True,
+            output="3 results",
+        ),
+        _done(20),
+    ]
+
+    evidence, candidate, decision = _evaluate(trace)
+
+    assert evidence.recoveries == []
+    assert not any(item.command_kind == "tool_recovery" for item in evidence.verification)
+    assert not any(claim.claim_type == "recovery" for claim in candidate.claims)
+    assert "verified_solution" not in decision.durable_signals
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "[Errno 111] Connection refused",
+        "DNS resolution failed for provider host",
+        "TLS handshake failed while connecting to provider",
+        "Cannot connect to proxy at synthetic-proxy.invalid",
+    ],
+    ids=["connection-refused", "dns", "tls", "proxy"],
+)
+def test_wrapper_error_uses_environmental_message_fallback(message: str) -> None:
+    trace = [
+        *_attempt(
+            1,
+            "search-wrapper-failed",
+            "web_search",
+            {"query": "MiniCode memory retrieval status", "max_results": 5},
+            ok=False,
+            output=message,
+        ),
+        *_attempt(
+            10,
+            "search-passed",
+            "web_search",
+            {"query": "MiniCode memory retrieval implementation", "max_results": 5},
+            ok=True,
+            output="3 results",
+        ),
+        _done(20),
+    ]
+
+    evidence, candidate, decision = _evaluate(trace)
+
+    assert evidence.recoveries == []
+    assert not any(claim.claim_type == "recovery" for claim in candidate.claims)
+    assert "verified_solution" not in decision.durable_signals
+
+
+def test_service_unavailable_is_not_laundered_by_a_changed_input_success() -> None:
+    trace = [
+        *_attempt(
+            1,
+            "search-unavailable",
+            "web_search",
+            {"query": "MiniCode memory retrieval status", "max_results": 5},
+            ok=False,
+            output="HTTP 503 Service Unavailable",
+        ),
+        *_attempt(
+            10,
+            "search-passed",
+            "web_search",
+            {"query": "MiniCode memory retrieval implementation", "max_results": 5},
+            ok=True,
+            output="3 results",
+        ),
+        _done(20),
+    ]
+
+    evidence, candidate, decision = _evaluate(trace)
+
+    assert evidence.recoveries == []
+    assert not any(item.command_kind == "tool_recovery" for item in evidence.verification)
+    assert not any(claim.claim_type == "recovery" for claim in candidate.claims)
+    assert "verified_solution" not in decision.durable_signals
+
+
+def test_lock_contention_is_not_laundered_by_a_changed_input_success() -> None:
+    trace = [
+        *_attempt(
+            1,
+            "index-locked",
+            "update_index_v2",
+            {"resource": "shared catalog", "mode": "strict"},
+            ok=False,
+            output="database is locked: lock contention on shared catalog",
+        ),
+        *_attempt(
+            10,
+            "index-passed",
+            "update_index_v2",
+            {"resource": "shared catalog", "mode": "compatible"},
+            ok=True,
+            output="catalog index updated",
+        ),
+        _done(20),
+    ]
+
+    evidence, candidate, decision = _evaluate(trace)
+
+    assert evidence.recoveries == []
+    assert not any(item.command_kind == "tool_recovery" for item in evidence.verification)
+    assert not any(claim.claim_type == "recovery" for claim in candidate.claims)
+    assert "verified_solution" not in decision.durable_signals
+
+
+def test_sqlite_table_lock_is_not_laundered_by_changed_input_success() -> None:
+    failed = _attempt(
+        1,
+        "index-table-locked",
+        "update_index_v2",
+        {"resource": "shared catalog", "mode": "strict"},
+        ok=False,
+        output="database table is locked: memory_entries",
+    )
+    failed[-1]["error_type"] = "OperationalError"
+    trace = [
+        *failed,
+        *_attempt(
+            10,
+            "index-passed",
+            "update_index_v2",
+            {"resource": "shared catalog", "mode": "compatible"},
+            ok=True,
+            output="catalog index updated",
+        ),
+        _done(20),
+    ]
+
+    evidence, candidate, decision = _evaluate(trace)
+
+    assert evidence.recoveries == []
+    assert not any(item.command_kind == "tool_recovery" for item in evidence.verification)
+    assert not any(claim.claim_type == "recovery" for claim in candidate.claims)
+    assert "verified_solution" not in decision.durable_signals
+
+
+def test_timeout_argument_validation_still_yields_a_changed_input_recovery() -> None:
+    trace = [
+        *_attempt(
+            1,
+            "fetch-invalid-timeout",
+            "fetch_page_v2",
+            {"resource": "lease records", "timeout": 0},
+            ok=False,
+            output="ValidationError: argument 'timeout' must be greater than zero",
+        ),
+        *_attempt(
+            10,
+            "fetch-passed",
+            "fetch_page_v2",
+            {"resource": "lease records", "timeout": 20},
+            ok=True,
+            output="20 lease records returned",
+        ),
+        _done(20),
+    ]
+
+    evidence, candidate, decision = _evaluate(trace)
+
+    assert len(evidence.recoveries) == 1
+    assert evidence.recoveries[0].epistemic_status == "confirmed"
+    assert '"timeout":20' in evidence.recoveries[0].action
+    assert any(item.command_kind == "tool_recovery" for item in evidence.verification)
+    assert any(claim.claim_type == "recovery" for claim in candidate.claims)
+    assert "verified_solution" in decision.durable_signals
+
+
+def test_explicit_argument_error_overrides_a_broad_connection_error_type() -> None:
+    failed = _attempt(
+        1,
+        "fetch-invalid-endpoint",
+        "fetch_endpoint_v2",
+        {"resource": "lease records", "endpoint": "not-a-url"},
+        ok=False,
+        output="invalid argument 'endpoint': expected an HTTPS URL",
+    )
+    failed[-1]["error_type"] = "ConnectionError"
+    trace = [
+        *failed,
+        *_attempt(
+            10,
+            "fetch-passed",
+            "fetch_endpoint_v2",
+            {"resource": "lease records", "endpoint": "https-endpoint"},
+            ok=True,
+            output="lease records returned",
+        ),
+        _done(20),
+    ]
+
+    evidence, candidate, decision = _evaluate(trace)
+
+    assert len(evidence.recoveries) == 1
+    assert evidence.recoveries[0].epistemic_status == "confirmed"
+    assert '"endpoint":"https-endpoint"' in evidence.recoveries[0].action
+    assert any(item.command_kind == "tool_recovery" for item in evidence.verification)
+    assert any(claim.claim_type == "recovery" for claim in candidate.claims)
+    assert "verified_solution" in decision.durable_signals
+
+
 def test_unrelated_later_search_is_not_a_recovery() -> None:
     trace = [
         *_attempt(

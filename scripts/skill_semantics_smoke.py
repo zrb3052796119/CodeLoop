@@ -1,9 +1,11 @@
 """Smoke-check semantic skill routing against a real embedding endpoint.
 
-Configure once (values live in the .env file, never in shell exports):
+Configure once (values live in the user-level .env file):
 
-    cp .env.example .env
-    # then edit .env:
+    mkdir -p ~/.mini-code
+    cp .env.example ~/.mini-code/.env
+    chmod 600 ~/.mini-code/.env
+    # then edit ~/.mini-code/.env:
     #   MINICODE_EMBEDDING_API_KEY=sk-你的DashScopeKey
     #   MINICODE_EMBEDDING_MODEL=text-embedding-v3   # or text-embedding-v4
 
@@ -11,8 +13,7 @@ Then run:
 
     python scripts/skill_semantics_smoke.py
 
-Resolution order per setting: process env > <workspace>/.env >
-~/.mini-code/.env > defaults.
+Resolution order per setting: process env > ~/.mini-code/.env > defaults.
 
 Verifies, in order:
 1. one real /embeddings round-trip;
@@ -61,15 +62,21 @@ def _setting(name: str, default: str = "") -> str:
     if direct:
         return direct
     return read_env_files(
-        [Path.home() / ".mini-code" / ".env", Path(".env")]
+        [Path.home() / ".mini-code" / ".env"]
     ).get(name, "").strip() or default
 
 
 def main() -> int:
     api_key = _setting(EMBEDDING_API_KEY_ENV)
     if not api_key:
-        print(f"{EMBEDDING_API_KEY_ENV} not set in the environment or .env — nothing to check.")
-        print("Run: cp .env.example .env  then fill in MINICODE_EMBEDDING_API_KEY.")
+        print(
+            f"{EMBEDDING_API_KEY_ENV} not set in the environment or "
+            "~/.mini-code/.env — nothing to check."
+        )
+        print(
+            "Copy .env.example to ~/.mini-code/.env, set mode 600, then fill "
+            "in MINICODE_EMBEDDING_API_KEY."
+        )
         return 2
 
     model = _setting(EMBEDDING_MODEL_ENV, DEFAULT_EMBEDDING_MODEL)
@@ -108,7 +115,10 @@ def main() -> int:
 
     print("\nAll checks passed.")
     print("Thresholds default to the Qwen-calibrated 0.60/0.67/0.52;")
-    print("override per provider in .env via MINICODE_EMBEDDING_SIGNAL_THRESHOLD etc.")
+    print(
+        "override per provider in ~/.mini-code/.env via "
+        "MINICODE_EMBEDDING_SIGNAL_THRESHOLD etc."
+    )
     return 0
 
 

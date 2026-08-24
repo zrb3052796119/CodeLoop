@@ -105,6 +105,28 @@ _READ_TOOLS = {"read_file"}
 _SEARCH_TOOLS = {"grep_files", "search_files", "find_symbols", "find_references"}
 _LIST_TOOLS = {"list_directory", "list_files", "directory_tree"}
 _FORMAT_TOOLS = {"format_file", "formatter"}
+_RECOVERY_TASK_ANCHOR_NOISE = {
+    "call",
+    "customer",
+    "edit",
+    "exact",
+    "file",
+    "first",
+    "marker",
+    "primary",
+    "secondary",
+    "python",
+    "read",
+    "repair",
+    "report",
+    "result",
+    "synthetic",
+    "test",
+    "tests",
+    "tool",
+    "unittest",
+    "verify",
+}
 
 
 def _ordered_unique(values: list[str] | tuple[str, ...]) -> list[str]:
@@ -233,6 +255,23 @@ def _named_artifacts(message: str) -> tuple[list[str], list[str]]:
             found.append(path)
     found = list(dict.fromkeys(found))
     return found[:_APPLIES_WHEN_MAX_ARTIFACTS], found
+
+
+def _verification_rule_applies_when(statement: str) -> str:
+    """Keep a durable rule's declared scope instead of its first use case.
+
+    A project policy often says "after changing X, always run Y" while the
+    current task happens to change one particular field in X.  Binding the
+    claim to that field makes a universal rule look unrelated on the next
+    change.  Prefer the first workspace-relative artifact named by the policy;
+    it is normally the file whose changes trigger verification.  When the
+    policy has no concrete artifact, retain a conservative project-rule
+    condition rather than copying the one-off task text.
+    """
+    artifacts, _all_artifacts = _named_artifacts(statement)
+    if artifacts:
+        return f"When changing {artifacts[0]}."
+    return "When the stated project verification trigger applies."
 
 
 def _failure_signal(error: ErrorEvidence, artifacts: list[str]) -> str:
@@ -368,6 +407,74 @@ def _text_tokens(value: str) -> set[str]:
 def _cjk_bigrams(value: str) -> set[str]:
     chars = "".join(re.findall(r"[\u4e00-\u9fff]", value))
     return {chars[index : index + 2] for index in range(max(0, len(chars) - 1))}
+
+
+def _grounded_recovery_task_anchors(
+    task_description: str,
+    verifications: list[VerificationEvidence],
+    errors: list[ErrorEvidence] | None = None,
+) -> list[str]:
+    """Return recovery terms corroborated by successful verification.
+
+    Raw task prose is not durable evidence and may contain private or
+    adversarial text.  A term is retained only when it is a short alphabetic
+    token that also appears in linked verification output.  Terms shared by
+    the failure and the later passing verification are also retained: that
+    red-green intersection is often the only grounded description of the bug
+    (for example, a test name) when the task prompt merely says "fix it".
+    """
+    verified_text = " ".join(item.summary for item in verifications)
+    verified_tokens = {
+        token.lower()
+        for token in re.findall(
+            r"[A-Za-z]{4,32}",
+            sanitize_evidence_text(verified_text, 4_000),
+        )
+    }
+    anchors: list[str] = []
+    failure_text = " ".join(item.message for item in (errors or []))
+    corroborated_sources = (
+        sanitize_evidence_text(task_description, 1_000),
+        sanitize_evidence_text(failure_text, 4_000),
+    )
+    for token in (
+        token
+        for source in corroborated_sources
+        for token in re.findall(r"[A-Za-z]{4,32}", source)
+    ):
+        normalized = token.lower()
+        if (
+            normalized in verified_tokens
+            and normalized not in _RECOVERY_TASK_ANCHOR_NOISE
+            and not normalized.endswith(("test", "tests"))
+            and normalized not in anchors
+        ):
+            anchors.append(normalized)
+        if len(anchors) >= 6:
+            break
+    return anchors
+
+
+def _pathless_recovery_change(recovery: RecoveryEvidence) -> str:
+    """Project an exact edit without exposing its one-off source path.
+
+    The source path remains bound in RecoveryEvidence/provenance.  Removing it
+    from the injectable statement prevents a verified behavior-level pattern
+    from being misread as an instruction for that source file only.
+    """
+    summary = sanitize_evidence_text(recovery.change_summary, 1_000).strip()
+    if not summary:
+        return ""
+    source_paths = set(recovery.files_changed)
+    projected: list[str] = []
+    for raw_part in summary.split(";"):
+        part = raw_part.strip()
+        location, separator, change = part.partition(": ")
+        if separator and location in source_paths:
+            part = change.strip()
+        if part and part not in source_paths:
+            projected.append(part)
+    return "; ".join(projected[:3])
 
 
 def _event_position(evidence: TaskEvidence, event_ids: list[str] | tuple[str, ...]) -> int:
@@ -567,7 +674,12 @@ class RuleReflectionSynthesizer:
             error_id for recovery in evidence.recoveries for error_id in recovery.related_error_ids
         }
         for recovery in evidence.recoveries:
-            self._synthesize_recovery_claim(recovery, evidence, add_claim)
+            self._synthesize_recovery_claim(
+                recovery,
+                evidence,
+                add_claim,
+                task_description=task_description,
+            )
 
         root_cause_error_ids = {
             error_id
@@ -596,7 +708,18 @@ class RuleReflectionSynthesizer:
                 related_error_ids=[error.error_id],
             )
 
-        self._synthesize_approach_claim(task_description, evidence, add_claim)
+        # A stable project rule is a stronger and more reusable lesson than a
+        # task-shaped success recap.  Keeping both lets the generic approach
+        # crowd the rule out at retrieval time, so only use the approach as the
+        # fallback lesson when no durable policy/decision claim was grounded.
+        durable_policy_types = {
+            "constraint",
+            "decision",
+            "correction",
+            "verification_rule",
+        }
+        if not any(claim.claim_type in durable_policy_types for claim in claims):
+            self._synthesize_approach_claim(task_description, evidence, add_claim)
 
         return ReflectionCandidate(
             task_summary=sanitize_evidence_text(task_description, 200),
@@ -716,7 +839,7 @@ class RuleReflectionSynthesizer:
                         f"Project verification rule: {statement}",
                         event_ids,
                         decision.epistemic_status,
-                        applies_when=f"When {sanitize_evidence_text(task_description, 180)}.",
+                        applies_when=_verification_rule_applies_when(statement),
                         verification_ids=verification_ids,
                     )
                     return
@@ -801,6 +924,8 @@ class RuleReflectionSynthesizer:
         recovery: RecoveryEvidence,
         evidence: TaskEvidence,
         add_claim: Any,
+        *,
+        task_description: str,
     ) -> None:
         related_errors = [
             item for item in evidence.errors if item.error_id in recovery.related_error_ids
@@ -827,22 +952,50 @@ class RuleReflectionSynthesizer:
             event_id for item in linked_passed for event_id in item.event_ids
         ]
         error = related_errors[0]
-        statement = (
-            f"After {_salient_line(sanitize_evidence_text(error.message, 2_000))}, "
-            f"the recovery action was: {recovery.action}."
+        task_anchors = _grounded_recovery_task_anchors(
+            task_description,
+            linked_passed,
+            related_errors,
         )
-        if recovery.change_summary:
-            # The old->new excerpt is what turns "a file was edited" into an
-            # executable fix; the action text stays verbatim above so
-            # statement-alignment validation still holds.
-            statement += f" Change: {recovery.change_summary}."
+        pathless_change = _pathless_recovery_change(recovery)
+        generalized_code_pattern = bool(
+            linked_passed
+            and task_anchors
+            and recovery.files_changed
+            and pathless_change
+            and pathless_change != recovery.change_summary
+        )
+        failure = _salient_line(sanitize_evidence_text(error.message, 2_000))
+        if generalized_code_pattern:
+            statement = (
+                f"After {failure}, the verified recovery pattern for "
+                f"{', '.join(task_anchors)} was: {pathless_change}. "
+                "Linked verification passed after this change."
+            )
+            applies_when = (
+                "When repairing the same verified "
+                f"{', '.join(task_anchors)} behavior in the same subsystem."
+            )
+            limitations.append(
+                "Source evidence covered one implementation; inspect the target "
+                "and apply the pattern only to the same behavior."
+            )
+        else:
+            statement = (
+                f"After {failure}, the recovery action was: {recovery.action}."
+            )
+            if recovery.change_summary:
+                statement += f" Change: {recovery.change_summary}."
+            if task_anchors:
+                statement += f" Verified task context: {', '.join(task_anchors)}."
+            applies_when = self._error_applies_when(error)
         add_claim(
             "recovery",
             _semantic_slug(f"{recovery.action} {error.message}", "recovery"),
             statement,
             event_ids,
             status,
-            applies_when=self._error_applies_when(error),
+            applies_when=applies_when,
             limitations=limitations,
             verification_ids=[item.verification_id for item in linked_passed],
             related_error_ids=[item.error_id for item in related_errors],
@@ -1341,7 +1494,14 @@ class ReflectionClaimValidator:
             aligned = any(quotes_source(item.message) for item in errors)
         elif claim.claim_type == "recovery":
             aligned = (
-                any(source_text(item.action) in statement for item in recoveries)
+                any(
+                    source_text(item.action) in statement
+                    or (
+                        bool(pattern := _pathless_recovery_change(item))
+                        and source_text(pattern) in statement
+                    )
+                    for item in recoveries
+                )
                 and any(quotes_source(item.message) for item in errors)
             )
         if not aligned:

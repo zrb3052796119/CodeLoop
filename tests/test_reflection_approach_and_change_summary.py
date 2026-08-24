@@ -56,8 +56,8 @@ def _recovered_trace() -> list[dict]:
                            "error_type": "ImportError",
                            "message": "ImportError: cannot import name 'retry' from 'tenacity'"})
     append_trace_event(t, {"type": "tool_call", "step": 2, "call_id": "c2", "tool_name": "edit_file",
-                           "input": {"path": "src/api_client.py", "old_string": "from tenacity import retry",
-                                     "new_string": "from tenacity import retry, stop_after_attempt"},
+                           "input": {"path": "src/api_client.py", "old": "from tenacity import retry",
+                                     "new": "from tenacity import retry, stop_after_attempt"},
                            "files": ["src/api_client.py"], "files_changed": ["src/api_client.py"]})
     append_trace_event(t, {"type": "tool_result", "step": 2, "call_id": "c2", "tool_name": "edit_file",
                            "status": "success", "is_error": False, "output_summary": "edited",

@@ -9,6 +9,7 @@ import tempfile
 from pathlib import Path
 
 from minicode.memory import MemoryEntry, MemoryManager, MemoryScope
+from minicode.memory_hybrid import build_hybrid_promotion_verifier_runtime
 from minicode.memory_pipeline import MemoryPipeline
 
 
@@ -51,13 +52,7 @@ def main() -> None:
     from minicode.model_registry import create_model_adapter
 
     apply_env_file([args.env_file])
-    runtime = dict(
-        load_runtime_config(ROOT),
-        maxOutputTokens=2000,
-        temperature=0,
-        modelMaxRetries=1,
-        modelTimeoutSeconds=90,
-    )
+    runtime = build_hybrid_promotion_verifier_runtime(load_runtime_config(ROOT))
     model = create_model_adapter("deepseek-chat", None, dict(runtime, model="deepseek-chat"))
     with tempfile.TemporaryDirectory(prefix="minicode-hybrid-production-smoke-") as temp:
         root = Path(temp)

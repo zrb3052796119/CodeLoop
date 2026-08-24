@@ -2,9 +2,14 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
+import minicode.config as config_module
 from minicode.config import load_runtime_config
+from minicode.env_file import update_private_env_file
 from minicode.openai_adapter import OpenAIModelAdapter
 from minicode.subagent_model_routing import (
+    SubagentModelRoutingError,
     create_subagent_model_adapter,
     resolve_subagent_model_route,
 )
@@ -64,7 +69,39 @@ def test_runtime_config_supports_per_agent_model_overrides(monkeypatch) -> None:
     assert runtime["subagentModels"]["general"] == "qwen3.6-flash"
 
 
-def test_runtime_config_reads_dedicated_child_route_from_workspace_env(
+def test_runtime_config_reads_child_route_from_private_user_env(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "minicode.config.load_effective_settings",
+        lambda cwd=None: {
+            "model": "claude-test",
+            "env": {"ANTHROPIC_API_KEY": "parent-key"},
+        },
+    )
+    monkeypatch.delenv("MINI_CODE_SUBAGENT_API_KEY", raising=False)
+    user_env = tmp_path / ".mini-code" / ".env"
+    monkeypatch.setattr(config_module, "MINI_CODE_ENV_PATH", user_env)
+    update_private_env_file(
+        user_env,
+        {
+            "MINI_CODE_SUBAGENT_API_KEY": "user-child-key",
+            "MINI_CODE_SUBAGENT_BASE_URL": (
+                "https://dashscope.aliyuncs.com/compatible-mode/v1"
+            ),
+            "MINI_CODE_SUBAGENT_PLAN_MODEL": "qwen-plan-user",
+        },
+    )
+
+    runtime = load_runtime_config(tmp_path / "workspace")
+
+    assert runtime["subagentRoutingEnabled"] is True
+    assert runtime["subagentApiKey"] == "user-child-key"
+    assert runtime["subagentModels"]["plan"] == "qwen-plan-user"
+
+
+def test_runtime_config_ignores_dedicated_child_route_from_workspace_env(
     tmp_path,
     monkeypatch,
 ) -> None:
@@ -84,9 +121,9 @@ def test_runtime_config_reads_dedicated_child_route_from_workspace_env(
 
     runtime = load_runtime_config(tmp_path)
 
-    assert runtime["subagentRoutingEnabled"] is True
-    assert runtime["subagentApiKey"] == "workspace-child-key"
-    assert runtime["subagentModels"]["plan"] == "qwen-plan-from-file"
+    assert runtime["subagentRoutingEnabled"] is False
+    assert runtime["subagentApiKey"] == ""
+    assert runtime["subagentModels"]["plan"] == "qwen3.6-flash"
 
 
 def test_workspace_cannot_redirect_a_globally_owned_subagent_key(
@@ -168,6 +205,30 @@ def test_enabled_qwen_route_builds_an_isolated_openai_compatible_adapter() -> No
         "https://dashscope.aliyuncs.com/compatible-mode/v1"
     )
     assert adapter.runtime["openaiApiKey"] == "child-key"
+
+
+@pytest.mark.parametrize(
+    "base_url",
+    [
+        "http://dashscope.invalid/v1",
+        "https://user:password@dashscope.invalid/v1",
+        "https://dashscope.invalid/v1?key=secret",
+        "https://dashscope.invalid/v1#fragment",
+    ],
+)
+def test_child_route_rejects_unsafe_credential_destinations(base_url) -> None:
+    with pytest.raises(SubagentModelRoutingError, match="subagent_base_url_unsafe"):
+        resolve_subagent_model_route(
+            {
+                "model": "parent-model",
+                "subagentRoutingEnabled": True,
+                "subagentProvider": "openai-compatible",
+                "subagentBaseUrl": base_url,
+                "subagentApiKey": "child-key",
+                "subagentModels": {"default": "qwen3.6-flash"},
+            },
+            "explore",
+        )
 
 
 def test_qwen_adapter_uses_versioned_dashscope_url_despite_parent_openai_env(

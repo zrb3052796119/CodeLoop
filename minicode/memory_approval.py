@@ -489,6 +489,21 @@ class MemoryApprovalAuthority:
     @staticmethod
     def _safe_preview(entry: MemoryEntry) -> tuple[dict[str, object], bool]:
         original = entry.content
+        persistence_sanitized = (
+            entry.metadata.get("persistence_sanitized", {})
+            if isinstance(entry.metadata, dict)
+            else {}
+        )
+        if (
+            isinstance(persistence_sanitized, dict)
+            and persistence_sanitized.get("content") is True
+        ):
+            return {
+                "contentPreview": _REDACTED_PREVIEW,
+                "complete": False,
+                "truncated": False,
+                "redacted": True,
+            }, False
         content = _ANSI_RE.sub("", original)
         content = _CONTROL_RE.sub("", content)
         if content != original:

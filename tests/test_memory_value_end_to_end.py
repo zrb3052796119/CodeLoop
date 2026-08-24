@@ -116,6 +116,8 @@ def test_verified_lesson_survives_reload_is_injected_and_receives_exact_feedback
         False,
         [lesson_id],
         verification_failed=1,
+        verification_memory_ids=[lesson_id],
+        observation_id="run_" + "1" * 32,
     )
 
     final_manager = MemoryManager(project_root=workspace, data_root=data_root)

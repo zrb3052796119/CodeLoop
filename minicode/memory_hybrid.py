@@ -7,6 +7,7 @@ import json
 import math
 from dataclasses import dataclass
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any, Protocol, runtime_checkable
 
 
@@ -44,6 +45,15 @@ HYBRID_ACCEPTED_PROMOTION_FINGERPRINT = (
 HYBRID_ACCEPTED_QWEN_PROMOTION_FINGERPRINT = (
     "bd317c42adb2d9d21807add9030ef111a197b9817bb88df6f24651600397e61e"
 )
+# Production must reproduce the inference controls used by the canonical
+# promotion evaluators.  Inheriting these values from the main agent changes
+# the verifier that the frozen evidence actually evaluated.
+HYBRID_PROMOTION_VERIFIER_RUNTIME = MappingProxyType({
+    "maxOutputTokens": 6000,
+    "temperature": 0,
+    "modelMaxRetries": 1,
+    "modelTimeoutSeconds": 90,
+})
 HYBRID_ALLOWED_DECISIONS = frozenset({"relevant", "irrelevant"})
 HYBRID_ALLOWED_REASONS = frozenset(
     {
@@ -80,6 +90,15 @@ RELEVANT includes a clear semantic equivalence, established alias, user preferen
 IRRELEVANT includes same words/domain/symptom but a different object or root cause, opposite direction/order/negation, same basename at a different path, unproven name similarity, unrelated preference, or an underspecified query without an object. Do not invent a missing relationship.
 
 Return one compact JSON object only: {"decisions":[{"id":"...","decision":"relevant|irrelevant","confidence":0.0,"objectMatch":true,"relationSupported":true,"reasonCode":"semantic_equivalence|alias|preference|cause|recovery|constraint|configuration|rename|correction|multi_clause|different_object|different_root|opposite|path_conflict|unproven|unrelated|underspecified"}]}. `relevant` requires objectMatch=true and relationSupported=true. Include every input ID exactly once and no extra IDs."""
+
+
+def build_hybrid_promotion_verifier_runtime(
+    runtime: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return a runtime pinned to the canonical promotion evaluator profile."""
+    merged = dict(runtime or {})
+    merged.update(HYBRID_PROMOTION_VERIFIER_RUNTIME)
+    return merged
 
 
 def _stable_json(value: Any) -> str:

@@ -333,8 +333,9 @@ class TestAgentMemoryPipeline:
     def test_same_turn_verification_tally_reaches_memory_feedback(
         self, workspace, monkeypatch
     ):
-        """An independently verified tool result must corroborate this turn's
-        Memory feedback, separately from the coarse whole-turn label."""
+        """An independently verified tool result reaches Memory feedback as a
+        turn tally. It is not attributed to an individual rendered Memory
+        unless a separate target binding is available."""
         from minicode.memory import MemoryManager
         from minicode.memory_pipeline import MemoryPipeline
         from minicode.tooling import ToolDefinition, ToolRegistry, ToolResult

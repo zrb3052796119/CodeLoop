@@ -55,7 +55,14 @@ def resolve_subagent_model_route(
         raise SubagentModelRoutingError("subagent_model_missing")
     base_url = str(runtime.get("subagentBaseUrl") or "").strip().rstrip("/")
     parsed = urlparse(base_url)
-    if parsed.scheme != "https" or not parsed.netloc:
+    if (
+        parsed.scheme != "https"
+        or not parsed.netloc
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+    ):
         raise SubagentModelRoutingError("subagent_base_url_unsafe")
     api_key = str(runtime.get("subagentApiKey") or "").strip()
     if not api_key:

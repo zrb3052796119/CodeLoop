@@ -16,13 +16,20 @@ from typing import Any, Iterable, Mapping, MutableMapping
 TEST_MODEL = "claude-sonnet-4-20250514"
 TEST_AUTH_TOKEN = "pytest-mock-auth-not-a-secret"
 _CREDENTIAL_ENV_NAMES = (
+    "MINI_CODE_PROVIDER",
     "ANTHROPIC_API_KEY",
     "ANTHROPIC_AUTH_TOKEN",
+    "ANTHROPIC_BASE_URL",
+    "ANTHROPIC_MODEL",
     "OPENAI_API_KEY",
     "OPENAI_API_BASE",
+    "OPENAI_BASE_URL",
     "OPENROUTER_API_KEY",
+    "OPENROUTER_BASE_URL",
     "CUSTOM_API_KEY",
     "CUSTOM_API_BASE_URL",
+    "DEEPSEEK_BASE_URL",
+    "DEEPSEEK_API_KEY",
 )
 
 

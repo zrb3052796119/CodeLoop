@@ -76,7 +76,11 @@ def test_explicit_negative_feedback_reduces_canonical_memory_score(
     request = MemoryRetrievalRequest(query="invoice retry tests")
 
     before = CanonicalMemoryRetriever(manager).retrieve(request)
-    manager.record_corroborated_feedback([entry.id], success=False)
+    manager.record_corroborated_feedback(
+        [entry.id],
+        success=False,
+        observation_id="run_" + "1" * 32,
+    )
     after = CanonicalMemoryRetriever(manager).retrieve(request)
 
     assert before.candidates[0].entry_id == entry.id

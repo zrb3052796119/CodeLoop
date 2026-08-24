@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any, Callable
 
@@ -24,46 +25,14 @@ from minicode.tls import open_verified_url
 from minicode.types import AgentStep, ModelUsage, StepDiagnostics
 
 DEFAULT_MAX_RETRIES = 4
-OPENAI_MODELS = {"gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "o1", "o1-mini", "o3-mini"}
-
-
-def _is_openai_model(model: str) -> bool:
-    """Check if model name indicates an OpenAI-compatible API."""
-    model_lower = model.lower()
-    # Direct match
-    if model_lower in OPENAI_MODELS:
-        return True
-    # Prefix match for versioned models
-    for prefix in ("gpt-4", "gpt-3.5", "o1-", "o3-", "chatgpt-"):
-        if model_lower.startswith(prefix):
-            return True
-    # Check if explicitly using OpenAI base URL
-    base_url = os.environ.get("OPENAI_BASE_URL", os.environ.get("OPENAI_API_BASE", ""))
-    if base_url and "openai" in base_url.lower():
-        return True
-    return False
-
-
 def _get_openai_base_url(runtime: dict) -> str:
-    """Get OpenAI-compatible base URL."""
-    if runtime.get("_isolatedOpenAIConfig") is True:
-        return str(runtime.get("openaiBaseUrl") or "").rstrip("/")
-    return (
-        os.environ.get("OPENAI_BASE_URL", "")
-        or os.environ.get("OPENAI_API_BASE", "")
-        or runtime.get("openaiBaseUrl", "")
-        or "https://api.openai.com"
-    ).rstrip("/")
+    """Get the base URL from the frozen provider runtime."""
+    return str(runtime.get("openaiBaseUrl") or "https://api.openai.com").rstrip("/")
 
 
 def _get_openai_api_key(runtime: dict) -> str:
-    """Get OpenAI API key."""
-    if runtime.get("_isolatedOpenAIConfig") is True:
-        return str(runtime.get("openaiApiKey") or "")
-    return (
-        os.environ.get("OPENAI_API_KEY", "")
-        or runtime.get("openaiApiKey", "")
-    )
+    """Get the credential from the frozen provider runtime."""
+    return str(runtime.get("openaiApiKey") or "")
 
 
 def _chat_completions_url(base_url: str) -> str:
@@ -76,13 +45,25 @@ def _chat_completions_url(base_url: str) -> str:
     return f"{normalized}/v1/chat/completions"
 
 
-def _to_openai_messages(messages: list[dict[str, Any]]) -> tuple[str, list[dict[str, Any]]]:
+def _to_openai_messages(
+    messages: list[dict[str, Any]],
+    *,
+    require_tool_reasoning_content: bool = False,
+) -> tuple[str, list[dict[str, Any]]]:
     """Convert internal message format to OpenAI Chat Completion format.
     
     Returns (system_message, chat_messages)
     """
     system_parts: list[str] = []
     converted: list[dict[str, Any]] = []
+    tool_call_groups: dict[str, list[dict[str, Any]]] = {}
+    for message in messages:
+        if message.get("role") != "assistant_tool_call":
+            continue
+        turn_id = message.get("assistantTurnId")
+        if isinstance(turn_id, str) and turn_id:
+            tool_call_groups.setdefault(turn_id, []).append(message)
+    emitted_tool_call_turns: set[str] = set()
     
     for message in messages:
         role = message["role"]
@@ -104,19 +85,70 @@ def _to_openai_messages(messages: list[dict[str, Any]]) -> tuple[str, list[dict[
             continue
         
         if role == "assistant_tool_call":
-            # OpenAI format: assistant message with tool_calls
-            converted.append({
+            turn_id = message.get("assistantTurnId")
+            if isinstance(turn_id, str) and turn_id:
+                if turn_id in emitted_tool_call_turns:
+                    continue
+                emitted_tool_call_turns.add(turn_id)
+                grouped_messages = tool_call_groups[turn_id]
+            else:
+                # Preserve compatibility with histories written before turn
+                # identities were introduced.
+                grouped_messages = [message]
+
+            # One model assistant turn can contain multiple tool calls.  The
+            # agent loop stores results per call, so rebuild the original
+            # assistant turn before sending it back to OpenAI-compatible APIs.
+            grouped_content = next(
+                (
+                    grouped_message.get("content")
+                    for grouped_message in grouped_messages
+                    if isinstance(grouped_message.get("content"), str)
+                    and grouped_message.get("content")
+                ),
+                None,
+            )
+            assistant_message: dict[str, Any] = {
                 "role": "assistant",
-                "content": None,
-                "tool_calls": [{
-                    "id": message["toolUseId"],
-                    "type": "function",
-                    "function": {
-                        "name": message["toolName"],
-                        "arguments": json.dumps(message["input"]) if isinstance(message["input"], dict) else "{}",
-                    },
-                }],
-            })
+                "content": (
+                    grouped_content
+                    if isinstance(grouped_content, str) and grouped_content
+                    else None
+                ),
+                "tool_calls": [
+                    {
+                        "id": grouped_message["toolUseId"],
+                        "type": "function",
+                        "function": {
+                            "name": grouped_message["toolName"],
+                            "arguments": (
+                                json.dumps(grouped_message["input"])
+                                if isinstance(grouped_message["input"], dict)
+                                else "{}"
+                            ),
+                        },
+                    }
+                    for grouped_message in grouped_messages
+                ],
+            }
+            reasoning_values = [
+                grouped_message.get("reasoningContent")
+                for grouped_message in grouped_messages
+                if isinstance(grouped_message.get("reasoningContent"), str)
+            ]
+            reasoning_content = next(
+                (value for value in reasoning_values if value),
+                reasoning_values[0] if reasoning_values else None,
+            )
+            if isinstance(reasoning_content, str):
+                assistant_message["reasoning_content"] = reasoning_content
+            elif require_tool_reasoning_content:
+                # DeepSeek thinking-mode requests require the field on every
+                # replayed assistant tool turn.  An empty value is the honest
+                # representation when an older/history turn did not preserve
+                # any reasoning tokens.
+                assistant_message["reasoning_content"] = ""
+            converted.append(assistant_message)
             continue
         
         if role == "tool_result":
@@ -190,7 +222,23 @@ class OpenAIModelAdapter:
         cancellation_token: Any = None,
         deadline_monotonic: float | None = None,
     ) -> AgentStep:
-        system_message, converted_messages = _to_openai_messages(messages)
+        base_url = _get_openai_base_url(self.runtime)
+        explicit_reasoning_replay = self.runtime.get(
+            "requireReasoningContentReplay"
+        )
+        if isinstance(explicit_reasoning_replay, bool):
+            require_tool_reasoning_content = explicit_reasoning_replay
+        else:
+            hostname = (
+                urllib.parse.urlsplit(base_url).hostname or ""
+            ).casefold()
+            require_tool_reasoning_content = (
+                hostname == "deepseek.com" or hostname.endswith(".deepseek.com")
+            )
+        system_message, converted_messages = _to_openai_messages(
+            messages,
+            require_tool_reasoning_content=require_tool_reasoning_content,
+        )
         
         request_body: dict[str, Any] = {
             "model": self.runtime["model"],
@@ -211,7 +259,6 @@ class OpenAIModelAdapter:
         if on_stream_chunk:
             request_body["stream"] = True
         
-        base_url = _get_openai_base_url(self.runtime)
         api_key = _get_openai_api_key(self.runtime)
         
         # Build headers — support OpenRouter and custom endpoints
@@ -345,6 +392,12 @@ class OpenAIModelAdapter:
             choice = choices[0]
             message = choice.get("message", {})
             text_content = message.get("content", "") or ""
+            reasoning_content_raw = message.get("reasoning_content")
+            reasoning_content = (
+                reasoning_content_raw
+                if isinstance(reasoning_content_raw, str)
+                else None
+            )
             tool_calls_raw = message.get("tool_calls", [])
             
             stop_reason = choice.get("finish_reason")
@@ -376,6 +429,7 @@ class OpenAIModelAdapter:
                     calls=tool_calls,
                     content=parsed_text,
                     contentKind="progress" if kind == "progress" else None,
+                    reasoningContent=reasoning_content,
                     diagnostics=diagnostics,
                     usage=model_usage,
                 )
@@ -383,6 +437,7 @@ class OpenAIModelAdapter:
                 type="assistant",
                 content=parsed_text,
                 kind=kind,
+                reasoningContent=reasoning_content,
                 diagnostics=diagnostics,
                 usage=model_usage,
             )
@@ -390,6 +445,8 @@ class OpenAIModelAdapter:
         # Streaming response
         tool_calls = []
         text_parts = []
+        reasoning_parts = []
+        reasoning_content_seen = False
         active_tool_calls: dict[int, dict] = {}
         stop_reason = None
         stream_input_tokens = 0
@@ -432,6 +489,13 @@ class OpenAIModelAdapter:
             if content:
                 text_parts.append(content)
                 on_stream_chunk(content)
+
+            reasoning_content = delta.get("reasoning_content")
+            if "reasoning_content" in delta and isinstance(reasoning_content, str):
+                reasoning_content_seen = True
+                reasoning_parts.append(reasoning_content)
+                if reasoning_content and on_thinking_delta:
+                    on_thinking_delta(reasoning_content)
             
             # Tool calls (incremental)
             tc_deltas = delta.get("tool_calls", [])
@@ -493,6 +557,9 @@ class OpenAIModelAdapter:
             store.set_state(update_context_usage(stream_input_tokens + stream_output_tokens))
         
         parsed_text, kind = _parse_assistant_text("".join(text_parts).strip())
+        reasoning_content = (
+            "".join(reasoning_parts) if reasoning_content_seen else None
+        )
         diagnostics = StepDiagnostics(
             stopReason=stop_reason,
             blockTypes=["tool_calls"] if tool_calls else (["text"] if text_parts else []),
@@ -505,6 +572,7 @@ class OpenAIModelAdapter:
                 calls=tool_calls,
                 content=parsed_text,
                 contentKind="progress" if kind == "progress" else None,
+                reasoningContent=reasoning_content,
                 diagnostics=diagnostics,
                 usage=model_usage,
             )
@@ -512,6 +580,7 @@ class OpenAIModelAdapter:
             type="assistant",
             content=parsed_text,
             kind=kind,
+            reasoningContent=reasoning_content,
             diagnostics=diagnostics,
             usage=model_usage,
         )

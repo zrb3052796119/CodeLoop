@@ -69,6 +69,13 @@ CA bundle. The shared verified-TLS seam was fixed before v7 was authored.
 
 ## Local E5 installation
 
+Local E5 keeps only the embedding computation on-device. The certified
+verifier/challenger route is still remote: it receives the retrieval query and
+candidate Memory text/metadata. Do not enable Hybrid Memory for content that
+must not leave the machine unless that remote disclosure is acceptable. The
+same verifier/challenger disclosure applies to the Qwen activation below; Qwen
+additionally sends the query and approved Memory text to its embedding API.
+
 Install the optional local runtime, then install the exact pinned model into a
 new directory:
 
@@ -90,7 +97,7 @@ Enable it in `~/.mini-code/settings.json`:
     "enabled": true,
     "embeddingProvider": "local-e5",
     "modelPath": "/absolute/path/to/multilingual-e5-small",
-    "evidencePath": "/absolute/path/to/MiniCode/artifacts/memory-retrieval-hybrid-v4-production-evidence.json",
+    "evidencePath": "/absolute/path/to/CodeLoop/artifacts/memory-retrieval-hybrid-v4-production-evidence.json",
     "verifierModel": "deepseek-chat"
   }
 }
@@ -110,7 +117,7 @@ configuring a Skill embedding key does not grant that authority.
     "enabled": true,
     "embeddingProvider": "qwen",
     "allowRemoteEmbedding": true,
-    "evidencePath": "/absolute/path/to/MiniCode/artifacts/memory-retrieval-hybrid-qwen-v1-production-evidence.json",
+    "evidencePath": "/absolute/path/to/CodeLoop/artifacts/memory-retrieval-hybrid-qwen-v1-production-evidence.json",
     "verifierModel": "deepseek-chat"
   }
 }
@@ -129,10 +136,20 @@ Equivalent environment variables are:
 - `MINI_CODE_MEMORY_HYBRID_MODEL_PATH`
 - `MINI_CODE_MEMORY_HYBRID_EVIDENCE_PATH`
 - `MINI_CODE_MEMORY_HYBRID_VERIFIER_MODEL`
+- `DEEPSEEK_API_KEY`
+- `DEEPSEEK_BASE_URL` (defaults to `https://api.deepseek.com`)
 
-The verifier model is independent of the main coding model. Its configured
-provider credentials and endpoint still come from the normal MiniCode runtime
-configuration.
+The verifier model is independent of the main coding model. The promoted
+configuration pins `deepseek-chat`, so an Anthropic, OpenAI, OpenRouter, Qwen,
+or other primary route must set the dedicated `DEEPSEEK_API_KEY` (and, if
+needed, `DEEPSEEK_BASE_URL`) in `~/.mini-code/.env`. A primary DeepSeek custom
+route may reuse `CUSTOM_API_KEY` only when the selected model is DeepSeek and
+the endpoint is the official `https://api.deepseek.com` route; credentials for
+any other custom endpoint are never inherited by the verifier. The
+`verifierModel` field shown above records the evidence-bound value; it is not a
+free model selector under this promotion artifact. If the dedicated adapter
+cannot be built, Hybrid activation is declined and the normal lexical
+retriever remains active rather than borrowing the primary model's transport.
 
 ## Verification
 

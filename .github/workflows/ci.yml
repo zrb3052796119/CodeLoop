@@ -38,6 +38,9 @@ jobs:
       - name: Run deterministic agent quality gate
         run: python scripts/evaluate_agent_quality.py --profile current
 
+      - name: Check portfolio documentation links
+        run: python -m pytest tests/test_portfolio_document_links.py -q
+
       - name: Run packaging smoke tests
         run: python -m pytest tests/test_packaging.py -q
 

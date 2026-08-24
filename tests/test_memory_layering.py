@@ -334,9 +334,7 @@ class TestDependencyLayering:
         assert "e1" not in entry.content
         assert "e2" not in entry.content
         assert "e3" not in entry.content
-        assert entry.metadata["task_summary"] == (
-            "Read POLICY.md and report the date format"
-        )
+        assert entry.metadata["task_summary"].startswith("[TASK_SHA256:")
         assert entry.provenance["event_ids"] == ["e1", "e2", "e3"]
         assert claim_metadata["evidence_ids"]
 

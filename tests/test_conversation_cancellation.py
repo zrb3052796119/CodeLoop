@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+import minicode.conversation as conversation_module
 from minicode.conversation import (
     ConversationFeedbackConflict,
     ConversationRuntimeUnavailable,
@@ -249,7 +250,66 @@ def test_accepted_feedback_applies_corroborated_memory_feedback_once(
     assert updated.corroborated_failure_count == 0
 
 
-def test_rejected_feedback_corroborates_negatively(isolated) -> None:
+def test_feedback_retry_repairs_a_missed_memory_side_effect(
+    isolated,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from minicode.memory import MemoryManager, MemoryScope
+
+    workspace, data_dir = isolated
+    manager = MemoryManager(project_root=workspace)
+    entry = manager.add_entry(
+        MemoryScope.PROJECT,
+        "testing",
+        "Use pytest fixtures for auth tests",
+        tags=["test"],
+    )
+    assert entry is not None
+    service = _service(
+        workspace, data_dir, RuntimeFactory(RenderingRuntime([entry.id]))
+    )
+    service.turn(message="safe", session_id=None, turn_id=TURN_ID)
+
+    original_apply = conversation_module._apply_corroborated_memory_feedback
+    attempts = 0
+
+    def defer_first_delivery(workspace, journal, run_id, signal):
+        nonlocal attempts
+        attempts += 1
+        if attempts > 1:
+            original_apply(workspace, journal, run_id, signal)
+
+    monkeypatch.setattr(
+        conversation_module,
+        "_apply_corroborated_memory_feedback",
+        defer_first_delivery,
+    )
+
+    service.record_feedback(TURN_ID, "accept")
+    missed = MemoryManager(project_root=workspace)
+    assert (
+        missed.memories[MemoryScope.PROJECT]
+        ._id_index[entry.id]
+        .corroborated_success_count
+        == 0
+    )
+
+    service.record_feedback(TURN_ID, "accept")
+    repaired = MemoryManager(project_root=workspace)
+    assert (
+        repaired.memories[MemoryScope.PROJECT]
+        ._id_index[entry.id]
+        .corroborated_success_count
+        == 1
+    )
+    assert attempts == 2
+
+
+@pytest.mark.parametrize("signal", ["correct", "reject"])
+def test_explicit_negative_feedback_quarantines_rendered_memory(
+    isolated,
+    signal: str,
+) -> None:
     from minicode.memory import MemoryManager, MemoryScope
 
     workspace, data_dir = isolated
@@ -267,12 +327,14 @@ def test_rejected_feedback_corroborates_negatively(isolated) -> None:
     )
     service.turn(message="safe", session_id=None, turn_id=TURN_ID)
 
-    service.record_feedback(TURN_ID, "reject")
+    service.record_feedback(TURN_ID, signal)
 
     reloaded = MemoryManager(project_root=workspace)
     updated = reloaded.memories[MemoryScope.PROJECT]._id_index[entry.id]
     assert updated.corroborated_success_count == 0
     assert updated.corroborated_failure_count == 1
+    assert updated.approval_status == "rejected"
+    assert updated.lifecycle_status == "rejected"
 
 
 def test_feedback_without_rendered_memory_ids_leaves_memory_untouched(

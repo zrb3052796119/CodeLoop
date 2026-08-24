@@ -426,11 +426,21 @@ def render_banner(
 
     model = runtime.get("model", "(unconfigured)") if runtime else "(unconfigured)"
 
-    # Provider hostname (strip scheme)
+    # Selected provider hostname (strip scheme).  ``baseUrl`` is always the
+    # Anthropic compatibility field, so non-Anthropic profiles must resolve
+    # their transport through the same provider seam used by /status.
     provider = "offline"
-    if runtime and runtime.get("baseUrl"):
+    provider_base_url = ""
+    if runtime:
+        try:
+            from minicode.model_registry import build_provider_config
+
+            provider_base_url = build_provider_config(model, runtime).base_url
+        except (RuntimeError, ValueError):
+            provider_base_url = str(runtime.get("baseUrl") or "")
+    if provider_base_url:
         provider = (
-            runtime["baseUrl"]
+            provider_base_url
             .replace("https://", "")
             .replace("http://", "")
             .split("/")[0]

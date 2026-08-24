@@ -151,6 +151,27 @@ def _validate_entry(entry: Any, index: int) -> tuple[bool, list[str]]:
                     f"{prefix} field '{list_field}' must contain only strings"
                 )
 
+    if "feedback_observations" in entry:
+        observations = entry["feedback_observations"]
+        if not isinstance(observations, dict):
+            errors.append(
+                f"{prefix} field 'feedback_observations' must be a dictionary"
+            )
+        elif len(observations) > _MAX_FEEDBACK_OBSERVATIONS:
+            errors.append(
+                f"{prefix} field 'feedback_observations' exceeds the bounded limit"
+            )
+        elif not all(
+            isinstance(digest, str)
+            and _FEEDBACK_OBSERVATION_DIGEST_RE.fullmatch(digest)
+            and isinstance(result, str)
+            and result in _FEEDBACK_OBSERVATION_RESULTS
+            for digest, result in observations.items()
+        ):
+            errors.append(
+                f"{prefix} field 'feedback_observations' contains an invalid receipt"
+            )
+
     for int_field in (
         "retrieval_count",
         "injection_count",
@@ -726,6 +747,18 @@ _VALID_APPROVAL_STATUSES = {
     _APPROVAL_PENDING,
     _APPROVAL_REJECTED,
 }
+_CORROBORATED_FAILURE_QUARANTINE_THRESHOLD = 2
+_MAX_FEEDBACK_OBSERVATIONS = 256
+_FEEDBACK_OBSERVATION_DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
+_FEEDBACK_OBSERVATION_RESULTS = frozenset({"success", "failure"})
+_CORROBORATED_FEEDBACK_SOURCES = frozenset(
+    {
+        "independent_verification",
+        "explicit_user_accept",
+        "explicit_user_correction",
+        "explicit_user_reject",
+    }
+)
 
 # Backward-compatible names for older callers that import these constants.
 _SAFETY_ACTIVE = _SAFETY_SAFE
@@ -933,6 +966,60 @@ def _safe_dict(value: Any) -> dict[str, Any]:
     return dict(value) if isinstance(value, dict) else {}
 
 
+def _safe_feedback_observations(value: Any) -> dict[str, str]:
+    """Load only bounded, content-free feedback delivery receipts."""
+    if not isinstance(value, dict):
+        return {}
+    valid = [
+        (digest, result)
+        for digest, result in value.items()
+        if isinstance(digest, str)
+        and _FEEDBACK_OBSERVATION_DIGEST_RE.fullmatch(digest)
+        and isinstance(result, str)
+        and result in _FEEDBACK_OBSERVATION_RESULTS
+    ]
+    return dict(valid[-_MAX_FEEDBACK_OBSERVATIONS:])
+
+
+def _feedback_observation_digest(
+    observation_id: str | None,
+    *,
+    channel: str,
+) -> str | None:
+    """Return a content-free receipt key for one stable feedback delivery."""
+    if observation_id is None:
+        return None
+    if not isinstance(observation_id, str) or not observation_id.strip():
+        raise ValueError("feedback observation_id must be a non-empty string")
+    normalized = observation_id.strip()
+    if len(normalized.encode("utf-8")) > 256:
+        raise ValueError("feedback observation_id is too long")
+    envelope = f"minicode-memory-feedback-v1\0{channel}\0{normalized}"
+    return hashlib.sha256(envelope.encode("utf-8")).hexdigest()
+
+
+def _claim_feedback_observation(
+    entry: "MemoryEntry",
+    digest: str | None,
+    *,
+    success: bool,
+) -> bool:
+    """Claim one receipt, returning false for an idempotent replay."""
+    if digest is None:
+        return True
+    result = "success" if success else "failure"
+    previous = entry.feedback_observations.get(digest)
+    if previous is not None:
+        if previous != result:
+            raise ValueError("feedback observation conflicts with its first result")
+        return False
+    entry.feedback_observations[digest] = result
+    while len(entry.feedback_observations) > _MAX_FEEDBACK_OBSERVATIONS:
+        oldest = next(iter(entry.feedback_observations))
+        del entry.feedback_observations[oldest]
+    return True
+
+
 def _normalize_safety_status(value: Any) -> str:
     status = str(value or _SAFETY_SAFE).lower()
     if status in {"active", "allowed", "approved", _SAFETY_SAFE}:
@@ -1110,6 +1197,7 @@ class MemoryEntry:
     corroborated_success_count: int = 0
     corroborated_failure_count: int = 0
     corroborated_usefulness_score: float = 0.0
+    feedback_observations: dict[str, str] = field(default_factory=dict)
     lifecycle_status: str = _ACTIVE_LIFECYCLE
     tier_reason: str = ""
     deprecated_at: float | None = None
@@ -1124,6 +1212,11 @@ class MemoryEntry:
     approval_policy: MemoryApprovalPolicy = MemoryApprovalPolicy.USER_EXPLICIT
     _cached_tokens: list[str] | None = field(default=None, repr=False)
     _last_relevance: float = field(default=0.0, repr=False, compare=False)
+    _authority_state_snapshot: tuple[str, str, bool, str, str, str] | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
 
     def __hash__(self) -> int:
         return hash(self.id)
@@ -1145,18 +1238,109 @@ class MemoryEntry:
     def invalidate_tokens(self) -> None:
         self._cached_tokens = None
 
+    def _current_authority_state(self) -> tuple[str, str, bool, str, str, str]:
+        return (
+            str(self.approval_status),
+            str(self.lifecycle_status),
+            bool(self.curator_locked),
+            str(self.safety_status),
+            self.tier.value,
+            str(self.approval_content_hash),
+        )
+
+    def _seal_authority_state(self) -> None:
+        """Snapshot state changed through a Manager-authorized transition."""
+        self._authority_state_snapshot = self._current_authority_state()
+
+    def _authority_state_is_current(self) -> bool:
+        return (
+            self._authority_state_snapshot is None
+            or self._authority_state_snapshot == self._current_authority_state()
+        )
+
+    def _authority_state_expands_privilege(self) -> bool:
+        """Return whether an unsealed state change can increase authority."""
+        trusted = self._authority_state_snapshot
+        if trusted is None:
+            return False
+        current = self._current_authority_state()
+        if current == trusted:
+            return False
+        # A caller-supplied approval hash can counterfeit a content review and
+        # is never accepted as a monotonic restriction.
+        if current[5] != trusted[5]:
+            return True
+
+        approval_rank = {
+            _APPROVAL_REJECTED: 0,
+            _APPROVAL_PENDING: 1,
+            _APPROVAL_APPROVED: 2,
+        }
+        safety_rank = {
+            _SAFETY_UNSAFE: 0,
+            _SAFETY_SUSPICIOUS: 1,
+            _SAFETY_SAFE: 2,
+        }
+
+        def ranks(state: tuple[str, str, bool, str, str, str]) -> tuple[int, ...]:
+            approval, lifecycle, locked, safety, tier, _content_hash = state
+            return (
+                approval_rank.get(approval, 0),
+                1 if lifecycle == _ACTIVE_LIFECYCLE else 0,
+                0 if locked else 1,
+                safety_rank.get(_normalize_safety_status(safety), 0),
+                0 if tier == MemoryTier.ARCHIVAL.value else 1,
+            )
+
+        trusted_ranks = ranks(trusted)
+        current_ranks = ranks(current)
+        # Mixed changes are conservative: any dimension that grows authority
+        # makes the whole unsealed transition an expansion.  Pure decreases
+        # (for example active -> deprecated+locked+archival) remain compatible
+        # with legacy curator callers and are sealed at the next save.
+        return any(
+            current_value > trusted_value
+            for current_value, trusted_value in zip(current_ranks, trusted_ranks)
+        ) or current_ranks == trusted_ranks
+
+    def _restore_authority_state(self) -> bool:
+        if self._authority_state_snapshot is None:
+            return False
+        if self._authority_state_snapshot == self._current_authority_state():
+            return False
+        (
+            self.approval_status,
+            self.lifecycle_status,
+            self.curator_locked,
+            self.safety_status,
+            tier,
+            self.approval_content_hash,
+        ) = self._authority_state_snapshot
+        self.tier = _coerce_tier(tier)
+        return True
+
     @property
     def is_active(self) -> bool:
+        # Officially persisted entries always carry an approval hash.  Keep
+        # hash-less standalone MemoryEntry fixtures backward compatible, but
+        # fail closed as soon as a previously approved authority object is
+        # mutated behind the manager's write API.
+        approval_is_current = (
+            not self.approval_content_hash
+            or self.approval_content_hash == _approval_hash_for_entry(self)
+        )
         return (
             self.approval_status == _APPROVAL_APPROVED
             and self.safety_status != _SAFETY_UNSAFE
             and self.lifecycle_status == _ACTIVE_LIFECYCLE
             and not self.curator_locked
             and self.tier != MemoryTier.ARCHIVAL
+            and approval_is_current
+            and self._authority_state_is_current()
         )
     
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for serialization."""
+    def _raw_persistence_payload(self) -> dict[str, Any]:
+        """Build the unsanitized serialization shape for boundary checks."""
         return {
             "id": self.id,
             "scope": self.scope.value,
@@ -1182,6 +1366,9 @@ class MemoryEntry:
             "corroborated_success_count": self.corroborated_success_count,
             "corroborated_failure_count": self.corroborated_failure_count,
             "corroborated_usefulness_score": self.corroborated_usefulness_score,
+            "feedback_observations": _safe_feedback_observations(
+                self.feedback_observations
+            ),
             "lifecycle_status": self.lifecycle_status,
             "tier_reason": self.tier_reason,
             "deprecated_at": self.deprecated_at,
@@ -1195,10 +1382,33 @@ class MemoryEntry:
             "approval_decided_at": self.approval_decided_at,
             "approval_policy": self.approval_policy.value,
         }
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to a recursively sanitized persistence dictionary."""
+        payload = self._raw_persistence_payload()
+        sanitized = sanitize_for_persistence(payload)
+        if not isinstance(sanitized, dict):
+            return {}
+        if sanitized.get("content") != payload.get("content"):
+            metadata = sanitized.get("metadata")
+            if not isinstance(metadata, dict):
+                metadata = {}
+                sanitized["metadata"] = metadata
+            metadata["persistence_sanitized"] = {"content": True}
+        return sanitized
     
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "MemoryEntry":
         """Create from dictionary."""
+        original_content = data.get("content")
+        sanitized = sanitize_for_persistence(data)
+        data = sanitized if isinstance(sanitized, dict) else {}
+        if data.get("content") != original_content:
+            metadata = data.get("metadata")
+            if not isinstance(metadata, dict):
+                metadata = {}
+                data["metadata"] = metadata
+            metadata["persistence_sanitized"] = {"content": True}
         return cls(
             id=data["id"],
             scope=_coerce_scope(data.get("scope", "user")),
@@ -1225,6 +1435,9 @@ class MemoryEntry:
             corroborated_failure_count=int(data.get("corroborated_failure_count", 0) or 0),
             corroborated_usefulness_score=float(
                 data.get("corroborated_usefulness_score", 0.0) or 0.0
+            ),
+            feedback_observations=_safe_feedback_observations(
+                data.get("feedback_observations", {})
             ),
             lifecycle_status=str(data.get("lifecycle_status", _ACTIVE_LIFECYCLE) or _ACTIVE_LIFECYCLE),
             tier_reason=str(data.get("tier_reason", "") or ""),
@@ -1568,32 +1781,294 @@ class MemoryPaths:
 
 _ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 _CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]")
-_SECRET_ASSIGNMENT_RE = re.compile(
-    r"(?i)\b(api[_-]?key|token|secret|password|credential|authorization|bearer)\b"
-    r"(\s*[:=]\s*)[^\s,;]+"
+_AUTHORIZATION_ASSIGNMENT_RE = re.compile(
+    r"(?i)\b((?:[a-z][a-z0-9]*[_-])*authorization)\b"
+    r"(\s*[:=]\s*)((?!\s*\[redacted)[^\r\n]+)"
 )
-_BEARER_VALUE_RE = re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]+")
+_PASSWORD_ASSIGNMENT_RE = re.compile(
+    r"(?i)\b((?:[a-z][a-z0-9]*[_-])*(?:password|passwd|pwd))\b"
+    r"(\s*[:=]\s*)((?!\s*\[redacted)[^\r\n]+)"
+)
+_SECRET_ASSIGNMENT_RE = re.compile(
+    r"(?i)\b((?:[a-z][a-z0-9]*[_-])*(?:api[_-]?key|access[_-]?token|"
+    r"auth[_-]?token|credential|token|"
+    r"secret(?:[_-]?key)?))\b"
+    r"(\s*[:=]\s*)((?!\s*\[redacted)[^\s,;]+)"
+)
+_NON_SECRET_ASSIGNMENT_VALUE_RE = re.compile(
+    r"^(?:"
+    r"[0-9]{1,4}(?:\.[0-9]{1,4})?"
+    r"|(?:None|True|False|null|nil|undefined|NULL|NaN)"
+    r"|(?:str|int|float|bool|bytes|dict|list|set|tuple|Any)"
+    r"|[A-Za-z_][A-Za-z_]{0,15}(?:\.[A-Za-z_][A-Za-z_]{0,15}){1,3}"
+    r")[)\]}\"'`,.;:]*$"
+)
+_BEARER_VALUE_RE = re.compile(
+    r"(?i)\bbearer\s+(?!\[redacted)[A-Za-z0-9._~+/=-]+"
+)
+_AUTHORIZATION_SCHEME_RE = re.compile(r"(?i)^(bearer|basic|token)\s+.+$")
+_NON_SECRET_ASSIGNMENT_PROSE_RE = re.compile(
+    r"(?i)^(?:None|null|nil|undefined)\s+"
+    r"(?:means|indicates|denotes|represents)\s+"
+    r"(?:unset|absent|missing|disabled|not\s+set)[.!]?$"
+)
 _TOKEN_VALUE_RE = re.compile(
     r"\b(?:sk-[A-Za-z0-9_-]{3,}|(?:AKIA|ASIA)[A-Z0-9]{16}|"
     r"gh[pousr]_[A-Za-z0-9]{20,255})\b"
 )
+_JWT_VALUE_RE = re.compile(
+    r"\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\."
+    r"[A-Za-z0-9_-]{8,}\b"
+)
 _CREDENTIAL_URL_RE = re.compile(
-    r"(?i)\b[a-z][a-z0-9+.-]*://[^\s/:@]+:[^\s/@]+@"
+    r"(?i)\b[a-z][a-z0-9+.-]*://[^\s/:@]+:[^\s/@]+@[^\s'\"<>]+"
 )
-_SENSITIVE_KEY_RE = re.compile(
-    r"(?i)(api[_-]?key|token|secret|password|credential|authorization|bearer|private[_-]?key)"
+_RAW_TASK_KEY_RE = re.compile(
+    r"(?i)^(?:raw[_-]?task|task|task[_-]?(?:summary|description)|"
+    r"user[_-]?(?:prompt|message))$"
+)
+_TASK_REFERENCE_RE = re.compile(r"^\[TASK_SHA256:[0-9a-f]{16} len=[0-9]+\]$")
+_PERSISTENCE_MAX_DEPTH = 12
+_SENSITIVE_KEY_WORDS = frozenset(
+    {
+        "auth",
+        "authorization",
+        "bearer",
+        "cookie",
+        "credential",
+        "password",
+        "passwd",
+        "pwd",
+        "secret",
+        "token",
+    }
+)
+_NON_SECRET_KEY_DESCRIPTORS = frozenset(
+    {
+        "algorithm",
+        "algorithms",
+        "budget",
+        "budgets",
+        "configured",
+        "count",
+        "counts",
+        "enabled",
+        "field",
+        "fields",
+        "format",
+        "kind",
+        "kinds",
+        "length",
+        "lifetime",
+        "limit",
+        "limits",
+        "method",
+        "methods",
+        "name",
+        "names",
+        "policy",
+        "policies",
+        "prefix",
+        "prefixes",
+        "present",
+        "required",
+        "rules",
+        "scanner",
+        "scope",
+        "size",
+        "source",
+        "status",
+        "suffix",
+        "suffixes",
+        "ttl",
+        "type",
+        "types",
+        "usage",
+    }
+)
+_TOKEN_METRIC_PREFIXES = frozenset(
+    {
+        "completion",
+        "estimated",
+        "input",
+        "max",
+        "min",
+        "output",
+        "prompt",
+        "total",
+        "used",
+    }
 )
 
 
-def _sanitize_untrusted_text(value: Any, max_chars: int = 600) -> str:
+def _persistence_key_words(key: str) -> list[str]:
+    """Split snake/kebab/camel/Pascal keys into normalized word tokens."""
+    separated = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", key)
+    separated = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", separated)
+    words = re.findall(r"[A-Za-z0-9]+", separated.lower())
+    singular: list[str] = []
+    for word in words:
+        if word in {"tokens", "secrets", "credentials", "passwords"}:
+            singular.append(word[:-1])
+        else:
+            singular.append(word)
+    return singular
+
+
+def _is_sensitive_persistence_key(key: str) -> bool:
+    """Recognize credential-value keys while preserving descriptor fields."""
+    words = _persistence_key_words(key)
+    if not words:
+        return False
+    sensitive = bool(_SENSITIVE_KEY_WORDS.intersection(words))
+    sensitive = sensitive or "apikey" in words
+    sensitive = sensitive or any(
+        left == "api" and right == "key"
+        for left, right in zip(words, words[1:])
+    )
+    sensitive = sensitive or any(
+        left == "private" and right == "key"
+        for left, right in zip(words, words[1:])
+    )
+    if not sensitive:
+        return False
+    if words[-1] in _NON_SECRET_KEY_DESCRIPTORS:
+        return False
+    if (
+        words[-1] == "token"
+        and len(words) >= 2
+        and words[-2] in _TOKEN_METRIC_PREFIXES
+    ):
+        return False
+    return True
+
+
+def _redact_secret_assignment(match: re.Match[str]) -> str:
+    """Redact credential assignments without corrupting obvious code prose."""
+    value = match.group(3).strip()
+    if _NON_SECRET_ASSIGNMENT_VALUE_RE.match(value):
+        return match.group(0)
+    return f"{match.group(1)}{match.group(2)}[REDACTED]"
+
+
+def _redact_full_secret_assignment(match: re.Match[str]) -> str:
+    """Redact a whole line-delimited secret value, including whitespace."""
+    value = match.group(3).strip()
+    if (
+        _NON_SECRET_ASSIGNMENT_VALUE_RE.match(value)
+        or _NON_SECRET_ASSIGNMENT_PROSE_RE.match(value)
+    ):
+        return match.group(0)
+    key_words = _persistence_key_words(match.group(1))
+    scheme = _AUTHORIZATION_SCHEME_RE.match(value)
+    if key_words and key_words[-1] == "authorization" and scheme is not None:
+        return (
+            f"{match.group(1)}{match.group(2)}"
+            f"{scheme.group(1)} [REDACTED]"
+        )
+    return f"{match.group(1)}{match.group(2)}[REDACTED]"
+
+
+def _redact_persistence_secrets(text: str) -> str:
+    # Authorization schemes and passphrases may contain whitespace.  Consume
+    # their entire line-delimited value before applying single-token patterns,
+    # otherwise only the scheme/first word is redacted and the tail leaks.
+    redacted = _AUTHORIZATION_ASSIGNMENT_RE.sub(
+        _redact_full_secret_assignment,
+        text,
+    )
+    redacted = _PASSWORD_ASSIGNMENT_RE.sub(
+        _redact_full_secret_assignment,
+        redacted,
+    )
+    redacted = _BEARER_VALUE_RE.sub("Bearer [REDACTED]", redacted)
+    redacted = _SECRET_ASSIGNMENT_RE.sub(_redact_secret_assignment, redacted)
+    redacted = _TOKEN_VALUE_RE.sub("[REDACTED]", redacted)
+    redacted = _JWT_VALUE_RE.sub("[REDACTED_JWT]", redacted)
+    return _CREDENTIAL_URL_RE.sub("[REDACTED_URL]", redacted)
+
+
+def persistence_text_contains_secret(value: Any) -> bool:
+    """Return whether text contains a credential shape this store redacts."""
+    try:
+        text = value if isinstance(value, str) else str(value)
+    except Exception:
+        return False
+    return _redact_persistence_secrets(text) != text
+
+
+def _task_reference(value: Any) -> str:
+    """Replace raw user task text with a bounded, deterministic audit handle."""
+    try:
+        text = value if isinstance(value, str) else json.dumps(
+            value,
+            sort_keys=True,
+            ensure_ascii=False,
+            default=_json_default,
+            separators=(",", ":"),
+        )
+    except Exception:
+        text = "[unprintable]"
+    if _TASK_REFERENCE_RE.fullmatch(text):
+        return text
+    digest = hashlib.sha256(text.encode("utf-8", errors="replace")).hexdigest()[:16]
+    return f"[TASK_SHA256:{digest} len={len(text)}]"
+
+
+def sanitize_for_persistence(
+    value: Any,
+    *,
+    _depth: int = 0,
+    _field_name: str | None = None,
+) -> Any:
+    """Recursively sanitize arbitrary values before durable persistence.
+
+    This is the single credential-redaction boundary shared by Memory entries,
+    their audit metadata/provenance, and ProjectFacts.  It intentionally keeps
+    ordinary technical prose and JSON scalar types intact.  Raw task/prompt
+    fields are represented by a digest so cross-record audit joins remain
+    possible without storing the user's original request.
+    """
+    if _depth > _PERSISTENCE_MAX_DEPTH:
+        return "[TRUNCATED]"
+    if _field_name and _RAW_TASK_KEY_RE.fullmatch(_field_name):
+        return _task_reference(value)
+    if isinstance(value, dict):
+        result: dict[str, Any] = {}
+        for key, nested in value.items():
+            safe_key = _sanitize_untrusted_text(key, max_chars=None)
+            if _is_sensitive_persistence_key(safe_key):
+                result[safe_key] = "[REDACTED]"
+            else:
+                result[safe_key] = sanitize_for_persistence(
+                    nested,
+                    _depth=_depth + 1,
+                    _field_name=safe_key,
+                )
+        return result
+    if isinstance(value, (list, tuple)):
+        return [
+            sanitize_for_persistence(item, _depth=_depth + 1)
+            for item in value
+        ]
+    if isinstance(value, (set, frozenset)):
+        return [
+            sanitize_for_persistence(item, _depth=_depth + 1)
+            for item in sorted(value, key=repr)
+        ]
+    if isinstance(value, str):
+        return _sanitize_untrusted_text(value, max_chars=None)
+    if isinstance(value, (int, float, bool)) or value is None:
+        return value
+    return _sanitize_untrusted_text(repr(value), max_chars=None)
+
+
+def _sanitize_untrusted_text(value: Any, max_chars: int | None = 600) -> str:
     text = str(value)
     text = _ANSI_ESCAPE_RE.sub("", text)
     text = _CONTROL_RE.sub(lambda m: f"\\x{ord(m.group(0)):02x}", text)
-    text = _SECRET_ASSIGNMENT_RE.sub(lambda m: f"{m.group(1)}{m.group(2)}[REDACTED]", text)
-    text = _BEARER_VALUE_RE.sub("Bearer [REDACTED]", text)
-    text = _TOKEN_VALUE_RE.sub("[REDACTED]", text)
-    text = _CREDENTIAL_URL_RE.sub("[REDACTED_URL]", text)
-    if len(text) > max_chars:
+    text = _redact_persistence_secrets(text)
+    if max_chars is not None and len(text) > max_chars:
         return text[:max_chars] + f"... [truncated {len(text) - max_chars} chars]"
     return text
 
@@ -1605,7 +2080,7 @@ def _redact_audit_value(value: Any, depth: int = 0) -> Any:
         result: dict[str, Any] = {}
         for key, nested in value.items():
             key_str = str(key)
-            if _SENSITIVE_KEY_RE.search(key_str):
+            if _is_sensitive_persistence_key(key_str):
                 result[key_str] = "[REDACTED]"
             else:
                 result[key_str] = _redact_audit_value(nested, depth + 1)
@@ -2065,6 +2540,54 @@ class MemoryManager:
                 save=save_audit,
             )
         return changed
+
+    @staticmethod
+    def _projection_body(markdown: str) -> str:
+        """Normalize volatile projection metadata before drift comparison."""
+        return "\n".join(
+            line
+            for line in markdown.splitlines()
+            if not line.startswith("*Last updated:")
+        ).strip()
+
+    def _repair_markdown_projection(self, scope: MemoryScope) -> bool:
+        """Rebuild a stale derived Markdown projection from JSON authority."""
+        if not self._recover_on_load:
+            return False
+        # Every load/reload entrypoint holds the same cooperative transaction
+        # used by authority writers.  Refuse an accidental future call outside
+        # that fence rather than racing a newer memory.json commit.
+        if not self.in_write_transaction:
+            raise MemoryStoreConflict(
+                "Memory Markdown projection repair requires a store transaction"
+            )
+        root = self._get_scope_path(scope)
+        memory_md = root / "MEMORY.md"
+        expected = MemoryFile(
+            scope=scope,
+            entries=[
+                entry
+                for entry in self.memories[scope].entries
+                if entry.is_active
+            ],
+        ).format_as_markdown()
+        try:
+            current = memory_md.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            current = ""
+        except OSError as error:
+            logger.warning(
+                "Memory Markdown projection read failed for %s: %s",
+                scope.value,
+                error,
+            )
+            return False
+        if self._projection_body(current) == self._projection_body(expected):
+            return False
+        self._ensure_scope_path(scope)
+        self._atomic_write(memory_md, expected)
+        logger.info("Rebuilt stale Memory Markdown projection for %s", scope.value)
+        return True
     
     def _load_scope(self, scope: MemoryScope) -> None:
         """Load memory file for a scope."""
@@ -2098,11 +2621,14 @@ class MemoryManager:
                             entry_data,
                             save_audit=False,
                         ) or changed
+                        entry._seal_authority_state()
                         self.memories[scope].entries.append(entry)
                     self.memories[scope]._rebuild_indices()
                     if changed and self._recover_on_load:
                         self._save_approval_audit(scope)
                         self._save_scope(scope)
+                    elif self._recover_on_load:
+                        self._repair_markdown_projection(scope)
                     return
                 else:
                     logger.warning(
@@ -2121,6 +2647,7 @@ class MemoryManager:
                             entry_data,
                             save_audit=False,
                         ) or changed
+                        entry._seal_authority_state()
                         self.memories[scope].entries.append(entry)
                     self.memories[scope]._rebuild_indices()
                     if valid_entries or changed:
@@ -2132,13 +2659,24 @@ class MemoryManager:
                 logger.error(
                     "JSON decode error in scope %s: %s", scope.value, e
                 )
+                if not self._recover_on_load:
+                    raise MemoryStoreConflict("Memory authority is invalid") from e
+                # memory.json is the authority whenever it exists.  A derived
+                # Markdown projection may be stale, so it must never be
+                # promoted merely because the authority cannot be decoded.
+                return
             except KeyError as e:
                 logger.error(
                     "Missing key in scope %s data: %s", scope.value, e
                 )
+                if not self._recover_on_load:
+                    raise MemoryStoreConflict("Memory authority is invalid") from e
+                return
         
-        # Load from MEMORY.md
-        if memory_md.exists():
+        # Explicit legacy migration is allowed only before a JSON authority
+        # exists.  Once memory.json is present, MEMORY.md remains a derived,
+        # human-facing projection and can never become authoritative.
+        if not memory_json.exists() and memory_md.exists():
             content = memory_md.read_text(encoding="utf-8")
             self._parse_memory_md(content, scope)
             if self.memories[scope].entries and self._recover_on_load:
@@ -2181,6 +2719,7 @@ class MemoryManager:
                     tags=tags,
                 )
                 self._apply_loaded_entry_safety(entry, {})
+                entry._seal_authority_state()
                 self.memories[scope].entries.append(entry)
         # Rebuild indices after Markdown-based loading
         if self.memories[scope].entries:
@@ -2297,6 +2836,11 @@ class MemoryManager:
         extra: dict[str, Any] | None = None,
         save: bool = False,
     ) -> dict[str, Any]:
+        # This method is the common end of every Manager/curator-authorized
+        # state transition.  Seal before an optional nested save so a live
+        # caller cannot counterfeit approval/lifecycle state merely by holding
+        # the mutable entry returned from add_entry.
+        entry._seal_authority_state()
         record = {
             "audit_id": f"audit-{time.time_ns()}-{uuid.uuid4().hex[:8]}",
             "entry_id": entry.id,
@@ -2381,6 +2925,27 @@ class MemoryManager:
             return None
 
         self._ensure_scope_path(scope)
+
+        original_content = content
+        sanitized_write = sanitize_for_persistence(
+            {
+                "content": content,
+                "metadata": dict(metadata or {}),
+                "provenance": dict(provenance or {}),
+            }
+        )
+        if not isinstance(sanitized_write, dict):
+            return None
+        content = str(sanitized_write.get("content", ""))
+        metadata_value = sanitized_write.get("metadata", {})
+        provenance_value = sanitized_write.get("provenance", {})
+        metadata = metadata_value if isinstance(metadata_value, dict) else {}
+        provenance = provenance_value if isinstance(provenance_value, dict) else {}
+        if content != original_content:
+            metadata["persistence_sanitized"] = {"content": True}
+        source = _sanitize_untrusted_text(source, max_chars=None)
+        if not content.strip():
+            return None
 
         final_category = category
         final_tags = list(tags or [])
@@ -2578,6 +3143,10 @@ class MemoryManager:
         scope = _coerce_scope(scope, MemoryScope.PROJECT)
         if not content or not content.strip():
             return False
+        original_content = content
+        content = str(sanitize_for_persistence(content))
+        if not content.strip():
+            return False
         memory_file = self.memories[scope]
         memory_file._ensure_cache_valid()
         entry = memory_file._id_index.get(entry_id)
@@ -2591,6 +3160,12 @@ class MemoryManager:
                 entry_id,
             )
             return False
+        metadata = entry.metadata if isinstance(entry.metadata, dict) else {}
+        if content != original_content:
+            metadata["persistence_sanitized"] = {"content": True}
+        else:
+            metadata.pop("persistence_sanitized", None)
+        entry.metadata = metadata
         safety = assess_memory_safety(content, source="update")
         previous_approval = entry.approval_status
         previous_lifecycle = entry.lifecycle_status
@@ -3152,14 +3727,35 @@ class MemoryManager:
             self._save_scope(scope)
 
     @_coordinated_all_write
-    def record_feedback(self, entry_ids: list[str], success: bool) -> None:
-        """Persist task-outcome feedback for memories that were injected."""
+    def record_feedback(
+        self,
+        entry_ids: list[str],
+        success: bool,
+        *,
+        observation_id: str | None = None,
+    ) -> None:
+        """Persist task-outcome feedback for memories that were injected.
+
+        A stable ``observation_id`` makes retries idempotent across manager
+        instances. Receipts retain the most recent 256 observations per entry;
+        omitting the ID preserves the legacy count-every-call API.
+        """
+        observation_digest = _feedback_observation_digest(
+            observation_id,
+            channel="task_outcome",
+        )
         touched: set[MemoryScope] = set()
         now = time.time()
         for entry_id in dict.fromkeys(entry_ids):
             scope, entry = self._find_entry_by_id(entry_id)
             if scope is None or entry is None:
                 logger.debug("Memory outcome feedback skipped missing entry_id=%s", entry_id)
+                continue
+            if not _claim_feedback_observation(
+                entry,
+                observation_digest,
+                success=success,
+            ):
                 continue
             if success:
                 entry.success_count += 1
@@ -3179,11 +3775,48 @@ class MemoryManager:
             self._save_scope(scope)
 
     @_coordinated_all_write
-    def record_corroborated_feedback(self, entry_ids: list[str], success: bool) -> None:
+    def record_corroborated_feedback(
+        self,
+        entry_ids: list[str],
+        success: bool,
+        *,
+        source: str = "independent_verification",
+        observation_id: str | None = None,
+    ) -> None:
         """Persist feedback backed by independent verification or an explicit
         user accept/correct/reject signal, kept separate from whole-turn
         outcome feedback because it carries materially stronger evidence.
+
+        Explicit correction/rejection quarantines the exact rendered Memory
+        immediately. Automated verification is deliberately less absolute: a
+        single failure records negative evidence, while two independently
+        observed failures quarantine it for review. Ordinary whole-turn
+        failures continue to use ``record_feedback`` and never revoke Memory.
+
+        Independent verification requires a stable observation identity so a
+        replay cannot masquerade as a second verifier. Receipts retain the most
+        recent 256 observations per entry and contain only SHA-256 identities.
         """
+        normalized_source = str(source).strip().lower()
+        if normalized_source not in _CORROBORATED_FEEDBACK_SOURCES:
+            raise ValueError("invalid corroborated Memory feedback source")
+        if normalized_source == "independent_verification" and (
+            not isinstance(observation_id, str) or not observation_id.strip()
+        ):
+            raise ValueError(
+                "independent verification requires a non-empty observation_id"
+            )
+        if normalized_source == "explicit_user_accept" and not success:
+            raise ValueError("explicit_user_accept requires successful feedback")
+        if normalized_source in {
+            "explicit_user_correction",
+            "explicit_user_reject",
+        } and success:
+            raise ValueError("explicit negative user feedback cannot be successful")
+        observation_digest = _feedback_observation_digest(
+            observation_id,
+            channel=f"corroborated:{normalized_source}",
+        )
         touched: set[MemoryScope] = set()
         now = time.time()
         for entry_id in dict.fromkeys(entry_ids):
@@ -3192,6 +3825,12 @@ class MemoryManager:
                 logger.debug(
                     "Memory corroborated feedback skipped missing entry_id=%s", entry_id
                 )
+                continue
+            if not _claim_feedback_observation(
+                entry,
+                observation_digest,
+                success=success,
+            ):
                 continue
             if success:
                 entry.corroborated_success_count += 1
@@ -3205,9 +3844,221 @@ class MemoryManager:
                 if total
                 else 0.0
             )
+            explicit_negative = normalized_source in {
+                "explicit_user_correction",
+                "explicit_user_reject",
+            }
+            repeated_verification_failure = (
+                normalized_source == "independent_verification"
+                and entry.corroborated_failure_count
+                >= _CORROBORATED_FAILURE_QUARANTINE_THRESHOLD
+            )
+            should_quarantine = (
+                not success
+                and entry.approval_status != _APPROVAL_REJECTED
+                and entry.lifecycle_status != "rejected"
+                and (explicit_negative or repeated_verification_failure)
+            )
+            if should_quarantine:
+                previous_approval = entry.approval_status
+                previous_lifecycle = entry.lifecycle_status
+                entry.approval_status = _APPROVAL_REJECTED
+                entry.lifecycle_status = "rejected"
+                entry.curator_locked = False
+                entry.approval_actor = normalized_source
+                entry.approval_reason = (
+                    "quarantined after explicit user correction"
+                    if explicit_negative
+                    else (
+                        "quarantined after repeated independent "
+                        "verification failures"
+                    )
+                )
+                entry.approval_decided_at = now
+                entry.updated_at = now
+                entry.approval_content_hash = _approval_hash_for_entry(entry)
+                self._append_approval_audit(
+                    scope,
+                    entry,
+                    action="feedback_quarantine",
+                    actor=normalized_source,
+                    previous_approval=previous_approval,
+                    previous_lifecycle=previous_lifecycle,
+                    reason=entry.approval_reason,
+                    extra={
+                        "feedback_source": normalized_source,
+                        "corroborated_failure_count": (
+                            entry.corroborated_failure_count
+                        ),
+                    },
+                )
             touched.add(scope)
         for scope in sorted(touched, key=lambda item: item.value):
             self._save_scope(scope)
+
+    def _canonicalize_scope_authority(
+        self,
+        scope: MemoryScope,
+    ) -> list[dict[str, Any]]:
+        """Normalize the live authority before producing any projection.
+
+        ``add_entry`` historically returned the live mutable MemoryEntry.  A
+        caller could therefore change approval-bound fields behind the public
+        update API.  Serialize-and-sanitize alone is insufficient because the
+        Markdown projection would still read the original object.  Mutate the
+        authoritative objects to their canonical safe form first, invalidate
+        stale approvals, and only then let JSON and Markdown read that single
+        snapshot.
+        """
+        scope_file = self.memories[scope]
+        rebuild_indices = False
+        serialized_entries: list[dict[str, Any]] = []
+        for entry in scope_file.entries:
+            previous_approval = entry.approval_status
+            previous_lifecycle = entry.lifecycle_status
+            authority_state_changed = not entry._authority_state_is_current()
+            authority_state_expanded = (
+                authority_state_changed
+                and entry._authority_state_expands_privilege()
+            )
+            if authority_state_expanded:
+                entry._restore_authority_state()
+            previous_hash = entry.approval_content_hash
+            before_bound_hash = _approval_hash_for_entry(entry)
+            safe_payload = entry.to_dict()
+
+            entry.category = str(safe_payload.get("category", "general") or "general")
+            entry.content = str(safe_payload.get("content", "") or "")
+            entry.tags = _safe_str_list(safe_payload.get("tags", []))
+            entry.domains = _safe_str_list(safe_payload.get("domains", []))
+            entry.related_to = _safe_str_list(safe_payload.get("related_to", []))
+            entry.feedback_observations = _safe_feedback_observations(
+                safe_payload.get("feedback_observations", {})
+            )
+            entry.metadata = _safe_dict(safe_payload.get("metadata", {}))
+            entry.source = str(safe_payload.get("source", "") or "")
+            entry.provenance = _safe_dict(safe_payload.get("provenance", {}))
+            entry.tier_reason = str(safe_payload.get("tier_reason", "") or "")
+            entry.approval_reason = str(
+                safe_payload.get("approval_reason", "") or ""
+            )
+            entry.approval_actor = str(
+                safe_payload.get("approval_actor", "") or ""
+            )
+            entry.invalidate_tokens()
+
+            canonical_hash = _approval_hash_for_entry(entry)
+            canonicalized_bound_fields = before_bound_hash != canonical_hash
+            # Hash-less in-memory entries are a supported legacy/test seam;
+            # initialize their hash if their canonical fields are unchanged.
+            # Real manager-created entries always have a non-empty hash, so a
+            # live-object mutation still takes the strict mismatch path.
+            approval_was_current = (
+                not previous_hash or previous_hash == canonical_hash
+            )
+            safety = assess_memory_safety(
+                entry.content,
+                source=entry.source or "persistence_boundary",
+            )
+            entry.safety_status = _normalize_safety_status(safety.status)
+            entry.safety_reason = safety.reason
+
+            if safety.status == _SAFETY_UNSAFE:
+                entry.approval_status = _APPROVAL_REJECTED
+                entry.lifecycle_status = "rejected"
+                entry.tier_reason = "safety_gate"
+                entry.curator_locked = False
+                entry.approval_reason = safety.reason
+                entry.approval_actor = "persistence_boundary"
+            elif entry.approval_status == _APPROVAL_REJECTED:
+                entry.approval_status = _APPROVAL_REJECTED
+                entry.curator_locked = False
+            elif (
+                canonicalized_bound_fields
+                or not approval_was_current
+            ):
+                entry.approval_status = _APPROVAL_PENDING
+                entry.approval_reason = (
+                    "approval invalidated by persistence canonicalization"
+                )
+                entry.approval_actor = "persistence_boundary"
+                entry.approval_decided_at = time.time()
+
+            approval_invalidated_for_review = (
+                safety.status != _SAFETY_UNSAFE
+                and previous_hash
+                and (canonicalized_bound_fields or not approval_was_current)
+            )
+            # Keep the prior hash stale until approve_entry rechecks the new
+            # canonical content and explicitly reports that the review became
+            # outdated.  Updating it here would let the very next approval
+            # silently accept content the user never reviewed.
+            entry.approval_content_hash = (
+                previous_hash
+                if approval_invalidated_for_review
+                else canonical_hash
+            )
+            state_changed = (
+                authority_state_changed
+                or canonicalized_bound_fields
+                or not approval_was_current
+                or entry.approval_status != previous_approval
+                or entry.lifecycle_status != previous_lifecycle
+            )
+            if state_changed:
+                entry.updated_at = time.time()
+                self._append_approval_audit(
+                    scope,
+                    entry,
+                    action="persistence_canonicalized",
+                    actor="persistence_boundary",
+                    previous_approval=previous_approval,
+                    previous_lifecycle=previous_lifecycle,
+                    reason=(
+                        "live authority state mutation rejected"
+                        if authority_state_expanded
+                        else "live authority restriction accepted"
+                        if authority_state_changed
+                        else entry.approval_reason
+                    ),
+                    safety=safety,
+                    extra={
+                        "authority_state_restored": authority_state_expanded,
+                        "authority_restriction_accepted": (
+                            authority_state_changed
+                            and not authority_state_expanded
+                        ),
+                        "approval_hash_was_current": approval_was_current,
+                        "bound_fields_sanitized": canonicalized_bound_fields,
+                    },
+                )
+                rebuild_indices = True
+
+            # ``safe_payload`` is the complete persistence-boundary result for
+            # the entry as it entered this pass. Normal usage accounting is
+            # already represented there, so writing it directly avoids a
+            # second recursive secret scan for every unchanged entry. If any
+            # canonicalization or authority transition changed the raw shape,
+            # fall back to a fresh boundary pass. This equality check also
+            # catches live mutation inside nested metadata/provenance values.
+            final_raw_payload = entry._raw_persistence_payload()
+            serialized_entries.append(
+                safe_payload
+                if final_raw_payload == safe_payload
+                else entry.to_dict()
+            )
+
+        sanitized_audit = sanitize_for_persistence(
+            list(self.approval_audit.get(scope, []))
+        )
+        self.approval_audit[scope] = (
+            [record for record in sanitized_audit if isinstance(record, dict)]
+            if isinstance(sanitized_audit, list)
+            else []
+        )
+        if rebuild_indices:
+            scope_file._rebuild_indices()
+        return serialized_entries
 
     def _save_scope(self, scope: MemoryScope) -> None:
         """Save memory to disk (atomic write to prevent corruption)."""
@@ -3224,13 +4075,14 @@ class MemoryManager:
         """Write one scope while the caller owns the cooperative transaction."""
         path = self._get_scope_path(scope)
         self._ensure_scope_path(scope)
+        serialized_entries = self._canonicalize_scope_authority(scope)
         
         # Save JSON metadata (atomic: write to temp, then replace)
         memory_json = path / "memory.json"
         data = {
             "scope": scope.value,
             "last_updated": time.time(),
-            "entries": [e.to_dict() for e in self.memories[scope].entries],
+            "entries": serialized_entries,
             "approval_audit": list(self.approval_audit.get(scope, [])),
         }
         self._atomic_write(memory_json, json.dumps(data, indent=2, ensure_ascii=False))
@@ -3578,6 +4430,7 @@ class MemoryManager:
         entry.approval_content_hash = current_hash
         entry.lifecycle_status = _ACTIVE_LIFECYCLE
         entry.updated_at = time.time()
+        entry._seal_authority_state()
         self._apply_declared_supersession(entry)
         self._append_approval_audit(
             scope,
@@ -4091,6 +4944,7 @@ class MemoryManager:
                 if entry.tier == MemoryTier.SHORT_TERM and entry.usage_count >= 5 and age_days > 7:
                     entry.tier = MemoryTier.LONG_TERM
                     entry.tier_reason = "usage"
+                    entry._seal_authority_state()
                     stats["promoted_to_long"] += 1
                     continue
                 if entry.tier == MemoryTier.LONG_TERM and accessed_days > 30:
@@ -4129,6 +4983,7 @@ class MemoryManager:
                 if entry.tier == MemoryTier.ARCHIVAL and accessed_days < 7:
                     entry.tier = MemoryTier.SHORT_TERM
                     entry.tier_reason = "recent_access"
+                    entry._seal_authority_state()
                     stats["reactivated"] += 1
         if any(stats.values()):
             for scope in MemoryScope:

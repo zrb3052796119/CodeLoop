@@ -4,13 +4,15 @@ from dataclasses import dataclass
 
 from minicode.config import (
     CLAUDE_SETTINGS_PATH,
+    MINI_CODE_ENV_PATH,
     MINI_CODE_MCP_PATH,
     MINI_CODE_PERMISSIONS_PATH,
     MINI_CODE_SETTINGS_PATH,
     load_runtime_config,
     safe_runtime_summary,
-    save_mini_code_settings,
+    USER_MODEL_ENV_KEYS,
 )
+from minicode.env_file import update_private_env_file
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,8 +38,8 @@ SLASH_COMMANDS = [
     SlashCommand("/retry", "/retry", "Retry the last natural-language prompt in this session."),
     SlashCommand("/transcript-save", "/transcript-save <path>", "Save the current session transcript to a text file."),
     SlashCommand("/model", "/model", "Show the current model."),
-    SlashCommand("/model", "/model <model-name>", "Persist a model override into ~/.mini-code/settings.json."),
-    SlashCommand("/config-paths", "/config-paths", "Show mini-code and Claude fallback settings paths."),
+    SlashCommand("/model", "/model <model-name>", "Persist a model override into ~/.mini-code/.env."),
+    SlashCommand("/config-paths", "/config-paths", "Show primary-model and compatibility config paths."),
     SlashCommand("/skills", "/skills", "List discovered SKILL.md workflows."),
     SlashCommand("/mcp", "/mcp", "Show configured MCP servers and connection state."),
     SlashCommand("/permissions", "/permissions", "Show mini-code permission storage path."),
@@ -103,10 +105,11 @@ def try_handle_local_command(user_input: str, tools=None, cwd: str | None = None
     if user_input == "/config-paths":
         return "\n".join(
             [
-                f"mini-code settings: {MINI_CODE_SETTINGS_PATH}",
+                f"primary model env: {MINI_CODE_ENV_PATH}",
+                f"mini-code settings fallback: {MINI_CODE_SETTINGS_PATH}",
                 f"mini-code permissions: {MINI_CODE_PERMISSIONS_PATH}",
                 f"mini-code mcp: {MINI_CODE_MCP_PATH}",
-                f"compat fallback: {CLAUDE_SETTINGS_PATH}",
+                f"claude settings fallback: {CLAUDE_SETTINGS_PATH}",
             ]
         )
 
@@ -178,26 +181,16 @@ def try_handle_local_command(user_input: str, tools=None, cwd: str | None = None
             runtime = load_runtime_config()
         except Exception as error:  # noqa: BLE001
             return f"runtime not configured: {error}"
-        from minicode.model_registry import detect_provider
+        from minicode.model_registry import build_provider_config, detect_provider
         provider = detect_provider(runtime["model"], runtime)
+        provider_config = build_provider_config(runtime["model"], runtime)
         safe_summary = safe_runtime_summary(runtime)
-        auth_methods = []
-        if runtime.get("authToken"):
-            auth_methods.append("ANTHROPIC_AUTH_TOKEN")
-        if runtime.get("apiKey"):
-            auth_methods.append("ANTHROPIC_API_KEY")
-        if runtime.get("openaiApiKey"):
-            auth_methods.append("OPENAI_API_KEY")
-        if runtime.get("openrouterApiKey"):
-            auth_methods.append("OPENROUTER_API_KEY")
-        if runtime.get("customApiKey"):
-            auth_methods.append("CUSTOM_API_KEY")
         return "\n".join(
             [
                 f"model: {runtime['model']}",
                 f"provider: {provider.value}",
-                f"baseUrl: {runtime['baseUrl']}",
-                f"auth: {', '.join(auth_methods) or 'none'}",
+                f"baseUrl: {provider_config.base_url}",
+                f"auth: {'configured' if provider_config.api_key else 'none'}",
                 (
                     "sub-agent auth: configured"
                     if safe_summary["credentials"]["subagentConfigured"]
@@ -239,13 +232,42 @@ def try_handle_local_command(user_input: str, tools=None, cwd: str | None = None
             from minicode.model_registry import format_model_list
             return format_model_list()
         # Provider filter: /model anthropic, /model openrouter, etc.
-        from minicode.model_registry import Provider, format_model_list
+        from minicode.model_registry import (
+            Provider,
+            format_model_list,
+            infer_model_provider,
+        )
         for p in Provider:
             if arg.lower() == p.value:
                 return format_model_list(provider=p)
         # Otherwise: set model name
-        save_mini_code_settings({"model": arg})
-        return f"saved model={arg} to {MINI_CODE_SETTINGS_PATH}\nRestart MiniCode for the change to take effect."
+        updates = {"MINI_CODE_MODEL": arg}
+        inferred_provider = infer_model_provider(arg)
+        if inferred_provider is not None and inferred_provider != Provider.MOCK:
+            updates["MINI_CODE_PROVIDER"] = inferred_provider.value
+        try:
+            update_private_env_file(
+                MINI_CODE_ENV_PATH,
+                updates,
+                allowed_keys=USER_MODEL_ENV_KEYS,
+            )
+        except (OSError, RuntimeError):
+            return "\n".join(
+                [
+                    "model update failed: could not safely write the global model profile.",
+                    f"path: {MINI_CODE_ENV_PATH}",
+                    "Check that ~/.mini-code is 0700 and its .env is 0600, then retry.",
+                ]
+            )
+        provider_note = (
+            f" provider={inferred_provider.value}"
+            if inferred_provider is not None
+            else ""
+        )
+        return (
+            f"saved model={arg}{provider_note} to {MINI_CODE_ENV_PATH}\n"
+            "Restart MiniCode for the change to take effect."
+        )
 
     if user_input == "/user" or user_input.startswith("/user "):
         from minicode.user_profile import handle_user_command

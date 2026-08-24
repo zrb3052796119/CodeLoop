@@ -1,0 +1,224 @@
+{
+  "recordedAt": "2026-08-23T12:20:02Z",
+  "results": [
+    {
+      "durationMs": 9511,
+      "id": "pmem-b1-schema-contract-warm",
+      "inputTokens": 14576,
+      "modelCalls": 6,
+      "outputTokens": 292,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "source-read",
+        "lesson-injected",
+        "marker-found"
+      ],
+      "runId": "run_74098f7c0075471badaaca6cc7f254fe",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    },
+    {
+      "durationMs": 38581,
+      "id": "pmem-b1-auth-policy-warm",
+      "inputTokens": 70563,
+      "modelCalls": 15,
+      "outputTokens": 796,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "marker-found"
+      ],
+      "relatedRunIds": [
+        "run_23fbe8d405b5423ebf030ad4b4618045"
+      ],
+      "runId": "run_e03aa8f5e1a74b5a8e50569ad2236109",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    },
+    {
+      "durationMs": 44510,
+      "id": "npmem-b1-payload-command-warm",
+      "inputTokens": 64609,
+      "modelCalls": 15,
+      "outputTokens": 1127,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "learning-failure",
+        "lesson-written",
+        "lesson-injected",
+        "target-verifier",
+        "target-marker"
+      ],
+      "relatedRunIds": [
+        "run_b87f608d47af44b0be690f7e97c1e18c"
+      ],
+      "runId": "run_55693bce28de4dc4825435fd7a693735",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    },
+    {
+      "durationMs": 42699,
+      "id": "npmem-b1-release-command-warm",
+      "inputTokens": 65109,
+      "modelCalls": 15,
+      "outputTokens": 1151,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "learning-failure",
+        "lesson-written",
+        "lesson-injected",
+        "target-verifier",
+        "target-marker"
+      ],
+      "relatedRunIds": [
+        "run_c8149bd715c8439c87645ba90a5f89af"
+      ],
+      "runId": "run_16b56448411543859204702d3ab7c892",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    },
+    {
+      "durationMs": 61527,
+      "id": "npmem-b1-expired-session-repair-warm",
+      "inputTokens": 75354,
+      "modelCalls": 15,
+      "outputTokens": 1470,
+      "passedOracleIds": [
+        "run-completed",
+        "learning-failure",
+        "lesson-written",
+        "target-content",
+        "target-verifier",
+        "target-marker"
+      ],
+      "relatedRunIds": [
+        "run_de8569a310ee4efd97b8c0396884bad3"
+      ],
+      "runId": "run_60725fe375624878b044e942e90dee21",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    },
+    {
+      "durationMs": 58963,
+      "id": "npmem-b1-token-normalization-repair-warm",
+      "inputTokens": 76112,
+      "modelCalls": 15,
+      "outputTokens": 1315,
+      "passedOracleIds": [
+        "run-completed",
+        "learning-failure",
+        "lesson-written",
+        "target-verifier",
+        "target-marker"
+      ],
+      "relatedRunIds": [
+        "run_f721a6375efb42638b785b5de82562a5"
+      ],
+      "runId": "run_4262a237d5214338b2f70afe5976e283",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    },
+    {
+      "durationMs": 62298,
+      "id": "npmem-b1-ledger-verification-rule-warm",
+      "inputTokens": 94979,
+      "modelCalls": 19,
+      "outputTokens": 1376,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "lesson-written",
+        "target-content",
+        "target-verifier",
+        "target-marker"
+      ],
+      "relatedRunIds": [
+        "run_4d81418767cb4bdaa970e556c8826267"
+      ],
+      "runId": "run_3caa71d65a7f42f89adcb3aa9974f6b2",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    },
+    {
+      "durationMs": 50072,
+      "id": "npmem-b1-parser-verification-rule-warm",
+      "inputTokens": 42105,
+      "modelCalls": 14,
+      "outputTokens": 937,
+      "passedOracleIds": [
+        "run-completed",
+        "lesson-written"
+      ],
+      "relatedRunIds": [
+        "run_717a5336122a496a93b5b26ecdd0bd12"
+      ],
+      "runId": "run_37e7dab40ca741879a11c6bf0b668ae2",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    },
+    {
+      "durationMs": 26319,
+      "id": "npmem-b1-registry-order-constraint-warm",
+      "inputTokens": 14381,
+      "modelCalls": 10,
+      "outputTokens": 401,
+      "passedOracleIds": [
+        "run-completed",
+        "lesson-written",
+        "lesson-injected"
+      ],
+      "relatedRunIds": [
+        "run_80fe7922db604c1f8d94a5a6de76f607"
+      ],
+      "runId": "run_499820db186e424ebe7ff7d52ce0a002",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    },
+    {
+      "durationMs": 12226,
+      "id": "npmem-b1-error-envelope-constraint-warm",
+      "inputTokens": 14630,
+      "modelCalls": 7,
+      "outputTokens": 563,
+      "passedOracleIds": [
+        "run-completed",
+        "lesson-injected"
+      ],
+      "runId": "run_6e7de81e0d46400ba7fa1678f263ae22",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceReport": "artifacts/persistent-memory-repair-acceptance-v1/manifest.json",
+  "suiteId": "persistent-memory-repair-acceptance-2026-08-23-v1"
+}

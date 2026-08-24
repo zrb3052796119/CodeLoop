@@ -13,7 +13,10 @@ from __future__ import annotations
 import json
 import logging
 import logging.handlers
+import os
+import re
 import sys
+import traceback
 from datetime import datetime, timezone
 from typing import Any
 
@@ -32,6 +35,49 @@ LOG_BACKUP_COUNT = 5               # Keep 5 rotated files (50 MB total max)
 LOG_ROTATION_WHEN = "midnight"     # Also rotate at midnight
 LOG_ROTATION_INTERVAL = 1          # Every 1 day
 
+_SECRET_ASSIGNMENT = re.compile(
+    r"(?i)(?P<prefix>[\"']?[a-z0-9_-]*(?:api[_-]?key|"
+    r"auth(?:orization)?[_-]?token|access[_-]?token|password|secret)"
+    r"[a-z0-9_-]*[\"']?\s*[:=]\s*)"
+    r"(?:[\"'](?:bearer\s+)?[^\"'\r\n]*[\"']|"
+    r"(?:bearer\s+)?[^\s,;}]+)"
+)
+_AUTHORIZATION = re.compile(
+    r"(?i)(?P<prefix>[\"']?authorization[\"']?\s*[:=]\s*)"
+    r"(?:[\"'](?:bearer\s+)?[^\"'\r\n]*[\"']|"
+    r"(?:bearer\s+)?[^\s,;}]+)"
+)
+_KNOWN_KEY_TOKEN = re.compile(r"\bsk-(?:ant-|or-)?[A-Za-z0-9_.-]{8,}\b")
+
+
+def redact_log_text(value: Any) -> str:
+    """Remove common credential forms before text reaches any handler."""
+    text = str(value)
+    text = _AUTHORIZATION.sub(r"\g<prefix><redacted>", text)
+    text = _SECRET_ASSIGNMENT.sub(r"\g<prefix><redacted>", text)
+    return _KNOWN_KEY_TOKEN.sub("<redacted>", text)
+
+
+class _RedactingFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.msg = redact_log_text(record.getMessage())
+        record.args = ()
+        if record.exc_info:
+            rendered = "".join(traceback.format_exception(*record.exc_info))
+            record.exc_text = redact_log_text(rendered)
+            record.exc_info = None
+        return True
+
+
+class _PrivateRotatingFileHandler(logging.handlers.RotatingFileHandler):
+    """Keep the active and newly rotated log files owner-readable only."""
+
+    def _open(self):
+        stream = super()._open()
+        if os.name == "posix":
+            os.chmod(self.baseFilename, 0o600)
+        return stream
+
 
 # ---------------------------------------------------------------------------
 # Structured JSON formatter
@@ -49,7 +95,7 @@ class StructuredFormatter(logging.Formatter):
             "ts": datetime.fromtimestamp(record.created, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
             "level": record.levelname,
             "module": record.name,
-            "msg": record.getMessage(),
+            "msg": redact_log_text(record.getMessage()),
             "file": f"{record.filename}:{record.lineno}",
         }
         
@@ -62,7 +108,7 @@ class StructuredFormatter(logging.Formatter):
         
         # Add exception info
         if record.exc_info and record.exc_info[1] is not None:
-            entry["exception"] = str(record.exc_info[1])
+            entry["exception"] = redact_log_text(record.exc_info[1])
             entry["exc_type"] = type(record.exc_info[1]).__name__
         
         return json.dumps(entry, ensure_ascii=False, default=str)
@@ -92,6 +138,12 @@ def setup_logging(
     # 确保日志目录存在
     if log_to_file:
         MINI_CODE_DIR.mkdir(parents=True, exist_ok=True)
+        if LOG_FILE.is_symlink():
+            raise RuntimeError("log_file_symlink")
+        if os.name == "posix":
+            os.chmod(MINI_CODE_DIR, 0o700)
+            if LOG_FILE.exists():
+                os.chmod(LOG_FILE, 0o600)
     
     # 创建根 logger
     root_logger = logging.getLogger("minicode")
@@ -111,7 +163,7 @@ def setup_logging(
     # 文件 handler — 使用 RotatingFileHandler 防止日志无限增长
     if log_to_file:
         # RotatingFileHandler: 按大小轮转
-        file_handler = logging.handlers.RotatingFileHandler(
+        file_handler = _PrivateRotatingFileHandler(
             LOG_FILE,
             maxBytes=LOG_MAX_BYTES,
             backupCount=LOG_BACKUP_COUNT,
@@ -119,6 +171,7 @@ def setup_logging(
         )
         file_handler.setLevel(logging.DEBUG)  # 文件记录所有级别
         file_handler.setFormatter(file_formatter)
+        file_handler.addFilter(_RedactingFilter())
         root_logger.addHandler(file_handler)
     
     # 控制台 handler
@@ -126,6 +179,7 @@ def setup_logging(
         console_handler = logging.StreamHandler(sys.stderr)
         console_handler.setLevel(getattr(logging, level.upper(), logging.WARNING))
         console_handler.setFormatter(console_formatter)
+        console_handler.addFilter(_RedactingFilter())
         root_logger.addHandler(console_handler)
     
     # 减少第三方库的日志噪音

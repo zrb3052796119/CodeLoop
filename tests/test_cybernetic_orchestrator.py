@@ -4,6 +4,8 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 from minicode.cybernetic_orchestrator import CyberneticOrchestrator
+from minicode.memory_hybrid import HybridActivation
+from minicode.openai_adapter import OpenAIModelAdapter
 from minicode.progress_controller import ProgressAction, ProgressDecision
 from minicode.reflection_llm import StructuredClientFactoryResult
 
@@ -213,16 +215,28 @@ class TestOrchestratorInit:
             "minicode.memory_pipeline.MemoryPipeline",
             MagicMock(return_value=pipeline),
         )
-        monkeypatch.setattr("minicode.model_registry.create_model_adapter", factory)
+        monkeypatch.setattr(
+            "minicode.model_registry.create_dedicated_model_adapter", factory
+        )
+        monkeypatch.setattr(
+            "minicode.memory_hybrid.assess_hybrid_activation",
+            lambda **_kwargs: HybridActivation(
+                requested=True,
+                active=True,
+                reason="activated",
+                evidence={"verifier": {"model_id": "deepseek-chat"}},
+                embedding_provider="qwen",
+            ),
+        )
         orch = CyberneticOrchestrator()
         orch.reflection = MagicMock()
-        orch._last_model = MagicMock(model_id="claude-main")
+        orch._last_model = MagicMock(model_id="deepseek-v4-pro")
         orch._runtime = {
-            "model": "claude-main",
+            "model": "deepseek-v4-pro",
             "memoryHybridEnabled": True,
             "memoryHybridModelPath": "/models/e5",
             "memoryHybridEvidencePath": "/evidence/promotion.json",
-            "memoryHybridVerifierModel": "deepseek-chat",
+            "memoryHybridVerifierModel": "deepseek-v4-pro",
         }
 
         orch.wire_memory(MagicMock())
@@ -230,6 +244,144 @@ class TestOrchestratorInit:
         factory.assert_called_once()
         assert factory.call_args.args[0] == "deepseek-chat"
         assert pipeline.initialize.call_args.kwargs["model_adapter"] is verifier
+        assert (
+            pipeline.initialize.call_args.kwargs["hybrid_verifier_binding"]
+            == "evidence_bound_override"
+        )
+
+    def test_evidence_bound_verifier_uses_canonical_promotion_profile(
+        self, monkeypatch
+    ):
+        pipeline = MagicMock()
+        verifier = MagicMock(model_id="deepseek-chat")
+        factory = MagicMock(return_value=verifier)
+        monkeypatch.setattr(
+            "minicode.memory_pipeline.MemoryPipeline",
+            MagicMock(return_value=pipeline),
+        )
+        monkeypatch.setattr(
+            "minicode.model_registry.create_dedicated_model_adapter", factory
+        )
+        monkeypatch.setattr(
+            "minicode.memory_hybrid.assess_hybrid_activation",
+            lambda **_kwargs: HybridActivation(
+                requested=True,
+                active=True,
+                reason="activated",
+                evidence={"verifier": {"model_id": "deepseek-chat"}},
+                embedding_provider="qwen",
+            ),
+        )
+        orch = CyberneticOrchestrator()
+        orch.reflection = MagicMock()
+        orch._last_model = MagicMock(model_id="deepseek-v4-pro")
+        orch._runtime = {
+            "model": "deepseek-v4-pro",
+            "temperature": 0.8,
+            "maxOutputTokens": 1200,
+            "modelMaxRetries": 4,
+            "modelTimeoutSeconds": 15,
+            "memoryHybridEnabled": True,
+            "memoryHybridEvidencePath": "/evidence/promotion.json",
+            "memoryHybridVerifierModel": "deepseek-chat",
+        }
+
+        orch.wire_memory(MagicMock())
+
+        verifier_runtime = factory.call_args.args[2]
+        assert verifier_runtime["temperature"] == 0
+        assert verifier_runtime["maxOutputTokens"] == 6000
+        assert verifier_runtime["modelMaxRetries"] == 1
+        assert verifier_runtime["modelTimeoutSeconds"] == 90
+
+    def test_evidence_bound_deepseek_verifier_uses_its_own_transport(self, monkeypatch):
+        pipeline = MagicMock()
+        monkeypatch.setattr(
+            "minicode.memory_pipeline.MemoryPipeline",
+            MagicMock(return_value=pipeline),
+        )
+        monkeypatch.setattr(
+            "minicode.memory_hybrid.assess_hybrid_activation",
+            lambda **_kwargs: HybridActivation(
+                requested=True,
+                active=True,
+                reason="activated",
+                evidence={"verifier": {"model_id": "deepseek-chat"}},
+                embedding_provider="qwen",
+            ),
+        )
+        monkeypatch.delenv("MINI_CODE_MODEL_MODE", raising=False)
+        orch = CyberneticOrchestrator()
+        orch.reflection = MagicMock()
+        orch._last_model = MagicMock(model_id="qwen3.6-flash")
+        orch._runtime = {
+            "model": "qwen3.6-flash",
+            "provider": "custom",
+            "customBaseUrl": "https://qwen.synthetic.invalid/v1",
+            "customApiKey": "synthetic-qwen-key",
+            "deepseekBaseUrl": "https://deepseek.synthetic.invalid/v1",
+            "deepseekApiKey": "synthetic-deepseek-key",
+            "memoryHybridEnabled": True,
+            "memoryHybridVerifierModel": "deepseek-chat",
+        }
+
+        orch.wire_memory(MagicMock())
+
+        verifier = pipeline.initialize.call_args.kwargs["model_adapter"]
+        assert isinstance(verifier, OpenAIModelAdapter)
+        assert verifier.runtime["model"] == "deepseek-chat"
+        assert verifier.runtime["openaiBaseUrl"] == (
+            "https://deepseek.synthetic.invalid/v1"
+        )
+        assert verifier.runtime["openaiApiKey"] == "synthetic-deepseek-key"
+        assert verifier.runtime["temperature"] == 0
+        assert verifier.runtime["maxOutputTokens"] == 6000
+        assert verifier.runtime["modelMaxRetries"] == 1
+        assert verifier.runtime["modelTimeoutSeconds"] == 90
+        assert "qwen.synthetic.invalid" not in str(verifier.runtime)
+        assert "synthetic-qwen-key" not in str(verifier.runtime)
+
+    def test_same_model_name_does_not_allow_wrong_primary_transport(self, monkeypatch):
+        pipeline = MagicMock()
+        monkeypatch.setattr(
+            "minicode.memory_pipeline.MemoryPipeline",
+            MagicMock(return_value=pipeline),
+        )
+        monkeypatch.setattr(
+            "minicode.memory_hybrid.assess_hybrid_activation",
+            lambda **_kwargs: HybridActivation(
+                requested=True,
+                active=True,
+                reason="activated",
+                evidence={"verifier": {"model_id": "deepseek-chat"}},
+                embedding_provider="qwen",
+            ),
+        )
+        monkeypatch.delenv("MINI_CODE_MODEL_MODE", raising=False)
+        orch = CyberneticOrchestrator()
+        orch.reflection = MagicMock()
+        # The label matches the evidence, but the primary transport does not.
+        orch._last_model = MagicMock(model_id="deepseek-chat")
+        orch._runtime = {
+            "model": "deepseek-chat",
+            "provider": "custom",
+            "customBaseUrl": "https://qwen.synthetic.invalid/v1",
+            "customApiKey": "synthetic-qwen-key",
+            "deepseekBaseUrl": "https://deepseek.synthetic.invalid/v1",
+            "deepseekApiKey": "synthetic-deepseek-key",
+            "memoryHybridEnabled": True,
+            "memoryHybridVerifierModel": "deepseek-chat",
+        }
+
+        orch.wire_memory(MagicMock())
+
+        verifier = pipeline.initialize.call_args.kwargs["model_adapter"]
+        assert isinstance(verifier, OpenAIModelAdapter)
+        assert verifier is not orch._last_model
+        assert verifier.runtime["openaiBaseUrl"] == (
+            "https://deepseek.synthetic.invalid/v1"
+        )
+        assert verifier.runtime["openaiApiKey"] == "synthetic-deepseek-key"
 
     def test_legacy_reflection_fallback_still_emits_trace_v2_events(self):
         orch = CyberneticOrchestrator()

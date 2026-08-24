@@ -18,7 +18,7 @@ from minicode.run_events import (
     verification_corroboration,
 )
 from minicode.task_outcome import canonicalize_task_outcome
-from minicode.tooling import ToolContext, ToolRegistry
+from minicode.tooling import ToolContext, ToolDefinition, ToolRegistry, ToolResult
 from minicode.tools.load_skill import create_load_skill_tool
 from minicode.types import AgentStep, ChatMessage, ModelAdapter
 
@@ -532,6 +532,71 @@ def test_memory_projection_uses_only_final_counts_and_safe_enums() -> None:
         assert forbidden not in serialized
 
 
+def test_memory_projection_exposes_bounded_hybrid_runtime_status() -> None:
+    result = MemoryRetrievalResult(
+        no_match=True,
+        no_match_reason="relevance_gate_rejected_all",
+        controller_decision={"mode": "none"},
+        diagnostics={
+            "hybrid_runtime": {
+                "requested": True,
+                "active": True,
+                "fallback": False,
+                "reason": "activated",
+                "embedding_provider": "qwen",
+                "verifier_binding": "evidence_bound_override",
+                "provider_cache_reused": True,
+                "adjudication_cache_hit": False,
+            },
+            "credential": "never-project-this-secret",
+        },
+    )
+    sink = RecordingSink()
+
+    emit_memory_result_safely(sink, result)
+
+    retrieved = sink.events[0][1]
+    assert retrieved["hybridRequested"] is True
+    assert retrieved["hybridActive"] is True
+    assert retrieved["hybridFallback"] is False
+    assert retrieved["hybridReason"] == "activated"
+    assert retrieved["hybridEmbeddingProvider"] == "qwen"
+    assert retrieved["hybridVerifierBinding"] == "evidence_bound_override"
+    assert retrieved["hybridCacheReused"] is True
+    assert retrieved["hybridAdjudicationCacheHit"] is False
+    assert "never-project-this-secret" not in str(sink.events)
+
+
+def test_memory_projection_replaces_untrusted_hybrid_labels_with_other() -> None:
+    result = MemoryRetrievalResult(
+        no_match=True,
+        no_match_reason="no_active_memories",
+        controller_decision={"mode": "none"},
+        diagnostics={
+            "hybrid_runtime": {
+                "requested": True,
+                "active": False,
+                "fallback": True,
+                "reason": "api_key=super-secret",
+                "embedding_provider": "https://secret.invalid",
+                "verifier_binding": "secret-binding",
+                "provider_cache_reused": False,
+                "adjudication_cache_hit": False,
+            }
+        },
+    )
+    sink = RecordingSink()
+
+    emit_memory_result_safely(sink, result)
+
+    retrieved = sink.events[0][1]
+    assert retrieved["hybridReason"] == "other"
+    assert retrieved["hybridEmbeddingProvider"] == "other"
+    assert retrieved["hybridVerifierBinding"] == "other"
+    assert "super-secret" not in str(sink.events)
+    assert "secret.invalid" not in str(sink.events)
+
+
 def test_memory_result_forwards_rendered_ids_to_a_sink_that_supports_it() -> None:
     class SinkWithMemoryBinding(RecordingSink):
         def __init__(self) -> None:
@@ -700,6 +765,76 @@ def test_agent_loop_observes_the_single_real_memory_injection_before_model(
     assert entry.injection_count == 1
     system = next(message["content"] for message in messages if message["role"] == "system")
     assert system.count(entry.content) == 1
+
+
+def test_agent_loop_replayed_run_observation_does_not_double_count_feedback(
+    tmp_path: Path,
+) -> None:
+    class VerifiedModel(ModelAdapter):
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def next(self, messages, on_stream_chunk=None) -> AgentStep:
+            self.calls += 1
+            if self.calls == 1:
+                return AgentStep(
+                    type="tool_calls",
+                    calls=[
+                        {"id": "verify", "toolName": "test_runner", "input": {}}
+                    ],
+                )
+            return AgentStep(type="assistant", content="done")
+
+    tools = ToolRegistry(
+        [
+            ToolDefinition(
+                name="test_runner",
+                description="verified test fixture",
+                input_schema={"type": "object"},
+                validator=lambda value: value,
+                run=lambda _value, _context: ToolResult(
+                    ok=True,
+                    output="passed",
+                    verification={
+                        "verificationVersion": 1,
+                        "kind": "tests",
+                        "outcome": "passed",
+                        "source": "test_runner",
+                    },
+                ),
+            )
+        ]
+    )
+    manager = MemoryManager(project_root=tmp_path)
+    entry = manager.add_entry(
+        scope=MemoryScope.PROJECT,
+        category="architecture",
+        content="Checkout total rounding happens after decimal line aggregation.",
+        tags=["checkout", "total", "rounding"],
+    )
+    assert entry is not None
+    run_id = "run_" + "b" * 32
+
+    for _ in range(2):
+        sink = RecordingSink()
+        sink.run_id = run_id
+        run_agent_turn(
+            model=VerifiedModel(),
+            tools=tools,
+            messages=[
+                {"role": "system", "content": "SYSTEM"},
+                {"role": "user", "content": "fix checkout total rounding"},
+            ],
+            cwd=str(tmp_path),
+            memory_manager=MemoryManager(project_root=tmp_path),
+            event_sink=sink,
+            max_steps=2,
+        )
+
+    reloaded = MemoryManager(project_root=tmp_path)
+    updated = reloaded.memories[MemoryScope.PROJECT]._id_index[entry.id]
+    assert updated.success_count == 1
+    assert len(updated.feedback_observations) == 1
 
 
 def test_failing_sink_does_not_change_memory_prompt_counters_or_result(

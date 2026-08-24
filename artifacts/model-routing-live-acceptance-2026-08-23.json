@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "artifactType": "sanitized-model-routing-acceptance-projection",
+  "date": "2026-08-23",
+  "scope": {
+    "workspace": "synthetic-empty",
+    "networkBoundary": "open_verified_url",
+    "rawPromptsCommitted": false,
+    "rawHeadersCommitted": false,
+    "credentialsCommitted": false
+  },
+  "verdict": {
+    "status": "passed",
+    "usableActors": 4,
+    "expectedActors": 4,
+    "repeatRounds": 2
+  },
+  "actors": [
+    {
+      "actor": "parent",
+      "requestedModel": "deepseek-v4-pro",
+      "providerReportedModel": "deepseek-v4-pro",
+      "httpStatuses": [200, 200],
+      "outcomes": ["completed", "completed"],
+      "requestCountPerRound": [1, 1],
+      "inputTokens": [168, 168]
+    },
+    {
+      "actor": "subagent:explore",
+      "requestedModel": "qwen3.7-plus",
+      "providerReportedModel": "qwen3.7-plus",
+      "httpStatuses": [200, 200],
+      "outcomes": ["completed", "completed"],
+      "requestCountPerRound": [1, 1],
+      "inputTokens": [3737, 3740]
+    },
+    {
+      "actor": "subagent:plan",
+      "requestedModel": "qwen3.7-max",
+      "providerReportedModel": "qwen3.7-max",
+      "httpStatuses": [200, 200],
+      "outcomes": ["completed", "completed"],
+      "requestCountPerRound": [1, 1],
+      "inputTokens": [3868, 3871]
+    },
+    {
+      "actor": "subagent:general",
+      "requestedModel": "qwen3.7-max",
+      "providerReportedModel": "qwen3.7-max",
+      "httpStatuses": [200, 200],
+      "outcomes": ["completed", "completed"],
+      "requestCountPerRound": [1, 1],
+      "inputTokens": [6143, 6146]
+    }
+  ],
+  "privacy": {
+    "retainedFields": [
+      "actor",
+      "request model",
+      "HTTP status",
+      "provider-reported model",
+      "outcome",
+      "request count",
+      "input token usage"
+    ],
+    "excludedFields": [
+      "credential",
+      "request header",
+      "prompt",
+      "response content",
+      "project content",
+      "persistent Memory"
+    ]
+  },
+  "limitations": [
+    "This is a curated projection of locally retained boundary captures; raw probe sidecars are not committed.",
+    "Provider-reported model identity corroborates request routing but cannot prove how an API alias is implemented.",
+    "The run used an empty synthetic workspace and does not measure task quality or cost savings."
+  ]
+}

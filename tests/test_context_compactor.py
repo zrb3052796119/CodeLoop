@@ -34,6 +34,8 @@ from minicode.context_compactor import (
     ReactiveCompactEngine,
     SessionMemoryCompactEngine,
     ToolResultBudgetManager,
+    _adjust_tail_cut_for_tool_pairs,
+    _loaded_skill_context_indices,
 )
 
 
@@ -84,6 +86,82 @@ class TestCoreDataStructures:
         assert boundary.messages_removed == 50
         assert boundary.timestamp > 0
         assert boundary.logical_parent_id is None
+
+    def test_tail_cut_keeps_an_entire_multi_tool_assistant_turn(self):
+        messages = [
+            {"role": "user", "content": "inspect both"},
+            {
+                "role": "assistant_tool_call",
+                "toolUseId": "call-a",
+                "toolName": "read_file",
+                "input": {"path": "a.py"},
+                "content": "I will inspect both files.",
+                "reasoningContent": "Read both before answering.",
+                "assistantTurnId": "turn-shared",
+            },
+            {
+                "role": "tool_result",
+                "toolUseId": "call-a",
+                "toolName": "read_file",
+                "content": "a-result",
+                "isError": False,
+            },
+            {
+                "role": "assistant_tool_call",
+                "toolUseId": "call-b",
+                "toolName": "read_file",
+                "input": {"path": "b.py"},
+                "assistantTurnId": "turn-shared",
+            },
+            {
+                "role": "tool_result",
+                "toolUseId": "call-b",
+                "toolName": "read_file",
+                "content": "b-result",
+                "isError": False,
+            },
+            {"role": "assistant", "content": "done"},
+        ]
+
+        assert _adjust_tail_cut_for_tool_pairs(messages, 3) == 1
+        assert _adjust_tail_cut_for_tool_pairs(messages, 4) == 1
+        assert _adjust_tail_cut_for_tool_pairs(messages, 5) == 5
+
+    def test_loaded_skill_pin_expands_to_its_entire_assistant_tool_turn(self):
+        messages = [
+            {
+                "role": "assistant_tool_call",
+                "toolUseId": "call-read",
+                "toolName": "read_file",
+                "input": {"path": "README.md"},
+                "content": "I will inspect and load the routed skill.",
+                "reasoningContent": "Both calls belong to this turn.",
+                "assistantTurnId": "turn-shared",
+            },
+            {
+                "role": "tool_result",
+                "toolUseId": "call-read",
+                "toolName": "read_file",
+                "content": "read-result",
+                "isError": False,
+            },
+            {
+                "role": "assistant_tool_call",
+                "toolUseId": "call-skill",
+                "toolName": "load_skill",
+                "input": {"name": "demo"},
+                "assistantTurnId": "turn-shared",
+            },
+            {
+                "role": "tool_result",
+                "toolUseId": "call-skill",
+                "toolName": "load_skill",
+                "content": "skill-body",
+                "isError": False,
+            },
+        ]
+
+        assert _loaded_skill_context_indices(messages) == {0, 1, 2, 3}
 
     def test_compact_boundary_to_dict(self):
         boundary = CompactBoundary(
@@ -801,6 +879,54 @@ class TestAutoCompactDispatcher:
             for message in call
         )
         assert "ACTIVE_SKILL_MARKER" not in summarized
+
+    def test_full_compact_preserves_hidden_tool_turn_metadata_in_tail(self):
+        dispatcher = AutoCompactDispatcher(
+            context_window=100000,
+            config=AutoCompactConfig(min_keep_tokens=0, min_keep_messages=5),
+            summary_generator=RecordingSummarizer("bounded summary"),
+        )
+        msgs = [
+            {
+                "role": "user" if index % 2 == 0 else "assistant",
+                "content": f"message-{index} " + "x" * 2000,
+            }
+            for index in range(30)
+        ]
+        msgs.extend(
+            [
+                {
+                    "role": "assistant_tool_call",
+                    "toolUseId": "call-tail",
+                    "toolName": "read_file",
+                    "input": {"path": "synthetic.py"},
+                    "assistantTurnId": "tool-turn-tail",
+                    "reasoningContent": "Inspect the retained file first.",
+                },
+                {
+                    "role": "tool_result",
+                    "toolUseId": "call-tail",
+                    "toolName": "read_file",
+                    "content": "synthetic result",
+                    "isError": False,
+                },
+                {"role": "assistant", "content": "continue"},
+            ]
+        )
+
+        result = dispatcher.dispatch(msgs, force_full=True)
+
+        assert result.effective
+        retained_call = next(
+            message
+            for message in result.messages
+            if message.get("toolUseId") == "call-tail"
+            and message.get("role") == "assistant_tool_call"
+        )
+        assert retained_call["assistantTurnId"] == "tool-turn-tail"
+        assert retained_call["reasoningContent"] == (
+            "Inspect the retained file first."
+        )
 
     def test_full_compact_never_replaces_context_with_negative_token_savings(self):
         dispatcher = AutoCompactDispatcher(

@@ -18,12 +18,14 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import tempfile
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+from minicode.memory import assess_memory_safety, sanitize_for_persistence
 from minicode.memory_store import MemoryStoreCoordinator
 
 logger = logging.getLogger(__name__)
@@ -31,6 +33,24 @@ logger = logging.getLogger(__name__)
 MAX_FACTS = 200
 MAX_NAME_CHARS = 120
 RENDER_MAX_BYTES = 2_000
+
+_DEPENDENCY_NAME_RE = re.compile(
+    r"^@?[A-Za-z0-9][A-Za-z0-9._+\-]*"
+    r"(?:(?:[/@:])[A-Za-z0-9][A-Za-z0-9._+\-]*){0,7}$"
+)
+
+
+def _safe_dependency_name(value: Any) -> str:
+    """Return one prompt-safe dependency identifier or fail closed."""
+    name = str(sanitize_for_persistence(str(value or ""))).strip()[:MAX_NAME_CHARS]
+    if (
+        not name
+        or "[REDACTED" in name
+        or _DEPENDENCY_NAME_RE.fullmatch(name) is None
+        or not assess_memory_safety(name, source="project_fact").allowed
+    ):
+        return ""
+    return name
 
 
 @dataclass
@@ -63,8 +83,16 @@ class ProjectFactsStore:
         for raw in data.get("facts", []):
             if not isinstance(raw, dict):
                 continue
+            sanitized_raw = sanitize_for_persistence(raw)
+            if not isinstance(sanitized_raw, dict):
+                continue
+            raw = sanitized_raw
             kind = str(raw.get("kind", "")).strip()[:40]
-            name = str(raw.get("name", "")).strip()[:MAX_NAME_CHARS]
+            name = (
+                _safe_dependency_name(raw.get("name", ""))
+                if kind == "dependency"
+                else str(raw.get("name", "")).strip()[:MAX_NAME_CHARS]
+            )
             if not kind or not name:
                 continue
             try:
@@ -134,15 +162,26 @@ class ProjectFactsStore:
         provenance: dict[str, Any] | None = None,
     ) -> int:
         """Merge newly confirmed dependency names; return added count."""
-        clean = sorted(
-            {
-                str(name).strip()[:MAX_NAME_CHARS]
-                for name in names
-                if str(name or "").strip()
-            }
-        )
+        validated: list[str] = []
+        for name in names:
+            if not str(name or "").strip():
+                continue
+            safe_name = _safe_dependency_name(name)
+            if not safe_name:
+                # Reject the full batch: callers may log the original names
+                # after any successful addition, so partial acceptance could
+                # disclose the rejected value outside this store.
+                return 0
+            validated.append(safe_name)
+        clean = sorted(set(validated))
         if not clean:
             return 0
+        sanitized_provenance = sanitize_for_persistence(dict(provenance or {}))
+        safe_provenance = (
+            sanitized_provenance
+            if isinstance(sanitized_provenance, dict)
+            else {}
+        )
         now = time.time()
         added = 0
         try:
@@ -155,7 +194,7 @@ class ProjectFactsStore:
                         facts[key] = ProjectFact(
                             kind="dependency", name=name,
                             first_seen=now, last_seen=now,
-                            provenance=[dict(provenance or {})] if provenance else [],
+                            provenance=[safe_provenance] if safe_provenance else [],
                         )
                         added += 1
                     else:
@@ -164,9 +203,9 @@ class ProjectFactsStore:
                         existing.status = "active"
                         existing.retracted_at = None
                         existing.retraction_reason = ""
-                        if provenance:
+                        if safe_provenance:
                             existing.provenance = (
-                                existing.provenance + [dict(provenance)]
+                                existing.provenance + [safe_provenance]
                             )[-16:]
                 self._save(facts)
         except Exception as exc:  # noqa: BLE001 - facts are advisory
@@ -185,6 +224,12 @@ class ProjectFactsStore:
         normalized = str(name or "").strip()[:MAX_NAME_CHARS]
         if not normalized:
             return False
+        sanitized_provenance = sanitize_for_persistence(dict(provenance or {}))
+        safe_provenance = (
+            sanitized_provenance
+            if isinstance(sanitized_provenance, dict)
+            else {}
+        )
         with self._coordinator.transaction():
             facts = self.snapshot()
             fact = facts.get(f"dependency:{normalized}")
@@ -193,8 +238,8 @@ class ProjectFactsStore:
             fact.status = "retracted"
             fact.retracted_at = time.time()
             fact.retraction_reason = str(reason or "retracted")[:240]
-            if provenance:
-                fact.provenance = (fact.provenance + [dict(provenance)])[-16:]
+            if safe_provenance:
+                fact.provenance = (fact.provenance + [safe_provenance])[-16:]
             self._save(facts)
         return True
 
@@ -219,11 +264,14 @@ class ProjectFactsStore:
         if self._root.is_symlink() or self._path.is_symlink():
             raise OSError("project facts path is a symbolic link")
         ordered = sorted(facts.values(), key=lambda fact: (fact.kind, fact.name))
-        payload = json.dumps(
+        sanitized_payload = sanitize_for_persistence(
             {
                 "last_updated": time.time(),
                 "facts": [asdict(fact) for fact in ordered[:MAX_FACTS]],
-            },
+            }
+        )
+        payload = json.dumps(
+            sanitized_payload,
             ensure_ascii=False,
             sort_keys=True,
         )

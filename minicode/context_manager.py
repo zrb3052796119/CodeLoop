@@ -133,6 +133,13 @@ def estimate_message_tokens(message: dict[str, Any]) -> int:
     content = message.get("content", "")
     if isinstance(content, str):
         tokens += estimate_tokens(content)
+
+    # OpenAI-compatible thinking models require the reasoning attached to an
+    # assistant tool-call turn to be replayed on every later request.  It is
+    # hidden from user-visible content, but still consumes provider context.
+    reasoning_content = message.get("reasoningContent")
+    if isinstance(reasoning_content, str):
+        tokens += estimate_tokens(reasoning_content)
     
     # Tool call input/output
     if "input" in message:

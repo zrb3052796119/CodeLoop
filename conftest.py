@@ -32,6 +32,7 @@ _PROTECTED_REAL_PATHS = (
     _REAL_MINICODE_DIR / "memory" / "MEMORY.md",
     _REAL_MINICODE_DIR / "memory" / "approval_audit.json",
     _REAL_MINICODE_DIR / "sessions_index.json",
+    _REAL_MINICODE_DIR / ".env",
     _REAL_MINICODE_DIR / "settings.json",
     _REAL_MINICODE_DIR / "history.json",
     _REAL_MINICODE_DIR / "context_state.json",

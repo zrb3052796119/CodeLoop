@@ -164,6 +164,47 @@ def test_a_bare_retry_is_flakiness_not_a_recovery() -> None:
     assert "verified_solution" not in decision.durable_signals
 
 
+def _transient_failure_with_unrelated_edit(message: str) -> list[dict[str, Any]]:
+    return [
+        *_call(1, "c1", "run_command", ok=False, command=PYTEST, message=message),
+        *_call(10, "c2", "edit_file", ok=True, path="src/unrelated.py", changed=True),
+        *_call(20, "c3", "run_command", ok=True, command=PYTEST, message="1 passed"),
+        _done(30),
+    ]
+
+
+def test_http_503_then_unrelated_file_edit_is_not_a_confirmed_recovery() -> None:
+    evidence, decision = _evaluate(
+        _transient_failure_with_unrelated_edit("HTTP 503 Service Unavailable")
+    )
+
+    assert evidence.recoveries == []
+    assert decision.accepted is False
+    assert "verified_solution" not in decision.durable_signals
+
+
+def test_network_timeout_then_unrelated_file_edit_is_not_a_recovery() -> None:
+    evidence, decision = _evaluate(
+        _transient_failure_with_unrelated_edit(
+            "Connection timed out while loading the remote fixture"
+        )
+    )
+
+    assert evidence.recoveries == []
+    assert decision.accepted is False
+    assert "verified_solution" not in decision.durable_signals
+
+
+def test_lock_contention_then_unrelated_file_edit_is_not_a_recovery() -> None:
+    evidence, decision = _evaluate(
+        _transient_failure_with_unrelated_edit("database table is locked")
+    )
+
+    assert evidence.recoveries == []
+    assert decision.accepted is False
+    assert "verified_solution" not in decision.durable_signals
+
+
 def test_success_on_a_different_target_is_not_a_recovery() -> None:
     """A later unrelated command must not be read as having fixed the failure."""
     trace = [

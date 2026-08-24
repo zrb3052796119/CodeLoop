@@ -561,8 +561,10 @@ def _adjust_tail_cut_for_tool_pairs(
     Messages before ``cut`` are dropped; the tail from ``cut`` onward is
     kept. The API contract requires every tool_result to reference a
     tool_use present in the same request, so a kept result whose call was
-    dropped invalidates the request — walk the cut back until every kept
-    result has its call in the tail.
+    dropped invalidates the request. A provider assistant turn may also own
+    multiple tool calls, so retaining one member identified by
+    ``assistantTurnId`` retains that whole turn. Walk the cut back to a fixed
+    point satisfying both contracts.
     """
     cut = max(0, min(cut, len(messages)))
     while True:
@@ -572,13 +574,27 @@ def _adjust_tail_cut_for_tool_pairs(
             if m.get("role") == "tool_result"
         }
         kept_result_ids.discard("")
-        if not kept_result_ids:
-            return cut
         new_cut = cut
-        for index in range(cut - 1, -1, -1):
-            if _tool_call_ids(messages[index]) & kept_result_ids:
-                new_cut = index
-                break
+        if kept_result_ids:
+            for index in range(cut - 1, -1, -1):
+                if _tool_call_ids(messages[index]) & kept_result_ids:
+                    new_cut = index
+                    break
+
+        kept_turn_ids = {
+            str(message.get("assistantTurnId", "") or "")
+            for message in messages[new_cut:]
+            if message.get("role") == "assistant_tool_call"
+        }
+        kept_turn_ids.discard("")
+        if kept_turn_ids:
+            for index, message in enumerate(messages[:new_cut]):
+                if (
+                    message.get("role") == "assistant_tool_call"
+                    and str(message.get("assistantTurnId", "") or "")
+                    in kept_turn_ids
+                ):
+                    new_cut = min(new_cut, index)
         if new_cut == cut:
             return cut
         cut = new_cut
@@ -609,6 +625,31 @@ def _loaded_skill_context_indices(
         )
         if call_index is not None:
             indices.update({call_index, result_index})
+    turn_ids = {
+        str(messages[index].get("assistantTurnId", "") or "")
+        for index in indices
+        if messages[index].get("role") == "assistant_tool_call"
+    }
+    turn_ids.discard("")
+    if not turn_ids:
+        return indices
+
+    grouped_call_ids: set[str] = set()
+    for index, message in enumerate(messages):
+        if (
+            message.get("role") == "assistant_tool_call"
+            and str(message.get("assistantTurnId", "") or "") in turn_ids
+        ):
+            indices.add(index)
+            call_id = str(message.get("toolUseId", "") or "")
+            if call_id:
+                grouped_call_ids.add(call_id)
+    for index, message in enumerate(messages):
+        if (
+            message.get("role") == "tool_result"
+            and str(message.get("toolUseId", "") or "") in grouped_call_ids
+        ):
+            indices.add(index)
     return indices
 
 

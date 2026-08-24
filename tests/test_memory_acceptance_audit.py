@@ -246,8 +246,16 @@ def test_corroborated_feedback_counters_are_independent_of_whole_turn_feedback(
     assert entry is not None
 
     manager.record_feedback([entry.id], success=False)
-    manager.record_corroborated_feedback([entry.id, entry.id, "missing-id"], success=True)
-    manager.record_corroborated_feedback([entry.id], success=True)
+    manager.record_corroborated_feedback(
+        [entry.id, entry.id, "missing-id"],
+        success=True,
+        observation_id="run_" + "1" * 32,
+    )
+    manager.record_corroborated_feedback(
+        [entry.id],
+        success=True,
+        observation_id="run_" + "2" * 32,
+    )
 
     again = _manager(isolated_workspace).memories[MemoryScope.PROJECT]._id_index[entry.id]
     assert again.failure_count == 1

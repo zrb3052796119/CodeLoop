@@ -414,7 +414,7 @@ class TestEnvFileConfig:
         assert os.environ["SKILL_SEMANTIC_TEST_NEW"] == "from-file"
         assert applied == {"SKILL_SEMANTIC_TEST_NEW": "from-file"}
 
-    def test_matcher_built_from_workspace_env_file(
+    def test_matcher_built_from_user_env_file(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         for name in (
@@ -423,10 +423,15 @@ class TestEnvFileConfig:
             "MINICODE_EMBEDDING_MODEL",
         ):
             monkeypatch.delenv(name, raising=False)
-        (tmp_path / ".env").write_text(
-            "MINICODE_EMBEDDING_API_KEY=sk-from-file\n"
-            "MINICODE_EMBEDDING_MODEL=text-embedding-v4\n",
-            encoding="utf-8",
+        user_env = Path.home() / ".mini-code" / ".env"
+        from minicode.env_file import update_private_env_file
+
+        update_private_env_file(
+            user_env,
+            {
+                "MINICODE_EMBEDDING_API_KEY": "sk-from-file",
+                "MINICODE_EMBEDDING_MODEL": "text-embedding-v4",
+            },
         )
         matcher = EmbeddingSemanticMatcher.from_environment(tmp_path)
         assert matcher is not None
@@ -442,13 +447,16 @@ class TestEnvFileConfig:
         monkeypatch.delenv("MINICODE_EMBEDDING_API_KEY", raising=False)
         assert EmbeddingSemanticMatcher.from_environment(tmp_path) is None
 
-    def test_process_env_beats_env_file(
+    def test_process_env_beats_user_env_file(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv("MINICODE_EMBEDDING_API_KEY", "sk-from-process")
-        (tmp_path / ".env").write_text(
-            "MINICODE_EMBEDDING_API_KEY=sk-from-file\n",
-            encoding="utf-8",
+        user_env = Path.home() / ".mini-code" / ".env"
+        from minicode.env_file import update_private_env_file
+
+        update_private_env_file(
+            user_env,
+            {"MINICODE_EMBEDDING_API_KEY": "sk-from-file"},
         )
         matcher = EmbeddingSemanticMatcher.from_environment(tmp_path)
         assert matcher is not None

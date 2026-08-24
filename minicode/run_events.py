@@ -129,6 +129,19 @@ _MEMORY_NO_MATCH_REASONS = frozenset(
         "prompt_injection_failed",
     }
 )
+_MEMORY_HYBRID_EMBEDDING_PROVIDERS = frozenset({"local-e5", "qwen"})
+_MEMORY_HYBRID_VERIFIER_BINDINGS = frozenset(
+    {
+        "not_applicable",
+        "activation_unavailable",
+        "configured_match",
+        "evidence_bound_primary",
+        "evidence_bound_dedicated",
+        "evidence_bound_override",
+        "verifier_adapter_unavailable",
+    }
+)
+_MEMORY_HYBRID_REASON_RE = re.compile(r"^[a-z][a-z0-9_]{0,95}$")
 
 
 class AgentEventSink(Protocol):
@@ -903,15 +916,62 @@ def project_memory_result_events(
     total_tokens = _bounded_count(
         getattr(result, "total_tokens", None), maximum=_MAX_MEMORY_TOKENS
     )
-    return (
-        {
+    retrieved = {
             "retrievalVersion": 1,
             "candidateCount": candidate_count,
             "selectedCount": selected_count,
             "suppressedCount": suppressed_count,
             "noMatch": no_match,
             "noMatchReason": no_match_reason,
-        },
+        }
+    diagnostics = getattr(result, "diagnostics", None)
+    if isinstance(diagnostics, Mapping):
+        hybrid = diagnostics.get("hybrid_runtime")
+        if isinstance(hybrid, Mapping):
+            requested = hybrid.get("requested")
+            active = hybrid.get("active")
+            fallback = hybrid.get("fallback")
+            cache_reused = hybrid.get("provider_cache_reused")
+            adjudication_cache_hit = hybrid.get("adjudication_cache_hit")
+            if all(
+                isinstance(value, bool)
+                for value in (
+                    requested,
+                    active,
+                    fallback,
+                    cache_reused,
+                    adjudication_cache_hit,
+                )
+            ):
+                raw_reason = str(hybrid.get("reason") or "")
+                raw_provider = str(hybrid.get("embedding_provider") or "")
+                raw_binding = str(hybrid.get("verifier_binding") or "")
+                retrieved.update(
+                    {
+                        "hybridRequested": requested,
+                        "hybridActive": active,
+                        "hybridFallback": fallback,
+                        "hybridReason": (
+                            raw_reason
+                            if _MEMORY_HYBRID_REASON_RE.fullmatch(raw_reason)
+                            else "other"
+                        ),
+                        "hybridEmbeddingProvider": (
+                            raw_provider
+                            if raw_provider in _MEMORY_HYBRID_EMBEDDING_PROVIDERS
+                            else "other"
+                        ),
+                        "hybridVerifierBinding": (
+                            raw_binding
+                            if raw_binding in _MEMORY_HYBRID_VERIFIER_BINDINGS
+                            else "other"
+                        ),
+                        "hybridCacheReused": cache_reused,
+                        "hybridAdjudicationCacheHit": adjudication_cache_hit,
+                    }
+                )
+    return (
+        retrieved,
         {
             "renderVersion": 1,
             "renderedCount": rendered_count,

@@ -19,6 +19,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any, Protocol, Sequence, runtime_checkable
+from urllib.parse import urlparse
 
 from minicode.agent_budget import record_budgeted_model_call
 from minicode.model_call_control import (
@@ -63,21 +64,54 @@ class EmbeddingUnavailable(RuntimeError):
     """Raised when an embedding transport cannot or should not be used."""
 
 
+def _validated_embedding_base_url(value: str) -> str:
+    normalized = str(value).strip().rstrip("/")
+    parsed = urlparse(normalized)
+    if (
+        not parsed.netloc
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise EmbeddingUnavailable("embedding base URL is unsafe")
+    if parsed.scheme == "https":
+        return normalized
+    if parsed.scheme == "http" and parsed.hostname in {
+        "localhost",
+        "127.0.0.1",
+        "::1",
+    }:
+        return normalized
+    raise EmbeddingUnavailable("embedding base URL must use HTTPS or loopback HTTP")
+
+
 def resolve_embedding_setting(
     workspace: str | Path | None,
     name: str,
     default: str = "",
 ) -> str:
-    """Resolve process env, workspace env, user env, then a default."""
-    from minicode.env_file import read_env_files
+    """Resolve one remote-embedding setting from trusted user sources.
+
+    ``workspace`` remains in the interface because callers also use it to
+    locate non-secret embedding caches.  A workspace ``.env`` is deliberately
+    not a configuration source here: resolving the credential and endpoint
+    independently allowed an untrusted repository to redirect a user-global
+    credential by overriding only ``MINICODE_EMBEDDING_BASE_URL``.
+    """
+    from minicode.env_file import read_private_env_file
 
     direct = os.environ.get(name, "").strip()
     if direct:
         return direct
-    paths = [Path.home() / ".mini-code" / ".env"]
-    if workspace is not None:
-        paths.append(Path(workspace) / ".env")
-    return read_env_files(paths).get(name, "").strip() or default
+    # Keep the parameter for backwards-compatible keyword calls without
+    # granting the workspace authority over a remote transport.
+    _ = workspace
+    user_env = read_private_env_file(
+        Path.home() / ".mini-code" / ".env",
+        allowed_keys={name},
+    )
+    return user_env.get(name, "").strip() or default
 
 
 class OpenAICompatibleEmbeddingClient:
@@ -95,7 +129,7 @@ class OpenAICompatibleEmbeddingClient:
         if not api_key:
             raise EmbeddingUnavailable("embedding api key is empty")
         self._api_key = api_key
-        self._endpoint = f"{str(base_url).rstrip('/')}/embeddings"
+        self._endpoint = f"{_validated_embedding_base_url(base_url)}/embeddings"
         self._model = model
         self._timeout = timeout
         self._ssl_context = ssl_context

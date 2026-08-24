@@ -1,0 +1,1262 @@
+{
+  "attributionContract": {
+    "contentFree": true,
+    "learnedSourceTurnMustPrecedeRenderedTurn": true,
+    "requiresExactEntryIdIntersection": true,
+    "version": 1
+  },
+  "caseCount": 10,
+  "cases": [
+    {
+      "authorizedPaths": [],
+      "category": "persistent-memory-warm",
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Persistent Memory Large Study\n",
+        "services/data/schema_contract.yaml": "# Synthetic data schema contract\nschema compatibility marker: SCHEMA-COMPAT-623\n"
+      },
+      "fixtureId": "persistent-memory-large-synthetic-v1",
+      "id": "pmem-b1-schema-contract-warm",
+      "memoryEntries": [
+        {
+          "category": "verified-recovery",
+          "content": "Verified recovery for the data schema contract: `schema/contract.yaml` is the failed target and must not be retried. The corrected, verified target is `services/data/schema_contract.yaml`; read it directly before any repository discovery.",
+          "tags": [
+            "data",
+            "schema",
+            "contract"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "lesson-injected",
+        "marker-found",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "everyTurn": true,
+          "id": "source-read",
+          "kind": "tool_succeeded",
+          "min": 1,
+          "toolName": "read_file"
+        },
+        {
+          "id": "lesson-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "marker-found",
+          "kind": "response_contains",
+          "values": [
+            "SCHEMA-COMPAT-623"
+          ]
+        },
+        {
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 0,
+          "seedIndexes": [
+            0
+          ],
+          "source": "seeded"
+        }
+      ],
+      "promptClass": "persistent-memory-large-study",
+      "study": {
+        "acceptanceFamily": "path_resource_recovery",
+        "block": 1,
+        "condition": "warm",
+        "conditionOrder": 1,
+        "correctedPath": "services/data/schema_contract.yaml",
+        "failedPath": "schema/contract.yaml",
+        "familyId": "schema-contract",
+        "lessonMode": "seeded",
+        "marker": "SCHEMA-COMPAT-623",
+        "pairOrder": 1,
+        "sourceCaseId": "pmem-b1-schema-contract-warm",
+        "stratum": "data-governance",
+        "targetTurnIndex": 0
+      },
+      "turns": [
+        {
+          "prompt": "Find the data schema contract and return its exact compatibility marker. Do not edit files."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "persistent-memory-learning",
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Persistent Memory Large Study\n",
+        "backend/src/auth_policy.py": "# Synthetic gateway authentication policy\nauthentication policy marker: AUTH-POLICY-731\n"
+      },
+      "fixtureId": "persistent-memory-large-synthetic-v1",
+      "id": "pmem-b1-auth-policy-warm",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "source-read",
+        "source-failure",
+        "lesson-written",
+        "lesson-injected",
+        "marker-found",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "everyTurn": true,
+          "id": "source-read",
+          "kind": "tool_succeeded",
+          "min": 1,
+          "toolName": "read_file"
+        },
+        {
+          "id": "source-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "read_file"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "id": "lesson-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "marker-found",
+          "kind": "response_contains",
+          "values": [
+            "AUTH-POLICY-731"
+          ]
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "persistent-memory-large-study",
+      "study": {
+        "acceptanceFamily": "path_resource_recovery",
+        "block": 1,
+        "condition": "warm",
+        "conditionOrder": 1,
+        "correctedPath": "backend/src/auth_policy.py",
+        "failedPath": "src/auth_policy.py",
+        "familyId": "auth-policy",
+        "lessonMode": "learned",
+        "marker": "AUTH-POLICY-731",
+        "pairOrder": 7,
+        "sourceCaseId": "pmem-b1-auth-policy-warm",
+        "stratum": "application-security",
+        "targetTurnIndex": 1
+      },
+      "turns": [
+        {
+          "prompt": "Your first tool call must be read_file with exactly the path src/auth_policy.py; do not inspect or list files before that call. This pre-registered path is intentionally absent. After the tool reports the failure, inspect the workspace, recover to the real gateway authentication policy, and report its exact authentication policy marker. Do not edit files."
+        },
+        {
+          "prompt": "Read the gateway authentication policy and report its exact policy marker. Do not edit files."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "non-path-memory-command-recovery",
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Non-Path Persistent Memory Study\n",
+        "tests/__init__.py": "",
+        "tests/test_payload_contract.py": "import unittest\n\n\nclass PayloadContractTests(unittest.TestCase):\n    def test_contract(self):\n        self.assertTrue(True)\n        print(\"COMMAND-PAYLOAD-284\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "non-path-memory-synthetic-v1",
+      "id": "npmem-b1-payload-command-warm",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "no-source-edits",
+        "learning-failure",
+        "lesson-written",
+        "lesson-injected",
+        "target-verifier",
+        "target-marker",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "everyTurn": true,
+          "id": "verification-ran",
+          "kind": "verification_passed",
+          "min": 1,
+          "sources": [
+            "run_command_exit",
+            "test_runner"
+          ],
+          "verificationKind": "tests"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "learning-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "id": "lesson-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "-v",
+            "tests.test_payload_contract.PayloadContractTests"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "COMMAND-PAYLOAD-284"
+          ]
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "non-path-persistent-memory-study",
+      "study": {
+        "acceptanceFamily": "command_recovery",
+        "block": 1,
+        "condition": "warm",
+        "conditionOrder": 1,
+        "familyId": "payload-command",
+        "learningFailureRequired": true,
+        "learningFile": "",
+        "lessonMode": "learned",
+        "pairOrder": 3,
+        "sourceCaseId": "npmem-b1-payload-command-warm",
+        "stratum": "command-recovery",
+        "targetExpected": "",
+        "targetFile": "",
+        "targetMarker": "COMMAND-PAYLOAD-284",
+        "targetTool": "run_command",
+        "targetTurnIndex": 1
+      },
+      "turns": [
+        {
+          "prompt": "Your first tool call must be run_command with exactly `python -m unittest -v tests.test_payload_contract.LegacyPayloadTests`; this selector is intentionally invalid. Recover to the real payload contract test class, verify it, and report its exact marker. Do not edit files."
+        },
+        {
+          "prompt": "Run the payload compatibility unittest and report its exact verification marker. Do not edit files."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "non-path-memory-command-recovery",
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Non-Path Persistent Memory Study\n",
+        "tests/__init__.py": "",
+        "tests/test_release_contract.py": "import unittest\n\n\nclass ReleaseContractTests(unittest.TestCase):\n    def test_contract(self):\n        self.assertTrue(True)\n        print(\"COMMAND-RELEASE-731\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "non-path-memory-synthetic-v1",
+      "id": "npmem-b1-release-command-warm",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "no-source-edits",
+        "learning-failure",
+        "lesson-written",
+        "lesson-injected",
+        "target-verifier",
+        "target-marker",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "everyTurn": true,
+          "id": "verification-ran",
+          "kind": "verification_passed",
+          "min": 1,
+          "sources": [
+            "run_command_exit",
+            "test_runner"
+          ],
+          "verificationKind": "tests"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "learning-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "id": "lesson-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "-v",
+            "tests.test_release_contract.ReleaseContractTests"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "COMMAND-RELEASE-731"
+          ]
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "non-path-persistent-memory-study",
+      "study": {
+        "acceptanceFamily": "command_recovery",
+        "block": 1,
+        "condition": "warm",
+        "conditionOrder": 1,
+        "familyId": "release-command",
+        "learningFailureRequired": true,
+        "learningFile": "",
+        "lessonMode": "learned",
+        "pairOrder": 7,
+        "sourceCaseId": "npmem-b1-release-command-warm",
+        "stratum": "command-recovery",
+        "targetExpected": "",
+        "targetFile": "",
+        "targetMarker": "COMMAND-RELEASE-731",
+        "targetTool": "run_command",
+        "targetTurnIndex": 1
+      },
+      "turns": [
+        {
+          "prompt": "Your first tool call must be run_command with exactly `python -m unittest -v tests.test_release_legacy`; this pre-registered command is intentionally invalid. After it fails, recover to the real release contract unittest, run it successfully, and report its exact marker. Do not edit files."
+        },
+        {
+          "prompt": "Run the project's release contract verification and report the exact verification marker. Do not edit files."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [
+        "auth/session_primary.py",
+        "auth/session_secondary.py"
+      ],
+      "category": "non-path-memory-code-repair",
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Non-Path Persistent Memory Study\n",
+        "auth/__init__.py": "",
+        "auth/session_primary.py": "def accept(expired: bool, known: bool) -> bool:\n    if known:\n        return True\n    if expired:\n        return False\n    return False\n",
+        "auth/session_secondary.py": "def accept(expired: bool, known: bool) -> bool:\n    if known:\n        return True\n    if expired:\n        return False\n    return False\n",
+        "tests/__init__.py": "",
+        "tests/test_session_primary.py": "import unittest\n\nfrom auth.session_primary import accept\n\n\nclass SessionPrimaryTests(unittest.TestCase):\n    def test_expired_known_session_is_rejected(self):\n        self.assertFalse(accept(expired=True, known=True))\n        print(\"REPAIR-AUTH-PRIMARY-463\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+        "tests/test_session_secondary.py": "import unittest\n\nfrom auth.session_secondary import accept\n\n\nclass SessionSecondaryTests(unittest.TestCase):\n    def test_expired_known_session_is_rejected(self):\n        self.assertFalse(accept(expired=True, known=True))\n        print(\"REPAIR-AUTH-SECONDARY-857\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "non-path-memory-synthetic-v1",
+      "id": "npmem-b1-expired-session-repair-warm",
+      "mutability": "write",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "learning-failure",
+        "lesson-written",
+        "lesson-injected",
+        "target-content",
+        "target-verifier",
+        "target-marker",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "everyTurn": true,
+          "id": "verification-ran",
+          "kind": "verification_passed",
+          "min": 1,
+          "sources": [
+            "run_command_exit",
+            "test_runner"
+          ],
+          "verificationKind": "tests"
+        },
+        {
+          "id": "learning-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "id": "lesson-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "target-content",
+          "kind": "file_contains",
+          "path": "auth/session_secondary.py",
+          "text": "    if expired:\n        return False\n    if known:"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "-v",
+            "tests.test_session_secondary.SessionSecondaryTests"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "REPAIR-AUTH-SECONDARY-857"
+          ]
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "non-path-persistent-memory-study",
+      "study": {
+        "acceptanceFamily": "code_fix_recovery",
+        "block": 1,
+        "condition": "warm",
+        "conditionOrder": 2,
+        "familyId": "expired-session-repair",
+        "learningFailureRequired": true,
+        "learningFile": "auth/session_primary.py",
+        "lessonMode": "learned",
+        "pairOrder": 6,
+        "sourceCaseId": "npmem-b1-expired-session-repair-warm",
+        "stratum": "code-repair",
+        "targetExpected": "    if expired:\n        return False\n    if known:",
+        "targetFile": "auth/session_secondary.py",
+        "targetMarker": "REPAIR-AUTH-SECONDARY-857",
+        "targetTool": "run_command",
+        "targetTurnIndex": 1
+      },
+      "turns": [
+        {
+          "prompt": "Your first tool call must be run_command with exactly `python -m unittest -v tests.test_session_primary.SessionPrimaryTests`; the test is intentionally failing. Repair auth/session_primary.py so expired known sessions are rejected before lookup, rerun the same test, and report its marker."
+        },
+        {
+          "prompt": "Fix the expired-token acceptance bug in auth/session_secondary.py, run its focused unittest, and report the exact verification marker."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [
+        "parser/normalizer_primary.py",
+        "parser/normalizer_secondary.py"
+      ],
+      "category": "non-path-memory-code-repair",
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Non-Path Persistent Memory Study\n",
+        "parser/__init__.py": "",
+        "parser/normalizer_primary.py": "KNOWN = {\"alpha\", \"beta\"}\n\n\ndef is_known(value: str) -> bool:\n    normalized = value.strip()\n    return normalized in KNOWN\n",
+        "parser/normalizer_secondary.py": "KNOWN = {\"alpha\", \"beta\"}\n\n\ndef is_known(value: str) -> bool:\n    normalized = value.strip()\n    return normalized in KNOWN\n",
+        "tests/__init__.py": "",
+        "tests/test_normalizer_primary.py": "import unittest\n\nfrom parser.normalizer_primary import is_known\n\n\nclass NormalizerPrimaryTests(unittest.TestCase):\n    def test_mixed_case_token_is_normalized(self):\n        self.assertTrue(is_known(\"  ALPHA  \"))\n        print(\"REPAIR-NORM-PRIMARY-812\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+        "tests/test_normalizer_secondary.py": "import unittest\n\nfrom parser.normalizer_secondary import is_known\n\n\nclass NormalizerSecondaryTests(unittest.TestCase):\n    def test_mixed_case_token_is_normalized(self):\n        self.assertTrue(is_known(\"  ALPHA  \"))\n        print(\"REPAIR-NORM-SECONDARY-394\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "non-path-memory-synthetic-v1",
+      "id": "npmem-b1-token-normalization-repair-warm",
+      "mutability": "write",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "learning-failure",
+        "lesson-written",
+        "lesson-injected",
+        "target-content",
+        "target-verifier",
+        "target-marker",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "everyTurn": true,
+          "id": "verification-ran",
+          "kind": "verification_passed",
+          "min": 1,
+          "sources": [
+            "run_command_exit",
+            "test_runner"
+          ],
+          "verificationKind": "tests"
+        },
+        {
+          "id": "learning-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "id": "lesson-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "target-content",
+          "kind": "file_not_contains",
+          "path": "parser/normalizer_secondary.py",
+          "text": "normalized = value.strip()\n"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "-v",
+            "tests.test_normalizer_secondary.NormalizerSecondaryTests"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "REPAIR-NORM-SECONDARY-394"
+          ]
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "non-path-persistent-memory-study",
+      "study": {
+        "acceptanceFamily": "code_fix_recovery",
+        "block": 1,
+        "condition": "warm",
+        "conditionOrder": 1,
+        "familyId": "token-normalization-repair",
+        "learningFailureRequired": true,
+        "learningFile": "parser/normalizer_primary.py",
+        "lessonMode": "learned",
+        "pairOrder": 11,
+        "sourceCaseId": "npmem-b1-token-normalization-repair-warm",
+        "stratum": "code-repair",
+        "targetExpected": "normalized = value.strip().lower()",
+        "targetFile": "parser/normalizer_secondary.py",
+        "targetMarker": "REPAIR-NORM-SECONDARY-394",
+        "targetTool": "run_command",
+        "targetTurnIndex": 1
+      },
+      "turns": [
+        {
+          "prompt": "Your first tool call must be run_command with exactly `python -m unittest -v tests.test_normalizer_primary.NormalizerPrimaryTests`; the test is intentionally failing. Repair parser/normalizer_primary.py, rerun the same focused test, and report its exact marker."
+        },
+        {
+          "prompt": "Fix mixed-case token recognition in parser/normalizer_secondary.py, run its focused unittest, and report the exact verification marker."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [
+        "ledger/config.py",
+        "ledger/config.py"
+      ],
+      "category": "non-path-memory-verification-rule",
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Non-Path Persistent Memory Study\n",
+        "ledger/__init__.py": "",
+        "ledger/config.py": "FORMAT = \"legacy\"\nNOTE = \"draft\"\n",
+        "project-policy.md": "# Ledger verification\n\nAfter changing ledger/config.py, always run python -m unittest -v tests.test_ledger_config.LedgerConfigTests. This compatibility check is required before completion.\n",
+        "tests/__init__.py": "",
+        "tests/test_ledger_config.py": "import unittest\n\nfrom ledger.config import FORMAT\n\n\nclass LedgerConfigTests(unittest.TestCase):\n    def test_project_contract(self):\n        self.assertEqual(FORMAT, \"stable-v2\")\n        print(\"VERIFY-LEDGER-642\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "non-path-memory-synthetic-v1",
+      "id": "npmem-b1-ledger-verification-rule-warm",
+      "mutability": "write",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "lesson-written",
+        "lesson-injected",
+        "target-content",
+        "target-verifier",
+        "target-marker",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "everyTurn": true,
+          "id": "verification-ran",
+          "kind": "verification_passed",
+          "min": 1,
+          "sources": [
+            "run_command_exit",
+            "test_runner"
+          ],
+          "verificationKind": "tests"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "id": "lesson-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "target-content",
+          "kind": "file_contains",
+          "path": "ledger/config.py",
+          "text": "NOTE = \"final\""
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "-v",
+            "tests.test_ledger_config.LedgerConfigTests"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-LEDGER-642"
+          ]
+        },
+        {
+          "claimType": "verification_rule",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "non-path-persistent-memory-study",
+      "study": {
+        "acceptanceFamily": "stable_verification_rule",
+        "block": 1,
+        "condition": "warm",
+        "conditionOrder": 1,
+        "familyId": "ledger-verification-rule",
+        "learningFailureRequired": false,
+        "learningFile": "ledger/config.py",
+        "lessonMode": "learned",
+        "pairOrder": 1,
+        "sourceCaseId": "npmem-b1-ledger-verification-rule-warm",
+        "stratum": "verification-rule",
+        "targetExpected": "NOTE = \"final\"",
+        "targetFile": "ledger/config.py",
+        "targetMarker": "VERIFY-LEDGER-642",
+        "targetTool": "run_command",
+        "targetTurnIndex": 1
+      },
+      "turns": [
+        {
+          "prompt": "First read project-policy.md. Then change FORMAT in ledger/config.py from legacy to stable-v2, execute the policy-required verifier, and report its marker."
+        },
+        {
+          "prompt": "Update NOTE in ledger/config.py from draft to final, follow the established verification rule, and report the exact compatibility marker."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [
+        "parser/runtime.py",
+        "parser/runtime.py"
+      ],
+      "category": "non-path-memory-verification-rule",
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Non-Path Persistent Memory Study\n",
+        "parser/__init__.py": "",
+        "parser/runtime.py": "MODE = \"legacy\"\nDESCRIPTION = \"old\"\n",
+        "project-policy.md": "# Parser verification\n\nAfter changing parser/runtime.py, always run python -m unittest -v tests.test_parser_runtime.ParserRuntimeTests. This verification is required before reporting completion.\n",
+        "tests/__init__.py": "",
+        "tests/test_parser_runtime.py": "import unittest\n\nfrom parser.runtime import MODE\n\n\nclass ParserRuntimeTests(unittest.TestCase):\n    def test_project_contract(self):\n        self.assertEqual(MODE, \"strict\")\n        print(\"VERIFY-PARSER-174\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "non-path-memory-synthetic-v1",
+      "id": "npmem-b1-parser-verification-rule-warm",
+      "mutability": "write",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "lesson-written",
+        "lesson-injected",
+        "target-content",
+        "target-verifier",
+        "target-marker",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "everyTurn": true,
+          "id": "verification-ran",
+          "kind": "verification_passed",
+          "min": 1,
+          "sources": [
+            "run_command_exit",
+            "test_runner"
+          ],
+          "verificationKind": "tests"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "id": "lesson-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "target-content",
+          "kind": "file_contains",
+          "path": "parser/runtime.py",
+          "text": "DESCRIPTION = \"current\""
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "-v",
+            "tests.test_parser_runtime.ParserRuntimeTests"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-PARSER-174"
+          ]
+        },
+        {
+          "claimType": "verification_rule",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "non-path-persistent-memory-study",
+      "study": {
+        "acceptanceFamily": "stable_verification_rule",
+        "block": 1,
+        "condition": "warm",
+        "conditionOrder": 2,
+        "familyId": "parser-verification-rule",
+        "learningFailureRequired": false,
+        "learningFile": "parser/runtime.py",
+        "lessonMode": "learned",
+        "pairOrder": 4,
+        "sourceCaseId": "npmem-b1-parser-verification-rule-warm",
+        "stratum": "verification-rule",
+        "targetExpected": "DESCRIPTION = \"current\"",
+        "targetFile": "parser/runtime.py",
+        "targetMarker": "VERIFY-PARSER-174",
+        "targetTool": "run_command",
+        "targetTurnIndex": 1
+      },
+      "turns": [
+        {
+          "prompt": "First read project-policy.md. Then change MODE in parser/runtime.py from legacy to strict, execute the policy-required verifier, and report its marker."
+        },
+        {
+          "prompt": "Update DESCRIPTION in parser/runtime.py from old to current, follow the established project verification rule, and report its exact marker."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [
+        "plugins/registry_primary.py",
+        "plugins/registry_secondary.py"
+      ],
+      "category": "non-path-memory-project-constraint",
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Non-Path Persistent Memory Study\n",
+        "plugins/__init__.py": "",
+        "plugins/registry_primary.py": "NAMES = ['alpha', 'gamma']\n",
+        "plugins/registry_secondary.py": "NAMES = ['delta', 'zeta']\n",
+        "project-policy.md": "# Registry policy\n\nExported registry names must always remain in alphabetical order. This rule applies to every plugin registry module.\n",
+        "tests/__init__.py": "",
+        "tests/test_registry_primary.py": "import unittest\n\nfrom plugins.registry_primary import NAMES\n\n\nclass RegistryPrimaryTests(unittest.TestCase):\n    def test_registry_is_sorted(self):\n        self.assertEqual(NAMES, ['alpha', 'beta', 'gamma'])\n        print(\"CONSTRAINT-REGISTRY-PRIMARY-269\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+        "tests/test_registry_secondary.py": "import unittest\n\nfrom plugins.registry_secondary import NAMES\n\n\nclass RegistrySecondaryTests(unittest.TestCase):\n    def test_registry_is_sorted(self):\n        self.assertEqual(NAMES, ['delta', 'epsilon', 'zeta'])\n        print(\"CONSTRAINT-REGISTRY-SECONDARY-481\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "non-path-memory-synthetic-v1",
+      "id": "npmem-b1-registry-order-constraint-warm",
+      "mutability": "write",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "lesson-written",
+        "lesson-injected",
+        "target-content",
+        "target-verifier",
+        "target-marker",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "everyTurn": true,
+          "id": "verification-ran",
+          "kind": "verification_passed",
+          "min": 1,
+          "sources": [
+            "run_command_exit",
+            "test_runner"
+          ],
+          "verificationKind": "tests"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "id": "lesson-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "target-content",
+          "kind": "file_contains",
+          "path": "plugins/registry_secondary.py",
+          "text": "NAMES = ['delta', 'epsilon', 'zeta']"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "-v",
+            "tests.test_registry_secondary.RegistrySecondaryTests"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "CONSTRAINT-REGISTRY-SECONDARY-481"
+          ]
+        },
+        {
+          "claimType": "constraint",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "non-path-persistent-memory-study",
+      "study": {
+        "acceptanceFamily": "project_constraint_decision",
+        "block": 1,
+        "condition": "warm",
+        "conditionOrder": 1,
+        "familyId": "registry-order-constraint",
+        "learningFailureRequired": false,
+        "learningFile": "plugins/registry_primary.py",
+        "lessonMode": "learned",
+        "pairOrder": 5,
+        "sourceCaseId": "npmem-b1-registry-order-constraint-warm",
+        "stratum": "project-constraint",
+        "targetExpected": "NAMES = ['delta', 'epsilon', 'zeta']",
+        "targetFile": "plugins/registry_secondary.py",
+        "targetMarker": "CONSTRAINT-REGISTRY-SECONDARY-481",
+        "targetTool": "run_command",
+        "targetTurnIndex": 1
+      },
+      "turns": [
+        {
+          "prompt": "First read project-policy.md. Then add beta to plugins/registry_primary.py in compliance with that policy, run `python -m unittest -v tests.test_registry_primary.RegistryPrimaryTests`, and report its marker."
+        },
+        {
+          "prompt": "Add epsilon to plugins/registry_secondary.py while respecting the established registry policy. Run its focused unittest and report the marker."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [
+        "api/error_envelope.py"
+      ],
+      "category": "non-path-memory-project-constraint",
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Non-Path Persistent Memory Study\n",
+        "api/__init__.py": "",
+        "api/error_envelope.py": "FIELDS = {\n    \"code\": {\"required\": True},\n}\n",
+        "tests/__init__.py": "",
+        "tests/test_error_envelope.py": "import unittest\n\nfrom api.error_envelope import FIELDS\n\n\nclass ErrorEnvelopeTests(unittest.TestCase):\n    def test_project_contract(self):\n        self.assertIn(\"details\", FIELDS); self.assertFalse(FIELDS[\"details\"][\"required\"]); self.assertTrue(FIELDS[\"code\"][\"required\"])\n        print(\"CONSTRAINT-ERROR-936\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "non-path-memory-synthetic-v1",
+      "id": "npmem-b1-error-envelope-constraint-warm",
+      "memoryEntries": [
+        {
+          "category": "project-constraint",
+          "content": "Project constraint: the public error envelope must retain required numeric code, while every newly added field such as details must be optional.",
+          "tags": [
+            "error",
+            "envelope",
+            "constraint"
+          ]
+        }
+      ],
+      "mutability": "write",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "verification-ran",
+        "lesson-injected",
+        "target-content",
+        "target-verifier",
+        "target-marker",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "everyTurn": true,
+          "id": "verification-ran",
+          "kind": "verification_passed",
+          "min": 1,
+          "sources": [
+            "run_command_exit",
+            "test_runner"
+          ],
+          "verificationKind": "tests"
+        },
+        {
+          "id": "lesson-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "target-content",
+          "kind": "file_contains",
+          "path": "api/error_envelope.py",
+          "text": "\"details\": {\"required\": False}"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "-v",
+            "tests.test_error_envelope.ErrorEnvelopeTests"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "CONSTRAINT-ERROR-936"
+          ]
+        },
+        {
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 0,
+          "seedIndexes": [
+            0
+          ],
+          "source": "seeded"
+        }
+      ],
+      "promptClass": "non-path-persistent-memory-study",
+      "study": {
+        "acceptanceFamily": "project_constraint_decision",
+        "block": 1,
+        "condition": "warm",
+        "conditionOrder": 2,
+        "familyId": "error-envelope-constraint",
+        "learningFailureRequired": false,
+        "learningFile": "",
+        "lessonMode": "seeded",
+        "pairOrder": 12,
+        "sourceCaseId": "npmem-b1-error-envelope-constraint-warm",
+        "stratum": "project-constraint",
+        "targetExpected": "\"details\": {\"required\": False}",
+        "targetFile": "api/error_envelope.py",
+        "targetMarker": "CONSTRAINT-ERROR-936",
+        "targetTool": "run_command",
+        "targetTurnIndex": 0
+      },
+      "turns": [
+        {
+          "prompt": "Add details to the public error envelope in api/error_envelope.py while respecting established compatibility constraints. Verify and report the marker."
+        }
+      ]
+    }
+  ],
+  "casesPerFamily": 2,
+  "description": "Synthetic post-repair live acceptance V5: the same ten V4 tasks, fixtures, behavioral checks and content-free Memory attribution; verification evidence is now provider-neutral across canonical run_command and test_runner observations.",
+  "familyCount": 5,
+  "oracleCorrections": [
+    {
+      "caseId": "npmem-b1-token-normalization-repair-warm",
+      "from": {
+        "kind": "file_contains",
+        "text": "normalized = value.strip().lower()"
+      },
+      "oracleId": "target-content",
+      "reason": "casefold_is_behaviorally_valid_and_passes_the_frozen_test",
+      "to": {
+        "kind": "file_not_contains",
+        "text": "normalized = value.strip()\n"
+      }
+    }
+  ],
+  "repairsUnderTest": [
+    "deepseek_atomic_content_reasoning_tool_turn_replay_v3",
+    "anthropic_atomic_multi_tool_turn_replay_v1",
+    "compaction_atomic_multi_tool_turn_boundary_v1",
+    "provider_neutral_verification_oracle_v1",
+    "resume_manifest_case_and_source_identity_binding_v1",
+    "private_evidence_public_projection_binding_v1",
+    "credential_free_actual_adapter_route_binding_v2",
+    "frozen_source_single_snapshot_builder_v1",
+    "strict_turn_and_nonvacuous_oracle_contract_v1",
+    "suite_completion_envelope_v1",
+    "verified_recovery_red_green_semantic_anchors_v2",
+    "behavior_level_recovery_projection_v1"
+  ],
+  "runtimeProfileContract": {
+    "adapterType": "openai_compatible",
+    "endpointUrl": "https://api.deepseek.com/v1/chat/completions",
+    "model": "deepseek-v4-pro",
+    "profileSha256": "7be22859b0be842cfebdc606a15de4d58ed9be8ef01a49558b38cb5f6bdbbbcb",
+    "provider": "custom",
+    "version": 2
+  },
+  "schemaVersion": 1,
+  "sourceManifests": [
+    {
+      "path": "artifacts/persistent-memory-large-study-v3/manifest.json",
+      "sha256": "923272933307127ab0a99e45e1e8449f10ee8a121810baf05e71196d195f6e0d"
+    },
+    {
+      "path": "artifacts/non-path-memory-study-v2/manifest.json",
+      "sha256": "26c1c63ccdf737860bbc3a287b7848827f26715207ba2e4ff1e1fdb06287b85f"
+    }
+  ],
+  "suiteId": "persistent-memory-repair-acceptance-2026-08-23-v5",
+  "supersedes": {
+    "firstAttemptPassedCases": 7,
+    "firstAttemptResult": "artifacts/persistent-memory-repair-acceptance-v4/live-results.json",
+    "firstAttemptResultSha256": "373d3e7b85e07e2a2781ba247db1fea72d7e10beb1935e31c2a5b51ad473c184",
+    "firstAttemptTotalCases": 10,
+    "manifest": "artifacts/persistent-memory-repair-acceptance-v4/manifest.json",
+    "manifestSha256": "beb99521e26b63408fdb075745f1fd04c1a11e8fa6cb8f2ba0ea6acc5cd6a788",
+    "retainedAsFailureEvidence": true,
+    "suiteId": "persistent-memory-repair-acceptance-2026-08-23-v4"
+  }
+}

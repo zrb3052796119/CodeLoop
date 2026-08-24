@@ -32,6 +32,7 @@ from minicode.memory_hybrid import (
     HYBRID_PROTOCOL_VERSION,
     HYBRID_QUERY_GATE_VERSION,
     HYBRID_SYSTEM_PROMPT,
+    build_hybrid_promotion_verifier_runtime,
     evidence_fingerprint,
 )
 from minicode.memory_hybrid_runtime import (
@@ -498,14 +499,7 @@ def main() -> None:
     from minicode.model_registry import create_model_adapter
 
     apply_env_file([args.env_file])
-    runtime = load_runtime_config(ROOT)
-    runtime = dict(
-        runtime,
-        maxOutputTokens=6000,
-        temperature=0,
-        modelMaxRetries=1,
-        modelTimeoutSeconds=90,
-    )
+    runtime = build_hybrid_promotion_verifier_runtime(load_runtime_config(ROOT))
     model = create_model_adapter(runtime["model"], None, runtime)
     dataset, entries = load_corpus(fixture_root)
     evidence = evaluation_evidence(args.model_path, runtime["model"])

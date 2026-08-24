@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "artifactType": "sanitized-memory-attribution-projection",
+  "caseId": "pmem-b1-auth-policy-warm",
+  "scope": {
+    "repository": "synthetic",
+    "task": "read-only path recovery",
+    "providerCalls": "remote-live",
+    "modelIdentityFrozen": false
+  },
+  "learning": {
+    "runId": "run_589e8d07a4934c8e9f2eb668891c1373",
+    "failedAction": {
+      "tool": "read_file",
+      "path": "src/auth_policy.py",
+      "result": "error[not_found]"
+    },
+    "correctedAction": {
+      "tool": "read_file",
+      "path": "backend/src/auth_policy.py",
+      "result": "success",
+      "marker": "AUTH-POLICY-731"
+    },
+    "recoveryEvidence": {
+      "kind": "tool_recovery",
+      "scope": "targeted",
+      "runtimeResult": "passed",
+      "independentVerifierInLearningRun": false,
+      "externalExperimentOracleAfterRun": true
+    },
+    "lesson": {
+      "entryId": "project-1787325545078471000-517600cb",
+      "claimId": "claim-000001",
+      "source": "reflection",
+      "safetyStatus": "safe",
+      "approvalStatus": "approved",
+      "approvalPolicy": "auto_approve_verified",
+      "approvalContentSha256": "ae4a07b2f860ffc80f65945840e40d17985353e7679d7d39036da286d6a2c025",
+      "durableSignals": [
+        "confirmed_error_recovery_verified",
+        "verified_solution"
+      ],
+      "limitation": "The runtime classified a successful corrected read as targeted recovery verification; no independent test command ran inside the learning Run."
+    }
+  },
+  "reuse": {
+    "runId": "run_c40582fd5e9f4ce0b7c1691fe0e1e930",
+    "renderedEntryIds": [
+      "project-1787325545078471000-517600cb"
+    ],
+    "retrievalCount": 1,
+    "injectionCount": 1,
+    "firstRepositoryAction": "read_file",
+    "toolCalls": 1,
+    "modelCalls": 2,
+    "inputTokens": 13358,
+    "markerFound": true,
+    "sourceEdited": false
+  },
+  "matchedCold": {
+    "runId": "run_a9b898b3efb84865af031525e5198fe0",
+    "firstRepositoryAction": "list_files",
+    "toolCalls": 4,
+    "modelCalls": 5,
+    "inputTokens": 33065,
+    "markerFound": true,
+    "sourceEdited": false
+  },
+  "sourceDigests": {
+    "publicManifestSha256": "923272933307127ab0a99e45e1e8449f10ee8a121810baf05e71196d195f6e0d",
+    "publicResultSha256": "6cb06e4ce0aca747f837a678b8f678ceb7b5249ba6ae4e078664c55adbaed592",
+    "localMemoryJsonSha256": "25b0b15df38e6b02976072a057900b7d30d1a7a67cca98dab697200df9610508",
+    "localMemoryRenderedJsonSha256": "9de249143c02ee2f5aa3d52f9861ecd6d10b0be0861faaa4e0314181056e5e4d",
+    "localCaseEvidenceJsonSha256": "753d6f3bacd06d846f07f09e7d4b56d7fc1b2a418f7483904b0913906f33cc37"
+  },
+  "privacy": {
+    "rawEvidenceCommitted": false,
+    "reason": "Raw journals and workspaces may contain full prompts, responses, paths, and local Memory. This artifact contains only the synthetic fields needed to audit the join.",
+    "curationMethod": "Selected fields copied from hash-identified local evidence and joined to the frozen public manifest, result, and analysis rows. The rendered-entry ID join remains a curated attestation unless the retained raw sidecars are separately inspected."
+  }
+}

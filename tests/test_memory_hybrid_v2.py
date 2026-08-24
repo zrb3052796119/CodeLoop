@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 
@@ -19,24 +20,54 @@ from minicode.memory_hybrid import (
     HybridAdjudication,
     HybridCandidateSignal,
     HYBRID_PROMPT_VERSION,
+    HYBRID_PROMOTION_VERIFIER_RUNTIME,
     HYBRID_QUERY_GATE_VERSION,
     HYBRID_SYSTEM_PROMPT,
     HybridActivation,
     evidence_fingerprint,
     assess_hybrid_activation,
+    build_hybrid_promotion_verifier_runtime,
 )
 from minicode.memory_hybrid_runtime import (
     HybridRuntimeProvider,
     LocalE5Encoder,
     create_hybrid_candidate_provider,
+    clear_hybrid_provider_cache,
+    _model_adapter_cache_identity,
     _parse_decisions,
 )
-from minicode.embeddings import OpenAICompatibleEmbeddingEncoder
+from minicode.embeddings import (
+    OpenAICompatibleEmbeddingClient,
+    OpenAICompatibleEmbeddingEncoder,
+)
 from minicode.memory_pipeline import MemoryPipeline
 from minicode.memory_retrieval import (
     CanonicalMemoryRetriever,
     MemoryRetrievalRequest,
 )
+
+
+def test_promotion_verifier_runtime_profile_is_exact_and_immutable() -> None:
+    source = {
+        "temperature": 0.9,
+        "maxOutputTokens": 1200,
+        "modelMaxRetries": 4,
+        "modelTimeoutSeconds": 15,
+        "transport": "preserved",
+    }
+
+    runtime = build_hybrid_promotion_verifier_runtime(source)
+
+    assert runtime == {
+        "temperature": 0,
+        "maxOutputTokens": 6000,
+        "modelMaxRetries": 1,
+        "modelTimeoutSeconds": 90,
+        "transport": "preserved",
+    }
+    assert source["temperature"] == 0.9
+    with pytest.raises(TypeError):
+        HYBRID_PROMOTION_VERIFIER_RUNTIME["temperature"] = 1
 
 
 def _manager(workspace: Path) -> MemoryManager:
@@ -105,7 +136,6 @@ def test_remote_memory_embedding_requires_separate_explicit_authorization(
         allow_remote_memory_embedding=False,
         hybrid_evidence_path=tmp_path / "missing-evidence.json",
     )
-
     assert pipeline.stats["hybrid_requested"] is True
     assert pipeline.stats["hybrid_active"] is False
     assert (
@@ -113,6 +143,41 @@ def test_remote_memory_embedding_requires_separate_explicit_authorization(
         == "remote_embedding_not_authorized"
     )
 
+
+def test_pipeline_reports_precise_evidence_verifier_mismatch_and_fallback(
+    tmp_path: Path,
+) -> None:
+    batches: list[tuple[str, ...]] = []
+    activation = _cache_activation(batches)
+    pipeline = MemoryPipeline(_manager(tmp_path))
+
+    with patch(
+        "minicode.memory_hybrid.assess_hybrid_activation",
+        return_value=activation,
+    ):
+        pipeline.initialize(
+            model_adapter=SimpleNamespace(model_id="deepseek-v4-pro"),
+            workspace_path=str(tmp_path),
+            enable_vector=True,
+            hybrid_embedding_provider="qwen",
+            allow_remote_memory_embedding=True,
+        )
+
+    assert pipeline.stats["hybrid_active"] is False
+    assert pipeline.stats["hybrid_fallback"] is True
+    assert pipeline.stats["hybrid_inactive_reason"] == "verifier_model_mismatch"
+    pipeline.read("run invoice retry tests", active_domains=["testing"])
+    runtime = pipeline.last_retrieval_result.diagnostics["hybrid_runtime"]
+    assert runtime == {
+        "requested": True,
+        "active": False,
+        "fallback": True,
+        "reason": "verifier_model_mismatch",
+        "embedding_provider": "qwen",
+        "verifier_binding": "configured_match",
+        "provider_cache_reused": False,
+        "adjudication_cache_hit": False,
+    }
 
 def test_active_hybrid_runtime_failure_suppresses_memory_instead_of_lexical_fallback(
     tmp_path: Path,
@@ -284,6 +349,19 @@ class _FakeRemoteEmbeddingClient:
         return [[1.0, 0.0] for _ in texts]
 
 
+class _CacheEmbeddingClient:
+    model = "text-embedding-v3"
+    endpoint = "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings"
+
+    def __init__(self, batches: list[tuple[str, ...]], credential: str) -> None:
+        self._batches = batches
+        self._api_key = credential
+
+    def embed(self, texts, **_kwargs):
+        self._batches.append(tuple(texts))
+        return [[1.0, 0.0] for _ in texts]
+
+
 class _CountingVerifier:
     model_id = "deepseek-chat"
 
@@ -330,6 +408,19 @@ class _CountingVerifier:
         )
 
 
+class _CacheVerifier(_CountingVerifier):
+    def __init__(self, credential: str = "verifier-key") -> None:
+        super().__init__()
+        self.runtime = {
+            "model": "deepseek-chat",
+            "provider": "custom",
+            "customBaseUrl": "https://api.deepseek.com",
+            "customApiKey": credential,
+            "openaiBaseUrl": "https://api.deepseek.com",
+            "openaiApiKey": credential,
+        }
+
+
 def _remote_runtime_evidence(client) -> dict:
     remote_identity = OpenAICompatibleEmbeddingEncoder(
         client, provider="qwen"
@@ -358,6 +449,387 @@ def _remote_runtime_evidence(client) -> dict:
         "max_union_candidates": 32,
         "max_model_calls_per_task": 8,
     }
+
+
+def _cache_activation(batches: list[tuple[str, ...]]) -> HybridActivation:
+    seed = _CacheEmbeddingClient(batches, "evidence-seed")
+    evidence = _remote_runtime_evidence(seed)
+    batches.clear()
+    return HybridActivation(
+        requested=True,
+        active=True,
+        reason="activated",
+        evidence=evidence,
+        embedding_provider="qwen",
+    )
+
+
+def _cached_provider(
+    activation: HybridActivation,
+    workspace: Path,
+    batches: list[tuple[str, ...]],
+    verifier: _CacheVerifier,
+    *,
+    embedding_credential: str = "embedding-key",
+) -> HybridRuntimeProvider:
+    provider = create_hybrid_candidate_provider(
+        activation=activation,
+        model_adapter=verifier,
+        workspace_path=workspace,
+        embedding_client_factory=lambda _workspace: _CacheEmbeddingClient(
+            batches, embedding_credential
+        ),
+        strict=True,
+    )
+    assert isinstance(provider, HybridRuntimeProvider)
+    return provider
+
+
+def test_cross_turn_cache_reuses_canary_and_documents_but_not_turn_budget(
+    tmp_path: Path,
+) -> None:
+    clear_hybrid_provider_cache()
+    batches: list[tuple[str, ...]] = []
+    activation = _cache_activation(batches)
+    activation.evidence["max_model_calls_per_task"] = 2
+    first_verifier = _CacheVerifier()
+    first = _cached_provider(activation, tmp_path, batches, first_verifier)
+    entry = _memory("safe-entry")
+
+    first_result = first.adjudicate(
+        request=SimpleNamespace(
+            query="apply safe-entry durable rule",
+            current_files=(),
+            active_domains=(),
+        ),
+        entries=(entry,),
+        lexical_accepted_ids=frozenset({entry.id}),
+    )
+    after_first = len(batches)
+    second_verifier = _CacheVerifier()
+    second = _cached_provider(activation, tmp_path, batches, second_verifier)
+
+    assert first_result is not None
+    assert first is not second
+    assert first._shared_state is second._shared_state
+    assert len(batches) == after_first  # no second canary
+
+    second_result = second.adjudicate(
+        request=SimpleNamespace(
+            query="enforce safe-entry architecture constraint",
+            current_files=(),
+            active_domains=(),
+        ),
+        entries=(entry,),
+        lexical_accepted_ids=frozenset({entry.id}),
+    )
+
+    assert second_result is not None
+    assert first_verifier.calls == 2
+    assert second_verifier.calls == 2  # fresh per-turn max_model_calls budget
+    assert len(batches) == after_first + 1  # query only; no document re-embed
+    assert second_result.diagnostics["provider_cache_reused"] is True
+
+
+def test_cross_turn_cache_joins_identical_concurrent_query_without_model_rebinding(
+    tmp_path: Path,
+) -> None:
+    clear_hybrid_provider_cache()
+    batches: list[tuple[str, ...]] = []
+    activation = _cache_activation(batches)
+    first_verifier = _CacheVerifier("verifier-key")
+    second_verifier = _CacheVerifier("verifier-key")
+    first = _cached_provider(activation, tmp_path, batches, first_verifier)
+    second = _cached_provider(activation, tmp_path, batches, second_verifier)
+    entry = _memory("safe-entry")
+    kwargs = {
+        "request": SimpleNamespace(
+            query="apply safe-entry durable rule",
+            current_files=(),
+            active_domains=(),
+        ),
+        "entries": (entry,),
+        "lexical_accepted_ids": frozenset({entry.id}),
+    }
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(lambda provider: provider.adjudicate(**kwargs), (first, second)))
+
+    assert all(result is not None for result in results)
+    assert first._model is first_verifier
+    assert second._model is second_verifier
+    assert first_verifier.calls + second_verifier.calls == 2
+    assert sum(bool(result.diagnostics["cache_hit"]) for result in results) == 1
+
+
+def test_cross_turn_cache_key_detects_embedding_credential_rotation(
+    tmp_path: Path,
+) -> None:
+    clear_hybrid_provider_cache()
+    batches: list[tuple[str, ...]] = []
+    activation = _cache_activation(batches)
+    first = _cached_provider(
+        activation,
+        tmp_path,
+        batches,
+        _CacheVerifier(),
+        embedding_credential="embedding-key-a",
+    )
+    second = _cached_provider(
+        activation,
+        tmp_path,
+        batches,
+        _CacheVerifier(),
+        embedding_credential="embedding-key-b",
+    )
+
+    assert first._shared_state is not second._shared_state
+    assert len(batches) == 2  # each credential proves its own canary identity
+
+
+def test_cross_turn_shared_state_is_not_reused_after_verifier_config_change(
+    tmp_path: Path,
+) -> None:
+    clear_hybrid_provider_cache()
+    batches: list[tuple[str, ...]] = []
+    activation = _cache_activation(batches)
+    baseline_verifier = _CacheVerifier()
+    baseline_verifier.runtime.update(
+        {
+            "temperature": 0.0,
+            "maxOutputTokens": 512,
+            "_custom_headers": {"X-Tenant": "synthetic-a"},
+        }
+    )
+    changed_verifier = _CacheVerifier()
+    changed_verifier.runtime.update(
+        {
+            "temperature": 0.7,
+            "maxOutputTokens": 512,
+            "_custom_headers": {"X-Tenant": "synthetic-a"},
+        }
+    )
+
+    baseline = _cached_provider(
+        activation,
+        tmp_path,
+        batches,
+        baseline_verifier,
+    )
+    changed = _cached_provider(
+        activation,
+        tmp_path,
+        batches,
+        changed_verifier,
+    )
+
+    assert baseline._shared_state is not changed._shared_state
+
+
+def test_real_openai_adapter_has_rotation_sensitive_hybrid_cache_identity(
+    monkeypatch,
+) -> None:
+    from minicode.model_registry import create_model_adapter
+
+    monkeypatch.delenv("MINI_CODE_MODEL_MODE", raising=False)
+
+    def adapter(credential: str):
+        return create_model_adapter(
+            "deepseek-chat",
+            None,
+            {
+                "model": "deepseek-chat",
+                "provider": "custom",
+                "customBaseUrl": "https://api.deepseek.com",
+                "customApiKey": credential,
+            },
+        )
+
+    first = _model_adapter_cache_identity(adapter("key-a"))
+    same = _model_adapter_cache_identity(adapter("key-a"))
+    rotated = _model_adapter_cache_identity(adapter("key-b"))
+
+    assert first is not None
+    assert first == same
+    assert first != rotated
+
+
+def test_hybrid_cache_identity_changes_with_verifier_inference_controls(
+    monkeypatch,
+) -> None:
+    from minicode.model_registry import create_model_adapter
+
+    monkeypatch.delenv("MINI_CODE_MODEL_MODE", raising=False)
+
+    def identity(*, temperature: float, max_tokens: int):
+        adapter = create_model_adapter(
+            "deepseek-chat",
+            None,
+            {
+                "model": "deepseek-chat",
+                "provider": "custom",
+                "customBaseUrl": "https://api.deepseek.com",
+                "customApiKey": "synthetic-key",
+                "temperature": temperature,
+                "maxOutputTokens": max_tokens,
+            },
+        )
+        return _model_adapter_cache_identity(adapter)
+
+    baseline = identity(temperature=0.0, max_tokens=512)
+
+    assert baseline is not None
+    assert baseline != identity(temperature=0.7, max_tokens=512)
+    assert baseline != identity(temperature=0.0, max_tokens=1024)
+
+
+def test_hybrid_cache_identity_is_bound_to_adapter_implementation() -> None:
+    runtime = {
+        "model": "deepseek-chat",
+        "provider": "custom",
+        "customBaseUrl": "https://api.deepseek.com",
+        "customApiKey": "synthetic-key",
+        "temperature": 0.0,
+    }
+
+    class FirstVerifier:
+        pass
+
+    class SecondVerifier:
+        pass
+
+    first = FirstVerifier()
+    first.runtime = dict(runtime)
+    second = SecondVerifier()
+    second.runtime = dict(runtime)
+
+    assert _model_adapter_cache_identity(first) != _model_adapter_cache_identity(second)
+
+
+def test_hybrid_cache_identity_hashes_route_headers_and_provider_params(
+    monkeypatch,
+) -> None:
+    from minicode.model_registry import create_model_adapter
+
+    monkeypatch.delenv("MINI_CODE_MODEL_MODE", raising=False)
+
+    def custom_identity(header_value: str):
+        adapter = create_model_adapter(
+            "deepseek-chat",
+            None,
+            {
+                "model": "deepseek-chat",
+                "provider": "custom",
+                "customBaseUrl": "https://api.deepseek.com",
+                "customApiKey": "synthetic-private-key",
+                "customApiExtraHeaders": f"X-Tenant:{header_value}",
+            },
+        )
+        return _model_adapter_cache_identity(adapter)
+
+    def openrouter_identity(transforms: str):
+        adapter = create_model_adapter(
+            "deepseek/deepseek-chat",
+            None,
+            {
+                "model": "deepseek/deepseek-chat",
+                "provider": "openrouter",
+                "openrouterBaseUrl": "https://openrouter.ai/api",
+                "openrouterApiKey": "synthetic-openrouter-key",
+                "openrouterTransforms": transforms,
+            },
+        )
+        return _model_adapter_cache_identity(adapter)
+
+    tenant_a = custom_identity("synthetic-tenant-a")
+    tenant_b = custom_identity("synthetic-tenant-b")
+    transforms_a = openrouter_identity("middle-out")
+    transforms_b = openrouter_identity("provider-routing")
+
+    assert tenant_a != tenant_b
+    assert transforms_a != transforms_b
+    rendered = str((tenant_a, tenant_b, transforms_a, transforms_b))
+    for private_value in (
+        "synthetic-private-key",
+        "synthetic-openrouter-key",
+        "synthetic-tenant-a",
+        "synthetic-tenant-b",
+        "middle-out",
+        "provider-routing",
+    ):
+        assert private_value not in rendered
+
+
+def test_explicit_adapter_identity_cannot_mask_runtime_config_changes() -> None:
+    def adapter(temperature: float):
+        return SimpleNamespace(
+            hybrid_runtime_cache_identity="stable-adapter-instance",
+            runtime={
+                "model": "deepseek-chat",
+                "provider": "custom",
+                "customBaseUrl": "https://api.deepseek.com",
+                "customApiKey": "synthetic-key",
+                "temperature": temperature,
+            },
+        )
+
+    assert _model_adapter_cache_identity(adapter(0.0)) != (
+        _model_adapter_cache_identity(adapter(0.7))
+    )
+
+
+def test_real_embedding_client_reuses_verified_canary_state_across_turns(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    batches: list[tuple[str, ...]] = []
+
+    def fake_embed_batch(self, texts, **_kwargs):
+        batches.append(tuple(texts))
+        return [[1.0, 0.0] for _ in texts]
+
+    monkeypatch.setattr(
+        OpenAICompatibleEmbeddingClient,
+        "_embed_batch",
+        fake_embed_batch,
+    )
+
+    def client():
+        return OpenAICompatibleEmbeddingClient(
+            "embedding-key",
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+            model="text-embedding-v3",
+        )
+
+    evidence = _remote_runtime_evidence(client())
+    batches.clear()
+    clear_hybrid_provider_cache()
+    activation = HybridActivation(
+        requested=True,
+        active=True,
+        reason="activated",
+        evidence=evidence,
+        embedding_provider="qwen",
+    )
+    first = create_hybrid_candidate_provider(
+        activation=activation,
+        model_adapter=_CacheVerifier(),
+        workspace_path=tmp_path,
+        embedding_client_factory=lambda _workspace: client(),
+        strict=True,
+    )
+    second = create_hybrid_candidate_provider(
+        activation=activation,
+        model_adapter=_CacheVerifier(),
+        workspace_path=tmp_path,
+        embedding_client_factory=lambda _workspace: client(),
+        strict=True,
+    )
+
+    assert isinstance(first, HybridRuntimeProvider)
+    assert isinstance(second, HybridRuntimeProvider)
+    assert first._shared_state is second._shared_state
+    assert len(batches) == 1
 
 
 def test_qwen_provider_factory_joins_live_canary_identity_before_use(

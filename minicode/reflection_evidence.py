@@ -228,6 +228,58 @@ _BEARER_RE = re.compile(r"(?i)\bbearer\s+(?!\[redacted)[a-z0-9._~+/-]+")
 _OPENAI_STYLE_KEY_RE = re.compile(r"\bsk-[a-zA-Z0-9_-]{8,}\b")
 _ENV_ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*$")
 _ERROR_TYPE_RE = re.compile(r"(?:^|[\[\s])([A-Za-z_][A-Za-z0-9_]*(?:Error|Exception))[]:]?")
+_TRANSIENT_ENVIRONMENTAL_ERROR_TYPE_RE = re.compile(
+    r"(?i)(?:^|[._])(?:"
+    r"RateLimit|TooManyRequests|"
+    r"(?:Connect|Read|Write|Pool)?Timeout|"
+    r"Network|Connect|Connection|ConnectionReset|ConnectionAborted|"
+    r"ConnectionClosed|BrokenPipe|RemoteProtocol|Proxy|Gai|"
+    r"SSL(?:CertVerification)?|TLS|Certificate|"
+    r"InternalServer|BadGateway|ServiceUnavailable|GatewayTimeout|"
+    r"LockTimeout|LockContention|Deadlock"
+    r")(?:Error|Exception)?$"
+)
+_TRANSIENT_ENVIRONMENTAL_MESSAGE_RE = re.compile(
+    r"(?i)(?:\bHTTP\s*429\b|\b429\s+Too\s+Many\s+Requests\b|"
+    r"\b(?:rate[ _-]?limit(?:ed|ing|error|exception)?|"
+    r"too[ _-]?many[ _-]?requests(?:error|exception)?)\b|"
+    r"\b(?:connect|read|write|pool)?timeout(?:error|exception)?\b|"
+    r"\b(?:timed?\s+out|deadline exceeded)\b|"
+    r"\bnetwork\s+(?:error|failure|unavailable|interruption|interrupted)\b|"
+    r"\bconnection\s+(?:reset|aborted|closed|dropped|interrupted|refused)\b|"
+    r"\b(?:broken pipe|temporary failure in name resolution)\b|"
+    r"\b(?:dns|name)[ -]?resolution\s+(?:failed|failure|error)\b|"
+    r"\b(?:getaddrinfo failed|name or service not known|"
+    r"nodename nor servname provided)\b|"
+    r"\b(?:cannot|could not|failed to) connect to (?:the )?proxy\b|"
+    r"\b(?:proxy connection|tunnel connection)\s+"
+    r"(?:failed|failure|error|refused)\b|"
+    r"\b(?:ssl|tls)(?: certificate)? handshake\s+(?:failed|failure|error)\b|"
+    r"\bcertificate verify failed\b|"
+    r"\bHTTP\s*5\d{2}\b|"
+    r"\b(?:status(?: code)?|response(?: status)?|server returned)"
+    r"\s*[:=]?\s*5\d{2}\b|"
+    r"\b(?:internal server error|bad gateway|service unavailable|"
+    r"gateway timeout)\b|"
+    r"\b(?:database(?: table| schema)? is locked|lock contention|"
+    r"lock wait timeout|resource busy)\b|"
+    r"\b(?:could not|failed to) acquire(?: the| a)? lock\b|"
+    r"\bdeadlock (?:detected|found)\b)"
+)
+_DETERMINISTIC_INPUT_ERROR_TYPE_RE = re.compile(
+    r"(?i)\b(?:Validation|Argument|Schema|Usage|Syntax|Parse|FileNotFound|"
+    r"NotADirectory|IsADirectory|Permission|CommandNotFound|CalledProcess)"
+    r"(?:Error|Exception)\b"
+)
+_DETERMINISTIC_INPUT_SUBJECT_RE = re.compile(
+    r"(?i)\b(?:argument|option|flag|parameter|input|schema|path|file|"
+    r"directory|command|old_string|new_string)\b"
+)
+_DETERMINISTIC_INPUT_MESSAGE_RE = re.compile(
+    r"(?i)\b(?:invalid|unsupported|unrecognized|unknown|missing)\s+"
+    r"(?:argument|option|flag|parameter|input|schema|path|file|"
+    r"directory|command)\b"
+)
 
 
 def append_trace_event(
@@ -375,6 +427,27 @@ def _bound_error_message(value: Any) -> str:
     """
     text = sanitize_evidence_text(value, EVIDENCE_MAX_TEXT_CHARS * 8)
     return bound_keeping_both_ends(text, EVIDENCE_MAX_TEXT_CHARS)
+
+
+def _is_transient_environmental_failure(error: ErrorEvidence) -> bool:
+    """Return whether a failure can recover independently of changed input.
+
+    Changed-input correlation is not causal proof for provider throttling and
+    other environmental failures.  Those failures need an explicit recovery
+    event or stronger evidence than a later successful invocation.
+    """
+    text = f"{error.error_type or ''} {error.message}"
+    if (
+        _DETERMINISTIC_INPUT_ERROR_TYPE_RE.search(text)
+        and _DETERMINISTIC_INPUT_SUBJECT_RE.search(error.message)
+    ):
+        return False
+    if _DETERMINISTIC_INPUT_MESSAGE_RE.search(error.message):
+        return False
+    error_type = (error.error_type or "").strip()
+    if _TRANSIENT_ENVIRONMENTAL_ERROR_TYPE_RE.search(error_type):
+        return True
+    return bool(_TRANSIENT_ENVIRONMENTAL_MESSAGE_RE.search(error.message))
 
 
 def _redact_secret_assignment(match: re.Match[str]) -> str:
@@ -1246,7 +1319,10 @@ class TraceEvidenceExtractor:
         out. It requires an intervening file change on purpose: a same-target
         retry that succeeds with nothing altered in between is flakiness, and
         minting a "recovery" from it would reintroduce exactly the contentless
-        memory this whole path is meant to stop producing.
+        memory this whole path is meant to stop producing. Transient provider,
+        network, and lock failures are excluded for the same reason: an
+        unrelated edit cannot establish that it caused those conditions to
+        clear.
         """
         calls = self._call_attempts(events)
         if not calls:
@@ -1270,9 +1346,16 @@ class TraceEvidenceExtractor:
         for failure in calls:
             if failure.status != "error":
                 continue
-            if not any(
-                error.error_id not in already_linked
+            attempt_errors = [
+                error
                 for error in errors_by_call.get(failure.call_id, [])
+                if error.error_id not in already_linked
+            ]
+            if not attempt_errors:
+                continue
+            if any(
+                _is_transient_environmental_failure(error)
+                for error in attempt_errors
             ):
                 continue
             success = next(
@@ -1397,9 +1480,11 @@ class TraceEvidenceExtractor:
         Correlation stays deliberately strict.  Both calls must describe the
         same verification kind, the successful call must have an independently
         parsed passing verification, and path-bearing calls must share a
-        non-generic resource fingerprint.  This prevents an unrelated later
-        ``ruff`` or ``pytest`` success from laundering an earlier failure into
-        a durable lesson.
+        non-generic resource fingerprint. Transient provider, network, service,
+        and lock failures are excluded because a later success cannot prove
+        that the changed invocation caused recovery. This prevents unrelated
+        or coincidental ``ruff``/``pytest`` success from laundering an earlier
+        failure into a durable lesson.
         """
         passed_calls = {
             item.call_id
@@ -1419,9 +1504,16 @@ class TraceEvidenceExtractor:
         for failure in calls:
             if failure.status != "error" or not failure.objective_kind:
                 continue
-            if not any(
-                error.error_id not in already_linked
+            attempt_errors = [
+                error
                 for error in errors_by_call.get(failure.call_id, [])
+                if error.error_id not in already_linked
+            ]
+            if not attempt_errors:
+                continue
+            if any(
+                _is_transient_environmental_failure(error)
+                for error in attempt_errors
             ):
                 continue
             success = next(
@@ -1508,7 +1600,9 @@ class TraceEvidenceExtractor:
         The successful ToolResult is direct proof that the corrected invocation
         is executable.  It becomes a ``tool_recovery`` VerificationEvidence in
         ``_extract_recovery_verifications`` so safe claims can be auto-approved
-        without pretending that a generic retry nudge was the fix.
+        without pretending that a generic retry nudge was the fix. Transient
+        provider, network, service, and lock failures are excluded because
+        changed-input correlation does not establish causation for them.
         """
         errors_by_call: dict[str, list[ErrorEvidence]] = defaultdict(list)
         for error in errors:
@@ -1524,9 +1618,16 @@ class TraceEvidenceExtractor:
         for failure in calls:
             if failure.status != "error" or not failure.invocation:
                 continue
-            if not any(
-                error.error_id not in already_linked
+            attempt_errors = [
+                error
                 for error in errors_by_call.get(failure.call_id, [])
+                if error.error_id not in already_linked
+            ]
+            if not attempt_errors:
+                continue
+            if any(
+                _is_transient_environmental_failure(error)
+                for error in attempt_errors
             ):
                 continue
             failure_position = call_positions[failure.call_id]
@@ -1716,8 +1817,26 @@ class TraceEvidenceExtractor:
                 or _safe_get(raw_input, "file_path")
                 or ""
             ).strip()
-            old_value = _safe_get(raw_input, "old_string")
-            new_value = _safe_get(raw_input, "new_string")
+            # ``edit_file`` exposes old/new and normalizes legacy
+            # search/replace.  Keep old_string/new_string compatibility for
+            # historical traces, but do not let the extractor depend on keys
+            # that the live tool schema never emits.
+            old_value = next(
+                (
+                    _safe_get(raw_input, key)
+                    for key in ("old_string", "old", "search")
+                    if key in raw_input
+                ),
+                None,
+            )
+            new_value = next(
+                (
+                    _safe_get(raw_input, key)
+                    for key in ("new_string", "new", "replace")
+                    if key in raw_input
+                ),
+                None,
+            )
 
             def _excerpt(value: Any) -> str:
                 if not isinstance(value, str):

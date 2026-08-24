@@ -6,6 +6,7 @@ from minicode.agent_reflection import ReflectionEngine
 from minicode.reflection_evidence import (
     DecisionEvidence,
     ErrorEvidence,
+    FileEvidence,
     LibraryEvidence,
     RecoveryEvidence,
     TaskEvidence,
@@ -17,6 +18,7 @@ from minicode.reflection_synthesis import (
     ReflectionClaim,
     ReflectionClaimValidator,
     ReflectionValueGate,
+    RuleReflectionSynthesizer,
 )
 
 
@@ -100,6 +102,290 @@ def test_verified_recovery_is_confirmed_and_value_accepted() -> None:
     assert claim.evidence_ids == ["event-1", "event-2", "event-3", "event-4"]
     assert result.value_decision.accepted is True
     assert "confirmed_error_recovery_verified" in result.value_decision.durable_signals
+
+
+def test_stable_verification_rule_keeps_its_declared_scope_not_the_first_task() -> None:
+    evidence = TaskEvidence(
+        decisions=[
+            DecisionEvidence(
+                "decision-1",
+                (
+                    "After changing ledger/config.py, always run python -m unittest "
+                    "tests.test_ledger_config.LedgerConfigTests. This compatibility "
+                    "check is required before completion."
+                ),
+                "Declared in project-policy.md",
+                ("event-policy",),
+                "confirmed",
+                "config_constraint",
+            )
+        ],
+        verification=[
+            VerificationEvidence(
+                "verify-1",
+                "run_command",
+                "call-verify",
+                "test",
+                "targeted",
+                "passed",
+                ("event-verify",),
+                "LedgerConfigTests passed",
+            )
+        ],
+        files_changed=[
+            FileEvidence("ledger/config.py", "changed", ("event-change",))
+        ],
+        outcome="success",
+    )
+
+    candidate = RuleReflectionSynthesizer().synthesize(
+        "Change FORMAT in ledger/config.py from legacy to stable-v2.",
+        evidence,
+    )
+
+    rule = next(claim for claim in candidate.claims if claim.claim_type == "verification_rule")
+    assert rule.applies_when == "When changing ledger/config.py."
+    assert "FORMAT" not in rule.applies_when
+    assert not any(claim.claim_type == "approach" for claim in candidate.claims)
+
+
+def test_project_constraint_supersedes_redundant_generic_approach() -> None:
+    evidence = TaskEvidence(
+        decisions=[
+            DecisionEvidence(
+                "decision-1",
+                "Registry entries must remain alphabetically sorted",
+                "Declared in project-policy.md",
+                ("event-policy",),
+                "confirmed",
+                "config_constraint",
+            )
+        ],
+        verification=[
+            VerificationEvidence(
+                "verify-1",
+                "run_command",
+                "call-verify",
+                "test",
+                "targeted",
+                "passed",
+                ("event-verify",),
+                "Registry tests passed",
+            )
+        ],
+        files_changed=[
+            FileEvidence("plugins/registry.py", "changed", ("event-change",))
+        ],
+        outcome="success",
+    )
+
+    candidate = RuleReflectionSynthesizer().synthesize(
+        "Add a plugin to plugins/registry.py.",
+        evidence,
+    )
+
+    assert any(claim.claim_type == "constraint" for claim in candidate.claims)
+    assert not any(claim.claim_type == "approach" for claim in candidate.claims)
+
+
+def test_verified_recovery_keeps_only_task_anchors_grounded_by_verification() -> None:
+    evidence = TaskEvidence(
+        errors=[
+            ErrorEvidence(
+                "error-1",
+                "call-old",
+                "read_file",
+                "ToolError",
+                "error[not_found]: File does not exist. (src/auth_policy.py)",
+                ("event-error",),
+            )
+        ],
+        recoveries=[
+            RecoveryEvidence(
+                "recovery-1",
+                ("error-1",),
+                "Read backend/src/auth_policy.py instead.",
+                ("event-recovery",),
+                (),
+                "confirmed",
+                verification_call_ids=("call-verify",),
+            )
+        ],
+        verification=[
+            VerificationEvidence(
+                "verify-1",
+                "read_file",
+                "call-verify",
+                "tool_recovery",
+                "targeted",
+                "passed",
+                ("event-verify",),
+                "Synthetic gateway authentication policy marker.",
+            )
+        ],
+    )
+
+    candidate = RuleReflectionSynthesizer().synthesize(
+        "Read the gateway authentication policy for customer Orion.",
+        evidence,
+    )
+
+    recovery = next(claim for claim in candidate.claims if claim.claim_type == "recovery")
+    assert "Verified task context: gateway, authentication, policy." in recovery.statement
+    assert recovery.statement.count("Verified task context:") == 1
+    assert "Orion" not in recovery.statement
+    validation = ReflectionClaimValidator().validate(candidate, evidence)
+    assert recovery.claim_id in {
+        claim.claim_id for claim in validation.valid_claims
+    }
+
+
+@pytest.mark.parametrize(
+    ("task", "error_message", "verification_summary", "expected", "excluded"),
+    [
+        (
+            (
+                "First run python -m unittest tests.test_session_primary. "
+                "Repair auth/session_primary.py by rejecting expired known sessions."
+            ),
+            "AssertionError in test_expired_known_session_is_rejected",
+            (
+                "test_expired_known_session_is_rejected "
+                "(tests.test_session_primary.SessionPrimaryTests) passed"
+            ),
+            {"session", "expired", "known"},
+            {"tests", "test", "primary", "sessionprimarytests", "repair"},
+        ),
+        (
+            (
+                "First run python -m unittest tests.test_normalizer_primary. "
+                "Repair parser/normalizer_primary.py and rerun the same test."
+            ),
+            "AssertionError in test_mixed_case_token_is_normalized",
+            (
+                "test_mixed_case_token_is_normalized "
+                "(tests.test_normalizer_primary.NormalizerPrimaryTests) passed"
+            ),
+            {"normalizer", "mixed", "case", "token"},
+            {"tests", "test", "primary", "normalizerprimarytests", "repair"},
+        ),
+    ],
+)
+def test_recovery_anchors_prioritize_verified_bug_semantics_over_harness_noise(
+    task: str,
+    error_message: str,
+    verification_summary: str,
+    expected: set[str],
+    excluded: set[str],
+) -> None:
+    evidence = TaskEvidence(
+        errors=[
+            ErrorEvidence(
+                "error-1",
+                "call-old",
+                "run_command",
+                "AssertionError",
+                error_message,
+                ("event-error",),
+            )
+        ],
+        recoveries=[
+            RecoveryEvidence(
+                "recovery-1",
+                ("error-1",),
+                "Changed the primary implementation.",
+                ("event-recovery",),
+                (),
+                "confirmed",
+                verification_call_ids=("call-verify",),
+            )
+        ],
+        verification=[
+            VerificationEvidence(
+                "verify-1",
+                "run_command",
+                "call-verify",
+                "test",
+                "targeted",
+                "passed",
+                ("event-verify",),
+                verification_summary,
+            )
+        ],
+    )
+
+    candidate = RuleReflectionSynthesizer().synthesize(task, evidence)
+    recovery = next(claim for claim in candidate.claims if claim.claim_type == "recovery")
+    anchors_text = recovery.statement.split("Verified task context: ", 1)[1]
+    anchors = {
+        item.strip(" .")
+        for item in anchors_text.split(".", 1)[0].split(",")
+    }
+
+    assert expected <= anchors
+    assert not (excluded & anchors)
+
+
+def test_verified_code_recovery_projects_behavior_pattern_not_source_path() -> None:
+    evidence = TaskEvidence(
+        errors=[
+            ErrorEvidence(
+                "error-1",
+                "call-old",
+                "run_command",
+                "AssertionError",
+                "AssertionError in test_mixed_case_token_is_normalized",
+                ("event-error",),
+            )
+        ],
+        recoveries=[
+            RecoveryEvidence(
+                "recovery-1",
+                ("error-1",),
+                (
+                    "Changed parser/normalizer_primary.py, after which "
+                    "run_command succeeded on NormalizerPrimaryTests"
+                ),
+                ("event-recovery",),
+                ("parser/normalizer_primary.py",),
+                "confirmed",
+                change_summary=(
+                    "parser/normalizer_primary.py: "
+                    "'normalized = value.strip()' -> "
+                    "'normalized = value.strip().lower()'"
+                ),
+                verification_call_ids=("call-verify",),
+            )
+        ],
+        verification=[
+            VerificationEvidence(
+                "verify-1",
+                "run_command",
+                "call-verify",
+                "test",
+                "targeted",
+                "passed",
+                ("event-verify",),
+                "test_mixed_case_token_is_normalized passed",
+            )
+        ],
+    )
+
+    candidate = RuleReflectionSynthesizer().synthesize(
+        "Repair parser/normalizer_primary.py and rerun the same test.",
+        evidence,
+    )
+    recovery = next(claim for claim in candidate.claims if claim.claim_type == "recovery")
+    validation = ReflectionClaimValidator().validate(candidate, evidence)
+
+    assert "normalized = value.strip().lower()" in recovery.statement
+    assert "parser/normalizer_primary.py" not in recovery.statement
+    assert "same verified" in recovery.applies_when
+    assert "same subsystem" in recovery.applies_when
+    assert any("one implementation" in item for item in recovery.limitations)
+    assert recovery.claim_id in {
+        claim.claim_id for claim in validation.valid_claims
+    }
 
 
 def test_every_claim_type_accepts_only_its_grounding_evidence() -> None:

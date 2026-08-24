@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 import math
+from pathlib import Path
+
+import pytest
 
 from minicode.embeddings import (
+    EmbeddingUnavailable,
+    OpenAICompatibleEmbeddingClient,
     OpenAICompatibleEmbeddingEncoder,
     create_openai_compatible_embedding_client,
 )
+from minicode.env_file import update_private_env_file
 
 
 class _FakeEmbeddingClient:
@@ -52,7 +58,7 @@ def test_remote_encoder_identity_probe_is_cached() -> None:
     assert len(client.calls) == 1
 
 
-def test_shared_client_factory_resolves_workspace_qwen_configuration(
+def test_shared_client_factory_resolves_user_qwen_configuration(
     tmp_path, monkeypatch
 ) -> None:
     for name in (
@@ -61,10 +67,13 @@ def test_shared_client_factory_resolves_workspace_qwen_configuration(
         "MINICODE_EMBEDDING_MODEL",
     ):
         monkeypatch.delenv(name, raising=False)
-    (tmp_path / ".env").write_text(
-        "MINICODE_EMBEDDING_API_KEY=synthetic-test-key\n"
-        "MINICODE_EMBEDDING_MODEL=text-embedding-v3\n",
-        encoding="utf-8",
+    user_env = Path.home() / ".mini-code" / ".env"
+    update_private_env_file(
+        user_env,
+        {
+            "MINICODE_EMBEDDING_API_KEY": "synthetic-test-key",
+            "MINICODE_EMBEDDING_MODEL": "text-embedding-v3",
+        },
     )
 
     client = create_openai_compatible_embedding_client(tmp_path)
@@ -75,3 +84,72 @@ def test_shared_client_factory_resolves_workspace_qwen_configuration(
         client.endpoint
         == "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings"
     )
+
+
+def test_workspace_env_cannot_redirect_user_embedding_credential(
+    tmp_path, monkeypatch
+) -> None:
+    for name in (
+        "MINICODE_EMBEDDING_API_KEY",
+        "MINICODE_EMBEDDING_BASE_URL",
+        "MINICODE_EMBEDDING_MODEL",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    user_env = Path.home() / ".mini-code" / ".env"
+    update_private_env_file(
+        user_env,
+        {
+            "MINICODE_EMBEDDING_API_KEY": "user-global-key",
+            "MINICODE_EMBEDDING_BASE_URL": "https://trusted.example/v1",
+        },
+    )
+    (tmp_path / ".env").write_text(
+        "MINICODE_EMBEDDING_BASE_URL=https://attacker.invalid/v1\n",
+        encoding="utf-8",
+    )
+
+    client = create_openai_compatible_embedding_client(tmp_path)
+
+    assert client is not None
+    assert client.endpoint == "https://trusted.example/v1/embeddings"
+
+
+def test_workspace_embedding_configuration_alone_is_ignored(
+    tmp_path, monkeypatch
+) -> None:
+    for name in (
+        "MINICODE_EMBEDDING_API_KEY",
+        "MINICODE_EMBEDDING_BASE_URL",
+        "MINICODE_EMBEDDING_MODEL",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    (tmp_path / ".env").write_text(
+        "MINICODE_EMBEDDING_API_KEY=workspace-key\n"
+        "MINICODE_EMBEDDING_BASE_URL=https://workspace.invalid/v1\n",
+        encoding="utf-8",
+    )
+
+    assert create_openai_compatible_embedding_client(tmp_path) is None
+
+
+@pytest.mark.parametrize(
+    "base_url",
+    [
+        "http://attacker.invalid/v1",
+        "https://user:password@example.invalid/v1",
+        "https://example.invalid/v1?key=secret",
+        "https://example.invalid/v1#fragment",
+    ],
+)
+def test_embedding_client_rejects_unsafe_credential_destinations(base_url) -> None:
+    with pytest.raises(EmbeddingUnavailable):
+        OpenAICompatibleEmbeddingClient("test-key", base_url=base_url)
+
+
+def test_embedding_client_allows_loopback_http_for_local_models() -> None:
+    client = OpenAICompatibleEmbeddingClient(
+        "test-key",
+        base_url="http://127.0.0.1:11434/v1",
+    )
+
+    assert client.endpoint == "http://127.0.0.1:11434/v1/embeddings"

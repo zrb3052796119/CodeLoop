@@ -106,6 +106,14 @@ def _push_anthropic_message(messages: list[dict[str, Any]], role: str, block: di
 def _to_anthropic_messages(messages: list[dict[str, Any]]) -> tuple[str, list[dict[str, Any]]]:
     system = "\n\n".join(message["content"] for message in messages if message["role"] == "system")
     converted: list[dict[str, Any]] = []
+    tool_call_groups: dict[str, list[dict[str, Any]]] = {}
+    for message in messages:
+        if message.get("role") != "assistant_tool_call":
+            continue
+        turn_id = message.get("assistantTurnId")
+        if isinstance(turn_id, str) and turn_id:
+            tool_call_groups.setdefault(turn_id, []).append(message)
+    emitted_tool_call_turns: set[str] = set()
     for message in messages:
         role = message["role"]
         if role == "system":
@@ -117,11 +125,40 @@ def _to_anthropic_messages(messages: list[dict[str, Any]]) -> tuple[str, list[di
             _push_anthropic_message(converted, "assistant", _to_text_block(_to_assistant_text(message)))
             continue
         if role == "assistant_tool_call":
-            _push_anthropic_message(
-                converted,
-                "assistant",
-                {"type": "tool_use", "id": message["toolUseId"], "name": message["toolName"], "input": message["input"]},
+            turn_id = message.get("assistantTurnId")
+            if isinstance(turn_id, str) and turn_id:
+                if turn_id in emitted_tool_call_turns:
+                    continue
+                emitted_tool_call_turns.add(turn_id)
+                grouped_messages = tool_call_groups[turn_id]
+            else:
+                grouped_messages = [message]
+            tool_turn_text = next(
+                (
+                    grouped_message.get("content")
+                    for grouped_message in grouped_messages
+                    if isinstance(grouped_message.get("content"), str)
+                    and grouped_message.get("content")
+                ),
+                None,
             )
+            if isinstance(tool_turn_text, str) and tool_turn_text:
+                _push_anthropic_message(
+                    converted,
+                    "assistant",
+                    _to_text_block(tool_turn_text),
+                )
+            for grouped_message in grouped_messages:
+                _push_anthropic_message(
+                    converted,
+                    "assistant",
+                    {
+                        "type": "tool_use",
+                        "id": grouped_message["toolUseId"],
+                        "name": grouped_message["toolName"],
+                        "input": grouped_message["input"],
+                    },
+                )
             continue
         _push_anthropic_message(
             converted,

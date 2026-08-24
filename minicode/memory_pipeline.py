@@ -63,7 +63,12 @@ _STRONG_DURABLE_SIGNALS = frozenset(
 
 def assess_trace_memory_safety(execution_trace: list[dict[str, Any]]):
     """Scan untrusted trace text before any automatic reflection write."""
-    from minicode.memory import MemorySafetyResult, assess_memory_safety
+    from minicode.memory import (
+        MemorySafetyResult,
+        assess_memory_safety,
+        persistence_text_contains_secret,
+    )
+    from minicode.reflection_evidence import TRACE_MAX_EVENTS
 
     def iter_strings(value: Any, depth: int = 0):
         if depth > 4:
@@ -77,7 +82,7 @@ def assess_trace_memory_safety(execution_trace: list[dict[str, Any]]):
             for nested in value[:20]:
                 yield from iter_strings(nested, depth + 1)
 
-    for event in execution_trace[:200]:
+    for event in execution_trace[:TRACE_MAX_EVENTS]:
         for text in iter_strings(event):
             # Empty strings in structured tool input represent an omitted or
             # root/default argument (for example ``list_files(path="")``).
@@ -86,6 +91,12 @@ def assess_trace_memory_safety(execution_trace: list[dict[str, Any]]):
             # actual durable Memory bodies.
             if not text.strip():
                 continue
+            if persistence_text_contains_secret(text):
+                return MemorySafetyResult(
+                    "suspicious",
+                    "trace contains credential-like text requiring redaction",
+                    "medium",
+                )
             safety = assess_memory_safety(text, source="trace")
             if not safety.allowed:
                 return MemorySafetyResult(
@@ -144,6 +155,7 @@ class MemoryPipeline:
         self._feedback_recorded = False
         self._project_facts: Any = None
         self._hybrid_activation: Any = None
+        self._hybrid_verifier_binding = "not_applicable"
         self._hybrid_provider_factory = hybrid_provider_factory
 
     # ── Lifecycle ──────────────────────────────────────────────────
@@ -159,6 +171,7 @@ class MemoryPipeline:
         hybrid_evidence_path: str | Path | None = None,
         hybrid_embedding_provider: str = "local-e5",
         allow_remote_memory_embedding: bool = False,
+        hybrid_verifier_binding: str = "",
     ) -> None:
         """Initialize all subsystems. Call once after MemoryManager is ready."""
         if enable_reranker:
@@ -177,6 +190,10 @@ class MemoryPipeline:
         )
         self._model = model_adapter
         self._workspace = workspace_path
+        self._hybrid_verifier_binding = (
+            str(hybrid_verifier_binding).strip()[:64]
+            or ("configured_match" if self._hybrid_activation.active else "not_applicable")
+        )
 
         # Deterministic project facts live outside the lesson pipeline.
         if workspace_path:
@@ -195,41 +212,56 @@ class MemoryPipeline:
                 from dataclasses import replace
                 from minicode.memory_retrieval import CanonicalMemoryRetriever
 
-                factory = self._hybrid_provider_factory
-                if factory is None:
-                    try:
-                        from minicode.memory_hybrid_runtime import (
-                            create_hybrid_candidate_provider,
-                        )
-
-                        factory = create_hybrid_candidate_provider
-                    except Exception:
-                        factory = None
-                try:
-                    provider = (
-                        factory(
-                            activation=self._hybrid_activation,
-                            model_adapter=model_adapter,
-                            workspace_path=workspace_path,
-                        )
-                        if factory is not None
-                        else None
-                    )
-                except Exception:
-                    provider = None
-                if provider is None:
+                if model_adapter is None:
                     self._hybrid_activation = replace(
                         self._hybrid_activation,
                         active=False,
-                        reason="provider_initialization_failed",
+                        reason="verifier_adapter_unavailable",
                     )
-                else:
-                    self._retriever = CanonicalMemoryRetriever(
-                        self._memory,
-                        controller=self._injector._controller,
-                        hybrid_provider=provider,
-                    )
-                    self._injector._retriever = self._retriever
+
+                if self._hybrid_activation.active:
+                    factory = self._hybrid_provider_factory
+                    using_default_factory = factory is None
+                    if factory is None:
+                        try:
+                            from minicode.memory_hybrid_runtime import (
+                                create_hybrid_candidate_provider,
+                            )
+
+                            factory = create_hybrid_candidate_provider
+                        except Exception:
+                            factory = None
+                    try:
+                        provider = (
+                            factory(
+                                activation=self._hybrid_activation,
+                                model_adapter=model_adapter,
+                                workspace_path=workspace_path,
+                                **({"strict": True} if using_default_factory else {}),
+                            )
+                            if factory is not None
+                            else None
+                        )
+                    except Exception as exc:
+                        provider = None
+                        initialization_reason = str(
+                            getattr(exc, "reason", "provider_initialization_failed")
+                        )[:96]
+                    else:
+                        initialization_reason = "provider_initialization_failed"
+                    if provider is None:
+                        self._hybrid_activation = replace(
+                            self._hybrid_activation,
+                            active=False,
+                            reason=initialization_reason,
+                        )
+                    else:
+                        self._retriever = CanonicalMemoryRetriever(
+                            self._memory,
+                            controller=self._injector._controller,
+                            hybrid_provider=provider,
+                        )
+                        self._injector._retriever = self._retriever
 
         # Curator (background optimization)
         from minicode.memory_curator_agent import MemoryCuratorAgent
@@ -358,7 +390,50 @@ class MemoryPipeline:
                 if self._hybrid_activation and not self._hybrid_activation.active
                 else ""
             ),
+            "hybrid_fallback": bool(
+                self._hybrid_activation
+                and self._hybrid_activation.requested
+                and not self._hybrid_activation.active
+            ),
+            "hybrid_verifier_binding": self._hybrid_verifier_binding,
         }
+
+    def _attach_hybrid_runtime_diagnostics(self, result: Any) -> Any:
+        """Join activation state to a content-free retrieval observation."""
+        from dataclasses import replace
+
+        diagnostics = dict(getattr(result, "diagnostics", {}) or {})
+        retrieval = diagnostics.get("hybrid", {})
+        retrieval = retrieval if isinstance(retrieval, dict) else {}
+        provider = retrieval.get("provider", {})
+        provider = provider if isinstance(provider, dict) else {}
+        requested = bool(
+            self._hybrid_activation and self._hybrid_activation.requested
+        )
+        active = bool(self._hybrid_activation and self._hybrid_activation.active)
+        adjudication_fallback = bool(retrieval.get("fallback"))
+        reason = "not_requested"
+        if requested and not active:
+            reason = str(self._hybrid_activation.reason or "inactive")[:96]
+        elif requested and adjudication_fallback:
+            reason = str(retrieval.get("failure_reason") or "provider_fail_closed")[:96]
+        elif requested:
+            reason = "activated"
+        diagnostics["hybrid_runtime"] = {
+            "requested": requested,
+            "active": active,
+            "fallback": bool(requested and (not active or adjudication_fallback)),
+            "reason": reason,
+            "embedding_provider": str(
+                getattr(self._hybrid_activation, "embedding_provider", "") or ""
+            )[:32],
+            "verifier_binding": self._hybrid_verifier_binding,
+            "provider_cache_reused": bool(
+                provider.get("provider_cache_reused", False)
+            ),
+            "adjudication_cache_hit": bool(provider.get("cache_hit", False)),
+        }
+        return replace(result, diagnostics=diagnostics)
 
     # ── READ: Memory retrieval ─────────────────────────────────────
 
@@ -418,8 +493,8 @@ class MemoryPipeline:
             cancellation_token=cancellation_token,
             deadline_monotonic=deadline_monotonic,
         )
+        result = self._attach_hybrid_runtime_diagnostics(result)
         self._last_retrieval_result = result
-        self._feedback_recorded = False
         if self._injector is not None:
             from minicode.memory_injector import (
                 MemoryInjectionDecision,
@@ -857,10 +932,21 @@ class MemoryPipeline:
             raise
         except ModelCallDeadlineExceeded:
             logger.info("MemoryPipeline: reflection skipped at Agent deadline")
-        except Exception:
-            logger.exception(
-                "MemoryPipeline: reflection write failed for task=%r",
-                task_description[:120],
+        except Exception as error:
+            from minicode.memory import sanitize_for_persistence
+
+            task_record = sanitize_for_persistence({"task": task_description})
+            task_reference = (
+                task_record.get("task", "[TASK_UNAVAILABLE]")
+                if isinstance(task_record, dict)
+                else "[TASK_UNAVAILABLE]"
+            )
+            # Do not attach ``exc_info`` here: a provider/tool exception may
+            # quote the original task, defeating the content-free task handle.
+            logger.error(
+                "MemoryPipeline: reflection write failed task_ref=%s error_type=%s",
+                task_reference,
+                type(error).__name__,
             )
         finally:
             if result is not None and hasattr(self._reflection, "complete_shadow"):
@@ -1151,6 +1237,8 @@ class MemoryPipeline:
         *,
         verification_passed: int = 0,
         verification_failed: int = 0,
+        verification_memory_ids: list[str] | None = None,
+        observation_id: str | None = None,
     ) -> None:
         """Task outcome → memory utility. Closes the outermost learning loop.
 
@@ -1159,9 +1247,12 @@ class MemoryPipeline:
 
         ``verification_passed``/``verification_failed`` are an optional tally
         of independently executed test/build/lint/typecheck outcomes observed
-        during this same turn. When present, they additionally drive
-        corroborated feedback — kept separate from the whole-turn label
-        because it is materially stronger, causally cleaner evidence.
+        during this same turn. Counts alone do not identify which rendered
+        Memory the verifier exercised. Corroborated feedback therefore also
+        requires ``verification_memory_ids``: an exact, trusted binding to a
+        subset of this turn's rendered IDs. The canonical Agent path currently
+        omits that binding and records only ordinary whole-turn feedback rather
+        than risking causal misattribution.
         """
         if not self._memory or self._feedback_recorded:
             return
@@ -1183,15 +1274,56 @@ class MemoryPipeline:
         else:
             success = bool(task_success)
         if hasattr(self._memory, "record_feedback"):
-            self._memory.record_feedback(rendered_ids, success)
+            if observation_id is None:
+                # Preserve compatibility with evaluator/test managers that
+                # implement the legacy two-argument feedback seam.
+                self._memory.record_feedback(rendered_ids, success)
+            else:
+                self._memory.record_feedback(
+                    rendered_ids,
+                    success,
+                    observation_id=observation_id,
+                )
             self._feedback_recorded = True
             corroborated = verification_corroboration(
                 verification_passed, verification_failed
             )
-            if corroborated is not None and hasattr(
-                self._memory, "record_corroborated_feedback"
+            bound_ids: list[str] = []
+            if verification_memory_ids is not None:
+                if not isinstance(verification_memory_ids, list) or any(
+                    not isinstance(entry_id, str)
+                    for entry_id in verification_memory_ids
+                ):
+                    logger.warning(
+                        "Memory corroborated feedback rejected malformed verification binding"
+                    )
+                else:
+                    candidate_ids = list(dict.fromkeys(verification_memory_ids))
+                    if candidate_ids and all(
+                        entry_id in rendered_ids for entry_id in candidate_ids
+                    ):
+                        bound_ids = candidate_ids
+                    elif candidate_ids:
+                        logger.warning(
+                            "Memory corroborated feedback rejected IDs outside this turn's rendered result"
+                        )
+            if corroborated is not None and bound_ids and not (
+                isinstance(observation_id, str) and observation_id.strip()
             ):
-                self._memory.record_corroborated_feedback(rendered_ids, corroborated)
+                logger.warning(
+                    "Memory corroborated feedback rejected missing observation identity"
+                )
+            elif (
+                corroborated is not None
+                and bound_ids
+                and hasattr(self._memory, "record_corroborated_feedback")
+            ):
+                self._memory.record_corroborated_feedback(
+                    bound_ids,
+                    corroborated,
+                    source="independent_verification",
+                    observation_id=observation_id,
+                )
 
     @property
     def last_retrieval_result(self):

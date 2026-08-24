@@ -23,6 +23,7 @@ MANIFEST
 
 # Virtual environments
 .venv/
+.venv-*/
 venv/
 ENV/
 env/
@@ -53,8 +54,9 @@ Thumbs.db
 # MiniCode specific
 .mini-code/
 minicode_session/
-# Project-local / session runtime state (never versioned by design);
-# .mini-code-memory/ is shared project memory and stays tracked.
+# Project-local / session runtime state is never versioned by design.
+# Durable project Memory is useful at runtime but may contain private paths,
+# prompts, or lessons, so .mini-code-memory/ also remains local.
 .mini-code-memory-local/
 .mini-code-session-memory/
 
@@ -88,6 +90,14 @@ out.txt
 /artifacts/**/journal/
 /artifacts/**/workspace/
 /artifacts/**/memory-store.lock
+
+# One-off development smokes are local diagnostics, not frozen acceptance
+# evidence. Curated acceptance manifests and results remain allowlisted by
+# their explicit paths in the repository.
+/artifacts/persistent-memory-repair-acceptance-v3/strong-attribution-smoke.json
+/artifacts/persistent-memory-repair-after-root-causes-smoke*/
+/artifacts/persistent-memory-repair-code-pattern-smoke*/
+/artifacts/persistent-memory-repair-verifier-profile-smoke-*/
 
 # Local secrets — copy from .env.example
 .env

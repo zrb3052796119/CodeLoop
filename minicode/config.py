@@ -9,12 +9,83 @@ from typing import Any
 
 
 MINI_CODE_DIR = Path.home() / ".mini-code"
+MINI_CODE_ENV_PATH = MINI_CODE_DIR / ".env"
 MINI_CODE_SETTINGS_PATH = MINI_CODE_DIR / "settings.json"
 MINI_CODE_HISTORY_PATH = MINI_CODE_DIR / "history.json"
 MINI_CODE_PERMISSIONS_PATH = MINI_CODE_DIR / "permissions.json"
 MINI_CODE_MCP_PATH = MINI_CODE_DIR / "mcp.json"
 MINI_CODE_USER_PROFILE_PATH = MINI_CODE_DIR / "USER.md"
 CLAUDE_SETTINGS_PATH = Path.home() / ".claude" / "settings.json"
+
+# Only these model/runtime variables are accepted from the private user env
+# store.  This prevents a typo or an unrelated shell variable in that file
+# from silently becoming authority for subprocess behaviour.
+USER_MODEL_ENV_KEYS = frozenset(
+    {
+        "MINI_CODE_MODEL",
+        "MINI_CODE_PROVIDER",
+        "MINI_CODE_MAX_OUTPUT_TOKENS",
+        "MINI_CODE_LANGUAGE",
+        "MINI_CODE_VERBOSITY",
+        "MINI_CODE_TOOL_PROFILE",
+        "ANTHROPIC_MODEL",
+        "ANTHROPIC_BASE_URL",
+        "ANTHROPIC_AUTH_TOKEN",
+        "ANTHROPIC_API_KEY",
+        "OPENAI_BASE_URL",
+        "OPENAI_API_BASE",
+        "OPENAI_API_KEY",
+        "OPENROUTER_BASE_URL",
+        "OPENROUTER_API_KEY",
+        "OPENROUTER_REFERER",
+        "OPENROUTER_TITLE",
+        "OPENROUTER_TRANSFORMS",
+        "CUSTOM_API_BASE_URL",
+        "CUSTOM_API_KEY",
+        "CUSTOM_API_EXTRA_HEADERS",
+        "DEEPSEEK_BASE_URL",
+        "DEEPSEEK_API_KEY",
+        "MINI_CODE_REFLECTION_SYNTHESIZER_MODE",
+        "MINI_CODE_REFLECTION_MODEL",
+        "MINI_CODE_REFLECTION_LLM_TIMEOUT_SECONDS",
+        "MINI_CODE_REFLECTION_LLM_MAX_OUTPUT_TOKENS",
+        "MINI_CODE_REFLECTION_LLM_MAX_INPUT_BYTES",
+        "MINI_CODE_REFLECTION_LLM_MAX_OUTPUT_BYTES",
+        "MINI_CODE_REFLECTION_LLM_MAX_CLAIMS",
+        "MINI_CODE_ALLOW_REMOTE_REFLECTION_MODEL",
+        "MINI_CODE_REFLECTION_SHADOW_METRICS_ENABLED",
+        "MINI_CODE_REFLECTION_SHADOW_METRICS_PATH",
+        "MINI_CODE_REFLECTION_SHADOW_SAMPLE_RATE",
+        "MINI_CODE_REFLECTION_SHADOW_MAX_RECORDS",
+        "MINI_CODE_REFLECTION_SHADOW_MAX_FILE_BYTES",
+        "MINI_CODE_REFLECTION_PROMPT_VERSION",
+        "MINI_CODE_REFLECTION_LLM_SELECTION_STRATEGY",
+        "MINI_CODE_TURN_BUDGET_TOKENS",
+        "MINI_CODE_TURN_BUDGET_MODEL_CALLS",
+        "MINI_CODE_TURN_BUDGET_COST_USD",
+        "MINI_CODE_SUBAGENT_ROUTING_ENABLED",
+        "MINI_CODE_SUBAGENT_PROVIDER",
+        "MINI_CODE_SUBAGENT_BASE_URL",
+        "MINI_CODE_SUBAGENT_API_KEY",
+        "MINI_CODE_SUBAGENT_MODEL",
+        "MINI_CODE_SUBAGENT_EXPLORE_MODEL",
+        "MINI_CODE_SUBAGENT_PLAN_MODEL",
+        "MINI_CODE_SUBAGENT_GENERAL_MODEL",
+        "MINI_CODE_MEMORY_HYBRID_ENABLED",
+        "MINI_CODE_MEMORY_HYBRID_EMBEDDING_PROVIDER",
+        "MINI_CODE_ALLOW_REMOTE_MEMORY_EMBEDDING",
+        "MINI_CODE_MEMORY_HYBRID_MODEL_PATH",
+        "MINI_CODE_MEMORY_HYBRID_EVIDENCE_PATH",
+        "MINI_CODE_MEMORY_HYBRID_VERIFIER_MODEL",
+        "MINICODE_EMBEDDING_API_KEY",
+        "MINICODE_EMBEDDING_BASE_URL",
+        "MINICODE_EMBEDDING_MODEL",
+        "MINICODE_EMBEDDING_TIMEOUT_SECONDS",
+        "MINICODE_EMBEDDING_BOOST_THRESHOLD",
+        "MINICODE_EMBEDDING_SIGNAL_THRESHOLD",
+        "MINICODE_EMBEDDING_SIGNAL_THRESHOLD_UNKNOWN",
+    }
+)
 
 
 def project_user_profile_path(cwd: str | Path | None = None) -> Path:
@@ -43,6 +114,7 @@ KNOWN_MODELS = [
     "meta-llama/llama-4-maverick",
     "deepseek/deepseek-r1",
     "deepseek/deepseek-chat",
+    "deepseek-chat",
     "qwen/qwen3-235b-a22b",
     "minimax/minimax-m1",
 ]
@@ -161,53 +233,244 @@ def save_mini_code_settings(updates: dict[str, Any]) -> None:
         raise
 
 
+def _resolve_env_value(
+    names: tuple[str, ...],
+    *,
+    process_env: Mapping[str, Any],
+    user_env: Mapping[str, Any],
+    legacy_env: Mapping[str, Any],
+) -> tuple[str, str]:
+    """Resolve aliases by source, preserving explicit empty tombstones."""
+    for source_name, source in (
+        ("process_env", process_env),
+        ("user_env", user_env),
+        ("legacy_settings", legacy_env),
+    ):
+        for name in names:
+            if name in source:
+                return str(source[name]).strip(), source_name
+    return "", "default"
+
+
+def _resolve_anthropic_credential(
+    *,
+    process_env: Mapping[str, Any],
+    user_env: Mapping[str, Any],
+    legacy_env: Mapping[str, Any],
+    effective: Mapping[str, Any],
+    legacy_fallback_enabled: bool,
+) -> tuple[str | None, str | None, str]:
+    """Select exactly one Anthropic credential by source precedence.
+
+    API keys and auth tokens are alternative authentication methods, so they
+    must compete at the source level rather than being resolved independently.
+    Within one source an API key wins when both are populated. An explicitly
+    empty credential source remains a tombstone for all lower-priority sources.
+    """
+    for source_name, source in (
+        ("process_env", process_env),
+        ("user_env", user_env),
+        ("legacy_settings", legacy_env),
+    ):
+        key_present = "ANTHROPIC_API_KEY" in source
+        token_present = "ANTHROPIC_AUTH_TOKEN" in source
+        if not (key_present or token_present):
+            continue
+        api_key = str(source.get("ANTHROPIC_API_KEY") or "").strip()
+        auth_token = str(source.get("ANTHROPIC_AUTH_TOKEN") or "").strip()
+        if api_key:
+            return api_key, None, source_name
+        if auth_token:
+            return None, auth_token, source_name
+        return None, None, source_name
+
+    if legacy_fallback_enabled:
+        key_present = "apiKey" in effective
+        token_present = "authToken" in effective
+        if key_present or token_present:
+            api_key = str(effective.get("apiKey") or "").strip()
+            auth_token = str(effective.get("authToken") or "").strip()
+            if api_key:
+                return api_key, None, "legacy_settings"
+            if auth_token:
+                return None, auth_token, "legacy_settings"
+            return None, None, "legacy_settings"
+    return None, None, "default"
+
+
 def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
     effective = load_effective_settings(cwd)
-    settings_env = dict(effective.get("env", {}))
-    env = {**settings_env, **os.environ}
-    model = (
-        os.environ.get("MINI_CODE_MODEL")
-        or effective.get("model")
-        or str(env.get("ANTHROPIC_MODEL", "")).strip()
+    mini_code_settings = read_settings_file(MINI_CODE_SETTINGS_PATH)
+    try:
+        model_env_migration_version = int(
+            mini_code_settings.get("modelEnvMigrationVersion", 0) or 0
+        )
+    except (TypeError, ValueError):
+        model_env_migration_version = 0
+    legacy_model_fallback_enabled = model_env_migration_version < 1
+    raw_settings_env = effective.get("env", {})
+    settings_env = (
+        dict(raw_settings_env)
+        if legacy_model_fallback_enabled and isinstance(raw_settings_env, Mapping)
+        else {}
     )
+    from minicode.env_file import read_private_env_file
+
+    user_env = read_private_env_file(
+        MINI_CODE_ENV_PATH,
+        allowed_keys=USER_MODEL_ENV_KEYS,
+    )
+    process_env: Mapping[str, Any] = os.environ
+    env = {**settings_env, **user_env, **process_env}
+
+    def resolved(
+        *names: str,
+        legacy_field: str | None = None,
+        default: Any = "",
+    ) -> tuple[Any, str]:
+        value, source = _resolve_env_value(
+            tuple(names),
+            process_env=process_env,
+            user_env=user_env,
+            legacy_env=settings_env,
+        )
+        if source != "default":
+            return value, source
+        if (
+            legacy_model_fallback_enabled
+            and legacy_field is not None
+            and legacy_field in effective
+        ):
+            return effective.get(legacy_field), "legacy_settings"
+        return default, "default"
+
+    model, model_source = resolved(
+        "MINI_CODE_MODEL",
+        "ANTHROPIC_MODEL",
+        legacy_field="model",
+    )
+    model = str(model or "").strip()
+    provider, provider_source = resolved(
+        "MINI_CODE_PROVIDER",
+        legacy_field="provider",
+    )
+    provider = str(provider or "").strip().lower()
 
     # --- Provider-specific base URLs ---
     # Anthropic
-    base_url = str(env.get("ANTHROPIC_BASE_URL", "")).strip() or "https://api.anthropic.com"
-    auth_token = str(env.get("ANTHROPIC_AUTH_TOKEN", "")).strip() or None
-    api_key = str(env.get("ANTHROPIC_API_KEY", "")).strip() or None
+    base_url, _ = resolved(
+        "ANTHROPIC_BASE_URL",
+        legacy_field="baseUrl",
+        default="https://api.anthropic.com",
+    )
+    base_url = str(base_url or "https://api.anthropic.com").strip()
+    api_key, auth_token, anthropic_credential_source = (
+        _resolve_anthropic_credential(
+            process_env=process_env,
+            user_env=user_env,
+            legacy_env=settings_env,
+            effective=effective,
+            legacy_fallback_enabled=legacy_model_fallback_enabled,
+        )
+    )
 
     # OpenAI
-    openai_base_url = (
-        str(env.get("OPENAI_BASE_URL", "")).strip()
-        or str(env.get("OPENAI_API_BASE", "")).strip()
-        or effective.get("openaiBaseUrl", "")
-        or "https://api.openai.com"
+    openai_base_url, _ = resolved(
+        "OPENAI_BASE_URL",
+        "OPENAI_API_BASE",
+        legacy_field="openaiBaseUrl",
+        default="https://api.openai.com",
     )
-    openai_api_key = str(env.get("OPENAI_API_KEY", "")).strip() or effective.get("openaiApiKey", "")
+    openai_base_url = str(openai_base_url or "https://api.openai.com").strip()
+    openai_api_key, openai_key_source = resolved(
+        "OPENAI_API_KEY",
+        legacy_field="openaiApiKey",
+    )
+    openai_api_key = str(openai_api_key).strip()
 
     # OpenRouter
-    openrouter_base_url = (
-        str(env.get("OPENROUTER_BASE_URL", "")).strip()
-        or "https://openrouter.ai/api"
+    openrouter_base_url, _ = resolved(
+        "OPENROUTER_BASE_URL",
+        legacy_field="openrouterBaseUrl",
+        default="https://openrouter.ai/api",
     )
-    openrouter_api_key = str(env.get("OPENROUTER_API_KEY", "")).strip()
+    openrouter_base_url = str(
+        openrouter_base_url or "https://openrouter.ai/api"
+    ).strip()
+    openrouter_api_key, openrouter_key_source = resolved(
+        "OPENROUTER_API_KEY",
+        legacy_field="openrouterApiKey",
+    )
+    openrouter_api_key = str(openrouter_api_key).strip()
+    openrouter_referer, _ = resolved(
+        "OPENROUTER_REFERER",
+        legacy_field="openrouterReferer",
+        default="https://github.com/minicode-py",
+    )
+    openrouter_title, _ = resolved(
+        "OPENROUTER_TITLE",
+        legacy_field="openrouterTitle",
+        default="MiniCode Python",
+    )
+    openrouter_transforms, _ = resolved(
+        "OPENROUTER_TRANSFORMS",
+        legacy_field="openrouterTransforms",
+    )
 
     # Custom endpoint
-    custom_base_url = (
-        str(env.get("CUSTOM_API_BASE_URL", "")).strip()
-        or effective.get("customBaseUrl", "")
+    custom_base_url, _ = resolved(
+        "CUSTOM_API_BASE_URL",
+        legacy_field="customBaseUrl",
     )
-    custom_api_key = (
-        str(env.get("CUSTOM_API_KEY", "")).strip()
-        or effective.get("customApiKey", "")
-        or openai_api_key
+    custom_base_url = str(custom_base_url).strip()
+    custom_api_key, custom_key_source = resolved(
+        "CUSTOM_API_KEY",
+        legacy_field="customApiKey",
+    )
+    custom_api_key = str(custom_api_key).strip()
+    custom_extra_headers, _ = resolved(
+        "CUSTOM_API_EXTRA_HEADERS",
+        legacy_field="customApiExtraHeaders",
     )
 
-    raw_max_output_tokens = (
-        os.environ.get("MINI_CODE_MAX_OUTPUT_TOKENS")
-        or effective.get("maxOutputTokens")
-        or env.get("MINI_CODE_MAX_OUTPUT_TOKENS")
+    # Compatibility for direct DeepSeek configuration is deliberately bound
+    # to DeepSeek's own endpoint; it is never lent to an arbitrary custom URL.
+    deepseek_base_url, _ = resolved(
+        "DEEPSEEK_BASE_URL",
+        default="https://api.deepseek.com",
+    )
+    deepseek_base_url = str(
+        deepseek_base_url or "https://api.deepseek.com"
+    ).strip().rstrip("/")
+    deepseek_api_key, deepseek_key_source = resolved("DEEPSEEK_API_KEY")
+    deepseek_api_key = str(deepseek_api_key).strip()
+    if (
+        not deepseek_api_key
+        and "deepseek" in model.lower()
+        and provider == "custom"
+        and custom_base_url.rstrip("/")
+        in {"https://api.deepseek.com", "https://api.deepseek.com/v1"}
+        and custom_api_key
+    ):
+        # A primary DeepSeek route may seed the isolated verifier route only
+        # after both its model and official endpoint have been proven.  A main
+        # Qwen/custom credential never crosses this boundary.
+        deepseek_base_url = custom_base_url.rstrip("/")
+        deepseek_api_key = custom_api_key
+        deepseek_key_source = custom_key_source
+    if (
+        not custom_api_key
+        and deepseek_api_key
+        and "deepseek" in model.lower()
+        and custom_base_url.rstrip("/") in {"", "https://api.deepseek.com", "https://api.deepseek.com/v1"}
+    ):
+        custom_base_url = custom_base_url or "https://api.deepseek.com"
+        custom_api_key = deepseek_api_key
+        custom_key_source = deepseek_key_source
+
+    raw_max_output_tokens, _ = resolved(
+        "MINI_CODE_MAX_OUTPUT_TOKENS",
+        legacy_field="maxOutputTokens",
     )
     max_output_tokens = None
     if raw_max_output_tokens is not None:
@@ -218,16 +481,9 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
         except (TypeError, ValueError):
             max_output_tokens = None
 
-    # Validate: at least one auth method must be available
-    has_auth = any([
-        auth_token, api_key, openai_api_key, openrouter_api_key, custom_api_key,
-    ])
     if not model:
-        raise RuntimeError("No model configured. Set ~/.mini-code/settings.json or ANTHROPIC_MODEL.")
-    if not has_auth:
         raise RuntimeError(
-            "No auth configured. Set one of: ANTHROPIC_API_KEY, OPENAI_API_KEY, "
-            "OPENROUTER_API_KEY, or CUSTOM_API_KEY."
+            "No model configured. Set MINI_CODE_MODEL in ~/.mini-code/.env."
         )
 
     # --- User profile paths ---
@@ -245,7 +501,7 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
         or user_preferences.get("verbosity", "")
     )
 
-    reflection_values = dict(effective)
+    reflection_values = dict(effective) if legacy_model_fallback_enabled else {}
     reflection_env_fields = {
         "reflectionSynthesizerMode": "MINI_CODE_REFLECTION_SYNTHESIZER_MODE",
         "reflectionModel": "MINI_CODE_REFLECTION_MODEL",
@@ -273,7 +529,11 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
     # Shared Agent Turn budget, inherited by every nested `task` sub-agent.
     # Values are optional; a default model-call ceiling is applied by
     # AgentTurnBudget.from_runtime even when token/cost limits are unset.
-    budget_settings = effective.get("agentTurnBudget", {})
+    budget_settings = (
+        effective.get("agentTurnBudget", {})
+        if legacy_model_fallback_enabled
+        else {}
+    )
     if not isinstance(budget_settings, dict):
         budget_settings = {}
     agent_turn_budget = {
@@ -288,33 +548,19 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
     # Child-agent model routing is independent from the parent provider. The
     # dedicated key is never inferred from the parent credential: adding it is
     # the explicit act that enables the default remote Qwen route.
-    subagent_settings = effective.get("subagentRouting", {})
-    if not isinstance(subagent_settings, dict):
-        subagent_settings = {}
-    # A workspace .env may configure the child route only when it owns the
-    # dedicated child credential too. This source binding prevents an
-    # untrusted workspace from overriding only the endpoint while borrowing a
-    # key from global settings. Process environment overrides remain trusted.
-    from minicode.env_file import read_env_files
-
-    workspace_subagent_env = (
-        read_env_files([Path(cwd) / ".env"])
-        if cwd is not None
+    subagent_settings = (
+        effective.get("subagentRouting", {})
+        if legacy_model_fallback_enabled
         else {}
     )
-    workspace_owns_subagent_key = bool(
-        str(workspace_subagent_env.get("MINI_CODE_SUBAGENT_API_KEY") or "").strip()
-    )
-    bound_workspace_env = (
-        workspace_subagent_env if workspace_owns_subagent_key else {}
-    )
-
+    if not isinstance(subagent_settings, dict):
+        subagent_settings = {}
     def subagent_env_value(name: str) -> Any:
-        return (
-            os.environ.get(name)
-            or bound_workspace_env.get(name)
-            or settings_env.get(name)
-        )
+        # A repository is data processed by the agent, not a credential
+        # authority.  Child routes therefore use the same trusted sources as
+        # the parent: process env, private user env, then legacy settings.
+        value, _ = resolved(name)
+        return value
 
     configured_subagent_models = subagent_settings.get("models", {})
     if not isinstance(configured_subagent_models, dict):
@@ -347,7 +593,11 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
             or default_subagent_model
         ).strip()
 
-    hybrid_settings = effective.get("memoryHybrid", {})
+    hybrid_settings = (
+        effective.get("memoryHybrid", {})
+        if legacy_model_fallback_enabled
+        else {}
+    )
     if not isinstance(hybrid_settings, dict):
         hybrid_settings = {}
     enabled_value = (
@@ -389,8 +639,16 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
         or model
     ).strip()
 
-    return {
+    credential_sources = {
+        "anthropic": anthropic_credential_source,
+        "openai": openai_key_source,
+        "openrouter": openrouter_key_source,
+        "custom": custom_key_source,
+        "deepseek": deepseek_key_source,
+    }
+    runtime = {
         "model": model,
+        "provider": provider,
         "baseUrl": base_url,
         "authToken": auth_token,
         "apiKey": api_key,
@@ -398,8 +656,14 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
         "openaiApiKey": openai_api_key,
         "openrouterBaseUrl": openrouter_base_url,
         "openrouterApiKey": openrouter_api_key,
+        "openrouterReferer": str(openrouter_referer or ""),
+        "openrouterTitle": str(openrouter_title or ""),
+        "openrouterTransforms": str(openrouter_transforms or ""),
         "customBaseUrl": custom_base_url,
         "customApiKey": custom_api_key,
+        "customApiExtraHeaders": str(custom_extra_headers or ""),
+        "deepseekBaseUrl": deepseek_base_url,
+        "deepseekApiKey": deepseek_api_key,
         "maxOutputTokens": max_output_tokens,
         "mcpServers": effective.get("mcpServers", {}),
         "globalUserProfilePath": str(global_user_profile),
@@ -444,19 +708,49 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
         "memoryHybridEvidencePath": memory_hybrid_evidence_path,
         "memoryHybridVerifierModel": memory_hybrid_verifier_model,
         "toolProfile": str(
-            os.environ.get("MINI_CODE_TOOL_PROFILE")
+            env.get("MINI_CODE_TOOL_PROFILE")
             or effective.get("toolProfile", "")
             or "core"
         ).strip().lower(),
-        "sourceSummary": f"config: {MINI_CODE_SETTINGS_PATH} > {CLAUDE_SETTINGS_PATH} > process.env",
+        "configSources": {
+            "model": model_source,
+            "provider": provider_source,
+            "credential": credential_sources,
+            "legacyModelFallbackEnabled": legacy_model_fallback_enabled,
+        },
+        "sourceSummary": (
+            (
+                f"model config: process.env > {MINI_CODE_ENV_PATH} > "
+                f"{MINI_CODE_SETTINGS_PATH} > {CLAUDE_SETTINGS_PATH}"
+            )
+            if legacy_model_fallback_enabled
+            else (
+                f"model config: process.env > {MINI_CODE_ENV_PATH} "
+                "(legacy model fallback disabled after migration)"
+            )
+        ),
     }
+    provider_errors = validate_provider_runtime(runtime)
+    if provider_errors:
+        raise RuntimeError(" ".join(provider_errors))
+    return runtime
 
 
 def _is_valid_http_url(value: str | None) -> bool:
     if not value:
         return False
     parsed = urlparse(str(value))
-    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+    if not parsed.netloc or parsed.username or parsed.password:
+        return False
+    if parsed.query or parsed.fragment:
+        return False
+    if parsed.scheme == "https":
+        return True
+    return parsed.scheme == "http" and parsed.hostname in {
+        "localhost",
+        "127.0.0.1",
+        "::1",
+    }
 
 
 def safe_runtime_summary(runtime: Mapping[str, Any]) -> dict[str, Any]:
@@ -474,6 +768,8 @@ def safe_runtime_summary(runtime: Mapping[str, Any]) -> dict[str, Any]:
                 safe_models[key] = value.strip()[:160]
     return {
         "model": str(values.get("model") or "")[:160],
+        "provider": str(values.get("provider") or "")[:40],
+        "configSources": dict(values.get("configSources") or {}),
         "toolProfile": str(values.get("toolProfile") or "core")[:80],
         "subagentRoutingEnabled": bool(values.get("subagentRoutingEnabled")),
         "subagentProvider": str(values.get("subagentProvider") or "")[:80],
@@ -525,19 +821,25 @@ def validate_provider_runtime(runtime: dict[str, Any]) -> list[str]:
                 "Provider is openai for this model, but OPENAI_API_KEY/openaiApiKey is not configured."
             )
         if not _is_valid_http_url(runtime.get("openaiBaseUrl")):
-            errors.append("OpenAI base URL must be an http(s) URL.")
+            errors.append(
+                "OpenAI base URL must use HTTPS (HTTP is allowed only for loopback)."
+            )
     elif provider == Provider.OPENROUTER:
         if not runtime.get("openrouterApiKey"):
             errors.append(
                 "Provider is openrouter for this model, but OPENROUTER_API_KEY is not configured."
             )
         if not _is_valid_http_url(runtime.get("openrouterBaseUrl")):
-            errors.append("OpenRouter base URL must be an http(s) URL.")
+            errors.append(
+                "OpenRouter base URL must use HTTPS (HTTP is allowed only for loopback)."
+            )
     elif provider == Provider.CUSTOM:
         if not runtime.get("customBaseUrl"):
             errors.append("Provider is custom, but CUSTOM_API_BASE_URL/customBaseUrl is not configured.")
         elif not _is_valid_http_url(runtime.get("customBaseUrl")):
-            errors.append("Custom base URL must be an http(s) URL.")
+            errors.append(
+                "Custom base URL must use HTTPS (HTTP is allowed only for loopback)."
+            )
         if not runtime.get("customApiKey"):
             errors.append("Provider is custom, but CUSTOM_API_KEY/customApiKey is not configured.")
     elif provider == Provider.ANTHROPIC:
@@ -546,9 +848,99 @@ def validate_provider_runtime(runtime: dict[str, Any]) -> list[str]:
                 "Provider is anthropic for this model, but ANTHROPIC_API_KEY/ANTHROPIC_AUTH_TOKEN is not configured."
             )
         if not _is_valid_http_url(runtime.get("baseUrl")):
-            errors.append("Anthropic base URL must be an http(s) URL.")
+            errors.append(
+                "Anthropic base URL must use HTTPS (HTTP is allowed only for loopback)."
+            )
 
     return errors
+
+
+def inspect_memory_hybrid_config(
+    runtime: Mapping[str, Any],
+) -> tuple[list[str], list[str], dict[str, Any]]:
+    """Statically validate evidence-gated Hybrid Memory configuration.
+
+    The accepted promotion evidence, not an editable model setting, is the
+    authority for the verifier identity.  This check performs no network I/O
+    and never returns endpoints, credentials, evidence content, or paths.
+    """
+    if not bool(runtime.get("memoryHybridEnabled", False)):
+        return [], [], {
+            "requested": False,
+            "active": False,
+            "reason": "not_requested",
+            "verifierBinding": "not_applicable",
+        }
+    from minicode.memory_hybrid import assess_hybrid_activation
+
+    activation = assess_hybrid_activation(
+        requested=True,
+        evidence_path=runtime.get("memoryHybridEvidencePath") or None,
+        model_path=runtime.get("memoryHybridModelPath") or None,
+        embedding_provider=str(
+            runtime.get("memoryHybridEmbeddingProvider") or "local-e5"
+        ),
+        allow_remote_embedding=bool(
+            runtime.get("allowRemoteMemoryEmbedding", False)
+        ),
+    )
+    status = {
+        "requested": True,
+        "active": bool(activation.active),
+        "reason": str(activation.reason)[:96],
+        "verifierBinding": "activation_unavailable",
+    }
+    if not activation.active or not isinstance(activation.evidence, dict):
+        return (
+            [
+                "Hybrid Memory was requested but promotion activation failed "
+                f"({activation.reason}). Canonical lexical retrieval will be used."
+            ],
+            [],
+            status,
+        )
+    verifier = activation.evidence.get("verifier", {})
+    expected_model = (
+        str(verifier.get("model_id") or "").strip()
+        if isinstance(verifier, dict)
+        else ""
+    )
+    configured_model = str(
+        runtime.get("memoryHybridVerifierModel") or ""
+    ).strip()
+    warnings: list[str] = []
+    binding = "configured_match"
+    if configured_model and configured_model != expected_model:
+        binding = "evidence_bound_override"
+        warnings.append(
+            "Hybrid verifier setting differs from accepted promotion evidence "
+            f"(configured={configured_model}, evidence={expected_model}); "
+            "runtime will use the evidence-bound verifier."
+        )
+    elif not configured_model:
+        binding = "evidence_bound_dedicated"
+    status["verifierBinding"] = binding
+    errors: list[str] = []
+    try:
+        from minicode.model_registry import (
+            build_dedicated_model_runtime,
+            build_provider_config,
+        )
+
+        verifier_runtime = build_dedicated_model_runtime(
+            expected_model,
+            dict(runtime),
+        )
+        provider = build_provider_config(expected_model, verifier_runtime)
+        if not provider.api_key:
+            errors.append(
+                "Hybrid Memory evidence-bound verifier credential is unavailable."
+            )
+    except Exception:
+        errors.append(
+            "Hybrid Memory evidence-bound verifier route is invalid or unavailable."
+        )
+    return errors, warnings, status
 
 
 def get_mcp_config_path(scope: str, cwd: str | Path | None = None) -> Path:
@@ -580,6 +972,11 @@ def validate_config(cwd: str | Path | None = None) -> tuple[bool, list[str]]:
     try:
         config = load_runtime_config(cwd)
         errors.extend(validate_provider_runtime(config))
+        hybrid_errors, hybrid_warnings, _hybrid_status = (
+            inspect_memory_hybrid_config(config)
+        )
+        errors.extend(hybrid_errors)
+        warnings.extend(hybrid_warnings)
         
         # 检查模型名称拼写
         model = config.get("model", "")
@@ -611,25 +1008,23 @@ def validate_config(cwd: str | Path | None = None) -> tuple[bool, list[str]]:
             help_msg = (
                 f"Error: {error_msg}\n\n"
                 "How to fix:\n"
-                "  1. Set model name: export ANTHROPIC_MODEL=claude-sonnet-4-20250514\n"
-                "  2. Or edit ~/.mini-code/settings.json:\n"
-                f'     {{"model": "claude-sonnet-4-20250514"}}\n'
+                "  1. Edit ~/.mini-code/.env\n"
+                "  2. Set MINI_CODE_MODEL=claude-sonnet-4-20250514\n"
+                "  3. Set MINI_CODE_PROVIDER=anthropic\n"
             )
             if suggestion:
                 help_msg += f"\n  Did you mean: {suggestion}?\n"
             help_msg += f"\n  Known models: {', '.join(KNOWN_MODELS[:3])}..."
             errors.append(help_msg)
             
-        elif "No auth configured" in error_msg:
+        elif "API_KEY" in error_msg or "AUTH_TOKEN" in error_msg:
             help_msg = (
                 f"Error: {error_msg}\n\n"
                 "How to fix:\n"
-                "  1. Anthropic:  export ANTHROPIC_API_KEY=sk-ant-...\n"
-                "  2. OpenAI:     export OPENAI_API_KEY=sk-...\n"
-                "  3. OpenRouter: export OPENROUTER_API_KEY=sk-or-...\n"
-                "  4. Custom:     export CUSTOM_API_KEY=... + CUSTOM_API_BASE_URL=...\n"
-                "  5. Or edit ~/.mini-code/settings.json:\n"
-                '     {"env": {"ANTHROPIC_API_KEY": "sk-ant-..."}}\n'
+                "  Edit ~/.mini-code/.env and configure the key matching "
+                "MINI_CODE_PROVIDER.\n"
+                "  Examples: ANTHROPIC_API_KEY, OPENAI_API_KEY, "
+                "OPENROUTER_API_KEY, or CUSTOM_API_KEY.\n"
             )
             errors.append(help_msg)
         else:
@@ -670,32 +1065,28 @@ def format_config_diagnostic(cwd: str | Path | None = None) -> str:
         lines.append(f"  Model: {model_name}")
 
         # Show provider info
-        from minicode.model_registry import detect_provider, Provider
+        from minicode.model_registry import build_provider_config, detect_provider
         provider = detect_provider(model_name, config)
         lines.append(f"  Provider: {provider.value}")
 
-        lines.append(f"  Base URL: {config.get('baseUrl', 'not set')}")
-        if config.get('openaiBaseUrl') and provider in (Provider.OPENAI, Provider.OPENROUTER, Provider.CUSTOM):
-            lines.append(f"  OpenAI Base URL: {config.get('openaiBaseUrl')}")
-        if config.get('openrouterApiKey'):
-            lines.append("  OpenRouter: configured")
-        if config.get('customBaseUrl'):
-            lines.append(f"  Custom Base URL: {config.get('customBaseUrl')}")
-
-        auth_methods = []
-        if config.get("authToken"):
-            auth_methods.append("ANTHROPIC_AUTH_TOKEN")
-        if config.get("apiKey"):
-            auth_methods.append("ANTHROPIC_API_KEY")
-        if config.get("openaiApiKey"):
-            auth_methods.append("OPENAI_API_KEY")
-        if config.get("openrouterApiKey"):
-            auth_methods.append("OPENROUTER_API_KEY")
-        if config.get("customApiKey"):
-            auth_methods.append("CUSTOM_API_KEY")
-        lines.append(f"  Auth: {', '.join(auth_methods) or 'none'}")
+        provider_config = build_provider_config(model_name, config)
+        lines.append(f"  Base URL: {provider_config.base_url}")
+        lines.append(
+            f"  Auth: {'configured' if provider_config.api_key else 'not configured'}"
+        )
+        lines.append(f"  Sources: {config.get('sourceSummary', 'unknown')}")
         lines.append(f"  MCP Servers: {len(config.get('mcpServers', {}))}")
         lines.append(f"  Tool Profile: {config.get('toolProfile', 'core')}")
+        _hybrid_errors, _hybrid_warnings, hybrid_status = (
+            inspect_memory_hybrid_config(config)
+        )
+        lines.append(
+            "  Hybrid Memory: "
+            f"requested={str(hybrid_status['requested']).lower()} "
+            f"active={str(hybrid_status['active']).lower()} "
+            f"reason={hybrid_status['reason']} "
+            f"verifierBinding={hybrid_status['verifierBinding']}"
+        )
 
         # User profile info
         global_profile_path = config.get('globalUserProfilePath', '')

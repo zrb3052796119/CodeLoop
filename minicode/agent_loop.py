@@ -4,6 +4,7 @@ import concurrent.futures
 import json
 import re
 import time
+import uuid
 from pathlib import Path
 from typing import Any, Callable
 
@@ -2407,17 +2408,19 @@ def run_agent_turn(
                 if role == "assistant_progress":
                     if on_progress_message:
                         on_progress_message(next_step.content)
-                    current_messages.append({"role": role, "content": next_step.content})
-                    current_messages.append(
-                        {
-                            "role": "user",
-                            "content": NUDGE_CONTINUE,
-                        }
-                    )
+                    if not next_step.calls:
+                        current_messages.append({"role": role, "content": next_step.content})
+                        current_messages.append(
+                            {
+                                "role": "user",
+                                "content": NUDGE_CONTINUE,
+                            }
+                        )
                 else:
                     if on_assistant_message:
                         on_assistant_message(next_step.content)
-                    current_messages.append({"role": role, "content": next_step.content})
+                    if not next_step.calls:
+                        current_messages.append({"role": role, "content": next_step.content})
 
             if not next_step.calls and next_step.content and next_step.contentKind != "progress":
                 skill_contract = enforce_skill_load_before_final()
@@ -2439,6 +2442,7 @@ def run_agent_turn(
             # --- Concurrent tool execution ---
             # Classify calls into concurrent-safe (read-only) vs serial (writes/commands)
             calls = next_step.calls
+            assistant_tool_turn_id = f"tool-turn-{uuid.uuid4().hex}"
             _results: list[tuple[dict, ToolResult]] = []
             concurrent_call_ids: set[str] = set()
             suppressed_call_ids: set[str] = set()
@@ -2626,7 +2630,7 @@ def run_agent_turn(
             ledger_changed = False
             executed_outcomes: list[bool] = []
 
-            for call, result in _results:
+            for result_index, (call, result) in enumerate(_results):
                 suppressed = call["id"] in suppressed_call_ids
                 if not suppressed:
                     executed_outcomes.append(result.ok)
@@ -2753,14 +2757,26 @@ def run_agent_turn(
                         recovery_note=recovery_note,
                     )
 
-                current_messages.append(
-                    {
-                        "role": "assistant_tool_call",
-                        "toolUseId": call["id"],
-                        "toolName": call["toolName"],
-                        "input": call["input"],
-                    }
-                )
+                assistant_tool_call_message: ChatMessage = {
+                    "role": "assistant_tool_call",
+                    "toolUseId": call["id"],
+                    "toolName": call["toolName"],
+                    "input": call["input"],
+                    "assistantTurnId": assistant_tool_turn_id,
+                }
+                # Text, reasoning, and tool calls are fields of one provider
+                # assistant turn.  Splitting text into a preceding assistant
+                # message breaks DeepSeek thinking-mode replay and changes the
+                # original turn structure for every provider.  Store the text
+                # once on the first call in the grouped internal turn.
+                if result_index == 0:
+                    if next_step.content:
+                        assistant_tool_call_message["content"] = next_step.content
+                    if next_step.reasoningContent is not None:
+                        assistant_tool_call_message["reasoningContent"] = (
+                            next_step.reasoningContent
+                        )
+                current_messages.append(assistant_tool_call_message)
                 current_messages.append(
                     {
                         "role": "tool_result",
@@ -3189,14 +3205,29 @@ def run_agent_turn(
                 and getattr(orch, "memory_pipeline", None) is not None
             ):
                 try:
+                    memory_feedback_outcome = (
+                        canonical_outcome.learning_success
+                        if canonical_outcome.learning_success is not None
+                        else "unknown"
+                    )
+                    memory_feedback_kwargs: dict[str, object] = {
+                        "verification_passed": verification_passed_count,
+                        "verification_failed": verification_failed_count,
+                    }
+                    feedback_observation_id = getattr(
+                        event_sink,
+                        "run_id",
+                        None,
+                    )
+                    if isinstance(feedback_observation_id, str) and (
+                        feedback_observation_id.strip()
+                    ):
+                        memory_feedback_kwargs["observation_id"] = (
+                            feedback_observation_id
+                        )
                     orch.memory_pipeline.feedback(
-                        (
-                            canonical_outcome.learning_success
-                            if canonical_outcome.learning_success is not None
-                            else "unknown"
-                        ),
-                        verification_passed=verification_passed_count,
-                        verification_failed=verification_failed_count,
+                        memory_feedback_outcome,
+                        **memory_feedback_kwargs,
                     )
                 except Exception:
                     pass

@@ -13,6 +13,7 @@ def _print_usage() -> None:
         "minicode skills list\n"
         "minicode skills add <path-to-skill-or-dir> [--name <name>] [--project]\n"
         "minicode skills remove <name> [--project]\n\n"
+        "minicode config migrate-env [--import-workspace-env <path>] [--scrub-workspace]\n\n"
         "minicode valid-config"
     )
 
@@ -150,6 +151,41 @@ def _handle_skills_command(cwd: str, args: list[str]) -> bool:
     return True
 
 
+def _handle_config_command(cwd: str, args: list[str]) -> bool:
+    if not args or args[0] != "migrate-env":
+        _print_usage()
+        return True
+    rest = list(args[1:])
+    workspace_env = _take_option(rest, "--import-workspace-env")
+    scrub_workspace = False
+    if "--scrub-workspace" in rest:
+        rest.remove("--scrub-workspace")
+        scrub_workspace = True
+    if rest:
+        raise RuntimeError(f"Unknown arguments: {' '.join(rest)}")
+    if scrub_workspace and workspace_env is None:
+        raise RuntimeError("--scrub-workspace requires --import-workspace-env")
+
+    from minicode.config_migration import migrate_model_config_to_user_env
+
+    source = None
+    if workspace_env is not None:
+        from pathlib import Path
+
+        candidate = Path(workspace_env)
+        source = candidate if candidate.is_absolute() else Path(cwd) / candidate
+    report = migrate_model_config_to_user_env(
+        workspace_env_path=source,
+        scrub_workspace=scrub_workspace,
+    )
+    print(f"Migrated model config to {report.env_path}")
+    print(f"Migrated keys: {len(report.migrated_keys)}")
+    print(f"Removed legacy fields: {len(report.removed_legacy_fields)}")
+    if report.scrubbed_workspace_keys:
+        print(f"Scrubbed workspace keys: {len(report.scrubbed_workspace_keys)}")
+    return True
+
+
 def maybe_handle_management_command(cwd: str, argv: list[str]) -> bool:
     if not argv:
         return False
@@ -158,6 +194,8 @@ def maybe_handle_management_command(cwd: str, argv: list[str]) -> bool:
         return _handle_mcp_command(cwd, rest)
     if category == "skills":
         return _handle_skills_command(cwd, rest)
+    if category == "config":
+        return _handle_config_command(cwd, rest)
     if category in {"valid-config", "validate-config"}:
         from minicode.config import format_config_diagnostic
         print(format_config_diagnostic(cwd))

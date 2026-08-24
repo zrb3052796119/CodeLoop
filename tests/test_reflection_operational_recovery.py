@@ -135,6 +135,73 @@ def test_changed_shell_invocation_yields_an_actionable_lint_recovery() -> None:
     assert "verified_solution" in decision.durable_signals
 
 
+def test_command_argument_error_still_yields_a_corrected_invocation_recovery() -> None:
+    trace = [
+        *_attempt(
+            1,
+            "pytest-invalid-argument",
+            "run_command",
+            {
+                "command": "pytest",
+                "args": ["tests/test_auth.py", "--bad-option"],
+            },
+            ok=False,
+            output="UsageError: unrecognized arguments: --bad-option",
+        ),
+        *_attempt(
+            10,
+            "pytest-passed",
+            "run_command",
+            {
+                "command": "python",
+                "args": ["-m", "pytest", "tests/test_auth.py", "-q"],
+            },
+            ok=True,
+            output="3 passed in 0.08s",
+        ),
+        _done(20),
+    ]
+
+    evidence, candidate, decision = _evaluate(trace)
+
+    assert len(evidence.recoveries) == 1
+    assert evidence.recoveries[0].epistemic_status == "confirmed"
+    assert "python -m pytest tests/test_auth.py -q" in evidence.recoveries[0].action
+    assert any(claim.claim_type == "recovery" for claim in candidate.claims)
+    assert "verified_solution" in decision.durable_signals
+
+
+def test_transient_command_failure_is_not_laundered_by_a_changed_invocation() -> None:
+    trace = [
+        *_attempt(
+            1,
+            "pytest-service-unavailable",
+            "run_command",
+            {"command": "pytest", "args": ["tests/test_auth.py", "--maxfail=1"]},
+            ok=False,
+            output="HTTP 503 Service Unavailable while loading a test dependency",
+        ),
+        *_attempt(
+            10,
+            "pytest-passed",
+            "run_command",
+            {
+                "command": "python",
+                "args": ["-m", "pytest", "tests/test_auth.py", "-q"],
+            },
+            ok=True,
+            output="3 passed in 0.08s",
+        ),
+        _done(20),
+    ]
+
+    evidence, candidate, decision = _evaluate(trace)
+
+    assert evidence.recoveries == []
+    assert not any(claim.claim_type == "recovery" for claim in candidate.claims)
+    assert "verified_solution" not in decision.durable_signals
+
+
 def test_switching_from_test_runner_to_project_python_is_a_recovery() -> None:
     trace = [
         *_attempt(

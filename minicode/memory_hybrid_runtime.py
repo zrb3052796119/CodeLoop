@@ -61,7 +61,21 @@ MAX_CANDIDATES = 32
 DEFAULT_DENSE_TOP_K = 20
 DEFAULT_BATCH_SIZE = 20
 MAX_CACHE_ENTRIES = 64
+MAX_PROVIDER_CACHE_ENTRIES = 8
 DEFAULT_MAX_MODEL_CALLS_PER_TASK = 8
+
+
+class HybridProviderInitializationError(RuntimeError):
+    """Fail-closed, content-free reason for Hybrid provider startup failure."""
+
+    def __init__(self, reason: str) -> None:
+        self.reason = str(reason).strip()[:96] or "provider_initialization_failed"
+        super().__init__(self.reason)
+
+
+_PROVIDER_CACHE_LOCK = threading.RLock()
+_PROVIDER_CACHE: OrderedDict[str, "_HybridSharedState"] = OrderedDict()
+_PROVIDER_CACHE_SALT = os.urandom(32)
 
 _GENERIC_QUERY_TERMS = frozenset(
     {
@@ -227,6 +241,20 @@ class _DenseRecord:
     vector: tuple[float, ...]
 
 
+class _HybridSharedState:
+    """Immutable encoder identity plus bounded, synchronized dense/query state."""
+
+    def __init__(self, encoder: EmbeddingEncoder) -> None:
+        self.encoder = encoder
+        self.records: dict[str, _DenseRecord] = {}
+        self.lock = threading.RLock()
+        # Providers created for concurrent turns keep their own model adapter
+        # and call budget, while this lock joins identical query work and makes
+        # the shared adjudication cache race-free.
+        self.adjudication_lock = threading.RLock()
+        self.cache: OrderedDict[str, HybridAdjudication] = OrderedDict()
+
+
 class LocalE5Encoder:
     """Pinned ONNX encoder whose manifest and every model file are verified."""
 
@@ -383,8 +411,12 @@ class HybridRuntimeProvider:
         challenger_minimum_confidence: float = 0.8,
         max_model_calls: int = DEFAULT_MAX_MODEL_CALLS_PER_TASK,
         embedding_provider: str = "local-e5",
+        shared_state: _HybridSharedState | None = None,
+        provider_cache_reused: bool = False,
     ) -> None:
-        self._encoder = encoder
+        state = shared_state or _HybridSharedState(encoder)
+        self._shared_state = state
+        self._encoder = state.encoder
         self._model = model_adapter
         self._dense_top_k = dense_top_k
         self._max_candidates = max_candidates
@@ -394,10 +426,11 @@ class HybridRuntimeProvider:
         self._embedding_provider = str(embedding_provider).strip().lower()
         self._model_calls = 0
         self._model_call_budget_owner: Any = None
-        self._records: dict[str, _DenseRecord] = {}
-        self._lock = threading.RLock()
-        self._adjudication_lock = threading.RLock()
-        self._cache: OrderedDict[str, HybridAdjudication] = OrderedDict()
+        self._records = state.records
+        self._lock = state.lock
+        self._adjudication_lock = state.adjudication_lock
+        self._cache = state.cache
+        self._provider_cache_reused = bool(provider_cache_reused)
 
     def _reserve_model_call(self) -> None:
         if self._model_calls >= self._max_model_calls:
@@ -432,11 +465,13 @@ class HybridRuntimeProvider:
             else ()
         )
         with self._lock:
-            self._records = {
+            retained = {
                 entry_id: record
                 for entry_id, record in self._records.items()
                 if entry_id in eligible
             }
+            self._records.clear()
+            self._records.update(retained)
             for (entry, _document, digest), vector in zip(changed, vectors, strict=True):
                 self._records[entry.id] = _DenseRecord(digest, vector)
         return eligible
@@ -475,14 +510,16 @@ class HybridRuntimeProvider:
         return _sha256_bytes(_stable_json(payload).encode("utf-8"))
 
     def _cached(self, key: str) -> HybridAdjudication | None:
-        cached = self._cache.get(key)
-        if cached is None:
-            return None
-        self._cache.move_to_end(key)
+        with self._lock:
+            cached = self._cache.get(key)
+            if cached is None:
+                return None
+            self._cache.move_to_end(key)
         return HybridAdjudication(
             cached.signals,
             {
                 **cached.diagnostics,
+                "provider_cache_reused": self._provider_cache_reused,
                 "cache_hit": True,
                 "model_call_count": 0,
                 "input_tokens": 0,
@@ -491,10 +528,11 @@ class HybridRuntimeProvider:
         )
 
     def _remember(self, key: str, result: HybridAdjudication) -> None:
-        self._cache[key] = result
-        self._cache.move_to_end(key)
-        while len(self._cache) > MAX_CACHE_ENTRIES:
-            self._cache.popitem(last=False)
+        with self._lock:
+            self._cache[key] = result
+            self._cache.move_to_end(key)
+            while len(self._cache) > MAX_CACHE_ENTRIES:
+                self._cache.popitem(last=False)
 
     def adjudicate(
         self,
@@ -565,6 +603,7 @@ class HybridRuntimeProvider:
                 ),
                 {
                     "provider": f"{self._embedding_provider}_strict_llm_v2",
+                    "provider_cache_reused": self._provider_cache_reused,
                     "cache_hit": False,
                     "query_gate": "underspecified",
                     "dense_candidate_count": 0,
@@ -701,6 +740,7 @@ class HybridRuntimeProvider:
             tuple(signals),
             {
                 "provider": f"{self._embedding_provider}_strict_llm_v2",
+                "provider_cache_reused": self._provider_cache_reused,
                 "cache_hit": False,
                 "dense_candidate_count": len(dense_ids),
                 "adjudicated_count": len(candidate_ids),
@@ -1026,23 +1066,214 @@ def _model_id(model_adapter: Any) -> str:
     return str(runtime.get("model", "")) if isinstance(runtime, dict) else ""
 
 
+def _salted_digest(value: object) -> str:
+    serialized = _stable_json(value).encode("utf-8")
+    return _sha256_bytes(_PROVIDER_CACHE_SALT + serialized)
+
+
+def _explicit_cache_identity(owner: Any) -> object | None:
+    identity = getattr(owner, "hybrid_runtime_cache_identity", None)
+    if callable(identity):
+        try:
+            identity = identity()
+        except Exception:
+            return None
+    if isinstance(identity, (str, int, float, bool, list, tuple, dict)):
+        return identity
+    return None
+
+
+def _model_adapter_cache_identity(model_adapter: Any) -> dict[str, Any] | None:
+    adapter_type = (
+        f"{type(model_adapter).__module__}.{type(model_adapter).__qualname__}"
+    )
+    explicit = _explicit_cache_identity(model_adapter)
+    runtime = getattr(model_adapter, "runtime", None)
+    if not isinstance(runtime, dict):
+        if explicit is None:
+            return None
+        return {
+            "model_id": _model_id(model_adapter),
+            "explicit_digest": _salted_digest(
+                {"adapter_type": adapter_type, "identity": explicit}
+            ),
+        }
+    credential_fields = (
+        "apiKey",
+        "authToken",
+        "openaiApiKey",
+        "openrouterApiKey",
+        "customApiKey",
+    )
+    credentials = [
+        str(runtime.get(name) or "")
+        for name in credential_fields
+        if str(runtime.get(name) or "")
+    ]
+    if not credentials and explicit is None:
+        # Without a bound credential (or an explicit identity supplied by a
+        # local adapter) rotation cannot be detected, so cross-turn reuse is
+        # deliberately disabled.
+        return None
+    identity_fields = (
+        "model",
+        "provider",
+        "baseUrl",
+        "openaiBaseUrl",
+        "openrouterBaseUrl",
+        "customBaseUrl",
+        "temperature",
+        "maxOutputTokens",
+        "modelTimeoutSeconds",
+        "modelMaxRetries",
+        "disableThinking",
+        "_custom_headers",
+        "_openrouter_headers",
+        "_openrouter_params",
+    )
+    identity_payload = {
+        name: runtime.get(name)
+        for name in identity_fields
+        if name in runtime
+    }
+    identity_payload["adapter_type"] = adapter_type
+    if explicit is not None:
+        identity_payload["explicit_identity"] = explicit
+    identity_payload["credentials"] = {
+        name: runtime.get(name)
+        for name in credential_fields
+        if str(runtime.get(name) or "")
+    }
+    try:
+        runtime_digest = _salted_digest(identity_payload)
+    except (TypeError, ValueError):
+        # Unstable or unserializable transport configuration disables sharing
+        # instead of falling back to an incomplete cache identity.
+        return None
+    return {
+        "model_id": _model_id(model_adapter),
+        "runtime_digest": runtime_digest,
+    }
+
+
+def _embedding_client_cache_identity(client: Any) -> dict[str, Any] | None:
+    explicit = _explicit_cache_identity(client)
+    model = str(getattr(client, "model", "") or getattr(client, "_model", ""))
+    endpoint = str(
+        getattr(client, "endpoint", "") or getattr(client, "_endpoint", "")
+    ).strip().rstrip("/")
+    if explicit is not None:
+        return {
+            "model": model,
+            "endpoint": endpoint,
+            "explicit_digest": _salted_digest(explicit),
+        }
+    credential = getattr(client, "_api_key", None)
+    if not model or not endpoint or not isinstance(credential, str) or not credential:
+        return None
+    return {
+        "model": model,
+        "endpoint": endpoint,
+        "credential_digest": _salted_digest(credential),
+    }
+
+
+def _provider_cache_key(
+    *,
+    activation: HybridActivation,
+    model_adapter: Any,
+    workspace_path: str | Path | None,
+    embedding_client: Any | None,
+) -> str | None:
+    adapter_identity = _model_adapter_cache_identity(model_adapter)
+    if adapter_identity is None or activation.evidence is None:
+        return None
+    embedding_identity = (
+        _embedding_client_cache_identity(embedding_client)
+        if embedding_client is not None
+        else {
+            "provider": activation.embedding_provider,
+            "model_path": str(activation.model_path or ""),
+        }
+    )
+    if embedding_identity is None:
+        return None
+    workspace = (
+        str(Path(workspace_path).expanduser().resolve(strict=False))
+        if workspace_path is not None
+        else ""
+    )
+    payload = {
+        "workspace": workspace,
+        "evidence": activation.evidence,
+        "evidence_path": str(activation.evidence_path or ""),
+        "embedding_provider": activation.embedding_provider,
+        "embedding": embedding_identity,
+        "verifier": adapter_identity,
+    }
+    return _salted_digest(payload)
+
+
+def _cached_provider_state(key: str | None) -> _HybridSharedState | None:
+    if key is None:
+        return None
+    with _PROVIDER_CACHE_LOCK:
+        state = _PROVIDER_CACHE.get(key)
+        if state is not None:
+            _PROVIDER_CACHE.move_to_end(key)
+        return state
+
+
+def _remember_provider_state(key: str | None, state: _HybridSharedState) -> None:
+    if key is None:
+        return
+    with _PROVIDER_CACHE_LOCK:
+        _PROVIDER_CACHE[key] = state
+        _PROVIDER_CACHE.move_to_end(key)
+        while len(_PROVIDER_CACHE) > MAX_PROVIDER_CACHE_ENTRIES:
+            _PROVIDER_CACHE.popitem(last=False)
+
+
+def clear_hybrid_provider_cache() -> None:
+    """Clear process-local Hybrid state (primarily for isolated tests)."""
+    with _PROVIDER_CACHE_LOCK:
+        _PROVIDER_CACHE.clear()
+
+
+def _provider_initialization_failure(
+    reason: str,
+    *,
+    strict: bool,
+) -> None:
+    if strict:
+        raise HybridProviderInitializationError(reason)
+    return None
+
+
 def create_hybrid_candidate_provider(
     *,
     activation: HybridActivation,
     model_adapter: Any,
     workspace_path: str | Path | None = None,
     embedding_client_factory: Any | None = None,
+    strict: bool = False,
 ) -> HybridRuntimeProvider | None:
     if not activation.active or activation.evidence is None:
-        return None
+        return _provider_initialization_failure(
+            "activation_unavailable", strict=strict
+        )
     evidence = activation.evidence
     verifier = evidence.get("verifier")
     challenger = evidence.get("challenger")
     if not isinstance(verifier, dict) or not isinstance(challenger, dict):
-        return None
+        return _provider_initialization_failure(
+            "verifier_evidence_invalid", strict=strict
+        )
     veto_reason_codes = challenger.get("veto_reason_codes")
     if not isinstance(veto_reason_codes, (list, tuple)):
-        return None
+        return _provider_initialization_failure(
+            "challenger_evidence_invalid", strict=strict
+        )
     prompt_sha = _sha256_bytes(HYBRID_SYSTEM_PROMPT.encode("utf-8"))
     challenger_sha = _sha256_bytes(HYBRID_CHALLENGER_SYSTEM_PROMPT.encode("utf-8"))
     if (
@@ -1055,7 +1286,13 @@ def create_hybrid_candidate_provider(
         or challenger.get("mode") != HYBRID_CHALLENGER_MODE
         or set(veto_reason_codes) != HYBRID_CHALLENGER_VETO_REASONS
     ):
-        return None
+        reason = (
+            "verifier_model_mismatch"
+            if verifier.get("model_id") != _model_id(model_adapter)
+            or challenger.get("model_id") != _model_id(model_adapter)
+            else "verifier_contract_mismatch"
+        )
+        return _provider_initialization_failure(reason, strict=strict)
     confidence = float(verifier.get("minimum_confidence", -1.0))
     challenger_confidence = float(challenger.get("minimum_confidence", -1.0))
     dense_top_k = int(evidence.get("dense_top_k", DEFAULT_DENSE_TOP_K))
@@ -1070,27 +1307,94 @@ def create_hybrid_candidate_provider(
         or not 1 <= max_candidates <= MAX_CANDIDATES
         or not 1 <= max_model_calls <= 16
     ):
-        return None
+        return _provider_initialization_failure(
+            "candidate_contract_invalid", strict=strict
+        )
+    embedding_client = None
     if activation.embedding_provider == "qwen":
         factory = (
             embedding_client_factory
             if embedding_client_factory is not None
             else create_openai_compatible_embedding_client
         )
-        client = factory(workspace_path)
-        if client is None:
-            return None
+        embedding_client = factory(workspace_path)
+        if embedding_client is None:
+            return _provider_initialization_failure(
+                "embedding_client_unavailable", strict=strict
+            )
+        evidence_model = evidence.get("model")
+        configured_model = str(
+            getattr(embedding_client, "model", "")
+            or getattr(embedding_client, "_model", "")
+        )
+        configured_endpoint = str(
+            getattr(embedding_client, "endpoint", "")
+            or getattr(embedding_client, "_endpoint", "")
+        ).rstrip("/")
+        if (
+            not isinstance(evidence_model, dict)
+            or configured_model != str(evidence_model.get("model_id") or "")
+            or configured_endpoint != str(evidence_model.get("endpoint") or "").rstrip("/")
+        ):
+            return _provider_initialization_failure(
+                "embedding_transport_identity_mismatch", strict=strict
+            )
+        cache_key = _provider_cache_key(
+            activation=activation,
+            model_adapter=model_adapter,
+            workspace_path=workspace_path,
+            embedding_client=embedding_client,
+        )
+        cached_state = _cached_provider_state(cache_key)
+        if cached_state is not None:
+            return HybridRuntimeProvider(
+                encoder=cached_state.encoder,
+                model_adapter=model_adapter,
+                dense_top_k=dense_top_k,
+                max_candidates=max_candidates,
+                minimum_confidence=confidence,
+                challenger_minimum_confidence=challenger_confidence,
+                max_model_calls=max_model_calls,
+                embedding_provider=activation.embedding_provider,
+                shared_state=cached_state,
+                provider_cache_reused=True,
+            )
         encoder: EmbeddingEncoder = OpenAICompatibleEmbeddingEncoder(
-            client,
+            embedding_client,
             provider="qwen",
         )
         if encoder.identity != evidence.get("model"):
-            return None
+            return _provider_initialization_failure(
+                "embedding_model_identity_mismatch", strict=strict
+            )
     else:
         if activation.model_path is None:
-            return None
+            return _provider_initialization_failure(
+                "local_model_unavailable", strict=strict
+            )
+        cache_key = _provider_cache_key(
+            activation=activation,
+            model_adapter=model_adapter,
+            workspace_path=workspace_path,
+            embedding_client=None,
+        )
+        cached_state = _cached_provider_state(cache_key)
+        if cached_state is not None:
+            return HybridRuntimeProvider(
+                encoder=cached_state.encoder,
+                model_adapter=model_adapter,
+                dense_top_k=dense_top_k,
+                max_candidates=max_candidates,
+                minimum_confidence=confidence,
+                challenger_minimum_confidence=challenger_confidence,
+                max_model_calls=max_model_calls,
+                embedding_provider=activation.embedding_provider,
+                shared_state=cached_state,
+                provider_cache_reused=True,
+            )
         encoder = LocalE5Encoder(activation.model_path, evidence["model"])
-    return HybridRuntimeProvider(
+    shared_state = _HybridSharedState(encoder)
+    provider = HybridRuntimeProvider(
         encoder=encoder,
         model_adapter=model_adapter,
         dense_top_k=dense_top_k,
@@ -1099,4 +1403,7 @@ def create_hybrid_candidate_provider(
         challenger_minimum_confidence=challenger_confidence,
         max_model_calls=max_model_calls,
         embedding_provider=activation.embedding_provider,
+        shared_state=shared_state,
     )
+    _remember_provider_state(cache_key, shared_state)
+    return provider

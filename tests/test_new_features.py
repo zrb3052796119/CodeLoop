@@ -58,6 +58,23 @@ def test_estimate_message_tokens():
     assert tokens > len("Hello world") / 10  # Should be reasonable estimate
 
 
+def test_estimate_assistant_tool_call_counts_hidden_reasoning_content():
+    reasoning = "inspect the repository carefully " * 200
+    base_message = {
+        "role": "assistant_tool_call",
+        "toolUseId": "call-1",
+        "toolName": "read_file",
+        "input": {"path": "synthetic.py"},
+    }
+
+    without_reasoning = estimate_message_tokens(base_message)
+    with_reasoning = estimate_message_tokens(
+        {**base_message, "reasoningContent": reasoning}
+    )
+
+    assert with_reasoning >= without_reasoning + estimate_tokens(reasoning)
+
+
 def test_estimate_messages_tokens():
     """Test multiple messages token estimation."""
     messages = [
