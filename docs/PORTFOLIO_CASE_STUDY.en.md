@@ -6,6 +6,11 @@
 
 ## The 3-Minute Version
 
+Here, **warm / Memory** means a new Run receives the relevant approved lesson;
+**cold** repeats the same task without it. Paired numbers compare reuse-stage
+target Turns; learning and reflecting on the lesson has a separate upfront
+cost.
+
 **Problem — 30 seconds.** I extended an existing MiniCode Python runtime with
 an evidence-controlled persistent-learning loop. In this controlled case, a
 real remote provider operated on a synthetic repository. Fault injection

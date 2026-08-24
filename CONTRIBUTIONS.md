@@ -58,6 +58,8 @@ Representative, reviewable commits through the current release:
 | [`4d61d0a`](https://github.com/zrb3052796119/CodeLoop/commit/4d61d0a) | Paired Memory acceptance studies and their reports. |
 | [`ae6c646`](https://github.com/zrb3052796119/CodeLoop/commit/ae6c646) | Evidence-driven Runtime hardening, acceptance contracts, and release tests. |
 | [`e1a4b17`](https://github.com/zrb3052796119/CodeLoop/commit/e1a4b17) | Portable persistence locks and Windows-safe storage/read/observation paths. |
+| [`5658aad`](https://github.com/zrb3052796119/CodeLoop/commit/5658aad) | Windows-safe atomic replacement and installed-wheel regression coverage. |
+| [`0a46def`](https://github.com/zrb3052796119/CodeLoop/commit/0a46def) | Cross-platform byte-stable checkouts and deterministic hosted-runner deadline tests. |
 
 These commits establish the post-import repository work. They do not repair the
 missing exact upstream revision or licensing grant; those remain explicit

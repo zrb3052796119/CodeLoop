@@ -15,6 +15,8 @@
   <a href="./docs/PORTFOLIO_CASE_STUDY.md">3 分钟案例</a>
   ·
   <a href="./CONTRIBUTIONS.md">贡献边界</a>
+  ·
+  <a href="#快速开始">快速开始</a>
 </p>
 
 <p align="center">
@@ -50,11 +52,14 @@ CodeLoop 是 [MiniCode Python](https://github.com/QUSETIONS/MiniCode-Python)
 
 ## 30 秒看懂证据
 
+下表中的 **Memory / warm** 指一个注入相关已批准经验的新 Run；**cold**
+指相同任务不提供这条经验。
+
 | 证据 | 结果 | 能说明什么，不能说明什么 |
 | --- | ---: | --- |
-| [仓库回归测试](./.github/workflows/ci.yml) | **4,448 passed, 2 skipped** | 2026-08-24 在 Python 3.12 对 [Runtime/测试提交 `5658aad`](https://github.com/zrb3052796119/CodeLoop/commit/5658aad) 完成的本地发布验收；说明已实现行为受到回归保护，不代表通用 Agent 智能。推送后 CI 会在 3 OS × 2 Python 矩阵重跑。 |
+| [仓库回归测试](./.github/workflows/ci.yml) | **4,449 passed, 2 skipped** | 2026-08-24 在 Python 3.12 对 [Runtime/测试提交 `0a46def`](https://github.com/zrb3052796119/CodeLoop/commit/0a46def) 完成的本地发布验收；说明已实现行为受到回归保护，不代表通用 Agent 智能。推送后 CI 会在 3 OS × 2 Python 矩阵重跑。 |
 | [内部 A 档评估](./docs/agent-quality-gates.md) | **Skill 60/60**、**压缩 12/12**、**记录任务 50/50** | 完全离线且 `remoteCallCount=0`。fixture/manifest 有哈希；与 `current` 不同，`a` 有意允许同 manifest 的新结果，不固定某一份 result 哈希。不是第三方认证。 |
-| [路径恢复配对实验](./docs/2026-08-21--persistent-memory-large-study--r1--robustness-check.md) | **48 对 Memory / cold** | 工具调用 50 vs 240（**-79.2%**）；输入 token 652,911 vs 1,539,738（**-57.6%**）。只覆盖合成、只读的恢复任务。 |
+| [路径恢复配对实验](./docs/2026-08-21--persistent-memory-large-study--r1--robustness-check.md) | **48 对 Memory / cold** | 仅比较复用阶段的目标 Turn：工具调用 50 vs 240（**-79.2%**）；输入 token 652,911 vs 1,539,738（**-57.6%**）。首次学习有前置成本；任务仅为合成、只读恢复。 |
 | [非路径经验配对实验](./docs/2026-08-22--non-path-persistent-memory--r1--robustness-check.md) | **36 对 Memory / cold** | 平均工具 7.50 vs 11.50（**-34.8%**）；严格成功 32/36 vs 28/36。不同经验类别差异明显。 |
 | [大文件修复回放](./docs/north-star-memory-compaction-repairs-2026-08-21.md) | **5/5 外部检查** | 单次随机回放中模型调用 25→5、输入 token 257,088→49,541；说明故障环消失，不能当作稳定因果效应。 |
 
@@ -169,7 +174,7 @@ macOS / Linux：
 ```bash
 git clone https://github.com/zrb3052796119/CodeLoop.git
 cd CodeLoop
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e ".[dev]"
 ```
@@ -179,9 +184,9 @@ Windows PowerShell：
 ```powershell
 git clone https://github.com/zrb3052796119/CodeLoop.git
 Set-Location CodeLoop
-py -m venv .venv
+py -3.12 -m venv .venv
 & .\.venv\Scripts\Activate.ps1
-py -m pip install -e ".[dev]"
+python -m pip install -e ".[dev]"
 ```
 
 ### 2. 只配置一次全局主模型
@@ -218,6 +223,7 @@ python -m minicode.main --validate-config
 macOS / Linux：
 
 ```bash
+source /path/to/CodeLoop/.venv/bin/activate
 cd /path/to/your/project
 minicode-py
 ```
@@ -225,11 +231,20 @@ minicode-py
 Windows PowerShell：
 
 ```powershell
+& C:\path\to\CodeLoop\.venv\Scripts\Activate.ps1
 Set-Location C:\path\to\your\project
 minicode-py
 ```
 
-**当前工作目录就是 CodeLoop 要读取和修改的目标项目。** 安装以后，不需要把 CodeLoop 源码复制进每个项目。也可以在虚拟环境中使用 `python -m minicode.main` 启动。
+**当前工作目录就是 CodeLoop 要读取和修改的目标项目。** 安装以后，不需要把 CodeLoop 源码复制进每个项目。这里使用的是 editable virtualenv 安装，所以每个新终端都要先激活 CodeLoop 的 `.venv`；如果移动或删除 clone，需要重新安装。也可以在已激活环境中使用 `python -m minicode.main` 启动。
+
+第一次使用建议先输入一个只读任务：
+
+```text
+评审这个仓库的架构和主要风险，先不要修改文件。
+```
+
+受保护操作执行前会出现审批提示。请核对准确的命令或路径后再允许或拒绝；面对陌生代码，审批不能替代临时分支、容器或可丢弃环境。输入 `/exit` 退出交互式 CLI。
 
 ### 可选：把子 Agent 路由到 Qwen
 

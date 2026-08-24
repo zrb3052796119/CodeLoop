@@ -15,6 +15,8 @@
   <a href="./docs/PORTFOLIO_CASE_STUDY.en.md">3-minute case study</a>
   ·
   <a href="./CONTRIBUTIONS.md">Contribution boundary</a>
+  ·
+  <a href="#quick-start">Quick start</a>
 </p>
 
 <p align="center">
@@ -58,11 +60,14 @@ contracts over broad capability claims.
 
 ## Evidence at a Glance
 
+In paired studies, **Memory / warm** is a new Run that receives the relevant
+approved lesson; **cold** repeats the same task without that lesson.
+
 | Evidence | Result | What it does—and does not—show |
 | --- | ---: | --- |
-| [Repository regression suite](./.github/workflows/ci.yml) | **4,448 passed, 2 skipped** | Local Python 3.12 release run on 2026-08-24 against [runtime/test commit `5658aad`](https://github.com/zrb3052796119/CodeLoop/commit/5658aad); protects implemented behavior, not general agent intelligence. CI reruns the suite on a 3-OS × 2-Python matrix after push. |
+| [Repository regression suite](./.github/workflows/ci.yml) | **4,449 passed, 2 skipped** | Local Python 3.12 release run on 2026-08-24 against [runtime/test commit `0a46def`](https://github.com/zrb3052796119/CodeLoop/commit/0a46def); protects implemented behavior, not general agent intelligence. CI reruns the suite on a 3-OS × 2-Python matrix after push. |
 | [Internal A-profile evaluation](./docs/agent-quality-gates.md) | **60/60 Skill**, **12/12 compaction**, **50/50 recorded tasks** | Deterministic and offline with `remoteCallCount=0`. Fixtures/manifest are hash-bound; unlike `current`, profile `a` accepts fresh matching result files instead of pinning one result hash. Not an external certification. |
-| [Paired path-recovery study](./docs/2026-08-21--persistent-memory-large-study--r1--robustness-check.md) | **48 Memory / cold pairs** | Tools: 50 vs 240 (**-79.2%**); input tokens: 652,911 vs 1,539,738 (**-57.6%**). Synthetic, read-only recovery tasks only. |
+| [Paired path-recovery study](./docs/2026-08-21--persistent-memory-large-study--r1--robustness-check.md) | **48 Memory / cold pairs** | Reuse-stage target Turns: tools 50 vs 240 (**-79.2%**); input tokens 652,911 vs 1,539,738 (**-57.6%**). Lesson acquisition has an upfront cost. Synthetic, read-only recovery tasks only. |
 | [Paired non-path study](./docs/2026-08-22--non-path-persistent-memory--r1--robustness-check.md) | **36 Memory / cold pairs** | Mean tools: 7.50 vs 11.50 (**-34.8%**); strict success: 32/36 vs 28/36. Results vary materially by lesson category. |
 | [Large-file repair replay](./docs/north-star-memory-compaction-repairs-2026-08-21.md) | **5/5 external checks** | Model calls 25→5 and input tokens 257,088→49,541 in one stochastic replay; useful fault-recovery evidence, not a causal effect estimate. |
 
@@ -210,7 +215,7 @@ macOS / Linux:
 ```bash
 git clone https://github.com/zrb3052796119/CodeLoop.git
 cd CodeLoop
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e ".[dev]"
 ```
@@ -220,9 +225,9 @@ Windows PowerShell:
 ```powershell
 git clone https://github.com/zrb3052796119/CodeLoop.git
 Set-Location CodeLoop
-py -m venv .venv
+py -3.12 -m venv .venv
 & .\.venv\Scripts\Activate.ps1
-py -m pip install -e ".[dev]"
+python -m pip install -e ".[dev]"
 ```
 
 ### 2. Create one global model configuration
@@ -267,6 +272,7 @@ globally owned key. Use `/config-paths` in the CLI to inspect active sources.
 macOS / Linux:
 
 ```bash
+source /path/to/CodeLoop/.venv/bin/activate
 cd /path/to/your/project
 minicode-py
 ```
@@ -274,13 +280,27 @@ minicode-py
 Windows PowerShell:
 
 ```powershell
+& C:\path\to\CodeLoop\.venv\Scripts\Activate.ps1
 Set-Location C:\path\to\your\project
 minicode-py
 ```
 
 The **current working directory is the target project**. CodeLoop itself does
-not need to be copied into that repository after installation. You can also
-start it with `python -m minicode.main` from the active environment.
+not need to be copied into that repository after installation. Because this is
+an editable virtual-environment install, activate CodeLoop's `.venv` in each
+new terminal and do not move or delete the clone without reinstalling. You can
+also start it with `python -m minicode.main` from the active environment.
+
+For a safe first turn, try:
+
+```text
+Review this repository's architecture and main risks. Do not modify files.
+```
+
+CodeLoop asks for approval before protected actions. Inspect the exact command
+or path and choose allow or deny; approval is not a substitute for a disposable
+branch or container when working on untrusted code. Enter `/exit` to leave the
+interactive CLI.
 
 ### Optional: route sub-agents to Qwen
 
