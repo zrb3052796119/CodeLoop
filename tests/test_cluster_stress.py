@@ -1,38 +1,30 @@
 """Cluster/concurrent stress tests for MiniCode.
 
 Tests multiple agent loops running concurrently to verify thread safety,
-performance, and resource limit enforcement under load.
+scheduling contracts, and resource limit enforcement under load.
 """
 
 from __future__ import annotations
 
 import concurrent.futures
-import sys
 import tempfile
 import threading
-import time
 from pathlib import Path
-
-try:
-    import pytest
-except ImportError:
-    pytest = None
+from typing import Any, Callable
 
 from minicode.agent_intelligence import ErrorClassifier
 from minicode.agent_loop import run_agent_turn
 from minicode.agent_metrics import AgentMetricsCollector
 from minicode.context_manager import ContextManager
 from minicode.memory import MemoryManager, MemoryScope
-from minicode.tooling import ToolContext, ToolDefinition, ToolRegistry, ToolResult
+from minicode.tooling import ToolDefinition, ToolRegistry, ToolResult
 from minicode.types import AgentStep, ChatMessage, ModelAdapter
 
 
-class DelayedModel(ModelAdapter):
-    """Model that simulates processing delay."""
+class CountingModel(ModelAdapter):
+    """Minimal model whose calls are observable without wall-clock delays."""
 
-    def __init__(self, delay: float = 0.01, fail_after: int | None = None):
-        self.delay = delay
-        self.fail_after = fail_after
+    def __init__(self) -> None:
         self.calls = 0
 
     def next(
@@ -41,20 +33,51 @@ class DelayedModel(ModelAdapter):
         on_stream_chunk: Callable[[str], None] | None = None,
         store: Any | None = None,
     ) -> AgentStep:
-        time.sleep(self.delay)
         self.calls += 1
-        if self.fail_after and self.calls > self.fail_after:
-            raise ConnectionError("Simulated network failure")
+        return AgentStep(type="assistant", content="done")
+
+
+class ToolBatchModel(ModelAdapter):
+    """Request one fixed tool batch, then complete the turn."""
+
+    def __init__(self, num_tools: int) -> None:
+        self.num_tools = num_tools
+        self.calls = 0
+
+    def next(
+        self,
+        messages: list[ChatMessage],
+        on_stream_chunk: Callable[[str], None] | None = None,
+        store: Any | None = None,
+    ) -> AgentStep:
+        self.calls += 1
+        if self.calls == 1:
+            return AgentStep(
+                type="tool_calls",
+                calls=[
+                    {"id": str(index), "toolName": f"tool_{index}", "input": {}}
+                    for index in range(self.num_tools)
+                ],
+            )
         return AgentStep(type="assistant", content="done")
 
 
 class ConcurrentToolRegistry:
     """Thread-safe tool registry for concurrent testing."""
-    def __init__(self, num_tools: int = 5):
+
+    def __init__(
+        self,
+        num_tools: int = 5,
+        *,
+        execution_barrier: threading.Barrier | None = None,
+        concurrency_safe: bool = True,
+    ) -> None:
         self._lock = threading.Lock()
         self._execution_count = 0
         self._concurrent_max = 0
         self._current_executions = 0
+        self._execution_threads: list[int] = []
+        self._execution_barrier = execution_barrier
         
         from minicode.tooling import ToolMetadata, ToolCapability
         
@@ -63,7 +86,9 @@ class ConcurrentToolRegistry:
             meta = ToolMetadata(
                 name=f"tool_{i}",
                 description=f"Test tool {i}",
-                capabilities={ToolCapability.CONCURRENCY_SAFE},
+                capabilities=(
+                    {ToolCapability.CONCURRENCY_SAFE} if concurrency_safe else set()
+                ),
             )
             tools.append(ToolDefinition(
                 name=f"tool_{i}",
@@ -81,10 +106,16 @@ class ConcurrentToolRegistry:
                 self._current_executions += 1
                 self._execution_count += 1
                 self._concurrent_max = max(self._concurrent_max, self._current_executions)
-            time.sleep(0.01)  # Simulate work
-            with self._lock:
-                self._current_executions -= 1
-            return ToolResult(ok=True, output=f"tool_{tool_id} result")
+                self._execution_threads.append(threading.get_ident())
+            try:
+                if self._execution_barrier is not None:
+                    # A watchdog prevents a scheduler regression from hanging the
+                    # suite; elapsed time is never part of the assertion.
+                    self._execution_barrier.wait(timeout=5)
+                return ToolResult(ok=True, output=f"tool_{tool_id} result")
+            finally:
+                with self._lock:
+                    self._current_executions -= 1
         return runner
 
 
@@ -94,7 +125,7 @@ class TestConcurrentAgentLoopStress:
     def test_single_agent_loop_basic(self):
         """Baseline: single agent loop completes successfully."""
         registry = ConcurrentToolRegistry(num_tools=3)
-        model = DelayedModel(delay=0.001)
+        model = CountingModel()
 
         messages = run_agent_turn(
             model=model,
@@ -113,7 +144,7 @@ class TestConcurrentAgentLoopStress:
 
         def run_worker(worker_id: int):
             registry = ConcurrentToolRegistry(num_tools=3)
-            model = DelayedModel(delay=0.001)
+            model = CountingModel()
             results = []
 
             for turn in range(num_turns_per_worker):
@@ -144,30 +175,31 @@ class TestConcurrentAgentLoopStress:
         assert all(r["success"] for r in all_results)
 
     def test_high_concurrency_tool_execution(self):
-        """Test tool execution under high concurrency."""
-        registry = ConcurrentToolRegistry(num_tools=10)
+        """The Agent Loop dispatches one concurrency-safe tool batch in parallel."""
+        num_tools = 5
+        registry = ConcurrentToolRegistry(
+            num_tools=num_tools,
+            execution_barrier=threading.Barrier(num_tools),
+        )
+        model = ToolBatchModel(num_tools)
 
-        # Simulate multiple tools being called simultaneously
-        def execute_tools():
-            results = []
-            for i in range(5):
-                result = registry.registry.execute(
-                    f"tool_{i}",
-                    {"test": "data"},
-                    ToolContext(cwd="."),
-                )
-                results.append(result.ok)
-            return results
+        messages = run_agent_turn(
+            model=model,
+            tools=registry.registry,
+            messages=[{"role": "system", "content": "sys"}],
+            cwd=".",
+            max_steps=3,
+            enable_work_chain=False,
+        )
 
-        num_workers = 8
-        with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as pool:
-            futures = [pool.submit(execute_tools) for _ in range(num_workers)]
-            all_results = []
-            for future in concurrent.futures.as_completed(futures):
-                all_results.extend(future.result())
-
-        assert all(all_results)
-        assert registry._concurrent_max > 1  # Verify actual concurrency happened
+        tool_results = [
+            message for message in messages if message.get("role") == "tool_result"
+        ]
+        assert model.calls == 2
+        assert registry._execution_count == num_tools
+        assert registry._concurrent_max == num_tools
+        assert len(tool_results) == num_tools
+        assert all("result" in str(message.get("content")) for message in tool_results)
 
     def test_metrics_collector_thread_safety(self):
         """Verify metrics collector is thread-safe."""
@@ -183,7 +215,6 @@ class TestConcurrentAgentLoopStress:
             for turn in range(5):
                 collector.start_turn(turn * 100 + worker_id)
                 collector.start_tool("read_file")
-                time.sleep(0.001)
                 collector.end_tool(True, "", 100)
                 collector.end_turn(total_tokens=100)
             return worker_id
@@ -269,73 +300,57 @@ class TestConcurrentAgentLoopStress:
             assert len(mgr.memories[MemoryScope.PROJECT].entries) == 10
 
 
-class TestAgentLoopPerformance:
-    """Performance benchmarks for agent loop."""
+class TestAgentLoopScheduling:
+    """Deterministic scheduling and call-accounting checks for the Agent Loop."""
 
-    def test_agent_loop_latency(self):
-        """Measure agent loop latency under various conditions."""
-        latencies = []
+    def test_repeated_agent_loop_call_accounting_is_deterministic(self):
+        """Repeated isolated turns each consume exactly one model call."""
+        call_counts = []
 
         for _ in range(10):
             registry = ConcurrentToolRegistry(num_tools=3)
-            model = DelayedModel(delay=0.001)
+            model = CountingModel()
 
-            start = time.time()
             messages = run_agent_turn(
                 model=model,
                 tools=registry.registry,
                 messages=[{"role": "system", "content": "sys"}],
                 cwd=".",
                 max_steps=3,
+                enable_work_chain=False,
             )
-            latency = time.time() - start
-            latencies.append(latency)
+            assert messages[-1] == {"role": "assistant", "content": "done"}
+            call_counts.append(model.calls)
 
-        avg_latency = sum(latencies) / len(latencies)
-        max_latency = max(latencies)
+        assert call_counts == [1] * 10
 
-        print(f"\n  Average latency: {avg_latency*1000:.1f}ms")
-        print(f"  Max latency: {max_latency*1000:.1f}ms")
-
-        assert avg_latency < 0.1  # Should complete within 100ms average
-
-    def test_concurrent_vs_serial_speedup(self):
-        """Compare concurrent vs serial tool execution speedup."""
+    def test_non_concurrency_safe_tool_batch_stays_on_agent_thread(self):
+        """The Agent Loop never moves ordinary tools into its worker pool."""
         num_tools = 4
-        tool_delay = 0.05
+        registry = ConcurrentToolRegistry(
+            num_tools=num_tools,
+            concurrency_safe=False,
+        )
+        model = ToolBatchModel(num_tools)
+        agent_thread = threading.get_ident()
 
-        # Serial execution
-        def run_serial():
-            for i in range(num_tools):
-                time.sleep(tool_delay)
+        messages = run_agent_turn(
+            model=model,
+            tools=registry.registry,
+            messages=[{"role": "system", "content": "sys"}],
+            cwd=".",
+            max_steps=3,
+            enable_work_chain=False,
+        )
 
-        start = time.perf_counter()
-        run_serial()
-        serial_time = time.perf_counter() - start
-
-        # Concurrent execution
-        with concurrent.futures.ThreadPoolExecutor(max_workers=num_tools) as pool:
-            # Warm the pool before measuring; this test is about concurrent
-            # execution throughput, not OS thread startup jitter.
-            warmup = [pool.submit(lambda: None) for _ in range(num_tools)]
-            for f in warmup:
-                f.result()
-
-            def run_concurrent():
-                futures = [pool.submit(time.sleep, tool_delay) for _ in range(num_tools)]
-                for f in futures:
-                    f.result()
-
-            start = time.perf_counter()
-            run_concurrent()
-            concurrent_time = time.perf_counter() - start
-
-        speedup = serial_time / concurrent_time
-        print(f"\n  Serial time: {serial_time*1000:.1f}ms")
-        print(f"  Concurrent time: {concurrent_time*1000:.1f}ms")
-        print(f"  Speedup: {speedup:.1f}x")
-
-        assert speedup > 2.5  # Should achieve clear speedup after warmup
+        tool_results = [
+            message for message in messages if message.get("role") == "tool_result"
+        ]
+        assert model.calls == 2
+        assert registry._execution_count == num_tools
+        assert registry._concurrent_max == 1
+        assert registry._execution_threads == [agent_thread] * num_tools
+        assert len(tool_results) == num_tools
 
 
 class TestResourceLimits:
