@@ -31,6 +31,14 @@ from minicode.permission_event_contract import (
     PERMISSION_EVENT_TYPES,
     normalize_permission_event_payload,
 )
+from minicode.scheduler_audit import (
+    SchedulerAudit,
+    SchedulerAuditJournal,
+    SchedulerAuditStorageError,
+    SchedulerAuditSummary,
+    SchedulerAuditValidationError,
+    SchedulerCommitReady,
+)
 from minicode.subagent_journal import (
     SubagentRunJournal,
     SubagentRunSummary,
@@ -1161,6 +1169,140 @@ class RunJournal:
             raise RunJournalNotFoundError("Run was not found.")
         run_dir = self._run_directory(run_id, must_exist=True)
         return self._read_memory_id_sidecar(run_dir, _WRITTEN_MEMORY_FILE, "Written")
+
+    def record_scheduler_commit_ready(
+        self,
+        run_id: str,
+        ready: SchedulerCommitReady,
+    ) -> bool:
+        """Write one immutable scheduler COMMIT_READY authorization.
+
+        ``True`` means this call created the durable record. ``False`` means
+        the exact same value was already present; any different binding for
+        the workflow is rejected rather than overwritten.
+        """
+        self._validate_run_id(run_id)
+        if not isinstance(ready, SchedulerCommitReady):
+            raise RunJournalValidationError(
+                "Scheduler commit-ready value is invalid."
+            )
+        mutex = self._writer_mutexes.get(run_id)
+        if mutex is None:
+            raise RunJournalOwnershipError("This process does not own the Run writer.")
+        with mutex:
+            run_dir = self._run_directory(run_id, must_exist=True)
+            self._require_writer(run_id, run_dir)
+            record, _ = self._read_run(run_id)
+            if record is None:
+                raise RunJournalNotFoundError("Run was not found.")
+            if record.status in TERMINAL_STATUSES:
+                raise RunJournalTransitionError(
+                    "A terminal Run cannot accept scheduler commit-ready records."
+                )
+            try:
+                return SchedulerAuditJournal(run_dir).write_commit_ready(ready)
+            except SchedulerAuditValidationError as exc:
+                raise RunJournalValidationError(
+                    "Scheduler commit-ready value is invalid."
+                ) from exc
+            except SchedulerAuditStorageError as exc:
+                raise RunJournalStorageError(
+                    "Scheduler commit-ready storage is unavailable."
+                ) from exc
+
+    def get_scheduler_commit_ready(
+        self,
+        run_id: str,
+        workflow_id: str,
+    ) -> SchedulerCommitReady | None:
+        """Read one exact scheduler COMMIT_READY authorization."""
+        self._validate_run_id(run_id)
+        record, _ = self._read_run(run_id)
+        if record is None:
+            raise RunJournalNotFoundError("Run was not found.")
+        run_dir = self._run_directory(run_id, must_exist=True)
+        try:
+            return SchedulerAuditJournal(run_dir).get_commit_ready(workflow_id)
+        except SchedulerAuditValidationError as exc:
+            raise RunJournalValidationError("Workflow ID is invalid.") from exc
+        except SchedulerAuditStorageError as exc:
+            raise RunJournalStorageError(
+                "Scheduler commit-ready storage is unavailable."
+            ) from exc
+
+    def record_scheduler_audit(
+        self,
+        run_id: str,
+        audit: SchedulerAudit,
+    ) -> None:
+        """Seal one scheduler-owned audit while this process owns the Run.
+
+        The audit is content-bearing and therefore lives in a dedicated
+        sidecar instead of the parent event stream or sub-agent journal.
+        """
+        self._validate_run_id(run_id)
+        if not isinstance(audit, SchedulerAudit):
+            raise RunJournalValidationError("Scheduler audit value is invalid.")
+        mutex = self._writer_mutexes.get(run_id)
+        if mutex is None:
+            raise RunJournalOwnershipError("This process does not own the Run writer.")
+        with mutex:
+            run_dir = self._run_directory(run_id, must_exist=True)
+            self._require_writer(run_id, run_dir)
+            record, _ = self._read_run(run_id)
+            if record is None:
+                raise RunJournalNotFoundError("Run was not found.")
+            if record.status in TERMINAL_STATUSES:
+                raise RunJournalTransitionError(
+                    "A terminal Run cannot accept scheduler audits."
+                )
+            try:
+                SchedulerAuditJournal(run_dir).write(audit)
+            except SchedulerAuditValidationError as exc:
+                raise RunJournalValidationError(
+                    "Scheduler audit value is invalid."
+                ) from exc
+            except SchedulerAuditStorageError as exc:
+                raise RunJournalStorageError(
+                    "Scheduler audit storage is unavailable."
+                ) from exc
+
+    def get_scheduler_audit(
+        self,
+        run_id: str,
+        workflow_id: str,
+    ) -> SchedulerAudit | None:
+        """Read one sealed scheduler audit, including canonical artifacts."""
+        self._validate_run_id(run_id)
+        record, _ = self._read_run(run_id)
+        if record is None:
+            raise RunJournalNotFoundError("Run was not found.")
+        run_dir = self._run_directory(run_id, must_exist=True)
+        try:
+            return SchedulerAuditJournal(run_dir).get(workflow_id)
+        except SchedulerAuditValidationError as exc:
+            raise RunJournalValidationError("Workflow ID is invalid.") from exc
+        except SchedulerAuditStorageError as exc:
+            raise RunJournalStorageError(
+                "Scheduler audit storage is unavailable."
+            ) from exc
+
+    def list_scheduler_audits(
+        self,
+        run_id: str,
+    ) -> tuple[SchedulerAuditSummary, ...]:
+        """List bounded, content-free summaries for sealed scheduler audits."""
+        self._validate_run_id(run_id)
+        record, _ = self._read_run(run_id)
+        if record is None:
+            raise RunJournalNotFoundError("Run was not found.")
+        run_dir = self._run_directory(run_id, must_exist=True)
+        try:
+            return SchedulerAuditJournal(run_dir).list()
+        except SchedulerAuditStorageError as exc:
+            raise RunJournalStorageError(
+                "Scheduler audit storage is unavailable."
+            ) from exc
 
     def open_subagent_journal(self, run_id: str) -> SubagentRunJournal:
         """Open the bounded sidecar journal owned by one Run directory.

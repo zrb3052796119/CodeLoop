@@ -203,6 +203,36 @@ class _BestEffortLifecycle:
             return False
         return True
 
+    def record_scheduler_commit_ready(self, ready: object) -> bool:
+        """Persist one COMMIT_READY seal without exposing its Run writer."""
+        if not self._running or self._journal is None or self._run_id is None:
+            return False
+        recorder = getattr(self._journal, "record_scheduler_commit_ready", None)
+        if not callable(recorder):
+            _safe_observation_warning("scheduler_commit_ready")
+            return False
+        try:
+            recorder(self._run_id, ready)
+        except Exception:  # noqa: BLE001 - authorization observation is optional
+            _safe_observation_warning("scheduler_commit_ready")
+            return False
+        return True
+
+    def record_scheduler_audit(self, audit: object) -> bool:
+        """Persist one sealed scheduler audit without exposing its Run writer."""
+        if not self._running or self._journal is None or self._run_id is None:
+            return False
+        recorder = getattr(self._journal, "record_scheduler_audit", None)
+        if not callable(recorder):
+            _safe_observation_warning("scheduler_audit")
+            return False
+        try:
+            recorder(self._run_id, audit)
+        except Exception:  # noqa: BLE001 - audit observation is best effort
+            _safe_observation_warning("scheduler_audit")
+            return False
+        return True
+
     def open_subagent_journal(self):
         """Open this Run's bounded sub-agent journal, or ``None``.
 
@@ -252,6 +282,14 @@ class RunObservation:
     def record_written_memory_ids(self, entry_ids: list[str]) -> None:
         """Persist the Memory entry IDs this turn produced against this Run."""
         self._lifecycle.record_written_memory_ids(entry_ids)
+
+    def record_scheduler_commit_ready(self, ready: object) -> bool:
+        """Persist COMMIT_READY through the narrow Run lifecycle seam."""
+        return self._lifecycle.record_scheduler_commit_ready(ready)
+
+    def record_scheduler_audit(self, audit: object) -> bool:
+        """Persist one scheduler audit through the narrow Run lifecycle seam."""
+        return self._lifecycle.record_scheduler_audit(audit)
 
     def open_subagent_journal(self):
         """Open the parent Run's sub-agent sidecar journal, if available."""

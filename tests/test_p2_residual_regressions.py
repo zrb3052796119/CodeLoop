@@ -78,7 +78,44 @@ def test_workflow_has_one_overall_monotonic_deadline(
 
     assert result.ok is False
     assert "deadline_exceeded" in result.output
-    assert len(calls) == 1
+    assert len(calls) <= 1
+
+
+def test_workflow_snapshot_is_charged_to_overall_deadline(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+    monkeypatch.setenv("MINICODE_TASK_TIMEOUT_SECONDS", "0.02")
+    original_snapshot = task_module._WorkflowWorkspaceTransaction._snapshot_directory
+
+    def delayed_snapshot(transaction) -> None:
+        time.sleep(0.04)
+        original_snapshot(transaction)
+
+    def fake_run(input_data: dict, _context: ToolContext) -> ToolResult:
+        calls.append(str(input_data["description"]))
+        return ToolResult(ok=True, output="phase complete")
+
+    monkeypatch.setattr(
+        task_module._WorkflowWorkspaceTransaction,
+        "_snapshot_directory",
+        delayed_snapshot,
+    )
+    monkeypatch.setattr(task_module, "_run", fake_run)
+
+    result = task_module.task_tool.run(
+        {
+            "description": "snapshot deadline probe",
+            "prompt": "Plan and implement a bounded local change.",
+            "agent_type": "workflow",
+        },
+        _context(tmp_path),
+    )
+
+    assert result.ok is False
+    assert "deadline_exceeded" in result.output
+    assert calls == []
 
 
 def test_general_subagent_checks_deadline_after_model_boundary(

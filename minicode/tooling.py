@@ -235,6 +235,11 @@ class ToolResult:
     backgroundTask: BackgroundTaskResult | None = None
     awaitUser: bool = False
     verification: dict[str, object] | None = None
+    # A stateful tool sets this only after an irreversible mutation has
+    # completed and its result has been finalized.  The Agent Loop must retain
+    # that truthful result even if cancellation raced with the finalization
+    # boundary; ordinary tool results keep the default cancellation behavior.
+    _must_deliver: bool = field(default=False, repr=False, compare=False)
 
 
 @dataclass(slots=True)
@@ -318,6 +323,75 @@ class ToolContext:
     # disturbing the permission-approval session's tool tracking.
     _presentation: Any | None = field(
         default=None,
+        repr=False,
+        compare=False,
+    )
+    # The fields below were appended (rather than inserted above) so existing
+    # embedders that still construct ToolContext positionally retain the exact
+    # pre-V2 argument order.
+    # Host-owned process isolation capability for deterministic verification.
+    # It is injected by an embedder/runtime administrator and is never exposed
+    # as task/model input. Absence deliberately makes repository-code checks
+    # inconclusive rather than running them unsandboxed on the host.
+    _verifier_sandbox_backend: Any | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    # Host-pinned command-name -> absolute executable capabilities. Verifier
+    # requests can select only a name already present in this private map.
+    _verifier_trusted_executables: dict[str, str] | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    # Host/UI-owned one-time approval provider for high-risk workflows.
+    # Public task JSON and Worker output cannot manufacture this capability.
+    _workflow_human_approval_provider: Any | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    # Production host mode: state-changing sub-agent work must enter through
+    # WorkflowRequest.v1 and the Central Scheduler. Direct tests/legacy
+    # embedders may leave this false while migrating.
+    _central_workflow_v2_enforced: bool = field(
+        default=False,
+        repr=False,
+        compare=False,
+    )
+    # True only for the Task invocation that created this deadline. The one
+    # deadline covers workflow snapshotting, dispatch, verification and commit;
+    # nested tasks always inherit or shorten it.
+    _task_deadline_owned: bool = field(
+        default=False,
+        repr=False,
+        compare=False,
+    )
+    # Scheduler-owned logical role. Public callers select legacy agent types;
+    # this internal marker narrows a physical `general` worker into a bounded
+    # Executor without exposing a second direct write entry point.
+    _logical_agent_role: str | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    _logical_agent_scope: Any | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    _logical_agent_workspace_root: str | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    # Internal marker for every phase running inside a disposable workflow
+    # transaction, including legacy phases without a structured logical role.
+    # It closes process-global/project memory injection and reflection as an
+    # undeclared channel into the frozen snapshot.
+    _workflow_phase: bool = field(
+        default=False,
         repr=False,
         compare=False,
     )
@@ -431,6 +505,7 @@ class ToolRegistry:
         if tool is None:
             return ToolResult(ok=False, output=f"Unknown tool: {tool_name}")
 
+        result: ToolResult | None = None
         try:
             abandoned = context._tool_abandoned
             if abandoned is not None and abandoned.is_set():
@@ -472,6 +547,8 @@ class ToolRegistry:
                     "owning tool execution was abandoned before execution"
                 )
             result = tool.run(parsed, context)
+            if getattr(result, "_must_deliver", False) is True:
+                return result
             
             # Phase 3: Output sanitization
             if result.output is None:
@@ -484,9 +561,13 @@ class ToolRegistry:
             return result
             
         except (KeyboardInterrupt, SystemExit, ToolExecutionAbandoned):
-            # These should always propagate upward
+            if getattr(result, "_must_deliver", False) is True:
+                return result
+            # Control-flow exceptions propagate until state has been finalized.
             raise
         except Exception as error:  # noqa: BLE001
+            if getattr(result, "_must_deliver", False) is True:
+                return result
             # Global safety net: convert any unhandled exception to error result
             # This prevents a single buggy tool from crashing the entire session
             safe_projection = getattr(error, "tool_output", None)

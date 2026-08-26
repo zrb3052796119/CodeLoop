@@ -625,3 +625,52 @@ def test_async_task_result_and_parent_event_join_on_spawned_id(
         assert payloads[0]["subagentId"] == spawned["subagentId"]
     finally:
         lifecycle.shutdown()
+
+
+def test_async_task_worker_does_not_join_its_own_lifecycle_job(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import minicode.subagent_model_routing as routing_module
+    import minicode.tools.task as task_module
+
+    model = _ScriptedModel(
+        [AgentStep(type="assistant", content="async inspection complete")]
+    )
+    monkeypatch.setattr(
+        routing_module,
+        "create_subagent_model_adapter",
+        lambda _runtime, _agent_type, *, tools: model,
+    )
+    # One final answer is sufficient when the worker owns an independent
+    # lifecycle. If it inherits the parent registry, the finalization barrier
+    # sees this worker's own pending Future and rejects that answer.
+    monkeypatch.setitem(task_module.AGENT_TYPES["explore"], "max_turns", 1)
+
+    lifecycle = AsyncSubagentLifecycle(max_workers=1)
+    context = ToolContext(
+        cwd=str(tmp_path),
+        _runtime={"model": "fake"},
+        _subagent_lifecycle=lifecycle,
+    )
+    try:
+        spawn_result = task_module.task_tool.run(
+            task_module.task_tool.validator(
+                {
+                    "action": "spawn",
+                    "description": "inspect asynchronously",
+                    "prompt": "Inspect the task implementation.",
+                    "agent_type": "explore",
+                }
+            ),
+            context,
+        )
+        spawned = json.loads(spawn_result.output)
+
+        terminal = _wait_for_terminal(
+            lifecycle,
+            str(spawned["subagentId"]),
+        )
+        assert terminal["status"] == "completed", terminal
+        assert terminal["result"]["ok"] is True
+    finally:
+        lifecycle.shutdown()

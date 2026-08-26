@@ -423,6 +423,7 @@ def _execute_single_tool(
     """
     tool_name = call["toolName"]
     tool_input = call["input"]
+    result: ToolResult | None = None
     
     try:
         raise_if_cancelled(cancellation_token)
@@ -449,6 +450,8 @@ def _execute_single_tool(
             else _base_timeout
         )
         def execute_tool() -> ToolResult:
+            from minicode.verifier_sandbox import resolve_verifier_host_capabilities
+
             raise_if_cancelled(cancellation_token)
             if tool_name == "ask_user" and not allow_user_interaction:
                 return ToolResult(
@@ -459,12 +462,18 @@ def _execute_single_tool(
                         "the result through the assistant final response."
                     ),
                 )
+            verifier_backend, verifier_executables = (
+                resolve_verifier_host_capabilities(runtime)
+            )
             executed = tools.execute(
                 tool_name, tool_input,
                 ToolContext(
                     cwd=cwd,
                     permissions=permissions,
                     _runtime=runtime,
+                    _verifier_sandbox_backend=verifier_backend,
+                    _verifier_trusted_executables=verifier_executables,
+                    _central_workflow_v2_enforced=True,
                     _event_sink=event_sink,
                     _step=step,
                     _skill_usage_tracker=skill_usage_tracker,
@@ -477,7 +486,8 @@ def _execute_single_tool(
                     _subagent_lifecycle=subagent_lifecycle,
                 ),
             )
-            raise_if_cancelled(cancellation_token)
+            if not executed._must_deliver:
+                raise_if_cancelled(cancellation_token)
             return executed
 
         tool_definition = tools.find(tool_name)
@@ -549,6 +559,11 @@ def _execute_single_tool(
         TurnCancellationRequested,
         ToolExecutionAbandoned,
     ):
+        if result is not None and result._must_deliver:
+            logger.exception(
+                "Post-tool control flow could not replace a finalized state change"
+            )
+            return result
         # Always propagate these
         raise
     except Exception as exc:  # noqa: BLE001
@@ -559,6 +574,17 @@ def _execute_single_tool(
         import traceback
         tb_excerpt = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__)[-3:]).strip()
         error_type = type(exc).__name__
+
+        if result is not None and result._must_deliver:
+            logger.exception(
+                "Post-tool failure could not replace a finalized state change"
+            )
+            if store:
+                try:
+                    store.set_state(set_idle())
+                except Exception:
+                    pass
+            return result
         
         logger.error("Tool execution pipeline crashed (%s): %s", error_type, exc)
         
@@ -574,6 +600,18 @@ def _execute_single_tool(
             output=f"[{error_type}] Tool execution pipeline crashed: {exc}\n"
                    f"Traceback:\n{tb_excerpt}"
         )
+    except BaseException:
+        if result is not None and result._must_deliver:
+            logger.exception(
+                "Post-tool base exception could not replace a finalized state change"
+            )
+            if store:
+                try:
+                    store.set_state(set_idle())
+                except BaseException:
+                    pass
+            return result
+        raise
 
 
 def _format_diagnostics(stop_reason: str | None, block_types: list[str] | None, ignored_block_types: list[str] | None) -> str:
@@ -1670,6 +1708,7 @@ def run_agent_turn(
     owns_subagent_lifecycle = subagent_lifecycle is None
     if subagent_lifecycle is None:
         subagent_lifecycle = AsyncSubagentLifecycle()
+    authority_delivery_ready = False
 
     try:
         while max_steps is None or step < max_steps:
@@ -2483,17 +2522,33 @@ def run_agent_turn(
                     subagent_lifecycle,
                     allow_user_interaction,
                 )
-                if metrics_collector:
-                    metrics_collector.end_tool(
-                        success=result.ok,
-                        error=result.output if not result.ok else "",
-                    )
-                recovery_guard.observe(
-                    call,
-                    ok=result.ok,
-                    output=result.output,
-                )
                 _results.append((call, result))
+                if metrics_collector:
+                    try:
+                        metrics_collector.end_tool(
+                            success=result.ok,
+                            error=result.output if not result.ok else "",
+                        )
+                    except BaseException:  # finalized authority wins
+                        if not result._must_deliver:
+                            raise
+                        logger.warning(
+                            "Tool metrics failed after finalized state change",
+                            exc_info=True,
+                        )
+                try:
+                    recovery_guard.observe(
+                        call,
+                        ok=result.ok,
+                        output=result.output,
+                    )
+                except BaseException:  # finalized authority wins
+                    if not result._must_deliver:
+                        raise
+                    logger.warning(
+                        "Recovery observation failed after state finalization",
+                        exc_info=True,
+                    )
             elif len(executable_calls) > 1:
                 # Multiple calls — use ToolScheduler for intelligent partitioning
                 concurrent_calls, serial_calls = tool_scheduler.schedule_calls(
@@ -2561,16 +2616,24 @@ def run_agent_turn(
                                 raise
                             except Exception as exc:
                                 result = ToolResult(ok=False, output=f"Concurrent execution error: {exc}")
-                            recovery_guard.observe(
-                                call,
-                                ok=result.ok,
-                                output=result.output,
-                            )
                             _results.append((call, result))
+                            try:
+                                recovery_guard.observe(
+                                    call,
+                                    ok=result.ok,
+                                    output=result.output,
+                                )
+                            except BaseException:  # finalized authority wins
+                                if not result._must_deliver:
+                                    raise
+                                logger.warning(
+                                    "Recovery observation failed after state finalization",
+                                    exc_info=True,
+                                )
 
                 # Phase 2: Run serial tools sequentially (in original order)
                 if serial_calls:
-                    for call in serial_calls:
+                    for serial_index, call in enumerate(serial_calls):
                         late_suppression = recovery_guard.suppression_for(call)
                         if late_suppression is not None:
                             suppressed_call_ids.add(call["id"])
@@ -2605,27 +2668,114 @@ def run_agent_turn(
                             subagent_lifecycle,
                             allow_user_interaction,
                         )
-                        if metrics_collector:
-                            metrics_collector.end_tool(
-                                success=result.ok,
-                                error=result.output if not result.ok else "",
-                            )
-                        recovery_guard.observe(
-                            call,
-                            ok=result.ok,
-                            output=result.output,
-                        )
                         _results.append((call, result))
-                        # If a serial tool awaits user, return immediately
-                        if result.awaitUser:
+                        if metrics_collector:
+                            try:
+                                metrics_collector.end_tool(
+                                    success=result.ok,
+                                    error=result.output if not result.ok else "",
+                                )
+                            except BaseException:  # finalized authority wins
+                                if not result._must_deliver:
+                                    raise
+                                logger.warning(
+                                    "Tool metrics failed after finalized state change",
+                                    exc_info=True,
+                                )
+                        try:
+                            recovery_guard.observe(
+                                call,
+                                ok=result.ok,
+                                output=result.output,
+                            )
+                        except BaseException:  # finalized authority wins
+                            if not result._must_deliver:
+                                raise
+                            logger.warning(
+                                "Recovery observation failed after state finalization",
+                                exc_info=True,
+                            )
+                        # A finalized state change is authoritative and must be
+                        # delivered before any later serial call can run.  Seal
+                        # skipped results for the remaining provider calls so
+                        # the tool-call protocol stays balanced.
+                        if result.awaitUser or result._must_deliver:
+                            if result._must_deliver:
+                                for pending_call in serial_calls[
+                                    serial_index + 1 :
+                                ]:
+                                    suppressed_call_ids.add(pending_call["id"])
+                                    _results.append(
+                                        (
+                                            pending_call,
+                                            ToolResult(
+                                                ok=False,
+                                                output=(
+                                                    "error[skipped_after_finalized_"
+                                                    "state_change]: a prior "
+                                                    "stateful result must be "
+                                                    "delivered first"
+                                                ),
+                                            ),
+                                        )
+                                    )
                             # Still need to process remaining results for messages
                             break
             
-            raise_if_cancelled(cancellation_token)
+            must_deliver_result = any(
+                result._must_deliver for _call, result in _results
+            )
+            if not must_deliver_result:
+                raise_if_cancelled(cancellation_token)
 
             # Process all results and build messages (preserve original call order)
             call_order = {call["id"]: idx for idx, call in enumerate(calls)}
             _results.sort(key=lambda pair: call_order.get(pair[0]["id"], 999))
+            if must_deliver_result:
+                # A finalized state change takes a dedicated authority path.
+                # Only balance the provider tool protocol and project every
+                # result byte-for-byte; all mutable telemetry and control
+                # sidecars are deliberately bypassed.
+                executed_outcomes: list[bool] = []
+                for result_index, (call, result) in enumerate(_results):
+                    suppressed = call["id"] in suppressed_call_ids
+                    if not suppressed:
+                        executed_outcomes.append(result.ok)
+                        if not result.ok:
+                            tool_error_count += 1
+                    assistant_tool_call_message: ChatMessage = {
+                        "role": "assistant_tool_call",
+                        "toolUseId": call["id"],
+                        "toolName": call["toolName"],
+                        "input": call["input"],
+                        "assistantTurnId": assistant_tool_turn_id,
+                    }
+                    if result_index == 0:
+                        if next_step.content:
+                            assistant_tool_call_message["content"] = (
+                                next_step.content
+                            )
+                        if next_step.reasoningContent is not None:
+                            assistant_tool_call_message["reasoningContent"] = (
+                                next_step.reasoningContent
+                            )
+                    current_messages.append(assistant_tool_call_message)
+                    current_messages.append(
+                        {
+                            "role": "tool_result",
+                            "toolUseId": call["id"],
+                            "toolName": call["toolName"],
+                            "content": result.output,
+                            "isError": not result.ok,
+                        }
+                    )
+                saw_tool_result = True
+                turn_outcome = (
+                    "success" if all(executed_outcomes) else "failed"
+                )
+                authority_delivery_ready = True
+                return current_messages
+
             await_user_output: str | None = None
             ledger_changed = False
             executed_outcomes: list[bool] = []
@@ -2657,6 +2807,15 @@ def run_agent_turn(
                 if suppressed:
                     result_output = result.output
                     recovery_note = None
+                elif result._must_deliver:
+                    # This output is the sole truthful report of an already
+                    # finalized state change. Diagnostics still flow through
+                    # counters, hooks, ledger, and execution trace, but the
+                    # provider-visible authority document must remain exact.
+                    result_output = result.output
+                    recovery_note = None
+                    if not result.ok:
+                        tool_error_count += 1
                 elif not result.ok:
                     tool_error_count += 1
                     # Use ErrorClassifier for intelligent error handling
@@ -2805,15 +2964,16 @@ def run_agent_turn(
                 0.0, time.perf_counter() - step_started_at
             )
             if strategy_switch_nudge is not None:
-                for message in reversed(current_messages):
-                    if message.get("role") == "tool_result":
-                        message["content"] = (
-                            str(message.get("content") or "")
-                            + "\n\n[System note: "
-                            + strategy_switch_nudge
-                            + "]"
-                        )
-                        break
+                if not must_deliver_result:
+                    for message in reversed(current_messages):
+                        if message.get("role") == "tool_result":
+                            message["content"] = (
+                                str(message.get("content") or "")
+                                + "\n\n[System note: "
+                                + strategy_switch_nudge
+                                + "]"
+                            )
+                            break
                 _append_trace_event(
                     execution_trace,
                     {
@@ -2829,7 +2989,7 @@ def run_agent_turn(
                     context_manager.messages = list(current_messages)
 
             recovery_stop = recovery_guard.stop_decision()
-            if recovery_stop is not None:
+            if recovery_stop is not None and not must_deliver_result:
                 emit_event_safely(
                     event_sink,
                     "execution.stopped",
@@ -3037,6 +3197,85 @@ def run_agent_turn(
         enable_work_chain = False
         raise
     finally:
+        if authority_delivery_ready:
+            if owns_subagent_lifecycle:
+                try:
+                    subagent_lifecycle.shutdown()
+                except BaseException:  # finalized authority wins
+                    logger.warning(
+                        "Failed to shut down asynchronous sub-agent lifecycle",
+                        exc_info=True,
+                    )
+            canonical_outcome = None
+            try:
+                verification_passed_count, verification_failed_count = (
+                    verification_tracker.snapshot()
+                )
+                canonical_outcome = canonicalize_task_outcome(
+                    turn_outcome,
+                    tool_error_count,
+                    verification_passed=verification_passed_count,
+                    verification_failed=verification_failed_count,
+                )
+            except BaseException:  # finalized authority wins
+                logger.warning(
+                    "Failed to derive finalized task telemetry",
+                    exc_info=True,
+                )
+            if outcome_capture is not None and canonical_outcome is not None:
+                try:
+                    outcome_capture.record(canonical_outcome)
+                except BaseException:  # finalized authority wins
+                    logger.warning(
+                        "Failed to capture finalized task outcome",
+                        exc_info=True,
+                    )
+            if canonical_outcome is not None:
+                try:
+                    emit_task_outcome_safely(
+                        event_sink,
+                        canonical_outcome,
+                        step=step,
+                    )
+                    emit_skill_attribution_safely(
+                        event_sink,
+                        skill_usage_tracker,
+                        canonical_outcome,
+                        step=step,
+                    )
+                except BaseException:  # finalized authority wins
+                    logger.warning(
+                        "Failed to emit finalized task telemetry",
+                        exc_info=True,
+                    )
+            try:
+                fire_hook_sync(
+                    HookEvent.AGENT_STOP,
+                    step=step,
+                    tool_errors=tool_error_count,
+                )
+            except BaseException:  # finalized authority wins
+                logger.warning(
+                    "Failed to run final agent hook after state finalization",
+                    exc_info=True,
+                )
+            if metrics_collector:
+                try:
+                    total_tokens = (
+                        sum(
+                            estimate_message_tokens(message)
+                            for message in current_messages
+                        )
+                        if context_manager
+                        else 0
+                    )
+                    metrics_collector.end_turn(total_tokens=total_tokens)
+                except BaseException:  # finalized authority wins
+                    logger.warning(
+                        "Failed to close metrics after state finalization",
+                        exc_info=True,
+                    )
+            return current_messages
         if owns_subagent_lifecycle:
             try:
                 subagent_lifecycle.shutdown()

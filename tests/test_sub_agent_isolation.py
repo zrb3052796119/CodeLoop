@@ -105,6 +105,129 @@ def test_general_sub_agent_never_receives_the_task_tool(
     assert "ask_user is unavailable" in captured["messages"][0]["content"]
 
 
+def test_scheduler_executor_is_local_without_narrowing_direct_general(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A scheduler role marker narrows capabilities; the legacy type does not."""
+    from dataclasses import dataclass
+
+    import minicode.tools as tools_module
+    from minicode.permissions import PermissionManager
+    from minicode.task_outcome import canonicalize_task_outcome
+    from minicode.tooling import ToolDefinition
+
+    @dataclass(slots=True)
+    class SchedulerWorkerContext(ToolContext):
+        # Test adapter for the proposed internal ToolContext seam. Keeping the
+        # logical role separate from the public legacy `agent_type` lets a
+        # scheduler-dispatched Executor remain model-route compatible.
+        _logical_agent_role: str | None = None
+
+    external_mcp_tool = ToolDefinition(
+        name="mcp__fixture__external",
+        description="fixture external tool",
+        input_schema={"type": "object"},
+        validator=lambda value: value,
+        run=lambda _input, _context: ToolResult(ok=True, output="external"),
+    )
+    mcp_constructions: list[dict[str, object]] = []
+
+    def fixture_mcp_tools(**kwargs):
+        mcp_constructions.append(kwargs)
+        return {
+            "tools": [external_mcp_tool],
+            "servers": [],
+            "dispose": lambda: None,
+        }
+
+    captured_runs: list[dict[str, object]] = []
+
+    def capture_turn(**kwargs):
+        captured_runs.append(kwargs)
+        kwargs["outcome_capture"].record(
+            canonicalize_task_outcome("success", 0)
+        )
+        return [{"role": "assistant", "content": "worker done"}]
+
+    monkeypatch.setattr(tools_module, "create_mcp_backed_tools", fixture_mcp_tools)
+    monkeypatch.setattr(task_module, "run_agent_turn", capture_turn)
+
+    def parent_prompt(_request):
+        return {"decision": "allow_once"}
+
+    parent_permissions = PermissionManager(str(tmp_path), prompt=parent_prompt)
+    runtime = {
+        "model": "fake",
+        "mcpServers": {"fixture": {"command": "fixture-mcp"}},
+    }
+    executor_context = SchedulerWorkerContext(
+        cwd=str(tmp_path),
+        permissions=parent_permissions,
+        _runtime=runtime,
+        _logical_agent_role="executor",
+        _logical_agent_scope={
+            "read_roots": (".",),
+            "write_paths": ("allowed.txt",),
+            "forbidden_paths": (".git",),
+        },
+        _logical_agent_workspace_root=str(tmp_path),
+    )
+
+    executor_result = task_tool.run(
+        {
+            "description": "scheduled implementation",
+            "prompt": "Implement the locked scheduler assignment.",
+            "agent_type": "general",
+        },
+        executor_context,
+    )
+    direct_result = task_tool.run(
+        {
+            "description": "legacy general",
+            "prompt": "Handle the legacy general task.",
+            "agent_type": "general",
+        },
+        _context(
+            tmp_path,
+            permissions=parent_permissions,
+            _runtime=runtime,
+        ),
+    )
+
+    assert executor_result.ok is True
+    assert direct_result.ok is True
+    executor_run, direct_run = captured_runs
+    direct_tools = {tool.name for tool in direct_run["tools"].list()}
+    assert {
+        "mcp__fixture__external",
+        "web_fetch",
+        "web_search",
+        "write_file",
+    } <= direct_tools
+    assert "task" not in direct_tools
+    assert "ask_user" not in direct_tools
+    assert direct_run["permissions"].prompt is parent_prompt
+
+    executor_tools = {tool.name for tool in executor_run["tools"].list()}
+    assert executor_tools == {
+        "edit_file",
+        "file_line_count",
+        "get_ast_info",
+        "list_files",
+        "patch_file",
+        "read_file",
+        "subagent_note_read",
+        "subagent_note_write",
+        "write_file",
+    }
+    assert executor_run["permissions"].prompt is None
+    assert type(executor_run["permissions"]).__name__ == (
+        "SchedulerExecutorPermissions"
+    )
+    assert executor_run["allow_user_interaction"] is False
+    assert len(mcp_constructions) == 1
+
+
 def test_sub_agent_runs_one_level_deeper_than_its_parent(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -329,6 +452,19 @@ def test_sub_agent_receives_the_project_memory_store(
     )
 
     assert captured["memory_manager"] is not None
+
+
+def test_isolated_workflow_phase_has_no_memory_side_channel(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured = _capture_sub_turn(monkeypatch)
+
+    task_tool.run(
+        {"description": "phase", "prompt": "review the isolated work", "agent_type": "plan"},
+        _context(tmp_path, _agent_depth=1, _workflow_phase=True),
+    )
+
+    assert captured["memory_manager"] is None
 
 
 def test_sub_agent_reports_model_turns_not_user_message_count(
