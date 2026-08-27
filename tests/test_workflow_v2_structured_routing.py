@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import hashlib
 import json
-from pathlib import Path
 import re
+from pathlib import Path
 
 import pytest
 
+import minicode.tools.task as task_module
 from minicode.central_scheduler import CentralScheduler
 from minicode.deterministic_verifier import DeterministicVerifier
 from minicode.run_journal import (
@@ -22,17 +23,16 @@ from minicode.scheduler_artifacts import (
     SchedulerArtifact,
     SchedulerArtifactError,
 )
-from minicode.scheduler_trace import extract_scheduler_trace
 from minicode.scheduler_audit import (
     SchedulerAuditValidationError,
     project_scheduler_audit,
     project_scheduler_commit_ready,
 )
+from minicode.scheduler_trace import extract_scheduler_trace
 from minicode.subagent_mailbox import SubagentMailbox
 from minicode.subagent_result import extract_subagent_result
 from minicode.tooling import ToolContext, ToolResult
 from minicode.turn_cancellation import TurnCancellationToken
-import minicode.tools.task as task_module
 
 
 def _request(
@@ -2969,6 +2969,57 @@ def test_exception_after_git_apply_cannot_be_reported_as_uncommitted(
     assert audits[0].trace["committed"] is True
     assert extract_scheduler_trace(result.output)["committed"] is True
     assert '"changesCommitted": true' in result.output
+
+
+def test_unknown_parent_promotion_is_projected_as_must_deliver_fallback(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
+        if role == "analyst":
+            _write_analyst_result(input_data, context, prepare_change=True)
+        elif role == "executor":
+            Path(context.cwd, "allowed.txt").write_text(
+                "after",
+                encoding="utf-8",
+            )
+            _write_executor_declaration(input_data, context)
+        else:
+            _write_reviewer_result(input_data, context)
+        return ToolResult(ok=True, output=f"{role} complete")
+
+    def commit_with_unknown_parent_state(self, **_kwargs):
+        self._parent_promotion_completed = False
+        self._parent_promotion_unknown = True
+        raise KeyboardInterrupt("injected unresolved parent promotion")
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(
+        task_module._WorkflowWorkspaceTransaction,
+        "commit",
+        commit_with_unknown_parent_state,
+    )
+    monkeypatch.setattr(
+        DeterministicVerifier,
+        "run",
+        lambda self, **request: _verification_result(request),
+    )
+
+    result = _run(tmp_path, _request(), monkeypatch)
+
+    assert result.ok is False
+    assert result._must_deliver is True
+    assert "error[workflow_commit_state_unknown]" in result.output
+    finalization = json.loads(
+        result.output.split("=== WORKFLOW FINALIZATION v1 ===\n", 1)[1]
+    )
+    assert finalization["changesCommitted"] is None
+    assert finalization["commitState"] == "unknown"
+    assert target.read_text(encoding="utf-8") == "before"
 
 
 def test_cancellation_after_commit_preserves_truthful_finalization(

@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 from minicode import advisory_lock as advisory_lock_module
+from minicode import workflow_workspace as workspace_module
 from minicode.scheduler_artifacts import (
     MAX_SCHEDULER_ARTIFACT_BYTES,
     SchedulerArtifactStore,
@@ -21,12 +22,17 @@ from minicode.scheduler_audit import (
     SchedulerAuditValidationError,
     _validate_frozen_diff,
 )
-from minicode.tools import task as task_module
+from minicode.task_deadline import (
+    TaskDeadlineExceeded as _TaskDeadlineExceeded,
+)
 from minicode.tools.task import (
-    _TaskDeadlineExceeded,
     _WorkflowCommitStateUnknown,
-    _WorkflowIsolationError,
-    _WorkflowWorkspaceTransaction,
+)
+from minicode.workflow_workspace import (
+    WorkflowIsolationError as _WorkflowIsolationError,
+)
+from minicode.workflow_workspace import (
+    WorkflowWorkspaceTransaction as _WorkflowWorkspaceTransaction,
 )
 
 
@@ -436,9 +442,9 @@ def test_parent_promotion_lock_key_follows_filesystem_aliases(
     except (NotImplementedError, OSError) as exc:
         pytest.skip(f"directory symlinks are unavailable: {exc}")
 
-    assert task_module._workflow_parent_lock_key(
+    assert workspace_module._workflow_parent_lock_key(
         source_root
-    ) == task_module._workflow_parent_lock_key(alias)
+    ) == workspace_module._workflow_parent_lock_key(alias)
 
 
 def test_parent_promotion_lock_key_fails_closed_when_identity_is_unavailable(
@@ -447,35 +453,35 @@ def test_parent_promotion_lock_key_fails_closed_when_identity_is_unavailable(
 ) -> None:
     source_root = tmp_path / "repository"
     source_root.mkdir()
-    real_stat = task_module.os.stat
+    real_stat = workspace_module.os.stat
 
     def unavailable(path, *args, **kwargs):
         if Path(path) == source_root:
             raise OSError("filesystem identity unavailable")
         return real_stat(path, *args, **kwargs)
 
-    monkeypatch.setattr(task_module.os, "stat", unavailable)
+    monkeypatch.setattr(workspace_module.os, "stat", unavailable)
 
     with pytest.raises(
         _WorkflowIsolationError,
         match="workflow commit lock identity is unavailable",
     ):
-        task_module._workflow_parent_lock_key(source_root)
+        workspace_module._workflow_parent_lock_key(source_root)
 
 
 def test_parent_promotion_lock_namespace_does_not_follow_tmpdir(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    namespace_before = task_module._workflow_parent_lock_namespace()
+    namespace_before = workspace_module._workflow_parent_lock_namespace()
     monkeypatch.setenv("TMPDIR", str(tmp_path / "different-tmp"))
     monkeypatch.setattr(
-        task_module.tempfile,
+        workspace_module.tempfile,
         "gettempdir",
         lambda: str(tmp_path / "different-tmp"),
     )
 
-    assert task_module._workflow_parent_lock_namespace() == namespace_before
+    assert workspace_module._workflow_parent_lock_namespace() == namespace_before
 
 
 def test_windows_parent_promotion_lock_namespace_requires_local_app_data(
@@ -483,13 +489,13 @@ def test_windows_parent_promotion_lock_namespace_requires_local_app_data(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        task_module,
+        workspace_module,
         "_workflow_lock_platform_name",
         lambda: "nt",
     )
     monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
 
-    assert task_module._workflow_parent_lock_namespace() == (
+    assert workspace_module._workflow_parent_lock_namespace() == (
         tmp_path / "MiniCode" / "workflow-locks"
     )
 
@@ -498,7 +504,7 @@ def test_windows_parent_promotion_lock_namespace_requires_local_app_data(
         _WorkflowIsolationError,
         match="workflow commit lock user namespace is unavailable",
     ):
-        task_module._workflow_parent_lock_namespace()
+        workspace_module._workflow_parent_lock_namespace()
 
 
 def test_commit_fails_closed_for_symlinked_lock_namespace(
@@ -517,7 +523,7 @@ def test_commit_fails_closed_for_symlinked_lock_namespace(
     except (NotImplementedError, OSError) as exc:
         pytest.skip(f"directory symlinks are unavailable: {exc}")
     monkeypatch.setattr(
-        task_module,
+        workspace_module,
         "_workflow_parent_lock_namespace",
         lambda: namespace_alias,
     )
@@ -555,11 +561,15 @@ def test_commit_fails_closed_for_lock_namespace_with_wrong_owner(
     lock_namespace.mkdir(mode=0o700)
     actual_user_id = os.geteuid()
     monkeypatch.setattr(
-        task_module,
+        workspace_module,
         "_workflow_parent_lock_namespace",
         lambda: lock_namespace,
     )
-    monkeypatch.setattr(task_module.os, "geteuid", lambda: actual_user_id + 1)
+    monkeypatch.setattr(
+        workspace_module.os,
+        "geteuid",
+        lambda: actual_user_id + 1,
+    )
 
     with _WorkflowWorkspaceTransaction(str(workspace)) as transaction:
         Path(transaction.cwd, "allowed.txt").write_text(
@@ -628,7 +638,7 @@ def test_parent_promotion_closes_lock_handle_when_setup_is_interrupted(
     tracked_handles = _track_workflow_lock_handles(monkeypatch)
     releases = 0
     interruption = KeyboardInterrupt(f"lock {failure_site} interrupted")
-    real_chmod = task_module.os.chmod
+    real_chmod = workspace_module.os.chmod
 
     def interrupted_prepare(_file_descriptor: int, *, mode: int = 0o600) -> None:
         del mode
@@ -656,7 +666,11 @@ def test_parent_promotion_closes_lock_handle_when_setup_is_interrupted(
                 interrupted_prepare,
             )
         else:
-            monkeypatch.setattr(task_module.os, "chmod", interrupted_chmod)
+            monkeypatch.setattr(
+                workspace_module.os,
+                "chmod",
+                interrupted_chmod,
+            )
         monkeypatch.setattr(
             advisory_lock_module,
             "release_advisory_lock",
@@ -857,8 +871,8 @@ def test_advisory_lock_contention_cannot_outlive_commit_deadline(
         "release_advisory_lock",
         released,
     )
-    monkeypatch.setattr(task_module.time, "monotonic", monotonic)
-    monkeypatch.setattr(task_module.time, "sleep", wait)
+    monkeypatch.setattr(workspace_module.time, "monotonic", monotonic)
+    monkeypatch.setattr(workspace_module.time, "sleep", wait)
 
     with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
         Path(transaction.cwd, "allowed.txt").write_text(
