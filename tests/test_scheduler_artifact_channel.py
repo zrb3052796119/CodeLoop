@@ -2,24 +2,24 @@
 
 from __future__ import annotations
 
-from dataclasses import FrozenInstanceError
 import threading
+from dataclasses import FrozenInstanceError
 
 import pytest
 
 import minicode.scheduler_artifacts as scheduler_artifacts_module
+from minicode.central_scheduler import DispatchStage, StageAssignment
 from minicode.scheduler_artifacts import (
-    AssignmentArtifactChannel,
     MAX_SCHEDULER_ARTIFACT_BYTES,
     MAX_SCHEDULER_ARTIFACTS_PER_WORKFLOW,
+    AssignmentArtifactChannel,
     SchedulerArtifactError,
     SchedulerArtifactStore,
 )
-from minicode.central_scheduler import DispatchStage, StageAssignment
 from minicode.subagent_mailbox import SubagentMailbox, SubagentMailboxError
 from minicode.tooling import ToolContext
 from minicode.tools.subagent_notes import subagent_note_write_tool
-from minicode.tools.task import _assignment_result_key
+from minicode.workflow_runner import _assignment_result_key
 
 
 @pytest.mark.parametrize("forgeable", [None, "scheduler", 1, True, ()])

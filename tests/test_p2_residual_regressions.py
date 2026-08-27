@@ -21,6 +21,7 @@ from minicode.project_facts import ProjectFactsStore
 from minicode.subagent_mailbox import SubagentMailbox
 from minicode.task_outcome import canonicalize_task_outcome
 from minicode.tooling import ToolContext, ToolResult
+from minicode.workflow_workspace import WorkflowWorkspaceTransaction
 
 
 def _context(workspace: Path, **overrides: object) -> ToolContext:
@@ -87,7 +88,7 @@ def test_workflow_snapshot_is_charged_to_overall_deadline(
 ) -> None:
     calls: list[str] = []
     monkeypatch.setenv("MINICODE_TASK_TIMEOUT_SECONDS", "0.02")
-    original_snapshot = task_module._WorkflowWorkspaceTransaction._snapshot_directory
+    original_snapshot = WorkflowWorkspaceTransaction._snapshot_directory
 
     def delayed_snapshot(transaction) -> None:
         time.sleep(0.04)
@@ -98,7 +99,7 @@ def test_workflow_snapshot_is_charged_to_overall_deadline(
         return ToolResult(ok=True, output="phase complete")
 
     monkeypatch.setattr(
-        task_module._WorkflowWorkspaceTransaction,
+        WorkflowWorkspaceTransaction,
         "_snapshot_directory",
         delayed_snapshot,
     )

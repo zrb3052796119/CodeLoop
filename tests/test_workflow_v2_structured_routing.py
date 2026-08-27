@@ -9,7 +9,9 @@ from pathlib import Path
 
 import pytest
 
+import minicode.task_deadline as task_deadline_module
 import minicode.tools.task as task_module
+import minicode.workflow_runner as workflow_runner_module
 from minicode.central_scheduler import CentralScheduler
 from minicode.deterministic_verifier import DeterministicVerifier
 from minicode.run_journal import (
@@ -32,8 +34,14 @@ from minicode.scheduler_trace import extract_scheduler_trace
 from minicode.subagent_mailbox import SubagentMailbox
 from minicode.subagent_result import extract_subagent_result
 from minicode.tooling import ToolContext, ToolResult
-from minicode.turn_cancellation import TurnCancellationToken
-from minicode.workflow_workspace import FrozenWorkflowChange
+from minicode.turn_cancellation import (
+    TurnCancellationRequested,
+    TurnCancellationToken,
+)
+from minicode.workflow_workspace import (
+    FrozenWorkflowChange,
+    WorkflowWorkspaceTransaction,
+)
 
 
 def _request(
@@ -634,7 +642,7 @@ def test_expired_human_approval_is_audited_at_each_privileged_boundary(
 
     monkeypatch.setattr(task_module, "_run", worker)
     monkeypatch.setattr(
-        task_module,
+        workflow_runner_module,
         "_human_approval_is_current",
         approval_is_current,
     )
@@ -1700,7 +1708,11 @@ def test_long_retry_narrative_preserves_both_authority_artifacts_and_finalizatio
         return ToolResult(ok=True, output=long_narrative)
 
     monkeypatch.setattr(task_module, "_run", worker)
-    monkeypatch.setattr(task_module, "_WORKFLOW_OUTPUT_MAX_CHARS", output_cap)
+    monkeypatch.setattr(
+        workflow_runner_module,
+        "_WORKFLOW_OUTPUT_MAX_CHARS",
+        output_cap,
+    )
     monkeypatch.setattr(
         DeterministicVerifier,
         "run",
@@ -1734,6 +1746,35 @@ def test_long_retry_narrative_preserves_both_authority_artifacts_and_finalizatio
     assert '"finalizationStatus": "completed"' in result.output
     assert '"traceProjection": "compacted"' in result.output
     assert len(result.output) <= output_cap
+
+
+def test_cancellation_from_injected_worker_propagates_before_promotion(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+    roles: list[str] = []
+    cancellation = TurnCancellationRequested("turn_" + "c" * 32)
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
+        roles.append(role)
+        if role == "analyst":
+            _write_analyst_result(input_data, context, prepare_change=True)
+            return ToolResult(ok=True, output="analyst complete")
+        if role == "executor":
+            raise cancellation
+        pytest.fail("Verifier and Reviewer must not run after cancellation")
+
+    monkeypatch.setattr(task_module, "_run", worker)
+
+    with pytest.raises(TurnCancellationRequested) as raised:
+        _run(tmp_path, _request(), monkeypatch)
+
+    assert raised.value is cancellation
+    assert roles == ["analyst", "executor"]
+    assert target.read_text(encoding="utf-8") == "before"
 
 
 def test_multiple_retries_with_maximum_task_id_keep_public_authority_bounded(
@@ -1797,7 +1838,7 @@ def test_multiple_retries_with_maximum_task_id_keep_public_authority_bounded(
     assert extract_scheduler_trace(result.output) is not None
     assert extract_subagent_result(result.output) is not None
     assert '"changesCommitted": true' in result.output
-    assert len(result.output) <= task_module._WORKFLOW_OUTPUT_MAX_CHARS
+    assert len(result.output) <= workflow_runner_module._WORKFLOW_OUTPUT_MAX_CHARS
 
 
 def test_reviewer_cannot_approve_without_mapped_verification_evidence(
@@ -2382,7 +2423,7 @@ def test_deadline_after_commit_ready_seal_reports_persisted_without_promotion(
 
     monkeypatch.setattr(task_module, "_run", worker)
     monkeypatch.setattr(CentralScheduler, "execute", execute_with_clock)
-    monkeypatch.setattr(task_module.time, "monotonic", lambda: now[0])
+    monkeypatch.setattr(task_deadline_module.time, "monotonic", lambda: now[0])
     monkeypatch.setattr(
         DeterministicVerifier,
         "run",
@@ -2835,7 +2876,7 @@ def test_trace_projection_failure_after_commit_returns_truthful_must_deliver(
             _write_reviewer_result(input_data, context)
         return ToolResult(ok=True, output=f"{role} complete")
 
-    original_projection = getattr(task_module, projection_port)
+    original_projection = getattr(workflow_runner_module, projection_port)
     projection_calls = 0
 
     def projection_failed(*args, **kwargs):
@@ -2848,7 +2889,11 @@ def test_trace_projection_failure_after_commit_returns_truthful_must_deliver(
         return original_projection(*args, **kwargs)
 
     monkeypatch.setattr(task_module, "_run", worker)
-    monkeypatch.setattr(task_module, projection_port, projection_failed)
+    monkeypatch.setattr(
+        workflow_runner_module,
+        projection_port,
+        projection_failed,
+    )
     monkeypatch.setattr(
         DeterministicVerifier,
         "run",
@@ -2867,7 +2912,7 @@ def test_trace_projection_failure_after_commit_returns_truthful_must_deliver(
     assert result._must_deliver is True
     assert target.read_text(encoding="utf-8") == "after"
     assert audit_calls == expected_audit_calls
-    assert len(result.output) <= task_module._WORKFLOW_OUTPUT_MAX_CHARS
+    assert len(result.output) <= workflow_runner_module._WORKFLOW_OUTPUT_MAX_CHARS
     assert '"changesCommitted": true' in result.output
     if expected_ok:
         assert '"auditStatus": "persisted"' in result.output
@@ -2911,7 +2956,7 @@ def test_cleanup_failure_after_commit_cannot_replace_finalized_result(
             _write_reviewer_result(input_data, context)
         return ToolResult(ok=True, output=f"{role} complete")
 
-    original_close = task_module._WorkflowWorkspaceTransaction.close
+    original_close = WorkflowWorkspaceTransaction.close
 
     def close_then_fail(self):
         original_close(self)
@@ -2920,7 +2965,7 @@ def test_cleanup_failure_after_commit_cannot_replace_finalized_result(
 
     monkeypatch.setattr(task_module, "_run", worker)
     monkeypatch.setattr(
-        task_module._WorkflowWorkspaceTransaction,
+        WorkflowWorkspaceTransaction,
         "close",
         close_then_fail,
     )
@@ -2981,7 +3026,7 @@ def test_exception_after_git_apply_cannot_be_reported_as_uncommitted(
             _write_reviewer_result(input_data, context)
         return ToolResult(ok=True, output=f"{role} complete")
 
-    original_run_checked = task_module._WorkflowWorkspaceTransaction._run_checked
+    original_run_checked = WorkflowWorkspaceTransaction._run_checked
 
     def apply_then_raise(self, args, **kwargs):
         completed = original_run_checked(self, args, **kwargs)
@@ -2997,7 +3042,7 @@ def test_exception_after_git_apply_cannot_be_reported_as_uncommitted(
 
     monkeypatch.setattr(task_module, "_run", worker)
     monkeypatch.setattr(
-        task_module._WorkflowWorkspaceTransaction,
+        WorkflowWorkspaceTransaction,
         "_run_checked",
         apply_then_raise,
     )

@@ -16,6 +16,7 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping
 
+from minicode.run_events import emit_event_safely
 
 SUBAGENT_EVENT_TYPE = "subagent.completed"
 
@@ -355,8 +356,28 @@ def project_subagent_event(
     )
 
 
+def emit_subagent_observation(context: object, **fields: object) -> None:
+    """Record one bounded sub-agent summary without affecting execution."""
+    sink = getattr(context, "_event_sink", None)
+    if sink is None:
+        return
+    try:
+        payload = project_subagent_event(**fields)
+        if payload is None:
+            return
+        emit_event_safely(
+            sink,
+            SUBAGENT_EVENT_TYPE,
+            step=getattr(context, "_step", None),
+            payload=payload,
+        )
+    except Exception:  # noqa: BLE001 - observation must never affect the result
+        pass
+
+
 __all__ = [
     "SUBAGENT_EVENT_TYPE",
+    "emit_subagent_observation",
     "normalize_subagent_payload",
     "project_subagent_event",
 ]

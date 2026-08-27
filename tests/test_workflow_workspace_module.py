@@ -5,20 +5,22 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from minicode import workflow_workspace
+from minicode import workflow_runner, workflow_workspace
 from minicode.task_deadline import TaskDeadlineExceeded
 from minicode.tools import task as task_module
 
 
-def test_task_compatibility_names_share_the_extracted_types() -> None:
+def test_runner_compatibility_names_share_the_extracted_types() -> None:
     assert (
-        task_module._WorkflowWorkspaceTransaction
+        workflow_runner._WorkflowWorkspaceTransaction
         is workflow_workspace.WorkflowWorkspaceTransaction
     )
     assert (
-        task_module._WorkflowIsolationError
+        workflow_runner._WorkflowIsolationError
         is workflow_workspace.WorkflowIsolationError
     )
+    assert not hasattr(task_module, "_WorkflowWorkspaceTransaction")
+    assert not hasattr(task_module, "_WorkflowIsolationError")
     assert task_module._TaskDeadlineExceeded is TaskDeadlineExceeded
 
 

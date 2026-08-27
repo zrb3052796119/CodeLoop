@@ -25,9 +25,7 @@ from minicode.scheduler_audit import (
 from minicode.task_deadline import (
     TaskDeadlineExceeded as _TaskDeadlineExceeded,
 )
-from minicode.tools.task import (
-    _WorkflowCommitStateUnknown,
-)
+from minicode.workflow_runner import _WorkflowCommitStateUnknown
 from minicode.workflow_workspace import (
     WorkflowIsolationError as _WorkflowIsolationError,
 )

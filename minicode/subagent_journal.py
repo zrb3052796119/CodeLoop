@@ -677,6 +677,19 @@ def new_subagent_id() -> str:
     return f"sub_{uuid.uuid4().hex}"
 
 
+def open_subagent_journal(context: object) -> SubagentRunJournal | None:
+    """Open the parent Run's sidecar without exposing its journal writer."""
+    sink = getattr(context, "_event_sink", None)
+    opener = getattr(sink, "open_subagent_journal", None)
+    if not callable(opener):
+        return None
+    try:
+        journal = opener()
+    except Exception:  # noqa: BLE001 - journaling is optional observation
+        return None
+    return journal if isinstance(journal, SubagentRunJournal) else None
+
+
 __all__ = [
     "JOURNAL_VERSION",
     "MAX_STANDARD_EVENTS_PER_SUBAGENT",
@@ -686,5 +699,6 @@ __all__ = [
     "SubagentRunJournal",
     "SubagentRunSummary",
     "new_subagent_id",
+    "open_subagent_journal",
     "sanitize_subagent_event_payload",
 ]

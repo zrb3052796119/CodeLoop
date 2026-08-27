@@ -31,7 +31,8 @@ from minicode.central_scheduler import (
 )
 from minicode.scheduler_permissions import MANDATORY_SCHEDULER_FORBIDDEN_PATHS
 from minicode.tooling import ToolContext
-from minicode.tools.task import _build_worker_assignment, task_tool
+from minicode.tools.task import task_tool
+from minicode.workflow_runner import _build_worker_assignment
 
 _TASK_ID = "task_workflow_request"
 
