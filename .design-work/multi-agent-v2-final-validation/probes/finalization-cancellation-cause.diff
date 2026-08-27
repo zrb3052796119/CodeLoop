@@ -1,0 +1,11 @@
+diff --git a/minicode/workflow_runner.py b/minicode/workflow_runner.py
+--- a/minicode/workflow_runner.py
++++ b/minicode/workflow_runner.py
+@@ -136,6 +136,6 @@ def _run_finalization_port(
+             cancellation_token=cancellation_token,
+         )
+     except ConflictPortCancelled as exc:
+-        if exc.cause is not None:
++        if exc.cause is None:
+             raise exc.cause from exc
+         raise

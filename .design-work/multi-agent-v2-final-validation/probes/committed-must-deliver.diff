@@ -1,0 +1,10 @@
+diff --git a/minicode/workflow_finalization.py b/minicode/workflow_finalization.py
+--- a/minicode/workflow_finalization.py
++++ b/minicode/workflow_finalization.py
+@@ -1155,5 +1155,5 @@ def _project_final_tool_result(
+         backgroundTask=result.backgroundTask,
+         awaitUser=result.awaitUser,
+         verification=result.verification if not failed else None,
+-        _must_deliver=snapshot.scheduler_outcome.committed,
++        _must_deliver=False,
+     )

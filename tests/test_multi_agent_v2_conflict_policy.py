@@ -58,6 +58,7 @@ def _ballot(
     *,
     independence: str | None = None,
     evidence_refs: tuple[str, ...] = ("artifact_a",),
+    sealed: bool = True,
 ):
     return ConflictBallot(
         voter_id=voter,
@@ -67,7 +68,7 @@ def _ballot(
         choice=choice,
         evidence_refs=evidence_refs,
         confidence="high",
-        sealed=True,
+        sealed=sealed,
     )
 
 
@@ -115,6 +116,24 @@ def test_correlated_or_unsealed_ballots_are_not_vote_eligible() -> None:
 
     assert result.route is ResolutionRoute.ADJUDICATOR
     assert result.reason == "independence_not_demonstrated"
+
+
+def test_three_unsealed_majority_ballots_cannot_resolve_the_vote() -> None:
+    unsealed_majority = (
+        _ballot("v1", "A", sealed=False),
+        _ballot("v2", "A", sealed=False),
+        _ballot("v3", "A", sealed=False),
+    )
+
+    result = ConflictResolver().resolve(
+        _package(),
+        ballots=unsealed_majority,
+    )
+
+    assert result.status == "escalated"
+    assert result.route is ResolutionRoute.ADJUDICATOR
+    assert result.choice is None
+    assert result.reason == "ballot_contract_mismatch"
 
 
 def test_deterministic_evidence_has_priority_over_model_vote() -> None:
@@ -349,6 +368,96 @@ def test_authority_ports_reject_untyped_string_decisions() -> None:
     assert result.status == "failed"
     assert result.reason == "adjudicator_result_invalid"
     assert result.choice is None
+
+
+@pytest.mark.parametrize(
+    (
+        "package_kwargs",
+        "authority_port",
+        "returned_route",
+        "returned_choice",
+        "expected_reason",
+    ),
+    [
+        pytest.param(
+            {"vote": False},
+            "adjudicator",
+            ResolutionRoute.HUMAN,
+            "A",
+            "adjudicator_result_invalid",
+            id="adjudicator-wrong-route",
+        ),
+        pytest.param(
+            {"vote": False},
+            "adjudicator",
+            ResolutionRoute.ADJUDICATOR,
+            "outside-package",
+            "adjudicator_result_invalid",
+            id="adjudicator-unknown-choice",
+        ),
+        pytest.param(
+            {"risk": "critical", "vote": False},
+            "human",
+            ResolutionRoute.ADJUDICATOR,
+            "A",
+            "human_result_invalid",
+            id="critical-human-wrong-route",
+        ),
+        pytest.param(
+            {"kind": "requirement", "vote": False},
+            "human",
+            ResolutionRoute.HUMAN,
+            "outside-package",
+            "human_result_invalid",
+            id="requirement-human-unknown-choice",
+        ),
+    ],
+)
+def test_typed_contradictory_authority_decisions_fail_closed(
+    package_kwargs,
+    authority_port,
+    returned_route,
+    returned_choice,
+    expected_reason,
+) -> None:
+    unexpected_calls = []
+
+    def contradictory_decision(_request, _package):
+        return ConflictResolution(
+            "resolved",
+            returned_route,
+            returned_choice,
+            "typed_but_contradictory",
+        )
+
+    def forbidden_port(*_args):
+        unexpected_calls.append(True)
+        raise AssertionError("an invalid authority result must fail closed")
+
+    if authority_port == "adjudicator":
+        result = CentralScheduler().execute_conflict(
+            _package(**package_kwargs),
+            run_adjudicator=contradictory_decision,
+            request_human=forbidden_port,
+        )
+        expected_route = ResolutionRoute.ADJUDICATOR
+        expected_calls = (1, 0)
+    else:
+        result = CentralScheduler().execute_conflict(
+            _package(**package_kwargs),
+            collect_ballot=forbidden_port,
+            run_adjudicator=forbidden_port,
+            request_human=contradictory_decision,
+        )
+        expected_route = ResolutionRoute.HUMAN
+        expected_calls = (0, 1)
+
+    assert result.status == "failed"
+    assert result.route is expected_route
+    assert result.choice is None
+    assert result.reason == expected_reason
+    assert (result.adjudicator_calls, result.human_calls) == expected_calls
+    assert unexpected_calls == []
 
 
 def test_ballot_cannot_cite_evidence_outside_the_frozen_package() -> None:

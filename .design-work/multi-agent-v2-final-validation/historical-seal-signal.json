@@ -1,0 +1,39 @@
+{
+  "baseline": {
+    "command": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-8tgctlbj/baseline/tests/test_workflow_runner_module.py::test_workflow_session_seal_revokes_every_execution_capability"
+    ],
+    "duration_seconds": 0.454,
+    "returncode": 1,
+    "stderr": "",
+    "stdout": "F                                                                        [100%]\n=================================== FAILURES ===================================\n________ test_workflow_session_seal_revokes_every_execution_capability _________\n\n    def test_workflow_session_seal_revokes_every_execution_capability() -> None:\n        from minicode import workflow_runner\n    \n        session = workflow_runner._WorkflowRunSession.__new__(\n            workflow_runner._WorkflowRunSession\n        )\n>       session._state = object()\n        ^^^^^^^^^^^^^^\nE       AttributeError: '_WorkflowRunSession' object has no attribute '_state'\n\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-8tgctlbj/baseline/tests/test_workflow_runner_module.py:316: AttributeError\n=========================== short test summary info ============================\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-8tgctlbj/baseline/tests/test_workflow_runner_module.py::test_workflow_session_seal_revokes_every_execution_capability\n1 failed in 0.32s\n",
+    "timed_out": false
+  },
+  "baseline_kind": "git-ref",
+  "fixed": {
+    "command": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/tests/test_workflow_runner_module.py::test_workflow_session_seal_revokes_every_execution_capability"
+    ],
+    "duration_seconds": 0.421,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ".                                                                        [100%]\n1 passed in 0.17s\n",
+    "timed_out": false
+  },
+  "fixed_root": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main",
+  "status": "PROVEN",
+  "test_files": [
+    {
+      "path": "tests/test_workflow_runner_module.py",
+      "sha256": "8f63218c5e5c7c3764b624665d87f1ccdabafa2221345b1c8fd04d309c145ef5"
+    }
+  ]
+}

@@ -330,6 +330,30 @@ def test_workflow_session_seal_revokes_every_execution_capability() -> None:
         session._execution_state()
 
 
+def test_finalization_port_restores_the_exact_typed_cancellation() -> None:
+    from minicode import workflow_runner
+    from minicode.conflict_port_runner import ConflictPortCancelled
+    from minicode.turn_cancellation import TurnCancellationRequested
+
+    cancellation = TurnCancellationRequested("turn_" + "a" * 32)
+
+    class CancellingRunner:
+        def run(self, *_args, **_kwargs):
+            raise ConflictPortCancelled(cause=cancellation)
+
+    with pytest.raises(TurnCancellationRequested) as caught:
+        workflow_runner._run_finalization_port(
+            CancellingRunner(),
+            lambda: None,
+            port_name="workflow-final-audit",
+            operation_id="wf_test:audit",
+            context=object(),
+            committed=False,
+        )
+
+    assert caught.value is cancellation
+
+
 def test_workflow_runner_does_not_reverse_import_task_tool() -> None:
     from minicode import workflow_runner
 

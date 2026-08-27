@@ -1203,6 +1203,139 @@ def test_scheduler_port_failure_cannot_claim_semantic_role_authority(
         )
 
 
+@pytest.mark.parametrize(
+    (
+        "fault_stage",
+        "expected_failure_stage",
+        "expected_terminal_reason",
+        "expected_roles",
+        "expected_verifier_calls",
+    ),
+    [
+        pytest.param(
+            "executor",
+            "executor",
+            "stage_port_failed",
+            ("analyst", "executor"),
+            0,
+            id="executor-worker-runtime-error",
+        ),
+        pytest.param(
+            "reviewer",
+            "reviewer",
+            "stage_port_failed",
+            ("analyst", "executor", "reviewer"),
+            1,
+            id="reviewer-worker-runtime-error",
+        ),
+        pytest.param(
+            "verifier",
+            "verifier",
+            "verifier_unavailable",
+            ("analyst", "executor"),
+            1,
+            id="deterministic-verifier-runtime-error",
+        ),
+    ],
+)
+def test_structured_stage_adapter_faults_fail_closed_with_replayable_audit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    fault_stage: str,
+    expected_failure_stage: str,
+    expected_terminal_reason: str,
+    expected_roles: tuple[str, ...],
+    expected_verifier_calls: int,
+) -> None:
+    target = tmp_path / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+    roles: list[str] = []
+    verifier_calls = 0
+    commit_ready_records = []
+    audits = []
+
+    class DurableSink:
+        def emit(self, *_args, **_kwargs):
+            return None
+
+        def record_scheduler_commit_ready(self, ready):
+            commit_ready_records.append(ready)
+            return True
+
+        def record_scheduler_audit(self, audit):
+            audits.append(audit)
+            return True
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
+        roles.append(role)
+        if role == "analyst":
+            _write_analyst_result(input_data, context, prepare_change=True)
+        elif role == "executor":
+            Path(context.cwd, "allowed.txt").write_text(
+                "isolated change",
+                encoding="utf-8",
+            )
+            if fault_stage == "executor":
+                raise RuntimeError("executor adapter failed")
+            _write_executor_declaration(input_data, context)
+        else:
+            assert role == "reviewer"
+            if fault_stage == "reviewer":
+                raise RuntimeError("reviewer adapter failed")
+            _write_reviewer_result(input_data, context)
+        return ToolResult(ok=True, output=f"{role} complete")
+
+    def verifier(_self, **request):
+        nonlocal verifier_calls
+        verifier_calls += 1
+        if fault_stage == "verifier":
+            raise RuntimeError("deterministic verifier infrastructure failed")
+        return _verification_result(request)
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(DeterministicVerifier, "run", verifier)
+
+    result = _run(
+        tmp_path,
+        _request(risk="medium", complex=True),
+        monkeypatch,
+        event_sink=DurableSink(),
+        central_enforced=True,
+    )
+
+    assert result.ok is False
+    assert target.read_text(encoding="utf-8") == "before"
+    assert tuple(roles) == expected_roles
+    assert verifier_calls == expected_verifier_calls
+    assert commit_ready_records == []
+    assert len(audits) == 1
+
+    trace = extract_scheduler_trace(result.output)
+    assert trace is not None
+    assert trace["status"] == "failed"
+    assert trace["committed"] is False
+    assert trace["terminalReason"] == expected_terminal_reason
+    assert trace["transitions"][-1]["stage"] == expected_failure_stage
+    assert trace["transitions"][-1]["errorCode"] == expected_terminal_reason
+    assert all(
+        transition["stage"] != "commit" for transition in trace["transitions"]
+    )
+
+    audit = audits[0]
+    assert audit.trace == trace
+    assert (
+        project_scheduler_audit(
+            profile=audit.profile,
+            plan=audit.plan,
+            trace=audit.trace,
+            artifacts=audit.artifacts,
+            contract_mode="v2",
+        ).trace
+        == trace
+    )
+
+
 def test_complex_read_only_request_uses_one_analyst_without_transaction_commit(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -3876,6 +4009,152 @@ def test_hung_final_audit_is_bounded_and_observation_still_runs(
     assert result.ok is False
     assert '"auditStatus": "projection_or_persistence_failed"' in result.output
     assert observation_calls >= 1
+
+
+def test_committed_hung_final_audit_is_bounded_and_runner_capacity_recovers(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first_workspace = tmp_path / "first"
+    second_workspace = tmp_path / "second"
+    first_workspace.mkdir()
+    second_workspace.mkdir()
+    first_target = first_workspace / "allowed.txt"
+    second_target = second_workspace / "allowed.txt"
+    first_target.write_text("before", encoding="utf-8")
+    second_target.write_text("before", encoding="utf-8")
+    audit_started = threading.Event()
+    audit_finished = threading.Event()
+    release_audit = threading.Event()
+    audit_threads: list[threading.Thread] = []
+    recovered_audits = []
+    first_results: list[ToolResult] = []
+    first_errors: list[BaseException] = []
+    first_finished = threading.Event()
+
+    class HangingAuditSink:
+        def emit(self, *_args, **_kwargs):
+            return None
+
+        def record_scheduler_commit_ready(self, _ready):
+            return True
+
+        def record_scheduler_audit(self, _audit):
+            audit_threads.append(threading.current_thread())
+            audit_started.set()
+            try:
+                release_audit.wait(1.0)
+                return True
+            finally:
+                audit_finished.set()
+
+    class RecoveredAuditSink:
+        def emit(self, *_args, **_kwargs):
+            return None
+
+        def record_scheduler_commit_ready(self, _ready):
+            return True
+
+        def record_scheduler_audit(self, audit):
+            recovered_audits.append(audit)
+            return True
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
+        if role == "analyst":
+            _write_analyst_result(input_data, context, prepare_change=True)
+        elif role == "executor":
+            Path(context.cwd, "allowed.txt").write_text(
+                "after",
+                encoding="utf-8",
+            )
+            _write_executor_declaration(input_data, context)
+        else:
+            _write_reviewer_result(input_data, context)
+        return ToolResult(ok=True, output=f"{role} complete")
+
+    runner = BoundedConflictPortRunner(
+        max_in_flight=1,
+        default_timeout_seconds=0.02,
+        cancellation_poll_seconds=0.001,
+    )
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(
+        workflow_runner_module,
+        "_FINALIZATION_AUDIT_PORT_RUNNER",
+        runner,
+    )
+    monkeypatch.setattr(
+        DeterministicVerifier,
+        "run",
+        lambda self, **request: _verification_result(request),
+    )
+
+    def run_first_workflow() -> None:
+        try:
+            first_results.append(
+                _run(
+                    first_workspace,
+                    _request(risk="medium", complex=True),
+                    monkeypatch,
+                    event_sink=HangingAuditSink(),
+                    central_enforced=True,
+                )
+            )
+        except BaseException as error:
+            first_errors.append(error)
+        finally:
+            first_finished.set()
+
+    first_thread = threading.Thread(target=run_first_workflow, daemon=True)
+    first_thread.start()
+    try:
+        assert audit_started.wait(5.0)
+        started = time.monotonic()
+        completed_within_budget = first_finished.wait(1.0)
+        elapsed = time.monotonic() - started
+        assert completed_within_budget, (
+            f"workflow remained blocked on final audit for {elapsed:.3f}s"
+        )
+    finally:
+        release_audit.set()
+        for audit_thread in tuple(audit_threads):
+            audit_thread.join(2.0)
+        first_thread.join(2.0)
+
+    assert audit_finished.is_set()
+    assert audit_threads and all(not item.is_alive() for item in audit_threads)
+    assert not first_thread.is_alive()
+    if first_errors:
+        raise first_errors[0]
+    assert len(first_results) == 1
+    first_result = first_results[0]
+
+    assert elapsed < 1.0
+    assert first_target.read_text(encoding="utf-8") == "after"
+    assert first_result.ok is False
+    assert first_result._must_deliver is True
+    assert '"changesCommitted": true' in first_result.output
+    assert (
+        '"auditStatus": "projection_or_persistence_failed"'
+        in first_result.output
+    )
+
+    second_result = _run(
+        second_workspace,
+        _request(risk="medium", complex=True),
+        monkeypatch,
+        event_sink=RecoveredAuditSink(),
+        central_enforced=True,
+    )
+
+    assert second_target.read_text(encoding="utf-8") == "after"
+    assert second_result.ok is True
+    assert second_result._must_deliver is True
+    assert len(recovered_audits) == 1
+    assert recovered_audits[0].trace["committed"] is True
+    assert '"changesCommitted": true' in second_result.output
+    assert '"auditStatus": "persisted"' in second_result.output
 
 
 def test_uncommitted_audit_wait_propagates_live_cancellation(

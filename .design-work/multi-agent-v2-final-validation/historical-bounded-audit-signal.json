@@ -1,0 +1,39 @@
+{
+  "baseline": {
+    "command": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-i97ji5pp/baseline/tests/test_workflow_finalization_portable_regression.py"
+    ],
+    "duration_seconds": 1.73,
+    "returncode": 1,
+    "stderr": "",
+    "stdout": "F                                                                        [100%]\n=================================== FAILURES ===================================\n___________ test_committed_hung_final_audit_is_bounded_and_truthful ____________\n\ntmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-794/test_committed_hung_final_audi0')\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1043f75c0>\n\n    def test_committed_hung_final_audit_is_bounded_and_truthful(\n        tmp_path: Path,\n        monkeypatch: pytest.MonkeyPatch,\n    ) -> None:\n        \"\"\"A hung final audit cannot hide an already committed parent change.\"\"\"\n        target = tmp_path / \"allowed.txt\"\n        target.write_text(\"before\", encoding=\"utf-8\")\n        audit_started = threading.Event()\n        audit_finished = threading.Event()\n        release_audit = threading.Event()\n        audit_threads: list[threading.Thread] = []\n    \n        class HangingAuditSink:\n            def emit(self, *_args, **_kwargs):\n                return None\n    \n            def record_scheduler_commit_ready(self, _ready):\n                return True\n    \n            def record_scheduler_audit(self, _audit):\n                audit_threads.append(threading.current_thread())\n                audit_started.set()\n                release_audit.wait()\n                audit_finished.set()\n                return True\n    \n        def worker(input_data, context):\n            role = _worker_role(input_data)\n            if role == \"analyst\":\n                _write_analyst_result(input_data, context)\n            elif role == \"executor\":\n                Path(context.cwd, \"allowed.txt\").write_text(\n                    \"after\",\n                    encoding=\"utf-8\",\n                )\n                _write_executor_result(input_data, context)\n            else:\n                _write_reviewer_result(input_data, context)\n            return ToolResult(ok=True, output=f\"{role} complete\")\n    \n        monkeypatch.setattr(task_module, \"_run\", worker)\n        monkeypatch.setattr(\n            DeterministicVerifier,\n            \"run\",\n            lambda self, **request: _verification_result(request),\n        )\n        # ``raising=False`` keeps these exact test bytes importable on f8ae6fd.\n        # That revision accepts the injected attribute but never consults it, so\n        # its synchronous recorder remains blocked for the historical counterexample.\n        monkeypatch.setattr(\n            workflow_runner_module,\n            \"_FINALIZATION_AUDIT_PORT_RUNNER\",\n            BoundedConflictPortRunner(\n                max_in_flight=1,\n                default_timeout_seconds=0.02,\n                cancellation_poll_seconds=0.001,\n            ),\n            raising=False,\n        )\n    \n        results: list[ToolResult] = []\n        errors: list[BaseException] = []\n        run_finished = threading.Event()\n    \n        def invoke_workflow() -> None:\n            try:\n                results.append(\n                    task_module.task_tool.run(\n                        task_module.task_tool.validator(\n                            {\n                                \"description\": \"portable final audit\",\n                                \"prompt\": \"Apply the structured request.\",\n                                \"agent_type\": \"workflow\",\n                                \"workflow_request\": _request(),\n                            }\n                        ),\n                        ToolContext(\n                            cwd=str(tmp_path),\n                            _runtime={\"model\": \"fake\"},\n                            _event_sink=HangingAuditSink(),\n                            _central_workflow_v2_enforced=True,\n                            _subagent_mailbox=SubagentMailbox(),\n                        ),\n                    )\n                )\n            except BaseException as error:\n                errors.append(error)\n            finally:\n                run_finished.set()\n    \n        workflow_thread = threading.Thread(target=invoke_workflow, daemon=True)\n        workflow_thread.start()\n        try:\n            assert audit_started.wait(5.0)\n            started = time.monotonic()\n            completed_within_budget = run_finished.wait(1.0)\n            elapsed = time.monotonic() - started\n            terminal_snapshot = None\n            if completed_within_budget and not errors and len(results) == 1:\n                returned = results[0]\n                terminal_snapshot = (\n                    returned.ok,\n                    returned.output,\n                    returned.awaitUser,\n                    returned.verification,\n                    returned._must_deliver,\n                    returned._termination_reason,\n                )\n        finally:\n            # Release both implementations on every assertion/error path.  On the\n            # current implementation this releases only the already-timed-out port\n            # thread; on f8ae6fd it also lets the synchronously blocked workflow\n            # unwind into an ordinary assertion failure.\n            release_audit.set()\n            for audit_thread in tuple(audit_threads):\n                audit_thread.join(2.0)\n            workflow_thread.join(2.0)\n    \n        assert audit_finished.is_set()\n        assert audit_threads and all(not item.is_alive() for item in audit_threads)\n        assert not workflow_thread.is_alive()\n        if errors:\n            raise errors[0]\n    \n>       assert completed_within_budget, (\n            f\"workflow remained blocked on final audit for {elapsed:.3f}s\"\n        )\nE       AssertionError: workflow remained blocked on final audit for 1.010s\nE       assert False\n\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-i97ji5pp/baseline/tests/test_workflow_finalization_portable_regression.py:368: AssertionError\n=========================== short test summary info ============================\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-i97ji5pp/baseline/tests/test_workflow_finalization_portable_regression.py::test_committed_hung_final_audit_is_bounded_and_truthful\n1 failed in 1.59s\n",
+    "timed_out": false
+  },
+  "baseline_kind": "git-ref",
+  "fixed": {
+    "command": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/tests/test_workflow_finalization_portable_regression.py"
+    ],
+    "duration_seconds": 0.672,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ".                                                                        [100%]\n1 passed in 0.42s\n",
+    "timed_out": false
+  },
+  "fixed_root": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main",
+  "status": "PROVEN",
+  "test_files": [
+    {
+      "path": "tests/test_workflow_finalization_portable_regression.py",
+      "sha256": "c64f7c83f2ac3f686a815a85fda0f06efb71905e14910b7e480f34e81b8c00ad"
+    }
+  ]
+}

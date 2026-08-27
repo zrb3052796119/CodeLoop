@@ -1,0 +1,11 @@
+diff --git a/minicode/workflow_finalization.py b/minicode/workflow_finalization.py
+--- a/minicode/workflow_finalization.py
++++ b/minicode/workflow_finalization.py
+@@ -75,6 +75,6 @@ class _PhaseResultSnapshot:
+     @classmethod
+     def from_result(cls, result: ToolResult) -> _PhaseResultSnapshot:
+-        if type(result) is not ToolResult:
++        if not isinstance(result, ToolResult):
+             raise TypeError("phase result must be a ToolResult")
+         if type(result.ok) is not bool or type(result.output) is not str:
+             raise TypeError("phase result scalars are invalid")

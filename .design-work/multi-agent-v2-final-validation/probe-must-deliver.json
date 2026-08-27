@@ -1,0 +1,36 @@
+{
+  "backend": "semantic-probe",
+  "baseline": {
+    "command": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_workflow_v2_structured_routing.py::test_committed_hung_final_audit_is_bounded_and_runner_capacity_recovers"
+    ],
+    "duration_seconds": 0.985,
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": ".                                                                        [100%]\n1 passed in 0.85s\n",
+    "timed_out": false
+  },
+  "description": "committed finalization drops mandatory delivery",
+  "mutated": {
+    "command": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_workflow_v2_structured_routing.py::test_committed_hung_final_audit_is_bounded_and_runner_capacity_recovers"
+    ],
+    "duration_seconds": 0.526,
+    "exit_code": 1,
+    "stderr": "",
+    "stdout": "F                                                                        [100%]\n=================================== FAILURES ===================================\n___ test_committed_hung_final_audit_is_bounded_and_runner_capacity_recovers ____\n\ntmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-799/test_committed_hung_final_audi0')\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x102f1b710>\n\n    def test_committed_hung_final_audit_is_bounded_and_runner_capacity_recovers(\n        tmp_path: Path,\n        monkeypatch: pytest.MonkeyPatch,\n    ) -> None:\n        first_workspace = tmp_path / \"first\"\n        second_workspace = tmp_path / \"second\"\n        first_workspace.mkdir()\n        second_workspace.mkdir()\n        first_target = first_workspace / \"allowed.txt\"\n        second_target = second_workspace / \"allowed.txt\"\n        first_target.write_text(\"before\", encoding=\"utf-8\")\n        second_target.write_text(\"before\", encoding=\"utf-8\")\n        audit_started = threading.Event()\n        audit_finished = threading.Event()\n        release_audit = threading.Event()\n        audit_threads: list[threading.Thread] = []\n        recovered_audits = []\n        first_results: list[ToolResult] = []\n        first_errors: list[BaseException] = []\n        first_finished = threading.Event()\n    \n        class HangingAuditSink:\n            def emit(self, *_args, **_kwargs):\n                return None\n    \n            def record_scheduler_commit_ready(self, _ready):\n                return True\n    \n            def record_scheduler_audit(self, _audit):\n                audit_threads.append(threading.current_thread())\n                audit_started.set()\n                try:\n                    release_audit.wait(1.0)\n                    return True\n                finally:\n                    audit_finished.set()\n    \n        class RecoveredAuditSink:\n            def emit(self, *_args, **_kwargs):\n                return None\n    \n            def record_scheduler_commit_ready(self, _ready):\n                return True\n    \n            def record_scheduler_audit(self, audit):\n                recovered_audits.append(audit)\n                return True\n    \n        def worker(input_data, context):\n            role = _worker_role(input_data)\n            if role == \"analyst\":\n                _write_analyst_result(input_data, context, prepare_change=True)\n            elif role == \"executor\":\n                Path(context.cwd, \"allowed.txt\").write_text(\n                    \"after\",\n                    encoding=\"utf-8\",\n                )\n                _write_executor_declaration(input_data, context)\n            else:\n                _write_reviewer_result(input_data, context)\n            return ToolResult(ok=True, output=f\"{role} complete\")\n    \n        runner = BoundedConflictPortRunner(\n            max_in_flight=1,\n            default_timeout_seconds=0.02,\n            cancellation_poll_seconds=0.001,\n        )\n        monkeypatch.setattr(task_module, \"_run\", worker)\n        monkeypatch.setattr(\n            workflow_runner_module,\n            \"_FINALIZATION_AUDIT_PORT_RUNNER\",\n            runner,\n        )\n        monkeypatch.setattr(\n            DeterministicVerifier,\n            \"run\",\n            lambda self, **request: _verification_result(request),\n        )\n    \n        def run_first_workflow() -> None:\n            try:\n                first_results.append(\n                    _run(\n                        first_workspace,\n                        _request(risk=\"medium\", complex=True),\n                        monkeypatch,\n                        event_sink=HangingAuditSink(),\n                        central_enforced=True,\n                    )\n                )\n            except BaseException as error:\n                first_errors.append(error)\n            finally:\n                first_finished.set()\n    \n        first_thread = threading.Thread(target=run_first_workflow, daemon=True)\n        first_thread.start()\n        try:\n            assert audit_started.wait(5.0)\n            started = time.monotonic()\n            completed_within_budget = first_finished.wait(1.0)\n            elapsed = time.monotonic() - started\n            assert completed_within_budget, (\n                f\"workflow remained blocked on final audit for {elapsed:.3f}s\"\n            )\n        finally:\n            release_audit.set()\n            for audit_thread in tuple(audit_threads):\n                audit_thread.join(2.0)\n            first_thread.join(2.0)\n    \n        assert audit_finished.is_set()\n        assert audit_threads and all(not item.is_alive() for item in audit_threads)\n        assert not first_thread.is_alive()\n        if first_errors:\n            raise first_errors[0]\n        assert len(first_results) == 1\n        first_result = first_results[0]\n    \n        assert elapsed < 1.0\n        assert first_target.read_text(encoding=\"utf-8\") == \"after\"\n        assert first_result.ok is False\n>       assert first_result._must_deliver is True\nE       assert False is True\nE        +  where False = ToolResult(ok=False, output='[Workflow structured workflow route completed]\\n  Phases: explore -> plan -> execute -> r...verification_2fca9c124c3653b79a39bf08]\"],\"status\":\"passed\"}}', backgroundTask=None, awaitUser=False, verification=None)._must_deliver\n\ntests/test_workflow_v2_structured_routing.py:4136: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_workflow_v2_structured_routing.py::test_committed_hung_final_audit_is_bounded_and_runner_capacity_recovers\n1 failed in 0.39s\n",
+    "timed_out": false
+  },
+  "probe_id": "committed-must-deliver",
+  "schema_version": 1,
+  "status": "KILLED",
+  "target": "minicode/workflow_finalization.py"
+}

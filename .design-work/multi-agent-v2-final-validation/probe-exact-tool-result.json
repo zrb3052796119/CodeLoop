@@ -1,0 +1,36 @@
+{
+  "backend": "semantic-probe",
+  "baseline": {
+    "command": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_workflow_finalization_resilience.py::test_phase_result_snapshot_rejects_tool_result_subclasses"
+    ],
+    "duration_seconds": 0.243,
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": ".                                                                        [100%]\n1 passed in 0.10s\n",
+    "timed_out": false
+  },
+  "description": "ToolResult subclasses bypass the exact phase snapshot type boundary",
+  "mutated": {
+    "command": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_workflow_finalization_resilience.py::test_phase_result_snapshot_rejects_tool_result_subclasses"
+    ],
+    "duration_seconds": 0.201,
+    "exit_code": 1,
+    "stderr": "",
+    "stdout": "F                                                                        [100%]\n=================================== FAILURES ===================================\n__________ test_phase_result_snapshot_rejects_tool_result_subclasses ___________\n\n    def test_phase_result_snapshot_rejects_tool_result_subclasses() -> None:\n        class DerivedToolResult(ToolResult):\n            pass\n    \n>       with pytest.raises(TypeError):\n             ^^^^^^^^^^^^^^^^^^^^^^^^\nE       Failed: DID NOT RAISE TypeError\n\ntests/test_workflow_finalization_resilience.py:104: Failed\n=========================== short test summary info ============================\nFAILED tests/test_workflow_finalization_resilience.py::test_phase_result_snapshot_rejects_tool_result_subclasses\n1 failed in 0.08s\n",
+    "timed_out": false
+  },
+  "probe_id": "exact-tool-result-guard",
+  "schema_version": 1,
+  "status": "KILLED",
+  "target": "minicode/workflow_finalization.py"
+}

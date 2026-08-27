@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "result": "REACH_ONLY",
+  "change": {
+    "new_root": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main",
+    "baseline": "f8ae6fd",
+    "changed_files": [
+      "minicode/workflow_runner.py",
+      "minicode/workflow_finalization.py"
+    ]
+  },
+  "test": {
+    "path": "tests/test_workflow_runner_module.py",
+    "sha256": "8f63218c5e5c7c3764b624665d87f1ccdabafa2221345b1c8fd04d309c145ef5",
+    "command": [
+      ".venv-acceptance/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_workflow_runner_module.py::test_workflow_session_seal_revokes_every_execution_capability"
+    ]
+  },
+  "iterations": 3,
+  "execution": {
+    "new": {"exit_code": 0, "timed_out": false},
+    "old": {"exit_code": 1, "timed_out": false},
+    "new_changed_lines_reached": 321,
+    "old_changed_lines_reached": 30,
+    "union_coverage": 0.08033875028610667
+  },
+  "attribution": {
+    "behavior": "The current workflow session exposes one mutable execution state that can be sealed and revoked.",
+    "old_failure_matches_behavior": false,
+    "rationale": "Changed workflow-runner lines are reached, but f8ae6fd fails while arranging _state before the seal method executes. This is structural reach evidence, not a behavioral counterexample; the public bounded-audit proof is recorded separately."
+  },
+  "raw_artifacts": {
+    "historical_result": "historical-seal-signal.json",
+    "union_coverage": "historical-seal-union-coverage.json"
+  },
+  "limitations": [
+    "The low union percentage is dominated by the entirely new 1816-line finalization module and the broad runner refactor; it is not a suite-wide coverage score.",
+    "The wall-clock-sensitive bounded-audit regression is proven separately because line tracing changes its timing behavior.",
+    "The historical seal failure occurs before the seal call, so this report deliberately does not claim DIFF_EXPOSED."
+  ]
+}

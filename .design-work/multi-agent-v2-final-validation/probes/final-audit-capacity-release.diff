@@ -1,0 +1,11 @@
+diff --git a/minicode/conflict_port_runner.py b/minicode/conflict_port_runner.py
+--- a/minicode/conflict_port_runner.py
++++ b/minicode/conflict_port_runner.py
+@@ -201,7 +201,6 @@ class BoundedConflictPortRunner:
+                 # Make the slot reusable before waking this caller, while the
+                 # same lock prevents a deadline race from replacing an on-time
+                 # callback completion.
+-                self._capacity.release()
+                 if terminal:
+                     return False
+                 terminal.append((kind, value))

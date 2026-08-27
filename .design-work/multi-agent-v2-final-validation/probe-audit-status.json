@@ -1,0 +1,36 @@
+{
+  "backend": "semantic-probe",
+  "baseline": {
+    "command": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_workflow_v2_structured_routing.py::test_committed_change_reports_audit_persistence_failure_without_lying"
+    ],
+    "duration_seconds": 1.143,
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": "..                                                                       [100%]\n2 passed in 0.88s\n",
+    "timed_out": false
+  },
+  "description": "a false audit persistence result is falsely reported as persisted",
+  "mutated": {
+    "command": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_workflow_v2_structured_routing.py::test_committed_change_reports_audit_persistence_failure_without_lying"
+    ],
+    "duration_seconds": 0.71,
+    "exit_code": 1,
+    "stderr": "",
+    "stdout": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n_ test_committed_change_reports_audit_persistence_failure_without_lying[false-persistence_failed] _\n\ntmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-801/test_committed_change_reports_0')\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110cf29f0>\nfailure_mode = 'false', audit_status = 'persistence_failed'\n\n    @pytest.mark.parametrize(\n        (\"failure_mode\", \"audit_status\"),\n        [\n            (\"false\", \"persistence_failed\"),\n            (\"interrupt\", \"projection_or_persistence_failed\"),\n        ],\n    )\n    def test_committed_change_reports_audit_persistence_failure_without_lying(\n        tmp_path: Path,\n        monkeypatch: pytest.MonkeyPatch,\n        failure_mode: str,\n        audit_status: str,\n    ) -> None:\n        target = tmp_path / \"allowed.txt\"\n        target.write_text(\"before\", encoding=\"utf-8\")\n    \n        class FailingAuditSink:\n            def emit(self, *_args, **_kwargs):\n                return None\n    \n            def record_scheduler_audit(self, _audit):\n                if failure_mode == \"interrupt\":\n                    raise KeyboardInterrupt(\"audit recorder interrupted\")\n                return False\n    \n        def worker(input_data, context):\n            role = _worker_role(input_data)\n            if role == \"analyst\":\n                _write_analyst_result(input_data, context, prepare_change=True)\n            elif role == \"executor\":\n                Path(context.cwd, \"allowed.txt\").write_text(\n                    \"after\",\n                    encoding=\"utf-8\",\n                )\n                _write_executor_declaration(input_data, context)\n            else:\n                _write_reviewer_result(input_data, context)\n            return ToolResult(ok=True, output=f\"{role} complete\")\n    \n        monkeypatch.setattr(task_module, \"_run\", worker)\n        monkeypatch.setattr(\n            DeterministicVerifier,\n            \"run\",\n            lambda self, **request: _verification_result(request),\n        )\n    \n        result = _run(\n            tmp_path,\n            _request(risk=\"medium\", complex=True),\n            monkeypatch,\n            event_sink=FailingAuditSink(),\n        )\n    \n>       assert result.ok is False\nE       AssertionError: assert True is False\nE        +  where True = ToolResult(ok=True, output='[Workflow structured workflow route completed]\\n  Phases: explore -> plan -> execute -> re...ser=False, verification={'verificationVersion': 1, 'kind': 'review', 'outcome': 'passed', 'source': 'workflow_review'}).ok\n\ntests/test_workflow_v2_structured_routing.py:2396: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_workflow_v2_structured_routing.py::test_committed_change_reports_audit_persistence_failure_without_lying[false-persistence_failed]\n1 failed, 1 passed in 0.57s\n",
+    "timed_out": false
+  },
+  "probe_id": "finalization-audit-status",
+  "schema_version": 1,
+  "status": "KILLED",
+  "target": "minicode/workflow_finalization.py"
+}

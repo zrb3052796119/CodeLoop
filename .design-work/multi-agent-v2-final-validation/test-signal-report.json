@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "backend": "semantic-probe",
+  "result": "STRONG",
+  "mutants": [
+    {
+      "id": "exact-tool-result-guard",
+      "status": "KILLED",
+      "description": "Allow ToolResult subclasses across the sealed phase-result boundary",
+      "target": {
+        "file": "minicode/workflow_finalization.py",
+        "location": {"start": {"line": 77, "column": 9}}
+      },
+      "evidence": {
+        "artifact": "probe-exact-tool-result.json",
+        "patch": "probes/exact-tool-result-guard.diff",
+        "patch_sha256": "32290d20e75ebc3daab3e140af10fca96c64b7bdbe8d2b4c10e5310c30b4dc1c",
+        "baseline_exit_code": 0,
+        "mutated_exit_code": 1
+      }
+    },
+    {
+      "id": "committed-must-deliver",
+      "status": "KILLED",
+      "description": "Drop mandatory delivery from an already committed final result",
+      "target": {
+        "file": "minicode/workflow_finalization.py",
+        "location": {"start": {"line": 1158, "column": 9}}
+      },
+      "evidence": {
+        "artifact": "probe-must-deliver.json",
+        "patch": "probes/committed-must-deliver.diff",
+        "patch_sha256": "5640c23954b9488758cc41e18b5f5f57cc7a43bf9a6629d73859d706cd29d414",
+        "baseline_exit_code": 0,
+        "mutated_exit_code": 1
+      }
+    },
+    {
+      "id": "final-audit-capacity-release",
+      "status": "KILLED",
+      "description": "Leak the bounded port slot after a timed-out audit callback finishes late",
+      "target": {
+        "file": "minicode/conflict_port_runner.py",
+        "location": {"start": {"line": 204, "column": 17}}
+      },
+      "evidence": {
+        "artifact": "probe-final-audit-capacity.json",
+        "patch": "probes/final-audit-capacity-release.diff",
+        "patch_sha256": "57aef75f0f1848aff1c5838d73ecb9e295140b9897f614dc6fe8528d3761ae0d",
+        "baseline_exit_code": 0,
+        "mutated_exit_code": 1
+      }
+    },
+    {
+      "id": "finalization-audit-status",
+      "status": "KILLED",
+      "description": "Report a false audit persistence result as persisted",
+      "target": {
+        "file": "minicode/workflow_finalization.py",
+        "location": {"start": {"line": 845, "column": 21}}
+      },
+      "evidence": {
+        "artifact": "probe-audit-status.json",
+        "patch": "probes/finalization-audit-status.diff",
+        "patch_sha256": "00716085333a5aed7d874e0ab636a0fc2437966fb780f6d48f592ff522197e79",
+        "baseline_exit_code": 0,
+        "mutated_exit_code": 1
+      }
+    },
+    {
+      "id": "finalization-cancellation-cause",
+      "status": "KILLED",
+      "description": "Lose the original typed cancellation at the bounded finalization port",
+      "target": {
+        "file": "minicode/workflow_runner.py",
+        "location": {"start": {"line": 141, "column": 9}}
+      },
+      "evidence": {
+        "artifact": "probe-cancellation-cause.json",
+        "patch": "probes/finalization-cancellation-cause.diff",
+        "patch_sha256": "5bfd0094d50967b28f05ee5cef5e57921212097229ec60becd6b488a6a47b699",
+        "baseline_exit_code": 0,
+        "mutated_exit_code": 1,
+        "note": "The initial integration test let this probe survive; a direct boundary regression test was added and the same probe was then killed."
+      }
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "counts": {"KILLED": 5}
+  },
+  "limitations": [
+    "These are five reviewed, behavior-specific probes rather than exhaustive mutation coverage.",
+    "In-process timeout tests prove bounded callers and rejected late authority, not forcible termination of arbitrary Python callbacks."
+  ]
+}

@@ -1,0 +1,14 @@
+diff --git a/minicode/workflow_finalization.py b/minicode/workflow_finalization.py
+--- a/minicode/workflow_finalization.py
++++ b/minicode/workflow_finalization.py
+@@ -840,9 +840,7 @@ def _project_trace_and_audit(
+                 state.audit_status = "not_configured"
+             else:
+                 persisted = ports.persist_audit(scheduler_audit)
+-                state.audit_status = (
+-                    "persisted" if persisted is True else "persistence_failed"
+-                )
++                state.audit_status = "persisted"
+                 # Cancellation/deadline is a status fact, never permission to
+                 # erase the bounded durable audit projection.
+                 _check_finalization_deadline(snapshot, ports, state)
