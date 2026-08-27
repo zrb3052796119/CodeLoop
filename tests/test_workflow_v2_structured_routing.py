@@ -5,14 +5,18 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import threading
+import time
 from pathlib import Path
 
 import pytest
 
 import minicode.task_deadline as task_deadline_module
 import minicode.tools.task as task_module
+import minicode.workflow_finalization as workflow_finalization_module
 import minicode.workflow_runner as workflow_runner_module
 from minicode.central_scheduler import CentralScheduler
+from minicode.conflict_port_runner import BoundedConflictPortRunner
 from minicode.deterministic_verifier import DeterministicVerifier
 from minicode.run_journal import (
     RunJournal,
@@ -24,6 +28,7 @@ from minicode.scheduler_artifacts import (
     MAX_SCHEDULER_ARTIFACTS_PER_WORKFLOW,
     SchedulerArtifact,
     SchedulerArtifactError,
+    SchedulerArtifactStore,
 )
 from minicode.scheduler_audit import (
     SchedulerAuditValidationError,
@@ -84,13 +89,16 @@ def _verification_result(request):
     check_id = str(getattr(check, "check_id", "check_tests"))
     check_kind = str(getattr(check, "kind", "tests"))
     argv = list(getattr(check, "argv", ("pytest", "-q")))
-    artifact_ref = "artifact_verification_" + hashlib.sha256(
-        (
-            f"{request['workflow_id']}\0"
-            f"{request['execution_assignment_id']}\0"
-            f"{request['patch_digest']}\0{check_id}"
-        ).encode("utf-8")
-    ).hexdigest()[:24]
+    artifact_ref = (
+        "artifact_verification_"
+        + hashlib.sha256(
+            (
+                f"{request['workflow_id']}\0"
+                f"{request['execution_assignment_id']}\0"
+                f"{request['patch_digest']}\0{check_id}"
+            ).encode("utf-8")
+        ).hexdigest()[:24]
+    )
     empty_stream = {
         "byteCount": 0,
         "digest": "sha256:" + hashlib.sha256(b"").hexdigest(),
@@ -368,9 +376,7 @@ def test_public_low_scoped_change_retains_semantic_reviewer_gate(
     assert (tmp_path / "allowed.txt").read_text(encoding="utf-8") == "after"
     projected = extract_subagent_result(result.output)
     assert projected is not None
-    assert projected["files"] == [
-        {"path": "allowed.txt", "action": "modified"}
-    ]
+    assert projected["files"] == [{"path": "allowed.txt", "action": "modified"}]
     assert projected["summary"] == (
         "Central scheduler completed a frozen change set for 1 file(s)."
     )
@@ -430,9 +436,7 @@ def test_nested_structured_workflow_keeps_scope_relative_to_invocation_cwd(
     assert verifier_observations == [(True, False)]
     projected = extract_subagent_result(result.output)
     assert projected is not None
-    assert projected["files"] == [
-        {"path": "allowed.txt", "action": "modified"}
-    ]
+    assert projected["files"] == [{"path": "allowed.txt", "action": "modified"}]
 
 
 def test_structured_scope_violation_discards_snapshot_before_verification(
@@ -663,13 +667,16 @@ def test_expired_human_approval_is_audited_at_each_privileged_boundary(
     assert target.read_text(encoding="utf-8") == "before"
     assert len(audits) == 1
     assert audits[0].trace["terminalReason"] == "human_approval_expired"
-    assert project_scheduler_audit(
-        profile=audits[0].profile,
-        plan=audits[0].plan,
-        trace=audits[0].trace,
-        artifacts=audits[0].artifacts,
-        contract_mode="v2",
-    ).trace == audits[0].trace
+    assert (
+        project_scheduler_audit(
+            profile=audits[0].profile,
+            plan=audits[0].plan,
+            trace=audits[0].trace,
+            artifacts=audits[0].artifacts,
+            contract_mode="v2",
+        ).trace
+        == audits[0].trace
+    )
 
 
 def test_human_approval_request_is_stable_across_wait_then_resume(
@@ -995,13 +1002,16 @@ def test_empty_analyst_step_scope_fails_before_executor_and_is_audited(
     assert target.read_text(encoding="utf-8") == "before"
     assert len(audits) == 1
     assert audits[0].trace["terminalReason"] == "analyst_result_invalid"
-    assert project_scheduler_audit(
-        profile=audits[0].profile,
-        plan=audits[0].plan,
-        trace=audits[0].trace,
-        artifacts=audits[0].artifacts,
-        contract_mode="v2",
-    ).trace == audits[0].trace
+    assert (
+        project_scheduler_audit(
+            profile=audits[0].profile,
+            plan=audits[0].plan,
+            trace=audits[0].trace,
+            artifacts=audits[0].artifacts,
+            contract_mode="v2",
+        ).trace
+        == audits[0].trace
+    )
 
 
 def test_high_risk_failure_before_human_stage_is_durably_audited(
@@ -1039,21 +1049,23 @@ def test_high_risk_failure_before_human_stage_is_durably_audited(
     assert len(audits) == 1
     audit = audits[0]
     assert all(
-        transition["stage"] != "human"
-        for transition in audit.trace["transitions"]
+        transition["stage"] != "human" for transition in audit.trace["transitions"]
     )
     assert all(
         json.loads(artifact.content).get("resultType")
         not in {"HumanApprovalRequest.v1", "HumanApproval.v1"}
         for artifact in audit.artifacts
     )
-    assert project_scheduler_audit(
-        profile=audit.profile,
-        plan=audit.plan,
-        trace=audit.trace,
-        artifacts=audit.artifacts,
-        contract_mode="v2",
-    ).trace == audit.trace
+    assert (
+        project_scheduler_audit(
+            profile=audit.profile,
+            plan=audit.plan,
+            trace=audit.trace,
+            artifacts=audit.artifacts,
+            contract_mode="v2",
+        ).trace
+        == audit.trace
+    )
 
     forged_trace = json.loads(json.dumps(audit.trace))
     forged_terminal = forged_trace["transitions"][-1]
@@ -1289,21 +1301,23 @@ def test_medium_complex_request_runs_strict_full_chain_in_role_order_and_commits
     assignment_artifacts = [
         json.loads(artifact.content)
         for artifact in audits[0].artifacts
-        if json.loads(artifact.content).get("resultType")
-        == "AssignmentArtifact.v1"
+        if json.loads(artifact.content).get("resultType") == "AssignmentArtifact.v1"
     ]
-    assert [
-        artifact["assignment"]["role"] for artifact in assignment_artifacts
-    ] == ["analyst", "executor", "reviewer"]
-    assert all(artifact["attemptId"].startswith("attempt_") for artifact in assignment_artifacts)
+    assert [artifact["assignment"]["role"] for artifact in assignment_artifacts] == [
+        "analyst",
+        "executor",
+        "reviewer",
+    ]
+    assert all(
+        artifact["attemptId"].startswith("attempt_")
+        for artifact in assignment_artifacts
+    )
     assert any(
         json.loads(artifact.content).get("resultType") == "EvidenceSnapshot.v1"
         for artifact in audits[0].artifacts
     )
     assert [
-        item["stage"]
-        for item in trace["transitions"]
-        if item["outcome"] == "completed"
+        item["stage"] for item in trace["transitions"] if item["outcome"] == "completed"
     ] == ["analyst", "executor", "verifier", "reviewer", "commit"]
 
 
@@ -1367,8 +1381,7 @@ def test_offline_audit_replays_completed_authority_artifacts(
         verification = next(
             json.loads(artifact.content)
             for artifact in audit.artifacts
-            if json.loads(artifact.content).get("resultType")
-            == "VerificationResult.v1"
+            if json.loads(artifact.content).get("resultType") == "VerificationResult.v1"
         )
         target_id = str(verification["checks"][0]["artifactRef"])
     tampered_artifacts = tuple(
@@ -1497,12 +1510,15 @@ def test_reviewer_retry_commits_with_audit_bound_to_second_assignment(
     assert completed_transition["artifactId"] == reviewer_result_keys[1]
     approved_artifact = artifact_by_id[reviewer_result_keys[1]]
     approved_review = json.loads(approved_artifact.content)
-    assert approved_review["assignmentId"] == second_assignment["assignment"][
-        "assignmentId"
-    ]
-    assert ready_records[0].review_digest == "sha256:" + hashlib.sha256(
-        approved_artifact.content.encode("utf-8")
-    ).hexdigest()
+    assert (
+        approved_review["assignmentId"]
+        == second_assignment["assignment"]["assignmentId"]
+    )
+    assert (
+        ready_records[0].review_digest
+        == "sha256:"
+        + hashlib.sha256(approved_artifact.content.encode("utf-8")).hexdigest()
+    )
 
 
 def test_maximum_v2_evidence_and_retry_shape_stays_below_artifact_limit(
@@ -1643,9 +1659,7 @@ def test_maximum_v2_evidence_and_retry_shape_stays_below_artifact_limit(
     monkeypatch.setattr(
         DeterministicVerifier,
         "run",
-        lambda self, **verification_request: _verification_result(
-            verification_request
-        ),
+        lambda self, **verification_request: _verification_result(verification_request),
     )
 
     result = _run(
@@ -1661,9 +1675,7 @@ def test_maximum_v2_evidence_and_retry_shape_stays_below_artifact_limit(
     assert target.read_text(encoding="utf-8") == "after\n"
     assert analyst_attempts == reviewer_attempts == 2
     assert len(audits) == 1
-    assert len(audits[0].artifacts) == (
-        MAX_SCHEDULER_ARTIFACTS_PER_WORKFLOW - 3
-    )
+    assert len(audits[0].artifacts) == (MAX_SCHEDULER_ARTIFACTS_PER_WORKFLOW - 3)
     assert audits[0].trace["committed"] is True
 
 
@@ -1709,7 +1721,7 @@ def test_long_retry_narrative_preserves_both_authority_artifacts_and_finalizatio
 
     monkeypatch.setattr(task_module, "_run", worker)
     monkeypatch.setattr(
-        workflow_runner_module,
+        workflow_finalization_module,
         "_WORKFLOW_OUTPUT_MAX_CHARS",
         output_cap,
     )
@@ -1736,8 +1748,7 @@ def test_long_retry_narrative_preserves_both_authority_artifacts_and_finalizatio
     # The durable audit keeps the failed attempt. The bounded public trace may
     # discard that entire diagnostic lifecycle, but never a partial lifecycle.
     assert not any(
-        transition["outcome"] == "retrying"
-        for transition in trace["transitions"]
+        transition["outcome"] == "retrying" for transition in trace["transitions"]
     )
     assert projected is not None
     assert projected["outcome"] == "completed"
@@ -1819,9 +1830,7 @@ def test_multiple_retries_with_maximum_task_id_keep_public_authority_bounded(
     monkeypatch.setattr(
         DeterministicVerifier,
         "run",
-        lambda self, **verification_request: _verification_result(
-            verification_request
-        ),
+        lambda self, **verification_request: _verification_result(verification_request),
     )
 
     result = _run(
@@ -1838,7 +1847,7 @@ def test_multiple_retries_with_maximum_task_id_keep_public_authority_bounded(
     assert extract_scheduler_trace(result.output) is not None
     assert extract_subagent_result(result.output) is not None
     assert '"changesCommitted": true' in result.output
-    assert len(result.output) <= workflow_runner_module._WORKFLOW_OUTPUT_MAX_CHARS
+    assert len(result.output) <= workflow_finalization_module._WORKFLOW_OUTPUT_MAX_CHARS
 
 
 def test_reviewer_cannot_approve_without_mapped_verification_evidence(
@@ -1955,8 +1964,7 @@ def test_failed_verifier_artifact_remains_replayable_and_tamper_evident(
     verifier_transition = next(
         transition
         for transition in audit.trace["transitions"]
-        if transition["stage"] == "verifier"
-        and transition["outcome"] == "inconclusive"
+        if transition["stage"] == "verifier" and transition["outcome"] == "inconclusive"
     )
     verification_artifact_id = str(verifier_transition["artifactId"])
     tampered_artifacts = tuple(
@@ -2087,9 +2095,7 @@ def test_failed_verifier_artifact_remains_replayable_and_tamper_evident(
         )
     )
     mismatched_assignment = json.loads(assignment_artifact.content)
-    mismatched_assignment["assignment"]["scope"]["readRoots"] = [
-        "allowed.txt"
-    ]
+    mismatched_assignment["assignment"]["scope"]["readRoots"] = ["allowed.txt"]
     mismatched_assignment["assignment"]["risk"] = "low"
     assignment_tampered_artifacts = tuple(
         SchedulerArtifact(
@@ -2171,8 +2177,7 @@ def test_malformed_executor_result_is_replaced_by_exact_failure_receipt(
     terminal = next(
         transition
         for transition in audit.trace["transitions"]
-        if transition["stage"] == "executor"
-        and transition["outcome"] == "failed"
+        if transition["stage"] == "executor" and transition["outcome"] == "failed"
     )
     receipt = next(
         json.loads(artifact.content)
@@ -2186,8 +2191,7 @@ def test_malformed_executor_result_is_replaced_by_exact_failure_receipt(
     forged_terminal = next(
         transition
         for transition in forged_trace["transitions"]
-        if transition["stage"] == "executor"
-        and transition["outcome"] == "failed"
+        if transition["stage"] == "executor" and transition["outcome"] == "failed"
     )
     forged_terminal["artifactId"] = executor_result_key
     with pytest.raises(
@@ -2281,6 +2285,7 @@ def test_production_commit_ready_persistence_failure_blocks_promotion(
             return True
 
         if recorder_mode == "false":
+
             def record_scheduler_commit_ready(self, _record):
                 observed_parent_states.append(target.read_text(encoding="utf-8"))
                 return False
@@ -2317,7 +2322,9 @@ def test_production_commit_ready_persistence_failure_blocks_promotion(
     assert result.ok is False
     assert target.read_text(encoding="utf-8") == "before"
     assert "commit_ready_persistence_failed" in result.output
-    expected_status = "recorder_missing" if recorder_mode == "missing" else "persistence_failed"
+    expected_status = (
+        "recorder_missing" if recorder_mode == "missing" else "persistence_failed"
+    )
     assert f'"commitReadyStatus": "{expected_status}"' in result.output
     assert observed_parent_states == ([] if recorder_mode == "missing" else ["before"])
 
@@ -2619,8 +2626,7 @@ def test_production_run_journal_joins_commit_ready_to_final_audit(
     assert ready.patch_digest == next(
         str(json.loads(artifact.content)["patchDigest"])
         for artifact in audit.artifacts
-        if json.loads(artifact.content).get("resultType")
-        == "VerificationResult.v1"
+        if json.loads(artifact.content).get("resultType") == "VerificationResult.v1"
     )
 
     ready_paths = list(data_dir.rglob("commit-ready.json"))
@@ -2745,8 +2751,7 @@ def test_final_audit_rejects_mismatched_commit_ready_authority(
     verification_document = next(
         json.loads(artifact.content)
         for artifact in audits[0].artifacts
-        if json.loads(artifact.content).get("resultType")
-        == "VerificationResult.v1"
+        if json.loads(artifact.content).get("resultType") == "VerificationResult.v1"
     )
     verification_document["verificationId"] = "verification_off_trace"
     off_trace_verification = SchedulerArtifact(
@@ -2774,14 +2779,17 @@ def test_final_audit_rejects_mismatched_commit_ready_authority(
         }
         for artifact in extended_artifacts
     ]
-    artifact_set_digest = "sha256:" + hashlib.sha256(
-        json.dumps(
-            artifact_index,
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
-    ).hexdigest()
+    artifact_set_digest = (
+        "sha256:"
+        + hashlib.sha256(
+            json.dumps(
+                artifact_index,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+    )
     off_trace_ready = project_scheduler_commit_ready(
         workflow_id=ready.workflow_id,
         task_id=ready.task_id,
@@ -2790,9 +2798,7 @@ def test_final_audit_rejects_mismatched_commit_ready_authority(
         base_digest=ready.base_digest,
         patch_digest=ready.patch_digest,
         verification_digest="sha256:"
-        + hashlib.sha256(
-            off_trace_verification.content.encode("utf-8")
-        ).hexdigest(),
+        + hashlib.sha256(off_trace_verification.content.encode("utf-8")).hexdigest(),
         review_digest=ready.review_digest,
         approval_digest=ready.approval_digest,
         artifact_set_digest=artifact_set_digest,
@@ -2876,7 +2882,7 @@ def test_trace_projection_failure_after_commit_returns_truthful_must_deliver(
             _write_reviewer_result(input_data, context)
         return ToolResult(ok=True, output=f"{role} complete")
 
-    original_projection = getattr(workflow_runner_module, projection_port)
+    original_projection = getattr(workflow_finalization_module, projection_port)
     projection_calls = 0
 
     def projection_failed(*args, **kwargs):
@@ -2890,7 +2896,7 @@ def test_trace_projection_failure_after_commit_returns_truthful_must_deliver(
 
     monkeypatch.setattr(task_module, "_run", worker)
     monkeypatch.setattr(
-        workflow_runner_module,
+        workflow_finalization_module,
         projection_port,
         projection_failed,
     )
@@ -2912,7 +2918,7 @@ def test_trace_projection_failure_after_commit_returns_truthful_must_deliver(
     assert result._must_deliver is True
     assert target.read_text(encoding="utf-8") == "after"
     assert audit_calls == expected_audit_calls
-    assert len(result.output) <= workflow_runner_module._WORKFLOW_OUTPUT_MAX_CHARS
+    assert len(result.output) <= workflow_finalization_module._WORKFLOW_OUTPUT_MAX_CHARS
     assert '"changesCommitted": true' in result.output
     if expected_ok:
         assert '"auditStatus": "persisted"' in result.output
@@ -3473,13 +3479,16 @@ def test_changes_required_review_is_rejected_and_durably_audited(
     assert len(audits) == 1
     audit = audits[0]
     assert audit.trace["terminalReason"] == "review_not_approved"
-    assert project_scheduler_audit(
-        profile=audit.profile,
-        plan=audit.plan,
-        trace=audit.trace,
-        artifacts=audit.artifacts,
-        contract_mode="v2",
-    ).trace == audit.trace
+    assert (
+        project_scheduler_audit(
+            profile=audit.profile,
+            plan=audit.plan,
+            trace=audit.trace,
+            artifacts=audit.artifacts,
+            contract_mode="v2",
+        ).trace
+        == audit.trace
+    )
 
 
 def test_public_context_hint_cannot_bypass_the_read_only_analyst(
@@ -3557,3 +3566,411 @@ def test_analyst_claim_with_nonexistent_evidence_fails_closed(
     assert roles == ["analyst", "analyst"]
     assert "analyst_evidence_invalid" in result.output
     assert "UNTRUSTED SUCCESS NARRATIVE" not in result.output
+
+
+def test_post_scheduler_cancellation_precedes_artifact_snapshot(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "README.md").write_text("evidence\n", encoding="utf-8")
+    token = TurnCancellationToken("turn_" + "d" * 32)
+    artifact_snapshot_calls = 0
+
+    def worker(input_data, context):
+        _write_analyst_result(input_data, context, prepare_change=False)
+        return ToolResult(ok=True, output="analysis complete")
+
+    original_execute = CentralScheduler.execute
+
+    def execute_then_cancel(self, *args, **kwargs):
+        outcome = original_execute(self, *args, **kwargs)
+        token.request()
+        return outcome
+
+    original_list = SchedulerArtifactStore.list_artifact_ids
+
+    def count_artifact_snapshot(self):
+        nonlocal artifact_snapshot_calls
+        artifact_snapshot_calls += 1
+        return original_list(self)
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(CentralScheduler, "execute", execute_then_cancel)
+    monkeypatch.setattr(
+        SchedulerArtifactStore,
+        "list_artifact_ids",
+        count_artifact_snapshot,
+    )
+
+    with pytest.raises(TurnCancellationRequested):
+        _run(
+            tmp_path,
+            _request(kind="read_only"),
+            monkeypatch,
+            cancellation_token=token,
+        )
+
+    assert artifact_snapshot_calls == 0
+
+
+def test_every_post_scheduler_exit_seals_session_authority(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "README.md").write_text("evidence\n", encoding="utf-8")
+    cancellation = TurnCancellationRequested("turn_" + "f" * 32)
+    captured_session = None
+
+    def worker(input_data, context):
+        _write_analyst_result(input_data, context, prepare_change=False)
+        return ToolResult(ok=True, output="analysis complete")
+
+    def fail_terminal_handoff(self, **_kwargs):
+        nonlocal captured_session
+        captured_session = self
+        raise cancellation
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(
+        workflow_runner_module._WorkflowRunSession,
+        "_seal_and_finalize",
+        fail_terminal_handoff,
+    )
+
+    with pytest.raises(TurnCancellationRequested) as caught:
+        _run(tmp_path, _request(kind="read_only"), monkeypatch)
+
+    assert caught.value is cancellation
+    assert captured_session is not None
+    assert captured_session._state is None
+    assert captured_session._context is None
+    assert captured_session._transaction is None
+    assert captured_session._run_subagent is None
+    with pytest.raises(RuntimeError, match="authority is sealed"):
+        captured_session._execution_state()
+
+
+def test_uncommitted_artifact_snapshot_failure_is_truthful_and_fail_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "README.md").write_text("evidence\n", encoding="utf-8")
+    audits = []
+
+    class AuditSink:
+        def emit(self, *_args, **_kwargs):
+            return None
+
+        def record_scheduler_audit(self, audit):
+            audits.append(audit)
+            return True
+
+    def worker(input_data, context):
+        _write_analyst_result(input_data, context, prepare_change=False)
+        return ToolResult(ok=True, output="analysis complete")
+
+    def fail_artifact_snapshot(_self):
+        raise RuntimeError("injected artifact snapshot failure")
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(
+        SchedulerArtifactStore,
+        "list_artifact_ids",
+        fail_artifact_snapshot,
+    )
+
+    result = _run(
+        tmp_path,
+        _request(kind="read_only"),
+        monkeypatch,
+        event_sink=AuditSink(),
+    )
+
+    assert result.ok is False
+    assert result._must_deliver is False
+    assert audits == []
+    assert '"changesCommitted": false' in result.output
+    assert '"auditStatus": "projection_or_persistence_failed"' in result.output
+
+
+def test_committed_artifact_snapshot_failure_retains_must_deliver_truth(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+    promoted = False
+    audits = []
+
+    class AuditSink:
+        def emit(self, *_args, **_kwargs):
+            return None
+
+        def record_scheduler_commit_ready(self, _ready):
+            return True
+
+        def record_scheduler_audit(self, audit):
+            audits.append(audit)
+            return True
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
+        if role == "analyst":
+            _write_analyst_result(input_data, context, prepare_change=True)
+        elif role == "executor":
+            Path(context.cwd, "allowed.txt").write_text("after", encoding="utf-8")
+            _write_executor_declaration(input_data, context)
+        else:
+            _write_reviewer_result(input_data, context)
+        return ToolResult(ok=True, output=f"{role} complete")
+
+    original_promote = FrozenWorkflowChange.promote
+
+    def promote_then_mark(self, **kwargs):
+        nonlocal promoted
+        original_promote(self, **kwargs)
+        promoted = True
+
+    original_list = SchedulerArtifactStore.list_artifact_ids
+
+    def fail_after_promotion(self):
+        if promoted:
+            raise RuntimeError("injected post-commit artifact snapshot failure")
+        return original_list(self)
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(FrozenWorkflowChange, "promote", promote_then_mark)
+    monkeypatch.setattr(
+        SchedulerArtifactStore,
+        "list_artifact_ids",
+        fail_after_promotion,
+    )
+    monkeypatch.setattr(
+        DeterministicVerifier,
+        "run",
+        lambda self, **request: _verification_result(request),
+    )
+
+    result = _run(
+        tmp_path,
+        _request(risk="medium", complex=True),
+        monkeypatch,
+        event_sink=AuditSink(),
+        central_enforced=True,
+    )
+
+    assert target.read_text(encoding="utf-8") == "after"
+    assert result.ok is False
+    assert result._must_deliver is True
+    assert audits == []
+    assert '"changesCommitted": true' in result.output
+    assert '"auditStatus": "projection_or_persistence_failed"' in result.output
+
+
+def test_committed_snapshot_capture_failure_still_persists_final_audit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+    audits = []
+
+    class DurableSink:
+        def emit(self, *_args, **_kwargs):
+            return None
+
+        def record_scheduler_commit_ready(self, _ready):
+            return True
+
+        def record_scheduler_audit(self, audit):
+            audits.append(audit)
+            return True
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
+        if role == "analyst":
+            _write_analyst_result(input_data, context, prepare_change=True)
+        elif role == "executor":
+            Path(context.cwd, "allowed.txt").write_text("after", encoding="utf-8")
+            _write_executor_declaration(input_data, context)
+        else:
+            _write_reviewer_result(input_data, context)
+        return ToolResult(ok=True, output=f"{role} complete")
+
+    def fail_rich_capture(_cls, **_kwargs):
+        raise RuntimeError("injected rich snapshot failure")
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(
+        workflow_finalization_module._WorkflowFinalizationSnapshot,
+        "capture",
+        classmethod(fail_rich_capture),
+    )
+    monkeypatch.setattr(
+        DeterministicVerifier,
+        "run",
+        lambda self, **request: _verification_result(request),
+    )
+
+    result = _run(
+        tmp_path,
+        _request(risk="medium", complex=True),
+        monkeypatch,
+        event_sink=DurableSink(),
+        central_enforced=True,
+    )
+
+    assert target.read_text(encoding="utf-8") == "after"
+    assert result.ok is False
+    assert result._must_deliver is True
+    assert len(audits) == 1
+    assert audits[0].trace["committed"] is True
+    assert '"changesCommitted": true' in result.output
+    assert '"finalizationStatus": "projection_failed"' in result.output
+    assert '"auditStatus": "persisted"' in result.output
+
+
+def test_hung_final_audit_is_bounded_and_observation_still_runs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "README.md").write_text("evidence\n", encoding="utf-8")
+    release_audit = threading.Event()
+    observation_calls = 0
+
+    class HangingAuditSink:
+        def emit(self, *_args, **_kwargs):
+            nonlocal observation_calls
+            observation_calls += 1
+
+        def record_scheduler_audit(self, _audit):
+            release_audit.wait(1.0)
+            return True
+
+    def worker(input_data, context):
+        _write_analyst_result(input_data, context, prepare_change=False)
+        return ToolResult(ok=True, output="analysis complete")
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(
+        workflow_runner_module,
+        "_FINALIZATION_AUDIT_PORT_RUNNER",
+        BoundedConflictPortRunner(
+            max_in_flight=1,
+            default_timeout_seconds=0.02,
+            cancellation_poll_seconds=0.001,
+        ),
+    )
+
+    started = time.monotonic()
+    result = _run(
+        tmp_path,
+        _request(kind="read_only"),
+        monkeypatch,
+        event_sink=HangingAuditSink(),
+    )
+    elapsed = time.monotonic() - started
+    release_audit.set()
+
+    assert elapsed < 0.5
+    assert result.ok is False
+    assert '"auditStatus": "projection_or_persistence_failed"' in result.output
+    assert observation_calls >= 1
+
+
+def test_uncommitted_audit_wait_propagates_live_cancellation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "README.md").write_text("evidence\n", encoding="utf-8")
+    token = TurnCancellationToken("turn_" + "e" * 32)
+    audit_started = threading.Event()
+    release_audit = threading.Event()
+
+    class HangingAuditSink:
+        def emit(self, *_args, **_kwargs):
+            return None
+
+        def record_scheduler_audit(self, _audit):
+            audit_started.set()
+            release_audit.wait(1.0)
+            return True
+
+    def worker(input_data, context):
+        _write_analyst_result(input_data, context, prepare_change=False)
+        return ToolResult(ok=True, output="analysis complete")
+
+    def cancel_during_audit() -> None:
+        if audit_started.wait(0.5):
+            token.request()
+
+    cancellation_thread = threading.Thread(
+        target=cancel_during_audit,
+        daemon=True,
+    )
+    monkeypatch.setattr(task_module, "_run", worker)
+    cancellation_thread.start()
+
+    started = time.monotonic()
+    with pytest.raises(TurnCancellationRequested) as caught:
+        _run(
+            tmp_path,
+            _request(kind="read_only"),
+            monkeypatch,
+            event_sink=HangingAuditSink(),
+            cancellation_token=token,
+        )
+    elapsed = time.monotonic() - started
+    release_audit.set()
+    cancellation_thread.join(timeout=0.5)
+
+    assert caught.value.turn_id == token.turn_id
+    assert audit_started.is_set()
+    assert elapsed < 0.5
+
+
+def test_hung_final_observation_is_bounded_and_does_not_erase_audit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "README.md").write_text("evidence\n", encoding="utf-8")
+    release_observation = threading.Event()
+    audits = []
+
+    class HangingObservationSink:
+        def emit(self, *_args, **_kwargs):
+            release_observation.wait(1.0)
+
+        def record_scheduler_audit(self, audit):
+            audits.append(audit)
+            return True
+
+    def worker(input_data, context):
+        _write_analyst_result(input_data, context, prepare_change=False)
+        return ToolResult(ok=True, output="analysis complete")
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(
+        workflow_runner_module,
+        "_FINALIZATION_OBSERVATION_PORT_RUNNER",
+        BoundedConflictPortRunner(
+            max_in_flight=1,
+            default_timeout_seconds=0.02,
+            cancellation_poll_seconds=0.001,
+        ),
+    )
+
+    started = time.monotonic()
+    result = _run(
+        tmp_path,
+        _request(kind="read_only"),
+        monkeypatch,
+        event_sink=HangingObservationSink(),
+    )
+    elapsed = time.monotonic() - started
+    release_observation.set()
+
+    assert elapsed < 0.5
+    assert result.ok is True
+    assert len(audits) == 1
+    assert '"auditStatus": "persisted"' in result.output
