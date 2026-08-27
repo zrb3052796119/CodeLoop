@@ -5,13 +5,14 @@ from __future__ import annotations
 import base64
 import json
 import os
-from pathlib import Path
 import shlex
 import subprocess
 import time
+from pathlib import Path
 
 import pytest
 
+from minicode import advisory_lock as advisory_lock_module
 from minicode.scheduler_artifacts import (
     MAX_SCHEDULER_ARTIFACT_BYTES,
     SchedulerArtifactStore,
@@ -20,11 +21,48 @@ from minicode.scheduler_audit import (
     SchedulerAuditValidationError,
     _validate_frozen_diff,
 )
+from minicode.tools import task as task_module
 from minicode.tools.task import (
     _TaskDeadlineExceeded,
+    _WorkflowCommitStateUnknown,
     _WorkflowIsolationError,
     _WorkflowWorkspaceTransaction,
 )
+
+
+class _TrackedLockHandle:
+    def __init__(self, handle) -> None:
+        self._handle = handle
+        self.close_calls = 0
+
+    def fileno(self) -> int:
+        return self._handle.fileno()
+
+    def close(self) -> None:
+        self.close_calls += 1
+        self._handle.close()
+
+    @property
+    def closed(self) -> bool:
+        return self._handle.closed
+
+
+def _track_workflow_lock_handles(
+    monkeypatch: pytest.MonkeyPatch,
+) -> list[_TrackedLockHandle]:
+    real_path_open = Path.open
+    tracked_handles: list[_TrackedLockHandle] = []
+
+    def tracked_open(path: Path, *args, **kwargs):
+        handle = real_path_open(path, *args, **kwargs)
+        if path.suffix != ".lock":
+            return handle
+        tracked = _TrackedLockHandle(handle)
+        tracked_handles.append(tracked)
+        return tracked
+
+    monkeypatch.setattr(Path, "open", tracked_open)
+    return tracked_handles
 
 
 def test_change_set_is_scope_checked_and_digest_bound(tmp_path: Path) -> None:
@@ -385,6 +423,529 @@ def test_expired_commit_guard_prevents_parent_promotion(tmp_path: Path) -> None:
             )
 
     assert target.read_text(encoding="utf-8") == "before"
+
+
+def test_parent_promotion_lock_key_follows_filesystem_aliases(
+    tmp_path: Path,
+) -> None:
+    source_root = tmp_path / "repository"
+    source_root.mkdir()
+    alias = tmp_path / "repository-alias"
+    try:
+        alias.symlink_to(source_root, target_is_directory=True)
+    except (NotImplementedError, OSError) as exc:
+        pytest.skip(f"directory symlinks are unavailable: {exc}")
+
+    assert task_module._workflow_parent_lock_key(
+        source_root
+    ) == task_module._workflow_parent_lock_key(alias)
+
+
+def test_parent_promotion_lock_key_fails_closed_when_identity_is_unavailable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source_root = tmp_path / "repository"
+    source_root.mkdir()
+    real_stat = task_module.os.stat
+
+    def unavailable(path, *args, **kwargs):
+        if Path(path) == source_root:
+            raise OSError("filesystem identity unavailable")
+        return real_stat(path, *args, **kwargs)
+
+    monkeypatch.setattr(task_module.os, "stat", unavailable)
+
+    with pytest.raises(
+        _WorkflowIsolationError,
+        match="workflow commit lock identity is unavailable",
+    ):
+        task_module._workflow_parent_lock_key(source_root)
+
+
+def test_parent_promotion_lock_namespace_does_not_follow_tmpdir(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    namespace_before = task_module._workflow_parent_lock_namespace()
+    monkeypatch.setenv("TMPDIR", str(tmp_path / "different-tmp"))
+    monkeypatch.setattr(
+        task_module.tempfile,
+        "gettempdir",
+        lambda: str(tmp_path / "different-tmp"),
+    )
+
+    assert task_module._workflow_parent_lock_namespace() == namespace_before
+
+
+def test_windows_parent_promotion_lock_namespace_requires_local_app_data(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        task_module,
+        "_workflow_lock_platform_name",
+        lambda: "nt",
+    )
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+
+    assert task_module._workflow_parent_lock_namespace() == (
+        tmp_path / "MiniCode" / "workflow-locks"
+    )
+
+    monkeypatch.delenv("LOCALAPPDATA")
+    with pytest.raises(
+        _WorkflowIsolationError,
+        match="workflow commit lock user namespace is unavailable",
+    ):
+        task_module._workflow_parent_lock_namespace()
+
+
+def test_commit_fails_closed_for_symlinked_lock_namespace(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    target = workspace / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+    actual_namespace = tmp_path / "actual-locks"
+    actual_namespace.mkdir(mode=0o700)
+    namespace_alias = tmp_path / "lock-namespace"
+    try:
+        namespace_alias.symlink_to(actual_namespace, target_is_directory=True)
+    except (NotImplementedError, OSError) as exc:
+        pytest.skip(f"directory symlinks are unavailable: {exc}")
+    monkeypatch.setattr(
+        task_module,
+        "_workflow_parent_lock_namespace",
+        lambda: namespace_alias,
+    )
+
+    with _WorkflowWorkspaceTransaction(str(workspace)) as transaction:
+        Path(transaction.cwd, "allowed.txt").write_text(
+            "after",
+            encoding="utf-8",
+        )
+        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+
+        with pytest.raises(
+            _WorkflowIsolationError,
+            match="workflow commit lock namespace is unavailable",
+        ):
+            transaction.commit(
+                expected_patch_digest=frozen["patchDigest"],
+                allowed_paths=("allowed.txt",),
+            )
+
+    assert target.read_text(encoding="utf-8") == "before"
+
+
+def test_commit_fails_closed_for_lock_namespace_with_wrong_owner(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    if not hasattr(os, "geteuid"):
+        pytest.skip("POSIX owner validation")
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    target = workspace / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+    lock_namespace = tmp_path / "lock-namespace"
+    lock_namespace.mkdir(mode=0o700)
+    actual_user_id = os.geteuid()
+    monkeypatch.setattr(
+        task_module,
+        "_workflow_parent_lock_namespace",
+        lambda: lock_namespace,
+    )
+    monkeypatch.setattr(task_module.os, "geteuid", lambda: actual_user_id + 1)
+
+    with _WorkflowWorkspaceTransaction(str(workspace)) as transaction:
+        Path(transaction.cwd, "allowed.txt").write_text(
+            "after",
+            encoding="utf-8",
+        )
+        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+
+        with pytest.raises(
+            _WorkflowIsolationError,
+            match="workflow commit lock namespace is unavailable: wrong owner",
+        ):
+            transaction.commit(
+                expected_patch_digest=frozen["patchDigest"],
+                allowed_paths=("allowed.txt",),
+            )
+
+    assert target.read_text(encoding="utf-8") == "before"
+
+
+def test_commit_fails_closed_when_advisory_lock_backend_is_unavailable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+    tracked_handles = _track_workflow_lock_handles(monkeypatch)
+
+    monkeypatch.setattr(
+        advisory_lock_module,
+        "_platform_name",
+        lambda: "nt",
+    )
+    monkeypatch.setattr(advisory_lock_module, "msvcrt", None)
+
+    with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
+        Path(transaction.cwd, "allowed.txt").write_text(
+            "after",
+            encoding="utf-8",
+        )
+        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+
+        with pytest.raises(
+            _WorkflowIsolationError,
+            match="workflow commit lock is unavailable",
+        ):
+            transaction.commit(
+                expected_patch_digest=frozen["patchDigest"],
+                allowed_paths=("allowed.txt",),
+            )
+
+    assert target.read_text(encoding="utf-8") == "before"
+    assert len(tracked_handles) == 1
+    assert tracked_handles[0].closed is True
+    assert tracked_handles[0].close_calls == 1
+
+
+@pytest.mark.parametrize("failure_site", ["chmod", "prepare"])
+def test_parent_promotion_closes_lock_handle_when_setup_is_interrupted(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failure_site: str,
+) -> None:
+    target = tmp_path / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+    tracked_handles = _track_workflow_lock_handles(monkeypatch)
+    releases = 0
+    interruption = KeyboardInterrupt(f"lock {failure_site} interrupted")
+    real_chmod = task_module.os.chmod
+
+    def interrupted_prepare(_file_descriptor: int, *, mode: int = 0o600) -> None:
+        del mode
+        raise interruption
+
+    def interrupted_chmod(path, mode: int) -> None:
+        if Path(path).suffix == ".lock":
+            raise interruption
+        real_chmod(path, mode)
+
+    def released(_file_descriptor: int) -> None:
+        nonlocal releases
+        releases += 1
+
+    with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
+        Path(transaction.cwd, "allowed.txt").write_text(
+            "after",
+            encoding="utf-8",
+        )
+        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+        if failure_site == "prepare":
+            monkeypatch.setattr(
+                advisory_lock_module,
+                "prepare_advisory_lock_file",
+                interrupted_prepare,
+            )
+        else:
+            monkeypatch.setattr(task_module.os, "chmod", interrupted_chmod)
+        monkeypatch.setattr(
+            advisory_lock_module,
+            "release_advisory_lock",
+            released,
+        )
+
+        with pytest.raises(KeyboardInterrupt) as raised:
+            transaction.commit(
+                expected_patch_digest=frozen["patchDigest"],
+                allowed_paths=("allowed.txt",),
+            )
+
+    assert raised.value is interruption
+    assert len(tracked_handles) == 1
+    assert tracked_handles[0].closed is True
+    assert tracked_handles[0].close_calls == 1
+    assert releases == 0
+    assert target.read_text(encoding="utf-8") == "before"
+
+
+@pytest.mark.parametrize(
+    "error_type",
+    [OSError, RuntimeError, KeyboardInterrupt],
+)
+def test_parent_promotion_closes_lock_handle_when_release_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    error_type: type[BaseException],
+) -> None:
+    target = tmp_path / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+    tracked_handles = _track_workflow_lock_handles(monkeypatch)
+    release_calls = 0
+    release_error = error_type("lock release failed")
+
+    def acquired(_file_descriptor: int) -> bool:
+        return True
+
+    def interrupted_release(_file_descriptor: int) -> None:
+        nonlocal release_calls
+        release_calls += 1
+        raise release_error
+
+    monkeypatch.setattr(
+        advisory_lock_module,
+        "acquire_advisory_lock",
+        acquired,
+    )
+    monkeypatch.setattr(
+        advisory_lock_module,
+        "release_advisory_lock",
+        interrupted_release,
+    )
+
+    with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
+        with pytest.raises(error_type) as raised:
+            with transaction._cross_process_commit_lock():
+                pass
+
+    assert raised.value is release_error
+    assert release_calls == 1
+    assert len(tracked_handles) == 1
+    assert tracked_handles[0].closed is True
+    assert tracked_handles[0].close_calls == 1
+    assert target.read_text(encoding="utf-8") == "before"
+
+
+@pytest.mark.parametrize("cleanup_site", ["release", "close"])
+def test_parent_promotion_cleanup_cannot_replace_primary_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cleanup_site: str,
+) -> None:
+    tracked_handles = _track_workflow_lock_handles(monkeypatch)
+    primary_error = _WorkflowCommitStateUnknown("parent state is unknown")
+    cleanup_error = RuntimeError(f"lock {cleanup_site} failed")
+    release_calls = 0
+
+    def acquired(_file_descriptor: int) -> bool:
+        return True
+
+    def released(_file_descriptor: int) -> None:
+        nonlocal release_calls
+        release_calls += 1
+        if cleanup_site == "release":
+            raise cleanup_error
+
+    real_close = _TrackedLockHandle.close
+
+    def close_then_maybe_fail(handle: _TrackedLockHandle) -> None:
+        real_close(handle)
+        if cleanup_site == "close":
+            raise cleanup_error
+
+    monkeypatch.setattr(
+        advisory_lock_module,
+        "acquire_advisory_lock",
+        acquired,
+    )
+    monkeypatch.setattr(
+        advisory_lock_module,
+        "release_advisory_lock",
+        released,
+    )
+    monkeypatch.setattr(_TrackedLockHandle, "close", close_then_maybe_fail)
+
+    with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
+        with pytest.raises(_WorkflowCommitStateUnknown) as raised:
+            with transaction._cross_process_commit_lock():
+                raise primary_error
+
+    assert raised.value is primary_error
+    assert release_calls == 1
+    assert len(tracked_handles) == 1
+    assert tracked_handles[0].closed is True
+    assert tracked_handles[0].close_calls == 1
+
+
+def test_parent_promotion_propagates_close_failure_without_primary_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tracked_handles = _track_workflow_lock_handles(monkeypatch)
+    close_error = RuntimeError("lock close failed")
+    release_calls = 0
+
+    def acquired(_file_descriptor: int) -> bool:
+        return True
+
+    def released(_file_descriptor: int) -> None:
+        nonlocal release_calls
+        release_calls += 1
+
+    real_close = _TrackedLockHandle.close
+
+    def close_then_fail(handle: _TrackedLockHandle) -> None:
+        real_close(handle)
+        raise close_error
+
+    monkeypatch.setattr(
+        advisory_lock_module,
+        "acquire_advisory_lock",
+        acquired,
+    )
+    monkeypatch.setattr(
+        advisory_lock_module,
+        "release_advisory_lock",
+        released,
+    )
+    monkeypatch.setattr(_TrackedLockHandle, "close", close_then_fail)
+
+    with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
+        with pytest.raises(RuntimeError) as raised:
+            with transaction._cross_process_commit_lock():
+                pass
+
+    assert raised.value is close_error
+    assert release_calls == 1
+    assert len(tracked_handles) == 1
+    assert tracked_handles[0].closed is True
+    assert tracked_handles[0].close_calls == 1
+
+
+def test_advisory_lock_contention_cannot_outlive_commit_deadline(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+    tracked_handles = _track_workflow_lock_handles(monkeypatch)
+    attempts = 0
+    releases = 0
+    clock = 100.0
+
+    def contended(_file_descriptor: int) -> bool:
+        nonlocal attempts
+        attempts += 1
+        return False
+
+    def released(_file_descriptor: int) -> None:
+        nonlocal releases
+        releases += 1
+
+    def monotonic() -> float:
+        return clock
+
+    def wait(seconds: float) -> None:
+        nonlocal clock
+        clock += seconds
+
+    monkeypatch.setattr(
+        advisory_lock_module,
+        "acquire_advisory_lock",
+        contended,
+    )
+    monkeypatch.setattr(
+        advisory_lock_module,
+        "release_advisory_lock",
+        released,
+    )
+    monkeypatch.setattr(task_module.time, "monotonic", monotonic)
+    monkeypatch.setattr(task_module.time, "sleep", wait)
+
+    with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
+        Path(transaction.cwd, "allowed.txt").write_text(
+            "after",
+            encoding="utf-8",
+        )
+        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+        transaction.set_operation_guard(
+            deadline_monotonic=clock + 0.02,
+            timeout_seconds=0.02,
+            operation_checkpoint=None,
+        )
+
+        with pytest.raises(_TaskDeadlineExceeded):
+            transaction.commit(
+                expected_patch_digest=frozen["patchDigest"],
+                allowed_paths=("allowed.txt",),
+            )
+
+    assert attempts >= 1
+    assert releases == 0
+    assert len(tracked_handles) == 1
+    assert tracked_handles[0].closed is True
+    assert tracked_handles[0].close_calls == 1
+    assert target.read_text(encoding="utf-8") == "before"
+
+
+def test_successful_parent_promotion_releases_advisory_lock(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+    tracked_handles = _track_workflow_lock_handles(monkeypatch)
+    events: list[tuple[str, int]] = []
+
+    def prepared(file_descriptor: int, *, mode: int = 0o600) -> None:
+        assert mode == 0o600
+        events.append(("prepare", file_descriptor))
+
+    attempts = iter((False, True))
+
+    def acquired(file_descriptor: int) -> bool:
+        events.append(("acquire", file_descriptor))
+        return next(attempts)
+
+    def released(file_descriptor: int) -> None:
+        events.append(("release", file_descriptor))
+
+    monkeypatch.setattr(
+        advisory_lock_module,
+        "prepare_advisory_lock_file",
+        prepared,
+    )
+    monkeypatch.setattr(
+        advisory_lock_module,
+        "acquire_advisory_lock",
+        acquired,
+    )
+    monkeypatch.setattr(
+        advisory_lock_module,
+        "release_advisory_lock",
+        released,
+    )
+
+    with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
+        Path(transaction.cwd, "allowed.txt").write_text(
+            "after",
+            encoding="utf-8",
+        )
+        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+        transaction.commit(
+            expected_patch_digest=frozen["patchDigest"],
+            allowed_paths=("allowed.txt",),
+        )
+
+    assert [event for event, _descriptor in events] == [
+        "prepare",
+        "acquire",
+        "acquire",
+        "release",
+    ]
+    assert len({descriptor for _event, descriptor in events}) == 1
+    assert len(tracked_handles) == 1
+    assert tracked_handles[0].closed is True
+    assert tracked_handles[0].close_calls == 1
+    assert target.read_text(encoding="utf-8") == "after"
 
 
 def test_commit_guard_propagates_cancellation_before_parent_write(

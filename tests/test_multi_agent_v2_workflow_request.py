@@ -14,11 +14,12 @@ check back to acceptance criteria without accepting a shell command string.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import time
+from datetime import datetime, timezone
 
 import pytest
 
+import minicode.multi_agent_contracts as contracts
 from minicode.agent_budget import AgentTurnBudget
 from minicode.central_scheduler import (
     CentralScheduler,
@@ -28,11 +29,9 @@ from minicode.central_scheduler import (
     TaskProfile,
     TaskRisk,
 )
-import minicode.multi_agent_contracts as contracts
 from minicode.scheduler_permissions import MANDATORY_SCHEDULER_FORBIDDEN_PATHS
 from minicode.tooling import ToolContext
 from minicode.tools.task import _build_worker_assignment, task_tool
-
 
 _TASK_ID = "task_workflow_request"
 
@@ -265,6 +264,36 @@ def test_workflow_scope_is_closed_normalized_and_non_overlapping(mutation) -> No
     mutation(value)
 
     with pytest.raises(contracts.ContractValidationError):
+        _parse_request(value)
+
+
+@pytest.mark.parametrize(
+    "scope",
+    [
+        {
+            "readRoots": ["minicode", "tests"],
+            "writePaths": ["Minicode/auth.py"],
+            "forbiddenPaths": ["minicode"],
+        },
+        {
+            "readRoots": ["minicode", "tests"],
+            "writePaths": ["Secrets/token.py"],
+            "forbiddenPaths": [],
+        },
+        {
+            "readRoots": ["Secrets"],
+            "writePaths": ["minicode/auth.py"],
+            "forbiddenPaths": [],
+        },
+    ],
+)
+def test_workflow_scope_rejects_declared_and_mandatory_forbidden_case_aliases(
+    scope: dict[str, list[str]],
+) -> None:
+    value = _workflow_request()
+    value["scope"] = scope
+
+    with pytest.raises(contracts.ContractValidationError, match="forbidden"):
         _parse_request(value)
 
 

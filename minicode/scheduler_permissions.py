@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Callable
 
 from minicode.permissions import NetworkPermissionError, PermissionDeniedError
-
+from minicode.scheduler_path_policy import (
+    normalized_forbidden_paths_overlap,
+    normalized_path_has_windows_ambiguous_component,
+    normalized_path_identity,
+    normalized_path_within,
+)
 
 _WRITE_INTENTS = frozenset({"write", "delete"})
 _EXECUTION_INTENTS = frozenset({"command", "command_cwd", "execute", "test"})
@@ -80,9 +85,15 @@ _CREDENTIAL_DATA_SUFFIXES = (
 
 
 def _normalize_scheduler_path(value: object) -> str:
-    if not isinstance(value, str) or not value or value != value.strip():
+    if not isinstance(value, str) or not value:
         raise ValueError("scheduler scope contains an unsafe path")
     normalized_separators = value.replace("\\", "/")
+    if normalized_path_has_windows_ambiguous_component(normalized_separators):
+        raise ValueError(
+            "scheduler scope contains a Windows-ambiguous path component"
+        )
+    if value != value.strip():
+        raise ValueError("scheduler scope contains an unsafe path")
     if (
         PurePosixPath(normalized_separators).is_absolute()
         or PureWindowsPath(normalized_separators).is_absolute()
@@ -97,14 +108,11 @@ def _normalize_scheduler_path(value: object) -> str:
 def scheduler_paths_overlap(left: str, right: str) -> bool:
     """Return whether two safe workspace-relative paths contain each other."""
 
-    normalized_left = _normalize_scheduler_path(left).casefold()
-    normalized_right = _normalize_scheduler_path(right).casefold()
-    return bool(
-        normalized_left == "."
-        or normalized_right == "."
-        or normalized_left == normalized_right
-        or normalized_left.startswith(normalized_right.rstrip("/") + "/")
-        or normalized_right.startswith(normalized_left.rstrip("/") + "/")
+    normalized_left = _normalize_scheduler_path(left)
+    normalized_right = _normalize_scheduler_path(right)
+    return normalized_forbidden_paths_overlap(
+        normalized_left,
+        normalized_right,
     )
 
 
@@ -130,10 +138,12 @@ def mandatory_scheduler_forbidden_paths(
     if not isinstance(declared_paths, tuple):
         raise ValueError("scheduler forbidden_paths must be a tuple")
     merged = list(MANDATORY_SCHEDULER_FORBIDDEN_PATHS)
-    seen = {path.casefold() for path in merged}
+    seen = {
+        normalized_path_identity(path, case_sensitive=False) for path in merged
+    }
     for raw_path in declared_paths:
         path = _normalize_scheduler_path(raw_path)
-        key = path.casefold()
+        key = normalized_path_identity(path, case_sensitive=False)
         if key not in seen:
             merged.append(path)
             seen.add(key)
@@ -165,14 +175,17 @@ class _SchedulerScopedPermissions:
         self._read_roots = self._resolve_scope(
             read_roots,
             label="read_roots",
+            case_sensitive_identity=True,
         )
         self._declared_forbidden_paths = self._resolve_scope(
             forbidden_paths,
             label="forbidden_paths",
+            case_sensitive_identity=False,
         )
         self._mandatory_forbidden_paths = self._resolve_scope(
             MANDATORY_SCHEDULER_FORBIDDEN_PATHS,
             label="mandatory forbidden paths",
+            case_sensitive_identity=False,
         )
         if not self._read_roots:
             raise ValueError("scheduler read_roots must be non-empty")
@@ -182,6 +195,7 @@ class _SchedulerScopedPermissions:
         values: tuple[str, ...],
         *,
         label: str,
+        case_sensitive_identity: bool,
     ) -> tuple[Path, ...]:
         if not isinstance(values, tuple):
             raise ValueError(f"scheduler {label} must be a unique tuple")
@@ -192,7 +206,10 @@ class _SchedulerScopedPermissions:
             target = (self._root / normalized).resolve(strict=False)
             if not self._contains(self._root, target):
                 raise ValueError(f"scheduler {label} escapes the workspace")
-            key = str(target).casefold()
+            key = normalized_path_identity(
+                target.as_posix(),
+                case_sensitive=case_sensitive_identity,
+            )
             if key in seen:
                 raise ValueError(f"scheduler {label} must be a unique tuple")
             seen.add(key)
@@ -211,6 +228,17 @@ class _SchedulerScopedPermissions:
     def _within_any(cls, target: Path, roots: tuple[Path, ...]) -> bool:
         return any(cls._contains(root, target) for root in roots)
 
+    @staticmethod
+    def _within_any_forbidden(target: Path, roots: tuple[Path, ...]) -> bool:
+        return any(
+            normalized_path_within(
+                target.as_posix(),
+                root.as_posix(),
+                case_sensitive=False,
+            )
+            for root in roots
+        )
+
     def _target(self, target_path: str) -> Path:
         if not isinstance(target_path, str) or not target_path:
             raise PermissionDeniedError(
@@ -219,9 +247,22 @@ class _SchedulerScopedPermissions:
             )
         try:
             candidate = Path(target_path)
+            if candidate.is_absolute():
+                try:
+                    lexical_relative = candidate.relative_to(self._root)
+                except ValueError as exc:
+                    raise PermissionDeniedError(
+                        f"{self._subject} path is outside its isolated workspace",
+                        code="path_assignment_scope_denied",
+                    ) from exc
+            else:
+                lexical_relative = candidate
+            _normalize_scheduler_path(lexical_relative.as_posix() or ".")
             target = (
                 candidate if candidate.is_absolute() else self._root / candidate
             ).resolve(strict=False)
+        except PermissionDeniedError:
+            raise
         except (OSError, RuntimeError, ValueError) as exc:
             raise PermissionDeniedError(
                 f"{self._subject} path is invalid",
@@ -233,7 +274,16 @@ class _SchedulerScopedPermissions:
                 code="path_assignment_scope_denied",
             )
         relative = target.relative_to(self._root).as_posix() or "."
-        if is_mandatory_scheduler_forbidden_path(relative) or self._within_any(
+        try:
+            relative = _normalize_scheduler_path(relative)
+        except ValueError as exc:
+            raise PermissionDeniedError(
+                f"{self._subject} path is invalid",
+                code="path_assignment_scope_denied",
+            ) from exc
+        if is_mandatory_scheduler_forbidden_path(
+            relative
+        ) or self._within_any_forbidden(
             target,
             self._mandatory_forbidden_paths,
         ):
@@ -241,7 +291,7 @@ class _SchedulerScopedPermissions:
                 f"{self._subject} path is mandatory forbidden",
                 code="path_scheduler_mandatory_forbidden",
             )
-        if self._within_any(target, self._declared_forbidden_paths):
+        if self._within_any_forbidden(target, self._declared_forbidden_paths):
             raise PermissionDeniedError(
                 f"{self._subject} path is forbidden by its Assignment",
                 code="path_assignment_forbidden",
@@ -348,6 +398,7 @@ class SchedulerExecutorPermissions(_SchedulerScopedPermissions):
         self._write_paths = self._resolve_scope(
             write_paths,
             label="write_paths",
+            case_sensitive_identity=True,
         )
 
     def ensure_path_access(self, target_path: str, intent: str) -> None:

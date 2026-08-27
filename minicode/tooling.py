@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from minicode.logging_config import get_logger
 
@@ -17,6 +18,14 @@ class ToolExecutionAbandoned(RuntimeError):
     can check the shared abandonment event at its next checkpoint and unwind
     instead of continuing to spend model calls and money.
     """
+
+
+class ToolTerminationReason(str, Enum):
+    """Closed internal control outcomes carried independently of display text."""
+
+    ABANDONED = "abandoned"
+    TURN_CANCELLED = "turn_cancelled"
+
 
 if TYPE_CHECKING:
     from minicode.mcp_current_state import McpCurrentStateRegistry
@@ -240,6 +249,14 @@ class ToolResult:
     # that truthful result even if cancellation raced with the finalization
     # boundary; ordinary tool results keep the default cancellation behavior.
     _must_deliver: bool = field(default=False, repr=False, compare=False)
+    # Lifecycle control must never parse ``output``.  Human-readable error
+    # wording can evolve independently while this closed marker remains the
+    # authoritative internal signal.
+    _termination_reason: ToolTerminationReason | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
 
 
 @dataclass(slots=True)

@@ -3,8 +3,10 @@ from __future__ import annotations
 import concurrent.futures
 import json
 import re
+import sys
 import time
 import uuid
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
@@ -12,6 +14,11 @@ from minicode.agent_budget import (
     AgentBudgetExceeded,
     AgentTurnBudget,
     record_budgeted_model_call,
+)
+from minicode.concurrent_tool_terminal import (
+    CONCURRENT_TOOL_TERMINAL_EVENT_TYPE,
+    MAX_CONCURRENT_TOOL_TERMINAL_EVENTS,
+    project_concurrent_tool_terminal,
 )
 from minicode.context_manager import ContextManager, estimate_message_tokens
 from minicode.logging_config import get_logger
@@ -52,6 +59,7 @@ from minicode.tooling import (
     ToolExecutionAbandoned,
     ToolRegistry,
     ToolResult,
+    ToolTerminationReason,
 )
 from minicode.turn_cancellation import (
     TurnCancellationRequested,
@@ -169,7 +177,7 @@ RESUME_AFTER_MAX_TOKENS = (
 _TRACE_MAX_EVENTS = 500
 _TRACE_MAX_FIELD_CHARS = 600
 _TRACE_MAX_LIST_ITEMS = 12
-_MAX_MODEL_TOOL_CALL_COUNT = 1_000
+_MAX_MODEL_TOOL_CALL_COUNT = MAX_CONCURRENT_TOOL_TERMINAL_EVENTS
 _TRACE_SECRET_KEYS = {
     "api_key",
     "apikey",
@@ -309,6 +317,365 @@ def _append_tool_trace_events(
                 "files": files,
                 **role_fields,
             })
+
+
+def _emit_concurrent_terminal_event(
+    sink: AgentEventSink | None,
+    *,
+    step: int,
+    call: dict,
+    status: str,
+) -> None:
+    """Persist one content-free terminal observation for a cancelled batch."""
+
+    emit_event_safely(
+        sink,
+        CONCURRENT_TOOL_TERMINAL_EVENT_TYPE,
+        step=step,
+        payload=project_concurrent_tool_terminal(
+            call_id=call.get("id", ""),
+            tool_name=call.get("toolName", ""),
+            status=status,
+        ),
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class _ConcurrentToolDisposition:
+    call: dict
+    result: ToolResult
+    status: str
+    completed_result: bool
+
+
+@dataclass(frozen=True, slots=True)
+class _ConcurrentBatchDecision:
+    dispositions: tuple[_ConcurrentToolDisposition, ...]
+    control_error: BaseException | None
+    cancellation: TurnCancellationRequested | None
+    must_deliver: bool
+
+
+def _is_fatal_concurrent_error(error: BaseException | None) -> bool:
+    """Return whether an error must retain BaseException control authority."""
+
+    return error is not None and not isinstance(error, Exception)
+
+
+def _is_completed_concurrent_exception(error: BaseException | None) -> bool:
+    """Return whether a finished tool raised an ordinary, account-able error."""
+
+    return isinstance(error, Exception) and not isinstance(
+        error,
+        (TurnCancellationRequested, concurrent.futures.CancelledError),
+    )
+
+
+def _concurrent_exception_result(error: BaseException) -> ToolResult:
+    """Project one ordinary concurrent tool exception as a stable result."""
+
+    return ToolResult(
+        ok=False,
+        output=f"Concurrent execution error: {error}",
+    )
+
+
+def _reduce_concurrent_batch_shutdown(
+    *,
+    future_to_call: dict[concurrent.futures.Future, dict],
+    observed_results: dict[concurrent.futures.Future, ToolResult],
+    observed_errors: dict[concurrent.futures.Future, BaseException],
+    cancellation: TurnCancellationRequested | None,
+    collection_error: BaseException | None = None,
+) -> _ConcurrentBatchDecision:
+    """Snapshot one interrupted batch with a closed authority precedence.
+
+    A successful ``Future.cancel`` proves the call never started.  A failed
+    cancellation is followed by a fresh completion check; only a still-running
+    Future is detached.  Results already finalized by a tool outrank every
+    control-flow signal, followed by fatal process signals and then turn
+    cancellation.
+    """
+
+    results = dict(observed_results)
+    errors = dict(observed_errors)
+    cancelled_before_start: set[concurrent.futures.Future] = set()
+    detached_running: set[concurrent.futures.Future] = set()
+    for future in future_to_call:
+        if future in results or future in errors:
+            continue
+        if future.cancel():
+            cancelled_before_start.add(future)
+        elif future.done():
+            try:
+                results[future] = future.result()
+            except BaseException as exc:  # noqa: BLE001 - reduced below
+                errors[future] = exc
+        else:
+            detached_running.add(future)
+
+    fatal_errors = (
+        [collection_error]
+        if _is_fatal_concurrent_error(collection_error)
+        else []
+    )
+    fatal_errors.extend(
+        error
+        for future in future_to_call
+        if _is_fatal_concurrent_error(error := errors.get(future))
+    )
+    cancellation_errors = (
+        [cancellation] if cancellation is not None else []
+    )
+    if isinstance(collection_error, TurnCancellationRequested):
+        cancellation_errors.append(collection_error)
+    cancellation_errors.extend(
+        error
+        for future in future_to_call
+        if isinstance(
+            (error := errors.get(future)),
+            TurnCancellationRequested,
+        )
+        and error is not cancellation
+    )
+    effective_cancellation = (
+        cancellation_errors[0] if cancellation_errors else None
+    )
+    cancellation_driven = effective_cancellation is not None
+    must_deliver = any(
+        result._must_deliver for result in results.values()
+    )
+
+    dispositions: list[_ConcurrentToolDisposition] = []
+    for future, call in future_to_call.items():
+        result = results.get(future)
+        error = errors.get(future)
+        completed_result = result is not None or (
+            _is_completed_concurrent_exception(error)
+        )
+
+        if result is not None:
+            status = (
+                "cancelled"
+                if result._termination_reason
+                is ToolTerminationReason.TURN_CANCELLED
+                else "completed"
+                if result.ok
+                else "failed"
+            )
+        elif future in detached_running:
+            result = ToolResult(
+                ok=False,
+                output=(
+                    "error[turn_cancelled]: concurrent tool execution was "
+                    "abandoned while still running"
+                    if cancellation_driven
+                    else "Concurrent execution was abandoned while still "
+                    "running after a fatal sibling failure"
+                ),
+                _termination_reason=ToolTerminationReason.ABANDONED,
+            )
+            status = "abandoned_running"
+        elif future in cancelled_before_start or isinstance(
+            error,
+            concurrent.futures.CancelledError,
+        ):
+            result = ToolResult(
+                ok=False,
+                output=(
+                    "error[turn_cancelled]: concurrent tool was cancelled "
+                    "before start"
+                    if cancellation_driven
+                    else "Concurrent execution was cancelled before start "
+                    "after a fatal sibling failure"
+                ),
+                _termination_reason=(
+                    ToolTerminationReason.TURN_CANCELLED
+                    if cancellation_driven
+                    else None
+                ),
+            )
+            status = "cancelled_before_start"
+        elif isinstance(error, TurnCancellationRequested):
+            result = ToolResult(
+                ok=False,
+                output="error[turn_cancelled]: concurrent tool stopped",
+                _termination_reason=ToolTerminationReason.TURN_CANCELLED,
+            )
+            status = "cancelled"
+        elif _is_completed_concurrent_exception(error):
+            assert error is not None
+            result = _concurrent_exception_result(error)
+            status = "failed"
+        else:
+            result = ToolResult(
+                ok=False,
+                output=(
+                    "Concurrent execution error: "
+                    + (type(error).__name__ if error is not None else "unknown")
+                ),
+            )
+            status = "failed"
+        dispositions.append(
+            _ConcurrentToolDisposition(
+                call=call,
+                result=result,
+                status=status,
+                completed_result=completed_result,
+            )
+        )
+
+    control_error: BaseException | None
+    if must_deliver:
+        control_error = None
+    elif fatal_errors:
+        control_error = fatal_errors[0]
+    elif effective_cancellation is not None:
+        control_error = effective_cancellation
+    elif collection_error is not None:
+        control_error = collection_error
+    else:
+        control_error = None
+    return _ConcurrentBatchDecision(
+        dispositions=tuple(dispositions),
+        control_error=control_error,
+        cancellation=effective_cancellation,
+        must_deliver=must_deliver,
+    )
+
+
+def _record_concurrent_shutdown_observations(
+    *,
+    decision: _ConcurrentBatchDecision,
+    execution_trace: list[dict[str, Any]],
+    event_sink: AgentEventSink | None,
+    step: int,
+) -> BaseException | None:
+    """Record bounded terminal observations without overriding FINAL authority."""
+
+    first_fatal: BaseException | None = None
+
+    def attempt(label: str, operation: Callable[[], object]) -> None:
+        nonlocal first_fatal
+        try:
+            operation()
+        except BaseException as exc:  # noqa: BLE001 - priority reduced below
+            logger.warning(
+                "Concurrent shutdown %s observation failed",
+                label,
+                exc_info=True,
+            )
+            if (
+                not decision.must_deliver
+                and first_fatal is None
+                and _is_fatal_concurrent_error(exc)
+            ):
+                first_fatal = exc
+
+    for disposition in decision.dispositions:
+        attempt(
+            "trace",
+            lambda disposition=disposition: _append_tool_trace_events(
+                execution_trace,
+                disposition.call,
+                disposition.result,
+                step,
+            ),
+        )
+        if decision.cancellation is not None:
+            attempt(
+                "journal",
+                lambda disposition=disposition: _emit_concurrent_terminal_event(
+                    event_sink,
+                    step=step,
+                    call=disposition.call,
+                    status=disposition.status,
+                ),
+            )
+    return first_fatal
+
+
+def _finalize_completed_concurrent_dispositions(
+    *,
+    dispositions: tuple[_ConcurrentToolDisposition, ...],
+    store: Store[AppState] | None,
+    task_ledger: TaskLedger | None,
+    recovery_guard: RecoveryGuard,
+    step: int,
+) -> BaseException | None:
+    """Bounded accounting for real results captured by a shutdown sweep."""
+
+    first_fatal: BaseException | None = None
+
+    def attempt(label: str, operation: Callable[[], object]) -> None:
+        nonlocal first_fatal
+        try:
+            operation()
+        except BaseException as exc:  # noqa: BLE001 - re-raised after sweep
+            logger.warning(
+                "Concurrent completed-result %s finalization failed",
+                label,
+                exc_info=True,
+            )
+            if first_fatal is None and _is_fatal_concurrent_error(exc):
+                first_fatal = exc
+
+    for disposition in dispositions:
+        if not disposition.completed_result:
+            continue
+        call = disposition.call
+        result = disposition.result
+        tool_name = call["toolName"]
+        if store is not None:
+            attempt(
+                "store-busy",
+                lambda tool_name=tool_name: store.set_state(
+                    set_busy(tool_name)
+                ),
+            )
+            attempt(
+                "store-count",
+                lambda: store.set_state(increment_tool_calls()),
+            )
+            attempt("store-idle", lambda: store.set_state(set_idle()))
+        attempt(
+            "post-hook",
+            lambda tool_name=tool_name, result=result: fire_hook_sync(
+                HookEvent.POST_TOOL_USE,
+                tool_name=tool_name,
+                tool_output=result.output,
+                is_error=not result.ok,
+                step=step,
+            ),
+        )
+        attempt(
+            "recovery",
+            lambda call=call, result=result: recovery_guard.observe(
+                call,
+                ok=result.ok,
+                output=result.output,
+            ),
+        )
+        if task_ledger is not None:
+
+            def record_ledger(
+                call: dict = call,
+                result: ToolResult = result,
+            ) -> None:
+                verification = normalize_tool_verification(
+                    call["toolName"],
+                    result.verification,
+                )
+                if verification is not None:
+                    task_ledger.record_verification(verification)
+                if not result.ok:
+                    task_ledger.record_failed_attempt(
+                        call["toolName"],
+                        result.output,
+                    )
+
+            attempt("ledger", record_ledger)
+    return first_fatal
 
 
 def _is_empty_assistant_response(content: str) -> bool:
@@ -2428,6 +2795,30 @@ def run_agent_turn(
                 _working_memory_observation(event_sink, step=step)
                 return current_messages
 
+            if len(next_step.calls) > _MAX_MODEL_TOOL_CALL_COUNT:
+                tool_call_limit_error = (
+                    "error[tool_call_limit_exceeded]: model returned "
+                    f"{len(next_step.calls)} tool calls; the per-turn limit is "
+                    f"{_MAX_MODEL_TOOL_CALL_COUNT}. No tools were executed."
+                )
+                raise_if_cancelled(cancellation_token)
+                if on_assistant_message:
+                    on_assistant_message(tool_call_limit_error)
+                current_messages.append(
+                    {"role": "assistant", "content": tool_call_limit_error}
+                )
+                _append_trace_event(
+                    execution_trace,
+                    {
+                        "type": "error",
+                        "step": step,
+                        "error_type": "tool_call_limit_exceeded",
+                        "message": tool_call_limit_error,
+                    },
+                )
+                turn_outcome = "failed"
+                return current_messages
+
             if (
                 not next_step.calls
                 and next_step.content
@@ -2554,6 +2945,7 @@ def run_agent_turn(
                 concurrent_calls, serial_calls = tool_scheduler.schedule_calls(
                     executable_calls, tools
                 )
+                concurrent_authority_stop = False
 
                 # Phase 1: Run all concurrent-safe tools in parallel
                 if concurrent_calls:
@@ -2587,52 +2979,241 @@ def run_agent_turn(
                             tool_scheduler.last_decision.cooldown_seconds,
                             ", ".join(tool_scheduler.last_decision.reasons or []),
                         )
-                    with concurrent.futures.ThreadPoolExecutor(
+                    pool = concurrent.futures.ThreadPoolExecutor(
                         max_workers=max_workers,
                         thread_name_prefix="mc-tool",
-                    ) as pool:
-                        future_to_call = {
-                            pool.submit(
-                                _execute_single_tool,
-                                call, tools, cwd, permissions, runtime, None, step,
-                                on_tool_start, on_tool_result, tool_scheduler, event_sink,
-                                skill_usage_tracker,
-                                cancellation_token,
-                                verification_tracker,
-                                agent_depth,
-                                presentation,
-                                agent_budget,
-                                subagent_mailbox,
-                                subagent_lifecycle,
-                                allow_user_interaction,
-                            ): call
-                            for call in concurrent_calls
-                        }
-                        for future in concurrent.futures.as_completed(future_to_call):
-                            call = future_to_call[future]
+                    )
+                    batch_cancellation: TurnCancellationRequested | None = None
+                    batch_fatal: BaseException | None = None
+                    observed_results: dict[
+                        concurrent.futures.Future, ToolResult
+                    ] = {}
+                    observed_errors: dict[
+                        concurrent.futures.Future, BaseException
+                    ] = {}
+                    future_to_call: dict[
+                        concurrent.futures.Future, dict
+                    ] = {}
+                    unsubmitted_concurrent_calls: list[dict] = []
+                    decision: _ConcurrentBatchDecision | None = None
+                    try:
+                        for dispatch_index, call in enumerate(concurrent_calls):
                             try:
-                                result = future.result()
-                            except TurnCancellationRequested:
-                                raise
-                            except Exception as exc:
-                                result = ToolResult(ok=False, output=f"Concurrent execution error: {exc}")
-                            _results.append((call, result))
-                            try:
-                                recovery_guard.observe(
+                                future = pool.submit(
+                                    _execute_single_tool,
                                     call,
-                                    ok=result.ok,
-                                    output=result.output,
+                                    tools,
+                                    cwd,
+                                    permissions,
+                                    runtime,
+                                    None,
+                                    step,
+                                    on_tool_start,
+                                    on_tool_result,
+                                    tool_scheduler,
+                                    event_sink,
+                                    skill_usage_tracker,
+                                    cancellation_token,
+                                    verification_tracker,
+                                    agent_depth,
+                                    presentation,
+                                    agent_budget,
+                                    subagent_mailbox,
+                                    subagent_lifecycle,
+                                    allow_user_interaction,
                                 )
-                            except BaseException:  # finalized authority wins
-                                if not result._must_deliver:
-                                    raise
+                            except TurnCancellationRequested as exc:
+                                batch_cancellation = exc
+                                unsubmitted_concurrent_calls = concurrent_calls[
+                                    dispatch_index:
+                                ]
+                                break
+                            except BaseException as exc:  # noqa: BLE001
+                                batch_fatal = exc
+                                unsubmitted_concurrent_calls = concurrent_calls[
+                                    dispatch_index:
+                                ]
+                                break
+                            future_to_call[future] = call
+                        pending_futures = set(future_to_call)
+                        while pending_futures:
+                            try:
+                                raise_if_cancelled(cancellation_token)
+                            except TurnCancellationRequested as exc:
+                                batch_cancellation = exc
+                                break
+                            try:
+                                done_futures, pending_futures = (
+                                    concurrent.futures.wait(
+                                        pending_futures,
+                                        timeout=0.05,
+                                        return_when=(
+                                            concurrent.futures.FIRST_COMPLETED
+                                        ),
+                                    )
+                                )
+                            except TurnCancellationRequested as exc:
+                                batch_cancellation = exc
+                                break
+                            except BaseException as exc:  # noqa: BLE001
+                                # A signal raised on the orchestration thread
+                                # must enter the same non-blocking reducer as a
+                                # worker signal; otherwise ``shutdown(wait)``
+                                # can strand the turn behind hung workers.
+                                batch_fatal = exc
+                                break
+                            for future in done_futures:
+                                try:
+                                    result = future.result()
+                                except TurnCancellationRequested as exc:
+                                    observed_errors[future] = exc
+                                    if batch_cancellation is None:
+                                        batch_cancellation = exc
+                                    continue
+                                except Exception as exc:
+                                    result = _concurrent_exception_result(exc)
+                                except BaseException as exc:  # noqa: BLE001
+                                    observed_errors[future] = exc
+                                    if batch_fatal is None:
+                                        batch_fatal = exc
+                                    continue
+                                observed_results[future] = result
+                            if (
+                                batch_fatal is not None
+                                and batch_cancellation is None
+                            ):
+                                try:
+                                    raise_if_cancelled(cancellation_token)
+                                except TurnCancellationRequested as exc:
+                                    batch_cancellation = exc
+                            if (
+                                batch_cancellation is not None
+                                or batch_fatal is not None
+                            ):
+                                break
+                        if (
+                            batch_cancellation is not None
+                            or batch_fatal is not None
+                        ):
+                            decision = _reduce_concurrent_batch_shutdown(
+                                future_to_call=future_to_call,
+                                observed_results=observed_results,
+                                observed_errors=observed_errors,
+                                cancellation=batch_cancellation,
+                                collection_error=batch_fatal,
+                            )
+                            for disposition in decision.dispositions:
+                                _results.append(
+                                    (disposition.call, disposition.result)
+                                )
+                            observation_fatal = (
+                                _record_concurrent_shutdown_observations(
+                                    decision=decision,
+                                    execution_trace=execution_trace,
+                                    event_sink=event_sink,
+                                    step=step,
+                                )
+                            )
+                            finalize_fatal = (
+                                _finalize_completed_concurrent_dispositions(
+                                    dispositions=decision.dispositions,
+                                    store=store,
+                                    task_ledger=task_ledger,
+                                    recovery_guard=recovery_guard,
+                                    step=step,
+                                )
+                            )
+                            if decision.control_error is not None:
+                                if _is_fatal_concurrent_error(
+                                    decision.control_error
+                                ):
+                                    raise decision.control_error
+                                if observation_fatal is not None:
+                                    raise observation_fatal
+                                if finalize_fatal is not None:
+                                    raise finalize_fatal
+                                raise decision.control_error
+                            concurrent_authority_stop = True
+                            for pending_call in (
+                                unsubmitted_concurrent_calls + serial_calls
+                            ):
+                                suppressed_call_ids.add(pending_call["id"])
+                                _results.append(
+                                    (
+                                        pending_call,
+                                        ToolResult(
+                                            ok=False,
+                                            output=(
+                                                "error[skipped_after_finalized_"
+                                                "state_change]: a prior "
+                                                "stateful result must be "
+                                                "delivered first"
+                                            ),
+                                        ),
+                                    )
+                                )
+                        else:
+                            for future, call in future_to_call.items():
+                                result = observed_results[future]
+                                _results.append((call, result))
+                                try:
+                                    recovery_guard.observe(
+                                        call,
+                                        ok=result.ok,
+                                        output=result.output,
+                                    )
+                                except BaseException:  # finalized authority wins
+                                    if not result._must_deliver:
+                                        raise
+                                    logger.warning(
+                                        "Recovery observation failed after state finalization",
+                                        exc_info=True,
+                                    )
+                    finally:
+                        active_error = sys.exception()
+                        wait_for_workers = (
+                            batch_cancellation is None
+                            and batch_fatal is None
+                        )
+                        try:
+                            pool.shutdown(
+                                wait=wait_for_workers,
+                                cancel_futures=not wait_for_workers,
+                            )
+                        except BaseException as shutdown_error:  # noqa: BLE001
+                            has_finalized_authority = (
+                                decision is not None
+                                and decision.must_deliver
+                            ) or any(
+                                result._must_deliver
+                                for result in observed_results.values()
+                            )
+                            preserve_active_fatal = (
+                                active_error is not None
+                                and _is_fatal_concurrent_error(active_error)
+                            )
+                            shutdown_wins = (
+                                not has_finalized_authority
+                                and not preserve_active_fatal
+                                and (
+                                    active_error is None
+                                    or _is_fatal_concurrent_error(
+                                        shutdown_error
+                                    )
+                                )
+                            )
+                            try:
                                 logger.warning(
-                                    "Recovery observation failed after state finalization",
+                                    "Concurrent pool shutdown failed",
                                     exc_info=True,
                                 )
+                            except BaseException:
+                                pass
+                            if shutdown_wins:
+                                raise
 
                 # Phase 2: Run serial tools sequentially (in original order)
-                if serial_calls:
+                if serial_calls and not concurrent_authority_stop:
                     for serial_index, call in enumerate(serial_calls):
                         late_suppression = recovery_guard.suppression_for(call)
                         if late_suppression is not None:
@@ -2725,18 +3306,16 @@ def run_agent_turn(
             must_deliver_result = any(
                 result._must_deliver for _call, result in _results
             )
-            if not must_deliver_result:
-                raise_if_cancelled(cancellation_token)
 
             # Process all results and build messages (preserve original call order)
             call_order = {call["id"]: idx for idx, call in enumerate(calls)}
             _results.sort(key=lambda pair: call_order.get(pair[0]["id"], 999))
+            executed_outcomes: list[bool] = []
             if must_deliver_result:
                 # A finalized state change takes a dedicated authority path.
                 # Only balance the provider tool protocol and project every
                 # result byte-for-byte; all mutable telemetry and control
                 # sidecars are deliberately bypassed.
-                executed_outcomes: list[bool] = []
                 for result_index, (call, result) in enumerate(_results):
                     suppressed = call["id"] in suppressed_call_ids
                     if not suppressed:
@@ -2778,7 +3357,6 @@ def run_agent_turn(
 
             await_user_output: str | None = None
             ledger_changed = False
-            executed_outcomes: list[bool] = []
 
             for result_index, (call, result) in enumerate(_results):
                 suppressed = call["id"] in suppressed_call_ids
@@ -2988,6 +3566,11 @@ def run_agent_turn(
                 if context_manager is not None:
                     context_manager.messages = list(current_messages)
 
+            # Completed results own their bounded accounting.  Propagate any
+            # cancellation requested during POST/store/ledger finalization
+            # before recovery or await-user paths can return successfully.
+            raise_if_cancelled(cancellation_token)
+
             recovery_stop = recovery_guard.stop_decision()
             if recovery_stop is not None and not must_deliver_result:
                 emit_event_safely(
@@ -3010,6 +3593,7 @@ def run_agent_turn(
                     {"role": "assistant", "content": recovery_stop.message}
                 )
                 turn_outcome = "failed"
+                raise_if_cancelled(cancellation_token)
                 return current_messages
 
             if await_user_output is not None:
@@ -3022,6 +3606,7 @@ def run_agent_turn(
                 if metrics_collector:
                     metrics_collector.end_turn(total_tokens=0)
                 turn_outcome = "unknown"
+                raise_if_cancelled(cancellation_token)
                 return current_messages
 
             # In-loop high-water check: one turn can run dozens of tool steps,

@@ -12,7 +12,7 @@ from minicode.subagent_lifecycle import (
     SubagentLifecycleNotFound,
     SubagentWorkerCancelled,
 )
-from minicode.tooling import ToolContext, ToolResult
+from minicode.tooling import ToolContext, ToolResult, ToolTerminationReason
 from minicode.types import AgentStep, ChatMessage, ModelAdapter
 
 
@@ -387,7 +387,11 @@ def test_task_cancel_action_is_idempotent(tmp_path, monkeypatch) -> None:
         if context._tool_abandoned.wait(timeout=1.0):
             observed_cancel.set()
         assert finish.wait(timeout=1.0)
-        return ToolResult(ok=False, output="error[tool_abandoned]: cancellation")
+        return ToolResult(
+            ok=False,
+            output="error[tool_abandoned]: cancellation",
+            _termination_reason=ToolTerminationReason.ABANDONED,
+        )
 
     monkeypatch.setattr(task_module, "_run", fake_run)
     context = ToolContext(cwd=str(tmp_path), _subagent_lifecycle=lifecycle)
@@ -419,6 +423,114 @@ def test_task_cancel_action_is_idempotent(tmp_path, monkeypatch) -> None:
         finish.set()
         terminal = _wait_for_terminal(lifecycle, subagent_id)
         assert terminal["status"] == "cancelled"
+    finally:
+        finish.set()
+        lifecycle.shutdown()
+
+
+def test_task_cancel_uses_typed_termination_instead_of_display_text(
+    tmp_path, monkeypatch
+) -> None:
+    import minicode.tools.task as task_module
+
+    lifecycle = AsyncSubagentLifecycle(max_workers=1)
+    started = threading.Event()
+    finish = threading.Event()
+
+    def fake_run(_input: dict, context: ToolContext) -> ToolResult:
+        started.set()
+        assert context._tool_abandoned.wait(timeout=1.0)
+        assert finish.wait(timeout=1.0)
+        return ToolResult(
+            ok=False,
+            output="display wording may change",
+            _termination_reason=ToolTerminationReason.ABANDONED,
+        )
+
+    monkeypatch.setattr(task_module, "_run", fake_run)
+    context = ToolContext(cwd=str(tmp_path), _subagent_lifecycle=lifecycle)
+    try:
+        spawned = task_module.task_tool.run(
+            task_module.task_tool.validator(
+                {
+                    "action": "spawn",
+                    "description": "inspect code",
+                    "prompt": "Inspect the code",
+                    "agent_type": "plan",
+                }
+            ),
+            context,
+        )
+        subagent_id = json.loads(spawned.output)["subagentId"]
+        assert started.wait(timeout=1.0)
+
+        task_module.task_tool.run(
+            task_module.task_tool.validator(
+                {"action": "cancel", "subagent_id": subagent_id}
+            ),
+            context,
+        )
+        finish.set()
+
+        terminal = _wait_for_terminal(lifecycle, subagent_id)
+        assert terminal["status"] == "cancelled"
+        assert terminal["result"] is None
+    finally:
+        finish.set()
+        lifecycle.shutdown()
+
+
+def test_task_cancel_does_not_trust_display_or_plain_string_marker(
+    tmp_path, monkeypatch
+) -> None:
+    import minicode.tools.task as task_module
+
+    lifecycle = AsyncSubagentLifecycle(max_workers=1)
+    started = threading.Event()
+    finish = threading.Event()
+
+    def fake_run(_input: dict, context: ToolContext) -> ToolResult:
+        started.set()
+        assert context._tool_abandoned.wait(timeout=1.0)
+        assert finish.wait(timeout=1.0)
+        return ToolResult(
+            ok=False,
+            output="error[tool_abandoned]: display text is not authority",
+            _termination_reason="abandoned",  # type: ignore[arg-type]
+        )
+
+    monkeypatch.setattr(task_module, "_run", fake_run)
+    context = ToolContext(cwd=str(tmp_path), _subagent_lifecycle=lifecycle)
+    try:
+        spawned = task_module.task_tool.run(
+            task_module.task_tool.validator(
+                {
+                    "action": "spawn",
+                    "description": "inspect code",
+                    "prompt": "Inspect the code",
+                    "agent_type": "plan",
+                }
+            ),
+            context,
+        )
+        subagent_id = json.loads(spawned.output)["subagentId"]
+        assert started.wait(timeout=1.0)
+
+        task_module.task_tool.run(
+            task_module.task_tool.validator(
+                {"action": "cancel", "subagent_id": subagent_id}
+            ),
+            context,
+        )
+        finish.set()
+
+        terminal = _wait_for_terminal(lifecycle, subagent_id)
+        assert terminal["status"] == "failed"
+        assert terminal["result"] == {
+            "ok": False,
+            "output": "error[tool_abandoned]: display text is not authority",
+            "truncated": False,
+        }
     finally:
         finish.set()
         lifecycle.shutdown()

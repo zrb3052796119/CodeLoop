@@ -16,19 +16,37 @@ import json
 import os
 import re
 import stat
+import threading
 import time
 import uuid
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 from minicode.agent_budget import AgentBudgetSnapshot
+from minicode.concurrent_tool_terminal import (
+    CONCURRENT_TOOL_TERMINAL_EVENT_TYPE,
+    MAX_CONCURRENT_TOOL_TERMINAL_EVENTS,
+    normalize_concurrent_tool_terminal,
+)
 
 JOURNAL_VERSION = 1
 _SUBAGENT_ID_RE = re.compile(r"^sub_[0-9a-f]{32}$")
 _MAX_SUBAGENTS_PER_RUN = 100
-_MAX_FILE_BYTES = 256 * 1024
-_MAX_EVENTS_PER_SUBAGENT = 500
+_MAX_STANDARD_FILE_BYTES = 1024 * 1024
+_MAX_TERMINAL_RECORD_BYTES = 512
+_MAX_FINISH_RECORD_BYTES = 4 * 1024
+MAX_STANDARD_EVENTS_PER_SUBAGENT = 500
+MAX_TERMINAL_EVENTS_PER_SUBAGENT = MAX_CONCURRENT_TOOL_TERMINAL_EVENTS
+_MAX_TERMINAL_FILE_BYTES = (
+    MAX_TERMINAL_EVENTS_PER_SUBAGENT * _MAX_TERMINAL_RECORD_BYTES
+)
+_MAX_FILE_BYTES = _MAX_STANDARD_FILE_BYTES + _MAX_TERMINAL_FILE_BYTES
+_MAX_EVENTS_PER_SUBAGENT = (
+    MAX_STANDARD_EVENTS_PER_SUBAGENT
+    + MAX_TERMINAL_EVENTS_PER_SUBAGENT
+)
 _MAX_STRING_CHARS = 240
 _MAX_NESTING = 4
 _MAX_LIST_ITEMS = 40
@@ -42,6 +60,7 @@ _ALLOWED_EVENT_TYPES = frozenset(
         "model.costed",
         "tool.started",
         "tool.finished",
+        CONCURRENT_TOOL_TERMINAL_EVENT_TYPE,
         "task.outcome",
         "skill.routed",
         "skill.loaded",
@@ -119,6 +138,11 @@ def sanitize_subagent_event_payload(
     sanitized = _sanitize_value(payload or {})
     if not isinstance(sanitized, dict):
         return {}
+    if event_type == CONCURRENT_TOOL_TERMINAL_EVENT_TYPE:
+        normalized_terminal = normalize_concurrent_tool_terminal(sanitized)
+        if normalized_terminal is None:
+            raise ValueError("concurrent tool terminal payload is invalid")
+        return normalized_terminal
     return sanitized
 
 
@@ -183,6 +207,8 @@ class SubagentRunJournal:
         self._run_dir = Path(run_dir)
         self._root = self._run_dir / "subagent-runs"
         self._clock = clock
+        self._write_lock = threading.Lock()
+        self._byte_usage: dict[str, tuple[int, int]] = {}
 
     @property
     def parent_run_id(self) -> str:
@@ -202,36 +228,155 @@ class SubagentRunJournal:
             raise SubagentJournalError("sub-agent id is invalid")
         return self._root / f"{subagent_id}.jsonl"
 
+    def _load_byte_usage(self, path: Path) -> tuple[int, int]:
+        try:
+            path_info = os.lstat(path)
+        except FileNotFoundError:
+            return 0, 0
+        except OSError as exc:
+            raise SubagentJournalError(
+                "sub-agent journal usage is unavailable"
+            ) from exc
+        if (
+            not stat.S_ISREG(path_info.st_mode)
+            or path_info.st_size > _MAX_FILE_BYTES
+        ):
+            raise SubagentJournalError(
+                "sub-agent journal file is unsafe"
+            )
+        flags = os.O_RDONLY
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        standard_bytes = 0
+        terminal_bytes = 0
+        try:
+            descriptor = os.open(path, flags)
+        except OSError as exc:
+            raise SubagentJournalError(
+                "sub-agent journal usage is unavailable"
+            ) from exc
+        try:
+            descriptor_info = os.fstat(descriptor)
+            if (
+                not stat.S_ISREG(descriptor_info.st_mode)
+                or descriptor_info.st_dev != path_info.st_dev
+                or descriptor_info.st_ino != path_info.st_ino
+                or descriptor_info.st_size > _MAX_FILE_BYTES
+            ):
+                raise SubagentJournalError(
+                    "sub-agent journal file is unsafe"
+                )
+            chunks: list[bytes] = []
+            remaining = _MAX_FILE_BYTES + 1
+            while remaining > 0:
+                chunk = os.read(descriptor, min(64 * 1024, remaining))
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                remaining -= len(chunk)
+            raw_journal = b"".join(chunks)
+            if (
+                len(raw_journal) > _MAX_FILE_BYTES
+                or len(raw_journal) != descriptor_info.st_size
+            ):
+                raise SubagentJournalError(
+                    "sub-agent journal changed while reading usage"
+                )
+        except OSError as exc:
+            raise SubagentJournalError(
+                "sub-agent journal usage is unavailable"
+            ) from exc
+        finally:
+            os.close(descriptor)
+        lines = raw_journal.splitlines(keepends=True)
+        for raw in lines:
+            try:
+                record = json.loads(raw)
+            except (json.JSONDecodeError, UnicodeError) as exc:
+                raise SubagentJournalError(
+                    "sub-agent journal contains an invalid record"
+                ) from exc
+            terminal = (
+                isinstance(record, dict)
+                and record.get("recordType") == "event"
+                and record.get("type")
+                == CONCURRENT_TOOL_TERMINAL_EVENT_TYPE
+            )
+            if terminal:
+                terminal_bytes += len(raw)
+            else:
+                standard_bytes += len(raw)
+        return standard_bytes, terminal_bytes
+
     def _append_line(self, subagent_id: str, record: Mapping[str, object]) -> None:
         self._ensure_root()
         path = self._path(subagent_id)
         if path.is_symlink():
             raise SubagentJournalError("sub-agent journal file is a symlink")
-        flags = os.O_WRONLY | os.O_APPEND | os.O_CREAT
-        if hasattr(os, "O_NOFOLLOW"):
-            flags |= os.O_NOFOLLOW
-        descriptor = os.open(path, flags, 0o600)
-        try:
-            info = os.fstat(descriptor)
-            if not stat.S_ISREG(info.st_mode):
-                raise SubagentJournalError("sub-agent journal file is unsafe")
-            if info.st_size >= _MAX_FILE_BYTES:
+        encoded = (
+            json.dumps(
+                dict(record),
+                ensure_ascii=True,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n"
+        ).encode("utf-8")
+        terminal = (
+            record.get("recordType") == "event"
+            and record.get("type") == CONCURRENT_TOOL_TERMINAL_EVENT_TYPE
+        )
+        standard_event = (
+            record.get("recordType") == "event" and not terminal
+        )
+        if terminal and len(encoded) > _MAX_TERMINAL_RECORD_BYTES:
+            raise SubagentJournalError("terminal event exceeds its byte bound")
+        with self._write_lock:
+            usage = self._byte_usage.get(subagent_id)
+            if usage is None:
+                usage = self._load_byte_usage(path)
+            standard_bytes, terminal_bytes = usage
+            next_standard_bytes = standard_bytes + (
+                0 if terminal else len(encoded)
+            )
+            next_terminal_bytes = terminal_bytes + (
+                len(encoded) if terminal else 0
+            )
+            standard_limit = (
+                _MAX_STANDARD_FILE_BYTES - _MAX_FINISH_RECORD_BYTES
+                if standard_event
+                else _MAX_STANDARD_FILE_BYTES
+            )
+            if (
+                next_standard_bytes > standard_limit
+                or next_terminal_bytes > _MAX_TERMINAL_FILE_BYTES
+                or next_standard_bytes + next_terminal_bytes > _MAX_FILE_BYTES
+            ):
                 raise SubagentJournalError("sub-agent journal is full")
-            encoded = (
-                json.dumps(
-                    dict(record),
-                    ensure_ascii=True,
-                    sort_keys=True,
-                    separators=(",", ":"),
-                )
-                + "\n"
-            ).encode("utf-8")
-            if info.st_size + len(encoded) > _MAX_FILE_BYTES:
-                raise SubagentJournalError("sub-agent journal is full")
-            if os.write(descriptor, encoded) != len(encoded):
-                raise SubagentJournalError("short sub-agent journal write")
-        finally:
-            os.close(descriptor)
+            flags = os.O_WRONLY | os.O_APPEND | os.O_CREAT
+            if hasattr(os, "O_NOFOLLOW"):
+                flags |= os.O_NOFOLLOW
+            descriptor = os.open(path, flags, 0o600)
+            try:
+                info = os.fstat(descriptor)
+                if not stat.S_ISREG(info.st_mode):
+                    raise SubagentJournalError(
+                        "sub-agent journal file is unsafe"
+                    )
+                if info.st_size != standard_bytes + terminal_bytes:
+                    raise SubagentJournalError(
+                        "sub-agent journal changed outside its writer"
+                    )
+                if os.write(descriptor, encoded) != len(encoded):
+                    raise SubagentJournalError(
+                        "short sub-agent journal write"
+                    )
+            finally:
+                os.close(descriptor)
+            self._byte_usage[subagent_id] = (
+                next_standard_bytes,
+                next_terminal_bytes,
+            )
 
     def start(
         self,
@@ -386,7 +531,11 @@ class SubagentRunJournal:
         except (OSError, UnicodeError):
             return ()
         events: list[SubagentJournalEvent] = []
-        for raw in lines[:_MAX_EVENTS_PER_SUBAGENT + 2]:
+        if len(lines) > _MAX_EVENTS_PER_SUBAGENT + 2:
+            return ()
+        standard_event_count = 0
+        terminal_event_count = 0
+        for raw in lines:
             try:
                 record = json.loads(raw)
             except json.JSONDecodeError:
@@ -414,6 +563,23 @@ class SubagentRunJournal:
                 or not isinstance(payload, dict)
             ):
                 return ()
+            if event_type == CONCURRENT_TOOL_TERMINAL_EVENT_TYPE:
+                terminal_event_count += 1
+                if (
+                    terminal_event_count
+                    > MAX_TERMINAL_EVENTS_PER_SUBAGENT
+                ):
+                    return ()
+                normalized_terminal = normalize_concurrent_tool_terminal(
+                    payload
+                )
+                if normalized_terminal is None:
+                    return ()
+                payload = normalized_terminal
+            else:
+                standard_event_count += 1
+                if standard_event_count > MAX_STANDARD_EVENTS_PER_SUBAGENT:
+                    return ()
             events.append(
                 SubagentJournalEvent(
                     sequence=sequence,
@@ -513,6 +679,8 @@ def new_subagent_id() -> str:
 
 __all__ = [
     "JOURNAL_VERSION",
+    "MAX_STANDARD_EVENTS_PER_SUBAGENT",
+    "MAX_TERMINAL_EVENTS_PER_SUBAGENT",
     "SubagentJournalError",
     "SubagentJournalEvent",
     "SubagentRunJournal",

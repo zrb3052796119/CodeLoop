@@ -68,6 +68,141 @@ def test_assignment_contract_rejects_unknown_fields_and_forbidden_write_scope() 
         parse_assignment(invalid_scope)
 
 
+def test_assignment_forbidden_scope_rejects_case_aliases() -> None:
+    invalid_scope = _assignment()
+    invalid_scope["scope"] = {
+        **invalid_scope["scope"],
+        "writePaths": ["minicode/Secrets/token.py"],
+        "forbiddenPaths": ["minicode/secrets"],
+    }
+
+    with pytest.raises(ContractValidationError, match="forbidden paths"):
+        parse_assignment(invalid_scope)
+
+
+def test_assignment_forbidden_scope_rejects_case_alias_duplicates() -> None:
+    invalid_scope = _assignment()
+    invalid_scope["scope"] = {
+        **invalid_scope["scope"],
+        "forbiddenPaths": ["minicode/private", "minicode/Private"],
+    }
+
+    with pytest.raises(ContractValidationError, match="duplicate paths"):
+        parse_assignment(invalid_scope)
+
+
+def test_assignment_scope_rejects_windows_alternate_data_stream_paths() -> None:
+    invalid_scope = _assignment()
+    invalid_scope["scope"] = {
+        **invalid_scope["scope"],
+        "readRoots": ["secrets.json::$DATA"],
+    }
+
+    with pytest.raises(ContractValidationError, match="Windows-ambiguous"):
+        parse_assignment(invalid_scope)
+
+
+@pytest.mark.parametrize(
+    "unsafe_path",
+    ["Secrets.", "Secrets ", "safe/Secrets. /token"],
+)
+def test_assignment_scope_rejects_windows_trailing_name_aliases(
+    unsafe_path: str,
+) -> None:
+    invalid_scope = _assignment()
+    invalid_scope["scope"] = {
+        **invalid_scope["scope"],
+        "readRoots": [unsafe_path],
+    }
+
+    with pytest.raises(ContractValidationError, match="Windows-ambiguous"):
+        parse_assignment(invalid_scope)
+
+
+@pytest.mark.parametrize(
+    "unsafe_path",
+    [
+        "NUL.txt",
+        "safe/CON",
+        "PRN.log",
+        "AUX",
+        "CLOCK$.txt",
+        "COM1.json",
+        "COM².json",
+        "LPT9.log",
+        "LPT³.log",
+    ],
+)
+def test_assignment_scope_rejects_windows_reserved_device_names(
+    unsafe_path: str,
+) -> None:
+    invalid_scope = _assignment()
+    invalid_scope["scope"] = {
+        **invalid_scope["scope"],
+        "readRoots": [unsafe_path],
+    }
+
+    with pytest.raises(ContractValidationError, match="Windows-ambiguous"):
+        parse_assignment(invalid_scope)
+
+
+@pytest.mark.parametrize(
+    "unsafe_path",
+    [
+        "src/<draft>.txt",
+        'src/"quoted".txt',
+        "src/bad|name.txt",
+        "src/bad?name.txt",
+        "src/bad*name.txt",
+        "src/bad.txt\x1f",
+        "src/bad\x1fname.txt",
+    ],
+)
+def test_assignment_scope_rejects_windows_illegal_component_characters(
+    unsafe_path: str,
+) -> None:
+    invalid_scope = _assignment()
+    invalid_scope["scope"] = {
+        **invalid_scope["scope"],
+        "readRoots": [unsafe_path],
+    }
+
+    with pytest.raises(ContractValidationError, match="Windows-ambiguous"):
+        parse_assignment(invalid_scope)
+
+
+def test_assignment_scope_rejects_null_in_path_component() -> None:
+    invalid_scope = _assignment()
+    invalid_scope["scope"] = {
+        **invalid_scope["scope"],
+        "readRoots": ["src/bad\x00name.txt"],
+    }
+
+    with pytest.raises(ContractValidationError):
+        parse_assignment(invalid_scope)
+
+
+def test_assignment_scope_keeps_ordinary_posix_relative_names() -> None:
+    value = _assignment()
+    safe_paths = [
+        ".",
+        ".config",
+        "src/release.v1",
+        "devices/COM10.txt",
+        "devices/LPT0.txt",
+        "docs/nul-safe.txt",
+        "docs/测试.txt",
+    ]
+    value["scope"] = {
+        **value["scope"],
+        "readRoots": safe_paths,
+    }
+
+    assignment = parse_assignment(value)
+
+    assert assignment.scope.read_roots == tuple(safe_paths)
+
+
 def test_assignment_contract_rejects_a_field_valid_but_oversized_envelope() -> None:
     value = _assignment()
     value["constraints"] = [
@@ -163,6 +298,22 @@ def test_analyst_result_requires_evidence_and_matching_assignment() -> None:
     missing_evidence["findings"][0]["evidence"] = []
     with pytest.raises(ContractValidationError, match="evidence"):
         parse_role_result(assignment, missing_evidence)
+
+
+def test_analyst_evidence_rejects_forbidden_case_aliases() -> None:
+    value = _assignment()
+    value["scope"] = {
+        **value["scope"],
+        "forbiddenPaths": ["minicode/private"],
+    }
+    assignment = parse_assignment(value)
+    report = _analyst_report()
+    report["findings"][0]["evidence"][0]["path"] = (
+        "minicode/Private/note.py"
+    )
+
+    with pytest.raises(ContractValidationError, match="forbidden scope"):
+        parse_role_result(assignment, report)
 
 
 def test_analyst_evidence_count_reserves_the_workflow_audit_budget() -> None:

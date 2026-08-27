@@ -8,15 +8,18 @@ the policy or dispatch Workers directly.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from enum import Enum
 import hashlib
 import re
 import time
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from enum import Enum
+from typing import TYPE_CHECKING
+
+from minicode.conflict_port_runner import BoundedConflictPortRunner
 
 if TYPE_CHECKING:
+    from minicode.conflict_port_runner import ConflictPortRunner
     from minicode.conflict_resolution import (
         ConflictBallot,
         ConflictExecutionOutcome,
@@ -27,6 +30,8 @@ if TYPE_CHECKING:
 
 
 SCHEDULER_POLICY_VERSION = 2
+_DEFAULT_CONFLICT_AUTHORITY_RUNNER = BoundedConflictPortRunner()
+_DEFAULT_CONFLICT_OBSERVER_RUNNER = BoundedConflictPortRunner()
 
 
 class TaskKind(str, Enum):
@@ -254,6 +259,25 @@ class SchedulerExecutionPolicy:
 class CentralScheduler:
     """Select centrally controlled flows from normalized task facts."""
 
+    def __init__(
+        self,
+        *,
+        conflict_port_runner: "ConflictPortRunner | None" = None,
+        conflict_observer_runner: "ConflictPortRunner | None" = None,
+    ) -> None:
+        if conflict_port_runner is None:
+            conflict_port_runner = _DEFAULT_CONFLICT_AUTHORITY_RUNNER
+        if conflict_observer_runner is None:
+            conflict_observer_runner = _DEFAULT_CONFLICT_OBSERVER_RUNNER
+        if not callable(getattr(conflict_port_runner, "run", None)):
+            raise TypeError("conflict_port_runner must implement run()")
+        if not callable(getattr(conflict_observer_runner, "run", None)):
+            raise TypeError("conflict_observer_runner must implement run()")
+        if conflict_observer_runner is conflict_port_runner:
+            raise ValueError("conflict runners must use independent capacity")
+        self._conflict_port_runner = conflict_port_runner
+        self._conflict_observer_runner = conflict_observer_runner
+
     def resolve_conflict(self, package, **authorities):
         """Resolve or escalate a validated conflict under central authority."""
         from minicode.conflict_resolution import ConflictResolver
@@ -286,8 +310,14 @@ class CentralScheduler:
         deadline_monotonic: float | None = None,
         clock: Callable[[], float] = time.monotonic,
         abort_exceptions: tuple[type[BaseException], ...] = (),
+        cancellation_token: object | None = None,
     ) -> "ConflictExecutionOutcome":
-        """Coordinate one conflict without exposing Worker or commit ports."""
+        """Coordinate one conflict through process-shared bounded runners.
+
+        Authority and observer capacity are independent.  Both runners are
+        fixed at Scheduler construction so individual conflict calls cannot
+        replace either gate.
+        """
 
         from minicode.conflict_resolution import ConflictCoordinator
 
@@ -304,6 +334,9 @@ class CentralScheduler:
             deadline_monotonic=deadline_monotonic,
             clock=clock,
             abort_exceptions=abort_exceptions,
+            port_runner=self._conflict_port_runner,
+            observer_runner=self._conflict_observer_runner,
+            cancellation_token=cancellation_token,
         )
 
     def plan(self, profile: TaskProfile) -> DispatchPlan:

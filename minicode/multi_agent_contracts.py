@@ -7,13 +7,20 @@ violations fail closed instead of being silently ignored.
 
 from __future__ import annotations
 
+import json
+import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-import json
-import re
-from typing import Mapping, TypeVar
+from typing import TypeVar
 
+from minicode.scheduler_path_policy import (
+    normalized_forbidden_paths_overlap,
+    normalized_path_has_windows_ambiguous_component,
+    normalized_path_identity,
+    normalized_path_within,
+)
 
 ASSIGNMENT_VERSION = 1
 MAX_ROLE_CONTRACT_BYTES = 18_000
@@ -374,6 +381,16 @@ def _non_negative_int(
 
 
 def _normalized_path(value: object, *, label: str) -> str:
+    if isinstance(value, str):
+        portable_path = value.replace("\\", "/")
+        if (
+            portable_path
+            and len(value.strip()) <= 500
+            and normalized_path_has_windows_ambiguous_component(portable_path)
+        ):
+            raise ContractValidationError(
+                f"{label} contains a Windows-ambiguous path component"
+            )
     path = _text(value, label=label, maximum=500).replace("\\", "/")
     parts = [part for part in path.split("/") if part not in {"", "."}]
     if ".." in parts:
@@ -385,19 +402,39 @@ def _normalized_path(value: object, *, label: str) -> str:
     return normalized
 
 
+def _normalized_path_list(
+    value: object,
+    *,
+    label: str,
+    maximum_items: int = _MAX_ITEMS,
+) -> tuple[str, ...]:
+    if not isinstance(value, list) or len(value) > maximum_items:
+        raise ContractValidationError(f"{label} must be a bounded list")
+    normalized: list[str] = []
+    for index, item in enumerate(value):
+        path = _normalized_path(item, label=f"{label}[{index}]")
+        if path in normalized:
+            raise ContractValidationError(f"{label} contains a duplicate")
+        normalized.append(path)
+    return tuple(normalized)
+
+
 def _path_within(path: str, roots: tuple[str, ...]) -> bool:
     candidate = _normalized_path(path, label="path")
     for raw_root in roots:
         root = _normalized_path(raw_root, label="scope root")
-        if root == "." and not candidate.startswith("/"):
-            return True
-        if candidate == root or candidate.startswith(root.rstrip("/") + "/"):
+        if normalized_path_within(candidate, root, case_sensitive=True):
             return True
     return False
 
 
 def _paths_overlap(left: str, right: str) -> bool:
-    return _path_within(left, (right,)) or _path_within(right, (left,))
+    normalized_left = _normalized_path(left, label="path")
+    normalized_right = _normalized_path(right, label="path")
+    return normalized_forbidden_paths_overlap(
+        normalized_left,
+        normalized_right,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -655,23 +692,28 @@ class Assignment:
 
 def _parse_scope(value: object, *, role: WorkerRole) -> AssignmentScope:
     raw = _closed_mapping(value, _SCOPE_FIELDS, label="scope")
-    read_roots = tuple(
-        _normalized_path(path, label="scope.readRoots")
-        for path in _string_list(raw["readRoots"], label="scope.readRoots")
+    read_roots = _normalized_path_list(
+        raw["readRoots"],
+        label="scope.readRoots",
     )
-    write_paths = tuple(
-        _normalized_path(path, label="scope.writePaths")
-        for path in _string_list(raw["writePaths"], label="scope.writePaths")
+    write_paths = _normalized_path_list(
+        raw["writePaths"],
+        label="scope.writePaths",
     )
-    forbidden_paths = tuple(
-        _normalized_path(path, label="scope.forbiddenPaths")
-        for path in _string_list(
-            raw["forbiddenPaths"], label="scope.forbiddenPaths"
+    forbidden_paths = _normalized_path_list(
+        raw["forbiddenPaths"],
+        label="scope.forbiddenPaths",
+    )
+    if (
+        len(set(read_roots)) != len(read_roots)
+        or len(set(write_paths)) != len(write_paths)
+        or len(
+            {
+                normalized_path_identity(path, case_sensitive=False)
+                for path in forbidden_paths
+            }
         )
-    )
-    if any(
-        len(set(paths)) != len(paths)
-        for paths in (read_roots, write_paths, forbidden_paths)
+        != len(forbidden_paths)
     ):
         raise ContractValidationError("scope contains normalized duplicate paths")
     scope = AssignmentScope(
@@ -1048,12 +1090,9 @@ def parse_implementation_order(
         raw["baseDigest"],
         label="ImplementationOrder baseDigest",
     )
-    allowed_paths = tuple(
-        _normalized_path(path, label="ImplementationOrder allowedPaths")
-        for path in _string_list(
-            raw["allowedPaths"],
-            label="ImplementationOrder allowedPaths",
-        )
+    allowed_paths = _normalized_path_list(
+        raw["allowedPaths"],
+        label="ImplementationOrder allowedPaths",
     )
     if not allowed_paths:
         raise ContractValidationError(
@@ -1107,12 +1146,9 @@ def parse_implementation_order(
         step_id = _generic_id(step["id"], label="ImplementationOrder step.id")
         if step_id in step_ids:
             raise ContractValidationError("ImplementationOrder step id is duplicated")
-        step_paths = tuple(
-            _normalized_path(path, label="ImplementationOrder step.allowedPaths")
-            for path in _string_list(
-                step["allowedPaths"],
-                label="ImplementationOrder step.allowedPaths",
-            )
+        step_paths = _normalized_path_list(
+            step["allowedPaths"],
+            label="ImplementationOrder step.allowedPaths",
         )
         if not step_paths or any(path not in allowed_paths for path in step_paths):
             raise ContractValidationError(
@@ -1300,11 +1336,9 @@ def _parse_analyst_result(
             if step_id in step_ids:
                 raise ContractValidationError("implementation step id is duplicated")
             step_ids.add(step_id)
-            allowed_paths = tuple(
-                _normalized_path(path, label="order step.allowedPaths")
-                for path in _string_list(
-                    step["allowedPaths"], label="order step.allowedPaths"
-                )
+            allowed_paths = _normalized_path_list(
+                step["allowedPaths"],
+                label="order step.allowedPaths",
             )
             if not allowed_paths:
                 raise ContractValidationError(

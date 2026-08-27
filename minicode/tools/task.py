@@ -13,8 +13,6 @@ from __future__ import annotations
 
 import base64
 import concurrent.futures
-from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
 import hashlib
 import inspect
 import json
@@ -26,10 +24,13 @@ import subprocess
 import tempfile
 import threading
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, replace
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterator
 
+from minicode import advisory_lock
 from minicode.agent_budget import AgentBudgetExceeded, AgentTurnBudget
 from minicode.agent_loop import AgentTurnDeadlineExceeded, run_agent_turn
 from minicode.central_scheduler import (
@@ -37,16 +38,19 @@ from minicode.central_scheduler import (
     DispatchStage,
     StageResult,
 )
+from minicode.concurrent_tool_terminal import (
+    CONCURRENT_TOOL_TERMINAL_EVENT_TYPE,
+)
 from minicode.deterministic_verifier import (
     DeterministicVerifier,
     VerificationCheck,
     VerificationDeadlineExceeded,
 )
 from minicode.multi_agent_contracts import (
-    Assignment,
-    ImplementationOrder,
     MAX_ANALYST_REPORT_BYTES,
     MAX_ROLE_CONTRACT_BYTES,
+    Assignment,
+    ImplementationOrder,
     WorkflowRequest,
     analyst_report_requires_reclassification,
     parse_assignment,
@@ -66,8 +70,8 @@ from minicode.scheduler_artifacts import (
 )
 from minicode.scheduler_audit import (
     human_approval_analysis_digest,
-    project_scheduler_commit_ready,
     project_scheduler_audit,
+    project_scheduler_commit_ready,
 )
 from minicode.scheduler_permissions import (
     SchedulerExecutorPermissions,
@@ -79,7 +83,12 @@ from minicode.scheduler_trace import (
     render_scheduler_trace,
 )
 from minicode.skill_router import required_skill_names_for_routing
-from minicode.subagent_journal import SubagentRunJournal, new_subagent_id
+from minicode.subagent_journal import (
+    MAX_STANDARD_EVENTS_PER_SUBAGENT,
+    MAX_TERMINAL_EVENTS_PER_SUBAGENT,
+    SubagentRunJournal,
+    new_subagent_id,
+)
 from minicode.subagent_lifecycle import (
     ASYNC_AGENT_TYPES,
     SubagentLifecycleError,
@@ -103,10 +112,10 @@ from minicode.tooling import (
     ToolExecutionAbandoned,
     ToolMetadata,
     ToolResult,
+    ToolTerminationReason,
 )
 from minicode.turn_cancellation import TurnCancellationRequested
 from minicode.verification_observation import project_verification
-
 
 # ---------------------------------------------------------------------------
 # Agent type definitions
@@ -594,25 +603,40 @@ class _SubagentJournalSink:
     ) -> None:
         self._journal = journal
         self._subagent_id = subagent_id
-        self._sequence = 0
+        self._persisted_sequence = 0
+        self._standard_events = 0
+        self._terminal_events = 0
+        self._lock = threading.Lock()
         self.model_turns = 0
 
     def emit(self, event_type: str, *, step=None, payload=None) -> None:
-        if event_type == "model.started":
-            self.model_turns += 1
-        self._sequence += 1
-        if self._journal is None or self._sequence > 500:
-            return
-        try:
-            self._journal.append_event(
-                self._subagent_id,
-                sequence=self._sequence,
-                event_type=event_type,
-                step=step,
-                payload=payload,
-            )
-        except Exception:  # noqa: BLE001 - sub-journal never alters execution
-            pass
+        with self._lock:
+            if event_type == "model.started":
+                self.model_turns += 1
+            if self._journal is None:
+                return
+            terminal = event_type == CONCURRENT_TOOL_TERMINAL_EVENT_TYPE
+            if terminal:
+                if self._terminal_events >= MAX_TERMINAL_EVENTS_PER_SUBAGENT:
+                    return
+            elif self._standard_events >= MAX_STANDARD_EVENTS_PER_SUBAGENT:
+                return
+            sequence = self._persisted_sequence + 1
+            try:
+                self._journal.append_event(
+                    self._subagent_id,
+                    sequence=sequence,
+                    event_type=event_type,
+                    step=step,
+                    payload=payload,
+                )
+            except Exception:  # noqa: BLE001 - observation never alters execution
+                return
+            self._persisted_sequence = sequence
+            if terminal:
+                self._terminal_events += 1
+            else:
+                self._standard_events += 1
 
 
 def _written_memory_recorder(context):
@@ -1544,6 +1568,123 @@ class _WorkflowCommitStateUnknown(BaseException):
     """Promotion was interrupted and the parent is neither base nor target."""
 
 
+def _workflow_parent_lock_key(source_root: Path) -> str:
+    """Bind one promotion lock to the underlying source-root directory."""
+
+    try:
+        metadata = os.stat(source_root, follow_symlinks=True)
+    except (OSError, TypeError, ValueError) as exc:
+        raise _WorkflowIsolationError(
+            f"workflow commit lock identity is unavailable: {exc}"
+        ) from exc
+    if not stat.S_ISDIR(metadata.st_mode):
+        raise _WorkflowIsolationError(
+            "workflow commit lock identity is not a directory"
+        )
+    device = metadata.st_dev
+    inode = metadata.st_ino
+    if (
+        isinstance(device, bool)
+        or not isinstance(device, int)
+        or device < 0
+        or isinstance(inode, bool)
+        or not isinstance(inode, int)
+        or inode <= 0
+    ):
+        raise _WorkflowIsolationError(
+            "workflow commit lock identity is unavailable"
+        )
+    identity = f"workflow-parent-v1:{device}:{inode}".encode("ascii")
+    return hashlib.sha256(identity).hexdigest()
+
+
+def _workflow_lock_platform_name() -> str:
+    return os.name
+
+
+def _workflow_parent_lock_namespace() -> Path:
+    """Return a stable per-user namespace independent of process temp config."""
+
+    platform = _workflow_lock_platform_name()
+    if platform == "posix":
+        get_effective_user = getattr(os, "geteuid", None)
+        if get_effective_user is None:
+            raise _WorkflowIsolationError(
+                "workflow commit lock user identity is unavailable"
+            )
+        user_id = get_effective_user()
+        if isinstance(user_id, bool) or not isinstance(user_id, int) or user_id < 0:
+            raise _WorkflowIsolationError(
+                "workflow commit lock user identity is unavailable"
+            )
+        return Path("/tmp") / f"minicode-workflow-locks-{user_id}"
+    if platform == "nt":
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        if (
+            not isinstance(local_app_data, str)
+            or not local_app_data
+            or local_app_data != local_app_data.strip()
+        ):
+            raise _WorkflowIsolationError(
+                "workflow commit lock user namespace is unavailable"
+            )
+        root = Path(local_app_data)
+        if not root.is_absolute():
+            raise _WorkflowIsolationError(
+                "workflow commit lock user namespace is unavailable"
+            )
+        return root / "MiniCode" / "workflow-locks"
+    raise _WorkflowIsolationError(
+        "workflow commit lock platform is unsupported"
+    )
+
+
+def _prepare_workflow_parent_lock_namespace(lock_root: Path) -> None:
+    """Create and validate the per-user lock namespace without following links."""
+
+    platform = _workflow_lock_platform_name()
+    try:
+        if platform == "posix":
+            try:
+                os.mkdir(lock_root, mode=0o700)
+            except FileExistsError:
+                pass
+        elif platform == "nt":
+            lock_root.mkdir(mode=0o700, parents=True, exist_ok=True)
+        else:
+            raise _WorkflowIsolationError(
+                "workflow commit lock platform is unsupported"
+            )
+        metadata = os.lstat(lock_root)
+    except _WorkflowIsolationError:
+        raise
+    except OSError as exc:
+        raise _WorkflowIsolationError(
+            f"workflow commit lock namespace is unavailable: {exc}"
+        ) from exc
+
+    is_link = stat.S_ISLNK(metadata.st_mode)
+    if platform == "nt":
+        reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+        file_attributes = getattr(metadata, "st_file_attributes", 0)
+        is_link = is_link or bool(file_attributes & reparse_flag)
+    if is_link or not stat.S_ISDIR(metadata.st_mode):
+        raise _WorkflowIsolationError(
+            "workflow commit lock namespace is unavailable: unsafe path type"
+        )
+    if platform == "posix":
+        get_effective_user = getattr(os, "geteuid", None)
+        owner = getattr(metadata, "st_uid", None)
+        if get_effective_user is None or owner != get_effective_user():
+            raise _WorkflowIsolationError(
+                "workflow commit lock namespace is unavailable: wrong owner"
+            )
+        if stat.S_IMODE(metadata.st_mode) != 0o700:
+            raise _WorkflowIsolationError(
+                "workflow commit lock namespace is unavailable: unsafe mode"
+            )
+
+
 @dataclass(frozen=True, slots=True)
 class _FrozenWorkflowChangeSet:
     """Exact isolated patch bytes reviewed by later workflow gates."""
@@ -1726,54 +1867,83 @@ class _WorkflowWorkspaceTransaction:
     @contextmanager
     def _cross_process_commit_lock(self) -> Iterator[None]:
         """Serialize promotions for one source root across local processes."""
-        lock_root = Path(tempfile.gettempdir()) / "minicode-workflow-locks"
+        lock_root = _workflow_parent_lock_namespace()
+        _prepare_workflow_parent_lock_namespace(lock_root)
+        handle = None
         try:
-            lock_root.mkdir(mode=0o700, parents=True, exist_ok=True)
-            os.chmod(lock_root, 0o700)
-            lock_name = hashlib.sha256(
-                str(self.source_root).encode("utf-8")
-            ).hexdigest()
+            lock_name = _workflow_parent_lock_key(self.source_root)
             lock_path = lock_root / f"{lock_name}.lock"
             handle = lock_path.open("a+b")
             os.chmod(lock_path, 0o600)
-        except OSError as exc:
-            raise _WorkflowIsolationError(
-                f"workflow commit lock is unavailable: {exc}"
-            ) from exc
-
-        locked = False
-        try:
-            try:
-                import fcntl
-            except ImportError:  # pragma: no cover - Windows fallback below
-                fcntl = None
-            if fcntl is None:
-                # The process-local lock and parent baseline check remain in
-                # force on platforms without POSIX advisory locks.
-                locked = True
-            else:
-                while not locked:
-                    remaining = self._commit_checkpoint()
-                    try:
-                        fcntl.flock(
-                            handle.fileno(),
-                            fcntl.LOCK_EX | fcntl.LOCK_NB,
-                        )
-                        locked = True
-                    except BlockingIOError:
-                        time.sleep(
-                            0.05
-                            if remaining is None
-                            else max(0.001, min(0.05, remaining))
-                        )
-            yield
-        finally:
-            if locked and fcntl is not None:
+            advisory_lock.prepare_advisory_lock_file(
+                handle.fileno(),
+                mode=0o600,
+            )
+        except BaseException as exc:
+            if handle is not None:
                 try:
-                    fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-                except OSError:
+                    handle.close()
+                except BaseException:
+                    # Preserve the setup failure; the descriptor close was
+                    # still attempted and must not replace cancellation.
                     pass
-            handle.close()
+            if isinstance(exc, OSError):
+                raise _WorkflowIsolationError(
+                    f"workflow commit lock is unavailable: {exc}"
+                ) from exc
+            raise
+
+        assert handle is not None
+        locked = False
+        primary_failure = False
+        try:
+            while not locked:
+                remaining = self._commit_checkpoint()
+                try:
+                    locked = advisory_lock.acquire_advisory_lock(
+                        handle.fileno()
+                    )
+                except InterruptedError:
+                    continue
+                except OSError as exc:
+                    raise _WorkflowIsolationError(
+                        f"workflow commit lock is unavailable: {exc}"
+                    ) from exc
+                if not locked:
+                    time.sleep(
+                        0.05
+                        if remaining is None
+                        else max(0.001, min(0.05, remaining))
+                    )
+            yield
+        except BaseException:
+            # Acquisition/body failures describe the authoritative promotion
+            # state.  Cleanup is still attempted exactly once, but must not
+            # replace that primary fact (especially CommitStateUnknown).
+            primary_failure = True
+            raise
+        finally:
+            release_failure: BaseException | None = None
+            release_traceback = None
+            close_failure: BaseException | None = None
+            close_traceback = None
+            try:
+                if locked:
+                    advisory_lock.release_advisory_lock(handle.fileno())
+            except BaseException as exc:
+                release_failure = exc
+                release_traceback = exc.__traceback__
+            finally:
+                try:
+                    handle.close()
+                except BaseException as exc:
+                    close_failure = exc
+                    close_traceback = exc.__traceback__
+            if not primary_failure:
+                if release_failure is not None:
+                    raise release_failure.with_traceback(release_traceback)
+                if close_failure is not None:
+                    raise close_failure.with_traceback(close_traceback)
 
     def _discover_git_root(self) -> Path | None:
         """Find the nearest worktree root without invoking repository Git."""
@@ -6189,6 +6359,7 @@ def _run(input_data: dict, context) -> ToolResult:
             return ToolResult(
                 ok=False,
                 output=f"error[tool_abandoned]: {e}",
+                _termination_reason=ToolTerminationReason.ABANDONED,
             )
         except (_TaskDeadlineExceeded, AgentTurnDeadlineExceeded) as e:
             journal_outcome = "failed"
@@ -6405,7 +6576,8 @@ def _dispatch(input_data: dict, context) -> ToolResult:
                 if (
                     cancel_event.is_set()
                     and not result.ok
-                    and result.output.startswith("error[tool_abandoned]:")
+                    and result._termination_reason
+                    is ToolTerminationReason.ABANDONED
                 ):
                     raise SubagentWorkerCancelled()
                 return result

@@ -7,13 +7,24 @@ override a human, policy, or deterministic result.
 
 from __future__ import annotations
 
-from collections import Counter
-from collections.abc import Callable, Mapping
 import copy
-from dataclasses import dataclass
-from enum import Enum
 import hashlib
 import time
+from collections import Counter
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from enum import Enum
+from typing import TypeVar
+
+from minicode.conflict_port_runner import (
+    BoundedConflictPortRunner,
+    ConflictPortCancelled,
+    ConflictPortCapacityExhausted,
+    ConflictPortDeadlineExceeded,
+    ConflictPortRunner,
+)
+
+_PortResult = TypeVar("_PortResult")
 
 
 class ResolutionRoute(str, Enum):
@@ -159,8 +170,12 @@ class ConflictExecutionOutcome:
             raise ValueError("conflict coordination cannot authorize mutation")
 
 
-class _TransitionPortFailed(RuntimeError):
-    pass
+class _ConflictPortAbortError(BaseException):
+    """Carry a registered host abort across a bounded runner unchanged."""
+
+    def __init__(self, cause: BaseException) -> None:
+        super().__init__(str(cause))
+        self.cause = cause
 
 
 class ConflictCoordinator:
@@ -168,7 +183,19 @@ class ConflictCoordinator:
 
     The coordinator deliberately has no Worker or commit port.  Its only
     possible side effect is the optional delivery of content-free transition
-    records to the host.
+    records to the host.  Those deliveries are non-authoritative observations:
+    the complete local outcome is frozen first, then observations are delivered
+    in order.  Delivery failure cannot alter the conflict decision.
+
+    Passing ``deadline_monotonic`` without ``port_runner`` preserves the
+    legacy synchronous API: the deadline is checked before and after each
+    callback, but cannot interrupt a callback that never returns.  A host that
+    requires hard deadlines must inject a ``ConflictPortRunner``.  The bundled
+    ``BoundedConflictPortRunner`` provides an in-process compatibility boundary
+    with explicitly bounded leaked-thread capacity; a process/RPC runner can
+    provide stronger cancellation.  When a direct caller bounds authority
+    ports and also supplies ``on_transition``, it must inject a distinct
+    ``observer_runner``; the Coordinator never creates a hidden per-call pool.
     """
 
     _BALLOT_COUNT = 3
@@ -199,6 +226,9 @@ class ConflictCoordinator:
         deadline_monotonic: float | None = None,
         clock: Callable[[], float] = time.monotonic,
         abort_exceptions: tuple[type[BaseException], ...] = (),
+        port_runner: ConflictPortRunner | None = None,
+        observer_runner: ConflictPortRunner | None = None,
+        cancellation_token: object | None = None,
     ) -> ConflictExecutionOutcome:
         frozen = self._validated_package(package)
         if collect_ballot is not None and not callable(collect_ballot):
@@ -211,6 +241,28 @@ class ConflictCoordinator:
             raise TypeError("on_transition must be callable or null")
         if not callable(clock):
             raise TypeError("clock must be callable")
+        if port_runner is not None and not callable(
+            getattr(port_runner, "run", None)
+        ):
+            raise TypeError("port_runner must implement run() or be null")
+        if observer_runner is not None and not callable(
+            getattr(observer_runner, "run", None)
+        ):
+            raise TypeError("observer_runner must implement run() or be null")
+        if (
+            on_transition is not None
+            and port_runner is not None
+            and observer_runner is None
+        ):
+            raise ValueError(
+                "observer_runner is required with a bounded authority runner"
+            )
+        if (
+            on_transition is not None
+            and observer_runner is port_runner
+            and port_runner is not None
+        ):
+            raise ValueError("observer_runner must have independent capacity")
         if deadline_monotonic is not None and (
             isinstance(deadline_monotonic, bool)
             or not isinstance(deadline_monotonic, (int, float))
@@ -248,6 +300,9 @@ class ConflictCoordinator:
         ).hexdigest()[:20]
         execution_id = f"conflict_exec_{namespace}"
         transitions: list[ConflictTransition] = []
+        pending_observations: list[
+            tuple[ConflictPortRequest, ConflictTransition]
+        ] = []
         ballots_collected = 0
         adjudicator_calls = 0
         human_calls = 0
@@ -264,6 +319,57 @@ class ConflictCoordinator:
                 deadline_monotonic is not None
                 and float(clock()) >= float(deadline_monotonic)
             )
+
+        def invoke_with_runner(
+            runner: ConflictPortRunner | None,
+            request: ConflictPortRequest,
+            port_name: str,
+            operation: Callable[[], _PortResult],
+        ) -> _PortResult:
+            if runner is None:
+                # Compatibility mode is intentionally synchronous.  The
+                # surrounding deadline checkpoints do not claim to interrupt
+                # an uncooperative callback.
+                return operation()
+            remaining_timeout = (
+                None
+                if deadline_monotonic is None
+                else float(deadline_monotonic) - float(clock())
+            )
+
+            def protected_operation() -> _PortResult:
+                try:
+                    return operation()
+                except abort_exceptions as error:
+                    raise _ConflictPortAbortError(error) from error
+
+            try:
+                return runner.run(
+                    protected_operation,
+                    port_name=port_name,
+                    operation_id=request.operation_id,
+                    timeout_seconds=remaining_timeout,
+                    cancellation_token=cancellation_token,
+                )
+            except _ConflictPortAbortError as error:
+                raise error.cause from error
+
+        def invoke_port(
+            request: ConflictPortRequest,
+            port_name: str,
+            operation: Callable[[], _PortResult],
+        ) -> _PortResult:
+            return invoke_with_runner(
+                port_runner,
+                request,
+                port_name,
+                operation,
+            )
+
+        def propagate_cancellation(error: ConflictPortCancelled) -> None:
+            if error.cause is not None:
+                raise error.cause from error
+            raise error
 
         def next_request(
             route: ResolutionRoute | None,
@@ -314,14 +420,37 @@ class ConflictCoordinator:
                 outcome=outcome,
                 error_code=error_code,
             )
+            # Transitions are scheduler-owned facts.  The host callback is a
+            # best-effort observer and cannot accept, reject, or replace them.
             transitions.append(transition)
             if on_transition is not None:
+                pending_observations.append((request, transition))
+
+        def deliver_observations() -> None:
+            if on_transition is None:
+                return
+            for request, transition in pending_observations:
                 try:
-                    on_transition(transition)
+                    invoke_with_runner(
+                        observer_runner,
+                        request,
+                        "on_transition",
+                        lambda transition=transition: on_transition(transition),
+                    )
+                except ConflictPortCancelled as error:
+                    propagate_cancellation(error)
+                except (
+                    ConflictPortCapacityExhausted,
+                    ConflictPortDeadlineExceeded,
+                ):
+                    pass
                 except abort_exceptions:
                     raise
-                except Exception as exc:  # noqa: BLE001 - audit port fails closed
-                    raise _TransitionPortFailed from exc
+                except Exception:  # noqa: BLE001,S110 - best-effort observer
+                    # Observation is deliberately non-authoritative.  A late,
+                    # unavailable, or buggy observer cannot rewrite the local
+                    # transition ledger or the already-frozen decision.
+                    pass
 
         def outcome(
             status: str,
@@ -329,7 +458,7 @@ class ConflictCoordinator:
             choice: str | None,
             reason: str,
         ) -> ConflictExecutionOutcome:
-            return ConflictExecutionOutcome(
+            result = ConflictExecutionOutcome(
                 execution_id=execution_id,
                 workflow_id=workflow_id,
                 task_id=task_id,
@@ -343,22 +472,25 @@ class ConflictCoordinator:
                 human_calls=human_calls,
                 transitions=tuple(transitions),
             )
+            # Observers run only after the complete local outcome is frozen, so
+            # their latency and bounded-runner capacity cannot influence which
+            # authority route or decision won.
+            deliver_observations()
+            return result
 
         def timeout(
             route: ResolutionRoute | None,
             request: ConflictPortRequest | None = None,
+            reason: str = "global_deadline_exceeded",
         ) -> ConflictExecutionOutcome:
             if request is None:
                 request = next_request(route, ordinal=0)
-            try:
-                emit(request, "timed_out", "global_deadline_exceeded")
-            except _TransitionPortFailed:
-                pass
+            emit(request, "timed_out", reason)
             return outcome(
                 "timed_out",
                 route,
                 None,
-                "global_deadline_exceeded",
+                reason,
             )
 
         def failed(
@@ -367,10 +499,7 @@ class ConflictCoordinator:
             request: ConflictPortRequest | None = None,
         ) -> ConflictExecutionOutcome:
             if request is not None:
-                try:
-                    emit(request, "failed", reason)
-                except _TransitionPortFailed:
-                    reason = "transition_port_failed"
+                emit(request, "failed", reason)
             return outcome("failed", route, None, reason)
 
         def resolved_authority(
@@ -379,15 +508,7 @@ class ConflictCoordinator:
             reason: str,
         ) -> ConflictExecutionOutcome:
             request = next_request(route, ordinal=0)
-            try:
-                emit(request, "resolved")
-            except _TransitionPortFailed:
-                return outcome(
-                    "failed",
-                    route,
-                    None,
-                    "transition_port_failed",
-                )
+            emit(request, "resolved")
             return outcome("resolved", route, choice, reason)
 
         if deadline_reached():
@@ -421,23 +542,30 @@ class ConflictCoordinator:
             route = ResolutionRoute.HUMAN
             request = next_request(route, ordinal=1)
             if request_human is None:
-                try:
-                    emit(request, "waiting_human", "human_port_unavailable")
-                except _TransitionPortFailed:
-                    return outcome(
-                        "failed", route, None, "transition_port_failed"
-                    )
+                emit(request, "waiting_human", "human_port_unavailable")
                 return outcome("waiting_human", route, None, reason)
             if deadline_reached():
                 return timeout(route, request)
             try:
                 emit(request, "dispatched")
                 human_calls += 1
-                decision = request_human(request, port_package())
+                decision = invoke_port(
+                    request,
+                    "request_human",
+                    lambda: request_human(request, port_package()),
+                )
+            except ConflictPortCancelled as error:
+                propagate_cancellation(error)
+            except ConflictPortDeadlineExceeded as error:
+                return timeout(route, request, error.reason)
+            except ConflictPortCapacityExhausted:
+                return failed(
+                    route,
+                    "port_runner_capacity_exhausted",
+                    request,
+                )
             except abort_exceptions:
                 raise
-            except _TransitionPortFailed:
-                return outcome("failed", route, None, "transition_port_failed")
             except Exception:  # noqa: BLE001 - authority port failures fail closed
                 if deadline_reached():
                     return timeout(route, request)
@@ -452,17 +580,9 @@ class ConflictCoordinator:
             if selected is False:
                 return failed(route, "human_result_invalid", request)
             if selected is None:
-                try:
-                    emit(request, "waiting_human", "human_decision_pending")
-                except _TransitionPortFailed:
-                    return outcome(
-                        "failed", route, None, "transition_port_failed"
-                    )
+                emit(request, "waiting_human", "human_decision_pending")
                 return outcome("waiting_human", route, None, reason)
-            try:
-                emit(request, "resolved")
-            except _TransitionPortFailed:
-                return outcome("failed", route, None, "transition_port_failed")
+            emit(request, "resolved")
             return outcome("resolved", route, selected, "human_decision")
 
         if human_only:
@@ -483,13 +603,26 @@ class ConflictCoordinator:
                         return timeout(route, request)
                     try:
                         emit(request, "dispatched")
-                        ballot = collect_ballot(request, port_package())
+                        ballot = invoke_port(
+                            request,
+                            "collect_ballot",
+                            lambda request=request: collect_ballot(
+                                request,
+                                port_package(),
+                            ),
+                        )
+                    except ConflictPortCancelled as error:
+                        propagate_cancellation(error)
+                    except ConflictPortDeadlineExceeded as error:
+                        return timeout(route, request, error.reason)
+                    except ConflictPortCapacityExhausted:
+                        return failed(
+                            route,
+                            "port_runner_capacity_exhausted",
+                            request,
+                        )
                     except abort_exceptions:
                         raise
-                    except _TransitionPortFailed:
-                        return outcome(
-                            "failed", route, None, "transition_port_failed"
-                        )
                     except Exception:  # noqa: BLE001 - ballot port fails closed
                         if deadline_reached():
                             return timeout(route, request)
@@ -525,12 +658,7 @@ class ConflictCoordinator:
                     independence_keys.add(ballot.independence_key)
                     ballots.append(ballot)
                     ballots_collected += 1
-                    try:
-                        emit(request, "completed")
-                    except _TransitionPortFailed:
-                        return outcome(
-                            "failed", route, None, "transition_port_failed"
-                        )
+                    emit(request, "completed")
 
                 vote = ConflictResolver().resolve(
                     frozen,
@@ -538,15 +666,7 @@ class ConflictCoordinator:
                 )
                 if vote.status == "resolved" and vote.choice is not None:
                     request = next_request(ResolutionRoute.VOTE, ordinal=0)
-                    try:
-                        emit(request, "resolved")
-                    except _TransitionPortFailed:
-                        return outcome(
-                            "failed",
-                            ResolutionRoute.VOTE,
-                            None,
-                            "transition_port_failed",
-                        )
+                    emit(request, "resolved")
                     return outcome(
                         "resolved",
                         ResolutionRoute.VOTE,
@@ -558,21 +678,30 @@ class ConflictCoordinator:
         route = ResolutionRoute.ADJUDICATOR
         request = next_request(route, ordinal=1)
         if run_adjudicator is None:
-            try:
-                emit(request, "escalated", "adjudicator_port_unavailable")
-            except _TransitionPortFailed:
-                return outcome("failed", route, None, "transition_port_failed")
+            emit(request, "escalated", "adjudicator_port_unavailable")
             return outcome("escalated", route, None, escalation_reason)
         if deadline_reached():
             return timeout(route, request)
         try:
             emit(request, "dispatched")
             adjudicator_calls += 1
-            decision = run_adjudicator(request, port_package())
+            decision = invoke_port(
+                request,
+                "run_adjudicator",
+                lambda: run_adjudicator(request, port_package()),
+            )
+        except ConflictPortCancelled as error:
+            propagate_cancellation(error)
+        except ConflictPortDeadlineExceeded as error:
+            return timeout(route, request, error.reason)
+        except ConflictPortCapacityExhausted:
+            return failed(
+                route,
+                "port_runner_capacity_exhausted",
+                request,
+            )
         except abort_exceptions:
             raise
-        except _TransitionPortFailed:
-            return outcome("failed", route, None, "transition_port_failed")
         except Exception:  # noqa: BLE001 - expert port failures fail closed
             if deadline_reached():
                 return timeout(route, request)
@@ -587,15 +716,9 @@ class ConflictCoordinator:
         if selected is False:
             return failed(route, "adjudicator_result_invalid", request)
         if selected is None:
-            try:
-                emit(request, "escalated", "adjudicator_inconclusive")
-            except _TransitionPortFailed:
-                return outcome("failed", route, None, "transition_port_failed")
+            emit(request, "escalated", "adjudicator_inconclusive")
             return outcome("escalated", route, None, "adjudicator_inconclusive")
-        try:
-            emit(request, "resolved")
-        except _TransitionPortFailed:
-            return outcome("failed", route, None, "transition_port_failed")
+        emit(request, "resolved")
         return outcome(
             "resolved", route, selected, "expert_adjudication"
         )
@@ -846,10 +969,15 @@ class ConflictResolver:
 
 
 __all__ = [
+    "BoundedConflictPortRunner",
     "ConflictBallot",
     "ConflictCoordinator",
     "ConflictExecutionOutcome",
+    "ConflictPortCancelled",
+    "ConflictPortCapacityExhausted",
+    "ConflictPortDeadlineExceeded",
     "ConflictPortRequest",
+    "ConflictPortRunner",
     "ConflictResolution",
     "ConflictResolver",
     "ConflictTransition",

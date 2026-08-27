@@ -2,20 +2,28 @@
 
 from __future__ import annotations
 
+import json
+import re
 from pathlib import Path
 
 import pytest
 
+import minicode.subagent_journal as subagent_journal_module
 from minicode.agent_budget import (
     AgentBudgetExceeded,
     AgentTurnBudget,
 )
+from minicode.concurrent_tool_terminal import (
+    project_concurrent_tool_terminal,
+)
 from minicode.run_journal import RunJournal
-from minicode.task_outcome import canonicalize_task_outcome
 from minicode.subagent_journal import (
+    SubagentJournalError,
     SubagentRunJournal,
     new_subagent_id,
 )
+from minicode.task_outcome import canonicalize_task_outcome
+from minicode.tools.task import _SubagentJournalSink
 
 
 def test_subagent_journal_records_bounded_events(tmp_path: Path) -> None:
@@ -78,6 +86,313 @@ def test_subagent_journal_records_bounded_events(tmp_path: Path) -> None:
     serialized = str(events[0].payload)
     assert "must never be persisted" not in serialized
     assert "content" not in events[0].payload
+
+
+def test_subagent_journal_round_trips_concurrent_tool_terminal_event(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(workspace, data_dir=tmp_path / "home" / ".mini-code")
+    record = journal.create_run(title="parent", source="headless")
+    journal.transition(record.id, "running")
+    subjournal = journal.open_subagent_journal(record.id)
+    subagent_id = new_subagent_id()
+    subjournal.start(
+        subagent_id=subagent_id,
+        agent_type="explore",
+        max_turns=2,
+        budget=None,
+    )
+    payload = project_concurrent_tool_terminal(
+        call_id="call-1",
+        tool_name="read_file",
+        status="cancelled_before_start",
+    )
+
+    subjournal.append_event(
+        subagent_id,
+        sequence=1,
+        event_type="tool.concurrent_terminal",
+        step=1,
+        payload=payload,
+    )
+
+    events = journal.list_subagent_events(record.id, subagent_id)
+    assert len(events) == 1
+    assert events[0].type == "tool.concurrent_terminal"
+    assert events[0].payload == payload
+
+    with pytest.raises(ValueError):
+        subjournal.append_event(
+            subagent_id,
+            sequence=2,
+            event_type="tool.concurrent_terminal",
+            step=1,
+            payload={**payload, "unexpected": True},
+        )
+
+
+def test_subagent_journal_rejects_tampered_concurrent_terminal_on_read(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / ("run_" + "a" * 32)
+    run_dir.mkdir()
+    journal = SubagentRunJournal(run_dir)
+    subagent_id = new_subagent_id()
+    journal.start(
+        subagent_id=subagent_id,
+        agent_type="explore",
+        max_turns=2,
+        budget=None,
+    )
+    payload = project_concurrent_tool_terminal(
+        call_id="call-1",
+        tool_name="read_file",
+        status="abandoned_running",
+    )
+    journal.append_event(
+        subagent_id,
+        sequence=1,
+        event_type="tool.concurrent_terminal",
+        step=1,
+        payload=payload,
+    )
+
+    path = run_dir / "subagent-runs" / f"{subagent_id}.jsonl"
+    records = [json.loads(line) for line in path.read_text().splitlines()]
+    records[1]["payload"]["executionMayContinue"] = False
+    path.write_text(
+        "".join(json.dumps(record) + "\n" for record in records),
+        encoding="utf-8",
+    )
+
+    assert journal.list_events(subagent_id) == ()
+
+
+def test_subagent_terminal_quota_survives_full_standard_event_budget(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / ("run_" + "a" * 32)
+    run_dir.mkdir()
+    journal = SubagentRunJournal(run_dir)
+    subagent_id = new_subagent_id()
+    journal.start(
+        subagent_id=subagent_id,
+        agent_type="explore",
+        max_turns=2,
+        budget=None,
+    )
+    sink = _SubagentJournalSink(journal, subagent_id)
+    for _ in range(500):
+        sink.emit("model.completed", step=1, payload={})
+    sink.emit("model.completed", step=1, payload={"dropped": True})
+    terminals = [
+        project_concurrent_tool_terminal(
+            call_id=f"call-after-standard-budget-{index}",
+            tool_name="t" * 128,
+            status="cancelled_before_start",
+        )
+        for index in range(1_000)
+    ]
+    for terminal in terminals:
+        sink.emit(
+            "tool.concurrent_terminal",
+            step=1_000_000,
+            payload=terminal,
+        )
+    sink.emit(
+        "tool.concurrent_terminal",
+        step=1,
+        payload=project_concurrent_tool_terminal(
+            call_id="terminal-overflow",
+            tool_name="t" * 128,
+            status="cancelled_before_start",
+        ),
+    )
+
+    events = journal.list_events(subagent_id)
+    assert len(events) == 1_500
+    assert [event.sequence for event in events] == list(range(1, 1_501))
+    assert events[500].payload == terminals[0]
+    assert events[-1].type == "tool.concurrent_terminal"
+    assert events[-1].payload == terminals[-1]
+
+
+def test_subagent_terminal_has_reserved_bytes_after_large_standard_events(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / ("run_" + "a" * 32)
+    run_dir.mkdir()
+    journal = SubagentRunJournal(run_dir)
+    subagent_id = new_subagent_id()
+    journal.start(
+        subagent_id=subagent_id,
+        agent_type="explore",
+        max_turns=2,
+        budget=None,
+    )
+    sink = _SubagentJournalSink(journal, subagent_id)
+    large_payload = {
+        f"field{index}": "x" * 240 for index in range(40)
+    }
+    for _ in range(500):
+        sink.emit("model.completed", step=1, payload=large_payload)
+    for _ in range(500):
+        sink.emit("model.completed", step=1, payload={})
+    terminal = project_concurrent_tool_terminal(
+        call_id="call-after-standard-byte-budget",
+        tool_name="read_file",
+        status="abandoned_running",
+    )
+
+    sink.emit(
+        "tool.concurrent_terminal",
+        step=1,
+        payload=terminal,
+    )
+
+    events = journal.list_events(subagent_id)
+    assert events
+    assert events[-1].type == "tool.concurrent_terminal"
+    assert events[-1].payload == terminal
+
+
+def test_worst_case_terminal_record_fits_reserved_per_record_bytes(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / ("run_" + "a" * 32)
+    run_dir.mkdir()
+    journal = SubagentRunJournal(run_dir, clock=lambda: 9_999_999_999.999999)
+    subagent_id = new_subagent_id()
+    journal.start(
+        subagent_id=subagent_id,
+        agent_type="explore",
+        max_turns=2,
+        budget=None,
+    )
+    journal.append_event(
+        subagent_id,
+        sequence=1_500,
+        event_type="tool.concurrent_terminal",
+        step=1_000_000,
+        payload=project_concurrent_tool_terminal(
+            call_id="longest-valid-terminal-call",
+            tool_name="t" * 128,
+            status="cancelled_before_start",
+        ),
+    )
+
+    path = run_dir / "subagent-runs" / f"{subagent_id}.jsonl"
+    terminal_record = path.read_bytes().splitlines(keepends=True)[-1]
+    assert len(terminal_record) <= (
+        subagent_journal_module._MAX_TERMINAL_RECORD_BYTES
+    )
+
+
+def test_usage_scan_rejects_symlink_and_oversized_file_before_read(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    run_dir = tmp_path / ("run_" + "a" * 32)
+    run_dir.mkdir()
+    journal = SubagentRunJournal(run_dir)
+    root = run_dir / "subagent-runs"
+    root.mkdir()
+    subagent_id = new_subagent_id()
+    path = root / f"{subagent_id}.jsonl"
+    outside = tmp_path / "outside.jsonl"
+    outside.write_bytes(b"{}\n")
+    path.symlink_to(outside)
+
+    with pytest.raises(SubagentJournalError, match="unsafe"):
+        journal._load_byte_usage(path)
+
+    path.unlink()
+    with path.open("wb") as handle:
+        handle.truncate(subagent_journal_module._MAX_FILE_BYTES + 1)
+
+    def unexpected_read(*_args, **_kwargs):
+        pytest.fail("oversized journal must be rejected before reading")
+
+    monkeypatch.setattr(subagent_journal_module.os, "read", unexpected_read)
+    with pytest.raises(SubagentJournalError, match="unsafe"):
+        journal._load_byte_usage(path)
+
+
+def test_append_rejects_file_changed_after_usage_scan(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    run_dir = tmp_path / ("run_" + "a" * 32)
+    run_dir.mkdir()
+    journal = SubagentRunJournal(run_dir)
+    subagent_id = new_subagent_id()
+    journal.start(
+        subagent_id=subagent_id,
+        agent_type="explore",
+        max_turns=2,
+        budget=None,
+    )
+    path = run_dir / "subagent-runs" / f"{subagent_id}.jsonl"
+    fresh_writer = SubagentRunJournal(run_dir)
+    original_load = fresh_writer._load_byte_usage
+
+    def load_then_change(candidate: Path) -> tuple[int, int]:
+        usage = original_load(candidate)
+        with candidate.open("ab") as handle:
+            handle.write(b"{}\n")
+        return usage
+
+    monkeypatch.setattr(fresh_writer, "_load_byte_usage", load_then_change)
+    with pytest.raises(SubagentJournalError, match="changed outside"):
+        fresh_writer.append_event(
+            subagent_id,
+            sequence=1,
+            event_type="model.completed",
+            step=1,
+            payload={},
+        )
+
+    assert path.read_bytes().endswith(b"{}\n")
+
+
+def test_concurrent_terminal_projection_is_content_free(tmp_path: Path) -> None:
+    secret = "sk-secret-call-content"
+
+    payload = project_concurrent_tool_terminal(
+        call_id=secret,
+        tool_name="read_file\n" + secret,
+        status="abandoned_running",
+    )
+    serialized = json.dumps(payload, sort_keys=True)
+
+    assert re.fullmatch(r"callref_[0-9a-f]{32}", str(payload["callId"]))
+    assert payload["toolName"] == "unknown"
+    assert secret not in serialized
+    assert "\\n" not in serialized
+
+    run_dir = tmp_path / ("run_" + "a" * 32)
+    run_dir.mkdir()
+    journal = SubagentRunJournal(run_dir)
+    subagent_id = new_subagent_id()
+    journal.start(
+        subagent_id=subagent_id,
+        agent_type="explore",
+        max_turns=2,
+        budget=None,
+    )
+    journal.append_event(
+        subagent_id,
+        sequence=1,
+        event_type="tool.concurrent_terminal",
+        step=1,
+        payload=payload,
+    )
+    persisted = (
+        run_dir / "subagent-runs" / f"{subagent_id}.jsonl"
+    ).read_text(encoding="utf-8")
+    assert secret not in persisted
 
 
 def test_parallel_first_writers_create_shared_journal_root_without_race(

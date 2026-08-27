@@ -25,6 +25,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from minicode.concurrent_tool_terminal import (
+    CONCURRENT_TOOL_TERMINAL_EVENT_TYPE,
+    normalize_concurrent_tool_terminal,
+)
 from minicode.config import MINI_CODE_DIR
 from minicode.mcp_event_contract import normalize_mcp_runtime_payload
 from minicode.permission_event_contract import (
@@ -113,6 +117,7 @@ EVENT_TYPES = frozenset(
         "model.failed",
         "tool.started",
         "tool.finished",
+        CONCURRENT_TOOL_TERMINAL_EVENT_TYPE,
         "assistant.completed",
         "task.outcome",
         "execution.stopped",
@@ -307,6 +312,13 @@ def _sanitize_payload(payload: Mapping[str, Any] | None) -> dict[str, Any]:
 
 def _sanitize_event_payload(event_type: str, payload: Mapping[str, Any] | None) -> dict[str, Any]:
     sanitized = _sanitize_payload(payload)
+    if event_type == CONCURRENT_TOOL_TERMINAL_EVENT_TYPE:
+        normalized_terminal = normalize_concurrent_tool_terminal(sanitized)
+        if normalized_terminal is None:
+            raise RunJournalValidationError(
+                "Concurrent tool terminal payload is invalid."
+            )
+        return normalized_terminal
     if event_type == "mcp.runtime.observed":
         normalized = normalize_mcp_runtime_payload(sanitized)
         if normalized is None:

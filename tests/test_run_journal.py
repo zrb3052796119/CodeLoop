@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 import minicode.run_journal as run_journal_module
+from minicode.concurrent_tool_terminal import project_concurrent_tool_terminal
 from minicode.deletion_store import DeletionLedger
 from minicode.run_journal import (
     RunEvent,
@@ -171,6 +172,43 @@ def test_context_compaction_failure_is_a_canonical_run_event(tmp_path: Path) -> 
     assert journal.list_events(record.id).items[-1].payload["reason"] == (
         "no_token_reduction"
     )
+
+
+def test_concurrent_tool_terminal_event_round_trips_with_closed_schema(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(
+        workspace,
+        data_dir=tmp_path / "home" / ".mini-code",
+    )
+    record = journal.create_run(title="Cancelled reads", source="headless")
+    journal.transition(record.id, "running")
+    payload = project_concurrent_tool_terminal(
+        call_id="call-1",
+        tool_name="read_file",
+        status="abandoned_running",
+    )
+
+    observed = journal.append_event(
+        record.id,
+        "tool.concurrent_terminal",
+        step=2,
+        payload=payload,
+    )
+    loaded = journal.list_events(record.id).items[-1]
+
+    assert observed.payload == payload
+    assert loaded == observed
+    assert RunEvent.from_dict(observed.to_dict()) == observed
+
+    with pytest.raises(RunJournalValidationError):
+        journal.append_event(
+            record.id,
+            "tool.concurrent_terminal",
+            payload={**payload, "unexpected": True},
+        )
 
 
 def test_run_journal_accepts_loaded_skill_observation(tmp_path: Path) -> None:

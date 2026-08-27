@@ -10,10 +10,11 @@ handoff context.
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 import minicode.multi_agent_contracts as contracts
-
 
 _BASE_DIGEST = "sha256:" + "a" * 64
 _PATCH_DIGEST = "sha256:" + "b" * 64
@@ -195,6 +196,34 @@ def test_implementation_order_rejects_scope_expansion_at_order_or_step_level(
     mutation(value)
 
     with pytest.raises(contracts.ContractValidationError):
+        _parse_order(assignment, value)
+
+
+def test_implementation_order_keeps_allow_containment_case_sensitive() -> None:
+    assignment = contracts.parse_assignment(_executor_assignment())
+    value = _implementation_order()
+    value["allowedPaths"][0] = "Minicode/auth.py"
+    value["steps"][0]["allowedPaths"] = ["Minicode/auth.py"]
+
+    with pytest.raises(contracts.ContractValidationError, match="write scope"):
+        _parse_order(assignment, value)
+
+
+def test_implementation_order_rejects_forbidden_case_aliases_defensively() -> None:
+    assignment = contracts.parse_assignment(_executor_assignment())
+    assignment = replace(
+        assignment,
+        scope=contracts.AssignmentScope(
+            read_roots=assignment.scope.read_roots,
+            write_paths=("minicode/Private/auth.py", "tests/test_auth.py"),
+            forbidden_paths=("minicode/private",),
+        ),
+    )
+    value = _implementation_order()
+    value["allowedPaths"][0] = "minicode/Private/auth.py"
+    value["steps"][0]["allowedPaths"] = ["minicode/Private/auth.py"]
+
+    with pytest.raises(contracts.ContractValidationError, match="forbidden"):
         _parse_order(assignment, value)
 
 
