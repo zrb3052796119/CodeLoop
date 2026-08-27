@@ -33,6 +33,7 @@ from minicode.subagent_mailbox import SubagentMailbox
 from minicode.subagent_result import extract_subagent_result
 from minicode.tooling import ToolContext, ToolResult
 from minicode.turn_cancellation import TurnCancellationToken
+from minicode.workflow_workspace import FrozenWorkflowChange
 
 
 def _request(
@@ -373,6 +374,57 @@ def test_public_low_scoped_change_retains_semantic_reviewer_gate(
     trace = extract_scheduler_trace(result.output)
     assert trace is not None
     assert trace["ruleId"] == "route.reviewed_change"
+
+
+def test_nested_structured_workflow_keeps_scope_relative_to_invocation_cwd(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / ".git").mkdir()
+    (tmp_path / "root-secret.txt").write_text("secret", encoding="utf-8")
+    nested = tmp_path / "sub"
+    nested.mkdir()
+    target = nested / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+    verifier_observations: list[tuple[bool, bool]] = []
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
+        if role == "analyst":
+            _write_analyst_result(input_data, context, prepare_change=True)
+        elif role == "executor":
+            Path(context.cwd, "allowed.txt").write_text(
+                "after",
+                encoding="utf-8",
+            )
+            _write_executor_declaration(input_data, context)
+        else:
+            _write_reviewer_result(input_data, context)
+        return ToolResult(ok=True, output=f"{role} completed")
+
+    def verifier(self, **request):
+        verification_cwd = Path(request["cwd"])
+        verifier_observations.append(
+            (
+                Path(verification_cwd, "allowed.txt").is_file(),
+                Path(verification_cwd.parent, "root-secret.txt").exists(),
+            )
+        )
+        return _verification_result(request)
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(DeterministicVerifier, "run", verifier)
+
+    result = _run(nested, _request(), monkeypatch)
+
+    assert result.ok is True
+    assert target.read_text(encoding="utf-8") == "after"
+    assert verifier_observations == [(True, False)]
+    projected = extract_subagent_result(result.output)
+    assert projected is not None
+    assert projected["files"] == [
+        {"path": "allowed.txt", "action": "modified"}
+    ]
 
 
 def test_structured_scope_violation_discards_snapshot_before_verification(
@@ -2992,16 +3044,16 @@ def test_unknown_parent_promotion_is_projected_as_must_deliver_fallback(
             _write_reviewer_result(input_data, context)
         return ToolResult(ok=True, output=f"{role} complete")
 
-    def commit_with_unknown_parent_state(self, **_kwargs):
-        self._parent_promotion_completed = False
-        self._parent_promotion_unknown = True
+    def promote_with_unknown_parent_state(self, **_kwargs):
+        self._owner._parent_promotion_completed = False
+        self._owner._parent_promotion_unknown = True
         raise KeyboardInterrupt("injected unresolved parent promotion")
 
     monkeypatch.setattr(task_module, "_run", worker)
     monkeypatch.setattr(
-        task_module._WorkflowWorkspaceTransaction,
-        "commit",
-        commit_with_unknown_parent_state,
+        FrozenWorkflowChange,
+        "promote",
+        promote_with_unknown_parent_state,
     )
     monkeypatch.setattr(
         DeterministicVerifier,
@@ -3092,10 +3144,10 @@ def test_cancellation_immediately_after_promotion_still_persists_audit(
             audits.append(audit)
             return True
 
-    original_commit = task_module._WorkflowWorkspaceTransaction.commit
+    original_promote = FrozenWorkflowChange.promote
 
-    def commit_then_cancel(self, **kwargs):
-        original_commit(self, **kwargs)
+    def promote_then_cancel(self, **kwargs):
+        original_promote(self, **kwargs)
         token.request()
 
     def worker(input_data, context):
@@ -3114,9 +3166,9 @@ def test_cancellation_immediately_after_promotion_still_persists_audit(
 
     monkeypatch.setattr(task_module, "_run", worker)
     monkeypatch.setattr(
-        task_module._WorkflowWorkspaceTransaction,
-        "commit",
-        commit_then_cancel,
+        FrozenWorkflowChange,
+        "promote",
+        promote_then_cancel,
     )
     monkeypatch.setattr(
         DeterministicVerifier,

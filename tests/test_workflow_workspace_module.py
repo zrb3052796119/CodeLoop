@@ -29,6 +29,14 @@ def test_shared_task_deadline_preserves_the_existing_contract() -> None:
     assert str(error) == "sub-agent deadline exceeded after 1.25s"
 
 
+def test_workspace_module_exports_both_transaction_states() -> None:
+    assert set(workflow_workspace.__all__) == {
+        "FrozenWorkflowChange",
+        "WorkflowIsolationError",
+        "WorkflowWorkspaceTransaction",
+    }
+
+
 def test_workspace_module_does_not_depend_on_the_task_orchestrator() -> None:
     module_path = Path(workflow_workspace.__file__)
     tree = ast.parse(module_path.read_text(encoding="utf-8"))

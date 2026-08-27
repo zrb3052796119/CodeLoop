@@ -116,6 +116,9 @@ from minicode.tooling import (
 from minicode.turn_cancellation import TurnCancellationRequested
 from minicode.verification_observation import project_verification
 from minicode.workflow_workspace import (
+    FrozenWorkflowChange as _FrozenWorkflowChange,
+)
+from minicode.workflow_workspace import (
     WorkflowIsolationError as _WorkflowIsolationError,
 )
 from minicode.workflow_workspace import (
@@ -1906,6 +1909,7 @@ def _run_workflow_phases(
     review_result: ToolResult | None = None
     typed_review = _workflow_review_not_applicable()
     verification_result: dict[str, object] | None = None
+    frozen_workspace_change: _FrozenWorkflowChange | None = None
     frozen_change_set: dict[str, object] | None = None
     commit_error: _WorkflowIsolationError | None = None
     commit_ready_status = "not_applicable"
@@ -2013,6 +2017,7 @@ def _run_workflow_phases(
 
     def run_worker(assignment) -> StageResult:
         nonlocal plan_result, execute_result, review_result, typed_review
+        nonlocal frozen_workspace_change
         nonlocal frozen_change_set, executor_assignment_id, analyst_report
         nonlocal implementation_order, execution_artifact, locked_write_paths
         nonlocal execution_artifact_id, verification_artifact_id
@@ -2555,15 +2560,13 @@ def _run_workflow_phases(
                         error_code=f"executor_{execution_artifact['status']}",
                     )
             try:
-                if workflow_request.structured:
-                    frozen_change_set = transaction.change_set(
-                        allowed_paths=locked_write_paths,
-                        paths_relative_to_cwd=True,
-                    )
-                else:
-                    frozen_change_set = transaction.change_set(
-                        allowed_paths=locked_write_paths,
-                    )
+                frozen_workspace_change = transaction.freeze(
+                    allowed_paths=locked_write_paths,
+                    paths_relative_to_cwd=workflow_request.structured,
+                )
+                frozen_change_set = (
+                    frozen_workspace_change.change_set_document
+                )
             except _WorkflowIsolationError:
                 return StageResult(
                     status="failed",
@@ -2576,7 +2579,9 @@ def _run_workflow_phases(
             )
             if workflow_request.structured:
                 try:
-                    change_diff_artifact = transaction.frozen_diff_artifact()
+                    change_diff_artifact = (
+                        frozen_workspace_change.diff_artifact_document
+                    )
                     change_diff_artifact_id = (
                         f"artifact_{assignment.assignment_id}_"
                         f"{assignment.attempt_id}_frozen_diff"
@@ -2917,13 +2922,18 @@ def _run_workflow_phases(
                 requires_human=True,
                 error_code="human_approval_expired",
             )
-        if frozen_change_set is None or executor_assignment_id is None:
+        if (
+            transaction is None
+            or frozen_workspace_change is None
+            or frozen_change_set is None
+            or executor_assignment_id is None
+        ):
             return StageResult(
                 status="failed",
                 artifact_id=_stage_receipt_artifact_id(assignment),
                 error_code="change_set_missing",
             )
-        patch_digest = str(frozen_change_set["patchDigest"])
+        patch_digest = frozen_workspace_change.patch_digest
         if not requested_checks:
             return StageResult(
                 status="inconclusive",
@@ -2933,11 +2943,7 @@ def _run_workflow_phases(
             )
         from minicode.permissions import PermissionDeniedError, PermissionManager
 
-        permission_cwd = (
-            str(transaction.source_cwd)
-            if transaction is not None
-            else context.cwd
-        )
+        permission_cwd = str(transaction.source_cwd)
         verification_permissions = getattr(context, "permissions", None)
         if verification_permissions is None:
             verification_permissions = PermissionManager(
@@ -2959,99 +2965,75 @@ def _run_workflow_phases(
                 )
                 verification_evidence_ids.append(artifact_id)
 
-            if transaction is not None:
-                verifier = _deterministic_verifier_for_context(
-                    context,
-                    trusted_git_executable=transaction.trusted_git_executable,
-                    untrusted_executable_root=str(transaction.source_root),
-                )
-                isolated_checks: list[dict[str, object]] = []
-                isolated_statuses: list[str] = []
-                verification_id: str | None = None
-                # Every check receives a fresh clone and private HOME. A test,
-                # build or linter can therefore never influence the bytes seen
-                # by a later gate.
-                for check in requested_checks:
-                    with transaction.verification_workspace(
-                        read_roots=(
-                            (".",)
-                            if check.kind == "oracle"
-                            else workflow_request.scope.read_roots
+            verifier = _deterministic_verifier_for_context(
+                context,
+                trusted_git_executable=transaction.trusted_git_executable,
+                untrusted_executable_root=str(transaction.source_root),
+            )
+            isolated_checks: list[dict[str, object]] = []
+            isolated_statuses: list[str] = []
+            verification_id: str | None = None
+            # Every check receives a fresh clone and private HOME. A test,
+            # build or linter can therefore never influence the bytes seen
+            # by a later gate.
+            for check in requested_checks:
+                with frozen_workspace_change.verification_workspace(
+                    read_roots=(
+                        (".",)
+                        if check.kind == "oracle"
+                        else workflow_request.scope.read_roots
+                    ),
+                    forbidden_paths=workflow_request.scope.forbidden_paths,
+                    retain_git_metadata=check.kind == "oracle",
+                ) as verification_cwd:
+                    partial = verifier.run(
+                        checks=(check,),
+                        cwd=str(verification_cwd),
+                        workflow_id=workflow_id,
+                        task_id=task_id,
+                        execution_assignment_id=executor_assignment_id,
+                        patch_digest=patch_digest,
+                        permissions=verifier_permission_gate,
+                        permission_cwd=permission_cwd,
+                        deadline_monotonic=getattr(
+                            context,
+                            "_task_deadline_monotonic",
+                            None,
                         ),
-                        forbidden_paths=workflow_request.scope.forbidden_paths,
-                        paths_relative_to_cwd=workflow_request.structured,
-                        retain_git_metadata=check.kind == "oracle",
-                    ) as verification_cwd:
-                        partial = verifier.run(
-                            checks=(check,),
-                            cwd=str(verification_cwd),
-                            workflow_id=workflow_id,
-                            task_id=task_id,
-                            execution_assignment_id=executor_assignment_id,
-                            patch_digest=patch_digest,
-                            permissions=verifier_permission_gate,
-                            permission_cwd=permission_cwd,
-                            deadline_monotonic=getattr(
-                                context,
-                                "_task_deadline_monotonic",
-                                None,
-                            ),
-                            cancellation_checkpoint=lambda: _raise_task_deadline(
-                                context
-                            ),
-                            evidence_sink=publish_verification_evidence,
-                        )
-                    verification_id = str(partial["verificationId"])
-                    isolated_checks.extend(partial["checks"])
-                    isolated_statuses.append(str(partial["status"]))
-                aggregate_status = (
-                    "failed"
-                    if "failed" in isolated_statuses
-                    else "inconclusive"
-                    if "inconclusive" in isolated_statuses
-                    else "passed"
-                )
-                verification_result = parse_verification_result(
-                    {
-                        "verificationVersion": 1,
-                        "verificationId": verification_id,
-                        "workflowId": workflow_id,
-                        "taskId": task_id,
-                        "executionAssignmentId": executor_assignment_id,
-                        "patchDigest": patch_digest,
-                        "status": aggregate_status,
-                        "checks": isolated_checks,
-                    },
-                    workflow_id=workflow_id,
-                    task_id=task_id,
-                    execution_assignment_id=executor_assignment_id,
-                    patch_digest=patch_digest,
-                    required_check_ids=tuple(
-                        check.check_id for check in requested_checks
-                    ),
-                )
-            else:
-                verification_result = _deterministic_verifier_for_context(
-                    context
-                ).run(
-                    checks=requested_checks,
-                    cwd=context.cwd,
-                    workflow_id=workflow_id,
-                    task_id=task_id,
-                    execution_assignment_id=executor_assignment_id,
-                    patch_digest=patch_digest,
-                    permissions=verifier_permission_gate,
-                    permission_cwd=permission_cwd,
-                    deadline_monotonic=getattr(
-                        context,
-                        "_task_deadline_monotonic",
-                        None,
-                    ),
-                    cancellation_checkpoint=lambda: _raise_task_deadline(
-                        context
-                    ),
-                    evidence_sink=publish_verification_evidence,
-                )
+                        cancellation_checkpoint=lambda: _raise_task_deadline(
+                            context
+                        ),
+                        evidence_sink=publish_verification_evidence,
+                    )
+                verification_id = str(partial["verificationId"])
+                isolated_checks.extend(partial["checks"])
+                isolated_statuses.append(str(partial["status"]))
+            aggregate_status = (
+                "failed"
+                if "failed" in isolated_statuses
+                else "inconclusive"
+                if "inconclusive" in isolated_statuses
+                else "passed"
+            )
+            verification_result = parse_verification_result(
+                {
+                    "verificationVersion": 1,
+                    "verificationId": verification_id,
+                    "workflowId": workflow_id,
+                    "taskId": task_id,
+                    "executionAssignmentId": executor_assignment_id,
+                    "patchDigest": patch_digest,
+                    "status": aggregate_status,
+                    "checks": isolated_checks,
+                },
+                workflow_id=workflow_id,
+                task_id=task_id,
+                execution_assignment_id=executor_assignment_id,
+                patch_digest=patch_digest,
+                required_check_ids=tuple(
+                    check.check_id for check in requested_checks
+                ),
+            )
         except (
             TurnCancellationRequested,
             ToolExecutionAbandoned,
@@ -3269,7 +3251,7 @@ def _run_workflow_phases(
 
     def commit_change(request) -> bool:
         nonlocal commit_error
-        if transaction is None:
+        if transaction is None or frozen_workspace_change is None:
             return False
         if (
             profile.human_confirmation_required
@@ -3280,17 +3262,9 @@ def _run_workflow_phases(
             )
             return False
         try:
-            if workflow_request.structured:
-                transaction.commit(
-                    expected_patch_digest=request.patch_digest,
-                    allowed_paths=locked_write_paths,
-                    paths_relative_to_cwd=True,
-                )
-            else:
-                transaction.commit(
-                    expected_patch_digest=request.patch_digest,
-                    allowed_paths=locked_write_paths,
-                )
+            frozen_workspace_change.promote(
+                approved_patch_digest=request.patch_digest,
+            )
         except BaseException as exc:
             # Promotion is the commit linearization point. Cleanup, lock
             # release, or observer failures after it may degrade finalization,

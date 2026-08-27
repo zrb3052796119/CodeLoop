@@ -78,16 +78,16 @@ def test_change_set_is_scope_checked_and_digest_bound(tmp_path: Path) -> None:
     with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
         Path(transaction.cwd, "allowed.txt").write_text("after", encoding="utf-8")
 
-        change_set = transaction.change_set(allowed_paths=("allowed.txt",))
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
+        change_set = frozen.change_set_document
 
         assert change_set["baseDigest"].startswith("sha256:")
         assert change_set["patchDigest"].startswith("sha256:")
         assert change_set["files"] == [
             {"path": "allowed.txt", "action": "modified"}
         ]
-        transaction.commit(
-            expected_patch_digest=change_set["patchDigest"],
-            allowed_paths=("allowed.txt",),
+        frozen.promote(
+            approved_patch_digest=frozen.patch_digest,
         )
 
     assert target.read_text(encoding="utf-8") == "after"
@@ -102,8 +102,9 @@ def test_non_utf8_large_frozen_diff_is_bounded_uncommitted_audit_evidence(
     with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
         Path(transaction.cwd, "allowed.txt").write_bytes(b"\xff" * 13_000)
         exact_patch = transaction._staged_patch()
-        change_set = transaction.change_set(allowed_paths=("allowed.txt",))
-        frozen_diff = transaction.frozen_diff_artifact()
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
+        change_set = frozen.change_set_document
+        frozen_diff = frozen.diff_artifact_document
 
     expected_preview = (
         exact_patch[:6_000]
@@ -151,7 +152,7 @@ def test_change_set_rejects_a_changed_path_outside_assignment_scope(
         Path(transaction.cwd, "outside.txt").write_text("escaped", encoding="utf-8")
 
         with pytest.raises(_WorkflowIsolationError, match="outside allowed paths"):
-            transaction.change_set(allowed_paths=("allowed.txt",))
+            transaction.freeze(allowed_paths=("allowed.txt",))
 
     assert not (tmp_path / "outside.txt").exists()
 
@@ -163,13 +164,12 @@ def test_commit_rejects_changes_made_after_verification(tmp_path: Path) -> None:
     with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
         isolated = Path(transaction.cwd, "allowed.txt")
         isolated.write_text("verified", encoding="utf-8")
-        verified = transaction.change_set(allowed_paths=("allowed.txt",))
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
         isolated.write_text("changed after verification", encoding="utf-8")
 
         with pytest.raises(_WorkflowIsolationError, match="patch digest changed"):
-            transaction.commit(
-                expected_patch_digest=verified["patchDigest"],
-                allowed_paths=("allowed.txt",),
+            frozen.promote(
+                approved_patch_digest=frozen.patch_digest,
             )
 
     assert target.read_text(encoding="utf-8") == "before"
@@ -189,13 +189,12 @@ def test_commit_rejects_unrelated_parent_baseline_drift(
 
     with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
         Path(transaction.cwd, "allowed.txt").write_text("after", encoding="utf-8")
-        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
         unrelated.write_text("concurrent update", encoding="utf-8")
 
         with pytest.raises(_WorkflowIsolationError, match="parent workspace changed"):
-            transaction.commit(
-                expected_patch_digest=frozen["patchDigest"],
-                allowed_paths=("allowed.txt",),
+            frozen.promote(
+                approved_patch_digest=frozen.patch_digest,
             )
 
     assert target.read_text(encoding="utf-8") == "before"
@@ -239,10 +238,9 @@ def test_snapshot_never_runs_repository_configured_git_filters(
             "updated\n",
             encoding="utf-8",
         )
-        change_set = transaction.change_set(allowed_paths=("payload.txt",))
-        transaction.commit(
-            expected_patch_digest=change_set["patchDigest"],
-            allowed_paths=("payload.txt",),
+        frozen = transaction.freeze(allowed_paths=("payload.txt",))
+        frozen.promote(
+            approved_patch_digest=frozen.patch_digest,
         )
 
     assert not marker.exists()
@@ -276,18 +274,17 @@ def test_verifier_side_effects_are_discarded_before_exact_patch_commit(
 
     with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
         Path(transaction.cwd, "allowed.txt").write_text("after", encoding="utf-8")
-        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
 
-        with transaction.verification_workspace() as verification_cwd:
+        with frozen.verification_workspace() as verification_cwd:
             Path(verification_cwd, ".pytest_cache").mkdir()
             Path(verification_cwd, ".pytest_cache", "README.md").write_text(
                 "generated by verifier",
                 encoding="utf-8",
             )
 
-        transaction.commit(
-            expected_patch_digest=frozen["patchDigest"],
-            allowed_paths=("allowed.txt",),
+        frozen.promote(
+            approved_patch_digest=frozen.patch_digest,
         )
 
     assert target.read_text(encoding="utf-8") == "after"
@@ -306,9 +303,9 @@ def test_verification_clone_physically_excludes_forbidden_data(
 
     with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
         Path(transaction.cwd, "allowed.txt").write_text("after", encoding="utf-8")
-        transaction.change_set(allowed_paths=("allowed.txt",))
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
 
-        with transaction.verification_workspace(
+        with frozen.verification_workspace(
             forbidden_paths=(".env", "credentials.json", ".git"),
         ) as verification_cwd:
             assert (verification_cwd / "allowed.txt").is_file()
@@ -329,15 +326,14 @@ def test_nested_verification_scope_is_relative_to_invocation_cwd(
 
     with _WorkflowWorkspaceTransaction(str(nested)) as transaction:
         Path(transaction.cwd, "visible.txt").write_text("changed", encoding="utf-8")
-        transaction.change_set(
+        frozen = transaction.freeze(
             allowed_paths=("visible.txt",),
             paths_relative_to_cwd=True,
         )
 
-        with transaction.verification_workspace(
+        with frozen.verification_workspace(
             read_roots=("visible.txt", "secret.txt"),
             forbidden_paths=("secret.txt",),
-            paths_relative_to_cwd=True,
         ) as verification_cwd:
             assert (verification_cwd / "visible.txt").is_file()
             assert not (verification_cwd / "secret.txt").exists()
@@ -359,9 +355,9 @@ def test_verification_clone_physically_prunes_outside_read_roots(
             "VALUE = 2\n",
             encoding="utf-8",
         )
-        transaction.change_set(allowed_paths=("allowed",))
+        frozen = transaction.freeze(allowed_paths=("allowed",))
 
-        with transaction.verification_workspace(
+        with frozen.verification_workspace(
             read_roots=("allowed",),
         ) as verification_cwd:
             assert (verification_cwd / "allowed" / "test_target.py").is_file()
@@ -376,7 +372,7 @@ def test_post_execution_escaping_symlink_is_rejected(tmp_path: Path) -> None:
         Path(transaction.cwd, "escape").symlink_to(outside)
 
         with pytest.raises(_WorkflowIsolationError, match="escaping symlink"):
-            transaction.change_set(allowed_paths=("escape",))
+            transaction.freeze(allowed_paths=("escape",))
 
     assert outside.read_text(encoding="utf-8") == "outside"
 
@@ -392,18 +388,17 @@ def test_structured_scope_paths_are_relative_to_invocation_cwd(
 
     with _WorkflowWorkspaceTransaction(str(nested)) as transaction:
         Path(transaction.cwd, "file.txt").write_text("after", encoding="utf-8")
-        change_set = transaction.change_set(
+        frozen = transaction.freeze(
             allowed_paths=("file.txt",),
             paths_relative_to_cwd=True,
         )
+        change_set = frozen.change_set_document
 
         assert change_set["files"] == [
             {"path": "file.txt", "action": "modified"}
         ]
-        transaction.commit(
-            expected_patch_digest=change_set["patchDigest"],
-            allowed_paths=("file.txt",),
-            paths_relative_to_cwd=True,
+        frozen.promote(
+            approved_patch_digest=frozen.patch_digest,
         )
 
     assert target.read_text(encoding="utf-8") == "after"
@@ -415,7 +410,7 @@ def test_expired_commit_guard_prevents_parent_promotion(tmp_path: Path) -> None:
 
     with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
         Path(transaction.cwd, "allowed.txt").write_text("after", encoding="utf-8")
-        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
         transaction.set_operation_guard(
             deadline_monotonic=time.monotonic() - 1,
             timeout_seconds=1,
@@ -423,9 +418,8 @@ def test_expired_commit_guard_prevents_parent_promotion(tmp_path: Path) -> None:
         )
 
         with pytest.raises(_TaskDeadlineExceeded):
-            transaction.commit(
-                expected_patch_digest=frozen["patchDigest"],
-                allowed_paths=("allowed.txt",),
+            frozen.promote(
+                approved_patch_digest=frozen.patch_digest,
             )
 
     assert target.read_text(encoding="utf-8") == "before"
@@ -533,15 +527,14 @@ def test_commit_fails_closed_for_symlinked_lock_namespace(
             "after",
             encoding="utf-8",
         )
-        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
 
         with pytest.raises(
             _WorkflowIsolationError,
             match="workflow commit lock namespace is unavailable",
         ):
-            transaction.commit(
-                expected_patch_digest=frozen["patchDigest"],
-                allowed_paths=("allowed.txt",),
+            frozen.promote(
+                approved_patch_digest=frozen.patch_digest,
             )
 
     assert target.read_text(encoding="utf-8") == "before"
@@ -576,15 +569,14 @@ def test_commit_fails_closed_for_lock_namespace_with_wrong_owner(
             "after",
             encoding="utf-8",
         )
-        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
 
         with pytest.raises(
             _WorkflowIsolationError,
             match="workflow commit lock namespace is unavailable: wrong owner",
         ):
-            transaction.commit(
-                expected_patch_digest=frozen["patchDigest"],
-                allowed_paths=("allowed.txt",),
+            frozen.promote(
+                approved_patch_digest=frozen.patch_digest,
             )
 
     assert target.read_text(encoding="utf-8") == "before"
@@ -610,15 +602,14 @@ def test_commit_fails_closed_when_advisory_lock_backend_is_unavailable(
             "after",
             encoding="utf-8",
         )
-        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
 
         with pytest.raises(
             _WorkflowIsolationError,
             match="workflow commit lock is unavailable",
         ):
-            transaction.commit(
-                expected_patch_digest=frozen["patchDigest"],
-                allowed_paths=("allowed.txt",),
+            frozen.promote(
+                approved_patch_digest=frozen.patch_digest,
             )
 
     assert target.read_text(encoding="utf-8") == "before"
@@ -644,10 +635,10 @@ def test_parent_promotion_closes_lock_handle_when_setup_is_interrupted(
         del mode
         raise interruption
 
-    def interrupted_chmod(path, mode: int) -> None:
+    def interrupted_chmod(path, mode: int, **kwargs) -> None:
         if Path(path).suffix == ".lock":
             raise interruption
-        real_chmod(path, mode)
+        real_chmod(path, mode, **kwargs)
 
     def released(_file_descriptor: int) -> None:
         nonlocal releases
@@ -658,7 +649,7 @@ def test_parent_promotion_closes_lock_handle_when_setup_is_interrupted(
             "after",
             encoding="utf-8",
         )
-        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
         if failure_site == "prepare":
             monkeypatch.setattr(
                 advisory_lock_module,
@@ -678,9 +669,8 @@ def test_parent_promotion_closes_lock_handle_when_setup_is_interrupted(
         )
 
         with pytest.raises(KeyboardInterrupt) as raised:
-            transaction.commit(
-                expected_patch_digest=frozen["patchDigest"],
-                allowed_paths=("allowed.txt",),
+            frozen.promote(
+                approved_patch_digest=frozen.patch_digest,
             )
 
     assert raised.value is interruption
@@ -879,7 +869,7 @@ def test_advisory_lock_contention_cannot_outlive_commit_deadline(
             "after",
             encoding="utf-8",
         )
-        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
         transaction.set_operation_guard(
             deadline_monotonic=clock + 0.02,
             timeout_seconds=0.02,
@@ -887,9 +877,8 @@ def test_advisory_lock_contention_cannot_outlive_commit_deadline(
         )
 
         with pytest.raises(_TaskDeadlineExceeded):
-            transaction.commit(
-                expected_patch_digest=frozen["patchDigest"],
-                allowed_paths=("allowed.txt",),
+            frozen.promote(
+                approved_patch_digest=frozen.patch_digest,
             )
 
     assert attempts >= 1
@@ -943,10 +932,9 @@ def test_successful_parent_promotion_releases_advisory_lock(
             "after",
             encoding="utf-8",
         )
-        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
-        transaction.commit(
-            expected_patch_digest=frozen["patchDigest"],
-            allowed_paths=("allowed.txt",),
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
+        frozen.promote(
+            approved_patch_digest=frozen.patch_digest,
         )
 
     assert [event for event, _descriptor in events] == [
@@ -973,7 +961,7 @@ def test_commit_guard_propagates_cancellation_before_parent_write(
 
     with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
         Path(transaction.cwd, "allowed.txt").write_text("after", encoding="utf-8")
-        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
         transaction.set_operation_guard(
             deadline_monotonic=None,
             timeout_seconds=1,
@@ -981,9 +969,8 @@ def test_commit_guard_propagates_cancellation_before_parent_write(
         )
 
         with pytest.raises(Cancelled):
-            transaction.commit(
-                expected_patch_digest=frozen["patchDigest"],
-                allowed_paths=("allowed.txt",),
+            frozen.promote(
+                approved_patch_digest=frozen.patch_digest,
             )
 
     assert target.read_text(encoding="utf-8") == "before"
@@ -1016,12 +1003,11 @@ def test_interrupted_apply_ignores_empty_directories_not_carried_by_patch(
     with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
         Path(transaction.cwd, "allowed.txt").write_text("after", encoding="utf-8")
         Path(transaction.cwd, "empty").mkdir()
-        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
 
         with pytest.raises(RuntimeError, match="post-apply observer failed"):
-            transaction.commit(
-                expected_patch_digest=frozen["patchDigest"],
-                allowed_paths=("allowed.txt",),
+            frozen.promote(
+                approved_patch_digest=frozen.patch_digest,
             )
 
         assert transaction.parent_promotion_completed is True
@@ -1074,12 +1060,11 @@ def test_second_interrupt_during_apply_reconciliation_preserves_unknown_state(
 
     with _WorkflowWorkspaceTransaction(str(tmp_path)) as transaction:
         Path(transaction.cwd, "allowed.txt").write_text("after", encoding="utf-8")
-        frozen = transaction.change_set(allowed_paths=("allowed.txt",))
+        frozen = transaction.freeze(allowed_paths=("allowed.txt",))
 
         with pytest.raises(KeyboardInterrupt, match="reconciliation interrupted"):
-            transaction.commit(
-                expected_patch_digest=frozen["patchDigest"],
-                allowed_paths=("allowed.txt",),
+            frozen.promote(
+                approved_patch_digest=frozen.patch_digest,
             )
 
         assert transaction.parent_promotion_completed is False

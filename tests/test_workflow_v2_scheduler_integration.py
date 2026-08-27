@@ -7,13 +7,14 @@ the isolated transaction, deterministic verification, and the review gate.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
-from pathlib import Path
 import re
+from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
 
+import minicode.tools.task as task_module
 from minicode.central_scheduler import CentralScheduler
 from minicode.deterministic_verifier import DeterministicVerifier
 from minicode.prompt import build_system_prompt
@@ -24,7 +25,10 @@ from minicode.subagent_result import (
     render_subagent_result,
 )
 from minicode.tooling import ToolContext, ToolResult
-import minicode.tools.task as task_module
+from minicode.workflow_workspace import (
+    FrozenWorkflowChange,
+    WorkflowWorkspaceTransaction,
+)
 
 
 @dataclass
@@ -33,7 +37,7 @@ class _WorkflowRun:
     events: list[str]
     change_sets: list[dict[str, object]]
     verifier_calls: list[dict[str, object]]
-    commit_calls: list[dict[str, object]]
+    promotion_calls: list[dict[str, object]]
     target: Path
 
 
@@ -83,7 +87,7 @@ def _run_legacy_workflow(
     events: list[str] = []
     change_sets: list[dict[str, object]] = []
     verifier_calls: list[dict[str, object]] = []
-    commit_calls: list[dict[str, object]] = []
+    promotion_calls: list[dict[str, object]] = []
     phase_ordinal = 0
 
     def fake_child_run(input_data: dict, context: ToolContext) -> ToolResult:
@@ -136,12 +140,21 @@ def _run_legacy_workflow(
         events.append("scheduler:execute")
         return original_execute(self, profile, **ports)
 
-    original_change_set = task_module._WorkflowWorkspaceTransaction.change_set
+    original_freeze = WorkflowWorkspaceTransaction.freeze
 
-    def change_set_spy(self, *, allowed_paths):
-        frozen = original_change_set(self, allowed_paths=allowed_paths)
-        events.append("transaction:change_set")
-        change_sets.append(frozen)
+    def freeze_spy(
+        self,
+        *,
+        allowed_paths,
+        paths_relative_to_cwd=False,
+    ):
+        frozen = original_freeze(
+            self,
+            allowed_paths=allowed_paths,
+            paths_relative_to_cwd=paths_relative_to_cwd,
+        )
+        events.append("transaction:freeze")
+        change_sets.append(frozen.change_set_document)
         return frozen
 
     def deterministic_verifier_spy(self, **request):
@@ -183,39 +196,36 @@ def _run_legacy_workflow(
             "checks": check_results,
         }
 
-    original_commit = task_module._WorkflowWorkspaceTransaction.commit
+    original_promote = FrozenWorkflowChange.promote
 
-    def commit_spy(
+    def promote_spy(
         self,
         *,
-        expected_patch_digest=None,
-        allowed_paths=None,
+        approved_patch_digest,
     ):
-        events.append("transaction:commit")
-        commit_calls.append(
+        events.append("transaction:promote")
+        promotion_calls.append(
             {
-                "expected_patch_digest": expected_patch_digest,
-                "allowed_paths": allowed_paths,
+                "approved_patch_digest": approved_patch_digest,
             }
         )
-        return original_commit(
+        return original_promote(
             self,
-            expected_patch_digest=expected_patch_digest,
-            allowed_paths=allowed_paths,
+            approved_patch_digest=approved_patch_digest,
         )
 
     monkeypatch.setattr(task_module, "_run", fake_child_run)
     monkeypatch.setattr(CentralScheduler, "execute", scheduler_execute_spy)
     monkeypatch.setattr(
-        task_module._WorkflowWorkspaceTransaction,
-        "change_set",
-        change_set_spy,
+        WorkflowWorkspaceTransaction,
+        "freeze",
+        freeze_spy,
     )
     monkeypatch.setattr(DeterministicVerifier, "run", deterministic_verifier_spy)
     monkeypatch.setattr(
-        task_module._WorkflowWorkspaceTransaction,
-        "commit",
-        commit_spy,
+        FrozenWorkflowChange,
+        "promote",
+        promote_spy,
     )
 
     # This is the pre-V2 caller shape. No new task-tool input is required.
@@ -236,7 +246,7 @@ def _run_legacy_workflow(
         events=events,
         change_sets=change_sets,
         verifier_calls=verifier_calls,
-        commit_calls=commit_calls,
+        promotion_calls=promotion_calls,
         target=target,
     )
 
@@ -261,24 +271,23 @@ def test_legacy_workflow_commits_only_a_scheduler_verified_frozen_digest(
     assert run.events.index("scheduler:execute") < run.events.index("agent:analyst")
     assert run.events.index("agent:analyst") < run.events.index("agent:executor")
     assert run.events.index("agent:executor") < run.events.index(
-        "transaction:change_set"
+        "transaction:freeze"
     )
-    assert run.events.index("transaction:change_set") < run.events.index(
+    assert run.events.index("transaction:freeze") < run.events.index(
         "deterministic:verify"
     )
     assert run.events.index("deterministic:verify") < run.events.index(
         "agent:reviewer"
     )
     assert run.events.index("agent:reviewer") < run.events.index(
-        "transaction:commit"
+        "transaction:promote"
     )
 
     frozen_digest = run.change_sets[0]["patchDigest"]
     assert run.verifier_calls[0]["patch_digest"] == frozen_digest
-    assert run.commit_calls == [
+    assert run.promotion_calls == [
         {
-            "expected_patch_digest": frozen_digest,
-            "allowed_paths": (".",),
+            "approved_patch_digest": frozen_digest,
         }
     ]
     assert run.target.read_text(encoding="utf-8") == "after"
@@ -303,14 +312,14 @@ def test_failed_deterministic_verification_stops_review_and_parent_commit(
 
     assert run.events.count("scheduler:execute") == 1
     assert run.events.index("agent:executor") < run.events.index(
-        "transaction:change_set"
+        "transaction:freeze"
     )
-    assert run.events.index("transaction:change_set") < run.events.index(
+    assert run.events.index("transaction:freeze") < run.events.index(
         "deterministic:verify"
     )
     assert "agent:reviewer" not in run.events
-    assert "transaction:commit" not in run.events
-    assert run.commit_calls == []
+    assert "transaction:promote" not in run.events
+    assert run.promotion_calls == []
     assert run.target.read_text(encoding="utf-8") == "before"
 
 
