@@ -1,0 +1,270 @@
+{
+  "baseline": [
+    {
+      "history": "给 legacy.py 不要添加测试；给当前模块添加测试。",
+      "text": "再加一个 None 输入的用例。",
+      "files": [],
+      "previous_operations": [
+        [
+          "test",
+          "create",
+          "negated",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ],
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ],
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给 legacy.py 添加测试的要求已经取消；给当前模块添加测试。",
+      "text": "再加一个 None 输入的用例。",
+      "files": [],
+      "previous_operations": [
+        [
+          "test",
+          "create",
+          "negated",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ],
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ],
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给 legacy.py 不要添加测试；给 utils.py 添加测试。",
+      "text": "再加一个 None 输入的用例。",
+      "files": [],
+      "previous_operations": [
+        [
+          "test",
+          "create",
+          "negated",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ],
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [
+              "utils.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ],
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    }
+  ],
+  "candidate": [
+    {
+      "history": "给 legacy.py 不要添加测试；给当前模块添加测试。",
+      "text": "再加一个 None 输入的用例。",
+      "files": [
+        "legacy.py"
+      ],
+      "previous_operations": [
+        [
+          "test",
+          "create",
+          "negated",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ],
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ],
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [
+              "legacy.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给 legacy.py 添加测试的要求已经取消；给当前模块添加测试。",
+      "text": "再加一个 None 输入的用例。",
+      "files": [
+        "legacy.py"
+      ],
+      "previous_operations": [
+        [
+          "test",
+          "create",
+          "negated",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ],
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ],
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [
+              "legacy.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给 legacy.py 不要添加测试；给 utils.py 添加测试。",
+      "text": "再加一个 None 输入的用例。",
+      "files": [],
+      "previous_operations": [
+        [
+          "test",
+          "create",
+          "negated",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ],
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [
+              "utils.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ],
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    }
+  ]
+}

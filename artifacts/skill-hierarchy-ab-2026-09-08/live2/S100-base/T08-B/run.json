@@ -1,0 +1,156 @@
+{
+  "task_id": "T08",
+  "scale": "S100",
+  "variant": "base",
+  "arm": "B",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-base",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283447356358388839",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "search-index"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "953bc74bbdf390f4b9c0a9b03b5d2f02f892bf296a12839e85ba4f605452ad32",
+      "output_chars": 1479,
+      "seen_qualified_names": [
+        "search-index/backpressure",
+        "search-index/batch-processing",
+        "search-index/circuit-breaker",
+        "search-index/cursor-scan-helper",
+        "search-index/idempotency",
+        "search-index/pagination",
+        "search-index/rate-limiting",
+        "search-index/retry-backoff",
+        "search-index/timeout-tuning"
+      ],
+      "seen_directories": [
+        "search-index"
+      ],
+      "elapsed_ms": 0.9737090440467
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283453472391817475",
+      "name": "load_skill",
+      "args": {
+        "name": "search-index/backpressure"
+      },
+      "ok": true,
+      "output_sha256": "d9c7de42776547f58f5754ce8fcec88b988c62c575996cd24e9db829b57dc042",
+      "output_chars": 1653,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 1.4288750244304538
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283453472391817475",
+      "requested_name": "search-index/backpressure",
+      "qualified_name": "search-index/backpressure",
+      "ok": true,
+      "body_chars": 1442,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "f2fb5ca8be65fa2db60374d227d67556680a35045dc0684d944bdfa09ebd833e",
+      "elapsed_ms": 3740.593084017746,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "list_files",
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7716,
+        "outputTokens": 88,
+        "cacheReadTokens": 7552,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "647e6fc3941359bca8e0188a57e30b1e91cda453c85a781b01ac845477cace8a",
+      "elapsed_ms": 2732.7419579960406,
+      "type": "tool_calls",
+      "content_chars": 81,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 8074,
+        "outputTokens": 68,
+        "cacheReadTokens": 7616,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and answered with a synthetic error tool_result; the run continues so the model can finish skill discovery on a later step.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "A batch with zero skill-tool calls stops the run as no_skill_discovery (model abandoned discovery).",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "8a32b6ca33c8204fed0e777be4e9388b61ea558800df5e0206ab1ae72fad9afd",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "dda8c3df3a9699dcbc8305a2cc60eee494a34d1cc7e7a6698dfe2d83fcf172ff",
+  "system_prompt_chars": 11326,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 15790,
+  "output_tokens": 156,
+  "routing_events": [],
+  "elapsed_ms": 7049.567083944567
+}

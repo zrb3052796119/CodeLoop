@@ -1,0 +1,146 @@
+{
+  "task_id": "T05",
+  "scale": "S100",
+  "variant": "stale-summary",
+  "arm": "B",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-stale-summary",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283556689045873708",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "ci-pipeline"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "d4dc79e2e40f9a63a7d4f434fb2066d602a874da2de4c997204eef821e72fe02",
+      "output_chars": 1413,
+      "seen_qualified_names": [
+        "ci-pipeline/circuit-breaker",
+        "ci-pipeline/config-management",
+        "ci-pipeline/debugging-playbook",
+        "ci-pipeline/idempotency",
+        "ci-pipeline/migration-job-runner",
+        "ci-pipeline/pagination",
+        "ci-pipeline/rate-limiting",
+        "ci-pipeline/retry-backoff",
+        "ci-pipeline/timeout-tuning"
+      ],
+      "seen_directories": [
+        "ci-pipeline"
+      ],
+      "elapsed_ms": 2.521667047403753
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283525456043701853",
+      "name": "load_skill",
+      "args": {
+        "name": "ci-pipeline/timeout-tuning"
+      },
+      "ok": true,
+      "output_sha256": "c29e7966918867a304160c192a97b5862c78551019c684dd621ae0ce1c293bd9",
+      "output_chars": 1631,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 1.390540972352028
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283525456043701853",
+      "requested_name": "ci-pipeline/timeout-tuning",
+      "qualified_name": "ci-pipeline/timeout-tuning",
+      "ok": true,
+      "body_chars": 1408,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "a0a36df0124660801d3a29dfa5da21d5d5ea8a5a2918d17724a9b3def0d7b0a2",
+      "elapsed_ms": 4846.673291991465,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7686,
+        "outputTokens": 133,
+        "cacheReadTokens": 7552,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "71c359f6b03c553389846f907ffdd89b61e5194b192c6b54355362ed2e56f247",
+      "elapsed_ms": 4607.123874942772,
+      "type": "tool_calls",
+      "content_chars": 77,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 8019,
+        "outputTokens": 76,
+        "cacheReadTokens": 7680,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "4467a9fb9ad5d6b210ff08ce45b9a8a1865033e7019c27a3e210d058259fac2a",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "187c58cd823807788e3dc42cee4671ebc22ff6c2fb35233e2621993f31eb3208",
+  "system_prompt_chars": 11201,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 15705,
+  "output_tokens": 209,
+  "routing_events": [],
+  "elapsed_ms": 10018.413541954942
+}

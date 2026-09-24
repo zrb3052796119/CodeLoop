@@ -1,0 +1,193 @@
+{
+  "task_id": "T07",
+  "scale": "S1000",
+  "variant": "base",
+  "arm": "A",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-base",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": null,
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": false,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283448696388185364",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "job-scheduler",
+          "message-queue",
+          "http-client"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "bce17d5cd1134488cb032c972ce1ff6f9e2f761a26d918b187759f137c6890a8",
+      "output_chars": 3906,
+      "seen_qualified_names": [
+        "job-scheduler/backpressure",
+        "job-scheduler/batch-processing",
+        "job-scheduler/caching-strategy",
+        "job-scheduler/circuit-breaker",
+        "job-scheduler/config-management",
+        "job-scheduler/connection-pooling",
+        "job-scheduler/db-retry-tuning",
+        "job-scheduler/dead-letter-handling",
+        "job-scheduler/debugging-playbook",
+        "job-scheduler/error-mapping",
+        "job-scheduler/flaky-cron-playbook",
+        "job-scheduler/idempotency",
+        "job-scheduler/observability",
+        "job-scheduler/pagination",
+        "job-scheduler/performance-tuning",
+        "job-scheduler/rate-limiting",
+        "job-scheduler/retry-backoff",
+        "job-scheduler/schema-migration",
+        "job-scheduler/security-hardening",
+        "job-scheduler/testing-strategy",
+        "job-scheduler/timeout-tuning",
+        "job-scheduler/upgrade-runbook",
+        "message-queue/backpressure"
+      ],
+      "seen_directories": [
+        "job-scheduler",
+        "message-queue"
+      ],
+      "elapsed_ms": 9.843500098213553
+    },
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283448696388185363",
+      "name": "search_skills",
+      "args": {
+        "query": "throttle rate limit backpressure quota concurrency scheduled task stampede"
+      },
+      "ok": true,
+      "output_sha256": "373f48e1f8cd7c6f065725109ad9651f7ae4b4bc2e86d20cf60ddb5aadac8e7f",
+      "output_chars": 4139,
+      "seen_qualified_names": [
+        "report-generator/rate-limiting",
+        "ab-testing/rate-limiting",
+        "alert-manager/rate-limiting",
+        "analytics-pipeline/rate-limiting",
+        "api-gateway/rate-limiting",
+        "audit-log/rate-limiting",
+        "auth-service/rate-limiting",
+        "backup-restore/rate-limiting",
+        "billing-service/rate-limiting",
+        "cache-layer/rate-limiting",
+        "capacity-planning/rate-limiting",
+        "ci-pipeline/rate-limiting",
+        "config-service/rate-limiting",
+        "crm-connector/rate-limiting",
+        "data-warehouse/rate-limiting",
+        "database/rate-limiting",
+        "disaster-recovery/rate-limiting",
+        "document-parser/rate-limiting",
+        "email-templates/rate-limiting",
+        "etl-jobs/rate-limiting",
+        "feature-flags/rate-limiting",
+        "fraud-detection/rate-limiting",
+        "graphql-api/rate-limiting"
+      ],
+      "seen_directories": [
+        "ab-testing",
+        "alert-manager",
+        "analytics-pipeline",
+        "api-gateway",
+        "audit-log",
+        "auth-service",
+        "backup-restore",
+        "billing-service",
+        "cache-layer",
+        "capacity-planning",
+        "ci-pipeline",
+        "config-service",
+        "crm-connector",
+        "data-warehouse",
+        "database",
+        "disaster-recovery",
+        "document-parser",
+        "email-templates",
+        "etl-jobs",
+        "feature-flags",
+        "fraud-detection",
+        "graphql-api",
+        "report-generator"
+      ],
+      "elapsed_ms": 456.03854209184647
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "e5c7c556404ffd163061e4472a24c89df925036814c11977abb449b1196402b8",
+      "elapsed_ms": 15941.87833298929,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "browse_skill_directory",
+        "search_skills",
+        "file_tree"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9285,
+        "outputTokens": 587,
+        "cacheReadTokens": 9216,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "file_tree",
+      "input": {
+        "max_depth": 4,
+        "path": "."
+      },
+      "batch_index": 2
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "166ed07d8da65a3328a901babd5a6aa439f41cd3b9c031554b7e218895e9ef76",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "b2e672deb64ba35707fa844f7bb9024e356bcabccb6455ddffb6ad36c2a68d0c",
+  "system_prompt_chars": 17973,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 9285,
+  "output_tokens": 587,
+  "routing_events": [],
+  "elapsed_ms": 21147.911124979146
+}

@@ -1,0 +1,15 @@
+{
+  "task_id": "T03",
+  "prompt": "我们的消息队列消费者偶尔会把同一条消息处理两次，导致重复发货。帮我设计一个幂等处理方案，让重复投递不会产生副作用。",
+  "scale": "S100",
+  "variant": "wrong-placement",
+  "arm": "A",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-wrong-placement",
+  "run_dir": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/live/S100-wrong-placement/T03-A",
+  "snapshot": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/snapshot",
+  "fake_scenario": null,
+  "fake_target": "",
+  "max_steps": 8,
+  "call_timeout_seconds": 60.0,
+  "run_timeout_seconds": 480.0
+}

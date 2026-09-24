@@ -1,0 +1,104 @@
+{
+  "total": 50,
+  "primary_correct": 26,
+  "all_labeled_checks_correct": 23,
+  "parser_exceptions": 0,
+  "groups": {
+    "代码编写": {
+      "count": 4,
+      "primary_correct": 3,
+      "all_labeled_checks_correct": 3
+    },
+    "故障排查": {
+      "count": 3,
+      "primary_correct": 2,
+      "all_labeled_checks_correct": 2
+    },
+    "重构": {
+      "count": 2,
+      "primary_correct": 1,
+      "all_labeled_checks_correct": 1
+    },
+    "解释": {
+      "count": 3,
+      "primary_correct": 2,
+      "all_labeled_checks_correct": 2
+    },
+    "查找": {
+      "count": 3,
+      "primary_correct": 1,
+      "all_labeled_checks_correct": 1
+    },
+    "代码审查": {
+      "count": 2,
+      "primary_correct": 1,
+      "all_labeled_checks_correct": 1
+    },
+    "测试": {
+      "count": 3,
+      "primary_correct": 3,
+      "all_labeled_checks_correct": 3
+    },
+    "文档": {
+      "count": 2,
+      "primary_correct": 1,
+      "all_labeled_checks_correct": 1
+    },
+    "配置": {
+      "count": 2,
+      "primary_correct": 1,
+      "all_labeled_checks_correct": 1
+    },
+    "普通问答": {
+      "count": 2,
+      "primary_correct": 0,
+      "all_labeled_checks_correct": 0
+    },
+    "闲聊": {
+      "count": 1,
+      "primary_correct": 0,
+      "all_labeled_checks_correct": 0
+    },
+    "记忆": {
+      "count": 2,
+      "primary_correct": 0,
+      "all_labeled_checks_correct": 0
+    },
+    "系统操作": {
+      "count": 1,
+      "primary_correct": 0,
+      "all_labeled_checks_correct": 0
+    },
+    "否定/撤回": {
+      "count": 5,
+      "primary_correct": 1,
+      "all_labeled_checks_correct": 1
+    },
+    "引用/假设": {
+      "count": 5,
+      "primary_correct": 2,
+      "all_labeled_checks_correct": 2
+    },
+    "多意图": {
+      "count": 5,
+      "primary_correct": 5,
+      "all_labeled_checks_correct": 4
+    },
+    "上下文/模糊": {
+      "count": 5,
+      "primary_correct": 3,
+      "all_labeled_checks_correct": 1
+    }
+  },
+  "parser_init_ms": 36.82791697792709,
+  "latency_ms": {
+    "median": 1.3566039851866663,
+    "p95_nearest_rank": 2.6215840480290353,
+    "max": 2.887790964450687,
+    "total": 70.35553560126573
+  },
+  "semantic_status": {
+    "disabled": 50
+  },
+  "sources_unchanged": true
+}

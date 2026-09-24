@@ -1,0 +1,1 @@
+{"task": "T21", "arm": "A", "prompt_mode": "hierarchical", "stop": "no_skill_discovery", "steps": 1}

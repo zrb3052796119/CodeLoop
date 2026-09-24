@@ -1,0 +1,162 @@
+{
+  "task_id": "T19",
+  "scale": "S100",
+  "variant": "base",
+  "arm": "A",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-base",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": null,
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": false,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283532568509542154",
+      "name": "search_skills",
+      "args": {
+        "query": "resumable chunked upload retry backoff object storage"
+      },
+      "ok": true,
+      "output_sha256": "a64322c58a001d8201ad23d2ddaa97cd7a29b3e0826d4bebb0af296fd24771cb",
+      "output_chars": 4000,
+      "seen_qualified_names": [
+        "object-storage/retry-backoff",
+        "http-client/multipart-retry-generic",
+        "auth-service/retry-backoff",
+        "cache-layer/retry-backoff",
+        "ci-pipeline/retry-backoff",
+        "database/retry-backoff",
+        "graphql-api/retry-backoff",
+        "http-client/retry-backoff",
+        "job-scheduler/db-retry-tuning",
+        "job-scheduler/retry-backoff",
+        "message-queue/retry-backoff",
+        "notification-service/retry-backoff",
+        "object-storage/rate-limiting",
+        "object-storage/upload-timeout-profile",
+        "payment-gateway/retry-backoff",
+        "search-index/retry-backoff",
+        "object-storage/backpressure",
+        "object-storage/circuit-breaker",
+        "object-storage/dead-letter-handling",
+        "object-storage/idempotency",
+        "object-storage/pagination"
+      ],
+      "seen_directories": [
+        "auth-service",
+        "cache-layer",
+        "ci-pipeline",
+        "database",
+        "graphql-api",
+        "http-client",
+        "job-scheduler",
+        "message-queue",
+        "notification-service",
+        "object-storage",
+        "payment-gateway",
+        "search-index"
+      ],
+      "elapsed_ms": 79.57341603469104
+    },
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283532568509542153",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "object-storage"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "ea2d3dc56d4b779c6c8ba528d0c3bb9f8bf6bfd806d4aaff3d363cc7ca2c4cb5",
+      "output_chars": 1501,
+      "seen_qualified_names": [
+        "object-storage/backpressure",
+        "object-storage/circuit-breaker",
+        "object-storage/dead-letter-handling",
+        "object-storage/idempotency",
+        "object-storage/pagination",
+        "object-storage/rate-limiting",
+        "object-storage/retry-backoff",
+        "object-storage/timeout-tuning",
+        "object-storage/upload-timeout-profile"
+      ],
+      "seen_directories": [
+        "object-storage"
+      ],
+      "elapsed_ms": 0.31283299904316664
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "461515ef19d3fafdddff6b3036fe4fd2080ad3ddfe58dcfaa9dd88a725613ded",
+      "elapsed_ms": 17668.07883302681,
+      "type": "tool_calls",
+      "content_chars": 34,
+      "tool_call_names": [
+        "list_files",
+        "search_skills",
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7638,
+        "outputTokens": 517,
+        "cacheReadTokens": 7552,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "8a32b6ca33c8204fed0e777be4e9388b61ea558800df5e0206ab1ae72fad9afd",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "eb0944ed7c97bcc09f81e478c472c4b1364484e2d8c716e700c04f9264607488",
+  "system_prompt_chars": 10893,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 7638,
+  "output_tokens": 517,
+  "routing_events": [],
+  "elapsed_ms": 18288.12574991025
+}

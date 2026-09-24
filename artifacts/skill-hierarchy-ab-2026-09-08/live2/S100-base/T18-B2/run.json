@@ -1,0 +1,155 @@
+{
+  "task_id": "T18",
+  "scale": "S100",
+  "variant": "base",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-base",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283451685685424777",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "notification-service"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "ba3554922467b89b13049f30a8a40eb7824249bf8e68c6ff41ea4a7be05cb03e",
+      "output_chars": 1473,
+      "seen_qualified_names": [
+        "notification-service/circuit-breaker",
+        "notification-service/debugging-playbook",
+        "notification-service/idempotency",
+        "notification-service/observability",
+        "notification-service/pagination",
+        "notification-service/rate-limiting",
+        "notification-service/retry-backoff",
+        "notification-service/timeout-tuning"
+      ],
+      "seen_directories": [
+        "notification-service"
+      ],
+      "elapsed_ms": 1.5399580588564277
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283443817305340539",
+      "name": "load_skill",
+      "args": {
+        "name": "notification-service/idempotency"
+      },
+      "ok": true,
+      "output_sha256": "2e621742f9296863ae7a0e5d1162a17b9847e250322cc6a0743cafe79dad8260",
+      "output_chars": 1742,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 1.2554579880088568
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283443817305340539",
+      "requested_name": "notification-service/idempotency",
+      "qualified_name": "notification-service/idempotency",
+      "ok": true,
+      "body_chars": 1525,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "e9c6273e7ec64370266d33187cdf05e3f2193a06048061c87cdea7130386de13",
+      "elapsed_ms": 4709.097082959488,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "list_files",
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7656,
+        "outputTokens": 154,
+        "cacheReadTokens": 7552,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "5e9839027f1d5ca866f063a3f8ba5b910ffdcdb54a34c84404daa5f33630d5ca",
+      "elapsed_ms": 4236.576916999184,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 8009,
+        "outputTokens": 95,
+        "cacheReadTokens": 8000,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and answered with a synthetic error tool_result; the run continues so the model can finish skill discovery on a later step.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "A batch with zero skill-tool calls stops the run as no_skill_discovery (model abandoned discovery).",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "8a32b6ca33c8204fed0e777be4e9388b61ea558800df5e0206ab1ae72fad9afd",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "45e1943aee08dc788628fe30a688d49eb87306344e3e06c86a0c6550e4b9bc49",
+  "system_prompt_chars": 11016,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 15665,
+  "output_tokens": 249,
+  "routing_events": [],
+  "elapsed_ms": 9512.633041013032
+}

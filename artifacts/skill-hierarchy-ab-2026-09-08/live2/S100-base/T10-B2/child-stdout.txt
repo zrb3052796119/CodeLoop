@@ -1,0 +1,1 @@
+{"task": "T10", "arm": "B2", "prompt_mode": "hierarchical", "stop": "skill_loaded", "steps": 1}

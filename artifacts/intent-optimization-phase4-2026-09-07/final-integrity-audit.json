@@ -1,0 +1,34 @@
+{
+  "versions": {
+    "before": {
+      "file_count": 258,
+      "hashes_valid": true
+    },
+    "evaluated": {
+      "file_count": 258,
+      "hashes_valid": true
+    },
+    "delivered": {
+      "file_count": 258,
+      "hashes_valid": true
+    }
+  },
+  "all_12_new_runs_integrity_flags_true": true,
+  "all_10_paired_groups_verified_by_summarize": true,
+  "delivery_changed_from_evaluated": [
+    "minicode/intent_parser.py"
+  ],
+  "all_3_proofs_match_final_test_bytes": true,
+  "delivery_tests": 2697,
+  "evaluated_tests": 2685,
+  "live_model_started": 111,
+  "live_model_completed": 110,
+  "live_model_failed": 1,
+  "timeout_ids": [
+    "N30"
+  ],
+  "scores_apply_to_evaluated_version_only": true,
+  "delivery_fixed_proposal_difference_ids": [
+    "U10"
+  ]
+}

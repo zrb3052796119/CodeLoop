@@ -1,0 +1,45 @@
+{
+  "total": 40,
+  "primary_correct": 27,
+  "all_labeled_checks_correct": 18,
+  "failed_ids": [
+    "N01",
+    "N03",
+    "N04",
+    "N05",
+    "N06",
+    "N07",
+    "N08",
+    "N09",
+    "N10",
+    "N14",
+    "N18",
+    "N20",
+    "N21",
+    "N22",
+    "N28",
+    "N30",
+    "N31",
+    "N32",
+    "N33",
+    "N36",
+    "N37",
+    "N39"
+  ],
+  "semantic_status": {
+    "disabled": 40
+  },
+  "event_counts": {},
+  "called_ids": [],
+  "called_median_ms": null,
+  "latency_ms": {
+    "median": 1.7071045003831387,
+    "p95": 2.842124958988279,
+    "max": 41.70300002442673
+  },
+  "wall_seconds": 0.15150079200975597,
+  "source_unchanged": true,
+  "runner_unchanged": true,
+  "scorer_unchanged": true,
+  "cases_unchanged": true
+}

@@ -1,0 +1,202 @@
+{
+  "task_id": "T15",
+  "scale": "S100",
+  "variant": "base",
+  "arm": "B",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-base",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283420109085860814",
+      "name": "search_skills",
+      "args": {
+        "query": "email bounce sending rate limit throttle notification"
+      },
+      "ok": true,
+      "output_sha256": "e5fcb90884cf739d1c648b66cbe4074e64e51dd9893d824deb35264c591f9755",
+      "output_chars": 3938,
+      "seen_qualified_names": [
+        "notification-service/rate-limiting",
+        "auth-service/rate-limiting",
+        "cache-layer/rate-limiting",
+        "ci-pipeline/rate-limiting",
+        "database/rate-limiting",
+        "graphql-api/rate-limiting",
+        "http-client/rate-limiting",
+        "job-scheduler/rate-limiting",
+        "message-queue/bounce-back-queue",
+        "message-queue/consumer-throttle",
+        "message-queue/rate-limiting",
+        "object-storage/rate-limiting",
+        "payment-gateway/rate-limiting",
+        "search-index/rate-limiting",
+        "notification-service/circuit-breaker",
+        "notification-service/debugging-playbook",
+        "notification-service/idempotency",
+        "notification-service/observability",
+        "notification-service/pagination",
+        "notification-service/retry-backoff",
+        "notification-service/timeout-tuning"
+      ],
+      "seen_directories": [
+        "auth-service",
+        "cache-layer",
+        "ci-pipeline",
+        "database",
+        "graphql-api",
+        "http-client",
+        "job-scheduler",
+        "message-queue",
+        "notification-service",
+        "object-storage",
+        "payment-gateway",
+        "search-index"
+      ],
+      "elapsed_ms": 48.97000000346452
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283436601760282167",
+      "name": "load_skill",
+      "args": {
+        "name": "notification-service/rate-limiting"
+      },
+      "ok": true,
+      "output_sha256": "7af1897d594993de1b3fc41cc7a12a7c4674e2f3ce3e11cabc28eec4526b635d",
+      "output_chars": 1768,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 1.552875037305057
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283436601760282166",
+      "name": "load_skill",
+      "args": {
+        "name": "notification-service/debugging-playbook"
+      },
+      "ok": true,
+      "output_sha256": "90e2e11bf67ef0eebb44a428fa57ebebc092db9d7110b7d727469243d8e63564",
+      "output_chars": 1769,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 2.0541249541565776
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283436601760282167",
+      "requested_name": "notification-service/rate-limiting",
+      "qualified_name": "notification-service/rate-limiting",
+      "ok": true,
+      "body_chars": 1547,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283436601760282166",
+      "requested_name": "notification-service/debugging-playbook",
+      "qualified_name": "notification-service/debugging-playbook",
+      "ok": true,
+      "body_chars": 1538,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "8563b05ddda541e027de0025697e7d66d35fe2589129bd45eb99df6d76863740",
+      "elapsed_ms": 10121.322666062042,
+      "type": "tool_calls",
+      "content_chars": 106,
+      "tool_call_names": [
+        "list_files",
+        "search_skills"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7674,
+        "outputTokens": 213,
+        "cacheReadTokens": 7552,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "412a68ad84d4b7254c708ae8a57bc0c7ea9678a3594ac1eeaea13fcc4c52030e",
+      "elapsed_ms": 6542.372458032332,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill",
+        "load_skill"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 8527,
+        "outputTokens": 82,
+        "cacheReadTokens": 7616,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and answered with a synthetic error tool_result; the run continues so the model can finish skill discovery on a later step.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "A batch with zero skill-tool calls stops the run as no_skill_discovery (model abandoned discovery).",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "8a32b6ca33c8204fed0e777be4e9388b61ea558800df5e0206ab1ae72fad9afd",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "ed96c91d1157854ebd7610043644c85b5eb891ca83e7e5a88eddb2c9a4744d9e",
+  "system_prompt_chars": 11060,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 16201,
+  "output_tokens": 295,
+  "routing_events": [],
+  "elapsed_ms": 17300.67179200705
+}

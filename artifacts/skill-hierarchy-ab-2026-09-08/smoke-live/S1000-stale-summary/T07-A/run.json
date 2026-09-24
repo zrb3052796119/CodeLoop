@@ -1,0 +1,159 @@
+{
+  "task_id": "T07",
+  "scale": "S1000",
+  "variant": "stale-summary",
+  "arm": "A",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-stale-summary",
+  "fake": true,
+  "fake_scenario": "oracle",
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": null,
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": false,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "fake-1",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "job-scheduler"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "12179370e298fccb6ac4361122a5613ebc4e257de53f94255228f55b850acd1d",
+      "output_chars": 3666,
+      "seen_qualified_names": [
+        "job-scheduler/backpressure",
+        "job-scheduler/batch-processing",
+        "job-scheduler/caching-strategy",
+        "job-scheduler/circuit-breaker",
+        "job-scheduler/config-management",
+        "job-scheduler/connection-pooling",
+        "job-scheduler/db-retry-tuning",
+        "job-scheduler/dead-letter-handling",
+        "job-scheduler/debugging-playbook",
+        "job-scheduler/error-mapping",
+        "job-scheduler/flaky-cron-playbook",
+        "job-scheduler/idempotency",
+        "job-scheduler/observability",
+        "job-scheduler/pagination",
+        "job-scheduler/performance-tuning",
+        "job-scheduler/rate-limiting",
+        "job-scheduler/retry-backoff",
+        "job-scheduler/schema-migration",
+        "job-scheduler/security-hardening",
+        "job-scheduler/testing-strategy",
+        "job-scheduler/timeout-tuning",
+        "job-scheduler/upgrade-runbook"
+      ],
+      "seen_directories": [
+        "job-scheduler"
+      ],
+      "elapsed_ms": 1.993292011320591
+    },
+    {
+      "step": 2,
+      "tool_call_id": "fake-2",
+      "name": "load_skill",
+      "args": {
+        "name": "job-scheduler/rate-limiting"
+      },
+      "ok": true,
+      "output_sha256": "e845b896215174f30d6ea293e422d6adf78dfafa5ae17ec6236af364d0c3e90b",
+      "output_chars": 1700,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 0.5285829538479447
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "fake-2",
+      "requested_name": "job-scheduler/rate-limiting",
+      "qualified_name": "job-scheduler/rate-limiting",
+      "ok": true,
+      "body_chars": 1476,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "36a70a8624f1745d728c7fd32e3c97794c4a6b578500a3da3404d2d07421dad8",
+      "elapsed_ms": 0.1217919634655118,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "estimated",
+        "inputTokens": 4464,
+        "outputTokens": 8,
+        "cacheReadTokens": null,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "8f0d89d99ee0497e8aa4339e2690d96a147485725ec96302524c98e7ff8b5c52",
+      "elapsed_ms": 0.09270908776670694,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "estimated",
+        "inputTokens": 5380,
+        "outputTokens": 8,
+        "cacheReadTokens": null,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; any other tool request stops the run and is recorded as blocked.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "f7b53465d2f17f614a4699b20f3f44c717bed290d9c0e8d4697a01385e7c8405",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "e621acb83cd95eab3617bb5ef31e09a6aa4e9579eb33afa2cb83f2b59c1b9402",
+  "system_prompt_chars": 17813,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "ScriptedSkillModel",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 9844,
+  "output_tokens": 16,
+  "routing_events": [],
+  "elapsed_ms": 4749.039457994513
+}

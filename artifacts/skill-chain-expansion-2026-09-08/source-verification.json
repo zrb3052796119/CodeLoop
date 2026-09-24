@@ -1,0 +1,18 @@
+{
+  "checks": [
+    {
+      "freeze": ".repair-work/skill-chain-expansion-2026-09-08/live-01/source-freeze.json",
+      "checked_files": 273,
+      "mismatches": []
+    },
+    {
+      "freeze": ".repair-work/skill-chain-expansion-2026-09-08/budget/live-01/source-freeze.json",
+      "checked_files": 276,
+      "mismatches": []
+    }
+  ],
+  "production_vs_previous": {
+    "comparison": ".repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-0/implementation-freeze.json",
+    "changed_production_paths": []
+  }
+}

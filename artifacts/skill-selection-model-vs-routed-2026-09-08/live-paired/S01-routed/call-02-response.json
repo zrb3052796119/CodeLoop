@@ -1,0 +1,54 @@
+{
+  "index": 2,
+  "operation_id": "modelop_c1d8f400ea124f55967a4352c7a2f6d9",
+  "input_sha256": "9e8b38494df37fe9bd4386597945d7dc25707bb071c4e3ce6f859d14769be8f7",
+  "provider_message_projection_sha256": "eafdd583ab4b734d8c769567cf21c4bc577ebb7f628b1c8736a3dc5a4d48af3f",
+  "request_file": "call-02-request.json",
+  "completed": true,
+  "elapsed_ms": 6124.687124975026,
+  "response": {
+    "type": "tool_calls",
+    "content": "",
+    "kind": null,
+    "calls": [
+      {
+        "id": "call_-7283769719423757769",
+        "toolName": "list_files",
+        "input": {
+          "path": "."
+        }
+      },
+      {
+        "id": "call_-7283769719423757768",
+        "toolName": "file_tree",
+        "input": {
+          "max_depth": 4,
+          "pattern": "*.py"
+        }
+      }
+    ],
+    "contentKind": null,
+    "reasoningContent": "Let me explore the codebase structure first.",
+    "diagnostics": {
+      "stopReason": "tool_calls",
+      "blockTypes": [
+        "tool_calls"
+      ],
+      "ignoredBlockTypes": []
+    },
+    "usage": {
+      "input_tokens": 7723,
+      "output_tokens": 39,
+      "cache_read_tokens": 7040,
+      "cache_creation_tokens": null,
+      "source": "provider"
+    }
+  },
+  "usage": {
+    "source": "provider",
+    "inputTokens": 7723,
+    "outputTokens": 39,
+    "cacheReadTokens": 7040,
+    "cacheCreationTokens": null
+  }
+}

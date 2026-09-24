@@ -1,0 +1,286 @@
+[
+  {
+    "text": "Can this file please be updated?",
+    "actual": {
+      "raw_input": "Can this file please be updated?",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "file",
+        "please",
+        "updated"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787038.9979572,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Can this file please be updated?",
+      "context_used": false
+    },
+    "requests": [
+      "Can this file please be updated?"
+    ]
+  },
+  {
+    "text": "Could this function please be refactored?",
+    "actual": {
+      "raw_input": "Could this function please be refactored?",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [
+          "please"
+        ],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "function",
+        "please",
+        "refactored"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787038.999576,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Could this function please be refactored?",
+      "context_used": false
+    },
+    "requests": [
+      "Could this function please be refactored?"
+    ]
+  },
+  {
+    "text": "Would this script please be updated to support JSON?",
+    "actual": {
+      "raw_input": "Would this script please be updated to support JSON?",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "script",
+        "please",
+        "updated",
+        "support",
+        "json"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787039.001699,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Would this script please be updated to support JSON?",
+      "context_used": false
+    },
+    "requests": [
+      "Would this script please be updated to support JSON?"
+    ]
+  },
+  {
+    "text": "这个脚本是否可以请你修改一下？",
+    "actual": {
+      "raw_input": "这个脚本是否可以请你修改一下？",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个脚本是否可以请你修改一下"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787039.002906,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个脚本是否可以请你修改一下？",
+      "context_used": false
+    },
+    "requests": [
+      "这个脚本是否可以请你修改一下？"
+    ]
+  },
+  {
+    "text": "这个函数能否帮我重构一下？",
+    "actual": {
+      "raw_input": "这个函数能否帮我重构一下？",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个函数能否帮我重构一下"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787039.004211,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "这个函数能否帮我重构一下？",
+          "span": [
+            0,
+            13
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个函数能否帮我重构一下"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            13
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个函数能否帮我重构一下？",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "Does this file update the cache?",
+    "actual": {
+      "raw_input": "Does this file update the cache?",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "file",
+        "update",
+        "cache"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787039.005808,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Does this file update the cache?",
+      "context_used": false
+    },
+    "requests": [
+      "Does this file update the cache?"
+    ]
+  },
+  {
+    "text": "这个脚本是否会修改缓存？",
+    "actual": {
+      "raw_input": "这个脚本是否会修改缓存？",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个脚本是否会修改缓存"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787039.006876,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个脚本是否会修改缓存？",
+      "context_used": false
+    },
+    "requests": [
+      "这个脚本是否会修改缓存？"
+    ]
+  }
+]

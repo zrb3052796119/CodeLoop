@@ -1,0 +1,142 @@
+{
+  "task_id": "T02",
+  "scale": "S1000",
+  "variant": "stale-summary",
+  "arm": "B",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-stale-summary",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283489000361288850",
+      "name": "search_skills",
+      "args": {
+        "query": "postgres retry exponential backoff transient errors database client"
+      },
+      "ok": true,
+      "output_sha256": "5c296f0b28edaf75ce3dfb12c0de526fff8d9d93e0721400020dcec0cd334b60",
+      "output_chars": 4118,
+      "seen_qualified_names": [
+        "database/retry-backoff",
+        "http-client/retry-backoff",
+        "job-scheduler/db-retry-tuning",
+        "ab-testing/retry-backoff",
+        "alert-manager/retry-backoff",
+        "analytics-pipeline/retry-backoff",
+        "api-gateway/retry-backoff",
+        "audit-log/retry-backoff",
+        "auth-service/retry-backoff",
+        "backup-restore/retry-backoff",
+        "billing-service/retry-backoff",
+        "cache-layer/retry-backoff",
+        "capacity-planning/retry-backoff",
+        "ci-pipeline/retry-backoff",
+        "config-service/retry-backoff",
+        "crm-connector/retry-backoff",
+        "data-warehouse/retry-backoff",
+        "disaster-recovery/retry-backoff",
+        "document-parser/retry-backoff",
+        "email-templates/retry-backoff",
+        "etl-jobs/retry-backoff"
+      ],
+      "seen_directories": [
+        "ab-testing",
+        "alert-manager",
+        "analytics-pipeline",
+        "api-gateway",
+        "audit-log",
+        "auth-service",
+        "backup-restore",
+        "billing-service",
+        "cache-layer",
+        "capacity-planning",
+        "ci-pipeline",
+        "config-service",
+        "crm-connector",
+        "data-warehouse",
+        "database",
+        "disaster-recovery",
+        "document-parser",
+        "email-templates",
+        "etl-jobs",
+        "http-client",
+        "job-scheduler"
+      ],
+      "elapsed_ms": 435.0408751051873
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "bf8bf2c642461f2297c8ee9e2e28c913af5558ce644719d15031f2149fa67e64",
+      "elapsed_ms": 8506.435625022277,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "list_files",
+        "search_skills"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9285,
+        "outputTokens": 241,
+        "cacheReadTokens": 9216,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "f7b53465d2f17f614a4699b20f3f44c717bed290d9c0e8d4697a01385e7c8405",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "2b353ae2c5e2f6af243843d5285ba82d073440be9fcef6f38e7eb87551ffa18f",
+  "system_prompt_chars": 17977,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 9285,
+  "output_tokens": 241,
+  "routing_events": [],
+  "elapsed_ms": 13925.389499985613
+}

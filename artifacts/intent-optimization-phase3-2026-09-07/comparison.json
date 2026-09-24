@@ -1,0 +1,813 @@
+{
+  "old50_disabled": {
+    "before": {
+      "total": 50,
+      "primary_correct": 35,
+      "strict_correct": 34,
+      "failed_ids": [
+        "C02",
+        "C06",
+        "C09",
+        "C11",
+        "C14",
+        "C23",
+        "C25",
+        "C26",
+        "C27",
+        "C29",
+        "C30",
+        "C39",
+        "C40",
+        "C45",
+        "C47",
+        "C50"
+      ],
+      "readonly_count": 22,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "C11",
+        "C14",
+        "C25",
+        "C26",
+        "C29"
+      ],
+      "semantic_status": {
+        "disabled": 50
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "after": {
+      "total": 50,
+      "primary_correct": 35,
+      "strict_correct": 34,
+      "failed_ids": [
+        "C02",
+        "C06",
+        "C09",
+        "C11",
+        "C14",
+        "C23",
+        "C25",
+        "C26",
+        "C27",
+        "C29",
+        "C30",
+        "C39",
+        "C40",
+        "C45",
+        "C47",
+        "C50"
+      ],
+      "readonly_count": 22,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "C11",
+        "C14",
+        "C25",
+        "C26",
+        "C29"
+      ],
+      "semantic_status": {
+        "disabled": 50
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "improved_ids": [],
+    "regressed_ids": []
+  },
+  "old50_live": {
+    "before": {
+      "total": 50,
+      "primary_correct": 43,
+      "strict_correct": 43,
+      "failed_ids": [
+        "C09",
+        "C26",
+        "C30",
+        "C39",
+        "C40",
+        "C47",
+        "C50"
+      ],
+      "readonly_count": 22,
+      "readonly_effectful_ids": [
+        "C40"
+      ],
+      "readonly_check_failed_ids": [
+        "C26",
+        "C40"
+      ],
+      "semantic_status": {
+        "skipped": 35,
+        "accepted": 11,
+        "timeout": 1,
+        "low_confidence": 1,
+        "abstained": 2
+      },
+      "model_call_attempts": 15,
+      "call_median_ms": 1817.8772500250489,
+      "event_counts": {
+        "model.started": 15,
+        "model.completed": 14,
+        "model.costed": 14,
+        "model.failed": 1
+      },
+      "usage_sources": {
+        "provider": 14
+      }
+    },
+    "after": {
+      "total": 50,
+      "primary_correct": 43,
+      "strict_correct": 43,
+      "failed_ids": [
+        "C23",
+        "C26",
+        "C30",
+        "C39",
+        "C40",
+        "C47",
+        "C50"
+      ],
+      "readonly_count": 22,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "C26"
+      ],
+      "semantic_status": {
+        "skipped": 36,
+        "accepted": 10,
+        "timeout": 1,
+        "low_confidence": 2,
+        "abstained": 1
+      },
+      "model_call_attempts": 14,
+      "call_median_ms": 2627.115791430697,
+      "event_counts": {
+        "model.started": 14,
+        "model.completed": 13,
+        "model.costed": 13,
+        "model.failed": 1
+      },
+      "usage_sources": {
+        "provider": 13
+      }
+    },
+    "improved_ids": [
+      "C09"
+    ],
+    "regressed_ids": [
+      "C23"
+    ]
+  },
+  "prior40_disabled": {
+    "before": {
+      "total": 40,
+      "primary_correct": 30,
+      "strict_correct": 22,
+      "failed_ids": [
+        "N01",
+        "N04",
+        "N05",
+        "N06",
+        "N07",
+        "N08",
+        "N09",
+        "N10",
+        "N14",
+        "N18",
+        "N22",
+        "N28",
+        "N30",
+        "N31",
+        "N32",
+        "N36",
+        "N37",
+        "N39"
+      ],
+      "readonly_count": 19,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "N22",
+        "N28",
+        "N30"
+      ],
+      "semantic_status": {
+        "disabled": 40
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "after": {
+      "total": 40,
+      "primary_correct": 30,
+      "strict_correct": 22,
+      "failed_ids": [
+        "N01",
+        "N04",
+        "N05",
+        "N06",
+        "N07",
+        "N08",
+        "N09",
+        "N10",
+        "N14",
+        "N18",
+        "N22",
+        "N28",
+        "N30",
+        "N31",
+        "N32",
+        "N36",
+        "N37",
+        "N39"
+      ],
+      "readonly_count": 19,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "N22",
+        "N28",
+        "N30"
+      ],
+      "semantic_status": {
+        "disabled": 40
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "improved_ids": [],
+    "regressed_ids": []
+  },
+  "prior40_live": {
+    "before": {
+      "total": 40,
+      "primary_correct": 35,
+      "strict_correct": 29,
+      "failed_ids": [
+        "N01",
+        "N04",
+        "N05",
+        "N06",
+        "N08",
+        "N09",
+        "N10",
+        "N14",
+        "N18",
+        "N32",
+        "N37"
+      ],
+      "readonly_count": 19,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [],
+      "semantic_status": {
+        "skipped": 26,
+        "abstained": 3,
+        "accepted": 9,
+        "low_confidence": 2
+      },
+      "model_call_attempts": 14,
+      "call_median_ms": 1421.2373750051484,
+      "event_counts": {
+        "model.started": 14,
+        "model.completed": 14,
+        "model.costed": 14
+      },
+      "usage_sources": {
+        "provider": 14
+      }
+    },
+    "after": {
+      "total": 40,
+      "primary_correct": 35,
+      "strict_correct": 29,
+      "failed_ids": [
+        "N01",
+        "N04",
+        "N05",
+        "N06",
+        "N08",
+        "N09",
+        "N10",
+        "N14",
+        "N18",
+        "N32",
+        "N37"
+      ],
+      "readonly_count": 19,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [],
+      "semantic_status": {
+        "skipped": 26,
+        "abstained": 2,
+        "accepted": 9,
+        "low_confidence": 1,
+        "timeout": 2
+      },
+      "model_call_attempts": 14,
+      "call_median_ms": 2627.1368539892137,
+      "event_counts": {
+        "model.started": 14,
+        "model.completed": 12,
+        "model.costed": 12,
+        "model.failed": 2
+      },
+      "usage_sources": {
+        "provider": 12
+      }
+    },
+    "improved_ids": [],
+    "regressed_ids": []
+  },
+  "priorfresh40_disabled": {
+    "before": {
+      "total": 40,
+      "primary_correct": 14,
+      "strict_correct": 11,
+      "failed_ids": [
+        "H01",
+        "H02",
+        "H03",
+        "H04",
+        "H06",
+        "H07",
+        "H08",
+        "H10",
+        "H11",
+        "H12",
+        "H13",
+        "H14",
+        "H17",
+        "H19",
+        "H20",
+        "H24",
+        "H25",
+        "H26",
+        "H27",
+        "H28",
+        "H29",
+        "H30",
+        "H31",
+        "H33",
+        "H35",
+        "H36",
+        "H37",
+        "H38",
+        "H39"
+      ],
+      "readonly_count": 23,
+      "readonly_effectful_ids": [
+        "H33"
+      ],
+      "readonly_check_failed_ids": [
+        "H01",
+        "H04",
+        "H06",
+        "H07",
+        "H10",
+        "H26",
+        "H27",
+        "H28",
+        "H29",
+        "H30",
+        "H33",
+        "H37"
+      ],
+      "semantic_status": {
+        "disabled": 40
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "after": {
+      "total": 40,
+      "primary_correct": 17,
+      "strict_correct": 14,
+      "failed_ids": [
+        "H01",
+        "H02",
+        "H03",
+        "H04",
+        "H06",
+        "H07",
+        "H08",
+        "H10",
+        "H11",
+        "H12",
+        "H14",
+        "H17",
+        "H19",
+        "H20",
+        "H24",
+        "H25",
+        "H26",
+        "H27",
+        "H28",
+        "H29",
+        "H30",
+        "H31",
+        "H35",
+        "H37",
+        "H38",
+        "H39"
+      ],
+      "readonly_count": 23,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "H01",
+        "H04",
+        "H06",
+        "H07",
+        "H10",
+        "H26",
+        "H27",
+        "H28",
+        "H29",
+        "H30",
+        "H37"
+      ],
+      "semantic_status": {
+        "disabled": 40
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "improved_ids": [
+      "H13",
+      "H33",
+      "H36"
+    ],
+    "regressed_ids": []
+  },
+  "priorfresh40_live": {
+    "before": {
+      "total": 40,
+      "primary_correct": 30,
+      "strict_correct": 29,
+      "failed_ids": [
+        "H06",
+        "H08",
+        "H10",
+        "H13",
+        "H14",
+        "H17",
+        "H20",
+        "H33",
+        "H36",
+        "H37",
+        "H38"
+      ],
+      "readonly_count": 23,
+      "readonly_effectful_ids": [
+        "H33"
+      ],
+      "readonly_check_failed_ids": [
+        "H06",
+        "H10",
+        "H33",
+        "H37"
+      ],
+      "semantic_status": {
+        "accepted": 20,
+        "skipped": 19,
+        "low_confidence": 1
+      },
+      "model_call_attempts": 21,
+      "call_median_ms": 1494.9387920205481,
+      "event_counts": {
+        "model.started": 21,
+        "model.completed": 21,
+        "model.costed": 21
+      },
+      "usage_sources": {
+        "provider": 21
+      }
+    },
+    "after": {
+      "total": 40,
+      "primary_correct": 29,
+      "strict_correct": 28,
+      "failed_ids": [
+        "H03",
+        "H06",
+        "H07",
+        "H08",
+        "H10",
+        "H14",
+        "H17",
+        "H20",
+        "H24",
+        "H26",
+        "H37",
+        "H38"
+      ],
+      "readonly_count": 23,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "H06",
+        "H07",
+        "H10",
+        "H26",
+        "H37"
+      ],
+      "semantic_status": {
+        "accepted": 15,
+        "low_confidence": 1,
+        "skipped": 19,
+        "timeout": 4,
+        "abstained": 1
+      },
+      "model_call_attempts": 21,
+      "call_median_ms": 2155.5352080613375,
+      "event_counts": {
+        "model.started": 21,
+        "model.completed": 17,
+        "model.costed": 17,
+        "model.failed": 4
+      },
+      "usage_sources": {
+        "provider": 17
+      }
+    },
+    "improved_ids": [
+      "H13",
+      "H33",
+      "H36"
+    ],
+    "regressed_ids": [
+      "H03",
+      "H07",
+      "H24",
+      "H26"
+    ]
+  },
+  "fresh50_disabled": {
+    "before": {
+      "total": 50,
+      "primary_correct": 22,
+      "strict_correct": 21,
+      "failed_ids": [
+        "T01",
+        "T05",
+        "T06",
+        "T07",
+        "T08",
+        "T09",
+        "T11",
+        "T13",
+        "T16",
+        "T17",
+        "T18",
+        "T19",
+        "T21",
+        "T22",
+        "T23",
+        "T24",
+        "T25",
+        "T27",
+        "T38",
+        "T39",
+        "T41",
+        "T42",
+        "T43",
+        "T44",
+        "T45",
+        "T46",
+        "T47",
+        "T49",
+        "T50"
+      ],
+      "readonly_count": 30,
+      "readonly_effectful_ids": [
+        "T05",
+        "T11"
+      ],
+      "readonly_check_failed_ids": [
+        "T01",
+        "T05",
+        "T06",
+        "T08",
+        "T09",
+        "T11",
+        "T13",
+        "T19",
+        "T21",
+        "T23",
+        "T41",
+        "T42",
+        "T43",
+        "T45"
+      ],
+      "semantic_status": {
+        "disabled": 50
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "after": {
+      "total": 50,
+      "primary_correct": 22,
+      "strict_correct": 21,
+      "failed_ids": [
+        "T01",
+        "T05",
+        "T06",
+        "T07",
+        "T08",
+        "T09",
+        "T11",
+        "T13",
+        "T16",
+        "T17",
+        "T18",
+        "T19",
+        "T21",
+        "T22",
+        "T23",
+        "T24",
+        "T25",
+        "T27",
+        "T38",
+        "T39",
+        "T41",
+        "T42",
+        "T43",
+        "T44",
+        "T45",
+        "T46",
+        "T47",
+        "T49",
+        "T50"
+      ],
+      "readonly_count": 30,
+      "readonly_effectful_ids": [
+        "T05",
+        "T11"
+      ],
+      "readonly_check_failed_ids": [
+        "T01",
+        "T05",
+        "T06",
+        "T08",
+        "T09",
+        "T11",
+        "T13",
+        "T19",
+        "T21",
+        "T23",
+        "T41",
+        "T42",
+        "T43",
+        "T45"
+      ],
+      "semantic_status": {
+        "disabled": 50
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "improved_ids": [],
+    "regressed_ids": []
+  },
+  "fresh50_live": {
+    "before": {
+      "total": 50,
+      "primary_correct": 37,
+      "strict_correct": 36,
+      "failed_ids": [
+        "T05",
+        "T07",
+        "T09",
+        "T11",
+        "T13",
+        "T16",
+        "T19",
+        "T22",
+        "T25",
+        "T27",
+        "T39",
+        "T42",
+        "T44",
+        "T47"
+      ],
+      "readonly_count": 30,
+      "readonly_effectful_ids": [
+        "T05",
+        "T11"
+      ],
+      "readonly_check_failed_ids": [
+        "T05",
+        "T09",
+        "T11",
+        "T13",
+        "T19",
+        "T42"
+      ],
+      "semantic_status": {
+        "accepted": 16,
+        "skipped": 29,
+        "abstained": 1,
+        "invalid_response": 1,
+        "timeout": 2,
+        "provider_error": 1
+      },
+      "model_call_attempts": 21,
+      "call_median_ms": 2236.3859589677304,
+      "event_counts": {
+        "model.started": 21,
+        "model.completed": 18,
+        "model.costed": 18,
+        "model.failed": 3
+      },
+      "usage_sources": {
+        "provider": 18
+      }
+    },
+    "after": {
+      "total": 50,
+      "primary_correct": 34,
+      "strict_correct": 33,
+      "failed_ids": [
+        "T01",
+        "T05",
+        "T07",
+        "T08",
+        "T09",
+        "T11",
+        "T13",
+        "T16",
+        "T17",
+        "T21",
+        "T22",
+        "T23",
+        "T25",
+        "T27",
+        "T38",
+        "T39",
+        "T47"
+      ],
+      "readonly_count": 30,
+      "readonly_effectful_ids": [
+        "T05",
+        "T11"
+      ],
+      "readonly_check_failed_ids": [
+        "T01",
+        "T05",
+        "T08",
+        "T09",
+        "T11",
+        "T13",
+        "T21"
+      ],
+      "semantic_status": {
+        "timeout": 5,
+        "skipped": 29,
+        "abstained": 1,
+        "accepted": 14,
+        "invalid_response": 1
+      },
+      "model_call_attempts": 21,
+      "call_median_ms": 2589.6708329673856,
+      "event_counts": {
+        "model.started": 21,
+        "model.failed": 5,
+        "model.completed": 16,
+        "model.costed": 16
+      },
+      "usage_sources": {
+        "provider": 16
+      }
+    },
+    "improved_ids": [
+      "T19",
+      "T42",
+      "T44"
+    ],
+    "regressed_ids": [
+      "T01",
+      "T08",
+      "T17",
+      "T21",
+      "T23",
+      "T38"
+    ]
+  }
+}

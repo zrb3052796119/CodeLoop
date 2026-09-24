@@ -1,0 +1,3116 @@
+[
+  {
+    "id": "S01",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "code-understanding/codebase-explanation"
+    ],
+    "candidates": [
+      "code-understanding/codebase-explanation"
+    ],
+    "intent": {
+      "raw_input": "我刚接手这个终端助手。请从用户敲下回车开始，说明消息经过哪些组件，什么时候交给模型，模型要求读文件时又怎样回到下一轮。用实际源码位置串起来，我现在只想读懂它。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.92,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "我刚接手这个终端助手",
+        "请从用户敲下回车开始",
+        "说明消息经过哪些组件",
+        "什么时候交给模型",
+        "模型要求读文件时又怎样回到下一轮",
+        "用实际源码位置串起来",
+        "我现在只想读懂它",
+        "component"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788792662.3555179
+    },
+    "routing": {
+      "intent_type": "explain",
+      "action_type": "read",
+      "capability_domains": [
+        "analysis",
+        "code",
+        "file",
+        "search"
+      ],
+      "capability_scopes": [
+        "readonly"
+      ],
+      "selected": [
+        {
+          "name": "codebase-explanation",
+          "qualified_name": "code-understanding/codebase-explanation",
+          "description": "Explain codebase architecture, agent loop flow, tool calling, and prompt construction.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/code-understanding/codebase-explanation/SKILL.md",
+          "source": "project",
+          "score": 12.4,
+          "reasons": [
+            "intent/action:explain",
+            "capability-domain:analysis",
+            "capability-domain:code",
+            "capability-domain:search",
+            "capability-scope:readonly",
+            "directory:code-understanding",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-scope:readonly",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "code-understanding",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "load_skill"
+          ],
+          "content_digest": "e8a180242ce259904e469a00c4f745229dc549ea6c079d8adbaa69e2007692b2",
+          "routing_identity_digest": "e5035fb53693ddde5a613898aedc588c99e29f19516b60c9ace463ece320d86a",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0
+          ]
+        }
+      ],
+      "selected_skills": [
+        {
+          "name": "codebase-explanation",
+          "qualified_name": "code-understanding/codebase-explanation",
+          "description": "Explain codebase architecture, agent loop flow, tool calling, and prompt construction.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/code-understanding/codebase-explanation/SKILL.md",
+          "source": "project",
+          "score": 12.4,
+          "reasons": [
+            "intent/action:explain",
+            "capability-domain:analysis",
+            "capability-domain:code",
+            "capability-domain:search",
+            "capability-scope:readonly",
+            "directory:code-understanding",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-scope:readonly",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "code-understanding",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "load_skill"
+          ],
+          "content_digest": "e8a180242ce259904e469a00c4f745229dc549ea6c079d8adbaa69e2007692b2",
+          "routing_identity_digest": "e5035fb53693ddde5a613898aedc588c99e29f19516b60c9ace463ece320d86a",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0
+          ]
+        }
+      ],
+      "selected_directories": [
+        {
+          "name": "code-understanding",
+          "description": "Skills for reading, tracing, and explaining code architecture.",
+          "source": "project",
+          "score": 7.8,
+          "reasons": [
+            "intent/action:explain",
+            "capability-domain:analysis",
+            "capability-domain:code",
+            "capability-domain:file",
+            "capability-domain:search",
+            "capability-scope:readonly",
+            "source:project"
+          ]
+        }
+      ],
+      "tool_affinity": {
+        "code-understanding/codebase-explanation": 2.6
+      },
+      "total_skills": 17,
+      "used_fallback": false,
+      "routing_version": 3,
+      "candidate_count": 1,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "deterministic-ranking",
+      "turn_outcome": "route",
+      "outcome_reason": "skills-selected",
+      "prompt_mode": "routed"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": true,
+    "selected_coverage": true,
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.19227083399891853,
+    "routing_events": [],
+    "local_loader_contract_checks": [
+      {
+        "name": "code-understanding/codebase-explanation",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ]
+  },
+  {
+    "id": "S02",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "code-understanding/design-review"
+    ],
+    "candidates": [
+      "code-understanding/design-review"
+    ],
+    "intent": {
+      "raw_input": "两个入口现在各自维护一份参数转换逻辑，我担心以后只改到其中一处。请审查这部分实现，列出重复职责、前后约定不一致和没有被用到的分支，按影响排序，暂时不要改文件。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "两个入口现在各自维护一份参数转换逻辑",
+        "我担心以后只改到其中一处",
+        "请审查这部分实现",
+        "列出重复职责",
+        "前后约定不一致和没有被用到的分支",
+        "按影响排序",
+        "暂时不要改文件",
+        "audit",
+        "review",
+        "branch"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788792662.512161
+    },
+    "routing": {
+      "intent_type": "code",
+      "action_type": "update",
+      "capability_domains": [
+        "analysis",
+        "code",
+        "file",
+        "search"
+      ],
+      "capability_scopes": [
+        "readonly",
+        "write"
+      ],
+      "selected": [
+        {
+          "name": "design-review",
+          "qualified_name": "code-understanding/design-review",
+          "description": "Review existing code for design issues, inconsistencies, dead code, and missing test coverage without changing it.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/code-understanding/design-review/SKILL.md",
+          "source": "project",
+          "score": 13.6,
+          "reasons": [
+            "intent/action:code",
+            "intent/action:review",
+            "keyword:audit",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:code",
+            "directory:code-understanding",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "code-understanding",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "find_symbols"
+          ],
+          "content_digest": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+          "routing_identity_digest": "5474e2c40f8cd27630aedd67aa1fe241dd6d066ce19d6d9598ac6f7ec49df830",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            1
+          ]
+        }
+      ],
+      "selected_skills": [
+        {
+          "name": "design-review",
+          "qualified_name": "code-understanding/design-review",
+          "description": "Review existing code for design issues, inconsistencies, dead code, and missing test coverage without changing it.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/code-understanding/design-review/SKILL.md",
+          "source": "project",
+          "score": 13.6,
+          "reasons": [
+            "intent/action:code",
+            "intent/action:review",
+            "keyword:audit",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:code",
+            "directory:code-understanding",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "code-understanding",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "find_symbols"
+          ],
+          "content_digest": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+          "routing_identity_digest": "5474e2c40f8cd27630aedd67aa1fe241dd6d066ce19d6d9598ac6f7ec49df830",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            1
+          ]
+        }
+      ],
+      "selected_directories": [
+        {
+          "name": "code-understanding",
+          "description": "Skills for reading, tracing, and explaining code architecture.",
+          "source": "project",
+          "score": 11.8,
+          "reasons": [
+            "intent/action:code",
+            "intent/action:review",
+            "keyword:audit",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:analysis",
+            "capability-domain:code",
+            "capability-domain:file",
+            "capability-domain:search",
+            "capability-scope:readonly",
+            "source:project"
+          ]
+        }
+      ],
+      "tool_affinity": {
+        "code-understanding/design-review": 3.3
+      },
+      "total_skills": 17,
+      "used_fallback": false,
+      "routing_version": 3,
+      "candidate_count": 1,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "deterministic-ranking",
+      "turn_outcome": "route",
+      "outcome_reason": "skills-selected",
+      "prompt_mode": "routed"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": true,
+    "selected_coverage": true,
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.15235629095695913,
+    "routing_events": [],
+    "local_loader_contract_checks": [
+      {
+        "name": "code-understanding/design-review",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ]
+  },
+  {
+    "id": "S03",
+    "outcome": "no_skill",
+    "reason": "no-catalog-match",
+    "prompt_mode": "inventory_names",
+    "selected": [],
+    "candidates": [],
+    "intent": {
+      "raw_input": "I have an interview about MiniCode next week. Work through its tool execution mechanism with me in short sections. After each section, ask one recall question, wait for my answer, and correct what I got wrong before moving on.",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "interview",
+        "about",
+        "minicode",
+        "next",
+        "week.",
+        "work",
+        "tool",
+        "execution",
+        "mechanism",
+        "short",
+        "sections.",
+        "section",
+        "ask",
+        "one"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788792662.664921
+    },
+    "routing": {
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "capability_domains": [],
+      "capability_scopes": [],
+      "selected": [],
+      "selected_skills": [],
+      "selected_directories": [],
+      "tool_affinity": {},
+      "total_skills": 17,
+      "used_fallback": true,
+      "routing_version": 3,
+      "candidate_count": 0,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "no-affirmed-operation",
+      "turn_outcome": "no_skill",
+      "outcome_reason": "no-catalog-match",
+      "prompt_mode": "inventory_names"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": false,
+    "selected_coverage": false,
+    "retrieval_strict": false,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "inventory_header_present": true,
+      "inventory_names_present": true,
+      "no_description_projection": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.11921137501485646,
+    "routing_events": [],
+    "local_loader_contract_checks": []
+  },
+  {
+    "id": "S04",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "documentation/readme-authoring",
+      "testing/test-driven-development"
+    ],
+    "candidates": [
+      "documentation/readme-authoring",
+      "testing/test-driven-development"
+    ],
+    "intent": {
+      "raw_input": "新同事拿到仓库后不知道第一次怎么跑起来。请核对项目里真实的安装方式和启动入口，把首页说明补成一份能照着做的入门指南，包含一个最小使用例子。",
+      "intent_type": "configure",
+      "action_type": "update",
+      "confidence": 0.912,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "新同事拿到仓库后不知道第一次怎么跑起来",
+        "请核对项目里真实的安装方式和启动入口",
+        "把首页说明补成一份能照着做的入门指南",
+        "包含一个最小使用例子",
+        "project",
+        "startup",
+        "guide",
+        "test",
+        "test case"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788792662.785523
+    },
+    "routing": {
+      "intent_type": "configure",
+      "action_type": "update",
+      "capability_domains": [
+        "code",
+        "execution",
+        "file",
+        "system"
+      ],
+      "capability_scopes": [
+        "readonly",
+        "write"
+      ],
+      "selected": [
+        {
+          "name": "readme-authoring",
+          "qualified_name": "documentation/readme-authoring",
+          "description": "Write concise README or guide content grounded in the actual project.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/documentation/readme-authoring/SKILL.md",
+          "source": "project",
+          "score": 10.4,
+          "reasons": [
+            "intent/action:update",
+            "keyword:guide",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:file",
+            "capability-scope:write",
+            "directory:documentation",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "documentation",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "edit_file"
+          ],
+          "content_digest": "6990db45ca8ef1abb0eb12dca4daf9f128e604f12575292f976649ec6524c706",
+          "routing_identity_digest": "65bd3534d197fac472b9f083a0921bdbe38cfbf1fa5cd588b18d4b9559583bb8",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            1
+          ]
+        },
+        {
+          "name": "test-driven-development",
+          "qualified_name": "testing/test-driven-development",
+          "description": "Add or update tests before implementation and verify behavior with focused commands.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/testing/test-driven-development/SKILL.md",
+          "source": "project",
+          "score": 16.55,
+          "reasons": [
+            "intent/action:update",
+            "intent/action:test",
+            "keyword:test",
+            "capability-domain:code",
+            "capability-domain:execution",
+            "capability-scope:write",
+            "directory:testing",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:execution",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "testing",
+          "tools": [
+            "read_file",
+            "write_file",
+            "edit_file",
+            "run_command"
+          ],
+          "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+          "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            2
+          ]
+        }
+      ],
+      "selected_skills": [
+        {
+          "name": "readme-authoring",
+          "qualified_name": "documentation/readme-authoring",
+          "description": "Write concise README or guide content grounded in the actual project.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/documentation/readme-authoring/SKILL.md",
+          "source": "project",
+          "score": 10.4,
+          "reasons": [
+            "intent/action:update",
+            "keyword:guide",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:file",
+            "capability-scope:write",
+            "directory:documentation",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "documentation",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "edit_file"
+          ],
+          "content_digest": "6990db45ca8ef1abb0eb12dca4daf9f128e604f12575292f976649ec6524c706",
+          "routing_identity_digest": "65bd3534d197fac472b9f083a0921bdbe38cfbf1fa5cd588b18d4b9559583bb8",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            1
+          ]
+        },
+        {
+          "name": "test-driven-development",
+          "qualified_name": "testing/test-driven-development",
+          "description": "Add or update tests before implementation and verify behavior with focused commands.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/testing/test-driven-development/SKILL.md",
+          "source": "project",
+          "score": 16.55,
+          "reasons": [
+            "intent/action:update",
+            "intent/action:test",
+            "keyword:test",
+            "capability-domain:code",
+            "capability-domain:execution",
+            "capability-scope:write",
+            "directory:testing",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:execution",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "testing",
+          "tools": [
+            "read_file",
+            "write_file",
+            "edit_file",
+            "run_command"
+          ],
+          "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+          "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            2
+          ]
+        }
+      ],
+      "selected_directories": [
+        {
+          "name": "testing",
+          "description": "Skills for adding, updating, and validating tests.",
+          "source": "project",
+          "score": 8.3,
+          "reasons": [
+            "intent/action:test",
+            "keyword:test",
+            "capability-domain:code",
+            "capability-domain:execution",
+            "capability-domain:file",
+            "capability-scope:readonly",
+            "capability-scope:write",
+            "source:project"
+          ]
+        },
+        {
+          "name": "documentation",
+          "description": "Skills for writing and updating project documentation.",
+          "source": "project",
+          "score": 4.3,
+          "reasons": [
+            "keyword:guide",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:code",
+            "capability-domain:file",
+            "capability-scope:readonly",
+            "capability-scope:write",
+            "source:project"
+          ]
+        }
+      ],
+      "tool_affinity": {
+        "documentation/readme-authoring": 2.6,
+        "testing/test-driven-development": 4.0
+      },
+      "total_skills": 17,
+      "used_fallback": false,
+      "routing_version": 3,
+      "candidate_count": 2,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "deterministic-ranking",
+      "turn_outcome": "route",
+      "outcome_reason": "skills-selected",
+      "prompt_mode": "routed"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": true,
+    "selected_coverage": true,
+    "retrieval_strict": false,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.21220783388707787,
+    "routing_events": [],
+    "local_loader_contract_checks": [
+      {
+        "name": "documentation/readme-authoring",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      },
+      {
+        "name": "testing/test-driven-development",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ]
+  },
+  {
+    "id": "S05",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "dependencies/dependency-hygiene"
+    ],
+    "candidates": [
+      "dependencies/dependency-hygiene"
+    ],
+    "intent": {
+      "raw_input": "CI 的质量检查提示 adapters.py 里有 F401 和 E722。请先运行仓库已经配置好的检查命令，再处理它实际报出的这些问题，保持现有执行结果不变。",
+      "intent_type": "debug",
+      "action_type": "update",
+      "confidence": 0.92,
+      "entities": {
+        "files": [
+          "adapters.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "ci",
+        "的质量检查提示",
+        "adapters.py",
+        "里有",
+        "f401",
+        "e722",
+        "请先运行仓库已经配置好的检查命令",
+        "再处理它实际报出的这些问题",
+        "保持现有执行结果不变",
+        "inspect",
+        "review",
+        "config",
+        "configuration"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788792662.999093
+    },
+    "routing": {
+      "intent_type": "test",
+      "action_type": "execute",
+      "capability_domains": [
+        "code",
+        "execution",
+        "file",
+        "search"
+      ],
+      "capability_scopes": [
+        "destructive",
+        "external",
+        "readonly",
+        "write"
+      ],
+      "selected": [
+        {
+          "name": "dependency-hygiene",
+          "qualified_name": "dependencies/dependency-hygiene",
+          "description": "Add, upgrade, or remove a third-party dependency and verify nothing broke.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/dependencies/dependency-hygiene/SKILL.md",
+          "source": "project",
+          "score": 9.95,
+          "reasons": [
+            "keyword:review",
+            "keyword:config",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:code",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:execution",
+            "tool-scope:destructive",
+            "tool-domain:execution",
+            "tool-scope:destructive",
+            "tool-scope:external",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "dependencies",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "edit_file",
+            "run_command",
+            "test_runner",
+            "web_fetch"
+          ],
+          "content_digest": "134bc00fb694afd8cea65dc6b9d6e35c83cfe868dbe67475a07d35502ef0f15b",
+          "routing_identity_digest": "bd8fece2a9ba2ed5f5c601ba8164b14964eb259dfbe54232d4d94a51bfc54e60",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0
+          ]
+        }
+      ],
+      "selected_skills": [
+        {
+          "name": "dependency-hygiene",
+          "qualified_name": "dependencies/dependency-hygiene",
+          "description": "Add, upgrade, or remove a third-party dependency and verify nothing broke.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/dependencies/dependency-hygiene/SKILL.md",
+          "source": "project",
+          "score": 9.95,
+          "reasons": [
+            "keyword:review",
+            "keyword:config",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:code",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:execution",
+            "tool-scope:destructive",
+            "tool-domain:execution",
+            "tool-scope:destructive",
+            "tool-scope:external",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "dependencies",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "edit_file",
+            "run_command",
+            "test_runner",
+            "web_fetch"
+          ],
+          "content_digest": "134bc00fb694afd8cea65dc6b9d6e35c83cfe868dbe67475a07d35502ef0f15b",
+          "routing_identity_digest": "bd8fece2a9ba2ed5f5c601ba8164b14964eb259dfbe54232d4d94a51bfc54e60",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0
+          ]
+        }
+      ],
+      "selected_directories": [],
+      "tool_affinity": {
+        "dependencies/dependency-hygiene": 5.9
+      },
+      "total_skills": 17,
+      "used_fallback": false,
+      "routing_version": 3,
+      "candidate_count": 1,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "deterministic-ranking",
+      "turn_outcome": "route",
+      "outcome_reason": "skills-selected",
+      "prompt_mode": "routed"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": false,
+    "selected_coverage": false,
+    "retrieval_strict": false,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.272511083050631,
+    "routing_events": [],
+    "local_loader_contract_checks": [
+      {
+        "name": "dependencies/dependency-hygiene",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ]
+  },
+  {
+    "id": "S06",
+    "outcome": "no_skill",
+    "reason": "no-catalog-match",
+    "prompt_mode": "inventory_names",
+    "selected": [],
+    "candidates": [],
+    "intent": {
+      "raw_input": "下载接口直接把用户传来的文件名拼到存储目录后面，另一个接口把表单内容拼进数据库语句。请检查这些路径是否能被恶意输入利用，也找一下仓库里有没有写死的口令，给出位置和依据。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "下载接口直接把用户传来的文件名拼到存储目录后面",
+        "另一个接口把表单内容拼进数据库语句",
+        "请检查这些路径是否能被恶意输入利用",
+        "也找一下仓库里有没有写死的口令",
+        "给出位置和依据",
+        "database",
+        "inspect",
+        "review"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788792663.271198
+    },
+    "routing": {
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "capability_domains": [],
+      "capability_scopes": [],
+      "selected": [],
+      "selected_skills": [],
+      "selected_directories": [],
+      "tool_affinity": {},
+      "total_skills": 17,
+      "used_fallback": true,
+      "routing_version": 3,
+      "candidate_count": 0,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "no-affirmed-operation",
+      "turn_outcome": "no_skill",
+      "outcome_reason": "no-catalog-match",
+      "prompt_mode": "inventory_names"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": false,
+    "selected_coverage": false,
+    "retrieval_strict": false,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "inventory_header_present": true,
+      "inventory_names_present": true,
+      "no_description_projection": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.11574241693597287,
+    "routing_events": [],
+    "local_loader_contract_checks": []
+  },
+  {
+    "id": "S07",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "testing/test-driven-development"
+    ],
+    "candidates": [
+      "testing/test-driven-development"
+    ],
+    "intent": {
+      "raw_input": "After my last change, pytest reports `test_empty_batch: AssertionError: assert None == []`. Please follow the failure from the test to the implementation, explain the cause, and rerun just the affected tests after the smallest fix.",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "last",
+        "change",
+        "pytest",
+        "reports",
+        "please",
+        "follow",
+        "failure",
+        "test",
+        "implementation",
+        "cause",
+        "rerun",
+        "affected",
+        "tests",
+        "smallest"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788792663.391554
+    },
+    "routing": {
+      "intent_type": "code",
+      "action_type": "update",
+      "capability_domains": [
+        "code",
+        "execution",
+        "file",
+        "search"
+      ],
+      "capability_scopes": [
+        "destructive",
+        "external",
+        "readonly",
+        "write"
+      ],
+      "selected": [
+        {
+          "name": "test-driven-development",
+          "qualified_name": "testing/test-driven-development",
+          "description": "Add or update tests before implementation and verify behavior with focused commands.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/testing/test-driven-development/SKILL.md",
+          "source": "project",
+          "score": 19.95,
+          "reasons": [
+            "intent/action:update",
+            "intent/action:test",
+            "keyword:pytest",
+            "keyword:failure",
+            "keyword:implementation",
+            "keyword:tests",
+            "capability-domain:code",
+            "capability-domain:execution",
+            "capability-scope:destructive",
+            "capability-scope:write",
+            "directory:testing",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:execution",
+            "tool-scope:destructive",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "testing",
+          "tools": [
+            "read_file",
+            "write_file",
+            "edit_file",
+            "run_command"
+          ],
+          "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+          "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0
+          ]
+        }
+      ],
+      "selected_skills": [
+        {
+          "name": "test-driven-development",
+          "qualified_name": "testing/test-driven-development",
+          "description": "Add or update tests before implementation and verify behavior with focused commands.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/testing/test-driven-development/SKILL.md",
+          "source": "project",
+          "score": 19.95,
+          "reasons": [
+            "intent/action:update",
+            "intent/action:test",
+            "keyword:pytest",
+            "keyword:failure",
+            "keyword:implementation",
+            "keyword:tests",
+            "capability-domain:code",
+            "capability-domain:execution",
+            "capability-scope:destructive",
+            "capability-scope:write",
+            "directory:testing",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:execution",
+            "tool-scope:destructive",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "testing",
+          "tools": [
+            "read_file",
+            "write_file",
+            "edit_file",
+            "run_command"
+          ],
+          "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+          "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0
+          ]
+        }
+      ],
+      "selected_directories": [
+        {
+          "name": "testing",
+          "description": "Skills for adding, updating, and validating tests.",
+          "source": "project",
+          "score": 12.8,
+          "reasons": [
+            "intent/action:code",
+            "intent/action:test",
+            "keyword:pytest",
+            "keyword:tests",
+            "capability-domain:code",
+            "capability-domain:execution",
+            "capability-domain:file",
+            "capability-scope:destructive",
+            "capability-scope:readonly",
+            "capability-scope:write",
+            "source:project"
+          ]
+        }
+      ],
+      "tool_affinity": {
+        "testing/test-driven-development": 4.4
+      },
+      "total_skills": 17,
+      "used_fallback": false,
+      "routing_version": 3,
+      "candidate_count": 1,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "deterministic-ranking",
+      "turn_outcome": "route",
+      "outcome_reason": "skills-selected",
+      "prompt_mode": "routed"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": false,
+    "selected_coverage": false,
+    "retrieval_strict": false,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.26061150000896305,
+    "routing_events": [],
+    "local_loader_contract_checks": [
+      {
+        "name": "testing/test-driven-development",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ]
+  },
+  {
+    "id": "S08",
+    "outcome": "no_skill",
+    "reason": "no-catalog-match",
+    "prompt_mode": "inventory_names",
+    "selected": [],
+    "candidates": [],
+    "intent": {
+      "raw_input": "单独跑都没事，但一起处理时偶尔就一直停在那里。请把资源取得和释放的先后关系理清楚，构造一种稳定出现卡住的执行顺序，再指出问题在哪。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "单独跑都没事",
+        "但一起处理时偶尔就一直停在那里",
+        "请把资源取得和释放的先后关系理清楚",
+        "构造一种稳定出现卡住的执行顺序",
+        "再指出问题在哪"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788792663.651396
+    },
+    "routing": {
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "capability_domains": [],
+      "capability_scopes": [],
+      "selected": [],
+      "selected_skills": [],
+      "selected_directories": [],
+      "tool_affinity": {},
+      "total_skills": 17,
+      "used_fallback": true,
+      "routing_version": 3,
+      "candidate_count": 0,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "no-affirmed-operation",
+      "turn_outcome": "no_skill",
+      "outcome_reason": "no-catalog-match",
+      "prompt_mode": "inventory_names"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": false,
+    "selected_coverage": false,
+    "retrieval_strict": false,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "inventory_header_present": true,
+      "inventory_names_present": true,
+      "no_description_projection": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.11828249995596707,
+    "routing_events": [],
+    "local_loader_contract_checks": []
+  },
+  {
+    "id": "S09",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "dependencies/dependency-hygiene"
+    ],
+    "candidates": [
+      "dependencies/dependency-hygiene"
+    ],
+    "intent": {
+      "raw_input": "项目已不再使用旧的日期解析包，但它还留在依赖清单里。请确认没有剩余调用，把它从声明和锁定文件中移除，并验证安装与已有功能仍然正常。",
+      "intent_type": "test",
+      "action_type": "execute",
+      "confidence": 0.907,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "项目已不再使用旧的日期解析包",
+        "但它还留在依赖清单里",
+        "请确认没有剩余调用",
+        "把它从声明和锁定文件中移除",
+        "并验证安装与已有功能仍然正常",
+        "project",
+        "dependency",
+        "package",
+        "lock",
+        "concurrency"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788792663.767391
+    },
+    "routing": {
+      "intent_type": "test",
+      "action_type": "execute",
+      "capability_domains": [
+        "code",
+        "execution",
+        "file"
+      ],
+      "capability_scopes": [
+        "destructive",
+        "external",
+        "readonly"
+      ],
+      "selected": [
+        {
+          "name": "dependency-hygiene",
+          "qualified_name": "dependencies/dependency-hygiene",
+          "description": "Add, upgrade, or remove a third-party dependency and verify nothing broke.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/dependencies/dependency-hygiene/SKILL.md",
+          "source": "project",
+          "score": 9.35,
+          "reasons": [
+            "keyword:dependency",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:code",
+            "directory:dependencies",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-domain:execution",
+            "tool-scope:destructive",
+            "tool-domain:execution",
+            "tool-scope:destructive",
+            "tool-scope:external",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "dependencies",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "edit_file",
+            "run_command",
+            "test_runner",
+            "web_fetch"
+          ],
+          "content_digest": "134bc00fb694afd8cea65dc6b9d6e35c83cfe868dbe67475a07d35502ef0f15b",
+          "routing_identity_digest": "bd8fece2a9ba2ed5f5c601ba8164b14964eb259dfbe54232d4d94a51bfc54e60",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0
+          ]
+        }
+      ],
+      "selected_skills": [
+        {
+          "name": "dependency-hygiene",
+          "qualified_name": "dependencies/dependency-hygiene",
+          "description": "Add, upgrade, or remove a third-party dependency and verify nothing broke.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/dependencies/dependency-hygiene/SKILL.md",
+          "source": "project",
+          "score": 9.35,
+          "reasons": [
+            "keyword:dependency",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:code",
+            "directory:dependencies",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-domain:execution",
+            "tool-scope:destructive",
+            "tool-domain:execution",
+            "tool-scope:destructive",
+            "tool-scope:external",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "dependencies",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "edit_file",
+            "run_command",
+            "test_runner",
+            "web_fetch"
+          ],
+          "content_digest": "134bc00fb694afd8cea65dc6b9d6e35c83cfe868dbe67475a07d35502ef0f15b",
+          "routing_identity_digest": "bd8fece2a9ba2ed5f5c601ba8164b14964eb259dfbe54232d4d94a51bfc54e60",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0
+          ]
+        }
+      ],
+      "selected_directories": [
+        {
+          "name": "dependencies",
+          "description": "Skills for adding, upgrading, and auditing third-party dependencies.",
+          "source": "project",
+          "score": 5.8,
+          "reasons": [
+            "keyword:dependency",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:code",
+            "capability-domain:execution",
+            "capability-domain:file",
+            "capability-scope:destructive",
+            "capability-scope:external",
+            "capability-scope:readonly",
+            "source:project"
+          ]
+        }
+      ],
+      "tool_affinity": {
+        "dependencies/dependency-hygiene": 4.8
+      },
+      "total_skills": 17,
+      "used_fallback": false,
+      "routing_version": 3,
+      "candidate_count": 1,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "deterministic-ranking",
+      "turn_outcome": "route",
+      "outcome_reason": "skills-selected",
+      "prompt_mode": "routed"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": true,
+    "selected_coverage": true,
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.16904112498741597,
+    "routing_events": [],
+    "local_loader_contract_checks": [
+      {
+        "name": "dependencies/dependency-hygiene",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ]
+  },
+  {
+    "id": "S10",
+    "outcome": "no_skill",
+    "reason": "no-catalog-match",
+    "prompt_mode": "inventory_names",
+    "selected": [],
+    "candidates": [],
+    "intent": {
+      "raw_input": "用户反馈：列表按名称排序以后，点第三行的删除按钮，消失的却是排序前第三个条目。请先把这个操作写成会失败的自动检查，再修好删除逻辑，并用同一个检查证明问题解决了。",
+      "intent_type": "code",
+      "action_type": "delete",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "用户反馈",
+        "列表按名称排序以后",
+        "点第三行的删除按钮",
+        "消失的却是排序前第三个条目",
+        "请先把这个操作写成会失败的自动检查",
+        "再修好删除逻辑",
+        "并用同一个检查证明问题解决了",
+        "inspect",
+        "review"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788792663.938835
+    },
+    "routing": {
+      "intent_type": "code",
+      "action_type": "delete",
+      "capability_domains": [
+        "code",
+        "execution",
+        "file",
+        "search"
+      ],
+      "capability_scopes": [
+        "destructive",
+        "readonly",
+        "write"
+      ],
+      "selected": [],
+      "selected_skills": [],
+      "selected_directories": [],
+      "tool_affinity": {},
+      "total_skills": 17,
+      "used_fallback": true,
+      "routing_version": 3,
+      "candidate_count": 0,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "",
+      "turn_outcome": "no_skill",
+      "outcome_reason": "no-catalog-match",
+      "prompt_mode": "inventory_names"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": false,
+    "selected_coverage": false,
+    "retrieval_strict": false,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "inventory_header_present": true,
+      "inventory_names_present": true,
+      "no_description_projection": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.18377020896878093,
+    "routing_events": [],
+    "local_loader_contract_checks": []
+  },
+  {
+    "id": "S11",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "testing/test-driven-development"
+    ],
+    "candidates": [
+      "testing/test-driven-development"
+    ],
+    "intent": {
+      "raw_input": "给配置解析器加一个新能力：数值可以带 ms 或 s 后缀，最后统一返回毫秒。先把 250ms、2s 和非法后缀的预期写成测试，看到它们失败后再开始实现，最后跑相关测试。",
+      "intent_type": "test",
+      "action_type": "create",
+      "confidence": 0.904,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "给配置解析器加一个新能力",
+        "数值可以带",
+        "ms",
+        "后缀",
+        "最后统一返回毫秒",
+        "先把",
+        "250ms",
+        "2s",
+        "和非法后缀的预期写成测试",
+        "看到它们失败后再开始实现",
+        "最后跑相关测试",
+        "config",
+        "configuration",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788792664.1232588
+    },
+    "routing": {
+      "intent_type": "test",
+      "action_type": "create",
+      "capability_domains": [
+        "code",
+        "execution",
+        "file"
+      ],
+      "capability_scopes": [
+        "destructive",
+        "external",
+        "readonly",
+        "write"
+      ],
+      "selected": [
+        {
+          "name": "test-driven-development",
+          "qualified_name": "testing/test-driven-development",
+          "description": "Add or update tests before implementation and verify behavior with focused commands.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/testing/test-driven-development/SKILL.md",
+          "source": "project",
+          "score": 13.95,
+          "reasons": [
+            "intent/action:test",
+            "keyword:test",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:code",
+            "capability-domain:execution",
+            "capability-scope:destructive",
+            "capability-scope:write",
+            "directory:testing",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:execution",
+            "tool-scope:destructive",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "testing",
+          "tools": [
+            "read_file",
+            "write_file",
+            "edit_file",
+            "run_command"
+          ],
+          "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+          "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0,
+            1
+          ]
+        }
+      ],
+      "selected_skills": [
+        {
+          "name": "test-driven-development",
+          "qualified_name": "testing/test-driven-development",
+          "description": "Add or update tests before implementation and verify behavior with focused commands.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/testing/test-driven-development/SKILL.md",
+          "source": "project",
+          "score": 13.95,
+          "reasons": [
+            "intent/action:test",
+            "keyword:test",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:code",
+            "capability-domain:execution",
+            "capability-scope:destructive",
+            "capability-scope:write",
+            "directory:testing",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:execution",
+            "tool-scope:destructive",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "testing",
+          "tools": [
+            "read_file",
+            "write_file",
+            "edit_file",
+            "run_command"
+          ],
+          "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+          "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0,
+            1
+          ]
+        }
+      ],
+      "selected_directories": [
+        {
+          "name": "testing",
+          "description": "Skills for adding, updating, and validating tests.",
+          "source": "project",
+          "score": 8.8,
+          "reasons": [
+            "intent/action:test",
+            "keyword:test",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:code",
+            "capability-domain:execution",
+            "capability-domain:file",
+            "capability-scope:destructive",
+            "capability-scope:readonly",
+            "capability-scope:write",
+            "source:project"
+          ]
+        }
+      ],
+      "tool_affinity": {
+        "testing/test-driven-development": 4.4
+      },
+      "total_skills": 17,
+      "used_fallback": false,
+      "routing_version": 3,
+      "candidate_count": 1,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "deterministic-ranking",
+      "turn_outcome": "route",
+      "outcome_reason": "skills-selected",
+      "prompt_mode": "routed"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": true,
+    "selected_coverage": true,
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.17163066600915045,
+    "routing_events": [],
+    "local_loader_contract_checks": [
+      {
+        "name": "testing/test-driven-development",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ]
+  },
+  {
+    "id": "S12",
+    "outcome": "no_skill",
+    "reason": "no-catalog-match",
+    "prompt_mode": "inventory_names",
+    "selected": [],
+    "candidates": [],
+    "intent": {
+      "raw_input": "这个处理函数有六层条件分支，已经很难继续维护。请把它拆成职责清楚的小函数，每拆一步就核对原有结果，参数、返回值和异常约定都要保持一致。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个处理函数有六层条件分支",
+        "已经很难继续维护",
+        "请把它拆成职责清楚的小函数",
+        "每拆一步就核对原有结果",
+        "参数",
+        "返回值和异常约定都要保持一致",
+        "branch"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788792664.293938
+    },
+    "routing": {
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "capability_domains": [],
+      "capability_scopes": [],
+      "selected": [],
+      "selected_skills": [],
+      "selected_directories": [],
+      "tool_affinity": {},
+      "total_skills": 17,
+      "used_fallback": true,
+      "routing_version": 3,
+      "candidate_count": 0,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "no-affirmed-operation",
+      "turn_outcome": "no_skill",
+      "outcome_reason": "no-catalog-match",
+      "prompt_mode": "inventory_names"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": false,
+    "selected_coverage": false,
+    "retrieval_strict": false,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "inventory_header_present": true,
+      "inventory_names_present": true,
+      "no_description_projection": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.11347891693003476,
+    "routing_events": [],
+    "local_loader_contract_checks": []
+  },
+  {
+    "id": "S13",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "refactoring/structural-rename"
+    ],
+    "candidates": [
+      "refactoring/structural-rename"
+    ],
+    "intent": {
+      "raw_input": "Move the `reporting` package under `app.analytics.reporting`. Update imports, tests, and the examples in the docs so the old package path is no longer used. Keep the public behavior the same.",
+      "intent_type": "code",
+      "action_type": "rename",
+      "confidence": 0.92,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "move",
+        "package",
+        "update",
+        "imports",
+        "tests",
+        "examples",
+        "docs",
+        "old",
+        "path",
+        "longer",
+        "used.",
+        "keep",
+        "public",
+        "behavior"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788792664.413044
+    },
+    "routing": {
+      "intent_type": "code",
+      "action_type": "rename",
+      "capability_domains": [
+        "code",
+        "file",
+        "search"
+      ],
+      "capability_scopes": [
+        "destructive",
+        "readonly",
+        "write"
+      ],
+      "selected": [
+        {
+          "name": "structural-rename",
+          "qualified_name": "refactoring/structural-rename",
+          "description": "Rename or move a module, package, or symbol consistently across its directory, imports, tests, and docs.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/refactoring/structural-rename/SKILL.md",
+          "source": "project",
+          "score": 21.35,
+          "reasons": [
+            "intent/action:rename",
+            "intent/action:update",
+            "keyword:move",
+            "keyword:package",
+            "keyword:update",
+            "keyword:imports",
+            "keyword:tests",
+            "keyword:docs",
+            "capability-scope:write",
+            "directory:refactoring",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-scope:destructive",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "refactoring",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "edit_file",
+            "write_file",
+            "run_command"
+          ],
+          "content_digest": "cc7bef8055026ee29f6066f17ebfea9a9e67c542be7758c4beeb0989b7c0c203",
+          "routing_identity_digest": "ee338a2f5fa51a4d796bf23f386781cf466d55c30b39ec85fa921981d43f304a",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0,
+            1
+          ]
+        }
+      ],
+      "selected_skills": [
+        {
+          "name": "structural-rename",
+          "qualified_name": "refactoring/structural-rename",
+          "description": "Rename or move a module, package, or symbol consistently across its directory, imports, tests, and docs.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/refactoring/structural-rename/SKILL.md",
+          "source": "project",
+          "score": 21.35,
+          "reasons": [
+            "intent/action:rename",
+            "intent/action:update",
+            "keyword:move",
+            "keyword:package",
+            "keyword:update",
+            "keyword:imports",
+            "keyword:tests",
+            "keyword:docs",
+            "capability-scope:write",
+            "directory:refactoring",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-scope:destructive",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "refactoring",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "edit_file",
+            "write_file",
+            "run_command"
+          ],
+          "content_digest": "cc7bef8055026ee29f6066f17ebfea9a9e67c542be7758c4beeb0989b7c0c203",
+          "routing_identity_digest": "ee338a2f5fa51a4d796bf23f386781cf466d55c30b39ec85fa921981d43f304a",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0,
+            1
+          ]
+        }
+      ],
+      "selected_directories": [
+        {
+          "name": "refactoring",
+          "description": "Skills for safe, behavior-preserving code restructuring.",
+          "source": "project",
+          "score": 12.8,
+          "reasons": [
+            "intent/action:code",
+            "intent/action:rename",
+            "keyword:move",
+            "keyword:package",
+            "capability-domain:code",
+            "capability-domain:file",
+            "capability-domain:search",
+            "capability-scope:destructive",
+            "capability-scope:readonly",
+            "capability-scope:write",
+            "source:project"
+          ]
+        }
+      ],
+      "tool_affinity": {
+        "refactoring/structural-rename": 4.8
+      },
+      "total_skills": 17,
+      "used_fallback": false,
+      "routing_version": 3,
+      "candidate_count": 1,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "deterministic-ranking",
+      "turn_outcome": "route",
+      "outcome_reason": "skills-selected",
+      "prompt_mode": "routed"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": true,
+    "selected_coverage": true,
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.25380362500436604,
+    "routing_events": [],
+    "local_loader_contract_checks": [
+      {
+        "name": "refactoring/structural-rename",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ]
+  },
+  {
+    "id": "S14",
+    "outcome": "clarify",
+    "reason": "explicit-skill-unresolved",
+    "prompt_mode": "inventory_names",
+    "selected": [],
+    "candidates": [],
+    "intent": {
+      "raw_input": "请使用 code-skills/minicode-study，带我看 MiniCode 的记忆系统：先说明写入和取回信息各经过哪些层，再用一次对话演示这些层如何配合。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "请使用",
+        "带我看",
+        "minicode",
+        "的记忆系统",
+        "先说明写入和取回信息各经过哪些层",
+        "再用一次对话演示这些层如何配合",
+        "memory"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788792664.6643462
+    },
+    "routing": {
+      "intent_type": "explain",
+      "action_type": "read",
+      "capability_domains": [],
+      "capability_scopes": [],
+      "selected": [],
+      "selected_skills": [],
+      "selected_directories": [],
+      "tool_affinity": {},
+      "total_skills": 17,
+      "used_fallback": true,
+      "routing_version": 3,
+      "candidate_count": 0,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "explicit-skill-unresolved",
+      "turn_outcome": "clarify",
+      "outcome_reason": "explicit-skill-unresolved",
+      "prompt_mode": "inventory_names"
+    },
+    "authority": {
+      "requested": [
+        "code-skills/minicode-study"
+      ],
+      "denied": [],
+      "unresolved": [
+        "code-"
+      ],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": false,
+    "selected_coverage": false,
+    "retrieval_strict": false,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "inventory_header_present": true,
+      "inventory_names_present": true,
+      "no_description_projection": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.11620499996934086,
+    "routing_events": [],
+    "local_loader_contract_checks": []
+  },
+  {
+    "id": "S15",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "git/commit-hygiene"
+    ],
+    "candidates": [
+      "git/commit-hygiene"
+    ],
+    "intent": {
+      "raw_input": "请用 git/commit-hygiene 处理我这次改动：核实实际差异，只暂存与当前修复有关的文件，检查没有把本地口令带进去，然后创建一个说明清楚的提交。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "请用",
+        "git/commit-hygiene",
+        "处理我这次改动",
+        "核实实际差异",
+        "只暂存与当前修复有关的文件",
+        "检查没有把本地口令带进去",
+        "然后创建一个说明清楚的提交",
+        "git-workflow",
+        "git",
+        "diff",
+        "change",
+        "inspect",
+        "review",
+        "commit"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788792664.783233
+    },
+    "routing": {
+      "intent_type": "code",
+      "action_type": "update",
+      "capability_domains": [
+        "analysis",
+        "code",
+        "execution",
+        "file",
+        "search",
+        "system"
+      ],
+      "capability_scopes": [
+        "readonly",
+        "write"
+      ],
+      "selected": [
+        {
+          "name": "commit-hygiene",
+          "qualified_name": "git/commit-hygiene",
+          "description": "Stage, review, and commit changes safely — inspect the real diff before committing and never record secrets.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/git/commit-hygiene/SKILL.md",
+          "source": "project",
+          "score": 116.3,
+          "reasons": [
+            "intent/action:review",
+            "keyword:git/commit-hygiene",
+            "semantic:alias:keyword-provenance",
+            "keyword:diff",
+            "keyword:inspect",
+            "keyword:review",
+            "capability-domain:analysis",
+            "capability-domain:code",
+            "capability-domain:file",
+            "capability-scope:readonly",
+            "capability-scope:write",
+            "explicit-skill-reference",
+            "directory:git",
+            "tool-domain:code",
+            "tool-scope:write",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-domain:execution",
+            "source:project",
+            "explicit-skill-contract-mismatch"
+          ],
+          "directory": "git",
+          "tools": [
+            "git",
+            "read_file",
+            "grep_files",
+            "run_command"
+          ],
+          "content_digest": "2fc407284133dcb47bdc473b266ee7085e28f49143c9b6a183f2a0ec84a5e483",
+          "routing_identity_digest": "119444341c2252c379caa043e5182ccbf49cbc8a4330ec3d63a65eb7a3bbd0ce",
+          "explicitly_requested": true,
+          "operation_indexes": [
+            0,
+            1
+          ]
+        }
+      ],
+      "selected_skills": [
+        {
+          "name": "commit-hygiene",
+          "qualified_name": "git/commit-hygiene",
+          "description": "Stage, review, and commit changes safely — inspect the real diff before committing and never record secrets.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/git/commit-hygiene/SKILL.md",
+          "source": "project",
+          "score": 116.3,
+          "reasons": [
+            "intent/action:review",
+            "keyword:git/commit-hygiene",
+            "semantic:alias:keyword-provenance",
+            "keyword:diff",
+            "keyword:inspect",
+            "keyword:review",
+            "capability-domain:analysis",
+            "capability-domain:code",
+            "capability-domain:file",
+            "capability-scope:readonly",
+            "capability-scope:write",
+            "explicit-skill-reference",
+            "directory:git",
+            "tool-domain:code",
+            "tool-scope:write",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-domain:execution",
+            "source:project",
+            "explicit-skill-contract-mismatch"
+          ],
+          "directory": "git",
+          "tools": [
+            "git",
+            "read_file",
+            "grep_files",
+            "run_command"
+          ],
+          "content_digest": "2fc407284133dcb47bdc473b266ee7085e28f49143c9b6a183f2a0ec84a5e483",
+          "routing_identity_digest": "119444341c2252c379caa043e5182ccbf49cbc8a4330ec3d63a65eb7a3bbd0ce",
+          "explicitly_requested": true,
+          "operation_indexes": [
+            0,
+            1
+          ]
+        }
+      ],
+      "selected_directories": [
+        {
+          "name": "git",
+          "description": "Skills for version control hygiene — staging, reviewing, and committing changes.",
+          "source": "project",
+          "score": 9.3,
+          "reasons": [
+            "intent/action:code",
+            "keyword:git",
+            "keyword:diff",
+            "capability-domain:code",
+            "capability-domain:execution",
+            "capability-domain:file",
+            "capability-scope:readonly",
+            "capability-scope:write",
+            "source:project"
+          ]
+        }
+      ],
+      "tool_affinity": {
+        "git/commit-hygiene": 4.0
+      },
+      "total_skills": 17,
+      "used_fallback": false,
+      "routing_version": 3,
+      "candidate_count": 0,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "deterministic-ranking",
+      "turn_outcome": "route",
+      "outcome_reason": "skills-selected",
+      "prompt_mode": "routed"
+    },
+    "authority": {
+      "requested": [
+        "git/commit-hygiene"
+      ],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": true,
+    "selected_coverage": true,
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.2122875419445336,
+    "routing_events": [],
+    "local_loader_contract_checks": [
+      {
+        "name": "git/commit-hygiene",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ]
+  },
+  {
+    "id": "S16",
+    "outcome": "no_skill",
+    "reason": "no-catalog-match",
+    "prompt_mode": "inventory_names",
+    "selected": [],
+    "candidates": [],
+    "intent": {
+      "raw_input": "导入两万条清单要等将近一分钟。先测量各阶段花了多少时间，找出主要开销；如果其中的逐条转换确实最贵，就把那一段重复分支合成一个公共处理函数，并验证输入输出和异常仍与原来一致。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "导入两万条清单要等将近一分钟",
+        "先测量各阶段花了多少时间",
+        "找出主要开销",
+        "如果其中的逐条转换确实最贵",
+        "就把那一段重复分支合成一个公共处理函数",
+        "并验证输入输出和异常仍与原来一致",
+        "branch"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788792664.99596
+    },
+    "routing": {
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "capability_domains": [],
+      "capability_scopes": [],
+      "selected": [],
+      "selected_skills": [],
+      "selected_directories": [],
+      "tool_affinity": {},
+      "total_skills": 17,
+      "used_fallback": true,
+      "routing_version": 3,
+      "candidate_count": 0,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "no-affirmed-operation",
+      "turn_outcome": "no_skill",
+      "outcome_reason": "no-catalog-match",
+      "prompt_mode": "inventory_names"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": false,
+    "selected_coverage": false,
+    "retrieval_strict": false,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "inventory_header_present": true,
+      "inventory_names_present": true,
+      "no_description_projection": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.11567750002723187,
+    "routing_events": [],
+    "local_loader_contract_checks": []
+  },
+  {
+    "id": "S17",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "code-understanding/design-review",
+      "documentation/readme-authoring"
+    ],
+    "candidates": [
+      "code-understanding/design-review",
+      "documentation/readme-authoring"
+    ],
+    "intent": {
+      "raw_input": "准备把这个项目交给外部团队。请先检查上传与查询入口有没有能绕出指定目录或把输入当成指令执行的地方；再依据查到的真实校验规则，给 README 补一节输入限制和安全使用示例。",
+      "intent_type": "document",
+      "action_type": "update",
+      "confidence": 0.913,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "准备把这个项目交给外部团队",
+        "请先检查上传与查询入口有没有能绕出指定目录或把输入当成指令执行的地方",
+        "再依据查到的真实校验规则",
+        "readme",
+        "补一节输入限制和安全使用示例",
+        "project",
+        "inspect",
+        "review",
+        "query"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788792665.11254
+    },
+    "routing": {
+      "intent_type": "review",
+      "action_type": "analyze",
+      "capability_domains": [
+        "analysis",
+        "code",
+        "file",
+        "search"
+      ],
+      "capability_scopes": [
+        "readonly",
+        "write"
+      ],
+      "selected": [
+        {
+          "name": "design-review",
+          "qualified_name": "code-understanding/design-review",
+          "description": "Review existing code for design issues, inconsistencies, dead code, and missing test coverage without changing it.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/code-understanding/design-review/SKILL.md",
+          "source": "project",
+          "score": 10.6,
+          "reasons": [
+            "intent/action:review",
+            "keyword:review",
+            "capability-domain:code",
+            "directory:code-understanding",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "code-understanding",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "find_symbols"
+          ],
+          "content_digest": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+          "routing_identity_digest": "5474e2c40f8cd27630aedd67aa1fe241dd6d066ce19d6d9598ac6f7ec49df830",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0
+          ]
+        },
+        {
+          "name": "readme-authoring",
+          "qualified_name": "documentation/readme-authoring",
+          "description": "Write concise README or guide content grounded in the actual project.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/documentation/readme-authoring/SKILL.md",
+          "source": "project",
+          "score": 11.1,
+          "reasons": [
+            "intent/action:update",
+            "keyword:readme",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:file",
+            "capability-scope:write",
+            "directory:documentation",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "documentation",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "edit_file"
+          ],
+          "content_digest": "6990db45ca8ef1abb0eb12dca4daf9f128e604f12575292f976649ec6524c706",
+          "routing_identity_digest": "65bd3534d197fac472b9f083a0921bdbe38cfbf1fa5cd588b18d4b9559583bb8",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            1
+          ]
+        }
+      ],
+      "selected_skills": [
+        {
+          "name": "design-review",
+          "qualified_name": "code-understanding/design-review",
+          "description": "Review existing code for design issues, inconsistencies, dead code, and missing test coverage without changing it.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/code-understanding/design-review/SKILL.md",
+          "source": "project",
+          "score": 10.6,
+          "reasons": [
+            "intent/action:review",
+            "keyword:review",
+            "capability-domain:code",
+            "directory:code-understanding",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "code-understanding",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "find_symbols"
+          ],
+          "content_digest": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+          "routing_identity_digest": "5474e2c40f8cd27630aedd67aa1fe241dd6d066ce19d6d9598ac6f7ec49df830",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0
+          ]
+        },
+        {
+          "name": "readme-authoring",
+          "qualified_name": "documentation/readme-authoring",
+          "description": "Write concise README or guide content grounded in the actual project.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/documentation/readme-authoring/SKILL.md",
+          "source": "project",
+          "score": 11.1,
+          "reasons": [
+            "intent/action:update",
+            "keyword:readme",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:file",
+            "capability-scope:write",
+            "directory:documentation",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "documentation",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "edit_file"
+          ],
+          "content_digest": "6990db45ca8ef1abb0eb12dca4daf9f128e604f12575292f976649ec6524c706",
+          "routing_identity_digest": "65bd3534d197fac472b9f083a0921bdbe38cfbf1fa5cd588b18d4b9559583bb8",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            1
+          ]
+        }
+      ],
+      "selected_directories": [
+        {
+          "name": "code-understanding",
+          "description": "Skills for reading, tracing, and explaining code architecture.",
+          "source": "project",
+          "score": 8.8,
+          "reasons": [
+            "intent/action:review",
+            "keyword:review",
+            "capability-domain:analysis",
+            "capability-domain:code",
+            "capability-domain:file",
+            "capability-domain:search",
+            "capability-scope:readonly",
+            "source:project"
+          ]
+        },
+        {
+          "name": "documentation",
+          "description": "Skills for writing and updating project documentation.",
+          "source": "project",
+          "score": 5.3,
+          "reasons": [
+            "keyword:readme",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:analysis",
+            "capability-domain:code",
+            "capability-domain:file",
+            "capability-scope:readonly",
+            "capability-scope:write",
+            "source:project"
+          ]
+        }
+      ],
+      "tool_affinity": {
+        "code-understanding/design-review": 3.3,
+        "documentation/readme-authoring": 3.3
+      },
+      "total_skills": 17,
+      "used_fallback": false,
+      "routing_version": 3,
+      "candidate_count": 2,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "deterministic-ranking",
+      "turn_outcome": "route",
+      "outcome_reason": "skills-selected",
+      "prompt_mode": "routed"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": false,
+    "selected_coverage": false,
+    "retrieval_strict": false,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.17152137495577335,
+    "routing_events": [],
+    "local_loader_contract_checks": [
+      {
+        "name": "code-understanding/design-review",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      },
+      {
+        "name": "documentation/readme-authoring",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ]
+  },
+  {
+    "id": "S18",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "refactoring/safe-refactor",
+      "testing/test-driven-development"
+    ],
+    "candidates": [
+      "refactoring/safe-refactor",
+      "testing/test-driven-development"
+    ],
+    "intent": {
+      "raw_input": "海报上准备放三个英文标签：safe-refactor、pytest-debugging、git/commit-hygiene。请仅把这些标签改写成便于非程序员理解的中文短语，每个不超过八个字；这些名称只是文案素材，不是在调用它们。",
+      "intent_type": "refactor",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "海报上准备放三个英文标签",
+        "safe-refactor",
+        "pytest-debugging",
+        "git/commit-hygiene",
+        "请仅把这些标签改写成便于非程序员理解的中文短语",
+        "每个不超过八个字",
+        "这些名称只是文案素材",
+        "不是在调用它们",
+        "git-workflow",
+        "git"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788792665.287148
+    },
+    "routing": {
+      "intent_type": "refactor",
+      "action_type": "update",
+      "capability_domains": [
+        "code",
+        "file",
+        "search"
+      ],
+      "capability_scopes": [
+        "readonly",
+        "write"
+      ],
+      "selected": [
+        {
+          "name": "safe-refactor",
+          "qualified_name": "refactoring/safe-refactor",
+          "description": "Refactor code in small behavior-preserving steps with tests and diff review.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/refactoring/safe-refactor/SKILL.md",
+          "source": "project",
+          "score": 14.35,
+          "reasons": [
+            "intent/action:refactor",
+            "intent/action:code",
+            "keyword:safe-refactor",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:code",
+            "directory:refactoring",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "refactoring",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "edit_file"
+          ],
+          "content_digest": "f7f778a3110a42383e46ca78bf7fe511317398195dc6799f179a8204d6e0a0db",
+          "routing_identity_digest": "3cfb7d257548ee8c9bd121f153f3861a05819de2be8729a0841029587d7a24bd",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0
+          ]
+        },
+        {
+          "name": "test-driven-development",
+          "qualified_name": "testing/test-driven-development",
+          "description": "Add or update tests before implementation and verify behavior with focused commands.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/testing/test-driven-development/SKILL.md",
+          "source": "project",
+          "score": 10.85,
+          "reasons": [
+            "intent/action:update",
+            "capability-domain:code",
+            "capability-scope:write",
+            "directory:testing",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:file",
+            "tool-scope:write",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "testing",
+          "tools": [
+            "read_file",
+            "write_file",
+            "edit_file",
+            "run_command"
+          ],
+          "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+          "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            1
+          ]
+        }
+      ],
+      "selected_skills": [
+        {
+          "name": "safe-refactor",
+          "qualified_name": "refactoring/safe-refactor",
+          "description": "Refactor code in small behavior-preserving steps with tests and diff review.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/refactoring/safe-refactor/SKILL.md",
+          "source": "project",
+          "score": 14.35,
+          "reasons": [
+            "intent/action:refactor",
+            "intent/action:code",
+            "keyword:safe-refactor",
+            "semantic:alias:keyword-provenance",
+            "capability-domain:code",
+            "directory:refactoring",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:search",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "refactoring",
+          "tools": [
+            "read_file",
+            "grep_files",
+            "edit_file"
+          ],
+          "content_digest": "f7f778a3110a42383e46ca78bf7fe511317398195dc6799f179a8204d6e0a0db",
+          "routing_identity_digest": "3cfb7d257548ee8c9bd121f153f3861a05819de2be8729a0841029587d7a24bd",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            0
+          ]
+        },
+        {
+          "name": "test-driven-development",
+          "qualified_name": "testing/test-driven-development",
+          "description": "Add or update tests before implementation and verify behavior with focused commands.",
+          "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/testing/test-driven-development/SKILL.md",
+          "source": "project",
+          "score": 10.85,
+          "reasons": [
+            "intent/action:update",
+            "capability-domain:code",
+            "capability-scope:write",
+            "directory:testing",
+            "tool-domain:file",
+            "tool-scope:readonly",
+            "tool-domain:file",
+            "tool-scope:write",
+            "tool-domain:file",
+            "tool-scope:write",
+            "source:project",
+            "operation-purpose-compatible"
+          ],
+          "directory": "testing",
+          "tools": [
+            "read_file",
+            "write_file",
+            "edit_file",
+            "run_command"
+          ],
+          "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+          "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7",
+          "explicitly_requested": false,
+          "operation_indexes": [
+            1
+          ]
+        }
+      ],
+      "selected_directories": [
+        {
+          "name": "refactoring",
+          "description": "Skills for safe, behavior-preserving code restructuring.",
+          "source": "project",
+          "score": 10.3,
+          "reasons": [
+            "intent/action:refactor",
+            "intent/action:code",
+            "capability-domain:code",
+            "capability-domain:file",
+            "capability-domain:search",
+            "capability-scope:readonly",
+            "capability-scope:write",
+            "source:project"
+          ]
+        },
+        {
+          "name": "testing",
+          "description": "Skills for adding, updating, and validating tests.",
+          "source": "project",
+          "score": 6.3,
+          "reasons": [
+            "intent/action:code",
+            "capability-domain:code",
+            "capability-domain:file",
+            "capability-scope:readonly",
+            "capability-scope:write",
+            "source:project"
+          ]
+        }
+      ],
+      "tool_affinity": {
+        "refactoring/safe-refactor": 3.3,
+        "testing/test-driven-development": 3.3
+      },
+      "total_skills": 17,
+      "used_fallback": false,
+      "routing_version": 3,
+      "candidate_count": 2,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "deterministic-ranking",
+      "turn_outcome": "route",
+      "outcome_reason": "skills-selected",
+      "prompt_mode": "routed"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": true,
+    "selected_coverage": true,
+    "retrieval_strict": false,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.19629649992566556,
+    "routing_events": [],
+    "local_loader_contract_checks": [
+      {
+        "name": "refactoring/safe-refactor",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      },
+      {
+        "name": "testing/test-driven-development",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ]
+  },
+  {
+    "id": "S19",
+    "outcome": "no_skill",
+    "reason": "no-catalog-match",
+    "prompt_mode": "inventory_names",
+    "selected": [],
+    "candidates": [],
+    "intent": {
+      "raw_input": "这一次不要加载或使用任何 Skill。直接给我一个 Python 表达式，把 [3, 1, 3, 2] 去重并按从小到大排列，不需要操作仓库。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": [
+          "python"
+        ]
+      },
+      "keywords": [
+        "这一次不要加载或使用任何",
+        "skill",
+        "直接给我一个",
+        "python",
+        "表达式",
+        "去重并按从小到大排列",
+        "不需要操作仓库"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788792665.48326
+    },
+    "routing": {
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "capability_domains": [],
+      "capability_scopes": [],
+      "selected": [],
+      "selected_skills": [],
+      "selected_directories": [],
+      "tool_affinity": {},
+      "total_skills": 17,
+      "used_fallback": true,
+      "routing_version": 3,
+      "candidate_count": 0,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "no-affirmed-operation",
+      "turn_outcome": "no_skill",
+      "outcome_reason": "no-catalog-match",
+      "prompt_mode": "inventory_names"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": true,
+    "selected_coverage": true,
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "inventory_header_present": true,
+      "inventory_names_present": true,
+      "no_description_projection": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.11801275005564094,
+    "routing_events": [],
+    "local_loader_contract_checks": []
+  },
+  {
+    "id": "S20",
+    "outcome": "no_skill",
+    "reason": "no-catalog-match",
+    "prompt_mode": "inventory_names",
+    "selected": [],
+    "candidates": [],
+    "intent": {
+      "raw_input": "今天总算忙完了，我想听一个关于小猫的冷笑话，最好一句话就讲完。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "今天总算忙完了",
+        "我想听一个关于小猫的冷笑话",
+        "最好一句话就讲完"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788792665.6009998
+    },
+    "routing": {
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "capability_domains": [],
+      "capability_scopes": [],
+      "selected": [],
+      "selected_skills": [],
+      "selected_directories": [],
+      "tool_affinity": {},
+      "total_skills": 17,
+      "used_fallback": true,
+      "routing_version": 3,
+      "candidate_count": 0,
+      "decision_source": "deterministic",
+      "reranker_status": "disabled",
+      "decision_reason": "no-affirmed-operation",
+      "turn_outcome": "no_skill",
+      "outcome_reason": "no-catalog-match",
+      "prompt_mode": "inventory_names"
+    },
+    "authority": {
+      "requested": [],
+      "denied": [],
+      "unresolved": [],
+      "ambiguous": [],
+      "deny_all": false,
+      "context_used": false
+    },
+    "candidate_coverage": true,
+    "selected_coverage": true,
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "inventory_header_present": true,
+      "inventory_names_present": true,
+      "no_description_projection": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 0.1129885419504717,
+    "routing_events": [],
+    "local_loader_contract_checks": []
+  }
+]

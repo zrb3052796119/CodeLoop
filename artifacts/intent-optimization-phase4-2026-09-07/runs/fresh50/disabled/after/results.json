@@ -1,0 +1,5697 @@
+[
+  {
+    "case": {
+      "id": "U01",
+      "text": "Python 函数把列表写成默认参数以后，为啥第二次调用还能看到上次塞进去的东西？拿一个小例子讲明白就行。",
+      "expected": [
+        "explain",
+        "question"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "explain",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          },
+          {
+            "intent": "question",
+            "actions": [
+              "analyze"
+            ]
+          }
+        ]
+      ],
+      "rationale": "询问语言机制并请求解释，没有仓库修改或执行要求。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['explain', 'question'], got document",
+      "read_only: expected True, got False",
+      "missing required operation group 1: [{'intent': 'explain', 'actions': ['analyze', 'read']}, {'intent': 'question', 'actions': ['analyze']}]"
+    ],
+    "actual": {
+      "raw_input": "Python 函数把列表写成默认参数以后，为啥第二次调用还能看到上次塞进去的东西？拿一个小例子讲明白就行。",
+      "intent_type": "document",
+      "action_type": "create",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": [
+          "python"
+        ]
+      },
+      "keywords": [
+        "python",
+        "函数把列表写成默认参数以后",
+        "为啥第二次调用还能看到上次塞进去的东西",
+        "拿一个小例子讲明白就行"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.871825,
+      "operations": [
+        {
+          "intent_type": "document",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "Python 函数把列表写成默认参数以后，为啥第二次调用还能看到上次塞进去的东西？拿一个小例子讲明白就行。",
+          "span": [
+            0,
+            53
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": [
+              "python"
+            ]
+          },
+          "keywords": [
+            "python",
+            "函数把列表写成默认参数以后",
+            "为啥第二次调用还能看到上次塞进去的东西",
+            "拿一个小例子讲明白就行"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-document.create"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-document.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            53
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Python 函数把列表写成默认参数以后，为啥第二次调用还能看到上次塞进去的东西？拿一个小例子讲明白就行。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 53.76608402002603,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['explain', 'question'], got document",
+        "read_only: expected True, got False"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U02",
+      "text": "页面上的“导出明细”按钮到底接的是哪个后端地址？请沿着点击事件找到发请求的那一处，把文件位置告诉我。",
+      "expected": [
+        "search"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "search",
+            "actions": [
+              "read",
+              "analyze"
+            ]
+          }
+        ]
+      ],
+      "rationale": "目标是定位调用链与源码位置。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "页面上的“导出明细”按钮到底接的是哪个后端地址？请沿着点击事件找到发请求的那一处，把文件位置告诉我。",
+      "intent_type": "search",
+      "action_type": "read",
+      "confidence": 0.909,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "页面上的",
+        "按钮到底接的是哪个后端地址",
+        "请沿着点击事件找到发请求的那一处",
+        "把文件位置告诉我"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.874416,
+      "operations": [
+        {
+          "intent_type": "search",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.909,
+          "clause": "页面上的“导出明细”按钮到底接的是哪个后端地址？请沿着点击事件找到发请求的那一处，把文件位置告诉我。",
+          "span": [
+            0,
+            50
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "页面上的",
+            "按钮到底接的是哪个后端地址",
+            "请沿着点击事件找到发请求的那一处",
+            "把文件位置告诉我"
+          ],
+          "evidence_codes": [
+            "rule:search.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:search.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.909,
+          "span": [
+            0,
+            50
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "页面上的“导出明细”按钮到底接的是哪个后端地址？请沿着点击事件找到发请求的那一处，把文件位置告诉我。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 2.2225839784368873,
+    "original_conjunctive_scoring": {
+      "primary_ok": true,
+      "all_labeled_checks_ok": true,
+      "issues": []
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U03",
+      "text": "它只在名字里带空格时失败，普通名字都能过。你先判断最可能是哪一步丢了引号，暂时别修。",
+      "expected": [
+        "debug"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "debug",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "根据故障补充条件诊断原因，明确暂不修复。",
+      "context": {
+        "active_task": "定位打包脚本处理目录名失败的原因",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "打包脚本碰到某些工作目录就报找不到文件。"
+          },
+          {
+            "role": "assistant",
+            "content": "可以先对照成功和失败的目录名，看看差别。"
+          }
+        ]
+      }
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['debug'], got unknown",
+      "missing required operation group 1: [{'intent': 'debug', 'actions': ['analyze', 'read']}]"
+    ],
+    "actual": {
+      "raw_input": "它只在名字里带空格时失败，普通名字都能过。你先判断最可能是哪一步丢了引号，暂时别修。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "它只在名字里带空格时失败",
+        "普通名字都能过",
+        "你先判断最可能是哪一步丢了引号",
+        "暂时别修"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.882863,
+      "operations": [
+        {
+          "intent_type": "debug",
+          "action_type": "update",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "它只在名字里带空格时失败，普通名字都能过。你先判断最可能是哪一步丢了引号，暂时别修。",
+          "span": [
+            0,
+            42
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "它只在名字里带空格时失败",
+            "普通名字都能过",
+            "你先判断最可能是哪一步丢了引号",
+            "暂时别修"
+          ],
+          "evidence_codes": [
+            "explicit:negated-debug.update"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-debug.update",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            0,
+            42
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "它只在名字里带空格时失败，普通名字都能过。你先判断最可能是哪一步丢了引号，暂时别修。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 8.153083035722375,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['debug'], got unknown"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U04",
+      "text": "帮我过一遍分页查询的实现，重点看最后一页和空结果有没有边界问题；发现的点列在回复里。",
+      "expected": [
+        "review"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "review",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "审查现有实现并反馈风险，没有要求修补。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['review'], got unknown",
+      "read_only: expected True, got False",
+      "missing required operation group 1: [{'intent': 'review', 'actions': ['analyze', 'read']}]"
+    ],
+    "actual": {
+      "raw_input": "帮我过一遍分页查询的实现，重点看最后一页和空结果有没有边界问题；发现的点列在回复里。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "帮我过一遍分页查询的实现",
+        "重点看最后一页和空结果有没有边界问题",
+        "发现的点列在回复里",
+        "query"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.8856618,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "帮我过一遍分页查询的实现，重点看最后一页和空结果有没有边界问题；发现的点列在回复里。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.4980829330161214,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['review'], got unknown",
+        "read_only: expected True, got False"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U05",
+      "text": "关于拆分那个大 service，我想先比较“按业务对象拆”和“按读写拆”各自会增加什么维护成本，代码先保持原样。",
+      "expected": [
+        "refactor",
+        "explain"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "refactor",
+            "actions": [
+              "compare",
+              "analyze"
+            ]
+          },
+          {
+            "intent": "explain",
+            "actions": [
+              "compare",
+              "analyze"
+            ]
+          }
+        ]
+      ],
+      "rationale": "讨论两种重构方案的取舍，不实施重构。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['refactor', 'explain'], got review",
+      "missing required operation group 1: [{'intent': 'refactor', 'actions': ['compare', 'analyze']}, {'intent': 'explain', 'actions': ['compare', 'analyze']}]"
+    ],
+    "actual": {
+      "raw_input": "关于拆分那个大 service，我想先比较“按业务对象拆”和“按读写拆”各自会增加什么维护成本，代码先保持原样。",
+      "intent_type": "review",
+      "action_type": "compare",
+      "confidence": 0.914,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "关于拆分那个大",
+        "service",
+        "我想先比较",
+        "各自会增加什么维护成本",
+        "代码先保持原样"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.8878,
+      "operations": [
+        {
+          "intent_type": "review",
+          "action_type": "compare",
+          "polarity": "affirmed",
+          "confidence": 0.914,
+          "clause": "关于拆分那个大 service，我想先比较“按业务对象拆”和“按读写拆”各自会增加什么维护成本，代码先保持原样。",
+          "span": [
+            0,
+            56
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "关于拆分那个大",
+            "service",
+            "我想先比较",
+            "各自会增加什么维护成本",
+            "代码先保持原样"
+          ],
+          "evidence_codes": [
+            "rule:review.compare"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:review.compare",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.914,
+          "span": [
+            0,
+            56
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "关于拆分那个大 service，我想先比较“按业务对象拆”和“按读写拆”各自会增加什么维护成本，代码先保持原样。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 1.8516250420361757,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['refactor', 'explain'], got review"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U06",
+      "text": "我说的“跑一次全量测试”是文档里的原话。现在只想知道这条命令会收集哪些目录，别启动它。",
+      "expected": [
+        "explain"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "explain",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "引号中是引用；实际请求解释命令的测试收集范围。",
+      "context": {
+        "active_task": "理解仓库的测试命令说明",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "贡献指南写着 python -m pytest tests integration。"
+          },
+          {
+            "role": "assistant",
+            "content": "这条说明把两个目录都作为收集入口。"
+          }
+        ]
+      }
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['explain'], got unknown",
+      "read_only: expected True, got False",
+      "missing required operation group 1: [{'intent': 'explain', 'actions': ['analyze', 'read']}]"
+    ],
+    "actual": {
+      "raw_input": "我说的“跑一次全量测试”是文档里的原话。现在只想知道这条命令会收集哪些目录，别启动它。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "我说的",
+        "是文档里的原话",
+        "现在只想知道这条命令会收集哪些目录",
+        "别启动它",
+        "documentation",
+        "startup"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.892063,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "我说的“跑一次全量测试”是文档里的原话。现在只想知道这条命令会收集哪些目录，别启动它。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 3.965709009207785,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['explain'], got unknown",
+        "read_only: expected True, got False"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U07",
+      "text": "同一个类同时定义 __repr__ 和 __str__ 时，交互窗口显示对象会用哪一个？我一直没分清这俩的分工。",
+      "expected": [
+        "question",
+        "explain"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "question",
+            "actions": [
+              "analyze"
+            ]
+          },
+          {
+            "intent": "explain",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "普通编程概念问答。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['question', 'explain'], got unknown",
+      "read_only: expected True, got False",
+      "missing required operation group 1: [{'intent': 'question', 'actions': ['analyze']}, {'intent': 'explain', 'actions': ['analyze', 'read']}]"
+    ],
+    "actual": {
+      "raw_input": "同一个类同时定义 __repr__ 和 __str__ 时，交互窗口显示对象会用哪一个？我一直没分清这俩的分工。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "同一个类同时定义",
+        "__repr__",
+        "__str__",
+        "交互窗口显示对象会用哪一个",
+        "我一直没分清这俩的分工",
+        "definition",
+        "reference",
+        "delegation"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787747.893779,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "同一个类同时定义 __repr__ 和 __str__ 时，交互窗口显示对象会用哪一个？我一直没分清这俩的分工。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 1.3956669718027115,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['question', 'explain'], got unknown",
+        "read_only: expected True, got False"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U08",
+      "text": "仓库里还有地方直接读 OLD_API_ENDPOINT 吗？请把引用它的文件和用途找出来，我想评估以后删配置的影响。",
+      "expected": [
+        "search"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "search",
+            "actions": [
+              "read",
+              "analyze"
+            ]
+          }
+        ]
+      ],
+      "rationale": "当前要求搜集引用，删除配置仅是未来评估背景。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['search'], got review",
+      "missing required operation group 1: [{'intent': 'search', 'actions': ['read', 'analyze']}]"
+    ],
+    "actual": {
+      "raw_input": "仓库里还有地方直接读 OLD_API_ENDPOINT 吗？请把引用它的文件和用途找出来，我想评估以后删配置的影响。",
+      "intent_type": "review",
+      "action_type": "analyze",
+      "confidence": 0.909,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "仓库里还有地方直接读",
+        "old_api_endpoint",
+        "请把引用它的文件和用途找出来",
+        "我想评估以后删配置的影响",
+        "reference",
+        "review",
+        "config",
+        "configuration"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.896738,
+      "operations": [
+        {
+          "intent_type": "review",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.909,
+          "clause": "仓库里还有地方直接读 OLD_API_ENDPOINT 吗？请把引用它的文件和用途找出来，我想评估以后删配置的影响。",
+          "span": [
+            0,
+            58
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "仓库里还有地方直接读",
+            "old_api_endpoint",
+            "请把引用它的文件和用途找出来",
+            "我想评估以后删配置的影响",
+            "reference",
+            "review",
+            "config",
+            "configuration"
+          ],
+          "evidence_codes": [
+            "rule:review.analyze"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:review.analyze",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.909,
+          "span": [
+            0,
+            58
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "仓库里还有地方直接读 OLD_API_ENDPOINT 吗？请把引用它的文件和用途找出来，我想评估以后删配置的影响。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 2.6406670222058892,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['search'], got review"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U09",
+      "text": "所以这里的 shallow copy 只复制外面那层，对吧？接着用那个嵌套列表说明一下改子列表为什么会串到原对象。",
+      "expected": [
+        "explain",
+        "question"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "explain",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          },
+          {
+            "intent": "question",
+            "actions": [
+              "analyze"
+            ]
+          }
+        ]
+      ],
+      "rationale": "上下文明确承接浅拷贝概念解释。",
+      "context": {
+        "active_task": "理解 Python 容器的复制行为",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "我有 a = [[1], [2]]，然后 b = a.copy()。"
+          },
+          {
+            "role": "assistant",
+            "content": "a 和 b 是两个外层列表，但其中的元素仍指向原来的子列表。"
+          }
+        ]
+      }
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['explain', 'question'], got unknown",
+      "read_only: expected True, got False",
+      "missing required operation group 1: [{'intent': 'explain', 'actions': ['analyze', 'read']}, {'intent': 'question', 'actions': ['analyze']}]"
+    ],
+    "actual": {
+      "raw_input": "所以这里的 shallow copy 只复制外面那层，对吧？接着用那个嵌套列表说明一下改子列表为什么会串到原对象。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "所以这里的",
+        "shallow",
+        "copy",
+        "只复制外面那层",
+        "对吧",
+        "接着用那个嵌套列表说明一下改子列表为什么会串到原对象"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787747.9017441,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "所以这里的 shallow copy 只复制外面那层，对吧？接着用那个嵌套列表说明一下改子列表为什么会串到原对象。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 4.560041008517146,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['explain', 'question'], got unknown",
+        "read_only: expected True, got False"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U10",
+      "text": "同一次支付回调偶尔会生成两张收据，日志里两条请求时间差不到一毫秒。先帮我分析是不是幂等检查有竞态，不要碰实现。",
+      "expected": [
+        "debug"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "debug",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "依据并发故障症状进行诊断，没有修复授权。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['debug'], got unknown",
+      "missing required operation group 1: [{'intent': 'debug', 'actions': ['analyze', 'read']}]"
+    ],
+    "actual": {
+      "raw_input": "同一次支付回调偶尔会生成两张收据，日志里两条请求时间差不到一毫秒。先帮我分析是不是幂等检查有竞态，不要碰实现。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "同一次支付回调偶尔会生成两张收据",
+        "日志里两条请求时间差不到一毫秒",
+        "先帮我分析是不是幂等检查有竞态",
+        "不要碰实现",
+        "inspect",
+        "review"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787747.906006,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "不要碰实现。",
+          "span": [
+            49,
+            55
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "不要碰实现"
+          ],
+          "evidence_codes": [
+            "explicit:negated-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-code.update",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            49,
+            55
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "同一次支付回调偶尔会生成两张收据，日志里两条请求时间差不到一毫秒。先帮我分析是不是幂等检查有竞态，不要碰实现。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 3.1076669692993164,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['debug'], got unknown"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U11",
+      "text": "看下这个提交前后的缓存读取流程，解释一下为什么作者把 TTL 检查挪到了反序列化前面。",
+      "expected": [
+        "explain"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "explain",
+            "actions": [
+              "analyze",
+              "compare",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "需要解释已有变更的设计理由。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['explain'], got review"
+    ],
+    "actual": {
+      "raw_input": "看下这个提交前后的缓存读取流程，解释一下为什么作者把 TTL 检查挪到了反序列化前面。",
+      "intent_type": "review",
+      "action_type": "analyze",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "看下这个提交前后的缓存读取流程",
+        "解释一下为什么作者把",
+        "ttl",
+        "检查挪到了反序列化前面",
+        "commit",
+        "inspect",
+        "review",
+        "move"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.909296,
+      "operations": [
+        {
+          "intent_type": "review",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "看下这个提交前后的缓存读取流程",
+          "span": [
+            0,
+            15
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "看下这个提交前后的缓存读取流程",
+            "commit"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-review.analyze"
+          ]
+        },
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.78,
+          "clause": "解释一下为什么作者把 TTL 检查挪到了反序列化前面。",
+          "span": [
+            16,
+            43
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "解释一下为什么作者把",
+            "ttl",
+            "检查挪到了反序列化前面",
+            "inspect",
+            "review",
+            "move"
+          ],
+          "evidence_codes": [
+            "rule:intra-turn-explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-review.analyze",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            15
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:intra-turn-explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.78,
+          "span": [
+            16,
+            43
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "看下这个提交前后的缓存读取流程，解释一下为什么作者把 TTL 检查挪到了反序列化前面。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 2.757375012151897,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['explain'], got review"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U12",
+      "text": "我倾向第二个补法。你再审一下它会不会把合法的空字符串也吞掉，先给结论，不要落代码。",
+      "expected": [
+        "review",
+        "debug"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "review",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          },
+          {
+            "intent": "debug",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "审查故障修补方案对有效输入的影响，属于只读分析。",
+      "context": {
+        "active_task": "讨论配置读取时将缺失值与空字符串混淆的修复方案",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "配置没填和填空串现在走了同一条逻辑。"
+          },
+          {
+            "role": "assistant",
+            "content": "方案一先判断键是否存在；方案二在读取后用 value or default 统一兜底。"
+          }
+        ]
+      }
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['review', 'debug'], got unknown",
+      "read_only: expected True, got False",
+      "missing required operation group 1: [{'intent': 'review', 'actions': ['analyze', 'read']}, {'intent': 'debug', 'actions': ['analyze', 'read']}]"
+    ],
+    "actual": {
+      "raw_input": "我倾向第二个补法。你再审一下它会不会把合法的空字符串也吞掉，先给结论，不要落代码。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "我倾向第二个补法",
+        "你再审一下它会不会把合法的空字符串也吞掉",
+        "先给结论",
+        "不要落代码"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.9138718,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "我倾向第二个补法。你再审一下它会不会把合法的空字符串也吞掉，先给结论，不要落代码。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 4.053583019413054,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['review', 'debug'], got unknown",
+        "read_only: expected True, got False"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U13",
+      "text": "README 里对离线模式写得够不够清楚？请指出一个刚接手的人最容易误解的地方，先不用改文案。",
+      "expected": [
+        "review",
+        "document"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "review",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          },
+          {
+            "intent": "document",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "评估现有文档的可理解性，明确不编辑。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "read_only: expected True, got False",
+      "missing required operation group 1: [{'intent': 'review', 'actions': ['analyze', 'read']}, {'intent': 'document', 'actions': ['analyze', 'read']}]"
+    ],
+    "actual": {
+      "raw_input": "README 里对离线模式写得够不够清楚？请指出一个刚接手的人最容易误解的地方，先不用改文案。",
+      "intent_type": "document",
+      "action_type": "create",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "readme",
+        "里对离线模式写得够不够清楚",
+        "请指出一个刚接手的人最容易误解的地方",
+        "先不用改文案"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.9178948,
+      "operations": [
+        {
+          "intent_type": "document",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "README 里对离线模式写得够不够清楚？请指出一个刚接手的人最容易误解的地方",
+          "span": [
+            0,
+            39
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "readme",
+            "里对离线模式写得够不够清楚",
+            "请指出一个刚接手的人最容易误解的地方"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-document.create"
+          ]
+        },
+        {
+          "intent_type": "document",
+          "action_type": "update",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "先不用改文案。",
+          "span": [
+            40,
+            47
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "先不用改文案"
+          ],
+          "evidence_codes": [
+            "explicit:negated-document.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-document.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            39
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-document.update",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            40,
+            47
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "README 里对离线模式写得够不够清楚？请指出一个刚接手的人最容易误解的地方，先不用改文案。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 3.408208955079317,
+    "original_conjunctive_scoring": {
+      "primary_ok": true,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "read_only: expected True, got False"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U14",
+      "text": "给日期解析器设计测试时，哪些跨年和闰日情况值得覆盖？我现在只要测试思路，不要创建文件或运行用例。",
+      "expected": [
+        "test"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "test",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "制定测试覆盖思路，不编写或执行测试。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['test'], got unknown",
+      "missing required operation group 1: [{'intent': 'test', 'actions': ['analyze', 'read']}]"
+    ],
+    "actual": {
+      "raw_input": "给日期解析器设计测试时，哪些跨年和闰日情况值得覆盖？我现在只要测试思路，不要创建文件或运行用例。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "给日期解析器设计测试时",
+        "哪些跨年和闰日情况值得覆盖",
+        "我现在只要测试思路",
+        "不要创建文件或运行用例",
+        "test",
+        "test case"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.923272,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "create",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不要创建文件或运行用例",
+          "span": [
+            36,
+            47
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.create",
+            "rule:typed-test-constraint"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不要创建文件或运行用例",
+          "span": [
+            36,
+            47
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "给日期解析器设计测试时，哪些跨年和闰日情况值得覆盖？我现在只要测试思路，不要创建文件或运行用例。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 4.319375031627715,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['test'], got unknown"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U15",
+      "text": "先别管前端，去后端找第二处校验在哪里发生，给我那个函数名和所在路径。",
+      "expected": [
+        "search"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "search",
+            "actions": [
+              "read",
+              "analyze"
+            ]
+          }
+        ]
+      ],
+      "rationale": "根据前文所列校验位置继续定位后端源码。",
+      "context": {
+        "active_task": "定位上传文件大小的校验位置",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "大文件上传被拒绝，我想知道都在哪些地方检查大小。"
+          },
+          {
+            "role": "assistant",
+            "content": "目前线索有两处：浏览器选择文件时的校验，以及后端接收上传后的校验。"
+          }
+        ]
+      }
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "先别管前端，去后端找第二处校验在哪里发生，给我那个函数名和所在路径。",
+      "intent_type": "search",
+      "action_type": "read",
+      "confidence": 0.915,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "先别管前端",
+        "去后端找第二处校验在哪里发生",
+        "给我那个函数名和所在路径",
+        "frontend"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.929155,
+      "operations": [
+        {
+          "intent_type": "search",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "先别管前端，去后端找第二处校验在哪里发生，给我那个函数名和所在路径。",
+          "span": [
+            0,
+            34
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "先别管前端",
+            "去后端找第二处校验在哪里发生",
+            "给我那个函数名和所在路径",
+            "frontend"
+          ],
+          "evidence_codes": [
+            "rule:search.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:search.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            34
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "先别管前端，去后端找第二处校验在哪里发生，给我那个函数名和所在路径。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 4.120459081605077,
+    "original_conjunctive_scoring": {
+      "primary_ok": true,
+      "all_labeled_checks_ok": true,
+      "issues": []
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U16",
+      "text": "如果开发环境要把日志级别调到 debug，应该改环境变量还是配置文件？请说明当前项目的优先级规则，我先了解一下。",
+      "expected": [
+        "configure",
+        "explain"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "configure",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          },
+          {
+            "intent": "explain",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "询问配置方法与优先级，没有提出实际配置变更。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['configure', 'explain'], got code",
+      "read_only: expected True, got False"
+    ],
+    "actual": {
+      "raw_input": "如果开发环境要把日志级别调到 debug，应该改环境变量还是配置文件？请说明当前项目的优先级规则，我先了解一下。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.908,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "如果开发环境要把日志级别调到",
+        "debug",
+        "应该改环境变量还是配置文件",
+        "请说明当前项目的优先级规则",
+        "我先了解一下",
+        "config",
+        "configuration",
+        "project"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787747.9365172,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.908,
+          "clause": "如果开发环境要把日志级别调到 debug，应该改环境变量还是配置文件",
+          "span": [
+            0,
+            34
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "如果开发环境要把日志级别调到",
+            "debug",
+            "应该改环境变量还是配置文件",
+            "config",
+            "configuration"
+          ],
+          "evidence_codes": [
+            "rule:code.update"
+          ]
+        },
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.919,
+          "clause": "请说明当前项目的优先级规则，我先了解一下。",
+          "span": [
+            35,
+            56
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "请说明当前项目的优先级规则",
+            "我先了解一下",
+            "project"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.908,
+          "span": [
+            0,
+            34
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.919,
+          "span": [
+            35,
+            56
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "如果开发环境要把日志级别调到 debug，应该改环境变量还是配置文件？请说明当前项目的优先级规则，我先了解一下。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 5.603208905085921,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['configure', 'explain'], got code",
+        "read_only: expected True, got False"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U17",
+      "text": "评审意见里写着“把这个模块重构掉”，但我还没决定采纳。请解释目前模块之间是怎样互相依赖的，别做重构。",
+      "expected": [
+        "explain"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "explain",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "评审意见是引用，当前肯定请求仅为解释依赖结构。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['explain'], got review"
+    ],
+    "actual": {
+      "raw_input": "评审意见里写着“把这个模块重构掉”，但我还没决定采纳。请解释目前模块之间是怎样互相依赖的，别做重构。",
+      "intent_type": "review",
+      "action_type": "analyze",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "评审意见里写着",
+        "但我还没决定采纳",
+        "请解释目前模块之间是怎样互相依赖的",
+        "别做重构",
+        "dependency",
+        "package"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.9410439,
+      "operations": [
+        {
+          "intent_type": "review",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "评审意见里写着“把这个模块重构掉”，",
+          "span": [
+            0,
+            18
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "评审意见里写着"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-review.analyze"
+          ]
+        },
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.919,
+          "clause": "请解释目前模块之间是怎样互相依赖的，别做重构。",
+          "span": [
+            27,
+            50
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "请解释目前模块之间是怎样互相依赖的",
+            "别做重构",
+            "dependency",
+            "package"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-review.analyze",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            18
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.919,
+          "span": [
+            27,
+            50
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "评审意见里写着“把这个模块重构掉”，但我还没决定采纳。请解释目前模块之间是怎样互相依赖的，别做重构。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 3.7273340858519077,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['explain'], got review"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U18",
+      "text": "把第二条再展开一点：读请求高峰时，它为什么可能拖慢写入？只讨论这个取舍。",
+      "expected": [
+        "explain"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "explain",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "依赖上下文解释单库架构的读写竞争。",
+      "context": {
+        "active_task": "比较报表数据查询架构",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "报表直接查业务库和另外同步一份数据，各有什么代价？"
+          },
+          {
+            "role": "assistant",
+            "content": "第一条是同步一份数据，会增加延迟和维护工作；第二条是直接查业务库，结构简单但读写共享资源。"
+          }
+        ]
+      }
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['explain'], got unknown",
+      "read_only: expected True, got False",
+      "missing required operation group 1: [{'intent': 'explain', 'actions': ['analyze', 'read']}]"
+    ],
+    "actual": {
+      "raw_input": "把第二条再展开一点：读请求高峰时，它为什么可能拖慢写入？只讨论这个取舍。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "把第二条再展开一点",
+        "读请求高峰时",
+        "它为什么可能拖慢写入",
+        "只讨论这个取舍",
+        "slow",
+        "performance",
+        "design review",
+        "tradeoffs"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787747.947119,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "把第二条再展开一点：读请求高峰时，它为什么可能拖慢写入？只讨论这个取舍。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 4.491583094932139,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['explain'], got unknown",
+        "read_only: expected True, got False"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U19",
+      "text": "检查一下现有 Dockerfile 有没有明显浪费构建缓存的步骤，把你认为应该调整的顺序说明白即可。",
+      "expected": [
+        "review"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "review",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "审查构建文件并提出顺序建议，没有构建或编辑要求。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['review'], got unknown",
+      "read_only: expected True, got False",
+      "missing required operation group 1: [{'intent': 'review', 'actions': ['analyze', 'read']}]"
+    ],
+    "actual": {
+      "raw_input": "检查一下现有 Dockerfile 有没有明显浪费构建缓存的步骤，把你认为应该调整的顺序说明白即可。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "检查一下现有",
+        "dockerfile",
+        "有没有明显浪费构建缓存的步骤",
+        "把你认为应该调整的顺序说明白即可",
+        "inspect",
+        "review"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787747.950046,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "检查一下现有 Dockerfile 有没有明显浪费构建缓存的步骤，把你认为应该调整的顺序说明白即可。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.0087079610675573,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['review'], got unknown",
+        "read_only: expected True, got False"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U20",
+      "text": "帮我找出 sync_client 和 async_client 各自公开了哪些方法，再对照一下有没有一边有、另一边没有的接口。",
+      "expected": [
+        "search"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "search",
+            "actions": [
+              "read",
+              "analyze"
+            ]
+          }
+        ],
+        [
+          {
+            "intent": "search",
+            "actions": [
+              "compare"
+            ]
+          },
+          {
+            "intent": "review",
+            "actions": [
+              "compare",
+              "analyze"
+            ]
+          }
+        ]
+      ],
+      "rationale": "先查找公开接口，再进行对照；两步都属于只读。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "missing required operation group 2: [{'intent': 'search', 'actions': ['compare']}, {'intent': 'review', 'actions': ['compare', 'analyze']}]"
+    ],
+    "actual": {
+      "raw_input": "帮我找出 sync_client 和 async_client 各自公开了哪些方法，再对照一下有没有一边有、另一边没有的接口。",
+      "intent_type": "search",
+      "action_type": "read",
+      "confidence": 0.919,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "帮我找出",
+        "sync_client",
+        "async_client",
+        "各自公开了哪些方法",
+        "再对照一下有没有一边有",
+        "另一边没有的接口"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.9543722,
+      "operations": [
+        {
+          "intent_type": "search",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.919,
+          "clause": "帮我找出 sync_client 和 async_client 各自公开了哪些方法，再对照一下有没有一边有、另一边没有的接口。",
+          "span": [
+            0,
+            63
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "帮我找出",
+            "sync_client",
+            "async_client",
+            "各自公开了哪些方法",
+            "再对照一下有没有一边有",
+            "另一边没有的接口"
+          ],
+          "evidence_codes": [
+            "rule:search.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:search.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.919,
+          "span": [
+            0,
+            63
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "帮我找出 sync_client 和 async_client 各自公开了哪些方法，再对照一下有没有一边有、另一边没有的接口。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 3.4967500250786543,
+    "original_conjunctive_scoring": {
+      "primary_ok": true,
+      "all_labeled_checks_ok": true,
+      "issues": []
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U21",
+      "text": "那为什么只有这条断言失败，前面的创建都成功了？顺着返回值帮我找原因，测试先不要重跑。",
+      "expected": [
+        "debug"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "debug",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "依据已给出的测试结果分析失败原因，不再执行测试。",
+      "context": {
+        "active_task": "诊断新建用户后读取显示名的测试失败",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "创建接口返回 201，但 assert fetched.display_name == \"Sam\" 得到的是 None。"
+          },
+          {
+            "role": "assistant",
+            "content": "可以检查创建响应和随后读取响应中显示名字段的来源。"
+          }
+        ]
+      }
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "那为什么只有这条断言失败，前面的创建都成功了？顺着返回值帮我找原因，测试先不要重跑。",
+      "intent_type": "debug",
+      "action_type": "analyze",
+      "confidence": 0.919,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "那为什么只有这条断言失败",
+        "前面的创建都成功了",
+        "顺着返回值帮我找原因",
+        "测试先不要重跑",
+        "assertion",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.9626648,
+      "operations": [
+        {
+          "intent_type": "debug",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.919,
+          "clause": "那为什么只有这条断言失败，前面的创建都成功了？顺着返回值帮我找原因",
+          "span": [
+            0,
+            33
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "那为什么只有这条断言失败",
+            "前面的创建都成功了",
+            "顺着返回值帮我",
+            "assertion",
+            "test",
+            "找原因"
+          ],
+          "evidence_codes": [
+            "rule:debug.analyze"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "测试先不要重跑",
+          "span": [
+            34,
+            41
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:debug.analyze",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.919,
+          "span": [
+            0,
+            30
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:debug.analyze",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.904,
+          "span": [
+            30,
+            33
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "那为什么只有这条断言失败，前面的创建都成功了？顺着返回值帮我找原因，测试先不要重跑。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 5.830083042383194,
+    "original_conjunctive_scoring": {
+      "primary_ok": true,
+      "all_labeled_checks_ok": true,
+      "issues": []
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U22",
+      "text": "在 async def 里直接调用耗时的普通函数，会自动去线程池吗？如果不会，事件循环这时在干什么？",
+      "expected": [
+        "question",
+        "explain"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "question",
+            "actions": [
+              "analyze"
+            ]
+          },
+          {
+            "intent": "explain",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "询问异步函数的运行语义。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['question', 'explain'], got unknown",
+      "read_only: expected True, got False",
+      "missing required operation group 1: [{'intent': 'question', 'actions': ['analyze']}, {'intent': 'explain', 'actions': ['analyze', 'read']}]"
+    ],
+    "actual": {
+      "raw_input": "在 async def 里直接调用耗时的普通函数，会自动去线程池吗？如果不会，事件循环这时在干什么？",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [
+          "里直接调用耗时的普通函数"
+        ],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "async",
+        "def",
+        "里直接调用耗时的普通函数",
+        "会自动去线程池吗",
+        "如果不会",
+        "事件循环这时在干什么",
+        "performance",
+        "latency"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787747.9656792,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "在 async def 里直接调用耗时的普通函数，会自动去线程池吗？如果不会，事件循环这时在干什么？",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 1.4115420635789633,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['question', 'explain'], got unknown",
+        "read_only: expected True, got False"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U23",
+      "text": "请定位项目里负责把数据库记录转成 API 响应的转换函数，并解释它是怎么处理日期字段的。",
+      "expected": [
+        "search"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "search",
+            "actions": [
+              "read",
+              "analyze"
+            ]
+          }
+        ],
+        [
+          {
+            "intent": "explain",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "主目标为定位代码，同时明确要求解释已定位函数的一部分行为。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "missing required operation group 2: [{'intent': 'explain', 'actions': ['analyze', 'read']}]"
+    ],
+    "actual": {
+      "raw_input": "请定位项目里负责把数据库记录转成 API 响应的转换函数，并解释它是怎么处理日期字段的。",
+      "intent_type": "search",
+      "action_type": "read",
+      "confidence": 0.92,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "请定位项目里负责把数据库记录转成",
+        "api",
+        "响应的转换函数",
+        "并解释它是怎么处理日期字段的",
+        "project",
+        "database"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.968918,
+      "operations": [
+        {
+          "intent_type": "search",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.92,
+          "clause": "请定位项目里负责把数据库记录转成 API 响应的转换函数，并解释它是怎么处理日期字段的。",
+          "span": [
+            0,
+            44
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "请定位项目里负责把数据库记录转成",
+            "api",
+            "响应的转换函数",
+            "并解释它是怎么处理日期字段的",
+            "project",
+            "database"
+          ],
+          "evidence_codes": [
+            "rule:search.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:search.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.92,
+          "span": [
+            0,
+            44
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "请定位项目里负责把数据库记录转成 API 响应的转换函数，并解释它是怎么处理日期字段的。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 1.614208915270865,
+    "original_conjunctive_scoring": {
+      "primary_ok": true,
+      "all_labeled_checks_ok": true,
+      "issues": []
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U24",
+      "text": "只看兼容性这一项吧，告诉我旧调用方最可能在哪种输入上出问题，不要顺手修。",
+      "expected": [
+        "review"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "review",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "对已有接口改动进行兼容性审查，明确不修补。",
+      "context": {
+        "active_task": "审查查询接口由单个 ID 改为 ID 列表的变更",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "这个改动需要看可读性、性能和兼容性。"
+          },
+          {
+            "role": "assistant",
+            "content": "接口现在接收 ids 列表；旧版本接收一个 id 字符串。"
+          }
+        ]
+      }
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['review'], got unknown",
+      "missing required operation group 1: [{'intent': 'review', 'actions': ['analyze', 'read']}]"
+    ],
+    "actual": {
+      "raw_input": "只看兼容性这一项吧，告诉我旧调用方最可能在哪种输入上出问题，不要顺手修。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "只看兼容性这一项吧",
+        "告诉我旧调用方最可能在哪种输入上出问题",
+        "不要顺手修",
+        "caller",
+        "callers",
+        "reference"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.975952,
+      "operations": [
+        {
+          "intent_type": "debug",
+          "action_type": "update",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "只看兼容性这一项吧，告诉我旧调用方最可能在哪种输入上出问题，不要顺手修。",
+          "span": [
+            0,
+            36
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "只看兼容性这一项吧",
+            "告诉我旧调用方最可能在哪种输入上出问题",
+            "不要顺手修",
+            "caller",
+            "callers",
+            "reference"
+          ],
+          "evidence_codes": [
+            "explicit:negated-debug.update"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-debug.update",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            0,
+            36
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "只看兼容性这一项吧，告诉我旧调用方最可能在哪种输入上出问题，不要顺手修。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 5.383874988183379,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['review'], got unknown"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U25",
+      "text": "在 utils/paths.py 里新增一个 ensure_parent_dir(path) 工具函数：父目录不存在就创建，已经存在就直接返回。",
+      "expected": [
+        "code"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "code",
+            "actions": [
+              "create"
+            ]
+          }
+        ]
+      ],
+      "rationale": "明确要求向指定源码文件新增功能。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "在 utils/paths.py 里新增一个 ensure_parent_dir(path) 工具函数：父目录不存在就创建，已经存在就直接返回。",
+      "intent_type": "code",
+      "action_type": "create",
+      "confidence": 0.956,
+      "entities": {
+        "files": [
+          "utils/paths.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "utils/paths.py",
+        "里新增一个",
+        "ensure_parent_dir",
+        "path",
+        "工具函数",
+        "父目录不存在就创建",
+        "已经存在就直接返回"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787747.981942,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.956,
+          "clause": "在 utils/paths.py 里新增一个 ensure_parent_dir(path) 工具函数：父目录不存在就创建，已经存在就直接返回。",
+          "span": [
+            0,
+            72
+          ],
+          "entities": {
+            "files": [
+              "utils/paths.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "utils/paths.py",
+            "里新增一个",
+            "ensure_parent_dir",
+            "path",
+            "工具函数",
+            "父目录不存在就创建",
+            "已经存在就直接返回"
+          ],
+          "evidence_codes": [
+            "rule:code.create"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.956,
+          "span": [
+            0,
+            72
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "在 utils/paths.py 里新增一个 ensure_parent_dir(path) 工具函数：父目录不存在就创建，已经存在就直接返回。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 3.9046669844537973,
+    "original_conjunctive_scoring": {
+      "primary_ok": true,
+      "all_labeled_checks_ok": true,
+      "issues": []
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U26",
+      "text": "把订单列表默认每页 20 条调成 50 条，直接修改后端的默认值，调用方显式传 page_size 时仍按它传的数处理。",
+      "expected": [
+        "code"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "code",
+            "actions": [
+              "update"
+            ]
+          }
+        ]
+      ],
+      "rationale": "请求修改现有业务行为，并保留显式参数的语义。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['code'], got unknown",
+      "missing required operation group 1: [{'intent': 'code', 'actions': ['update']}]"
+    ],
+    "actual": {
+      "raw_input": "把订单列表默认每页 20 条调成 50 条，直接修改后端的默认值，调用方显式传 page_size 时仍按它传的数处理。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "把订单列表默认每页",
+        "20",
+        "条调成",
+        "50",
+        "直接修改后端的默认值",
+        "调用方显式传",
+        "page_size",
+        "时仍按它传的数处理",
+        "caller",
+        "callers",
+        "reference"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787747.985058,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "把订单列表默认每页 20 条调成 50 条，直接修改后端的默认值，调用方显式传 page_size 时仍按它传的数处理。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 1.9518749322742224,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['code'], got unknown"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U27",
+      "text": "原因清楚了，就把这个边界修掉：恰好等于上限也应该被接受，改完保留其他校验。",
+      "expected": [
+        "debug"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "debug",
+            "actions": [
+              "update"
+            ]
+          }
+        ]
+      ],
+      "rationale": "承接已诊断出的比较符错误，明确要求实施修复。",
+      "context": {
+        "active_task": "修复附件大小上限的边界判断",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "大小刚好为 MAX_BYTES 的附件也被拒绝了。"
+          },
+          {
+            "role": "assistant",
+            "content": "拒绝条件使用了 size >= MAX_BYTES，而需求只拒绝超过上限的附件。"
+          }
+        ]
+      }
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['debug'], got unknown",
+      "missing required operation group 1: [{'intent': 'debug', 'actions': ['update']}]"
+    ],
+    "actual": {
+      "raw_input": "原因清楚了，就把这个边界修掉：恰好等于上限也应该被接受，改完保留其他校验。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "原因清楚了",
+        "就把这个边界修掉",
+        "恰好等于上限也应该被接受",
+        "改完保留其他校验"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.9887621,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "原因清楚了，就把这个边界修掉：恰好等于上限也应该被接受，改完保留其他校验。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.5599580258131027,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['debug'], got unknown"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U28",
+      "text": "把 legacy_loader.py 重命名为 data_loader.py，并把仓库里引用旧模块名的 import 一起更新到新名字。",
+      "expected": [
+        "refactor"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "refactor",
+            "actions": [
+              "rename"
+            ]
+          }
+        ],
+        [
+          {
+            "intent": "refactor",
+            "actions": [
+              "update"
+            ]
+          },
+          {
+            "intent": "code",
+            "actions": [
+              "update"
+            ]
+          }
+        ]
+      ],
+      "rationale": "实施模块重命名并同步修改导入，属于保行为结构调整。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['refactor'], got code",
+      "missing required operation group 1: [{'intent': 'refactor', 'actions': ['rename']}]"
+    ],
+    "actual": {
+      "raw_input": "把 legacy_loader.py 重命名为 data_loader.py，并把仓库里引用旧模块名的 import 一起更新到新名字。",
+      "intent_type": "code",
+      "action_type": "rename",
+      "confidence": 0.96,
+      "entities": {
+        "files": [
+          "legacy_loader.py",
+          "data_loader.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "legacy_loader.py",
+        "重命名为",
+        "data_loader.py",
+        "并把仓库里引用旧模块名的",
+        "import",
+        "一起更新到新名字",
+        "rename",
+        "reference"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787747.992158,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "rename",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "把 legacy_loader.py 重命名为 data_loader.py，",
+          "span": [
+            0,
+            39
+          ],
+          "entities": {
+            "files": [
+              "legacy_loader.py",
+              "data_loader.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "legacy_loader.py",
+            "重命名为",
+            "data_loader.py",
+            "rename"
+          ],
+          "evidence_codes": [
+            "rule:code.rename"
+          ]
+        },
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.917,
+          "clause": "把仓库里引用旧模块名的 import 一起更新到新名字。",
+          "span": [
+            40,
+            68
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "把仓库里引用旧模块名的",
+            "import",
+            "一起更新到新名字",
+            "reference"
+          ],
+          "evidence_codes": [
+            "rule:code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.rename",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            0,
+            39
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.917,
+          "span": [
+            40,
+            68
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "把 legacy_loader.py 重命名为 data_loader.py，并把仓库里引用旧模块名的 import 一起更新到新名字。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.263665897771716,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['refactor'], got code"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U29",
+      "text": "请把开发环境配置里的 LOG_LEVEL 设成 DEBUG，改开发环境那份配置文件即可。",
+      "expected": [
+        "configure"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "configure",
+            "actions": [
+              "update"
+            ]
+          }
+        ]
+      ],
+      "rationale": "要求直接更改指定环境的配置值。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['configure'], got code",
+      "missing required operation group 1: [{'intent': 'configure', 'actions': ['update']}]"
+    ],
+    "actual": {
+      "raw_input": "请把开发环境配置里的 LOG_LEVEL 设成 DEBUG，改开发环境那份配置文件即可。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.92,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "请把开发环境配置里的",
+        "log_level",
+        "设成",
+        "debug",
+        "改开发环境那份配置文件即可",
+        "config",
+        "configuration"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787747.994825,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.92,
+          "clause": "改开发环境那份配置文件即可。",
+          "span": [
+            30,
+            44
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "改开发环境那份配置文件即可",
+            "config",
+            "configuration"
+          ],
+          "evidence_codes": [
+            "rule:code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.92,
+          "span": [
+            30,
+            44
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "请把开发环境配置里的 LOG_LEVEL 设成 DEBUG，改开发环境那份配置文件即可。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 1.4929999597370625,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['configure'], got code"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U30",
+      "text": "那就用你刚才确认的这条命令跑一次，把结果给我。",
+      "expected": [
+        "test"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "test",
+            "actions": [
+              "execute"
+            ]
+          }
+        ]
+      ],
+      "rationale": "上下文中的唯一待执行命令是指定测试命令，本轮予以执行授权。",
+      "context": {
+        "active_task": "执行购物车单元测试",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "购物车这块的单元测试怎么单独跑？"
+          },
+          {
+            "role": "assistant",
+            "content": "确认命令是 python -m pytest tests/unit/test_cart.py。"
+          }
+        ]
+      }
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['test'], got unknown",
+      "missing required operation group 1: [{'intent': 'test', 'actions': ['execute']}]"
+    ],
+    "actual": {
+      "raw_input": "那就用你刚才确认的这条命令跑一次，把结果给我。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "那就用你刚才确认的这条命令跑一次",
+        "把结果给我"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787747.998484,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "那就用你刚才确认的这条命令跑一次，把结果给我。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.3342089261859655,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['test'], got unknown"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U31",
+      "text": "README 的安装步骤还漏了虚拟环境激活，请直接补上 macOS/Linux 和 Windows 两种写法，放在安装依赖之前。",
+      "expected": [
+        "document"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "document",
+            "actions": [
+              "update"
+            ]
+          }
+        ]
+      ],
+      "rationale": "编辑已有说明文档中的安装步骤。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['document'], got configure",
+      "missing required operation group 1: [{'intent': 'document', 'actions': ['update']}]"
+    ],
+    "actual": {
+      "raw_input": "README 的安装步骤还漏了虚拟环境激活，请直接补上 macOS/Linux 和 Windows 两种写法，放在安装依赖之前。",
+      "intent_type": "configure",
+      "action_type": "update",
+      "confidence": 0.913,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "readme",
+        "的安装步骤还漏了虚拟环境激活",
+        "请直接补上",
+        "macos/linux",
+        "windows",
+        "两种写法",
+        "放在安装依赖之前",
+        "dependency",
+        "package"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787748.002104,
+      "operations": [
+        {
+          "intent_type": "configure",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.913,
+          "clause": "README 的安装步骤还漏了虚拟环境激活",
+          "span": [
+            0,
+            21
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "readme",
+            "的安装步骤还漏了虚拟环境激活"
+          ],
+          "evidence_codes": [
+            "rule:configure.update"
+          ]
+        },
+        {
+          "intent_type": "configure",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.905,
+          "clause": "请直接补上 macOS/Linux 和 Windows 两种写法，放在安装依赖之前。",
+          "span": [
+            22,
+            64
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "请直接补上",
+            "macos/linux",
+            "windows",
+            "两种写法",
+            "放在安装依赖之前",
+            "dependency",
+            "package"
+          ],
+          "evidence_codes": [
+            "rule:configure.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:configure.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.913,
+          "span": [
+            0,
+            21
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:configure.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.905,
+          "span": [
+            22,
+            64
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "README 的安装步骤还漏了虚拟环境激活，请直接补上 macOS/Linux 和 Windows 两种写法，放在安装依赖之前。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.3659589933231473,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['document'], got configure"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U32",
+      "text": "旧版 /v1/ping 已经停用了，把注册这个路由的代码删掉；/health 还在用，别动它。",
+      "expected": [
+        "code"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "code",
+            "actions": [
+              "delete"
+            ]
+          }
+        ]
+      ],
+      "rationale": "明确删除废弃路由代码，限定保留另一条路由。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "旧版 /v1/ping 已经停用了，把注册这个路由的代码删掉；/health 还在用，别动它。",
+      "intent_type": "code",
+      "action_type": "delete",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "旧版",
+        "/v1/ping",
+        "已经停用了",
+        "把注册这个路由的代码删掉",
+        "/health",
+        "还在用",
+        "别动它",
+        "routing"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787748.0053399,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "delete",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "旧版 /v1/ping 已经停用了，把注册这个路由的代码删掉",
+          "span": [
+            0,
+            30
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "旧版",
+            "/v1/ping",
+            "已经停用了",
+            "把注册这个路由的代码删掉",
+            "routing"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-code.delete"
+          ]
+        },
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "别动它。",
+          "span": [
+            43,
+            47
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "旧版",
+            "/v1/ping",
+            "已经停用了",
+            "把注册这个路由的代码删掉",
+            "routing",
+            "别动它"
+          ],
+          "evidence_codes": [
+            "explicit:negated-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-code.delete",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            30
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-code.update",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            43,
+            47
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "旧版 /v1/ping 已经停用了，把注册这个路由的代码删掉；/health 还在用，别动它。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 1.956084044650197,
+    "original_conjunctive_scoring": {
+      "primary_ok": true,
+      "all_labeled_checks_ok": true,
+      "issues": []
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U33",
+      "text": "按这个位置迁过去吧，顺便把指向原路径的导入改好，让现有调用继续工作。",
+      "expected": [
+        "refactor"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "refactor",
+            "actions": [
+              "move"
+            ]
+          }
+        ],
+        [
+          {
+            "intent": "refactor",
+            "actions": [
+              "update"
+            ]
+          },
+          {
+            "intent": "code",
+            "actions": [
+              "update"
+            ]
+          }
+        ]
+      ],
+      "rationale": "上下文确定模块迁移路径，本轮要求移动并更新导入。",
+      "context": {
+        "active_task": "迁移可复用的金额格式化模块",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "ui/money.py 现在也被导出任务使用，放 UI 目录里不合适。"
+          },
+          {
+            "role": "assistant",
+            "content": "可以将整个文件移动到 common/money.py，函数接口保持不变。"
+          }
+        ]
+      }
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['refactor'], got unknown",
+      "missing required operation group 1: [{'intent': 'refactor', 'actions': ['move']}]",
+      "missing required operation group 2: [{'intent': 'refactor', 'actions': ['update']}, {'intent': 'code', 'actions': ['update']}]"
+    ],
+    "actual": {
+      "raw_input": "按这个位置迁过去吧，顺便把指向原路径的导入改好，让现有调用继续工作。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "按这个位置迁过去吧",
+        "顺便把指向原路径的导入改好",
+        "让现有调用继续工作"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787748.0090759,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "按这个位置迁过去吧，顺便把指向原路径的导入改好，让现有调用继续工作。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.4220000486820936,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['refactor'], got unknown"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U34",
+      "text": "给 normalize_email 补上单元测试，至少覆盖首尾空白和域名大写两种输入，把用例写进现有测试文件。",
+      "expected": [
+        "test"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "test",
+            "actions": [
+              "create",
+              "update"
+            ]
+          }
+        ]
+      ],
+      "rationale": "要求实际编写测试用例，允许在已有文件中新增用例的创建或更新表述。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "给 normalize_email 补上单元测试，至少覆盖首尾空白和域名大写两种输入，把用例写进现有测试文件。",
+      "intent_type": "test",
+      "action_type": "create",
+      "confidence": 0.914,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "normalize_email",
+        "补上单元测试",
+        "至少覆盖首尾空白和域名大写两种输入",
+        "把用例写进现有测试文件",
+        "test",
+        "test case"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787748.012886,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.914,
+          "clause": "给 normalize_email 补上单元测试，至少覆盖首尾空白和域名大写两种输入，把用例写进现有测试文件。",
+          "span": [
+            0,
+            55
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "normalize_email",
+            "补上单元测试",
+            "至少覆盖首尾空白和域名大写两种输入",
+            "把用例写进现有测试文件",
+            "test",
+            "test case"
+          ],
+          "evidence_codes": [
+            "rule:test.create"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:test.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.914,
+          "span": [
+            0,
+            55
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "给 normalize_email 补上单元测试，至少覆盖首尾空白和域名大写两种输入，把用例写进现有测试文件。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.4693330051377416,
+    "original_conjunctive_scoring": {
+      "primary_ok": true,
+      "all_labeled_checks_ok": true,
+      "issues": []
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U35",
+      "text": "请把 pyproject.toml 中声明的 Python 最低版本提升到 3.11，直接更新项目的版本约束。",
+      "expected": [
+        "configure"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "configure",
+            "actions": [
+              "update"
+            ]
+          }
+        ]
+      ],
+      "rationale": "明确修改项目配置中的运行时版本约束。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['configure'], got unknown",
+      "missing required operation group 1: [{'intent': 'configure', 'actions': ['update']}]"
+    ],
+    "actual": {
+      "raw_input": "请把 pyproject.toml 中声明的 Python 最低版本提升到 3.11，直接更新项目的版本约束。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [
+          "pyproject.toml"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": [
+          "python"
+        ]
+      },
+      "keywords": [
+        "请把",
+        "pyproject.toml",
+        "中声明的",
+        "python",
+        "最低版本提升到",
+        "3.11",
+        "直接更新项目的版本约束",
+        "version",
+        "project"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787748.01598,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "请把 pyproject.toml 中声明的 Python 最低版本提升到 3.11，直接更新项目的版本约束。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 1.5944589395076036,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['configure'], got unknown"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U36",
+      "text": "照你说的把计数位置改好，然后跑一下重试相关的测试，确认第三次失败后会停止。",
+      "expected": [
+        "debug"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "debug",
+            "actions": [
+              "update"
+            ]
+          }
+        ],
+        [
+          {
+            "intent": "test",
+            "actions": [
+              "execute"
+            ]
+          }
+        ]
+      ],
+      "rationale": "修复已定位的重试计数问题，并明确要求执行相关测试。",
+      "context": {
+        "active_task": "修复最多重试三次却一直重试的问题",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "设置最多重试三次，服务异常时却停不下来。"
+          },
+          {
+            "role": "assistant",
+            "content": "计数器在循环体开头被重置了，应该在进入循环前初始化，再在每次失败后累加。"
+          }
+        ]
+      }
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['debug'], got test",
+      "missing required operation group 1: [{'intent': 'debug', 'actions': ['update']}]"
+    ],
+    "actual": {
+      "raw_input": "照你说的把计数位置改好，然后跑一下重试相关的测试，确认第三次失败后会停止。",
+      "intent_type": "test",
+      "action_type": "execute",
+      "confidence": 0.92,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "照你说的把计数位置改好",
+        "然后跑一下重试相关的测试",
+        "确认第三次失败后会停止",
+        "retry",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787748.019936,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "affirmed",
+          "confidence": 0.92,
+          "clause": "跑一下重试相关的测试，确认第三次失败后会停止。",
+          "span": [
+            14,
+            37
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "跑一下重试相关的测试",
+            "确认第三次失败后会停止",
+            "retry",
+            "test"
+          ],
+          "evidence_codes": [
+            "rule:test.execute",
+            "context:topic-continuation"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:test.execute",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.92,
+          "span": [
+            14,
+            37
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "context:topic-continuation",
+          "source": "context",
+          "reason": "current operation continues the active task topic",
+          "strength": 0.62,
+          "span": [
+            14,
+            37
+          ],
+          "turn_offset": -1
+        }
+      ],
+      "decision_reason": "contextual_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 2,
+        "warnings": []
+      },
+      "semantic_query": "照你说的把计数位置改好，然后跑一下重试相关的测试，确认第三次失败后会停止。",
+      "context_used": true
+    },
+    "read_only": false,
+    "elapsed_ms": 2.5237499503418803,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['debug'], got test"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U37",
+      "text": "新建 docs/migration-v2.md，整理 v1 到 v2 的字段改名表，并写一个旧请求和对应新请求的例子。",
+      "expected": [
+        "document"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "document",
+            "actions": [
+              "create"
+            ]
+          }
+        ]
+      ],
+      "rationale": "要求创建迁移文档文件并填充内容。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['document'], got code"
+    ],
+    "actual": {
+      "raw_input": "新建 docs/migration-v2.md，整理 v1 到 v2 的字段改名表，并写一个旧请求和对应新请求的例子。",
+      "intent_type": "code",
+      "action_type": "rename",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "docs/migration-v2.md"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "新建",
+        "docs/migration-v2.md",
+        "整理",
+        "v1",
+        "v2",
+        "的字段改名表",
+        "并写一个旧请求和对应新请求的例子",
+        "rename"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787748.0265028,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "rename",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "新建 docs/migration-v2.md，整理 v1 到 v2 的字段改名表，",
+          "span": [
+            0,
+            42
+          ],
+          "entities": {
+            "files": [
+              "docs/migration-v2.md"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "新建",
+            "docs/migration-v2.md",
+            "整理",
+            "v1",
+            "v2",
+            "的字段改名表",
+            "rename"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-code.rename"
+          ]
+        },
+        {
+          "intent_type": "document",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.78,
+          "clause": "写一个旧请求和对应新请求的例子。",
+          "span": [
+            43,
+            59
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "写一个旧请求和对应新请求的例子"
+          ],
+          "evidence_codes": [
+            "rule:intra-turn-document.create"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-code.rename",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            42
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:intra-turn-document.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.78,
+          "span": [
+            43,
+            59
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "新建 docs/migration-v2.md，整理 v1 到 v2 的字段改名表，并写一个旧请求和对应新请求的例子。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 5.066083045676351,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['document'], got code"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U38",
+      "text": "把 reports.py 拆成数据汇总和文本渲染两个模块，现有对外入口继续保留在 reports.py，调用结果保持一致。",
+      "expected": [
+        "refactor"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "refactor",
+            "actions": [
+              "split"
+            ]
+          }
+        ]
+      ],
+      "rationale": "明确实施模块拆分并保留既有公共入口。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['refactor'], got unknown",
+      "missing required operation group 1: [{'intent': 'refactor', 'actions': ['split']}]"
+    ],
+    "actual": {
+      "raw_input": "把 reports.py 拆成数据汇总和文本渲染两个模块，现有对外入口继续保留在 reports.py，调用结果保持一致。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [
+          "reports.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "reports.py",
+        "拆成数据汇总和文本渲染两个模块",
+        "现有对外入口继续保留在",
+        "调用结果保持一致",
+        "aggregation"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787748.0317628,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "把 reports.py 拆成数据汇总和文本渲染两个模块，现有对外入口继续保留在 reports.py，调用结果保持一致。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.711665933020413,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['refactor'], got unknown"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U39",
+      "text": "就用这个文案，替换表单上的提示；另外把用户指南里对应的说明也改成相同表述。",
+      "expected": [
+        "code"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "code",
+            "actions": [
+              "update"
+            ]
+          }
+        ],
+        [
+          {
+            "intent": "document",
+            "actions": [
+              "update"
+            ]
+          }
+        ]
+      ],
+      "rationale": "上下文提供已选定文案，本轮要求同时更新界面和文档。",
+      "context": {
+        "active_task": "调整注册表单的密码长度提示",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "现在“密码不合规”的提示太含糊了。"
+          },
+          {
+            "role": "assistant",
+            "content": "可以改成“密码至少需要 12 个字符”。"
+          }
+        ]
+      }
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['code'], got unknown",
+      "missing required operation group 1: [{'intent': 'code', 'actions': ['update']}]",
+      "missing required operation group 2: [{'intent': 'document', 'actions': ['update']}]"
+    ],
+    "actual": {
+      "raw_input": "就用这个文案，替换表单上的提示；另外把用户指南里对应的说明也改成相同表述。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "就用这个文案",
+        "替换表单上的提示",
+        "另外把用户指南里对应的说明也改成相同表述",
+        "guide"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787748.0389152,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "就用这个文案，替换表单上的提示；另外把用户指南里对应的说明也改成相同表述。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 3.176916972734034,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['code'], got unknown"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U40",
+      "text": "从 .env.example 里移除已经废弃的 CACHE_HOST 配置项，我们现在只使用 CACHE_URL。",
+      "expected": [
+        "configure"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "configure",
+            "actions": [
+              "delete"
+            ]
+          }
+        ]
+      ],
+      "rationale": "实际删除示例环境配置中的废弃项。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['configure'], got code",
+      "missing required operation group 1: [{'intent': 'configure', 'actions': ['delete']}]"
+    ],
+    "actual": {
+      "raw_input": "从 .env.example 里移除已经废弃的 CACHE_HOST 配置项，我们现在只使用 CACHE_URL。",
+      "intent_type": "code",
+      "action_type": "delete",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          ".env.example"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        ".env.example",
+        "里移除已经废弃的",
+        "cache_host",
+        "配置项",
+        "我们现在只使用",
+        "config",
+        "configuration"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787748.043573,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "delete",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "从 .env.example 里移除已经废弃的 CACHE_HOST 配置项，我们现在只使用 CACHE_URL。",
+          "span": [
+            0,
+            57
+          ],
+          "entities": {
+            "files": [
+              ".env.example"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            ".env.example",
+            "里移除已经废弃的",
+            "cache_host",
+            "配置项",
+            "我们现在只使用",
+            "config",
+            "configuration"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-code.delete"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-code.delete",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            57
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "从 .env.example 里移除已经废弃的 CACHE_HOST 配置项，我们现在只使用 CACHE_URL。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.3886250564828515,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['configure'], got code"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U41",
+      "text": "Why does a generator stop yielding values when I loop over it a second time? A short explanation with an example would help.",
+      "expected": [
+        "explain",
+        "question"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "explain",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          },
+          {
+            "intent": "question",
+            "actions": [
+              "analyze"
+            ]
+          }
+        ]
+      ],
+      "rationale": "A conceptual programming question; no repository changes or execution are requested."
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['explain', 'question'], got unknown",
+      "read_only: expected True, got False",
+      "missing required operation group 1: [{'intent': 'explain', 'actions': ['analyze', 'read']}, {'intent': 'question', 'actions': ['analyze']}]"
+    ],
+    "actual": {
+      "raw_input": "Why does a generator stop yielding values when I loop over it a second time? A short explanation with an example would help.",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "generator",
+        "stop",
+        "yielding",
+        "values",
+        "loop",
+        "over",
+        "second",
+        "time",
+        "short",
+        "explanation",
+        "example",
+        "help."
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787748.0479832,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Why does a generator stop yielding values when I loop over it a second time? A short explanation with an example would help.",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.32979201246053,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['explain', 'question'], got unknown",
+        "read_only: expected True, got False"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U42",
+      "text": "Track down where the upload handler decides a file is too large, and point me to the function that makes that decision.",
+      "expected": [
+        "search"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "search",
+            "actions": [
+              "read",
+              "analyze"
+            ]
+          }
+        ]
+      ],
+      "rationale": "The requested result is the location of an existing decision in code."
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['search'], got unknown",
+      "read_only: expected True, got False",
+      "missing required operation group 1: [{'intent': 'search', 'actions': ['read', 'analyze']}]"
+    ],
+    "actual": {
+      "raw_input": "Track down where the upload handler decides a file is too large, and point me to the function that makes that decision.",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [
+          "that"
+        ],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "track",
+        "down",
+        "upload",
+        "handler",
+        "decides",
+        "file",
+        "large",
+        "point",
+        "function",
+        "makes",
+        "decision."
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787748.052638,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Track down where the upload handler decides a file is too large, and point me to the function that makes that decision.",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.704833052121103,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['search'], got unknown",
+        "read_only: expected True, got False"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U43",
+      "text": "Could that explain the stale value after logout? Trace the lifetime of that object and tell me where the old value survives; leave the implementation alone for now.",
+      "expected": [
+        "debug"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "debug",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "The turn asks for a diagnosis of stale state using prior context, expressly withholding implementation changes.",
+      "context": {
+        "active_task": "Diagnosing a user name that persists after logout",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "The header still shows the previous user after I log out and sign in as someone else."
+          },
+          {
+            "role": "assistant",
+            "content": "The header appears to read from a service instance created when the app starts."
+          }
+        ]
+      }
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['debug'], got explain",
+      "missing required operation group 1: [{'intent': 'debug', 'actions': ['analyze', 'read']}]"
+    ],
+    "actual": {
+      "raw_input": "Could that explain the stale value after logout? Trace the lifetime of that object and tell me where the old value survives; leave the implementation alone for now.",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.915,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "stale",
+        "value",
+        "logout",
+        "trace",
+        "lifetime",
+        "object",
+        "old",
+        "survives",
+        "leave",
+        "implementation",
+        "alone",
+        "now."
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787748.060288,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "Could that explain the stale value after logout? Trace the lifetime of that object and tell me where the old value survives",
+          "span": [
+            0,
+            123
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "stale",
+            "value",
+            "logout",
+            "trace",
+            "lifetime",
+            "object",
+            "old",
+            "survives"
+          ],
+          "evidence_codes": [
+            "rule:explain.read",
+            "context:topic-continuation"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            123
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "context:topic-continuation",
+          "source": "context",
+          "reason": "current operation continues the active task topic",
+          "strength": 0.62,
+          "span": [
+            0,
+            123
+          ],
+          "turn_offset": -1
+        }
+      ],
+      "decision_reason": "contextual_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 2,
+        "warnings": []
+      },
+      "semantic_query": "Could that explain the stale value after logout? Trace the lifetime of that object and tell me where the old value survives; leave the implementation alone for now.",
+      "context_used": true
+    },
+    "read_only": true,
+    "elapsed_ms": 5.596291972324252,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['debug'], got explain"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U44",
+      "text": "Review the timeout handling in this client, especially whether callers can distinguish a timeout from a malformed response. Please report your findings without editing it.",
+      "expected": [
+        "review"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "review",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "Review existing error handling and report findings, without edits."
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "Review the timeout handling in this client, especially whether callers can distinguish a timeout from a malformed response. Please report your findings without editing it.",
+      "intent_type": "review",
+      "action_type": "analyze",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "review",
+        "timeout",
+        "handling",
+        "client",
+        "especially",
+        "whether",
+        "callers",
+        "distinguish",
+        "malformed",
+        "response.",
+        "please",
+        "report",
+        "findings",
+        "without"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787748.066509,
+      "operations": [
+        {
+          "intent_type": "review",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "Review the timeout handling in this client, especially whether callers can distinguish a timeout from a malformed response. Please report your findings",
+          "span": [
+            0,
+            151
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "review",
+            "timeout",
+            "handling",
+            "client",
+            "especially",
+            "whether",
+            "callers",
+            "distinguish",
+            "malformed",
+            "response.",
+            "please",
+            "report",
+            "findings"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-review.analyze"
+          ]
+        },
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "without editing it.",
+          "span": [
+            152,
+            171
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "without",
+            "editing",
+            "it.",
+            "review",
+            "timeout",
+            "handling",
+            "client",
+            "especially",
+            "whether",
+            "callers",
+            "distinguish",
+            "malformed",
+            "response.",
+            "please",
+            "report",
+            "findings"
+          ],
+          "evidence_codes": [
+            "explicit:negated-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-review.analyze",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            151
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-code.update",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            152,
+            171
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Review the timeout handling in this client, especially whether callers can distinguish a timeout from a malformed response. Please report your findings without editing it.",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 4.138207994401455,
+    "original_conjunctive_scoring": {
+      "primary_ok": true,
+      "all_labeled_checks_ok": true,
+      "issues": []
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U45",
+      "text": "The issue says \"delete the fallback\". I am only asking what that fallback currently does and which callers still depend on it; do not remove anything.",
+      "expected": [
+        "explain"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "explain",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ],
+        [
+          {
+            "intent": "search",
+            "actions": [
+              "read",
+              "analyze"
+            ]
+          }
+        ]
+      ],
+      "rationale": "The quoted deletion is background; the affirmative request is to explain the behavior and identify dependent callers."
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['explain'], got unknown",
+      "missing required operation group 1: [{'intent': 'explain', 'actions': ['analyze', 'read']}]",
+      "missing required operation group 2: [{'intent': 'search', 'actions': ['read', 'analyze']}]"
+    ],
+    "actual": {
+      "raw_input": "The issue says \"delete the fallback\". I am only asking what that fallback currently does and which callers still depend on it; do not remove anything.",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "issue",
+        "says",
+        "am",
+        "asking",
+        "fallback",
+        "currently",
+        "callers",
+        "still",
+        "depend",
+        "remove",
+        "anything."
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787748.0713952,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "delete",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "do not remove anything.",
+          "span": [
+            127,
+            150
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "remove",
+            "anything."
+          ],
+          "evidence_codes": [
+            "explicit:negated-code.delete"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-code.delete",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            127,
+            150
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "The issue says \"delete the fallback\". I am only asking what that fallback currently does and which callers still depend on it; do not remove anything.",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 3.040916984900832,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['explain'], got unknown"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U46",
+      "text": "Focus on the second scenario. Which assertions would prove that behavior, without writing or running the tests yet?",
+      "expected": [
+        "test"
+      ],
+      "expected_read_only": true,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "test",
+            "actions": [
+              "analyze",
+              "read"
+            ]
+          }
+        ]
+      ],
+      "rationale": "The user wants test design for a scenario identified in context, not test creation or execution.",
+      "context": {
+        "active_task": "Planning tests for a reconnecting message consumer",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "We should cover a clean connection and a connection dropped halfway through a batch."
+          },
+          {
+            "role": "assistant",
+            "content": "In the first scenario all messages are acknowledged normally. In the second, unacknowledged messages must be retried after reconnecting."
+          }
+        ]
+      }
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['test'], got unknown",
+      "missing required operation group 1: [{'intent': 'test', 'actions': ['analyze', 'read']}]"
+    ],
+    "actual": {
+      "raw_input": "Focus on the second scenario. Which assertions would prove that behavior, without writing or running the tests yet?",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "focus",
+        "second",
+        "scenario.",
+        "assertions",
+        "prove",
+        "behavior",
+        "without",
+        "writing",
+        "running",
+        "tests",
+        "yet"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787748.0779362,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "create",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "without writing or running the tests",
+          "span": [
+            74,
+            110
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.create",
+            "rule:typed-test-constraint"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "without writing or running the tests",
+          "span": [
+            74,
+            110
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-test.create",
+          "source": "explicit",
+          "reason": "current directive denies this test operation",
+          "strength": 0.99,
+          "span": [
+            74,
+            110
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Focus on the second scenario. Which assertions would prove that behavior, without writing or running the tests yet?",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 4.672959097661078,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['test'], got unknown"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U47",
+      "text": "Add a clamp(value, lower, upper) helper to math_utils.py and export it from the package so callers can use it directly.",
+      "expected": [
+        "code"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "code",
+            "actions": [
+              "create"
+            ]
+          }
+        ],
+        [
+          {
+            "intent": "code",
+            "actions": [
+              "update"
+            ]
+          }
+        ]
+      ],
+      "rationale": "Implement a new source helper and update the package exports."
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['code'], got unknown",
+      "missing required operation group 1: [{'intent': 'code', 'actions': ['create']}]",
+      "missing required operation group 2: [{'intent': 'code', 'actions': ['update']}]"
+    ],
+    "actual": {
+      "raw_input": "Add a clamp(value, lower, upper) helper to math_utils.py and export it from the package so callers can use it directly.",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [
+          "math_utils.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "add",
+        "clamp",
+        "value",
+        "lower",
+        "upper",
+        "helper",
+        "math_utils.py",
+        "export",
+        "package",
+        "callers",
+        "use",
+        "directly."
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787748.082299,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Add a clamp(value, lower, upper) helper to math_utils.py and export it from the package so callers can use it directly.",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.216416993178427,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['code'], got unknown"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U48",
+      "text": "Run the full unit test suite now and tell me which tests fail. You do not need to change any files for this step.",
+      "expected": [
+        "test"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "test",
+            "actions": [
+              "execute"
+            ]
+          }
+        ]
+      ],
+      "rationale": "Executing a test suite is an action even though source edits are not requested."
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "Run the full unit test suite now and tell me which tests fail. You do not need to change any files for this step.",
+      "intent_type": "test",
+      "action_type": "execute",
+      "confidence": 0.92,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "run",
+        "full",
+        "unit",
+        "test",
+        "suite",
+        "now",
+        "tests",
+        "fail.",
+        "change",
+        "files",
+        "step."
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787748.087497,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "affirmed",
+          "confidence": 0.92,
+          "clause": "Run the full unit test suite now and tell me which tests fail. You",
+          "span": [
+            0,
+            66
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "run",
+            "full",
+            "unit",
+            "test",
+            "suite",
+            "now",
+            "tests",
+            "fail."
+          ],
+          "evidence_codes": [
+            "rule:test.execute"
+          ]
+        },
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "do not need to change any files for this step.",
+          "span": [
+            67,
+            113
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "change",
+            "files",
+            "step.",
+            "run",
+            "full",
+            "unit",
+            "test",
+            "suite",
+            "now",
+            "tests",
+            "fail."
+          ],
+          "evidence_codes": [
+            "explicit:negated-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:test.execute",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.92,
+          "span": [
+            0,
+            66
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-code.update",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            67,
+            113
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Run the full unit test suite now and tell me which tests fail. You do not need to change any files for this step.",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 3.1826660269871354,
+    "original_conjunctive_scoring": {
+      "primary_ok": true,
+      "all_labeled_checks_ok": true,
+      "issues": []
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U49",
+      "text": "Go ahead with that extraction and replace both copies with calls to the shared helper. Keep the current validation messages.",
+      "expected": [
+        "refactor"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "refactor",
+            "actions": [
+              "update"
+            ]
+          }
+        ]
+      ],
+      "rationale": "The prior proposal is now authorized for implementation as a behavior-preserving extraction.",
+      "context": {
+        "active_task": "Removing duplicated address validation",
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "The billing and shipping handlers contain the same address checks."
+          },
+          {
+            "role": "assistant",
+            "content": "We can extract those checks into validate_address and call it from both handlers."
+          }
+        ]
+      }
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['refactor'], got unknown",
+      "missing required operation group 1: [{'intent': 'refactor', 'actions': ['update']}]"
+    ],
+    "actual": {
+      "raw_input": "Go ahead with that extraction and replace both copies with calls to the shared helper. Keep the current validation messages.",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": [
+          "go"
+        ]
+      },
+      "keywords": [
+        "go",
+        "ahead",
+        "extraction",
+        "replace",
+        "copies",
+        "calls",
+        "shared",
+        "helper.",
+        "keep",
+        "current",
+        "validation",
+        "messages."
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787748.093438,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Go ahead with that extraction and replace both copies with calls to the shared helper. Keep the current validation messages.",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 3.888124949298799,
+    "original_conjunctive_scoring": {
+      "primary_ok": false,
+      "all_labeled_checks_ok": false,
+      "issues": [
+        "primary: expected ['refactor'], got unknown"
+      ]
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "U50",
+      "text": "Update docs/cli.md to use --output-dir wherever it currently documents the old --destination flag, including the command examples.",
+      "expected": [
+        "document"
+      ],
+      "expected_read_only": false,
+      "required_operation_groups": [
+        [
+          {
+            "intent": "document",
+            "actions": [
+              "update"
+            ]
+          }
+        ]
+      ],
+      "rationale": "Directly edit existing CLI documentation and examples for the renamed flag."
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "Update docs/cli.md to use --output-dir wherever it currently documents the old --destination flag, including the command examples.",
+      "intent_type": "document",
+      "action_type": "update",
+      "confidence": 0.96,
+      "entities": {
+        "files": [
+          "docs/cli.md"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "update",
+        "docs/cli.md",
+        "use",
+        "--output-dir",
+        "wherever",
+        "currently",
+        "documents",
+        "old",
+        "--destination",
+        "flag",
+        "including",
+        "command",
+        "examples."
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787748.098513,
+      "operations": [
+        {
+          "intent_type": "document",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "Update docs/cli.md to use --output-dir wherever it currently documents the old --destination flag, including the command examples.",
+          "span": [
+            0,
+            130
+          ],
+          "entities": {
+            "files": [
+              "docs/cli.md"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "update",
+            "docs/cli.md",
+            "use",
+            "--output-dir",
+            "wherever",
+            "currently",
+            "documents",
+            "old",
+            "--destination",
+            "flag",
+            "including",
+            "command",
+            "examples."
+          ],
+          "evidence_codes": [
+            "rule:document.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:document.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            0,
+            130
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Update docs/cli.md to use --output-dir wherever it currently documents the old --destination flag, including the command examples.",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.8594169998541474,
+    "original_conjunctive_scoring": {
+      "primary_ok": true,
+      "all_labeled_checks_ok": true,
+      "issues": []
+    },
+    "events": []
+  }
+]

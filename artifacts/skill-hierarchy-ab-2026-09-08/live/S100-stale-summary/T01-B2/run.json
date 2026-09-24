@@ -1,0 +1,168 @@
+{
+  "task_id": "T01",
+  "scale": "S100",
+  "variant": "stale-summary",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-stale-summary",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283512914739192154",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "http-client",
+          "payment-gateway"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "be33e26f2e99953615f09352d8526a911f95a1313980e3ab3a95b05fb5a4ce79",
+      "output_chars": 3351,
+      "seen_qualified_names": [
+        "http-client/circuit-breaker",
+        "http-client/debugging-playbook",
+        "http-client/idempotency",
+        "http-client/latency-profiling",
+        "http-client/multipart-retry-generic",
+        "http-client/pagination",
+        "http-client/rate-limiting",
+        "http-client/retry-backoff",
+        "http-client/testing-strategy",
+        "http-client/timeout-tuning",
+        "payment-gateway/circuit-breaker",
+        "payment-gateway/debugging-playbook",
+        "payment-gateway/idempotency",
+        "payment-gateway/pagination",
+        "payment-gateway/pci-hardening",
+        "payment-gateway/performance-tuning",
+        "payment-gateway/rate-limiting",
+        "payment-gateway/retry-backoff",
+        "payment-gateway/retry-helper-legacy",
+        "payment-gateway/timeout-tuning"
+      ],
+      "seen_directories": [
+        "http-client",
+        "payment-gateway"
+      ],
+      "elapsed_ms": 1.868083025328815
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283527620707220198",
+      "name": "load_skill",
+      "args": {
+        "name": "http-client/retry-backoff"
+      },
+      "ok": true,
+      "output_sha256": "8948aaa2c2367ec72ca1f0d8b99a54f438ed736f7967ff0731f8cbbd1a01485f",
+      "output_chars": 1709,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 2.083083032630384
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283527620707220198",
+      "requested_name": "http-client/retry-backoff",
+      "qualified_name": "http-client/retry-backoff",
+      "ok": true,
+      "body_chars": 1488,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "29bb66bbe4996a6d592fb9d87825183bfe3045a22aa2c272e6aff453312f7e2d",
+      "elapsed_ms": 10903.566207969561,
+      "type": "tool_calls",
+      "content_chars": 177,
+      "tool_call_names": [
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7981,
+        "outputTokens": 258,
+        "cacheReadTokens": 7552,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "6fa1a52e0dd711679d7a5d5680ca6c4e7c92eec9b4a6e504a881e5c3ac38e7ca",
+      "elapsed_ms": 9930.613082950003,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill",
+        "list_files"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 8674,
+        "outputTokens": 215,
+        "cacheReadTokens": 7936,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 1
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "4467a9fb9ad5d6b210ff08ce45b9a8a1865033e7019c27a3e210d058259fac2a",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "7ee9e74b77e08abdd543c55ccfefe42fd2900a8377ab8c7c90499c3ee07e5410",
+  "system_prompt_chars": 12555,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 16655,
+  "output_tokens": 473,
+  "routing_events": [],
+  "elapsed_ms": 21412.60775004048
+}

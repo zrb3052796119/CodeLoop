@@ -1,0 +1,1054 @@
+{
+  "old50_disabled": {
+    "before": {
+      "total": 50,
+      "primary_correct": 35,
+      "strict_correct": 34,
+      "failed_ids": [
+        "C02",
+        "C06",
+        "C09",
+        "C11",
+        "C14",
+        "C23",
+        "C25",
+        "C26",
+        "C27",
+        "C29",
+        "C30",
+        "C39",
+        "C40",
+        "C45",
+        "C47",
+        "C50"
+      ],
+      "readonly_count": 22,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "C11",
+        "C14",
+        "C25",
+        "C26",
+        "C29"
+      ],
+      "semantic_status": {
+        "disabled": 50
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "after": {
+      "total": 50,
+      "primary_correct": 35,
+      "strict_correct": 34,
+      "failed_ids": [
+        "C02",
+        "C06",
+        "C09",
+        "C11",
+        "C14",
+        "C23",
+        "C25",
+        "C26",
+        "C27",
+        "C29",
+        "C30",
+        "C39",
+        "C40",
+        "C45",
+        "C47",
+        "C50"
+      ],
+      "readonly_count": 22,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "C11",
+        "C14",
+        "C25",
+        "C26",
+        "C29"
+      ],
+      "semantic_status": {
+        "disabled": 50
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "improved_ids": [],
+    "regressed_ids": []
+  },
+  "old50_live": {
+    "before": {
+      "total": 50,
+      "primary_correct": 43,
+      "strict_correct": 43,
+      "failed_ids": [
+        "C23",
+        "C26",
+        "C30",
+        "C39",
+        "C40",
+        "C47",
+        "C50"
+      ],
+      "readonly_count": 22,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "C26"
+      ],
+      "semantic_status": {
+        "skipped": 36,
+        "accepted": 10,
+        "timeout": 1,
+        "low_confidence": 2,
+        "abstained": 1
+      },
+      "model_call_attempts": 14,
+      "call_median_ms": 2627.115791430697,
+      "event_counts": {
+        "model.started": 14,
+        "model.completed": 13,
+        "model.costed": 13,
+        "model.failed": 1
+      },
+      "usage_sources": {
+        "provider": 13
+      }
+    },
+    "after": {
+      "total": 50,
+      "primary_correct": 44,
+      "strict_correct": 44,
+      "failed_ids": [
+        "C26",
+        "C30",
+        "C39",
+        "C40",
+        "C47",
+        "C50"
+      ],
+      "readonly_count": 22,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [],
+      "semantic_status": {
+        "skipped": 36,
+        "accepted": 12,
+        "abstained": 2
+      },
+      "model_call_attempts": 14,
+      "call_median_ms": 1282.6815205044113,
+      "event_counts": {
+        "model.started": 14,
+        "model.completed": 14,
+        "model.costed": 14
+      },
+      "usage_sources": {
+        "provider": 14
+      }
+    },
+    "improved_ids": [
+      "C23"
+    ],
+    "regressed_ids": []
+  },
+  "prior40_disabled": {
+    "before": {
+      "total": 40,
+      "primary_correct": 30,
+      "strict_correct": 22,
+      "failed_ids": [
+        "N01",
+        "N04",
+        "N05",
+        "N06",
+        "N07",
+        "N08",
+        "N09",
+        "N10",
+        "N14",
+        "N18",
+        "N22",
+        "N28",
+        "N30",
+        "N31",
+        "N32",
+        "N36",
+        "N37",
+        "N39"
+      ],
+      "readonly_count": 19,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "N22",
+        "N28",
+        "N30"
+      ],
+      "semantic_status": {
+        "disabled": 40
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "after": {
+      "total": 40,
+      "primary_correct": 30,
+      "strict_correct": 22,
+      "failed_ids": [
+        "N01",
+        "N04",
+        "N05",
+        "N06",
+        "N07",
+        "N08",
+        "N09",
+        "N10",
+        "N14",
+        "N18",
+        "N22",
+        "N28",
+        "N30",
+        "N31",
+        "N32",
+        "N36",
+        "N37",
+        "N39"
+      ],
+      "readonly_count": 19,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "N22",
+        "N28",
+        "N30"
+      ],
+      "semantic_status": {
+        "disabled": 40
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "improved_ids": [],
+    "regressed_ids": []
+  },
+  "prior40_live": {
+    "before": {
+      "total": 40,
+      "primary_correct": 35,
+      "strict_correct": 29,
+      "failed_ids": [
+        "N01",
+        "N04",
+        "N05",
+        "N06",
+        "N08",
+        "N09",
+        "N10",
+        "N14",
+        "N18",
+        "N32",
+        "N37"
+      ],
+      "readonly_count": 19,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [],
+      "semantic_status": {
+        "skipped": 26,
+        "abstained": 2,
+        "accepted": 9,
+        "low_confidence": 1,
+        "timeout": 2
+      },
+      "model_call_attempts": 14,
+      "call_median_ms": 2627.1368539892137,
+      "event_counts": {
+        "model.started": 14,
+        "model.completed": 12,
+        "model.costed": 12,
+        "model.failed": 2
+      },
+      "usage_sources": {
+        "provider": 12
+      }
+    },
+    "after": {
+      "total": 40,
+      "primary_correct": 34,
+      "strict_correct": 28,
+      "failed_ids": [
+        "N01",
+        "N04",
+        "N05",
+        "N06",
+        "N08",
+        "N09",
+        "N10",
+        "N14",
+        "N18",
+        "N30",
+        "N32",
+        "N37"
+      ],
+      "readonly_count": 19,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "N30"
+      ],
+      "semantic_status": {
+        "skipped": 26,
+        "abstained": 2,
+        "accepted": 9,
+        "low_confidence": 2,
+        "timeout": 1
+      },
+      "model_call_attempts": 14,
+      "call_median_ms": 1538.323728425894,
+      "event_counts": {
+        "model.started": 14,
+        "model.completed": 13,
+        "model.costed": 13,
+        "model.failed": 1
+      },
+      "usage_sources": {
+        "provider": 13
+      }
+    },
+    "improved_ids": [],
+    "regressed_ids": [
+      "N30"
+    ]
+  },
+  "priorfresh40_disabled": {
+    "before": {
+      "total": 40,
+      "primary_correct": 17,
+      "strict_correct": 14,
+      "failed_ids": [
+        "H01",
+        "H02",
+        "H03",
+        "H04",
+        "H06",
+        "H07",
+        "H08",
+        "H10",
+        "H11",
+        "H12",
+        "H14",
+        "H17",
+        "H19",
+        "H20",
+        "H24",
+        "H25",
+        "H26",
+        "H27",
+        "H28",
+        "H29",
+        "H30",
+        "H31",
+        "H35",
+        "H37",
+        "H38",
+        "H39"
+      ],
+      "readonly_count": 23,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "H01",
+        "H04",
+        "H06",
+        "H07",
+        "H10",
+        "H26",
+        "H27",
+        "H28",
+        "H29",
+        "H30",
+        "H37"
+      ],
+      "semantic_status": {
+        "disabled": 40
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "after": {
+      "total": 40,
+      "primary_correct": 17,
+      "strict_correct": 14,
+      "failed_ids": [
+        "H01",
+        "H02",
+        "H03",
+        "H04",
+        "H06",
+        "H07",
+        "H08",
+        "H10",
+        "H11",
+        "H12",
+        "H14",
+        "H17",
+        "H19",
+        "H20",
+        "H24",
+        "H25",
+        "H26",
+        "H27",
+        "H28",
+        "H29",
+        "H30",
+        "H31",
+        "H35",
+        "H37",
+        "H38",
+        "H39"
+      ],
+      "readonly_count": 23,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "H01",
+        "H04",
+        "H06",
+        "H07",
+        "H10",
+        "H26",
+        "H27",
+        "H28",
+        "H29",
+        "H30",
+        "H37"
+      ],
+      "semantic_status": {
+        "disabled": 40
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "improved_ids": [],
+    "regressed_ids": []
+  },
+  "priorfresh40_live": {
+    "before": {
+      "total": 40,
+      "primary_correct": 29,
+      "strict_correct": 28,
+      "failed_ids": [
+        "H03",
+        "H06",
+        "H07",
+        "H08",
+        "H10",
+        "H14",
+        "H17",
+        "H20",
+        "H24",
+        "H26",
+        "H37",
+        "H38"
+      ],
+      "readonly_count": 23,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "H06",
+        "H07",
+        "H10",
+        "H26",
+        "H37"
+      ],
+      "semantic_status": {
+        "accepted": 15,
+        "low_confidence": 1,
+        "skipped": 19,
+        "timeout": 4,
+        "abstained": 1
+      },
+      "model_call_attempts": 21,
+      "call_median_ms": 2155.5352080613375,
+      "event_counts": {
+        "model.started": 21,
+        "model.completed": 17,
+        "model.costed": 17,
+        "model.failed": 4
+      },
+      "usage_sources": {
+        "provider": 17
+      }
+    },
+    "after": {
+      "total": 40,
+      "primary_correct": 32,
+      "strict_correct": 31,
+      "failed_ids": [
+        "H03",
+        "H06",
+        "H08",
+        "H10",
+        "H14",
+        "H17",
+        "H20",
+        "H37",
+        "H38"
+      ],
+      "readonly_count": 23,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "H06",
+        "H10",
+        "H37"
+      ],
+      "semantic_status": {
+        "accepted": 19,
+        "skipped": 20,
+        "low_confidence": 1
+      },
+      "model_call_attempts": 20,
+      "call_median_ms": 1255.1705205114558,
+      "event_counts": {
+        "model.started": 20,
+        "model.completed": 20,
+        "model.costed": 20
+      },
+      "usage_sources": {
+        "provider": 20
+      }
+    },
+    "improved_ids": [
+      "H07",
+      "H24",
+      "H26"
+    ],
+    "regressed_ids": []
+  },
+  "priorfresh50_disabled": {
+    "before": {
+      "total": 50,
+      "primary_correct": 22,
+      "strict_correct": 21,
+      "failed_ids": [
+        "T01",
+        "T05",
+        "T06",
+        "T07",
+        "T08",
+        "T09",
+        "T11",
+        "T13",
+        "T16",
+        "T17",
+        "T18",
+        "T19",
+        "T21",
+        "T22",
+        "T23",
+        "T24",
+        "T25",
+        "T27",
+        "T38",
+        "T39",
+        "T41",
+        "T42",
+        "T43",
+        "T44",
+        "T45",
+        "T46",
+        "T47",
+        "T49",
+        "T50"
+      ],
+      "readonly_count": 30,
+      "readonly_effectful_ids": [
+        "T05",
+        "T11"
+      ],
+      "readonly_check_failed_ids": [
+        "T01",
+        "T05",
+        "T06",
+        "T08",
+        "T09",
+        "T11",
+        "T13",
+        "T19",
+        "T21",
+        "T23",
+        "T41",
+        "T42",
+        "T43",
+        "T45"
+      ],
+      "semantic_status": {
+        "disabled": 50
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "after": {
+      "total": 50,
+      "primary_correct": 28,
+      "strict_correct": 28,
+      "failed_ids": [
+        "T01",
+        "T06",
+        "T08",
+        "T13",
+        "T17",
+        "T18",
+        "T21",
+        "T22",
+        "T23",
+        "T24",
+        "T25",
+        "T27",
+        "T38",
+        "T39",
+        "T41",
+        "T42",
+        "T44",
+        "T45",
+        "T46",
+        "T47",
+        "T49",
+        "T50"
+      ],
+      "readonly_count": 30,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [
+        "T01",
+        "T06",
+        "T08",
+        "T13",
+        "T21",
+        "T23",
+        "T41",
+        "T42",
+        "T45"
+      ],
+      "semantic_status": {
+        "disabled": 50
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "improved_ids": [
+      "T05",
+      "T07",
+      "T09",
+      "T11",
+      "T16",
+      "T19",
+      "T43"
+    ],
+    "regressed_ids": []
+  },
+  "priorfresh50_live": {
+    "before": {
+      "total": 50,
+      "primary_correct": 34,
+      "strict_correct": 33,
+      "failed_ids": [
+        "T01",
+        "T05",
+        "T07",
+        "T08",
+        "T09",
+        "T11",
+        "T13",
+        "T16",
+        "T17",
+        "T21",
+        "T22",
+        "T23",
+        "T25",
+        "T27",
+        "T38",
+        "T39",
+        "T47"
+      ],
+      "readonly_count": 30,
+      "readonly_effectful_ids": [
+        "T05",
+        "T11"
+      ],
+      "readonly_check_failed_ids": [
+        "T01",
+        "T05",
+        "T08",
+        "T09",
+        "T11",
+        "T13",
+        "T21"
+      ],
+      "semantic_status": {
+        "timeout": 5,
+        "skipped": 29,
+        "abstained": 1,
+        "accepted": 14,
+        "invalid_response": 1
+      },
+      "model_call_attempts": 21,
+      "call_median_ms": 2589.6708329673856,
+      "event_counts": {
+        "model.started": 21,
+        "model.failed": 5,
+        "model.completed": 16,
+        "model.costed": 16
+      },
+      "usage_sources": {
+        "provider": 16
+      }
+    },
+    "after": {
+      "total": 50,
+      "primary_correct": 44,
+      "strict_correct": 44,
+      "failed_ids": [
+        "T22",
+        "T23",
+        "T25",
+        "T27",
+        "T39",
+        "T47"
+      ],
+      "readonly_count": 30,
+      "readonly_effectful_ids": [],
+      "readonly_check_failed_ids": [],
+      "semantic_status": {
+        "accepted": 18,
+        "skipped": 32
+      },
+      "model_call_attempts": 18,
+      "call_median_ms": 1241.6097289533354,
+      "event_counts": {
+        "model.started": 18,
+        "model.completed": 18,
+        "model.costed": 18
+      },
+      "usage_sources": {
+        "provider": 18
+      }
+    },
+    "improved_ids": [
+      "T01",
+      "T05",
+      "T07",
+      "T08",
+      "T09",
+      "T11",
+      "T13",
+      "T16",
+      "T17",
+      "T21",
+      "T38"
+    ],
+    "regressed_ids": []
+  },
+  "fresh50_disabled": {
+    "before": {
+      "total": 50,
+      "primary_correct": 12,
+      "strict_correct": 9,
+      "failed_ids": [
+        "U01",
+        "U03",
+        "U04",
+        "U05",
+        "U06",
+        "U07",
+        "U08",
+        "U09",
+        "U10",
+        "U11",
+        "U12",
+        "U13",
+        "U14",
+        "U16",
+        "U17",
+        "U18",
+        "U19",
+        "U20",
+        "U22",
+        "U23",
+        "U24",
+        "U26",
+        "U27",
+        "U28",
+        "U29",
+        "U30",
+        "U31",
+        "U33",
+        "U35",
+        "U36",
+        "U37",
+        "U38",
+        "U39",
+        "U40",
+        "U41",
+        "U42",
+        "U43",
+        "U45",
+        "U46",
+        "U47",
+        "U49"
+      ],
+      "readonly_count": 30,
+      "readonly_effectful_ids": [
+        "U01",
+        "U13",
+        "U16"
+      ],
+      "readonly_check_failed_ids": [
+        "U01",
+        "U04",
+        "U06",
+        "U07",
+        "U09",
+        "U12",
+        "U13",
+        "U16",
+        "U18",
+        "U19",
+        "U22",
+        "U41",
+        "U42",
+        "U43"
+      ],
+      "semantic_status": {
+        "disabled": 50
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "after": {
+      "total": 50,
+      "primary_correct": 12,
+      "strict_correct": 9,
+      "failed_ids": [
+        "U01",
+        "U03",
+        "U04",
+        "U05",
+        "U06",
+        "U07",
+        "U08",
+        "U09",
+        "U10",
+        "U11",
+        "U12",
+        "U13",
+        "U14",
+        "U16",
+        "U17",
+        "U18",
+        "U19",
+        "U20",
+        "U22",
+        "U23",
+        "U24",
+        "U26",
+        "U27",
+        "U28",
+        "U29",
+        "U30",
+        "U31",
+        "U33",
+        "U35",
+        "U36",
+        "U37",
+        "U38",
+        "U39",
+        "U40",
+        "U41",
+        "U42",
+        "U43",
+        "U45",
+        "U46",
+        "U47",
+        "U49"
+      ],
+      "readonly_count": 30,
+      "readonly_effectful_ids": [
+        "U01",
+        "U13",
+        "U16"
+      ],
+      "readonly_check_failed_ids": [
+        "U01",
+        "U04",
+        "U06",
+        "U07",
+        "U09",
+        "U12",
+        "U13",
+        "U16",
+        "U18",
+        "U19",
+        "U22",
+        "U41",
+        "U42"
+      ],
+      "semantic_status": {
+        "disabled": 50
+      },
+      "model_call_attempts": 0,
+      "call_median_ms": null,
+      "event_counts": {},
+      "usage_sources": {}
+    },
+    "improved_ids": [],
+    "regressed_ids": []
+  },
+  "fresh50_live": {
+    "before": {
+      "total": 50,
+      "primary_correct": 33,
+      "strict_correct": 25,
+      "failed_ids": [
+        "U01",
+        "U03",
+        "U05",
+        "U06",
+        "U07",
+        "U08",
+        "U11",
+        "U12",
+        "U13",
+        "U16",
+        "U17",
+        "U20",
+        "U22",
+        "U23",
+        "U24",
+        "U28",
+        "U30",
+        "U31",
+        "U33",
+        "U37",
+        "U38",
+        "U40",
+        "U41",
+        "U43",
+        "U45"
+      ],
+      "readonly_count": 30,
+      "readonly_effectful_ids": [
+        "U01",
+        "U13",
+        "U16"
+      ],
+      "readonly_check_failed_ids": [
+        "U01",
+        "U06",
+        "U12",
+        "U13",
+        "U16",
+        "U22",
+        "U41",
+        "U43"
+      ],
+      "semantic_status": {
+        "skipped": 27,
+        "accepted": 21,
+        "low_confidence": 2
+      },
+      "model_call_attempts": 23,
+      "call_median_ms": 1515.0847079930827,
+      "event_counts": {
+        "model.started": 23,
+        "model.completed": 23,
+        "model.costed": 23
+      },
+      "usage_sources": {
+        "provider": 23
+      }
+    },
+    "after": {
+      "total": 50,
+      "primary_correct": 30,
+      "strict_correct": 23,
+      "failed_ids": [
+        "U01",
+        "U03",
+        "U05",
+        "U06",
+        "U08",
+        "U10",
+        "U11",
+        "U12",
+        "U13",
+        "U16",
+        "U17",
+        "U20",
+        "U22",
+        "U23",
+        "U24",
+        "U27",
+        "U28",
+        "U30",
+        "U31",
+        "U33",
+        "U37",
+        "U38",
+        "U40",
+        "U41",
+        "U43",
+        "U45",
+        "U47"
+      ],
+      "readonly_count": 30,
+      "readonly_effectful_ids": [
+        "U01",
+        "U13",
+        "U16"
+      ],
+      "readonly_check_failed_ids": [
+        "U01",
+        "U06",
+        "U12",
+        "U13",
+        "U16",
+        "U22",
+        "U41"
+      ],
+      "semantic_status": {
+        "skipped": 28,
+        "accepted": 20,
+        "low_confidence": 2
+      },
+      "model_call_attempts": 22,
+      "call_median_ms": 1260.921604523901,
+      "event_counts": {
+        "model.started": 22,
+        "model.completed": 22,
+        "model.costed": 22
+      },
+      "usage_sources": {
+        "provider": 22
+      }
+    },
+    "improved_ids": [
+      "U07"
+    ],
+    "regressed_ids": [
+      "U10",
+      "U27",
+      "U47"
+    ]
+  }
+}

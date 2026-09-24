@@ -1,0 +1,15 @@
+{
+  "task_id": "T19",
+  "prompt": "用户上传到大对象存储的文件偶尔传到一半就断了，整个文件得重传。希望客户端能自己断点续传、失败后带退避地重试分片。",
+  "scale": "S100",
+  "variant": "base",
+  "arm": "B",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-base",
+  "run_dir": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/live/S100-base/T19-B",
+  "snapshot": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/snapshot",
+  "fake_scenario": null,
+  "fake_target": "",
+  "max_steps": 8,
+  "call_timeout_seconds": 60.0,
+  "run_timeout_seconds": 480.0
+}

@@ -1,0 +1,132 @@
+{
+  "task_id": "T18",
+  "scale": "S100",
+  "variant": "base",
+  "arm": "A",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-base",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": null,
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": false,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283543529266081784",
+      "name": "search_skills",
+      "args": {
+        "query": "notification exactly-once idempotency duplicate welcome push"
+      },
+      "ok": true,
+      "output_sha256": "14386accfbd216df457e07265068b27bd90a364856e9dfa64ae2f3d2d65e6497",
+      "output_chars": 3651,
+      "seen_qualified_names": [
+        "notification-service/idempotency",
+        "auth-service/idempotency",
+        "cache-layer/idempotency",
+        "ci-pipeline/idempotency",
+        "database/idempotency",
+        "graphql-api/idempotency",
+        "http-client/idempotency",
+        "job-scheduler/idempotency",
+        "message-queue/idempotency",
+        "object-storage/idempotency",
+        "payment-gateway/idempotency",
+        "search-index/idempotency",
+        "message-queue/bounce-back-queue",
+        "notification-service/circuit-breaker",
+        "notification-service/debugging-playbook",
+        "notification-service/observability",
+        "notification-service/pagination",
+        "notification-service/rate-limiting",
+        "notification-service/retry-backoff",
+        "notification-service/timeout-tuning"
+      ],
+      "seen_directories": [
+        "auth-service",
+        "cache-layer",
+        "ci-pipeline",
+        "database",
+        "graphql-api",
+        "http-client",
+        "job-scheduler",
+        "message-queue",
+        "notification-service",
+        "object-storage",
+        "payment-gateway",
+        "search-index"
+      ],
+      "elapsed_ms": 53.114957991056144
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "c7065bb454ab5af10e29171610384f663e7499945e2108c5a624943db4c460d5",
+      "elapsed_ms": 12334.727332927287,
+      "type": "tool_calls",
+      "content_chars": 78,
+      "tool_call_names": [
+        "list_files",
+        "search_skills"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7632,
+        "outputTokens": 254,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "8a32b6ca33c8204fed0e777be4e9388b61ea558800df5e0206ab1ae72fad9afd",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "eb0944ed7c97bcc09f81e478c472c4b1364484e2d8c716e700c04f9264607488",
+  "system_prompt_chars": 10893,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 7632,
+  "output_tokens": 254,
+  "routing_events": [],
+  "elapsed_ms": 12942.786791943945
+}

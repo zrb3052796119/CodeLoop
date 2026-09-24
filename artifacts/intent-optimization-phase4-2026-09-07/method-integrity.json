@@ -1,0 +1,6 @@
+{
+  "score_functions_ast_identical_to_phase3": true,
+  "score_loader_identical_to_phase3": true,
+  "original_scorer_sha256": "d7239de029e47782e4fc2d220964c6640e65b88d09c9777f3469ac4221a680f0",
+  "new_dataset_branch": "priorfresh50 loads sealed phase3 scorer by absolute path; fresh50 loads phase4 author seal"
+}

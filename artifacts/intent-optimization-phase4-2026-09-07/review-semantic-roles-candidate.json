@@ -1,0 +1,464 @@
+[
+  {
+    "text": "Can this file please be updated?",
+    "actual": {
+      "raw_input": "Can this file please be updated?",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "file",
+        "please",
+        "updated"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787216.206395,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "Can this file please be updated?",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "file",
+            "please",
+            "updated"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Can this file please be updated?",
+      "context_used": false
+    },
+    "requests": [
+      "Can this file please be updated?"
+    ]
+  },
+  {
+    "text": "Could this function please be refactored?",
+    "actual": {
+      "raw_input": "Could this function please be refactored?",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [
+          "please"
+        ],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "function",
+        "please",
+        "refactored"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787216.20819,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "Could this function please be refactored?",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "function",
+            "please",
+            "refactored"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Could this function please be refactored?",
+      "context_used": false
+    },
+    "requests": [
+      "Could this function please be refactored?"
+    ]
+  },
+  {
+    "text": "Would this script please be updated to support JSON?",
+    "actual": {
+      "raw_input": "Would this script please be updated to support JSON?",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "script",
+        "please",
+        "updated",
+        "support",
+        "json"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787216.210509,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "Would this script please be updated to support JSON?",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "script",
+            "please",
+            "updated",
+            "support",
+            "json"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Would this script please be updated to support JSON?",
+      "context_used": false
+    },
+    "requests": [
+      "Would this script please be updated to support JSON?"
+    ]
+  },
+  {
+    "text": "这个脚本是否可以请你修改一下？",
+    "actual": {
+      "raw_input": "这个脚本是否可以请你修改一下？",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个脚本是否可以请你修改一下"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787216.211941,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "这个脚本是否可以请你修改一下？",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "这个脚本是否可以请你修改一下"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个脚本是否可以请你修改一下？",
+      "context_used": false
+    },
+    "requests": [
+      "这个脚本是否可以请你修改一下？"
+    ]
+  },
+  {
+    "text": "这个函数能否帮我重构一下？",
+    "actual": {
+      "raw_input": "这个函数能否帮我重构一下？",
+      "intent_type": "refactor",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个函数能否帮我重构一下"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787216.2133088,
+      "operations": [
+        {
+          "intent_type": "refactor",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "这个函数能否帮我重构一下？",
+          "span": [
+            0,
+            13
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个函数能否帮我重构一下"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-refactor.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-refactor.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            13
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个函数能否帮我重构一下？",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "Does this file update the cache?",
+    "actual": {
+      "raw_input": "Does this file update the cache?",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.915,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "file",
+        "update",
+        "cache"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787216.215025,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "Does this file update the cache?",
+          "span": [
+            0,
+            32
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "file",
+            "update",
+            "cache"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            32
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Does this file update the cache?",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "这个脚本是否会修改缓存？",
+    "actual": {
+      "raw_input": "这个脚本是否会修改缓存？",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.915,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个脚本是否会修改缓存"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787216.216253,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "这个脚本是否会修改缓存？",
+          "span": [
+            0,
+            12
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个脚本是否会修改缓存"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            12
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个脚本是否会修改缓存？",
+      "context_used": false
+    },
+    "requests": []
+  }
+]

@@ -1,0 +1,2081 @@
+[
+  {
+    "case_id": "S01",
+    "original_run_id": "run_c898801f23414cd3b72c6dd7c7574465",
+    "original_model_call_count": 1,
+    "cumulative_model_call_count": 2,
+    "original_tool_schema_sha256": "1874ce52c4ac67b86512a3ac908f5b3c7ef3034ba434cf05922e536b81648b12",
+    "original_policy": {
+      "version": 2,
+      "allowed_bindings": [
+        {
+          "qualified_name": "code-understanding/codebase-explanation",
+          "source": "project",
+          "content_digest": "e8a180242ce259904e469a00c4f745229dc549ea6c079d8adbaa69e2007692b2",
+          "routing_identity_digest": "e5035fb53693ddde5a613898aedc588c99e29f19516b60c9ace463ece320d86a"
+        }
+      ],
+      "denied_qualified_names": [],
+      "reason_code": "routed-selection"
+    },
+    "source_hashes": {
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S01/result.json": "546bed62659c845230a4a47f4c44c8d1c8b0e4e59a1066f02504c7fe9850bd46",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S01/call-01-request.json": "5edc36acec07a1341eb39c9b8d7da4f189130e1f57a98c36856bc03c378152e9",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S01/call-01-response.json": "c1f65daa0cba86b7b790b70c0a4e6a123c8de2e518d39b66a01e8be44f55aa1a",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S01/tool-schemas.json": "df9987dea9dd9f26dec15454014067d91007207a6498e1af3456025097287ad2"
+    },
+    "input_sha256": "f29fe94e7a4815de41f4203a6bcfcbb455ef624099a72405c247e10978f65e41",
+    "provider_message_projection_sha256": "6184350574637eb2924ab2a92cf54e293511599472018a6cf908b54e84864887",
+    "interventions": [
+      {
+        "tool_call_id": "call_-7283888913356159745",
+        "tool_name": "list_files",
+        "isError": true,
+        "content": "Controlled evaluation: this tool was not executed. No file contents, command output, or task results were obtained. Do not infer file contents or task outcomes from this error. 本评测没有执行此工具；不得据此推断文件内容或任务结果。",
+        "origin": "controlled_evaluation_nonexecution_notice"
+      }
+    ],
+    "body_evidence": [
+      {
+        "qualified_name": "code-understanding/codebase-explanation",
+        "tool_call_id": "call_-7283888913356159746",
+        "body_sha256": "e8a180242ce259904e469a00c4f745229dc549ea6c079d8adbaa69e2007692b2",
+        "output_sha256": "7c166097e0adbda67b76a05b6e17b1e7a48aee641bbf8b0d712a3de3c74db2f6",
+        "internal_exact": true,
+        "provider_projection_exact": true
+      }
+    ],
+    "mode": "controlled-error-feedback-body-handoff",
+    "completed": true,
+    "original_metrics_unchanged": true,
+    "tool_dispatches": 0,
+    "limits": {
+      "additional_calls": 1,
+      "timeout_seconds": 30,
+      "retries": 0,
+      "max_output_tokens": 2048
+    },
+    "limitation": "Controlled errors complete an unexecuted mixed batch; this is not spontaneous uninterrupted task execution or task success.",
+    "run_id": "run_fc419dc7a6ab4cdeba24082edc2292ec",
+    "elapsed_ms": 3606.9026249460876,
+    "response": {
+      "type": "tool_calls",
+      "content": "",
+      "kind": null,
+      "calls": [
+        {
+          "id": "call_-7283936776471701066",
+          "toolName": "file_tree",
+          "input": {
+            "max_depth": 3,
+            "path": "."
+          }
+        }
+      ],
+      "contentKind": null,
+      "reasoningContent": "The list_files tool returned a controlled evaluation error - meaning the tool was not executed in this evaluation context. I should not infer file contents from this. Let me try again or use other tools like file_tree to explore.\n\nLet me try list_files again, or use file_tree.",
+      "diagnostics": {
+        "stopReason": "tool_calls",
+        "blockTypes": [
+          "tool_calls"
+        ],
+        "ignoredBlockTypes": []
+      },
+      "usage": {
+        "input_tokens": 7776,
+        "output_tokens": 75,
+        "cache_read_tokens": 7104,
+        "cache_creation_tokens": null,
+        "source": "provider"
+      }
+    },
+    "usage": {
+      "source": "provider",
+      "inputTokens": 7776,
+      "outputTokens": 75,
+      "cacheReadTokens": 7104,
+      "cacheCreationTokens": null
+    },
+    "returned_tool_calls_not_executed": [
+      {
+        "id": "call_-7283936776471701066",
+        "toolName": "file_tree",
+        "input": {
+          "max_depth": 3,
+          "path": "."
+        }
+      }
+    ],
+    "confirmed_body_handoff_names": [
+      "code-understanding/codebase-explanation"
+    ],
+    "events": [
+      {
+        "type": "run.queued",
+        "payload": {}
+      },
+      {
+        "type": "run.started",
+        "payload": {}
+      },
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_b7b2592dede84afe8c881ed0a0fda18a"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_b7b2592dede84afe8c881ed0a0fda18a",
+          "resultType": "tool_calls",
+          "contentPresent": false,
+          "toolCallCount": 1,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 7776,
+            "outputTokens": 75,
+            "cacheReadTokens": 7104,
+            "cacheCreationTokens": null
+          },
+          "durationMs": 3606
+        }
+      },
+      {
+        "type": "run.completed",
+        "payload": {
+          "coordination": {
+            "parentInputTokens": 7776,
+            "parentOutputTokens": 75,
+            "subagentInputTokens": 0,
+            "subagentOutputTokens": 0
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case_id": "S02",
+    "original_run_id": "run_106f72e773184ac0bbf6cc3cdcba2aca",
+    "original_model_call_count": 1,
+    "cumulative_model_call_count": 2,
+    "original_tool_schema_sha256": "1874ce52c4ac67b86512a3ac908f5b3c7ef3034ba434cf05922e536b81648b12",
+    "original_policy": {
+      "version": 2,
+      "allowed_bindings": [
+        {
+          "qualified_name": "code-understanding/design-review",
+          "source": "project",
+          "content_digest": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+          "routing_identity_digest": "5474e2c40f8cd27630aedd67aa1fe241dd6d066ce19d6d9598ac6f7ec49df830"
+        }
+      ],
+      "denied_qualified_names": [],
+      "reason_code": "routed-selection"
+    },
+    "source_hashes": {
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S02/result.json": "d43895853ee2866d9b35be2493a144598a72c40401b01605fca3f0eef8547d53",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S02/call-01-request.json": "038421a25fb5b91c155b92c4436c2821344a71d0af5f595af7f5efeb9470faf4",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S02/call-01-response.json": "3b7358b42e6b4f5868841c8fcc4ac13e2903f849b29bf66f69018a09ea052b34",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S02/tool-schemas.json": "df9987dea9dd9f26dec15454014067d91007207a6498e1af3456025097287ad2"
+    },
+    "input_sha256": "e13448f6f555f944b70884ae40b0b5d83d2eff0bf1c1aab3278766ef7f782ca8",
+    "provider_message_projection_sha256": "280f0832278be3e21c2b9fa508369500ca4200a2b5a379647ec8c29c0ba90e3a",
+    "interventions": [
+      {
+        "tool_call_id": "call_-7283974984500770530",
+        "tool_name": "file_tree",
+        "isError": true,
+        "content": "Controlled evaluation: this tool was not executed. No file contents, command output, or task results were obtained. Do not infer file contents or task outcomes from this error. 本评测没有执行此工具；不得据此推断文件内容或任务结果。",
+        "origin": "controlled_evaluation_nonexecution_notice"
+      }
+    ],
+    "body_evidence": [
+      {
+        "qualified_name": "code-understanding/design-review",
+        "tool_call_id": "call_-7283974984500770531",
+        "body_sha256": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+        "output_sha256": "5c39efbaede31c14f60df344709c166b4b19ba378e45402e3ec90ca6411bf2e3",
+        "internal_exact": true,
+        "provider_projection_exact": true
+      }
+    ],
+    "mode": "controlled-error-feedback-body-handoff",
+    "completed": true,
+    "original_metrics_unchanged": true,
+    "tool_dispatches": 0,
+    "limits": {
+      "additional_calls": 1,
+      "timeout_seconds": 30,
+      "retries": 0,
+      "max_output_tokens": 2048
+    },
+    "limitation": "Controlled errors complete an unexecuted mixed batch; this is not spontaneous uninterrupted task execution or task success.",
+    "run_id": "run_8aed7412295b4b9083bb2c1f99d4c69f",
+    "elapsed_ms": 5238.306874991395,
+    "response": {
+      "type": "tool_calls",
+      "content": "技能已加载。文件树工具被拦截，改用 list_files 探索仓库结构。",
+      "kind": null,
+      "calls": [
+        {
+          "id": "call_-7283939456531295300",
+          "toolName": "list_files",
+          "input": {
+            "path": "."
+          }
+        }
+      ],
+      "contentKind": null,
+      "reasoningContent": "The file_tree tool returned an error message about controlled evaluation. Let me try list_files instead.",
+      "diagnostics": {
+        "stopReason": "tool_calls",
+        "blockTypes": [
+          "tool_calls"
+        ],
+        "ignoredBlockTypes": []
+      },
+      "usage": {
+        "input_tokens": 7940,
+        "output_tokens": 51,
+        "cache_read_tokens": 0,
+        "cache_creation_tokens": null,
+        "source": "provider"
+      }
+    },
+    "usage": {
+      "source": "provider",
+      "inputTokens": 7940,
+      "outputTokens": 51,
+      "cacheReadTokens": 0,
+      "cacheCreationTokens": null
+    },
+    "returned_tool_calls_not_executed": [
+      {
+        "id": "call_-7283939456531295300",
+        "toolName": "list_files",
+        "input": {
+          "path": "."
+        }
+      }
+    ],
+    "confirmed_body_handoff_names": [
+      "code-understanding/design-review"
+    ],
+    "events": [
+      {
+        "type": "run.queued",
+        "payload": {}
+      },
+      {
+        "type": "run.started",
+        "payload": {}
+      },
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_4118da67c3cc4b71bbb022ff35e004e9"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_4118da67c3cc4b71bbb022ff35e004e9",
+          "resultType": "tool_calls",
+          "contentPresent": true,
+          "toolCallCount": 1,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 7940,
+            "outputTokens": 51,
+            "cacheReadTokens": 0,
+            "cacheCreationTokens": null
+          },
+          "durationMs": 5238
+        }
+      },
+      {
+        "type": "run.completed",
+        "payload": {
+          "coordination": {
+            "parentInputTokens": 7940,
+            "parentOutputTokens": 51,
+            "subagentInputTokens": 0,
+            "subagentOutputTokens": 0
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case_id": "S06",
+    "original_run_id": "run_a19e003194934d63853be082dfa4178f",
+    "original_model_call_count": 1,
+    "cumulative_model_call_count": 2,
+    "original_tool_schema_sha256": "1874ce52c4ac67b86512a3ac908f5b3c7ef3034ba434cf05922e536b81648b12",
+    "original_policy": {
+      "version": 2,
+      "allowed_bindings": [
+        {
+          "qualified_name": "code-skills/minicode-study",
+          "source": "project",
+          "content_digest": "3759d5f3f8faed34a100c6638da7ffc20a479c1b0d5d8801c9f2518c44c0fe7b",
+          "routing_identity_digest": "5f86794285fdb3e51c489bef37cebd1c6efcdb9a17aa1d618abcf1763dbaca87"
+        },
+        {
+          "qualified_name": "code-understanding/codebase-explanation",
+          "source": "project",
+          "content_digest": "e8a180242ce259904e469a00c4f745229dc549ea6c079d8adbaa69e2007692b2",
+          "routing_identity_digest": "e5035fb53693ddde5a613898aedc588c99e29f19516b60c9ace463ece320d86a"
+        },
+        {
+          "qualified_name": "code-understanding/design-review",
+          "source": "project",
+          "content_digest": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+          "routing_identity_digest": "5474e2c40f8cd27630aedd67aa1fe241dd6d066ce19d6d9598ac6f7ec49df830"
+        },
+        {
+          "qualified_name": "code-understanding/minicode-learning-coach-demo",
+          "source": "project",
+          "content_digest": "9f8b473f7db0a0e955faa5901fbcfe4799e0d63568fc3d8a97939a41c5782176",
+          "routing_identity_digest": "1e5ea39f536bc30529a039abeb4a40a48bc5083dfd6d2996b075241d0ecdcf96"
+        },
+        {
+          "qualified_name": "debugging/concurrency-debugging",
+          "source": "project",
+          "content_digest": "a497b728ff77f9ccf8d6a7ae118a27019c3966d9d401be7e1c817531e3a520e0",
+          "routing_identity_digest": "ad4a3c47f7079ae99e08f3d9eadf8dff92ffa889a0734984fdff8d3ea9f2f412"
+        },
+        {
+          "qualified_name": "debugging/pytest-debugging",
+          "source": "project",
+          "content_digest": "a0d2254a350cf3e84255d7b2a069d4a07081d8a40608d654b976c5261603ab4d",
+          "routing_identity_digest": "f8c756241ceb5f31ce94288c0d7e911761e608f6c0ea6e4430180bc06716911b"
+        },
+        {
+          "qualified_name": "dependencies/dependency-hygiene",
+          "source": "project",
+          "content_digest": "134bc00fb694afd8cea65dc6b9d6e35c83cfe868dbe67475a07d35502ef0f15b",
+          "routing_identity_digest": "bd8fece2a9ba2ed5f5c601ba8164b14964eb259dfbe54232d4d94a51bfc54e60"
+        },
+        {
+          "qualified_name": "documentation/readme-authoring",
+          "source": "project",
+          "content_digest": "6990db45ca8ef1abb0eb12dca4daf9f128e604f12575292f976649ec6524c706",
+          "routing_identity_digest": "65bd3534d197fac472b9f083a0921bdbe38cfbf1fa5cd588b18d4b9559583bb8"
+        },
+        {
+          "qualified_name": "git/commit-hygiene",
+          "source": "project",
+          "content_digest": "2fc407284133dcb47bdc473b266ee7085e28f49143c9b6a183f2a0ec84a5e483",
+          "routing_identity_digest": "119444341c2252c379caa043e5182ccbf49cbc8a4330ec3d63a65eb7a3bbd0ce"
+        },
+        {
+          "qualified_name": "minicode",
+          "source": "compat_project",
+          "content_digest": "21d8ab5727f1cb4442cb12f502e7bf517e51728d9bc08839b69bebff2d8a081f",
+          "routing_identity_digest": "21d8ab5727f1cb4442cb12f502e7bf517e51728d9bc08839b69bebff2d8a081f"
+        },
+        {
+          "qualified_name": "performance/hotpath-profiling",
+          "source": "project",
+          "content_digest": "71d1b9c5d03055d792ede40e928bdcd0b249daa60ee3fff52593cec730c83f4d",
+          "routing_identity_digest": "2eea1539b0f252ceab7bdb9f005fd72ca5811a4cc11a286f964c6b2b66791842"
+        },
+        {
+          "qualified_name": "quality/lint-and-static-cleanup",
+          "source": "project",
+          "content_digest": "05fb64c5a85d739a2b065d36568ac847e40c1465faf865437528be31f1ff45d6",
+          "routing_identity_digest": "36de4a56339c71a3cd31a3d78e6995b1a87a105431825ecff4c7a180cd22c127"
+        },
+        {
+          "qualified_name": "refactoring/safe-refactor",
+          "source": "project",
+          "content_digest": "f7f778a3110a42383e46ca78bf7fe511317398195dc6799f179a8204d6e0a0db",
+          "routing_identity_digest": "3cfb7d257548ee8c9bd121f153f3861a05819de2be8729a0841029587d7a24bd"
+        },
+        {
+          "qualified_name": "refactoring/structural-rename",
+          "source": "project",
+          "content_digest": "cc7bef8055026ee29f6066f17ebfea9a9e67c542be7758c4beeb0989b7c0c203",
+          "routing_identity_digest": "ee338a2f5fa51a4d796bf23f386781cf466d55c30b39ec85fa921981d43f304a"
+        },
+        {
+          "qualified_name": "security/secret-and-injection-review",
+          "source": "project",
+          "content_digest": "706a8e5e732bcdf8cd54f095fb9a09026a07f9ba605f533e06b7f67904d1e0db",
+          "routing_identity_digest": "93ade5049a8cc8f674495e77c35cedb656d25195b08c6128c2af92e80aea14a6"
+        },
+        {
+          "qualified_name": "testing/regression-from-bug-report",
+          "source": "project",
+          "content_digest": "d889a82bd8f291c8a65d8446c405afbc3e5f4ca965e4040fee8c13c4c6603b48",
+          "routing_identity_digest": "82f1511f9f03c574b1398010d7fcc32f88ec3b1fcfe36a9371541cd66e052de8"
+        },
+        {
+          "qualified_name": "testing/test-driven-development",
+          "source": "project",
+          "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+          "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7"
+        }
+      ],
+      "denied_qualified_names": [],
+      "reason_code": "inventory-fallback"
+    },
+    "source_hashes": {
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S06/result.json": "311b4148414847ad50717223f40b60aa830b034cd0a8a88d230e0bf9af614301",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S06/call-01-request.json": "83a5db5dd8dde1b06a08f7c85c6276eba0fee6699b0ec3faeb0446623efb3eb8",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S06/call-01-response.json": "113a324031a972a5c3ea937cab145ae552dd6f027b90487acbd7acd5ef547bd3",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S06/tool-schemas.json": "df9987dea9dd9f26dec15454014067d91007207a6498e1af3456025097287ad2"
+    },
+    "input_sha256": "73a8b7277f379d881865a751a0f6dd16299c9ef38253ec899ed0e53773eee8d4",
+    "provider_message_projection_sha256": "5caa3b5cb752a8e92554f7618f800646b997b9ffb5c78e59deb3ff6c9f3a9710",
+    "interventions": [
+      {
+        "tool_call_id": "call_-7283937601105421480",
+        "tool_name": "file_tree",
+        "isError": true,
+        "content": "Controlled evaluation: this tool was not executed. No file contents, command output, or task results were obtained. Do not infer file contents or task outcomes from this error. 本评测没有执行此工具；不得据此推断文件内容或任务结果。",
+        "origin": "controlled_evaluation_nonexecution_notice"
+      }
+    ],
+    "body_evidence": [
+      {
+        "qualified_name": "security/secret-and-injection-review",
+        "tool_call_id": "call_-7283937601105421481",
+        "body_sha256": "706a8e5e732bcdf8cd54f095fb9a09026a07f9ba605f533e06b7f67904d1e0db",
+        "output_sha256": "fb407360d8419d9259f22d7f1bc85497e7e73f25614d2c340cfb1c3fe4d6322c",
+        "internal_exact": true,
+        "provider_projection_exact": true
+      }
+    ],
+    "mode": "controlled-error-feedback-body-handoff",
+    "completed": true,
+    "original_metrics_unchanged": true,
+    "tool_dispatches": 0,
+    "limits": {
+      "additional_calls": 1,
+      "timeout_seconds": 30,
+      "retries": 0,
+      "max_output_tokens": 2048
+    },
+    "limitation": "Controlled errors complete an unexecuted mixed batch; this is not spontaneous uninterrupted task execution or task success.",
+    "run_id": "run_763175fd6e834625a8e3881dd12354bb",
+    "elapsed_ms": 4515.00808307901,
+    "response": {
+      "type": "tool_calls",
+      "content": "",
+      "kind": null,
+      "calls": [
+        {
+          "id": "call_-7283972854196992832",
+          "toolName": "list_files",
+          "input": {
+            "path": "."
+          }
+        }
+      ],
+      "contentKind": null,
+      "reasoningContent": "The file_tree tool was not executed (controlled evaluation). Let me use list_files instead to explore the repository.",
+      "diagnostics": {
+        "stopReason": "tool_calls",
+        "blockTypes": [
+          "tool_calls"
+        ],
+        "ignoredBlockTypes": []
+      },
+      "usage": {
+        "input_tokens": 7851,
+        "output_tokens": 34,
+        "cache_read_tokens": 7168,
+        "cache_creation_tokens": null,
+        "source": "provider"
+      }
+    },
+    "usage": {
+      "source": "provider",
+      "inputTokens": 7851,
+      "outputTokens": 34,
+      "cacheReadTokens": 7168,
+      "cacheCreationTokens": null
+    },
+    "returned_tool_calls_not_executed": [
+      {
+        "id": "call_-7283972854196992832",
+        "toolName": "list_files",
+        "input": {
+          "path": "."
+        }
+      }
+    ],
+    "confirmed_body_handoff_names": [
+      "security/secret-and-injection-review"
+    ],
+    "events": [
+      {
+        "type": "run.queued",
+        "payload": {}
+      },
+      {
+        "type": "run.started",
+        "payload": {}
+      },
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_0f819619545d40fbb40534f575c3d413"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_0f819619545d40fbb40534f575c3d413",
+          "resultType": "tool_calls",
+          "contentPresent": false,
+          "toolCallCount": 1,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 7851,
+            "outputTokens": 34,
+            "cacheReadTokens": 7168,
+            "cacheCreationTokens": null
+          },
+          "durationMs": 4515
+        }
+      },
+      {
+        "type": "run.completed",
+        "payload": {
+          "coordination": {
+            "parentInputTokens": 7851,
+            "parentOutputTokens": 34,
+            "subagentInputTokens": 0,
+            "subagentOutputTokens": 0
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case_id": "S07",
+    "original_run_id": "run_559aaa9e0c8644ce9d67cef1773f9cf6",
+    "original_model_call_count": 1,
+    "cumulative_model_call_count": 2,
+    "original_tool_schema_sha256": "1874ce52c4ac67b86512a3ac908f5b3c7ef3034ba434cf05922e536b81648b12",
+    "original_policy": {
+      "version": 2,
+      "allowed_bindings": [
+        {
+          "qualified_name": "testing/test-driven-development",
+          "source": "project",
+          "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+          "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7"
+        }
+      ],
+      "denied_qualified_names": [],
+      "reason_code": "routed-selection"
+    },
+    "source_hashes": {
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S07/result.json": "a7e80b22d201d2fe1c333842bcfb31f5199fa9f42462ae0620299af0bbe6cd55",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S07/call-01-request.json": "950518b8054c4fc13965e9002dabaa2cf6343315348fe76a76a10055f4b42d15",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S07/call-01-response.json": "d564390ad9ae0abddda0f8c80c0697303f64d0923b392131b3ac212070d5772d",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S07/tool-schemas.json": "df9987dea9dd9f26dec15454014067d91007207a6498e1af3456025097287ad2"
+    },
+    "input_sha256": "a381f65205cd75d4f7d180690685928f1dfb142df16eefaeeee6983e29dd7962",
+    "provider_message_projection_sha256": "cfc7402f6917266a5874070f4b7a3a7c0b2ad4a91e6075e4c446a44b9b7cf3e7",
+    "interventions": [
+      {
+        "tool_call_id": "call_-7283958423106879185",
+        "tool_name": "grep_files",
+        "isError": true,
+        "content": "Controlled evaluation: this tool was not executed. No file contents, command output, or task results were obtained. Do not infer file contents or task outcomes from this error. 本评测没有执行此工具；不得据此推断文件内容或任务结果。",
+        "origin": "controlled_evaluation_nonexecution_notice"
+      }
+    ],
+    "body_evidence": [
+      {
+        "qualified_name": "testing/test-driven-development",
+        "tool_call_id": "call_-7283958423106879186",
+        "body_sha256": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+        "output_sha256": "0d814faced7a68ba636263ff092902b287b9de5eadb3d4f1c2b7e748e0adffd1",
+        "internal_exact": true,
+        "provider_projection_exact": true
+      }
+    ],
+    "mode": "controlled-error-feedback-body-handoff",
+    "completed": true,
+    "original_metrics_unchanged": true,
+    "tool_dispatches": 0,
+    "limits": {
+      "additional_calls": 1,
+      "timeout_seconds": 30,
+      "retries": 0,
+      "max_output_tokens": 2048
+    },
+    "limitation": "Controlled errors complete an unexecuted mixed batch; this is not spontaneous uninterrupted task execution or task success.",
+    "run_id": "run_a9acb5d9f7ee4e9199b1d16688577498",
+    "elapsed_ms": 6322.0338330138475,
+    "response": {
+      "type": "tool_calls",
+      "content": "The skill is loaded. The grep call didn't execute, so let me retry discovery of the failing test.",
+      "kind": null,
+      "calls": [
+        {
+          "id": "call_-7283936845191183963",
+          "toolName": "grep_files",
+          "input": {
+            "pattern": "test_empty_batch"
+          }
+        }
+      ],
+      "contentKind": null,
+      "reasoningContent": "The grep tool returned a controlled evaluation error — the tool was not executed. I need to retry, perhaps the tool call is being simulated/blocked. Let me try again with grep_files, or use run_command with grep, or list files first.",
+      "diagnostics": {
+        "stopReason": "tool_calls",
+        "blockTypes": [
+          "tool_calls"
+        ],
+        "ignoredBlockTypes": []
+      },
+      "usage": {
+        "input_tokens": 7672,
+        "output_tokens": 86,
+        "cache_read_tokens": 7104,
+        "cache_creation_tokens": null,
+        "source": "provider"
+      }
+    },
+    "usage": {
+      "source": "provider",
+      "inputTokens": 7672,
+      "outputTokens": 86,
+      "cacheReadTokens": 7104,
+      "cacheCreationTokens": null
+    },
+    "returned_tool_calls_not_executed": [
+      {
+        "id": "call_-7283936845191183963",
+        "toolName": "grep_files",
+        "input": {
+          "pattern": "test_empty_batch"
+        }
+      }
+    ],
+    "confirmed_body_handoff_names": [
+      "testing/test-driven-development"
+    ],
+    "events": [
+      {
+        "type": "run.queued",
+        "payload": {}
+      },
+      {
+        "type": "run.started",
+        "payload": {}
+      },
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_886a8a64adad4ff784a1b5d4a7cfb313"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_886a8a64adad4ff784a1b5d4a7cfb313",
+          "resultType": "tool_calls",
+          "contentPresent": true,
+          "toolCallCount": 1,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 7672,
+            "outputTokens": 86,
+            "cacheReadTokens": 7104,
+            "cacheCreationTokens": null
+          },
+          "durationMs": 6322
+        }
+      },
+      {
+        "type": "run.completed",
+        "payload": {
+          "coordination": {
+            "parentInputTokens": 7672,
+            "parentOutputTokens": 86,
+            "subagentInputTokens": 0,
+            "subagentOutputTokens": 0
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case_id": "S08",
+    "original_run_id": "run_68e4672e1b794d3c879f920a18263c7e",
+    "original_model_call_count": 1,
+    "cumulative_model_call_count": 2,
+    "original_tool_schema_sha256": "1874ce52c4ac67b86512a3ac908f5b3c7ef3034ba434cf05922e536b81648b12",
+    "original_policy": {
+      "version": 2,
+      "allowed_bindings": [
+        {
+          "qualified_name": "code-skills/minicode-study",
+          "source": "project",
+          "content_digest": "3759d5f3f8faed34a100c6638da7ffc20a479c1b0d5d8801c9f2518c44c0fe7b",
+          "routing_identity_digest": "5f86794285fdb3e51c489bef37cebd1c6efcdb9a17aa1d618abcf1763dbaca87"
+        },
+        {
+          "qualified_name": "code-understanding/codebase-explanation",
+          "source": "project",
+          "content_digest": "e8a180242ce259904e469a00c4f745229dc549ea6c079d8adbaa69e2007692b2",
+          "routing_identity_digest": "e5035fb53693ddde5a613898aedc588c99e29f19516b60c9ace463ece320d86a"
+        },
+        {
+          "qualified_name": "code-understanding/design-review",
+          "source": "project",
+          "content_digest": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+          "routing_identity_digest": "5474e2c40f8cd27630aedd67aa1fe241dd6d066ce19d6d9598ac6f7ec49df830"
+        },
+        {
+          "qualified_name": "code-understanding/minicode-learning-coach-demo",
+          "source": "project",
+          "content_digest": "9f8b473f7db0a0e955faa5901fbcfe4799e0d63568fc3d8a97939a41c5782176",
+          "routing_identity_digest": "1e5ea39f536bc30529a039abeb4a40a48bc5083dfd6d2996b075241d0ecdcf96"
+        },
+        {
+          "qualified_name": "debugging/concurrency-debugging",
+          "source": "project",
+          "content_digest": "a497b728ff77f9ccf8d6a7ae118a27019c3966d9d401be7e1c817531e3a520e0",
+          "routing_identity_digest": "ad4a3c47f7079ae99e08f3d9eadf8dff92ffa889a0734984fdff8d3ea9f2f412"
+        },
+        {
+          "qualified_name": "debugging/pytest-debugging",
+          "source": "project",
+          "content_digest": "a0d2254a350cf3e84255d7b2a069d4a07081d8a40608d654b976c5261603ab4d",
+          "routing_identity_digest": "f8c756241ceb5f31ce94288c0d7e911761e608f6c0ea6e4430180bc06716911b"
+        },
+        {
+          "qualified_name": "dependencies/dependency-hygiene",
+          "source": "project",
+          "content_digest": "134bc00fb694afd8cea65dc6b9d6e35c83cfe868dbe67475a07d35502ef0f15b",
+          "routing_identity_digest": "bd8fece2a9ba2ed5f5c601ba8164b14964eb259dfbe54232d4d94a51bfc54e60"
+        },
+        {
+          "qualified_name": "documentation/readme-authoring",
+          "source": "project",
+          "content_digest": "6990db45ca8ef1abb0eb12dca4daf9f128e604f12575292f976649ec6524c706",
+          "routing_identity_digest": "65bd3534d197fac472b9f083a0921bdbe38cfbf1fa5cd588b18d4b9559583bb8"
+        },
+        {
+          "qualified_name": "git/commit-hygiene",
+          "source": "project",
+          "content_digest": "2fc407284133dcb47bdc473b266ee7085e28f49143c9b6a183f2a0ec84a5e483",
+          "routing_identity_digest": "119444341c2252c379caa043e5182ccbf49cbc8a4330ec3d63a65eb7a3bbd0ce"
+        },
+        {
+          "qualified_name": "minicode",
+          "source": "compat_project",
+          "content_digest": "21d8ab5727f1cb4442cb12f502e7bf517e51728d9bc08839b69bebff2d8a081f",
+          "routing_identity_digest": "21d8ab5727f1cb4442cb12f502e7bf517e51728d9bc08839b69bebff2d8a081f"
+        },
+        {
+          "qualified_name": "performance/hotpath-profiling",
+          "source": "project",
+          "content_digest": "71d1b9c5d03055d792ede40e928bdcd0b249daa60ee3fff52593cec730c83f4d",
+          "routing_identity_digest": "2eea1539b0f252ceab7bdb9f005fd72ca5811a4cc11a286f964c6b2b66791842"
+        },
+        {
+          "qualified_name": "quality/lint-and-static-cleanup",
+          "source": "project",
+          "content_digest": "05fb64c5a85d739a2b065d36568ac847e40c1465faf865437528be31f1ff45d6",
+          "routing_identity_digest": "36de4a56339c71a3cd31a3d78e6995b1a87a105431825ecff4c7a180cd22c127"
+        },
+        {
+          "qualified_name": "refactoring/safe-refactor",
+          "source": "project",
+          "content_digest": "f7f778a3110a42383e46ca78bf7fe511317398195dc6799f179a8204d6e0a0db",
+          "routing_identity_digest": "3cfb7d257548ee8c9bd121f153f3861a05819de2be8729a0841029587d7a24bd"
+        },
+        {
+          "qualified_name": "refactoring/structural-rename",
+          "source": "project",
+          "content_digest": "cc7bef8055026ee29f6066f17ebfea9a9e67c542be7758c4beeb0989b7c0c203",
+          "routing_identity_digest": "ee338a2f5fa51a4d796bf23f386781cf466d55c30b39ec85fa921981d43f304a"
+        },
+        {
+          "qualified_name": "security/secret-and-injection-review",
+          "source": "project",
+          "content_digest": "706a8e5e732bcdf8cd54f095fb9a09026a07f9ba605f533e06b7f67904d1e0db",
+          "routing_identity_digest": "93ade5049a8cc8f674495e77c35cedb656d25195b08c6128c2af92e80aea14a6"
+        },
+        {
+          "qualified_name": "testing/regression-from-bug-report",
+          "source": "project",
+          "content_digest": "d889a82bd8f291c8a65d8446c405afbc3e5f4ca965e4040fee8c13c4c6603b48",
+          "routing_identity_digest": "82f1511f9f03c574b1398010d7fcc32f88ec3b1fcfe36a9371541cd66e052de8"
+        },
+        {
+          "qualified_name": "testing/test-driven-development",
+          "source": "project",
+          "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+          "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7"
+        }
+      ],
+      "denied_qualified_names": [],
+      "reason_code": "inventory-fallback"
+    },
+    "source_hashes": {
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S08/result.json": "9a2fd1e3965a436df1e1b186388211d0abeca79352214c54d74c45eb78e19c8e",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S08/call-01-request.json": "5afb9c9ba47200d17fe3ba2d989e6105c0df363137b858b15b9892de44886db4",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S08/call-01-response.json": "7191d459e0af4f5887b694cc8dbe1bf6abff06a44fcfe67bd1043a2fb1d763fb",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S08/tool-schemas.json": "df9987dea9dd9f26dec15454014067d91007207a6498e1af3456025097287ad2"
+    },
+    "input_sha256": "977773da52c5a330defc155d5201bc0c73c445f83cf89fccd5c4417d5694e567",
+    "provider_message_projection_sha256": "2868312e30b6788fb990365b897ae74c522bfcd69238beb66aef2000e3bb44b0",
+    "interventions": [
+      {
+        "tool_call_id": "call_-7283961962159928921",
+        "tool_name": "grep_files",
+        "isError": true,
+        "content": "Controlled evaluation: this tool was not executed. No file contents, command output, or task results were obtained. Do not infer file contents or task outcomes from this error. 本评测没有执行此工具；不得据此推断文件内容或任务结果。",
+        "origin": "controlled_evaluation_nonexecution_notice"
+      }
+    ],
+    "body_evidence": [
+      {
+        "qualified_name": "debugging/concurrency-debugging",
+        "tool_call_id": "call_-7283961962159928922",
+        "body_sha256": "a497b728ff77f9ccf8d6a7ae118a27019c3966d9d401be7e1c817531e3a520e0",
+        "output_sha256": "77a70b31c52175735806d84894ccdf4b651b6788d699950137014851581b4805",
+        "internal_exact": true,
+        "provider_projection_exact": true
+      }
+    ],
+    "mode": "controlled-error-feedback-body-handoff",
+    "completed": true,
+    "original_metrics_unchanged": true,
+    "tool_dispatches": 0,
+    "limits": {
+      "additional_calls": 1,
+      "timeout_seconds": 30,
+      "retries": 0,
+      "max_output_tokens": 2048
+    },
+    "limitation": "Controlled errors complete an unexecuted mixed batch; this is not spontaneous uninterrupted task execution or task success.",
+    "run_id": "run_5970488281404324b1db617a5f3f1b3b",
+    "elapsed_ms": 6684.643042040989,
+    "response": {
+      "type": "tool_calls",
+      "content": "",
+      "kind": null,
+      "calls": [
+        {
+          "id": "call_-7283965329414285265",
+          "toolName": "file_tree",
+          "input": {
+            "max_depth": 3,
+            "pattern": "*.py"
+          }
+        }
+      ],
+      "contentKind": null,
+      "reasoningContent": "The grep was blocked by the evaluation sandbox. Let me try to explore the repository structure first to understand what's here, then look for the worker code. Actually, the user said \"我这里有两个后台 worker\" (I have two background workers here) — they might be in this repo, or the user may be describing a hypothetical/general scenario.\n\nLet me check the repo structure first.",
+      "diagnostics": {
+        "stopReason": "tool_calls",
+        "blockTypes": [
+          "tool_calls"
+        ],
+        "ignoredBlockTypes": []
+      },
+      "usage": {
+        "input_tokens": 7976,
+        "output_tokens": 98,
+        "cache_read_tokens": 0,
+        "cache_creation_tokens": null,
+        "source": "provider"
+      }
+    },
+    "usage": {
+      "source": "provider",
+      "inputTokens": 7976,
+      "outputTokens": 98,
+      "cacheReadTokens": 0,
+      "cacheCreationTokens": null
+    },
+    "returned_tool_calls_not_executed": [
+      {
+        "id": "call_-7283965329414285265",
+        "toolName": "file_tree",
+        "input": {
+          "max_depth": 3,
+          "pattern": "*.py"
+        }
+      }
+    ],
+    "confirmed_body_handoff_names": [
+      "debugging/concurrency-debugging"
+    ],
+    "events": [
+      {
+        "type": "run.queued",
+        "payload": {}
+      },
+      {
+        "type": "run.started",
+        "payload": {}
+      },
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_1140b0e83fd64d9283b0c50800f024cc"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_1140b0e83fd64d9283b0c50800f024cc",
+          "resultType": "tool_calls",
+          "contentPresent": false,
+          "toolCallCount": 1,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 7976,
+            "outputTokens": 98,
+            "cacheReadTokens": 0,
+            "cacheCreationTokens": null
+          },
+          "durationMs": 6684
+        }
+      },
+      {
+        "type": "run.completed",
+        "payload": {
+          "coordination": {
+            "parentInputTokens": 7976,
+            "parentOutputTokens": 98,
+            "subagentInputTokens": 0,
+            "subagentOutputTokens": 0
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case_id": "S09",
+    "original_run_id": "run_95de7cdedc5546229205d2d865b7864f",
+    "original_model_call_count": 1,
+    "cumulative_model_call_count": 2,
+    "original_tool_schema_sha256": "1874ce52c4ac67b86512a3ac908f5b3c7ef3034ba434cf05922e536b81648b12",
+    "original_policy": {
+      "version": 2,
+      "allowed_bindings": [
+        {
+          "qualified_name": "dependencies/dependency-hygiene",
+          "source": "project",
+          "content_digest": "134bc00fb694afd8cea65dc6b9d6e35c83cfe868dbe67475a07d35502ef0f15b",
+          "routing_identity_digest": "bd8fece2a9ba2ed5f5c601ba8164b14964eb259dfbe54232d4d94a51bfc54e60"
+        }
+      ],
+      "denied_qualified_names": [],
+      "reason_code": "routed-selection"
+    },
+    "source_hashes": {
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S09/result.json": "fab98af9698d4b53e987dfb77cf204e7154a17d2ce868de32d7fcd3ee415b270",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S09/call-01-request.json": "3e6896bef57483bd57b7d40f897f3ef1d65a3895fa50c2e161455cee7318d11f",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S09/call-01-response.json": "620846ac2bd7e73fa2104482c824876e123941b7c4024533558c49774ae3fea3",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S09/tool-schemas.json": "df9987dea9dd9f26dec15454014067d91007207a6498e1af3456025097287ad2"
+    },
+    "input_sha256": "2505abb0841646f32703be9c35358ff07e35fb809a8632f24a6cd5c1f1a8b0f5",
+    "provider_message_projection_sha256": "ac01a1c95629e1e90d9487623ee5d92e9e69b9015a806af6f736a1ebb22068a0",
+    "interventions": [
+      {
+        "tool_call_id": "call_-7283943201742778540",
+        "tool_name": "file_tree",
+        "isError": true,
+        "content": "Controlled evaluation: this tool was not executed. No file contents, command output, or task results were obtained. Do not infer file contents or task outcomes from this error. 本评测没有执行此工具；不得据此推断文件内容或任务结果。",
+        "origin": "controlled_evaluation_nonexecution_notice"
+      }
+    ],
+    "body_evidence": [
+      {
+        "qualified_name": "dependencies/dependency-hygiene",
+        "tool_call_id": "call_-7283943201742778541",
+        "body_sha256": "134bc00fb694afd8cea65dc6b9d6e35c83cfe868dbe67475a07d35502ef0f15b",
+        "output_sha256": "177ce13c80cf5f3b5185cd29c1b465c143b1ae7fbb7b38889071576b87d3ce51",
+        "internal_exact": true,
+        "provider_projection_exact": true
+      }
+    ],
+    "mode": "controlled-error-feedback-body-handoff",
+    "completed": true,
+    "original_metrics_unchanged": true,
+    "tool_dispatches": 0,
+    "limits": {
+      "additional_calls": 1,
+      "timeout_seconds": 30,
+      "retries": 0,
+      "max_output_tokens": 2048
+    },
+    "limitation": "Controlled errors complete an unexecuted mixed batch; this is not spontaneous uninterrupted task execution or task success.",
+    "run_id": "run_bec0ecfc61c246ddbc1d709aee9e0f52",
+    "elapsed_ms": 5414.178375038318,
+    "response": {
+      "type": "tool_calls",
+      "content": "技能已加载。现在按流程执行：先找到依赖声明文件和锁定文件，再全局搜索该包的调用。",
+      "kind": null,
+      "calls": [
+        {
+          "id": "call_-7283937979062546577",
+          "toolName": "list_files",
+          "input": {
+            "path": "."
+          }
+        }
+      ],
+      "contentKind": null,
+      "reasoningContent": "The skill loaded. Now I need to explore the project structure. The file_tree call was blocked by evaluation, let me use list_files instead.",
+      "diagnostics": {
+        "stopReason": "tool_calls",
+        "blockTypes": [
+          "tool_calls"
+        ],
+        "ignoredBlockTypes": []
+      },
+      "usage": {
+        "input_tokens": 7821,
+        "output_tokens": 67,
+        "cache_read_tokens": 7104,
+        "cache_creation_tokens": null,
+        "source": "provider"
+      }
+    },
+    "usage": {
+      "source": "provider",
+      "inputTokens": 7821,
+      "outputTokens": 67,
+      "cacheReadTokens": 7104,
+      "cacheCreationTokens": null
+    },
+    "returned_tool_calls_not_executed": [
+      {
+        "id": "call_-7283937979062546577",
+        "toolName": "list_files",
+        "input": {
+          "path": "."
+        }
+      }
+    ],
+    "confirmed_body_handoff_names": [
+      "dependencies/dependency-hygiene"
+    ],
+    "events": [
+      {
+        "type": "run.queued",
+        "payload": {}
+      },
+      {
+        "type": "run.started",
+        "payload": {}
+      },
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_32abb179c1864c108f7291c5987825d5"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_32abb179c1864c108f7291c5987825d5",
+          "resultType": "tool_calls",
+          "contentPresent": true,
+          "toolCallCount": 1,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 7821,
+            "outputTokens": 67,
+            "cacheReadTokens": 7104,
+            "cacheCreationTokens": null
+          },
+          "durationMs": 5414
+        }
+      },
+      {
+        "type": "run.completed",
+        "payload": {
+          "coordination": {
+            "parentInputTokens": 7821,
+            "parentOutputTokens": 67,
+            "subagentInputTokens": 0,
+            "subagentOutputTokens": 0
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case_id": "S10",
+    "original_run_id": "run_22aac0a82cef4aad869f6d6b65638768",
+    "original_model_call_count": 1,
+    "cumulative_model_call_count": 2,
+    "original_tool_schema_sha256": "1874ce52c4ac67b86512a3ac908f5b3c7ef3034ba434cf05922e536b81648b12",
+    "original_policy": {
+      "version": 2,
+      "allowed_bindings": [
+        {
+          "qualified_name": "code-skills/minicode-study",
+          "source": "project",
+          "content_digest": "3759d5f3f8faed34a100c6638da7ffc20a479c1b0d5d8801c9f2518c44c0fe7b",
+          "routing_identity_digest": "5f86794285fdb3e51c489bef37cebd1c6efcdb9a17aa1d618abcf1763dbaca87"
+        },
+        {
+          "qualified_name": "code-understanding/codebase-explanation",
+          "source": "project",
+          "content_digest": "e8a180242ce259904e469a00c4f745229dc549ea6c079d8adbaa69e2007692b2",
+          "routing_identity_digest": "e5035fb53693ddde5a613898aedc588c99e29f19516b60c9ace463ece320d86a"
+        },
+        {
+          "qualified_name": "code-understanding/design-review",
+          "source": "project",
+          "content_digest": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+          "routing_identity_digest": "5474e2c40f8cd27630aedd67aa1fe241dd6d066ce19d6d9598ac6f7ec49df830"
+        },
+        {
+          "qualified_name": "code-understanding/minicode-learning-coach-demo",
+          "source": "project",
+          "content_digest": "9f8b473f7db0a0e955faa5901fbcfe4799e0d63568fc3d8a97939a41c5782176",
+          "routing_identity_digest": "1e5ea39f536bc30529a039abeb4a40a48bc5083dfd6d2996b075241d0ecdcf96"
+        },
+        {
+          "qualified_name": "debugging/concurrency-debugging",
+          "source": "project",
+          "content_digest": "a497b728ff77f9ccf8d6a7ae118a27019c3966d9d401be7e1c817531e3a520e0",
+          "routing_identity_digest": "ad4a3c47f7079ae99e08f3d9eadf8dff92ffa889a0734984fdff8d3ea9f2f412"
+        },
+        {
+          "qualified_name": "debugging/pytest-debugging",
+          "source": "project",
+          "content_digest": "a0d2254a350cf3e84255d7b2a069d4a07081d8a40608d654b976c5261603ab4d",
+          "routing_identity_digest": "f8c756241ceb5f31ce94288c0d7e911761e608f6c0ea6e4430180bc06716911b"
+        },
+        {
+          "qualified_name": "dependencies/dependency-hygiene",
+          "source": "project",
+          "content_digest": "134bc00fb694afd8cea65dc6b9d6e35c83cfe868dbe67475a07d35502ef0f15b",
+          "routing_identity_digest": "bd8fece2a9ba2ed5f5c601ba8164b14964eb259dfbe54232d4d94a51bfc54e60"
+        },
+        {
+          "qualified_name": "documentation/readme-authoring",
+          "source": "project",
+          "content_digest": "6990db45ca8ef1abb0eb12dca4daf9f128e604f12575292f976649ec6524c706",
+          "routing_identity_digest": "65bd3534d197fac472b9f083a0921bdbe38cfbf1fa5cd588b18d4b9559583bb8"
+        },
+        {
+          "qualified_name": "git/commit-hygiene",
+          "source": "project",
+          "content_digest": "2fc407284133dcb47bdc473b266ee7085e28f49143c9b6a183f2a0ec84a5e483",
+          "routing_identity_digest": "119444341c2252c379caa043e5182ccbf49cbc8a4330ec3d63a65eb7a3bbd0ce"
+        },
+        {
+          "qualified_name": "minicode",
+          "source": "compat_project",
+          "content_digest": "21d8ab5727f1cb4442cb12f502e7bf517e51728d9bc08839b69bebff2d8a081f",
+          "routing_identity_digest": "21d8ab5727f1cb4442cb12f502e7bf517e51728d9bc08839b69bebff2d8a081f"
+        },
+        {
+          "qualified_name": "performance/hotpath-profiling",
+          "source": "project",
+          "content_digest": "71d1b9c5d03055d792ede40e928bdcd0b249daa60ee3fff52593cec730c83f4d",
+          "routing_identity_digest": "2eea1539b0f252ceab7bdb9f005fd72ca5811a4cc11a286f964c6b2b66791842"
+        },
+        {
+          "qualified_name": "quality/lint-and-static-cleanup",
+          "source": "project",
+          "content_digest": "05fb64c5a85d739a2b065d36568ac847e40c1465faf865437528be31f1ff45d6",
+          "routing_identity_digest": "36de4a56339c71a3cd31a3d78e6995b1a87a105431825ecff4c7a180cd22c127"
+        },
+        {
+          "qualified_name": "refactoring/safe-refactor",
+          "source": "project",
+          "content_digest": "f7f778a3110a42383e46ca78bf7fe511317398195dc6799f179a8204d6e0a0db",
+          "routing_identity_digest": "3cfb7d257548ee8c9bd121f153f3861a05819de2be8729a0841029587d7a24bd"
+        },
+        {
+          "qualified_name": "refactoring/structural-rename",
+          "source": "project",
+          "content_digest": "cc7bef8055026ee29f6066f17ebfea9a9e67c542be7758c4beeb0989b7c0c203",
+          "routing_identity_digest": "ee338a2f5fa51a4d796bf23f386781cf466d55c30b39ec85fa921981d43f304a"
+        },
+        {
+          "qualified_name": "security/secret-and-injection-review",
+          "source": "project",
+          "content_digest": "706a8e5e732bcdf8cd54f095fb9a09026a07f9ba605f533e06b7f67904d1e0db",
+          "routing_identity_digest": "93ade5049a8cc8f674495e77c35cedb656d25195b08c6128c2af92e80aea14a6"
+        },
+        {
+          "qualified_name": "testing/regression-from-bug-report",
+          "source": "project",
+          "content_digest": "d889a82bd8f291c8a65d8446c405afbc3e5f4ca965e4040fee8c13c4c6603b48",
+          "routing_identity_digest": "82f1511f9f03c574b1398010d7fcc32f88ec3b1fcfe36a9371541cd66e052de8"
+        },
+        {
+          "qualified_name": "testing/test-driven-development",
+          "source": "project",
+          "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+          "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7"
+        }
+      ],
+      "denied_qualified_names": [],
+      "reason_code": "inventory-fallback"
+    },
+    "source_hashes": {
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S10/result.json": "fc2431afcb911e82773558b04a7340a9457382cf485e74a072dccbc42a7a3be6",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S10/call-01-request.json": "d57e4e73931984528445bb1571216c340b6ed5b6a974098fcac8a7e7a8e9ad76",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S10/call-01-response.json": "192e5d50373e06f2125e94483cfa310578761385da9d461b2bc4a52113e0562d",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S10/tool-schemas.json": "df9987dea9dd9f26dec15454014067d91007207a6498e1af3456025097287ad2"
+    },
+    "input_sha256": "1092bf61b1ad366cb50c49ee9787ed455e354f91d005298381ef21e664ad0582",
+    "provider_message_projection_sha256": "6e9c6c3441db30fc35931b686f480e853b1ab7f3562eeee8745537a87bfa4231",
+    "interventions": [
+      {
+        "tool_call_id": "call_-7283942858145394080",
+        "tool_name": "list_files",
+        "isError": true,
+        "content": "Controlled evaluation: this tool was not executed. No file contents, command output, or task results were obtained. Do not infer file contents or task outcomes from this error. 本评测没有执行此工具；不得据此推断文件内容或任务结果。",
+        "origin": "controlled_evaluation_nonexecution_notice"
+      }
+    ],
+    "body_evidence": [
+      {
+        "qualified_name": "testing/regression-from-bug-report",
+        "tool_call_id": "call_-7283942858145394081",
+        "body_sha256": "d889a82bd8f291c8a65d8446c405afbc3e5f4ca965e4040fee8c13c4c6603b48",
+        "output_sha256": "f976eadcf0e95f1f4007f2d11d83d4f272e9ede2f1e2f6a70091ab3715c330de",
+        "internal_exact": true,
+        "provider_projection_exact": true
+      }
+    ],
+    "mode": "controlled-error-feedback-body-handoff",
+    "completed": true,
+    "original_metrics_unchanged": true,
+    "tool_dispatches": 0,
+    "limits": {
+      "additional_calls": 1,
+      "timeout_seconds": 30,
+      "retries": 0,
+      "max_output_tokens": 2048
+    },
+    "limitation": "Controlled errors complete an unexecuted mixed batch; this is not spontaneous uninterrupted task execution or task success.",
+    "run_id": "run_22d81fb7c94442d8b8bf6043987d1e21",
+    "elapsed_ms": 4631.9989579496905,
+    "response": {
+      "type": "tool_calls",
+      "content": "",
+      "kind": null,
+      "calls": [
+        {
+          "id": "call_-7283950451647570380",
+          "toolName": "file_tree",
+          "input": {
+            "max_depth": 4
+          }
+        }
+      ],
+      "contentKind": null,
+      "reasoningContent": "The list_files tool failed with a \"controlled evaluation\" message. Let me try file_tree instead.",
+      "diagnostics": {
+        "stopReason": "tool_calls",
+        "blockTypes": [
+          "tool_calls"
+        ],
+        "ignoredBlockTypes": []
+      },
+      "usage": {
+        "input_tokens": 7992,
+        "output_tokens": 33,
+        "cache_read_tokens": 7168,
+        "cache_creation_tokens": null,
+        "source": "provider"
+      }
+    },
+    "usage": {
+      "source": "provider",
+      "inputTokens": 7992,
+      "outputTokens": 33,
+      "cacheReadTokens": 7168,
+      "cacheCreationTokens": null
+    },
+    "returned_tool_calls_not_executed": [
+      {
+        "id": "call_-7283950451647570380",
+        "toolName": "file_tree",
+        "input": {
+          "max_depth": 4
+        }
+      }
+    ],
+    "confirmed_body_handoff_names": [
+      "testing/regression-from-bug-report"
+    ],
+    "events": [
+      {
+        "type": "run.queued",
+        "payload": {}
+      },
+      {
+        "type": "run.started",
+        "payload": {}
+      },
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_79bf894d8b824c23a2545901c0c0de54"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_79bf894d8b824c23a2545901c0c0de54",
+          "resultType": "tool_calls",
+          "contentPresent": false,
+          "toolCallCount": 1,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 7992,
+            "outputTokens": 33,
+            "cacheReadTokens": 7168,
+            "cacheCreationTokens": null
+          },
+          "durationMs": 4631
+        }
+      },
+      {
+        "type": "run.completed",
+        "payload": {
+          "coordination": {
+            "parentInputTokens": 7992,
+            "parentOutputTokens": 33,
+            "subagentInputTokens": 0,
+            "subagentOutputTokens": 0
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case_id": "S11",
+    "original_run_id": "run_028711edd688431e9fcbffcd843ff1d5",
+    "original_model_call_count": 1,
+    "cumulative_model_call_count": 2,
+    "original_tool_schema_sha256": "1874ce52c4ac67b86512a3ac908f5b3c7ef3034ba434cf05922e536b81648b12",
+    "original_policy": {
+      "version": 2,
+      "allowed_bindings": [
+        {
+          "qualified_name": "testing/test-driven-development",
+          "source": "project",
+          "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+          "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7"
+        }
+      ],
+      "denied_qualified_names": [],
+      "reason_code": "routed-selection"
+    },
+    "source_hashes": {
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S11/result.json": "ed8d115e8e7dc1ca48c4cc512edc1c840c967ae538da8af262eddbd16bdffa25",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S11/call-01-request.json": "41bd4ceefc133a214d390e608a38c28cf075245f61fc92993e51f90397e6208b",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S11/call-01-response.json": "919051ca1b07c8263c5110816e3ee4547edd5266ddc5c7fb90d1cd5894c1d7db",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S11/tool-schemas.json": "df9987dea9dd9f26dec15454014067d91007207a6498e1af3456025097287ad2"
+    },
+    "input_sha256": "819747d537ada2a9419823941a64d3792bf1a66658de480c6b2a20fb3b70d96a",
+    "provider_message_projection_sha256": "ba0a681956b773e3b8d36f7c937cfba08ca290b2d8055dc2e301e7a9178b6d6a",
+    "interventions": [
+      {
+        "tool_call_id": "call_-7283948218264583451",
+        "tool_name": "file_tree",
+        "isError": true,
+        "content": "Controlled evaluation: this tool was not executed. No file contents, command output, or task results were obtained. Do not infer file contents or task outcomes from this error. 本评测没有执行此工具；不得据此推断文件内容或任务结果。",
+        "origin": "controlled_evaluation_nonexecution_notice"
+      }
+    ],
+    "body_evidence": [
+      {
+        "qualified_name": "testing/test-driven-development",
+        "tool_call_id": "call_-7283948218264583452",
+        "body_sha256": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+        "output_sha256": "0d814faced7a68ba636263ff092902b287b9de5eadb3d4f1c2b7e748e0adffd1",
+        "internal_exact": true,
+        "provider_projection_exact": true
+      }
+    ],
+    "mode": "controlled-error-feedback-body-handoff",
+    "completed": true,
+    "original_metrics_unchanged": true,
+    "tool_dispatches": 0,
+    "limits": {
+      "additional_calls": 1,
+      "timeout_seconds": 30,
+      "retries": 0,
+      "max_output_tokens": 2048
+    },
+    "limitation": "Controlled errors complete an unexecuted mixed batch; this is not spontaneous uninterrupted task execution or task success.",
+    "run_id": "run_0b3d68b1ba8d41f8bef786ccf3a88037",
+    "elapsed_ms": 4560.47466606833,
+    "response": {
+      "type": "tool_calls",
+      "content": "",
+      "kind": null,
+      "calls": [
+        {
+          "id": "call_-7283953166066908554",
+          "toolName": "list_files",
+          "input": {
+            "path": "."
+          }
+        }
+      ],
+      "contentKind": null,
+      "reasoningContent": "The file_tree tool seems to be under controlled evaluation and wasn't executed. Let me use list_files instead.",
+      "diagnostics": {
+        "stopReason": "tool_calls",
+        "blockTypes": [
+          "tool_calls"
+        ],
+        "ignoredBlockTypes": []
+      },
+      "usage": {
+        "input_tokens": 7703,
+        "output_tokens": 34,
+        "cache_read_tokens": 6976,
+        "cache_creation_tokens": null,
+        "source": "provider"
+      }
+    },
+    "usage": {
+      "source": "provider",
+      "inputTokens": 7703,
+      "outputTokens": 34,
+      "cacheReadTokens": 6976,
+      "cacheCreationTokens": null
+    },
+    "returned_tool_calls_not_executed": [
+      {
+        "id": "call_-7283953166066908554",
+        "toolName": "list_files",
+        "input": {
+          "path": "."
+        }
+      }
+    ],
+    "confirmed_body_handoff_names": [
+      "testing/test-driven-development"
+    ],
+    "events": [
+      {
+        "type": "run.queued",
+        "payload": {}
+      },
+      {
+        "type": "run.started",
+        "payload": {}
+      },
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_997a1d491d504b2b99f31f4ef63728db"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_997a1d491d504b2b99f31f4ef63728db",
+          "resultType": "tool_calls",
+          "contentPresent": false,
+          "toolCallCount": 1,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 7703,
+            "outputTokens": 34,
+            "cacheReadTokens": 6976,
+            "cacheCreationTokens": null
+          },
+          "durationMs": 4560
+        }
+      },
+      {
+        "type": "run.completed",
+        "payload": {
+          "coordination": {
+            "parentInputTokens": 7703,
+            "parentOutputTokens": 34,
+            "subagentInputTokens": 0,
+            "subagentOutputTokens": 0
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case_id": "S12",
+    "original_run_id": "run_19ca4e2f0388408dbab154db73c6a94c",
+    "original_model_call_count": 1,
+    "cumulative_model_call_count": 2,
+    "original_tool_schema_sha256": "1874ce52c4ac67b86512a3ac908f5b3c7ef3034ba434cf05922e536b81648b12",
+    "original_policy": {
+      "version": 2,
+      "allowed_bindings": [
+        {
+          "qualified_name": "code-skills/minicode-study",
+          "source": "project",
+          "content_digest": "3759d5f3f8faed34a100c6638da7ffc20a479c1b0d5d8801c9f2518c44c0fe7b",
+          "routing_identity_digest": "5f86794285fdb3e51c489bef37cebd1c6efcdb9a17aa1d618abcf1763dbaca87"
+        },
+        {
+          "qualified_name": "code-understanding/codebase-explanation",
+          "source": "project",
+          "content_digest": "e8a180242ce259904e469a00c4f745229dc549ea6c079d8adbaa69e2007692b2",
+          "routing_identity_digest": "e5035fb53693ddde5a613898aedc588c99e29f19516b60c9ace463ece320d86a"
+        },
+        {
+          "qualified_name": "code-understanding/design-review",
+          "source": "project",
+          "content_digest": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+          "routing_identity_digest": "5474e2c40f8cd27630aedd67aa1fe241dd6d066ce19d6d9598ac6f7ec49df830"
+        },
+        {
+          "qualified_name": "code-understanding/minicode-learning-coach-demo",
+          "source": "project",
+          "content_digest": "9f8b473f7db0a0e955faa5901fbcfe4799e0d63568fc3d8a97939a41c5782176",
+          "routing_identity_digest": "1e5ea39f536bc30529a039abeb4a40a48bc5083dfd6d2996b075241d0ecdcf96"
+        },
+        {
+          "qualified_name": "debugging/concurrency-debugging",
+          "source": "project",
+          "content_digest": "a497b728ff77f9ccf8d6a7ae118a27019c3966d9d401be7e1c817531e3a520e0",
+          "routing_identity_digest": "ad4a3c47f7079ae99e08f3d9eadf8dff92ffa889a0734984fdff8d3ea9f2f412"
+        },
+        {
+          "qualified_name": "debugging/pytest-debugging",
+          "source": "project",
+          "content_digest": "a0d2254a350cf3e84255d7b2a069d4a07081d8a40608d654b976c5261603ab4d",
+          "routing_identity_digest": "f8c756241ceb5f31ce94288c0d7e911761e608f6c0ea6e4430180bc06716911b"
+        },
+        {
+          "qualified_name": "dependencies/dependency-hygiene",
+          "source": "project",
+          "content_digest": "134bc00fb694afd8cea65dc6b9d6e35c83cfe868dbe67475a07d35502ef0f15b",
+          "routing_identity_digest": "bd8fece2a9ba2ed5f5c601ba8164b14964eb259dfbe54232d4d94a51bfc54e60"
+        },
+        {
+          "qualified_name": "documentation/readme-authoring",
+          "source": "project",
+          "content_digest": "6990db45ca8ef1abb0eb12dca4daf9f128e604f12575292f976649ec6524c706",
+          "routing_identity_digest": "65bd3534d197fac472b9f083a0921bdbe38cfbf1fa5cd588b18d4b9559583bb8"
+        },
+        {
+          "qualified_name": "git/commit-hygiene",
+          "source": "project",
+          "content_digest": "2fc407284133dcb47bdc473b266ee7085e28f49143c9b6a183f2a0ec84a5e483",
+          "routing_identity_digest": "119444341c2252c379caa043e5182ccbf49cbc8a4330ec3d63a65eb7a3bbd0ce"
+        },
+        {
+          "qualified_name": "minicode",
+          "source": "compat_project",
+          "content_digest": "21d8ab5727f1cb4442cb12f502e7bf517e51728d9bc08839b69bebff2d8a081f",
+          "routing_identity_digest": "21d8ab5727f1cb4442cb12f502e7bf517e51728d9bc08839b69bebff2d8a081f"
+        },
+        {
+          "qualified_name": "performance/hotpath-profiling",
+          "source": "project",
+          "content_digest": "71d1b9c5d03055d792ede40e928bdcd0b249daa60ee3fff52593cec730c83f4d",
+          "routing_identity_digest": "2eea1539b0f252ceab7bdb9f005fd72ca5811a4cc11a286f964c6b2b66791842"
+        },
+        {
+          "qualified_name": "quality/lint-and-static-cleanup",
+          "source": "project",
+          "content_digest": "05fb64c5a85d739a2b065d36568ac847e40c1465faf865437528be31f1ff45d6",
+          "routing_identity_digest": "36de4a56339c71a3cd31a3d78e6995b1a87a105431825ecff4c7a180cd22c127"
+        },
+        {
+          "qualified_name": "refactoring/safe-refactor",
+          "source": "project",
+          "content_digest": "f7f778a3110a42383e46ca78bf7fe511317398195dc6799f179a8204d6e0a0db",
+          "routing_identity_digest": "3cfb7d257548ee8c9bd121f153f3861a05819de2be8729a0841029587d7a24bd"
+        },
+        {
+          "qualified_name": "refactoring/structural-rename",
+          "source": "project",
+          "content_digest": "cc7bef8055026ee29f6066f17ebfea9a9e67c542be7758c4beeb0989b7c0c203",
+          "routing_identity_digest": "ee338a2f5fa51a4d796bf23f386781cf466d55c30b39ec85fa921981d43f304a"
+        },
+        {
+          "qualified_name": "security/secret-and-injection-review",
+          "source": "project",
+          "content_digest": "706a8e5e732bcdf8cd54f095fb9a09026a07f9ba605f533e06b7f67904d1e0db",
+          "routing_identity_digest": "93ade5049a8cc8f674495e77c35cedb656d25195b08c6128c2af92e80aea14a6"
+        },
+        {
+          "qualified_name": "testing/regression-from-bug-report",
+          "source": "project",
+          "content_digest": "d889a82bd8f291c8a65d8446c405afbc3e5f4ca965e4040fee8c13c4c6603b48",
+          "routing_identity_digest": "82f1511f9f03c574b1398010d7fcc32f88ec3b1fcfe36a9371541cd66e052de8"
+        },
+        {
+          "qualified_name": "testing/test-driven-development",
+          "source": "project",
+          "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+          "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7"
+        }
+      ],
+      "denied_qualified_names": [],
+      "reason_code": "inventory-fallback"
+    },
+    "source_hashes": {
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S12/result.json": "60deea6934a81a700b0ed70fb5d3cb13e8525c23e465e2ff6ecb8f6fd2025b13",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S12/call-01-request.json": "ca44507e9dbb18b0e9c16d6aef197863f6081345d7b1613c63b35a100d9e472b",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S12/call-01-response.json": "e697da1ec887501b5214fc62d587ba693b4867a76780e2a246fdeedf4292b4a5",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S12/tool-schemas.json": "df9987dea9dd9f26dec15454014067d91007207a6498e1af3456025097287ad2"
+    },
+    "input_sha256": "240a91c29a4bca702a80dbe3d3035b0a65386530c6049e090a3ec28ce85348e0",
+    "provider_message_projection_sha256": "1c824957cab765990b8568277eef9a67638d249555c9c81fcb772a730d7ad649",
+    "interventions": [
+      {
+        "tool_call_id": "call_-7283958629265307572",
+        "tool_name": "list_files",
+        "isError": true,
+        "content": "Controlled evaluation: this tool was not executed. No file contents, command output, or task results were obtained. Do not infer file contents or task outcomes from this error. 本评测没有执行此工具；不得据此推断文件内容或任务结果。",
+        "origin": "controlled_evaluation_nonexecution_notice"
+      }
+    ],
+    "body_evidence": [
+      {
+        "qualified_name": "refactoring/safe-refactor",
+        "tool_call_id": "call_-7283958629265307573",
+        "body_sha256": "f7f778a3110a42383e46ca78bf7fe511317398195dc6799f179a8204d6e0a0db",
+        "output_sha256": "ab93d36ee6856ca0d183e913648c6c85b2a4c0d18932b234e582629021b24ff0",
+        "internal_exact": true,
+        "provider_projection_exact": true
+      }
+    ],
+    "mode": "controlled-error-feedback-body-handoff",
+    "completed": true,
+    "original_metrics_unchanged": true,
+    "tool_dispatches": 0,
+    "limits": {
+      "additional_calls": 1,
+      "timeout_seconds": 30,
+      "retries": 0,
+      "max_output_tokens": 2048
+    },
+    "limitation": "Controlled errors complete an unexecuted mixed batch; this is not spontaneous uninterrupted task execution or task success.",
+    "run_id": "run_98d477fd450c46ae9df3984554964656",
+    "elapsed_ms": 5209.398749982938,
+    "response": {
+      "type": "tool_calls",
+      "content": "",
+      "kind": null,
+      "calls": [
+        {
+          "id": "call_-7283933031260224078",
+          "toolName": "file_tree",
+          "input": {
+            "max_depth": 3,
+            "path": "."
+          }
+        }
+      ],
+      "contentKind": null,
+      "reasoningContent": "The list_files tool was not executed (controlled evaluation error). Let me try again — maybe try file_tree or read specific paths. The message says the tool was not executed. Let me try again with a different tool.",
+      "diagnostics": {
+        "stopReason": "tool_calls",
+        "blockTypes": [
+          "tool_calls"
+        ],
+        "ignoredBlockTypes": []
+      },
+      "usage": {
+        "input_tokens": 7929,
+        "output_tokens": 63,
+        "cache_read_tokens": 7104,
+        "cache_creation_tokens": null,
+        "source": "provider"
+      }
+    },
+    "usage": {
+      "source": "provider",
+      "inputTokens": 7929,
+      "outputTokens": 63,
+      "cacheReadTokens": 7104,
+      "cacheCreationTokens": null
+    },
+    "returned_tool_calls_not_executed": [
+      {
+        "id": "call_-7283933031260224078",
+        "toolName": "file_tree",
+        "input": {
+          "max_depth": 3,
+          "path": "."
+        }
+      }
+    ],
+    "confirmed_body_handoff_names": [
+      "refactoring/safe-refactor"
+    ],
+    "events": [
+      {
+        "type": "run.queued",
+        "payload": {}
+      },
+      {
+        "type": "run.started",
+        "payload": {}
+      },
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_c64f48ff8c0549d68202576161375404"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_c64f48ff8c0549d68202576161375404",
+          "resultType": "tool_calls",
+          "contentPresent": false,
+          "toolCallCount": 1,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 7929,
+            "outputTokens": 63,
+            "cacheReadTokens": 7104,
+            "cacheCreationTokens": null
+          },
+          "durationMs": 5209
+        }
+      },
+      {
+        "type": "run.completed",
+        "payload": {
+          "coordination": {
+            "parentInputTokens": 7929,
+            "parentOutputTokens": 63,
+            "subagentInputTokens": 0,
+            "subagentOutputTokens": 0
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case_id": "S13",
+    "original_run_id": "run_f9ca9b1ad616436f9df9e6a77280bf5c",
+    "original_model_call_count": 1,
+    "cumulative_model_call_count": 2,
+    "original_tool_schema_sha256": "1874ce52c4ac67b86512a3ac908f5b3c7ef3034ba434cf05922e536b81648b12",
+    "original_policy": {
+      "version": 2,
+      "allowed_bindings": [
+        {
+          "qualified_name": "refactoring/structural-rename",
+          "source": "project",
+          "content_digest": "cc7bef8055026ee29f6066f17ebfea9a9e67c542be7758c4beeb0989b7c0c203",
+          "routing_identity_digest": "ee338a2f5fa51a4d796bf23f386781cf466d55c30b39ec85fa921981d43f304a"
+        }
+      ],
+      "denied_qualified_names": [],
+      "reason_code": "routed-selection"
+    },
+    "source_hashes": {
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S13/result.json": "c75eea89fc7dd51e4b19f8ce70e8a4ec011df5f6dd5ef6c4c29b3adf807c8810",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S13/call-01-request.json": "0ecd1203fc4d67025cdcbb51f6a11356b5f4b7276a0412b972e7c624e3abe372",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S13/call-01-response.json": "a55c1b13591939a1211a290e851e5765e6671c1533314997c0b5a122e8c2cdf9",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S13/tool-schemas.json": "df9987dea9dd9f26dec15454014067d91007207a6498e1af3456025097287ad2"
+    },
+    "input_sha256": "f95c9d94df99e49cbbc6f9617b5110cc3dcfa3aa56e4ca4913ab504062626902",
+    "provider_message_projection_sha256": "513614ffa4031a25cbd3efb3d49801067d68365ad6a5241dab727c20c5e8c39e",
+    "interventions": [
+      {
+        "tool_call_id": "call_-7283964779658472630",
+        "tool_name": "file_tree",
+        "isError": true,
+        "content": "Controlled evaluation: this tool was not executed. No file contents, command output, or task results were obtained. Do not infer file contents or task outcomes from this error. 本评测没有执行此工具；不得据此推断文件内容或任务结果。",
+        "origin": "controlled_evaluation_nonexecution_notice"
+      }
+    ],
+    "body_evidence": [
+      {
+        "qualified_name": "refactoring/structural-rename",
+        "tool_call_id": "call_-7283964779658472631",
+        "body_sha256": "cc7bef8055026ee29f6066f17ebfea9a9e67c542be7758c4beeb0989b7c0c203",
+        "output_sha256": "4473d4cbf7d5c00fe28c0249606ff9bf2d95f00ff6978a7fe7d722fe5baacba4",
+        "internal_exact": true,
+        "provider_projection_exact": true
+      }
+    ],
+    "mode": "controlled-error-feedback-body-handoff",
+    "completed": true,
+    "original_metrics_unchanged": true,
+    "tool_dispatches": 0,
+    "limits": {
+      "additional_calls": 1,
+      "timeout_seconds": 30,
+      "retries": 0,
+      "max_output_tokens": 2048
+    },
+    "limitation": "Controlled errors complete an unexecuted mixed batch; this is not spontaneous uninterrupted task execution or task success.",
+    "run_id": "run_285cd1f9dab3432cbdaca80293aa6264",
+    "elapsed_ms": 4911.87012498267,
+    "response": {
+      "type": "tool_calls",
+      "content": "The skill is loaded. The file tree tool was blocked, so I'll use `list_files` to explore the layout.",
+      "kind": null,
+      "calls": [
+        {
+          "id": "call_-7283972544959344357",
+          "toolName": "list_files",
+          "input": {
+            "path": "."
+          }
+        }
+      ],
+      "contentKind": null,
+      "reasoningContent": "The file_tree tool was blocked by the evaluation control. Let me use list_files instead.",
+      "diagnostics": {
+        "stopReason": "tool_calls",
+        "blockTypes": [
+          "tool_calls"
+        ],
+        "ignoredBlockTypes": []
+      },
+      "usage": {
+        "input_tokens": 7678,
+        "output_tokens": 55,
+        "cache_read_tokens": 7104,
+        "cache_creation_tokens": null,
+        "source": "provider"
+      }
+    },
+    "usage": {
+      "source": "provider",
+      "inputTokens": 7678,
+      "outputTokens": 55,
+      "cacheReadTokens": 7104,
+      "cacheCreationTokens": null
+    },
+    "returned_tool_calls_not_executed": [
+      {
+        "id": "call_-7283972544959344357",
+        "toolName": "list_files",
+        "input": {
+          "path": "."
+        }
+      }
+    ],
+    "confirmed_body_handoff_names": [
+      "refactoring/structural-rename"
+    ],
+    "events": [
+      {
+        "type": "run.queued",
+        "payload": {}
+      },
+      {
+        "type": "run.started",
+        "payload": {}
+      },
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_7687a212b1c144a080087225af2286d5"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_7687a212b1c144a080087225af2286d5",
+          "resultType": "tool_calls",
+          "contentPresent": true,
+          "toolCallCount": 1,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 7678,
+            "outputTokens": 55,
+            "cacheReadTokens": 7104,
+            "cacheCreationTokens": null
+          },
+          "durationMs": 4911
+        }
+      },
+      {
+        "type": "run.completed",
+        "payload": {
+          "coordination": {
+            "parentInputTokens": 7678,
+            "parentOutputTokens": 55,
+            "subagentInputTokens": 0,
+            "subagentOutputTokens": 0
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case_id": "S17",
+    "original_run_id": "run_c861d1f38cb643beb543125a6ed5ad1f",
+    "original_model_call_count": 1,
+    "cumulative_model_call_count": 2,
+    "original_tool_schema_sha256": "1874ce52c4ac67b86512a3ac908f5b3c7ef3034ba434cf05922e536b81648b12",
+    "original_policy": {
+      "version": 2,
+      "allowed_bindings": [
+        {
+          "qualified_name": "code-understanding/design-review",
+          "source": "project",
+          "content_digest": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+          "routing_identity_digest": "5474e2c40f8cd27630aedd67aa1fe241dd6d066ce19d6d9598ac6f7ec49df830"
+        },
+        {
+          "qualified_name": "documentation/readme-authoring",
+          "source": "project",
+          "content_digest": "6990db45ca8ef1abb0eb12dca4daf9f128e604f12575292f976649ec6524c706",
+          "routing_identity_digest": "65bd3534d197fac472b9f083a0921bdbe38cfbf1fa5cd588b18d4b9559583bb8"
+        }
+      ],
+      "denied_qualified_names": [],
+      "reason_code": "routed-selection"
+    },
+    "source_hashes": {
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S17/result.json": "6dceb67c30c3fcf1b320a23cb11d566ea7c4e028b73f292f749cea9fca34e2bc",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S17/call-01-request.json": "83a41a1e337f2e49569c8fe9fb9b615f555a7030d7b489010d90b49f8fbb27c2",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S17/call-01-response.json": "6c08c1171083a647d3f2afacb296b852cfdd9ebf3b6447397906c1d4e37d4219",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-evaluation-2026-09-07/live/S17/tool-schemas.json": "df9987dea9dd9f26dec15454014067d91007207a6498e1af3456025097287ad2"
+    },
+    "input_sha256": "c620bd59f730ea67c93b31b71764bf731eeb3b5bf1874f3de8955b130935854c",
+    "provider_message_projection_sha256": "58f5947637ebd73d7bac92a9411bceff840b263b2b3187b5767314a232c59fbc",
+    "interventions": [
+      {
+        "tool_call_id": "call_-7283946328478973720",
+        "tool_name": "list_files",
+        "isError": true,
+        "content": "Controlled evaluation: this tool was not executed. No file contents, command output, or task results were obtained. Do not infer file contents or task outcomes from this error. 本评测没有执行此工具；不得据此推断文件内容或任务结果。",
+        "origin": "controlled_evaluation_nonexecution_notice"
+      }
+    ],
+    "body_evidence": [
+      {
+        "qualified_name": "code-understanding/design-review",
+        "tool_call_id": "call_-7283946328478973721",
+        "body_sha256": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+        "output_sha256": "5c39efbaede31c14f60df344709c166b4b19ba378e45402e3ec90ca6411bf2e3",
+        "internal_exact": true,
+        "provider_projection_exact": true
+      }
+    ],
+    "mode": "controlled-error-feedback-body-handoff",
+    "completed": true,
+    "original_metrics_unchanged": true,
+    "tool_dispatches": 0,
+    "limits": {
+      "additional_calls": 1,
+      "timeout_seconds": 30,
+      "retries": 0,
+      "max_output_tokens": 2048
+    },
+    "limitation": "Controlled errors complete an unexecuted mixed batch; this is not spontaneous uninterrupted task execution or task success.",
+    "run_id": "run_e2812626206040ea8d9b089b9bdf1dd0",
+    "elapsed_ms": 6533.4706250578165,
+    "response": {
+      "type": "tool_calls",
+      "content": "技能已加载。文件列表被环境拦了一次，换用 file_tree 重新探查项目结构。",
+      "kind": null,
+      "calls": [
+        {
+          "id": "call_-7283961206245682554",
+          "toolName": "file_tree",
+          "input": {
+            "max_depth": 3
+          }
+        }
+      ],
+      "contentKind": null,
+      "reasoningContent": "The list_files tool was blocked by evaluation control. Let me try the file_tree tool instead, or just read files directly.",
+      "diagnostics": {
+        "stopReason": "tool_calls",
+        "blockTypes": [
+          "tool_calls"
+        ],
+        "ignoredBlockTypes": []
+      },
+      "usage": {
+        "input_tokens": 7872,
+        "output_tokens": 60,
+        "cache_read_tokens": 6976,
+        "cache_creation_tokens": null,
+        "source": "provider"
+      }
+    },
+    "usage": {
+      "source": "provider",
+      "inputTokens": 7872,
+      "outputTokens": 60,
+      "cacheReadTokens": 6976,
+      "cacheCreationTokens": null
+    },
+    "returned_tool_calls_not_executed": [
+      {
+        "id": "call_-7283961206245682554",
+        "toolName": "file_tree",
+        "input": {
+          "max_depth": 3
+        }
+      }
+    ],
+    "confirmed_body_handoff_names": [
+      "code-understanding/design-review"
+    ],
+    "events": [
+      {
+        "type": "run.queued",
+        "payload": {}
+      },
+      {
+        "type": "run.started",
+        "payload": {}
+      },
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_29b298d30ab945d9a9ca94333ff6b7a0"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_29b298d30ab945d9a9ca94333ff6b7a0",
+          "resultType": "tool_calls",
+          "contentPresent": true,
+          "toolCallCount": 1,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 7872,
+            "outputTokens": 60,
+            "cacheReadTokens": 6976,
+            "cacheCreationTokens": null
+          },
+          "durationMs": 6533
+        }
+      },
+      {
+        "type": "run.completed",
+        "payload": {
+          "coordination": {
+            "parentInputTokens": 7872,
+            "parentOutputTokens": 60,
+            "subagentInputTokens": 0,
+            "subagentOutputTokens": 0
+          }
+        }
+      }
+    ]
+  }
+]

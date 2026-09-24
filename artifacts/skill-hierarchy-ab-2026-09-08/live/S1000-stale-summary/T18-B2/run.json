@@ -1,0 +1,125 @@
+{
+  "task_id": "T18",
+  "scale": "S1000",
+  "variant": "stale-summary",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-stale-summary",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283516900468849628",
+      "name": "search_skills",
+      "args": {
+        "query": "duplicate push notification welcome dedupe exactly once"
+      },
+      "ok": true,
+      "output_sha256": "fadafa9855215d846a142923d8f270bd2c03d5452ce0cbbddb3a8334be3c3bbf",
+      "output_chars": 4127,
+      "seen_qualified_names": [
+        "push-service/backpressure",
+        "push-service/batch-processing",
+        "push-service/caching-strategy",
+        "push-service/circuit-breaker",
+        "push-service/config-management",
+        "push-service/connection-pooling",
+        "push-service/dead-letter-handling",
+        "push-service/debugging-playbook",
+        "push-service/error-mapping",
+        "push-service/idempotency",
+        "push-service/observability",
+        "push-service/pagination",
+        "push-service/performance-tuning",
+        "push-service/rate-limiting",
+        "push-service/retry-backoff",
+        "push-service/schema-migration",
+        "push-service/security-hardening",
+        "push-service/testing-strategy",
+        "push-service/timeout-tuning",
+        "push-service/upgrade-runbook",
+        "message-queue/bounce-back-queue",
+        "metrics-collector/delivery-dashboards"
+      ],
+      "seen_directories": [
+        "message-queue",
+        "metrics-collector",
+        "push-service"
+      ],
+      "elapsed_ms": 218.52066705469042
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "748e6fb219bcde6c0500521a45170fa843c55074fc910a8d0b496ebcebe12501",
+      "elapsed_ms": 13289.153458899818,
+      "type": "tool_calls",
+      "content_chars": 117,
+      "tool_call_names": [
+        "list_files",
+        "search_skills"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9280,
+        "outputTokens": 291,
+        "cacheReadTokens": 9216,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "f7b53465d2f17f614a4699b20f3f44c717bed290d9c0e8d4697a01385e7c8405",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "1aee8141eae0bc4676f7507ab9d9eec62616e7e41634410d977f011471db6fe0",
+  "system_prompt_chars": 17936,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 9280,
+  "output_tokens": 291,
+  "routing_events": [],
+  "elapsed_ms": 18339.90579098463
+}

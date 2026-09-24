@@ -1,0 +1,15 @@
+{
+  "task_id": "T12",
+  "prompt": "Follow notification-service/observability and instrument delivery metrics for our email and push channels.",
+  "scale": "S100",
+  "variant": "stale-summary",
+  "arm": "B",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-stale-summary",
+  "run_dir": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/live/S100-stale-summary/T12-B",
+  "snapshot": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/snapshot",
+  "fake_scenario": null,
+  "fake_target": "",
+  "max_steps": 8,
+  "call_timeout_seconds": 60.0,
+  "run_timeout_seconds": 480.0
+}

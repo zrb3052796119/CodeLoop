@@ -1,0 +1,2751 @@
+{
+  "mode": "offline-real-catalog-no-model",
+  "remoteCallCount": 0,
+  "caseSha256": "dd5387bebd0c89089dc05665bde82d9b8123a530612b5eff0c7b6d2c617be5f3",
+  "catalogSha256": "b661567b58ec7184e2a455e8f57bc0d5e5e418aa5bb9f9429761f9726b30750a",
+  "productionSourceSha256": "389fff9e7338bde309d61549f69b66a5bd2e6ac38b5beed31fe6bc6e60687d9d",
+  "sourceStableDuringRun": true,
+  "caseCount": 110,
+  "solidCaseCount": 85,
+  "ambiguousCaseCount": 25,
+  "fullPassCount": 12,
+  "fullPassRate": 0.109091,
+  "lenientPassCount": 24,
+  "lenientPassRate": 0.218182,
+  "stageRates": {
+    "operations": 0.145455,
+    "context": 0.936364,
+    "outcome": 0.372727,
+    "top": 0.309091,
+    "allowed": 0.909091,
+    "forbidden": 0.981818
+  },
+  "lenientStageRates": {
+    "keyIntent": 0.281818,
+    "negatedConstraints": 0.718182,
+    "outcome": 0.372727,
+    "forbidden": 0.981818
+  },
+  "routingRates": {
+    "intendedRouteCaseCount": 91,
+    "intendedRouteOutcomeRecall": 0.296703,
+    "intendedTopSkillRecall": 0.186813,
+    "acceptableSkillAnywhereRecall": 0.21978,
+    "nonRouteCaseCount": 19,
+    "nonRouteOutcomeExactRate": 0.736842,
+    "actualRoutedCaseCount": 29,
+    "actualRouteAllowedPrecision": 0.655172
+  },
+  "categoryStats": {
+    "ambiguity-meta": {
+      "count": 12,
+      "strictPass": 4,
+      "strictRate": 0.333333,
+      "lenientPass": 4,
+      "lenientRate": 0.333333
+    },
+    "compound-conflict": {
+      "count": 12,
+      "strictPass": 0,
+      "strictRate": 0.0,
+      "lenientPass": 2,
+      "lenientRate": 0.166667
+    },
+    "context-reference": {
+      "count": 12,
+      "strictPass": 2,
+      "strictRate": 0.166667,
+      "lenientPass": 3,
+      "lenientRate": 0.25
+    },
+    "correction": {
+      "count": 10,
+      "strictPass": 0,
+      "strictRate": 0.0,
+      "lenientPass": 3,
+      "lenientRate": 0.3
+    },
+    "mixed-emoji": {
+      "count": 10,
+      "strictPass": 2,
+      "strictRate": 0.2,
+      "lenientPass": 5,
+      "lenientRate": 0.5
+    },
+    "negation": {
+      "count": 12,
+      "strictPass": 1,
+      "strictRate": 0.083333,
+      "lenientPass": 1,
+      "lenientRate": 0.083333
+    },
+    "no-punctuation": {
+      "count": 10,
+      "strictPass": 0,
+      "strictRate": 0.0,
+      "lenientPass": 0,
+      "lenientRate": 0.0
+    },
+    "omitted-subject": {
+      "count": 10,
+      "strictPass": 1,
+      "strictRate": 0.1,
+      "lenientPass": 1,
+      "lenientRate": 0.1
+    },
+    "quoted-literal": {
+      "count": 10,
+      "strictPass": 1,
+      "strictRate": 0.1,
+      "lenientPass": 3,
+      "lenientRate": 0.3
+    },
+    "typo-pinyin-abbrev": {
+      "count": 12,
+      "strictPass": 1,
+      "strictRate": 0.083333,
+      "lenientPass": 2,
+      "lenientRate": 0.166667
+    }
+  },
+  "oracleStats": {
+    "ambiguous": {
+      "count": 25,
+      "strictPass": 1,
+      "strictRate": 0.04,
+      "lenientPass": 5,
+      "lenientRate": 0.2
+    },
+    "solid": {
+      "count": 85,
+      "strictPass": 11,
+      "strictRate": 0.129412,
+      "lenientPass": 19,
+      "lenientRate": 0.223529
+    }
+  },
+  "failures": [
+    {
+      "id": "omit-01",
+      "category": "omitted-subject",
+      "oracle": "solid",
+      "prompt": "这个卡顿，先量一下，别急着改",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:debug.analyze",
+        "negated:code.update"
+      ],
+      "actualOperations": [
+        "negated:code.update"
+      ],
+      "expectedTop": "performance/hotpath-profiling",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "omit-02",
+      "category": "omitted-subject",
+      "oracle": "solid",
+      "prompt": "那俩实现，优缺点捋一下",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:review.compare"
+      ],
+      "actualOperations": [
+        "affirmed:explain.read"
+      ],
+      "expectedTop": "code-understanding/design-review",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "omit-03",
+      "category": "omitted-subject",
+      "oracle": "ambiguous",
+      "prompt": "失败那条，复现，再修",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:debug.analyze",
+        "affirmed:debug.update"
+      ],
+      "actualOperations": [
+        "affirmed:debug.update"
+      ],
+      "expectedTop": "testing/regression-from-bug-report",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "omit-05",
+      "category": "omitted-subject",
+      "oracle": "solid",
+      "prompt": "包名全仓换掉，引用也跟着",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:code.rename",
+        "affirmed:code.update"
+      ],
+      "actualOperations": [],
+      "expectedTop": "refactoring/structural-rename",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "omit-06",
+      "category": "omitted-subject",
+      "oracle": "solid",
+      "prompt": "锁这块偶发挂住，查下",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:debug.analyze"
+      ],
+      "actualOperations": [
+        "affirmed:search.read"
+      ],
+      "expectedTop": "debugging/concurrency-debugging",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "omit-07",
+      "category": "omitted-subject",
+      "oracle": "ambiguous",
+      "prompt": "ruff 那堆，清干净就行，行为别动",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:code.update"
+      ],
+      "actualOperations": [
+        "negated:code.update"
+      ],
+      "expectedTop": "quality/lint-and-static-cleanup",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "omit-08",
+      "category": "omitted-subject",
+      "oracle": "solid",
+      "prompt": "这个模块只讲流程，不做改动",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:explain.read",
+        "negated:code.update"
+      ],
+      "actualOperations": [
+        "negated:code.update"
+      ],
+      "expectedTop": "code-understanding/codebase-explanation",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "omit-09",
+      "category": "omitted-subject",
+      "oracle": "solid",
+      "prompt": "依赖那版升一下，完事跑测",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:configure.update",
+        "affirmed:test.execute"
+      ],
+      "actualOperations": [],
+      "expectedTop": "dependencies/dependency-hygiene",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "omit-10",
+      "category": "omitted-subject",
+      "oracle": "solid",
+      "prompt": "这批改动看看再落个 commit",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:review.analyze",
+        "affirmed:code.update"
+      ],
+      "actualOperations": [],
+      "expectedTop": "git/commit-hygiene",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "typo-01",
+      "category": "typo-pinyin-abbrev",
+      "oracle": "solid",
+      "prompt": "pls expln agent_loop咋把tool call塞回去的",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:explain.read"
+      ],
+      "actualOperations": [],
+      "expectedTop": "code-understanding/codebase-explanation",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "typo-02",
+      "category": "typo-pinyin-abbrev",
+      "oracle": "solid",
+      "prompt": "rn pytes，挂的那条顺手修咯",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [],
+      "expectedOperations": [
+        "affirmed:test.execute",
+        "affirmed:debug.update"
+      ],
+      "actualOperations": [
+        "affirmed:test.execute"
+      ],
+      "expectedTop": "debugging/pytest-debugging",
+      "selected": [
+        "debugging/pytest-debugging"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "typo-03",
+      "category": "typo-pinyin-abbrev",
+      "oracle": "solid",
+      "prompt": "refacor这个parser，行为保持哈",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:refactor.update"
+      ],
+      "actualOperations": [],
+      "expectedTop": "refactoring/safe-refactor",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "typo-04",
+      "category": "typo-pinyin-abbrev",
+      "oracle": "solid",
+      "prompt": "cha一下woker pool为啥deallock",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:debug.analyze"
+      ],
+      "actualOperations": [],
+      "expectedTop": "debugging/concurrency-debugging",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "typo-05",
+      "category": "typo-pinyin-abbrev",
+      "oracle": "solid",
+      "prompt": "ba memory pkg gai名，import都bie漏",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:code.rename",
+        "affirmed:code.update"
+      ],
+      "actualOperations": [],
+      "expectedTop": "refactoring/structural-rename",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "typo-07",
+      "category": "typo-pinyin-abbrev",
+      "oracle": "solid",
+      "prompt": "README yongfa bu一下",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:document.update"
+      ],
+      "actualOperations": [],
+      "expectedTop": "documentation/readme-authoring",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "typo-08",
+      "category": "typo-pinyin-abbrev",
+      "oracle": "solid",
+      "prompt": "reqs里的pytes pin sheng到新版本",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:configure.update"
+      ],
+      "actualOperations": [],
+      "expectedTop": "dependencies/dependency-hygiene",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "typo-09",
+      "category": "typo-pinyin-abbrev",
+      "oracle": "solid",
+      "prompt": "profil一下startup，看看慢zai哪",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:debug.analyze"
+      ],
+      "actualOperations": [],
+      "expectedTop": "performance/hotpath-profiling",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "typo-10",
+      "category": "typo-pinyin-abbrev",
+      "oracle": "ambiguous",
+      "prompt": "lint warnning qing了，逻辑莫动",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:code.update"
+      ],
+      "actualOperations": [
+        "negated:code.update"
+      ],
+      "expectedTop": "quality/lint-and-static-cleanup",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "typo-11",
+      "category": "typo-pinyin-abbrev",
+      "oracle": "solid",
+      "prompt": "按TDD整个parser feat",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:test.create",
+        "affirmed:code.create"
+      ],
+      "actualOperations": [],
+      "expectedTop": "testing/test-driven-development",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "typo-12",
+      "category": "typo-pinyin-abbrev",
+      "oracle": "solid",
+      "prompt": "git diff瞅眼 然后comit",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:review.analyze",
+        "affirmed:code.update"
+      ],
+      "actualOperations": [],
+      "expectedTop": "git/commit-hygiene",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "mix-02",
+      "category": "mixed-emoji",
+      "oracle": "solid",
+      "prompt": "pytest 又红了💥 root cause + fix pls",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "affirmed:debug.analyze",
+        "affirmed:debug.update"
+      ],
+      "actualOperations": [
+        "affirmed:debug.update"
+      ],
+      "expectedTop": "debugging/pytest-debugging",
+      "selected": [
+        "debugging/pytest-debugging"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "mix-03",
+      "category": "mixed-emoji",
+      "oracle": "solid",
+      "prompt": "memory.py → memory_store.py，all refs 一起改🙏",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:code.rename",
+        "affirmed:code.update"
+      ],
+      "actualOperations": [
+        "affirmed:code.update"
+      ],
+      "expectedTop": "refactoring/structural-rename",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "mix-04",
+      "category": "mixed-emoji",
+      "oracle": "solid",
+      "prompt": "只 review auth bypass，no edits 🚫",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [],
+      "expectedOperations": [
+        "affirmed:review.analyze",
+        "negated:code.update"
+      ],
+      "actualOperations": [
+        "affirmed:review.analyze"
+      ],
+      "expectedTop": "security/secret-and-injection-review",
+      "selected": [
+        "security/secret-and-injection-review"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "mix-05",
+      "category": "mixed-emoji",
+      "oracle": "solid",
+      "prompt": "README 加个 quickstart ✍️",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:document.update"
+      ],
+      "actualOperations": [],
+      "expectedTop": "documentation/readme-authoring",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "mix-07",
+      "category": "mixed-emoji",
+      "oracle": "solid",
+      "prompt": "run ruff → fix warnings，don't refactor",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [],
+      "expectedOperations": [
+        "affirmed:code.update",
+        "negated:refactor.update"
+      ],
+      "actualOperations": [
+        "affirmed:code.update"
+      ],
+      "expectedTop": "quality/lint-and-static-cleanup",
+      "selected": [
+        "quality/lint-and-static-cleanup"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "mix-08",
+      "category": "mixed-emoji",
+      "oracle": "solid",
+      "prompt": "把 requests 升级，verify tests ✅",
+      "failedStages": [
+        "operations",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "affirmed:configure.update",
+        "affirmed:test.execute"
+      ],
+      "actualOperations": [
+        "affirmed:test.execute"
+      ],
+      "expectedTop": "dependencies/dependency-hygiene",
+      "selected": [
+        "testing/test-driven-development"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "mix-09",
+      "category": "mixed-emoji",
+      "oracle": "solid",
+      "prompt": "compare old/new router design，不要写代码",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [],
+      "expectedOperations": [
+        "affirmed:review.compare",
+        "negated:code.update"
+      ],
+      "actualOperations": [
+        "affirmed:review.compare",
+        "negated:code.create"
+      ],
+      "expectedTop": "code-understanding/design-review",
+      "selected": [
+        "code-understanding/design-review"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "mix-10",
+      "category": "mixed-emoji",
+      "oracle": "solid",
+      "prompt": "bug: 删第二项会删第一项 😬 regression first then fix",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:test.create",
+        "affirmed:debug.update"
+      ],
+      "actualOperations": [],
+      "expectedTop": "testing/regression-from-bug-report",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "nopunct-01",
+      "category": "no-punctuation",
+      "oracle": "solid",
+      "prompt": "代码别改测试别跑只查pytest为什么失败",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "negated:code.update",
+        "negated:test.execute",
+        "affirmed:debug.analyze"
+      ],
+      "actualOperations": [
+        "negated:test.execute",
+        "negated:debug.analyze"
+      ],
+      "expectedTop": "debugging/pytest-debugging",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "nopunct-02",
+      "category": "no-punctuation",
+      "oracle": "solid",
+      "prompt": "先别修把删除错位这个bug复现成测试",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "negated:debug.update",
+        "affirmed:test.create"
+      ],
+      "actualOperations": [
+        "negated:code.delete"
+      ],
+      "expectedTop": "testing/regression-from-bug-report",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "nopunct-03",
+      "category": "no-punctuation",
+      "oracle": "solid",
+      "prompt": "文档不用写给我解释prompt怎么拼的",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "negated:document.create",
+        "affirmed:explain.read"
+      ],
+      "actualOperations": [
+        "negated:explain.read"
+      ],
+      "expectedTop": "code-understanding/codebase-explanation",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "nopunct-04",
+      "category": "no-punctuation",
+      "oracle": "solid",
+      "prompt": "不提交只看diff有没有secret",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "negated:code.update",
+        "affirmed:review.analyze"
+      ],
+      "actualOperations": [],
+      "expectedTop": "security/secret-and-injection-review",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "nopunct-05",
+      "category": "no-punctuation",
+      "oracle": "solid",
+      "prompt": "别动逻辑先测启动慢在哪里",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "negated:code.update",
+        "affirmed:debug.analyze"
+      ],
+      "actualOperations": [
+        "negated:code.update"
+      ],
+      "expectedTop": "performance/hotpath-profiling",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "nopunct-06",
+      "category": "no-punctuation",
+      "oracle": "solid",
+      "prompt": "包先别挪只把类名全局改掉",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "negated:code.move",
+        "affirmed:code.rename",
+        "affirmed:code.update"
+      ],
+      "actualOperations": [
+        "negated:code.update"
+      ],
+      "expectedTop": "refactoring/structural-rename",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "nopunct-07",
+      "category": "no-punctuation",
+      "oracle": "solid",
+      "prompt": "依赖不升级就审一遍版本是不是过期",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "negated:configure.update",
+        "affirmed:review.analyze"
+      ],
+      "actualOperations": [],
+      "expectedTop": "dependencies/dependency-hygiene",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "nopunct-08",
+      "category": "no-punctuation",
+      "oracle": "solid",
+      "prompt": "别讲大道理直接把README用法补上",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "negated:explain.read",
+        "affirmed:document.update"
+      ],
+      "actualOperations": [
+        "negated:document.update"
+      ],
+      "expectedTop": "documentation/readme-authoring",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "nopunct-09",
+      "category": "no-punctuation",
+      "oracle": "solid",
+      "prompt": "先测试再实现最后复测",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:test.create",
+        "affirmed:code.create",
+        "affirmed:test.execute"
+      ],
+      "actualOperations": [],
+      "expectedTop": "testing/test-driven-development",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "nopunct-10",
+      "category": "no-punctuation",
+      "oracle": "solid",
+      "prompt": "查所有调用方然后讲清数据怎么走",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:search.read",
+        "affirmed:explain.read"
+      ],
+      "actualOperations": [
+        "affirmed:search.read"
+      ],
+      "expectedTop": "code-understanding/codebase-explanation",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "ctx-01",
+      "category": "context-reference",
+      "oracle": "solid",
+      "prompt": "就这个，继续往下查",
+      "failedStages": [
+        "operations",
+        "context",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:debug.analyze"
+      ],
+      "actualOperations": [],
+      "expectedTop": "debugging/concurrency-debugging",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": true,
+      "actualContext": false
+    },
+    {
+      "id": "ctx-02",
+      "category": "context-reference",
+      "oracle": "solid",
+      "prompt": "照刚才那个做，不过别改代码",
+      "failedStages": [
+        "operations",
+        "context",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:explain.read",
+        "negated:code.update"
+      ],
+      "actualOperations": [
+        "negated:code.update"
+      ],
+      "expectedTop": "code-understanding/codebase-explanation",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": true,
+      "actualContext": false
+    },
+    {
+      "id": "ctx-03",
+      "category": "context-reference",
+      "oracle": "ambiguous",
+      "prompt": "same thing, but run it this time",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "affirmed:test.execute"
+      ],
+      "actualOperations": [
+        "affirmed:debug.analyze"
+      ],
+      "expectedTop": "debugging/pytest-debugging",
+      "selected": [
+        "debugging/pytest-debugging"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": true,
+      "actualContext": true
+    },
+    {
+      "id": "ctx-04",
+      "category": "context-reference",
+      "oracle": "solid",
+      "prompt": "那个再来一遍",
+      "failedStages": [
+        "outcome"
+      ],
+      "lenientFailedStages": [
+        "outcome"
+      ],
+      "expectedOperations": [],
+      "actualOperations": [],
+      "expectedTop": null,
+      "selected": [],
+      "expectedOutcome": "clarify",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "ctx-05",
+      "category": "context-reference",
+      "oracle": "solid",
+      "prompt": "就按上面说的改名",
+      "failedStages": [
+        "operations",
+        "context",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:code.rename",
+        "affirmed:code.update"
+      ],
+      "actualOperations": [],
+      "expectedTop": "refactoring/structural-rename",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": true,
+      "actualContext": false
+    },
+    {
+      "id": "ctx-06",
+      "category": "context-reference",
+      "oracle": "solid",
+      "prompt": "do that, no deploy though",
+      "failedStages": [
+        "operations",
+        "context",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:refactor.update",
+        "negated:configure.execute"
+      ],
+      "actualOperations": [
+        "negated:configure.update"
+      ],
+      "expectedTop": "refactoring/safe-refactor",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": true,
+      "actualContext": false
+    },
+    {
+      "id": "ctx-07",
+      "category": "context-reference",
+      "oracle": "solid",
+      "prompt": "还是它，先写回归，不修",
+      "failedStages": [
+        "operations",
+        "context",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:test.create",
+        "negated:debug.update"
+      ],
+      "actualOperations": [
+        "negated:debug.update"
+      ],
+      "expectedTop": "testing/regression-from-bug-report",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": true,
+      "actualContext": false
+    },
+    {
+      "id": "ctx-08",
+      "category": "context-reference",
+      "oracle": "solid",
+      "prompt": "继续，但这次只列调用方",
+      "failedStages": [
+        "operations",
+        "context",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:search.read"
+      ],
+      "actualOperations": [],
+      "expectedTop": "code-understanding/codebase-explanation",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": true,
+      "actualContext": false
+    },
+    {
+      "id": "ctx-10",
+      "category": "context-reference",
+      "oracle": "ambiguous",
+      "prompt": "那块先别提交，只检查一下",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [],
+      "expectedOperations": [
+        "negated:code.update",
+        "affirmed:review.analyze"
+      ],
+      "actualOperations": [
+        "affirmed:review.analyze"
+      ],
+      "expectedTop": "git/commit-hygiene",
+      "selected": [
+        "git/commit-hygiene"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": true,
+      "actualContext": true
+    },
+    {
+      "id": "ctx-11",
+      "category": "context-reference",
+      "oracle": "solid",
+      "prompt": "它慢的问题继续，改 query，代码别碰",
+      "failedStages": [
+        "operations",
+        "context",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:refactor.update",
+        "negated:code.update"
+      ],
+      "actualOperations": [
+        "affirmed:code.update"
+      ],
+      "expectedTop": "performance/hotpath-profiling",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": true,
+      "actualContext": false
+    },
+    {
+      "id": "corr-01",
+      "category": "correction",
+      "oracle": "solid",
+      "prompt": "把模块删——算了，不删，只解释它",
+      "failedStages": [
+        "operations",
+        "top",
+        "allowed"
+      ],
+      "lenientFailedStages": [],
+      "expectedOperations": [
+        "negated:code.delete",
+        "affirmed:explain.read"
+      ],
+      "actualOperations": [
+        "affirmed:code.delete",
+        "negated:code.delete",
+        "affirmed:explain.read"
+      ],
+      "expectedTop": "code-understanding/codebase-explanation",
+      "selected": [
+        "code-skills/minicode-study"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "corr-02",
+      "category": "correction",
+      "oracle": "solid",
+      "prompt": "run pytest, actually don't run it; inspect the traceback only",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [],
+      "expectedOperations": [
+        "negated:test.execute",
+        "affirmed:debug.analyze"
+      ],
+      "actualOperations": [
+        "affirmed:test.execute",
+        "negated:test.execute",
+        "affirmed:debug.analyze"
+      ],
+      "expectedTop": "debugging/pytest-debugging",
+      "selected": [
+        "debugging/pytest-debugging"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "corr-03",
+      "category": "correction",
+      "oracle": "solid",
+      "prompt": "用 concurrency-debugging。等下，不是，改用 pytest-debugging",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "affirmed:debug.analyze"
+      ],
+      "actualOperations": [
+        "affirmed:code.update"
+      ],
+      "expectedTop": "debugging/pytest-debugging",
+      "selected": [
+        "debugging/pytest-debugging"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "corr-04",
+      "category": "correction",
+      "oracle": "solid",
+      "prompt": "先改实现……不对，先加失败测试再改",
+      "failedStages": [
+        "operations",
+        "top",
+        "allowed"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "affirmed:test.create",
+        "affirmed:debug.update"
+      ],
+      "actualOperations": [
+        "affirmed:code.create",
+        "affirmed:code.update"
+      ],
+      "expectedTop": "testing/regression-from-bug-report",
+      "selected": [
+        "testing/test-driven-development"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "corr-05",
+      "category": "correction",
+      "oracle": "solid",
+      "prompt": "提交吧，哦不，先只看 diff",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "negated:code.update",
+        "affirmed:review.analyze"
+      ],
+      "actualOperations": [],
+      "expectedTop": "git/commit-hygiene",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "corr-06",
+      "category": "correction",
+      "oracle": "solid",
+      "prompt": "rename package—scratch that—just explain its imports",
+      "failedStages": [
+        "operations",
+        "top",
+        "allowed",
+        "forbidden"
+      ],
+      "lenientFailedStages": [
+        "forbidden"
+      ],
+      "expectedOperations": [
+        "affirmed:explain.read"
+      ],
+      "actualOperations": [
+        "affirmed:code.rename",
+        "affirmed:explain.read"
+      ],
+      "expectedTop": "code-understanding/codebase-explanation",
+      "selected": [
+        "refactoring/structural-rename",
+        "code-skills/minicode-study"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "corr-07",
+      "category": "correction",
+      "oracle": "solid",
+      "prompt": "写 README，等等，只给我一个口头概要，别落盘",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top",
+        "allowed",
+        "forbidden"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "forbidden",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "negated:document.update",
+        "affirmed:explain.read"
+      ],
+      "actualOperations": [
+        "affirmed:document.create"
+      ],
+      "expectedTop": null,
+      "selected": [
+        "documentation/readme-authoring"
+      ],
+      "expectedOutcome": "no_skill",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "corr-08",
+      "category": "correction",
+      "oracle": "ambiguous",
+      "prompt": "修 lint；改主意了，只跑 ruff 看结果",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [],
+      "expectedOperations": [
+        "negated:code.update"
+      ],
+      "actualOperations": [],
+      "expectedTop": null,
+      "selected": [],
+      "expectedOutcome": "no_skill",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "corr-09",
+      "category": "correction",
+      "oracle": "solid",
+      "prompt": "升级 package，不，先审下当前 pin，暂时别升",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "negated:configure.update",
+        "affirmed:review.analyze"
+      ],
+      "actualOperations": [],
+      "expectedTop": "dependencies/dependency-hygiene",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "corr-10",
+      "category": "correction",
+      "oracle": "solid",
+      "prompt": "别用 security review——等等，就是用它，只读审计",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:review.analyze"
+      ],
+      "actualOperations": [
+        "negated:review.analyze"
+      ],
+      "expectedTop": "security/secret-and-injection-review",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "neg-02",
+      "category": "negation",
+      "oracle": "solid",
+      "prompt": "可别不查那个 deadlock，我等结果",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:debug.analyze"
+      ],
+      "actualOperations": [
+        "affirmed:search.read"
+      ],
+      "expectedTop": "debugging/concurrency-debugging",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "neg-03",
+      "category": "negation",
+      "oracle": "solid",
+      "prompt": "甭碰实现，也甭跑命令，只审 credential 泄漏",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "negated:code.update",
+        "negated:test.execute",
+        "affirmed:review.analyze"
+      ],
+      "actualOperations": [
+        "negated:code.update",
+        "negated:test.execute"
+      ],
+      "expectedTop": "security/secret-and-injection-review",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "neg-04",
+      "category": "negation",
+      "oracle": "ambiguous",
+      "prompt": "不是不要重构，是不要改变行为",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:refactor.update"
+      ],
+      "actualOperations": [
+        "negated:code.update"
+      ],
+      "expectedTop": "refactoring/safe-refactor",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "neg-05",
+      "category": "negation",
+      "oracle": "solid",
+      "prompt": "不需要不写测试；先写失败用例",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:test.create"
+      ],
+      "actualOperations": [
+        "negated:code.create",
+        "affirmed:document.create"
+      ],
+      "expectedTop": "testing/test-driven-development",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "neg-06",
+      "category": "negation",
+      "oracle": "ambiguous",
+      "prompt": "别不是不提交，确认 diff 干净就提交",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:review.analyze",
+        "affirmed:code.update"
+      ],
+      "actualOperations": [],
+      "expectedTop": "git/commit-hygiene",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "neg-07",
+      "category": "negation",
+      "oracle": "solid",
+      "prompt": "不是让你别查；查慢点在哪，但零代码改动",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:debug.analyze",
+        "negated:code.update"
+      ],
+      "actualOperations": [
+        "affirmed:code.update"
+      ],
+      "expectedTop": "performance/hotpath-profiling",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "neg-08",
+      "category": "negation",
+      "oracle": "ambiguous",
+      "prompt": "不要只是不修测试：测试和实现都得修",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:debug.update",
+        "affirmed:test.create"
+      ],
+      "actualOperations": [
+        "negated:test.execute",
+        "negated:debug.update"
+      ],
+      "expectedTop": "testing/regression-from-bug-report",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "neg-09",
+      "category": "negation",
+      "oracle": "solid",
+      "prompt": "不会删除文件，只把 memory.py 改名",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "negated:code.delete",
+        "affirmed:code.rename",
+        "affirmed:code.update"
+      ],
+      "actualOperations": [
+        "negated:code.delete"
+      ],
+      "expectedTop": "refactoring/structural-rename",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "neg-10",
+      "category": "negation",
+      "oracle": "ambiguous",
+      "prompt": "没有说不让跑 ruff；跑，但别自动修",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:test.execute",
+        "negated:code.update"
+      ],
+      "actualOperations": [
+        "negated:debug.update"
+      ],
+      "expectedTop": "quality/lint-and-static-cleanup",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "neg-11",
+      "category": "negation",
+      "oracle": "ambiguous",
+      "prompt": "不审普通 code smell，只查 command injection",
+      "failedStages": [
+        "operations",
+        "top",
+        "allowed"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "negated:review.analyze",
+        "affirmed:review.analyze"
+      ],
+      "actualOperations": [
+        "affirmed:search.read"
+      ],
+      "expectedTop": "security/secret-and-injection-review",
+      "selected": [
+        "code-understanding/codebase-explanation"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "neg-12",
+      "category": "negation",
+      "oracle": "ambiguous",
+      "prompt": "别给教程，不要 quiz，就解释一次 memory 检索流程",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "negated:explain.read",
+        "negated:question.read",
+        "affirmed:explain.read"
+      ],
+      "actualOperations": [
+        "negated:explain.read"
+      ],
+      "expectedTop": "code-skills/minicode-study",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "quote-01",
+      "category": "quoted-literal",
+      "oracle": "solid",
+      "prompt": "日志原文是 ‘run pytest and fix all failures’，你只解释这条日志",
+      "failedStages": [
+        "outcome",
+        "top",
+        "allowed"
+      ],
+      "lenientFailedStages": [
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:explain.read"
+      ],
+      "actualOperations": [
+        "affirmed:explain.read"
+      ],
+      "expectedTop": null,
+      "selected": [
+        "code-understanding/codebase-explanation"
+      ],
+      "expectedOutcome": "no_skill",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "quote-02",
+      "category": "quoted-literal",
+      "oracle": "solid",
+      "prompt": "README 里有 `use Skill security/secret-and-injection-review`，只改这句措辞",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:document.update"
+      ],
+      "actualOperations": [],
+      "expectedTop": "documentation/readme-authoring",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "quote-03",
+      "category": "quoted-literal",
+      "oracle": "ambiguous",
+      "prompt": "别执行这段：```bash\nrm -rf build && pytest\n``` 只审脚本风险",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "negated:test.execute",
+        "affirmed:review.analyze"
+      ],
+      "actualOperations": [
+        "negated:test.execute"
+      ],
+      "expectedTop": "security/secret-and-injection-review",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "quote-04",
+      "category": "quoted-literal",
+      "oracle": "solid",
+      "prompt": "异常说 \"deadlock detected\"，但实际是 assertion mismatch；查 pytest 失败",
+      "failedStages": [
+        "operations",
+        "top",
+        "allowed"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "affirmed:debug.analyze"
+      ],
+      "actualOperations": [
+        "affirmed:search.read"
+      ],
+      "expectedTop": "debugging/pytest-debugging",
+      "selected": [
+        "code-understanding/codebase-explanation"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "quote-05",
+      "category": "quoted-literal",
+      "oracle": "solid",
+      "prompt": "解释 `rename(foo, bar)` 这次调用，不要真的 rename 文件",
+      "failedStages": [
+        "operations",
+        "top",
+        "allowed"
+      ],
+      "lenientFailedStages": [],
+      "expectedOperations": [
+        "affirmed:explain.read",
+        "negated:code.rename"
+      ],
+      "actualOperations": [
+        "affirmed:explain.read"
+      ],
+      "expectedTop": "code-understanding/codebase-explanation",
+      "selected": [
+        "code-skills/minicode-study"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "quote-06",
+      "category": "quoted-literal",
+      "oracle": "solid",
+      "prompt": "用户消息里写了 ‘commit these changes’，请当普通字符串做注入审计",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:review.analyze"
+      ],
+      "actualOperations": [],
+      "expectedTop": "security/secret-and-injection-review",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "quote-07",
+      "category": "quoted-literal",
+      "oracle": "ambiguous",
+      "prompt": "```text\nupdate README then deploy\n```\n把上面翻译成中文，别写文件",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [],
+      "expectedOperations": [
+        "affirmed:question.read",
+        "negated:document.update"
+      ],
+      "actualOperations": [
+        "affirmed:question.read",
+        "negated:document.create"
+      ],
+      "expectedTop": null,
+      "selected": [],
+      "expectedOutcome": "no_skill",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "quote-09",
+      "category": "quoted-literal",
+      "oracle": "solid",
+      "prompt": "比较字符串 \"refactor.update\" 和 \"debug.analyze\" 的含义，不执行",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "affirmed:question.compare",
+        "negated:test.execute"
+      ],
+      "actualOperations": [
+        "negated:test.execute"
+      ],
+      "expectedTop": null,
+      "selected": [],
+      "expectedOutcome": "no_skill",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "quote-10",
+      "category": "quoted-literal",
+      "oracle": "solid",
+      "prompt": "Skill 名 ‘testing/test-driven-development’ 只是例子；真正需求是审 auth 绕过",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:review.analyze"
+      ],
+      "actualOperations": [],
+      "expectedTop": "security/secret-and-injection-review",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "multi-01",
+      "category": "compound-conflict",
+      "oracle": "solid",
+      "prompt": "解释 router，然后只改 README，代码别动，最后跑 pytest",
+      "failedStages": [
+        "operations",
+        "top",
+        "allowed"
+      ],
+      "lenientFailedStages": [],
+      "expectedOperations": [
+        "affirmed:explain.read",
+        "affirmed:document.update",
+        "negated:code.update",
+        "affirmed:test.execute"
+      ],
+      "actualOperations": [
+        "affirmed:explain.read",
+        "affirmed:code.update",
+        "affirmed:test.execute"
+      ],
+      "expectedTop": "code-understanding/codebase-explanation",
+      "selected": [
+        "code-skills/minicode-study",
+        "refactoring/structural-rename",
+        "debugging/pytest-debugging"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "multi-02",
+      "category": "compound-conflict",
+      "oracle": "ambiguous",
+      "prompt": "先 profile，不慢就别改；真有瓶颈再重构并测",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:debug.analyze",
+        "negated:code.update",
+        "affirmed:refactor.update",
+        "affirmed:test.execute"
+      ],
+      "actualOperations": [
+        "negated:code.update"
+      ],
+      "expectedTop": "performance/hotpath-profiling",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "multi-03",
+      "category": "compound-conflict",
+      "oracle": "ambiguous",
+      "prompt": "包别升级；审 pin，写结论到 README，再提交文档改动",
+      "failedStages": [
+        "operations",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "negated:configure.update",
+        "affirmed:review.analyze",
+        "affirmed:document.update",
+        "affirmed:code.update"
+      ],
+      "actualOperations": [
+        "affirmed:document.create"
+      ],
+      "expectedTop": "dependencies/dependency-hygiene",
+      "selected": [
+        "git/commit-hygiene"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "multi-04",
+      "category": "compound-conflict",
+      "oracle": "solid",
+      "prompt": "复现删除 bug，先别修；把失败测跑出来后再问我",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:test.create",
+        "negated:debug.update",
+        "affirmed:test.execute"
+      ],
+      "actualOperations": [
+        "negated:debug.update",
+        "affirmed:test.execute"
+      ],
+      "expectedTop": "testing/regression-from-bug-report",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "multi-05",
+      "category": "compound-conflict",
+      "oracle": "ambiguous",
+      "prompt": "查 route_skill_turn 调用方、解释流程、比较旧 router；不要改",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [],
+      "expectedOperations": [
+        "affirmed:search.read",
+        "affirmed:explain.read",
+        "affirmed:review.compare",
+        "negated:code.update"
+      ],
+      "actualOperations": [
+        "affirmed:search.read",
+        "affirmed:explain.read",
+        "negated:code.update"
+      ],
+      "expectedTop": "code-understanding/codebase-explanation",
+      "selected": [
+        "code-understanding/codebase-explanation"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "multi-06",
+      "category": "compound-conflict",
+      "oracle": "solid",
+      "prompt": "rename 类，不挪文件，更新 refs，ruff 清一下",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:code.rename",
+        "negated:code.move",
+        "affirmed:code.update",
+        "affirmed:code.update"
+      ],
+      "actualOperations": [
+        "affirmed:code.rename"
+      ],
+      "expectedTop": "refactoring/structural-rename",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "multi-07",
+      "category": "compound-conflict",
+      "oracle": "ambiguous",
+      "prompt": "deadlock 先分析；pytest 也红，但别把两件事混着修",
+      "failedStages": [
+        "operations",
+        "top",
+        "allowed"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "affirmed:debug.analyze",
+        "affirmed:debug.analyze",
+        "negated:debug.update"
+      ],
+      "actualOperations": [
+        "affirmed:explain.read",
+        "negated:debug.update"
+      ],
+      "expectedTop": "debugging/concurrency-debugging",
+      "selected": [
+        "code-understanding/codebase-explanation"
+      ],
+      "expectedOutcome": "route",
+      "actualOutcome": "route",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "multi-08",
+      "category": "compound-conflict",
+      "oracle": "solid",
+      "prompt": "测先写，实现随后，README 最后补；不要 commit",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:test.create",
+        "affirmed:code.create",
+        "affirmed:document.update",
+        "negated:code.update"
+      ],
+      "actualOperations": [
+        "affirmed:document.create"
+      ],
+      "expectedTop": "testing/test-driven-development",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "multi-09",
+      "category": "compound-conflict",
+      "oracle": "ambiguous",
+      "prompt": "只审 secrets 和 path traversal；普通设计问题先不看",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:review.analyze",
+        "negated:review.analyze"
+      ],
+      "actualOperations": [],
+      "expectedTop": "security/secret-and-injection-review",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "multi-10",
+      "category": "compound-conflict",
+      "oracle": "solid",
+      "prompt": "先讲 MiniCode memory，再出两题；我答完你再纠正",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:explain.read",
+        "affirmed:question.create"
+      ],
+      "actualOperations": [],
+      "expectedTop": "code-understanding/minicode-learning-coach-demo",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "multi-11",
+      "category": "compound-conflict",
+      "oracle": "ambiguous",
+      "prompt": "性能只测不改，lint 只看不修，最后汇总",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:debug.analyze",
+        "negated:code.update",
+        "affirmed:test.execute",
+        "negated:code.update",
+        "affirmed:explain.read"
+      ],
+      "actualOperations": [
+        "negated:debug.update"
+      ],
+      "expectedTop": "performance/hotpath-profiling",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "multi-12",
+      "category": "compound-conflict",
+      "oracle": "solid",
+      "prompt": "升级依赖前先跑测，升级后再跑；失败就停，别提交",
+      "failedStages": [
+        "operations",
+        "outcome",
+        "top"
+      ],
+      "lenientFailedStages": [
+        "keyIntent",
+        "outcome"
+      ],
+      "expectedOperations": [
+        "affirmed:test.execute",
+        "affirmed:configure.update",
+        "affirmed:test.execute",
+        "negated:code.update"
+      ],
+      "actualOperations": [],
+      "expectedTop": "dependencies/dependency-hygiene",
+      "selected": [],
+      "expectedOutcome": "route",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "amb-01",
+      "category": "ambiguity-meta",
+      "oracle": "ambiguous",
+      "prompt": "这个你看着办",
+      "failedStages": [
+        "outcome"
+      ],
+      "lenientFailedStages": [
+        "outcome"
+      ],
+      "expectedOperations": [],
+      "actualOperations": [],
+      "expectedTop": null,
+      "selected": [],
+      "expectedOutcome": "clarify",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "amb-03",
+      "category": "ambiguity-meta",
+      "oracle": "solid",
+      "prompt": "intent 和 capability 现在各有哪些？",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "affirmed:question.read"
+      ],
+      "actualOperations": [],
+      "expectedTop": null,
+      "selected": [],
+      "expectedOutcome": "no_skill",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "amb-04",
+      "category": "ambiguity-meta",
+      "oracle": "ambiguous",
+      "prompt": "skills?",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "affirmed:question.read"
+      ],
+      "actualOperations": [],
+      "expectedTop": null,
+      "selected": [],
+      "expectedOutcome": "no_skill",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "amb-05",
+      "category": "ambiguity-meta",
+      "oracle": "solid",
+      "prompt": "security/secret-and-injection-reveiw 用这个 Skill",
+      "failedStages": [
+        "outcome"
+      ],
+      "lenientFailedStages": [
+        "outcome"
+      ],
+      "expectedOperations": [],
+      "actualOperations": [],
+      "expectedTop": null,
+      "selected": [],
+      "expectedOutcome": "clarify",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "amb-06",
+      "category": "ambiguity-meta",
+      "oracle": "solid",
+      "prompt": "午饭去哪吃？别给我代码",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "affirmed:question.read",
+        "negated:code.create"
+      ],
+      "actualOperations": [],
+      "expectedTop": null,
+      "selected": [],
+      "expectedOutcome": "no_skill",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "amb-07",
+      "category": "ambiguity-meta",
+      "oracle": "ambiguous",
+      "prompt": "agent 最近有点慢，是人慢还是接口慢？",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "affirmed:question.read"
+      ],
+      "actualOperations": [],
+      "expectedTop": null,
+      "selected": [],
+      "expectedOutcome": "no_skill",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "amb-10",
+      "category": "ambiguity-meta",
+      "oracle": "solid",
+      "prompt": "what can u do rn 🤔",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "affirmed:question.read"
+      ],
+      "actualOperations": [],
+      "expectedTop": null,
+      "selected": [],
+      "expectedOutcome": "no_skill",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    },
+    {
+      "id": "amb-11",
+      "category": "ambiguity-meta",
+      "oracle": "ambiguous",
+      "prompt": "review 一下",
+      "failedStages": [
+        "operations"
+      ],
+      "lenientFailedStages": [
+        "keyIntent"
+      ],
+      "expectedOperations": [
+        "affirmed:review.analyze"
+      ],
+      "actualOperations": [],
+      "expectedTop": null,
+      "selected": [],
+      "expectedOutcome": "no_skill",
+      "actualOutcome": "no_skill",
+      "expectedContext": false,
+      "actualContext": false
+    }
+  ]
+}

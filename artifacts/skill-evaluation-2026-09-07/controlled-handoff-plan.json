@@ -1,0 +1,20 @@
+{
+  "script_sha256": "5e0016c774b68c9dc3395140e701fc1821347cc66ebcba49c74c71ad8b77fca1",
+  "frozen_input_manifest_sha256": "61108d3a2fabcfdc394de9f24361f291ab4218fb143c22132bba849ad8981bbd",
+  "model": "glm-5.3-flash",
+  "model_base": "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions",
+  "case_ids": [
+    "S01",
+    "S02",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S10",
+    "S11",
+    "S12",
+    "S13",
+    "S17"
+  ],
+  "separate_from_original_metrics": true
+}

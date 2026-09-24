@@ -1,0 +1,64 @@
+{
+  "model": "glm-5.3-flash",
+  "tool_profile": "core",
+  "skill_selection_modes": [
+    "routed",
+    "model"
+  ],
+  "intent_semantic": false,
+  "candidate_reranker": false,
+  "embedding_routed_arm": true,
+  "embedding_model": "text-embedding-v3",
+  "embedding_cache_seed_sha256": "9fa8872acf11ee3e45ff1c64ab27c2d25e0bfb9491a641481e8dfe6caded75e8",
+  "model_base": "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions",
+  "embedding_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings",
+  "configured_mcp_count": 1,
+  "mcp_started": false,
+  "memory_context": "",
+  "tool_names": [
+    "ask_user",
+    "list_files",
+    "grep_files",
+    "read_file",
+    "file_line_count",
+    "write_file",
+    "edit_file",
+    "patch_file",
+    "batch_copy",
+    "batch_move",
+    "batch_delete",
+    "run_command",
+    "web_fetch",
+    "web_search",
+    "todo_write",
+    "task",
+    "subagent_note_write",
+    "subagent_note_read",
+    "subagent_note_list",
+    "git",
+    "find_symbols",
+    "find_references",
+    "get_ast_info",
+    "code_review",
+    "file_tree",
+    "diff_viewer",
+    "test_runner",
+    "load_skill",
+    "propose_skill"
+  ],
+  "catalog_drift_vs_2026_09_07": {
+    "quality/lint-and-static-cleanup": [
+      "content_digest",
+      "keywords",
+      "routing_identity_digest",
+      "supported_operations"
+    ],
+    "performance/hotpath-profiling": [
+      "activation_terms",
+      "content_digest",
+      "routing_identity_digest"
+    ]
+  },
+  "probe": "model_probe.py byte-identical to the 2026-09-07 baseline probe (sha256 c2630d0b); stops at the first non-load tool request in both arms",
+  "scope": "Paired fresh core-tool turns; only skill_selection_mode varies. No MCP, memories, or task execution."
+}

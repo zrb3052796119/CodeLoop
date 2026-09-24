@@ -1,0 +1,389 @@
+{
+  "schemaVersion": 1,
+  "suiteId": "skill-routing-messy-v1",
+  "description": "Independently authored offline challenge corpus for irregular intent-to-Skill routing. It is adversarial coverage, not an estimate of natural-traffic accuracy.",
+  "catalogFixture": "intent-skill-production-regressions.json",
+  "topK": 5,
+  "coverageMinimums": {
+    "caseCount": 74,
+    "contextCases": 12,
+    "compoundCases": 20,
+    "negativeCases": 18,
+    "nonRouteCases": 10,
+    "pairCount": 7,
+    "requiredDimensions": ["colloquial", "typo", "context", "negation", "correction", "compound", "quote", "authority", "polysemy", "ambiguity"],
+    "requiredLanguages": ["zh", "en", "mixed"]
+  },
+  "cases": [
+    {
+      "id": "zh-colloquial-auth-explain", "category": "colloquial", "language": "mixed", "dimensions": ["colloquial", "word-order"], "pairId": "zh-auth-intent",
+      "prompt": "嗯…auth 那坨 token 最后咋落到角色判断上的，给捋顺呗", "context": null,
+      "expected": {"operations": ["affirmed:explain.read"], "contextUsed": false, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation", "code-skills/minicode-study"], "forbiddenSkills": ["security/secret-and-injection-review"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-colloquial-auth-audit", "category": "colloquial", "language": "mixed", "dimensions": ["colloquial", "implicit-action"], "pairId": "zh-auth-intent",
+      "prompt": "登录这块儿感觉能串号，麻烦瞅瞅普通人是不是能摸到管理员订单", "context": null,
+      "expected": {"operations": ["affirmed:review.analyze"], "contextUsed": false, "outcome": "route", "topSkill": "security/secret-and-injection-review", "allowedSkills": ["security/secret-and-injection-review"], "forbiddenSkills": ["code-understanding/codebase-explanation"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-colloquial-pytest-red", "category": "colloquial", "language": "mixed", "dimensions": ["colloquial", "slang"], "pairId": "zh-pytest-surface",
+      "prompt": "pytest 那条断言又红了哈，帮忙看看到底哪抽风", "context": null,
+      "expected": {"operations": ["affirmed:debug.analyze"], "contextUsed": false, "outcome": "route", "topSkill": "debugging/pytest-debugging", "allowedSkills": ["debugging/pytest-debugging"], "forbiddenSkills": ["debugging/concurrency-debugging"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-colloquial-hotpath", "category": "colloquial", "language": "mixed", "dimensions": ["colloquial", "slang", "domain-negation"], "pairId": null,
+      "prompt": "接口磨磨唧唧的，DB 就十来毫秒，剩下时间烧哪儿了给扒一下", "context": null,
+      "expected": {"operations": ["affirmed:debug.analyze"], "contextUsed": false, "outcome": "route", "topSkill": "performance/hotpath-profiling", "allowedSkills": ["performance/hotpath-profiling"], "forbiddenSkills": ["dependencies/dependency-hygiene"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-colloquial-query-optimize", "category": "colloquial", "language": "mixed", "dimensions": ["colloquial", "slang"], "pairId": null,
+      "prompt": "orders 越跑越肉，执行计划看着像扫整表，给它收拾利索", "context": null,
+      "expected": {"operations": ["affirmed:refactor.update"], "contextUsed": false, "outcome": "route", "topSkill": "performance/hotpath-profiling", "allowedSkills": ["performance/hotpath-profiling"], "forbiddenSkills": ["refactoring/safe-refactor"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-colloquial-mobile-fix-no-skill", "category": "colloquial", "language": "zh", "dimensions": ["colloquial", "implicit-action", "catalog-gap"], "pairId": null,
+      "prompt": "手机上一打开设置页按钮就挤出去了，弄正常点儿", "context": null,
+      "expected": {"operations": ["affirmed:code.update"], "contextUsed": false, "outcome": "no_skill", "topSkill": null, "allowedSkills": [], "forbiddenSkills": ["testing/test-driven-development", "quality/lint-and-static-cleanup"], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "zh-colloquial-deploy-no-skill", "category": "colloquial", "language": "mixed", "dimensions": ["colloquial", "implicit-action", "catalog-gap"], "pairId": null,
+      "prompt": "每次发版还手点呢，给串成 tag 后自己灰度，炸了能回退", "context": null,
+      "expected": {"operations": ["affirmed:configure.update"], "contextUsed": false, "outcome": "no_skill", "topSkill": null, "allowedSkills": [], "forbiddenSkills": ["git/commit-hygiene"], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "zh-colloquial-split-commits", "category": "colloquial", "language": "mixed", "dimensions": ["colloquial", "slang"], "pairId": null,
+      "prompt": "这坨改动别糊一个 commit 里，按功能劈俩，回滚得开", "context": null,
+      "expected": {"operations": ["affirmed:code.update"], "contextUsed": false, "outcome": "route", "topSkill": "git/commit-hygiene", "allowedSkills": ["git/commit-hygiene"], "forbiddenSkills": [], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-typo-pytes-diagnose", "category": "typo", "language": "mixed", "dimensions": ["typo", "colloquial"], "pairId": "zh-pytest-surface",
+      "prompt": "pytes 那条断言又红了，瞅瞅啥原因", "context": null,
+      "expected": {"operations": ["affirmed:debug.analyze"], "contextUsed": false, "outcome": "route", "topSkill": "debugging/pytest-debugging", "allowedSkills": ["debugging/pytest-debugging"], "forbiddenSkills": ["debugging/concurrency-debugging"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-typo-meta-inventory", "category": "typo", "language": "mixed", "dimensions": ["typo", "meta-query"], "pairId": null,
+      "prompt": "这个 capablity 跟 intend 的映射给我列一哈", "context": null,
+      "expected": {"operations": ["affirmed:question.read"], "contextUsed": false, "outcome": "no_skill", "topSkill": null, "allowedSkills": [], "forbiddenSkills": ["code-understanding/design-review"], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "zh-typo-refacor", "category": "typo", "language": "mixed", "dimensions": ["typo", "negation"], "pairId": null,
+      "prompt": "refacor 下 agent_loop.py，行为别变", "context": null,
+      "expected": {"operations": ["affirmed:refactor.update", "negated:code.update"], "contextUsed": false, "outcome": "route", "topSkill": "refactoring/safe-refactor", "allowedSkills": ["refactoring/safe-refactor"], "forbiddenSkills": ["quality/lint-and-static-cleanup"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-typo-explicit-skill", "category": "typo", "language": "mixed", "dimensions": ["typo", "authority", "ambiguity"], "pairId": null,
+      "prompt": "用 securty-audit skill 查 auth 越权", "context": null,
+      "expected": {"operations": ["affirmed:review.analyze"], "contextUsed": false, "outcome": "clarify", "topSkill": null, "allowedSkills": [], "forbiddenSkills": ["security/secret-and-injection-review"], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "zh-typo-run-pytes", "category": "typo", "language": "mixed", "dimensions": ["typo", "colloquial"], "pairId": null,
+      "prompt": "跑下 pytes 就行", "context": null,
+      "expected": {"operations": ["affirmed:test.execute"], "contextUsed": false, "outcome": "route", "topSkill": "debugging/pytest-debugging", "allowedSkills": ["debugging/pytest-debugging"], "forbiddenSkills": ["dependencies/dependency-hygiene"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-typo-readme-update", "category": "typo", "language": "mixed", "dimensions": ["typo", "code-switch"], "pairId": null,
+      "prompt": "README 那段 usage 不对，updata 一下", "context": null,
+      "expected": {"operations": ["affirmed:document.update"], "contextUsed": false, "outcome": "route", "topSkill": "documentation/readme-authoring", "allowedSkills": ["documentation/readme-authoring"], "forbiddenSkills": ["quality/lint-and-static-cleanup"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-context-auth-continue", "category": "context", "language": "zh", "dimensions": ["context", "ellipsis", "colloquial"], "pairId": null,
+      "prompt": "这个再往下捋捋，直到权限判断那层", "context": {"messages": [{"role": "user", "content": "先帮我理解 auth.py 里 token 到角色判断的调用过程。"}, {"role": "assistant", "content": "已经找到入口，下面还有两层。"}], "activeTask": "继续解释 auth.py 调用链"},
+      "expected": {"operations": ["affirmed:explain.read"], "contextUsed": true, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation", "code-skills/minicode-study"], "forbiddenSkills": ["security/secret-and-injection-review"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-context-pytest-root-cause", "category": "context", "language": "zh", "dimensions": ["context", "ellipsis", "negation", "colloquial"], "pairId": null,
+      "prompt": "嗯就它，先别碰代码，光把为啥挂了说明白", "context": {"messages": [{"role": "user", "content": "CI 全量跑时 pytest 失败，单跑没事。"}, {"role": "assistant", "content": "现象复现了，还没找到根因。"}], "activeTask": "调查 pytest 隔离失败"},
+      "expected": {"operations": ["negated:code.update", "affirmed:debug.analyze"], "contextUsed": true, "outcome": "route", "topSkill": "debugging/pytest-debugging", "allowedSkills": ["debugging/pytest-debugging"], "forbiddenSkills": ["debugging/concurrency-debugging"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-context-frontend-fix-no-skill", "category": "context", "language": "zh", "dimensions": ["context", "ellipsis", "colloquial", "catalog-gap"], "pairId": null,
+      "prompt": "行，就照这个收拾，手机上别再横着滚", "context": {"messages": [{"role": "user", "content": "SettingsPage 手机上横向溢出。"}, {"role": "assistant", "content": "原因是容器最小宽度。"}], "activeTask": "修复 SettingsPage 移动端布局"},
+      "expected": {"operations": ["affirmed:code.update"], "contextUsed": true, "outcome": "no_skill", "topSkill": null, "allowedSkills": [], "forbiddenSkills": ["testing/test-driven-development"], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "zh-context-query-optimize", "category": "context", "language": "mixed", "dimensions": ["context", "ellipsis", "domain-negation"], "pairId": null,
+      "prompt": "那就按你说的弄，别动 Python 那边", "context": {"messages": [{"role": "user", "content": "orders 查询慢。"}, {"role": "assistant", "content": "执行计划确认全表扫描。"}], "activeTask": "优化 orders 查询"},
+      "expected": {"operations": ["affirmed:refactor.update", "negated:code.update"], "contextUsed": true, "outcome": "route", "topSkill": "performance/hotpath-profiling", "allowedSkills": ["performance/hotpath-profiling"], "forbiddenSkills": ["refactoring/safe-refactor"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-context-switch-readme", "category": "context", "language": "mixed", "dimensions": ["context", "target-switch", "correction"], "pairId": null,
+      "prompt": "先放放。换 README，把刚才结论补进去", "context": {"messages": [{"role": "user", "content": "普通用户能看到管理员订单。"}, {"role": "assistant", "content": "已经定位到资源所有权判断。"}], "activeTask": "审计 auth 越权"},
+      "expected": {"operations": ["affirmed:document.update"], "contextUsed": true, "outcome": "route", "topSkill": "documentation/readme-authoring", "allowedSkills": ["documentation/readme-authoring"], "forbiddenSkills": ["security/secret-and-injection-review"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-context-memory-audit-no-skill", "category": "context", "language": "zh", "dimensions": ["context", "ellipsis", "colloquial", "catalog-gap"], "pairId": null,
+      "prompt": "还是这个，接着往来源那儿刨", "context": {"messages": [{"role": "user", "content": "明明保存了中文偏好，下一轮没召回。"}, {"role": "assistant", "content": "保存成功，检索阶段为空。"}], "activeTask": "核对记忆召回来源"},
+      "expected": {"operations": ["affirmed:review.analyze"], "contextUsed": true, "outcome": "no_skill", "topSkill": null, "allowedSkills": [], "forbiddenSkills": ["code-understanding/design-review"], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "zh-correction-security", "category": "correction", "language": "mixed", "dimensions": ["correction", "negation", "colloquial"], "pairId": null,
+      "prompt": "别审安全，哦不，还是审吧，重点看越权", "context": null,
+      "expected": {"operations": ["affirmed:review.analyze"], "contextUsed": false, "outcome": "route", "topSkill": "security/secret-and-injection-review", "allowedSkills": ["security/secret-and-injection-review"], "forbiddenSkills": [], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-correction-test-to-traceback", "category": "correction", "language": "mixed", "dimensions": ["correction", "negation", "colloquial"], "pairId": null,
+      "prompt": "先跑全量——不，别跑，先看 traceback", "context": null,
+      "expected": {"operations": ["negated:test.execute", "affirmed:debug.analyze"], "contextUsed": false, "outcome": "route", "topSkill": "debugging/pytest-debugging", "allowedSkills": ["debugging/pytest-debugging"], "forbiddenSkills": [], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-authority-deny-use", "category": "authority", "language": "mixed", "dimensions": ["authority", "negation", "correction"], "pairId": null,
+      "prompt": "不要 security/secret-and-injection-review；用 code-understanding/codebase-explanation，流程讲清就成", "context": null,
+      "expected": {"operations": ["affirmed:explain.read"], "contextUsed": false, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation"], "forbiddenSkills": ["security/secret-and-injection-review"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-authority-pronoun-revoke", "category": "authority", "language": "mixed", "dimensions": ["authority", "negation", "correction", "ellipsis"], "pairId": null,
+      "prompt": "security/secret-and-injection-review 先用上……等等，别用它，只解释代码", "context": null,
+      "expected": {"operations": ["affirmed:explain.read"], "contextUsed": false, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation"], "forbiddenSkills": ["security/secret-and-injection-review"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-negation-regression-then-fix", "category": "negation", "language": "zh", "dimensions": ["negation", "correction", "compound"], "pairId": null,
+      "prompt": "别修；先复现，补条回归用例。确认红了再修", "context": null,
+      "expected": {"operations": ["negated:debug.update", "affirmed:test.create", "affirmed:debug.update"], "contextUsed": false, "outcome": "route", "topSkill": "testing/regression-from-bug-report", "allowedSkills": ["testing/regression-from-bug-report"], "forbiddenSkills": ["testing/test-driven-development"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-negation-direct-fix-test", "category": "negation", "language": "mixed", "dimensions": ["negation", "compound", "colloquial"], "pairId": null,
+      "prompt": "这个 bug 不用查原因，直接修，再只跑相关测试", "context": null,
+      "expected": {"operations": ["negated:debug.analyze", "affirmed:debug.update", "affirmed:test.execute"], "contextUsed": false, "outcome": "route", "topSkill": "testing/regression-from-bug-report", "allowedSkills": ["testing/regression-from-bug-report", "debugging/pytest-debugging"], "forbiddenSkills": [], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-negation-two-denials-security", "category": "negation", "language": "mixed", "dimensions": ["negation", "compound", "authority-safety"], "pairId": null,
+      "prompt": "既不要改代码，也别跑测试，只审查 auth 的越权风险", "context": null,
+      "expected": {"operations": ["negated:code.update", "negated:test.execute", "affirmed:review.analyze"], "contextUsed": false, "outcome": "route", "topSkill": "security/secret-and-injection-review", "allowedSkills": ["security/secret-and-injection-review"], "forbiddenSkills": ["testing/test-driven-development"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-negation-dont-forget-test", "category": "negation", "language": "zh", "dimensions": ["negation", "idiom"], "pairId": null,
+      "prompt": "不要忘了跑测试", "context": null,
+      "expected": {"operations": ["affirmed:test.execute"], "contextUsed": false, "outcome": "no_skill", "topSkill": null, "allowedSkills": [], "forbiddenSkills": [], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "zh-negation-double-mobile-no-skill", "category": "negation", "language": "mixed", "dimensions": ["negation", "double-negation", "catalog-gap"], "pairId": null,
+      "prompt": "不用不改，直接把 SettingsPage 修了", "context": null,
+      "expected": {"operations": ["affirmed:code.update"], "contextUsed": false, "outcome": "no_skill", "topSkill": null, "allowedSkills": [], "forbiddenSkills": ["testing/test-driven-development"], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "zh-compound-auth-three-actions", "category": "compound", "language": "mixed", "dimensions": ["compound", "colloquial", "no-punctuation"], "pairId": null,
+      "prompt": "auth 调用链捋一下再看看会不会越权最后把结论扔进 md", "context": null,
+      "expected": {"operations": ["affirmed:explain.read", "affirmed:review.analyze", "affirmed:document.create"], "contextUsed": false, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation", "security/secret-and-injection-review", "documentation/readme-authoring"], "forbiddenSkills": [], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-compound-pytest-fix-commits", "category": "compound", "language": "mixed", "dimensions": ["compound", "colloquial", "no-punctuation"], "pairId": null,
+      "prompt": "先把 pytest 为啥挂搞明白修完以后再把改动拆俩 commit", "context": null,
+      "expected": {"operations": ["affirmed:debug.analyze", "affirmed:debug.update", "affirmed:code.update"], "contextUsed": false, "outcome": "route", "topSkill": "debugging/pytest-debugging", "allowedSkills": ["debugging/pytest-debugging", "git/commit-hygiene"], "forbiddenSkills": ["debugging/concurrency-debugging"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-compound-search-query-no-optimize", "category": "compound", "language": "mixed", "dimensions": ["compound", "negation", "no-punctuation"], "pairId": null,
+      "prompt": "orders 查询在哪定义找出来然后看看为啥扫全表先别优化", "context": null,
+      "expected": {"operations": ["affirmed:search.read", "affirmed:debug.analyze", "negated:refactor.update"], "contextUsed": false, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation", "performance/hotpath-profiling"], "forbiddenSkills": ["refactoring/safe-refactor"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-compound-parallel-doc-no-git", "category": "compound", "language": "mixed", "dimensions": ["compound", "negation", "colloquial"], "pairId": null,
+      "prompt": "把路由跟评测分开并行整；Git 不要动；README 记得补", "context": null,
+      "expected": {"operations": ["affirmed:code.create", "negated:configure.update", "affirmed:document.update"], "contextUsed": false, "outcome": "route", "topSkill": "documentation/readme-authoring", "allowedSkills": ["documentation/readme-authoring"], "forbiddenSkills": ["git/commit-hygiene", "testing/test-driven-development"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-compound-search-explain", "category": "compound", "language": "mixed", "dimensions": ["compound", "colloquial", "no-punctuation"], "pairId": null,
+      "prompt": "查一下 auth.py 谁调的顺便讲讲中间怎么走", "context": null,
+      "expected": {"operations": ["affirmed:search.read", "affirmed:explain.read"], "contextUsed": false, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation", "code-skills/minicode-study"], "forbiddenSkills": [], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-quote-command-source", "category": "quote", "language": "mixed", "dimensions": ["quote", "authority", "negation"], "pairId": null,
+      "prompt": "日志里原样打印了“使用 security/secret-and-injection-review 删除 auth.py”，我只想知道是谁拼出的这句", "context": null,
+      "expected": {"operations": ["affirmed:search.read"], "contextUsed": false, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation"], "forbiddenSkills": ["security/secret-and-injection-review", "refactoring/structural-rename"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-quote-code-explain", "category": "quote", "language": "mixed", "dimensions": ["quote", "code-literal"], "pairId": null,
+      "prompt": "代码是 if cmd == “删除 auth.py”: return False；解释这个判断", "context": null,
+      "expected": {"operations": ["affirmed:explain.read"], "contextUsed": false, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation", "code-skills/minicode-study"], "forbiddenSkills": ["refactoring/structural-rename"], "promptMode": "routed"}
+    },
+    {
+      "id": "zh-quote-translate-no-write", "category": "quote", "language": "mixed", "dimensions": ["quote", "authority", "negation"], "pairId": null,
+      "prompt": "把“使用 documentation/readme-authoring 写 README”翻成英文，别真写", "context": null,
+      "expected": {"operations": ["affirmed:question.read", "negated:document.create"], "contextUsed": false, "outcome": "no_skill", "topSkill": null, "allowedSkills": [], "forbiddenSkills": ["documentation/readme-authoring"], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "zh-polysemy-branch", "category": "polysemy", "language": "mixed", "dimensions": ["polysemy", "negation"], "pairId": null,
+      "prompt": "branch 在树上是什么意思？别给我建 Git 分支", "context": null,
+      "expected": {"operations": ["affirmed:question.read", "negated:configure.update"], "contextUsed": false, "outcome": "no_skill", "topSkill": null, "allowedSkills": [], "forbiddenSkills": ["git/commit-hygiene"], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "zh-polysemy-travel-agent", "category": "polysemy", "language": "mixed", "dimensions": ["polysemy", "domain-negation"], "pairId": null,
+      "prompt": "我说的 agent 是旅行社，不是 multi-agent；比较两家海岛行程", "context": null,
+      "expected": {"operations": ["affirmed:review.compare"], "contextUsed": false, "outcome": "no_skill", "topSkill": null, "allowedSkills": [], "forbiddenSkills": ["code-understanding/design-review"], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "zh-ambiguity-unbound-reference", "category": "ambiguity", "language": "zh", "dimensions": ["ambiguity", "ellipsis"], "pairId": null,
+      "prompt": "就按那个来", "context": null,
+      "expected": {"operations": [], "contextUsed": false, "outcome": "clarify", "topSkill": null, "allowedSkills": [], "forbiddenSkills": [], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "en-typo-explian", "category": "typo", "language": "en", "dimensions": ["typo", "colloquial"], "pairId": null,
+      "prompt": "can u explian agent_loop.py call flow??", "context": null,
+      "expected": {"operations": ["affirmed:explain.read"], "contextUsed": false, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation", "code-skills/minicode-study"], "forbiddenSkills": ["security/secret-and-injection-review"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-typo-refacor-query", "category": "typo", "language": "en", "dimensions": ["typo", "code-switch"], "pairId": null,
+      "prompt": "plz refacor the SQL query logic in orders.py; it's doing full table scan", "context": null,
+      "expected": {"operations": ["affirmed:refactor.update"], "contextUsed": false, "outcome": "route", "topSkill": "performance/hotpath-profiling", "allowedSkills": ["performance/hotpath-profiling"], "forbiddenSkills": ["refactoring/safe-refactor"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-typo-run-pytes", "category": "typo", "language": "en", "dimensions": ["typo", "casing", "symbols"], "pairId": null,
+      "prompt": "RUN!! pytes tests in tests/test_router.py pls", "context": null,
+      "expected": {"operations": ["affirmed:test.execute"], "contextUsed": false, "outcome": "route", "topSkill": "debugging/pytest-debugging", "allowedSkills": ["debugging/pytest-debugging", "testing/test-driven-development"], "forbiddenSkills": ["dependencies/dependency-hygiene"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-slang-catalog-wut", "category": "typo", "language": "en", "dimensions": ["typo", "colloquial", "meta-query"], "pairId": "en-meta-slang",
+      "prompt": "wut skills/capabilites r avail rn?", "context": null,
+      "expected": {"operations": ["affirmed:question.read"], "contextUsed": false, "outcome": "no_skill", "topSkill": null, "allowedSkills": [], "forbiddenSkills": ["code-understanding/design-review"], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "en-slang-catalog-gimme", "category": "typo", "language": "en", "dimensions": ["typo", "colloquial", "meta-query"], "pairId": "en-meta-slang",
+      "prompt": "gimme d current intents n capabilities lol", "context": null,
+      "expected": {"operations": ["affirmed:question.read"], "contextUsed": false, "outcome": "no_skill", "topSkill": null, "allowedSkills": [], "forbiddenSkills": ["code-understanding/design-review"], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "en-compound-auth-no-edits", "category": "compound", "language": "en", "dimensions": ["compound", "symbols", "negation"], "pairId": null,
+      "prompt": "audit auth.py >>> then explain the call-flow; no edits pls", "context": null,
+      "expected": {"operations": ["affirmed:review.analyze", "affirmed:explain.read", "negated:code.update"], "contextUsed": false, "outcome": "route", "topSkill": "security/secret-and-injection-review", "allowedSkills": ["security/secret-and-injection-review", "code-understanding/codebase-explanation"], "forbiddenSkills": ["quality/lint-and-static-cleanup"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-compound-slow-query-tests", "category": "compound", "language": "en", "dimensions": ["compound", "symbols", "colloquial"], "pairId": null,
+      "prompt": "need SQL slow query fixed + add regression tests, thx", "context": null,
+      "expected": {"operations": ["affirmed:refactor.update", "affirmed:test.create"], "contextUsed": false, "outcome": "route", "topSkill": "performance/hotpath-profiling", "allowedSkills": ["performance/hotpath-profiling", "testing/test-driven-development"], "forbiddenSkills": ["debugging/pytest-debugging"], "promptMode": "routed"}
+    },
+    {
+      "id": "mixed-compound-auth-no-touch", "category": "compound", "language": "mixed", "dimensions": ["compound", "code-switch", "negation"], "pairId": null,
+      "prompt": "先 explain auth flow then 审计有没有越权; don't touch code", "context": null,
+      "expected": {"operations": ["affirmed:explain.read", "affirmed:review.analyze", "negated:code.update"], "contextUsed": false, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation", "security/secret-and-injection-review"], "forbiddenSkills": ["quality/lint-and-static-cleanup"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-compound-doc-query-test", "category": "compound", "language": "en", "dimensions": ["compound", "ordering"], "pairId": null,
+      "prompt": "write docs first pls, then tune the orders SQL index, and finally run pytest tests", "context": null,
+      "expected": {"operations": ["affirmed:document.create", "affirmed:refactor.update", "affirmed:test.execute"], "contextUsed": false, "outcome": "route", "topSkill": "documentation/readme-authoring", "allowedSkills": ["documentation/readme-authoring", "performance/hotpath-profiling", "debugging/pytest-debugging"], "forbiddenSkills": [], "promptMode": "routed"}
+    },
+    {
+      "id": "en-compound-callers-memory-name", "category": "compound", "language": "en", "dimensions": ["compound", "symbols", "incidental-skill-name"], "pairId": null,
+      "prompt": "find callers of parse_intent() & explain why routing picks memory-audit", "context": null,
+      "expected": {"operations": ["affirmed:search.read", "affirmed:explain.read"], "contextUsed": false, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation", "code-skills/minicode-study"], "forbiddenSkills": ["code-understanding/design-review"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-compound-profile-no-deploy", "category": "compound", "language": "en", "dimensions": ["compound", "negation", "domain-negation"], "pairId": null,
+      "prompt": "profile API p95 and optimize the SQL, but no deploy", "context": null,
+      "expected": {"operations": ["affirmed:debug.analyze", "affirmed:refactor.update", "negated:configure.update"], "contextUsed": false, "outcome": "route", "topSkill": "performance/hotpath-profiling", "allowedSkills": ["performance/hotpath-profiling"], "forbiddenSkills": ["git/commit-hygiene"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-correction-use-security", "category": "correction", "language": "en", "dimensions": ["correction", "negation", "authority", "ellipsis"], "pairId": null,
+      "prompt": "dont use security/secret-and-injection-review, actually use it to audit auth.py", "context": null,
+      "expected": {"operations": ["affirmed:review.analyze"], "contextUsed": false, "outcome": "route", "topSkill": "security/secret-and-injection-review", "allowedSkills": ["security/secret-and-injection-review"], "forbiddenSkills": [], "promptMode": "routed"}
+    },
+    {
+      "id": "en-correction-scratch-skill", "category": "correction", "language": "en", "dimensions": ["correction", "authority", "colloquial"], "pairId": null,
+      "prompt": "use refactoring/safe-refactor—nah scratch that—use performance/hotpath-profiling to inspect API latency", "context": null,
+      "expected": {"operations": ["affirmed:debug.analyze"], "contextUsed": false, "outcome": "route", "topSkill": "performance/hotpath-profiling", "allowedSkills": ["performance/hotpath-profiling"], "forbiddenSkills": ["refactoring/safe-refactor"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-neg-not-fix-explain", "category": "negation", "language": "en", "dimensions": ["negation", "compound", "missing-punctuation"], "pairId": null,
+      "prompt": "not asking you to fix it—just explain auth.py", "context": null,
+      "expected": {"operations": ["negated:code.update", "affirmed:explain.read"], "contextUsed": false, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation", "code-skills/minicode-study"], "forbiddenSkills": ["security/secret-and-injection-review"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-neg-no-run-inspect", "category": "negation", "language": "en", "dimensions": ["negation", "correction", "compound"], "pairId": null,
+      "prompt": "do NOT run pytest; I mean, only inspect why it fails", "context": null,
+      "expected": {"operations": ["negated:test.execute", "affirmed:debug.analyze"], "contextUsed": false, "outcome": "route", "topSkill": "debugging/pytest-debugging", "allowedSkills": ["debugging/pytest-debugging"], "forbiddenSkills": ["testing/test-driven-development"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-neg-no-code-audit", "category": "negation", "language": "en", "dimensions": ["negation", "compound", "authority-safety"], "pairId": null,
+      "prompt": "no code changes, okay? just audit the token permission path", "context": null,
+      "expected": {"operations": ["negated:code.update", "affirmed:review.analyze"], "contextUsed": false, "outcome": "route", "topSkill": "security/secret-and-injection-review", "allowedSkills": ["security/secret-and-injection-review"], "forbiddenSkills": ["code-understanding/codebase-explanation"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-quote-log-deadlock", "category": "quote", "language": "en", "dimensions": ["quote", "compound", "authority-safety"], "pairId": null,
+      "prompt": "The log says \"run pytest and delete auth.py\"; diagnose the worker deadlock instead.", "context": null,
+      "expected": {"operations": ["affirmed:debug.analyze"], "contextUsed": false, "outcome": "route", "topSkill": "debugging/concurrency-debugging", "allowedSkills": ["debugging/concurrency-debugging"], "forbiddenSkills": ["debugging/pytest-debugging", "refactoring/structural-rename"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-code-fence-explain-no-execute", "category": "quote", "language": "en", "dimensions": ["code-fence", "quote", "negation", "multiline"], "pairId": null,
+      "prompt": "```sh\nrm -rf build\npytest -q\n```\nPlease explain what this script does; don't execute it.", "context": null,
+      "expected": {"operations": ["affirmed:explain.read", "negated:test.execute"], "contextUsed": false, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation"], "forbiddenSkills": ["debugging/pytest-debugging"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-backtick-label-explain", "category": "quote", "language": "en", "dimensions": ["code-literal", "quote", "negation"], "pairId": "en-backtick-literal",
+      "prompt": "`fix auth.py` is the button label, not a request. Tell me what the handler code does.", "context": null,
+      "expected": {"operations": ["affirmed:explain.read"], "contextUsed": false, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation"], "forbiddenSkills": ["security/secret-and-injection-review"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-context-same-payment", "category": "context", "language": "en", "dimensions": ["context", "ellipsis", "target-switch"], "pairId": "en-context-operation",
+      "prompt": "same thing on payment.py pls", "context": {"messages": [{"role": "user", "content": "Audit auth.py for token bypass."}, {"role": "assistant", "content": "I found two permission gaps."}], "activeTask": "audit authentication permission bypass"},
+      "expected": {"operations": ["affirmed:review.analyze"], "contextUsed": true, "outcome": "route", "topSkill": "security/secret-and-injection-review", "allowedSkills": ["security/secret-and-injection-review"], "forbiddenSkills": ["code-understanding/codebase-explanation"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-context-retry-path", "category": "context", "language": "en", "dimensions": ["context", "ellipsis", "question-form"], "pairId": "en-context-operation",
+      "prompt": "and the retry path?", "context": {"messages": [{"role": "user", "content": "Explain agent_loop.py call flow."}, {"role": "assistant", "content": "The main path is clear."}], "activeTask": "explain agent_loop.py call flow"},
+      "expected": {"operations": ["affirmed:explain.read"], "contextUsed": true, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation", "code-skills/minicode-study"], "forbiddenSkills": ["security/secret-and-injection-review"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-context-do-that-query", "category": "context", "language": "en", "dimensions": ["context", "ellipsis", "negation"], "pairId": null,
+      "prompt": "yep do that, but don't touch migrations", "context": {"messages": [{"role": "user", "content": "Tune the orders SQL query index."}, {"role": "assistant", "content": "I proposed a covering index."}], "activeTask": "optimize orders SQL query"},
+      "expected": {"operations": ["affirmed:refactor.update", "negated:code.update"], "contextUsed": true, "outcome": "route", "topSkill": "performance/hotpath-profiling", "allowedSkills": ["performance/hotpath-profiling"], "forbiddenSkills": ["refactoring/safe-refactor"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-context-unsafe-delete", "category": "context", "language": "en", "dimensions": ["context", "ellipsis", "unsafe-context", "ambiguity"], "pairId": null,
+      "prompt": "same as above", "context": {"messages": [{"role": "user", "content": "Delete legacy.py."}, {"role": "assistant", "content": "Waiting for confirmation."}], "activeTask": "delete legacy.py"},
+      "expected": {"operations": [], "contextUsed": false, "outcome": "clarify", "topSkill": null, "allowedSkills": [], "forbiddenSkills": ["refactoring/structural-rename"], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "en-context-sql-not-suspect", "category": "context", "language": "en", "dimensions": ["context", "domain-negation", "continuation"], "pairId": "en-context-domain",
+      "prompt": "keep going, SQL is not the suspect", "context": {"messages": [{"role": "user", "content": "Inspect API latency in Python."}, {"role": "assistant", "content": "The service spends 900ms before DB."}], "activeTask": "inspect Python API latency"},
+      "expected": {"operations": ["affirmed:debug.analyze"], "contextUsed": true, "outcome": "route", "topSkill": "performance/hotpath-profiling", "allowedSkills": ["performance/hotpath-profiling"], "forbiddenSkills": ["dependencies/dependency-hygiene"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-context-intent-switch-explain", "category": "context", "language": "en", "dimensions": ["context", "intent-switch", "domain-negation"], "pairId": "en-context-domain",
+      "prompt": "same query, read-only explanation this time", "context": {"messages": [{"role": "user", "content": "Use performance/hotpath-profiling to optimize the orders query."}, {"role": "assistant", "content": "The index plan is ready."}], "activeTask": "optimize orders database query"},
+      "expected": {"operations": ["affirmed:explain.read"], "contextUsed": true, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation"], "forbiddenSkills": ["performance/hotpath-profiling"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-explicit-security-upper", "category": "authority", "language": "en", "dimensions": ["authority", "casing", "colloquial"], "pairId": "en-explicit-security",
+      "prompt": "USE the security/secret-and-injection-review skill pls: auth.py, privilege bypass check", "context": null,
+      "expected": {"operations": ["affirmed:review.analyze"], "contextUsed": false, "outcome": "route", "topSkill": "security/secret-and-injection-review", "allowedSkills": ["security/secret-and-injection-review"], "forbiddenSkills": [], "promptMode": "routed"}
+    },
+    {
+      "id": "en-explicit-security-look", "category": "authority", "language": "en", "dimensions": ["authority", "colloquial"], "pairId": "en-explicit-security",
+      "prompt": "pls use skill named security/secret-and-injection-review to look for auth bypass", "context": null,
+      "expected": {"operations": ["affirmed:review.analyze"], "contextUsed": false, "outcome": "route", "topSkill": "security/secret-and-injection-review", "allowedSkills": ["security/secret-and-injection-review"], "forbiddenSkills": [], "promptMode": "routed"}
+    },
+    {
+      "id": "en-explicit-sigil-profile", "category": "authority", "language": "en", "dimensions": ["authority", "symbols", "implicit-action"], "pairId": null,
+      "prompt": "$performance/hotpath-profiling — orders SQL index; make it stop full-scanning", "context": null,
+      "expected": {"operations": ["affirmed:refactor.update"], "contextUsed": false, "outcome": "route", "topSkill": "performance/hotpath-profiling", "allowedSkills": ["performance/hotpath-profiling"], "forbiddenSkills": ["refactoring/safe-refactor"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-explicit-unknown-typo", "category": "authority", "language": "en", "dimensions": ["authority", "typo", "ambiguity"], "pairId": null,
+      "prompt": "use security/secret-and-injection-reveiw to audit auth.py", "context": null,
+      "expected": {"operations": ["affirmed:review.analyze"], "contextUsed": false, "outcome": "clarify", "topSkill": null, "allowedSkills": [], "forbiddenSkills": ["security/secret-and-injection-review"], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "en-no-skill-database-restaurant", "category": "polysemy", "language": "en", "dimensions": ["polysemy", "hard-negative"], "pairId": null,
+      "prompt": "find me a database-themed restaurant nearby", "context": null,
+      "expected": {"operations": ["affirmed:search.read"], "contextUsed": false, "outcome": "no_skill", "topSkill": null, "allowedSkills": [], "forbiddenSkills": ["performance/hotpath-profiling", "code-understanding/codebase-explanation"], "promptMode": "inventory_names"}
+    },
+    {
+      "id": "en-backtick-skill-sentence", "category": "quote", "language": "en", "dimensions": ["code-literal", "quote", "authority"], "pairId": "en-backtick-literal",
+      "prompt": "The docs contain `use security/secret-and-injection-review skill`; merely explain that sentence.", "context": null,
+      "expected": {"operations": ["affirmed:explain.read"], "contextUsed": false, "outcome": "route", "topSkill": "code-understanding/codebase-explanation", "allowedSkills": ["code-understanding/codebase-explanation"], "forbiddenSkills": ["security/secret-and-injection-review"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-missing-punct-review-explain", "category": "compound", "language": "en", "dimensions": ["compound", "missing-punctuation", "negation"], "pairId": null,
+      "prompt": "please review auth.py dont fix it just explain the permission flow", "context": null,
+      "expected": {"operations": ["affirmed:review.analyze", "negated:code.update", "affirmed:explain.read"], "contextUsed": false, "outcome": "route", "topSkill": "security/secret-and-injection-review", "allowedSkills": ["security/secret-and-injection-review", "code-understanding/codebase-explanation"], "forbiddenSkills": [], "promptMode": "routed"}
+    },
+    {
+      "id": "en-implicit-query-fast", "category": "colloquial", "language": "en", "dimensions": ["colloquial", "implicit-action", "abbreviation"], "pairId": null,
+      "prompt": "orders query takes 8s rn can u make it fast", "context": null,
+      "expected": {"operations": ["affirmed:refactor.update"], "contextUsed": false, "outcome": "route", "topSkill": "performance/hotpath-profiling", "allowedSkills": ["performance/hotpath-profiling"], "forbiddenSkills": ["refactoring/safe-refactor"], "promptMode": "routed"}
+    },
+    {
+      "id": "en-ampersand-three-actions", "category": "compound", "language": "en", "dimensions": ["compound", "symbols", "missing-punctuation"], "pairId": null,
+      "prompt": "audit auth.py & explain its call flow & run pytest", "context": null,
+      "expected": {"operations": ["affirmed:review.analyze", "affirmed:explain.read", "affirmed:test.execute"], "contextUsed": false, "outcome": "route", "topSkill": "security/secret-and-injection-review", "allowedSkills": ["security/secret-and-injection-review", "code-understanding/codebase-explanation", "debugging/pytest-debugging"], "forbiddenSkills": [], "promptMode": "routed"}
+    }
+  ]
+}

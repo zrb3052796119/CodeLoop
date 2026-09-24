@@ -1,0 +1,72 @@
+{
+  "task_id": "T24",
+  "scale": "S100",
+  "variant": "base",
+  "arm": "A",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-base",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": null,
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": false,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "a5c9f90afc92a822521128fe2aa2bfe0ed4c2eab275acd170efc0601f1a7dd58",
+      "elapsed_ms": 3954.8034999752417,
+      "type": "assistant",
+      "content_chars": 45,
+      "tool_call_names": [],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 6935,
+        "outputTokens": 89,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [],
+  "stop_reason": "assistant_response",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "8a32b6ca33c8204fed0e777be4e9388b61ea558800df5e0206ab1ae72fad9afd",
+  "prompt_mode": "suppressed",
+  "routing_outcome": "no_skill",
+  "routing_outcome_reason": "user-denied-all-skills",
+  "system_prompt_sha256": "a45c69b77bc9c1893992085f0318c1f789d91238c108391d32bdf4ce49b9a567",
+  "system_prompt_chars": 7862,
+  "policy": {
+    "reason_code": "user-denied-all-skills",
+    "catalog_scope": false,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 6935,
+  "output_tokens": 89,
+  "routing_events": [],
+  "elapsed_ms": 4499.214250012301
+}

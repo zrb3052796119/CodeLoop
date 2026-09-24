@@ -1,0 +1,124 @@
+{
+  "task_id": "T13",
+  "scale": "S100",
+  "variant": "wrong-placement",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-wrong-placement",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283557788557501504",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "graphql-api",
+          "payment-gateway"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "1578f77cf15950a0981e417b5dd21417b8ebd02c679adad4b9f0d7b8726507ab",
+      "output_chars": 3195,
+      "seen_qualified_names": [
+        "graphql-api/circuit-breaker",
+        "graphql-api/config-management",
+        "graphql-api/idempotency",
+        "graphql-api/pagination",
+        "graphql-api/rate-limiting",
+        "graphql-api/retry-backoff",
+        "graphql-api/security-hardening",
+        "graphql-api/timeout-tuning",
+        "payment-gateway/circuit-breaker",
+        "payment-gateway/debugging-playbook",
+        "payment-gateway/idempotency",
+        "payment-gateway/pagination",
+        "payment-gateway/pci-hardening",
+        "payment-gateway/performance-tuning",
+        "payment-gateway/rate-limiting",
+        "payment-gateway/retry-backoff",
+        "payment-gateway/retry-helper-legacy",
+        "payment-gateway/security-hardening",
+        "payment-gateway/timeout-tuning"
+      ],
+      "seen_directories": [
+        "graphql-api",
+        "payment-gateway"
+      ],
+      "elapsed_ms": 2.5502090575173497
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "851dd9359c50671c2cb4019273e340112f7a41e46142371b0c13eb2d3ac63ba6",
+      "elapsed_ms": 12896.93399996031,
+      "type": "tool_calls",
+      "content_chars": 113,
+      "tool_call_names": [
+        "list_files",
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7957,
+        "outputTokens": 355,
+        "cacheReadTokens": 7616,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "f8d0ff2c5402c35727774d20d9d50c4ef18bfaa9e27f114ed2d4262c4564740b",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "5140199d656d289a9f28606ab8dac20af765fa69a6ea809f10757f9a6b346f49",
+  "system_prompt_chars": 12431,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 7957,
+  "output_tokens": 355,
+  "routing_events": [],
+  "elapsed_ms": 13476.868833065964
+}

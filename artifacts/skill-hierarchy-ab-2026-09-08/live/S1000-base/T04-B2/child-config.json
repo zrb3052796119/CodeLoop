@@ -1,0 +1,15 @@
+{
+  "task_id": "T04",
+  "prompt": "Our GraphQL clients currently fetch entire lists in one shot and it's getting slow. I want proper cursor-based pagination on the server side connections.",
+  "scale": "S1000",
+  "variant": "base",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-base",
+  "run_dir": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/live/S1000-base/T04-B2",
+  "snapshot": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/snapshot",
+  "fake_scenario": null,
+  "fake_target": "",
+  "max_steps": 8,
+  "call_timeout_seconds": 60.0,
+  "run_timeout_seconds": 480.0
+}

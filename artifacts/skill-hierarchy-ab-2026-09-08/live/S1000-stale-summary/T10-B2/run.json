@@ -1,0 +1,125 @@
+{
+  "task_id": "T10",
+  "scale": "S1000",
+  "variant": "stale-summary",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-stale-summary",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283485633106930407",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "payment-gateway"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "ec7c9110d4d3906082ffc2d65dc37304d0a30dac65a107691db56ba914c02045",
+      "output_chars": 3709,
+      "seen_qualified_names": [
+        "payment-gateway/backpressure",
+        "payment-gateway/batch-processing",
+        "payment-gateway/caching-strategy",
+        "payment-gateway/circuit-breaker",
+        "payment-gateway/config-management",
+        "payment-gateway/connection-pooling",
+        "payment-gateway/dead-letter-handling",
+        "payment-gateway/debugging-playbook",
+        "payment-gateway/error-mapping",
+        "payment-gateway/idempotency",
+        "payment-gateway/observability",
+        "payment-gateway/pagination",
+        "payment-gateway/pci-hardening",
+        "payment-gateway/performance-tuning",
+        "payment-gateway/rate-limiting",
+        "payment-gateway/retry-backoff",
+        "payment-gateway/retry-helper-legacy",
+        "payment-gateway/schema-migration",
+        "payment-gateway/security-hardening",
+        "payment-gateway/testing-strategy",
+        "payment-gateway/timeout-tuning",
+        "payment-gateway/upgrade-runbook"
+      ],
+      "seen_directories": [
+        "payment-gateway"
+      ],
+      "elapsed_ms": 6.294292048551142
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "a86d6a788be8872356ad9d86757ba8954f2ac66c574325cfae4fd034495e09de",
+      "elapsed_ms": 3132.4770828941837,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "browse_skill_directory",
+        "list_files"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9268,
+        "outputTokens": 104,
+        "cacheReadTokens": 9216,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 1
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "f7b53465d2f17f614a4699b20f3f44c717bed290d9c0e8d4697a01385e7c8405",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "1aee8141eae0bc4676f7507ab9d9eec62616e7e41634410d977f011471db6fe0",
+  "system_prompt_chars": 17936,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 9268,
+  "output_tokens": 104,
+  "routing_events": [],
+  "elapsed_ms": 7957.606457988732
+}

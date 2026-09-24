@@ -1,0 +1,209 @@
+{
+  "fresh50": {
+    "fresh50-baseline-disabled": {
+      "total": 50,
+      "primary": 22,
+      "strict": 21,
+      "readonly_count": 30,
+      "true_readonly_effect_ids": [
+        "T05",
+        "T11"
+      ],
+      "readonly_unknown_ids": [
+        "T01",
+        "T06",
+        "T07",
+        "T08",
+        "T09",
+        "T13",
+        "T16",
+        "T17",
+        "T18",
+        "T19",
+        "T21",
+        "T23",
+        "T24",
+        "T41",
+        "T42",
+        "T43",
+        "T44",
+        "T45",
+        "T46"
+      ],
+      "readonly_check_failed_ids": [
+        "T01",
+        "T05",
+        "T06",
+        "T08",
+        "T09",
+        "T11",
+        "T13",
+        "T19",
+        "T21",
+        "T23",
+        "T41",
+        "T42",
+        "T43",
+        "T45"
+      ],
+      "semantic_status": {
+        "disabled": 50
+      },
+      "sha256": {
+        "results.json": "2b81ef2db4d83bb769475a84951ec42ef16e7ea743fd55f779a9354c1def2706",
+        "summary.json": "738329b17245c007ede1c1e1e7b9344016648ec6157efbb38292543b7f4da644",
+        "freeze.json": "a4d4f4a424005c715dfb63fd22b95169a88b8ce8f273869d2212789cf103f20b"
+      }
+    },
+    "fresh50-baseline-live": {
+      "total": 50,
+      "primary": 37,
+      "strict": 36,
+      "readonly_count": 30,
+      "true_readonly_effect_ids": [
+        "T05",
+        "T11"
+      ],
+      "readonly_unknown_ids": [
+        "T07",
+        "T09",
+        "T13",
+        "T16",
+        "T19",
+        "T42",
+        "T44"
+      ],
+      "readonly_check_failed_ids": [
+        "T05",
+        "T09",
+        "T11",
+        "T13",
+        "T19",
+        "T42"
+      ],
+      "semantic_status": {
+        "accepted": 16,
+        "skipped": 29,
+        "abstained": 1,
+        "invalid_response": 1,
+        "timeout": 2,
+        "provider_error": 1
+      },
+      "sha256": {
+        "results.json": "99a94f119f359f35ad1bbe4286057a7b0a69bd517099f7fb37495b56111bbfa0",
+        "summary.json": "3abb4b300e36b84b779e058ec8935c665da510d3e094f2d747e744fb48c8ae9e",
+        "freeze.json": "2af90ca7e73fb795d140779adf951238567d100c34404885475f1da5b5c93e5e"
+      }
+    },
+    "fresh50-final-disabled": {
+      "total": 50,
+      "primary": 22,
+      "strict": 21,
+      "readonly_count": 30,
+      "true_readonly_effect_ids": [
+        "T05",
+        "T11"
+      ],
+      "readonly_unknown_ids": [
+        "T01",
+        "T06",
+        "T07",
+        "T08",
+        "T09",
+        "T13",
+        "T16",
+        "T17",
+        "T18",
+        "T19",
+        "T21",
+        "T23",
+        "T24",
+        "T41",
+        "T42",
+        "T43",
+        "T44",
+        "T45",
+        "T46"
+      ],
+      "readonly_check_failed_ids": [
+        "T01",
+        "T05",
+        "T06",
+        "T08",
+        "T09",
+        "T11",
+        "T13",
+        "T19",
+        "T21",
+        "T23",
+        "T41",
+        "T42",
+        "T43",
+        "T45"
+      ],
+      "semantic_status": {
+        "disabled": 50
+      },
+      "sha256": {
+        "results.json": "a27947727900c553d44fa25474cd93473f0ae746920f7310fce5daf1662767af",
+        "summary.json": "5f84a4f4542567b2b7f25bd710554ccb40bd0cd432bfcb141d356a4c112833f0",
+        "freeze.json": "6228f02a25be3fbc1a9fa7ef81ab8fac649ce0c74866c8158328221707957242"
+      }
+    },
+    "fresh50-final-live": {
+      "total": 50,
+      "primary": 34,
+      "strict": 33,
+      "readonly_count": 30,
+      "true_readonly_effect_ids": [
+        "T05",
+        "T11"
+      ],
+      "readonly_unknown_ids": [
+        "T01",
+        "T07",
+        "T08",
+        "T09",
+        "T13",
+        "T16",
+        "T17",
+        "T21"
+      ],
+      "readonly_check_failed_ids": [
+        "T01",
+        "T05",
+        "T08",
+        "T09",
+        "T11",
+        "T13",
+        "T21"
+      ],
+      "semantic_status": {
+        "timeout": 5,
+        "skipped": 29,
+        "abstained": 1,
+        "accepted": 14,
+        "invalid_response": 1
+      },
+      "sha256": {
+        "results.json": "9ae35235b3e21bd23f0820fb3209b2531ff9fc6b080976dcb8619135d1e54663",
+        "summary.json": "c43c31724ee8c6f42f819e65dd08aaf4dd41db9a9661494819167a894bc99452",
+        "freeze.json": "9c0aae666930a43d1b9049343c99171f1adb9addecaf8307a5216ad987d139d2"
+      }
+    }
+  },
+  "offline": {
+    "empty": {
+      "count": 50,
+      "request_and_result_difference_ids": []
+    },
+    "baseline_accepted": {
+      "count": 50,
+      "request_and_result_difference_ids": []
+    },
+    "final_accepted": {
+      "count": 50,
+      "request_and_result_difference_ids": []
+    }
+  }
+}

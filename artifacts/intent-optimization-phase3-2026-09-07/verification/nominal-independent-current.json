@@ -1,0 +1,303 @@
+[
+  {
+    "text": "阅读 app.py 后直接更新函数。",
+    "primary": "search",
+    "readonly": true,
+    "operations": [
+      {
+        "intent": "search",
+        "action": "read",
+        "polarity": "affirmed",
+        "clause": "阅读 app.py 后直接更新函数。"
+      }
+    ]
+  },
+  {
+    "text": "先检查代码后直接修复函数中的错误。",
+    "primary": "debug",
+    "readonly": false,
+    "operations": [
+      {
+        "intent": "review",
+        "action": "analyze",
+        "polarity": "affirmed",
+        "clause": "先检查代码后"
+      },
+      {
+        "intent": "debug",
+        "action": "update",
+        "polarity": "affirmed",
+        "clause": "直接修复函数中的错误。"
+      }
+    ]
+  },
+  {
+    "text": "检查代码并修复函数中的错误。",
+    "primary": "debug",
+    "readonly": false,
+    "operations": [
+      {
+        "intent": "review",
+        "action": "analyze",
+        "polarity": "affirmed",
+        "clause": "检查代码"
+      },
+      {
+        "intent": "debug",
+        "action": "update",
+        "polarity": "affirmed",
+        "clause": "修复函数中的错误。"
+      }
+    ]
+  },
+  {
+    "text": "检查代码，修复函数中的错误。",
+    "primary": "debug",
+    "readonly": false,
+    "operations": [
+      {
+        "intent": "review",
+        "action": "analyze",
+        "polarity": "affirmed",
+        "clause": "检查代码"
+      },
+      {
+        "intent": "debug",
+        "action": "update",
+        "polarity": "affirmed",
+        "clause": "修复函数中的错误。"
+      }
+    ]
+  },
+  {
+    "text": "审查 app.py 的代码后立即删除函数。",
+    "primary": "review",
+    "readonly": true,
+    "operations": [
+      {
+        "intent": "review",
+        "action": "analyze",
+        "polarity": "affirmed",
+        "clause": "审查 app.py 的代码后立即删除函数。"
+      }
+    ]
+  },
+  {
+    "text": "解释 app.py 的逻辑后立刻修改函数。",
+    "primary": "explain",
+    "readonly": true,
+    "operations": [
+      {
+        "intent": "explain",
+        "action": "read",
+        "polarity": "affirmed",
+        "clause": "解释 app.py 的逻辑后立刻修改函数。"
+      }
+    ]
+  },
+  {
+    "text": "先阅读文档后再修改函数。",
+    "primary": "code",
+    "readonly": false,
+    "operations": [
+      {
+        "intent": "code",
+        "action": "update",
+        "polarity": "affirmed",
+        "clause": "修改函数。"
+      }
+    ]
+  },
+  {
+    "text": "阅读 app.py 之后修改函数。",
+    "primary": "code",
+    "readonly": false,
+    "operations": [
+      {
+        "intent": "search",
+        "action": "read",
+        "polarity": "affirmed",
+        "clause": "阅读 app.py 之后"
+      },
+      {
+        "intent": "code",
+        "action": "update",
+        "polarity": "affirmed",
+        "clause": "修改函数。"
+      }
+    ]
+  },
+  {
+    "text": "查看负责删除文件的函数。",
+    "primary": "search",
+    "readonly": true,
+    "operations": [
+      {
+        "intent": "search",
+        "action": "read",
+        "polarity": "affirmed",
+        "clause": "查看负责删除文件的函数。"
+      }
+    ]
+  },
+  {
+    "text": "检查用户编号的生成函数。",
+    "primary": "review",
+    "readonly": true,
+    "operations": [
+      {
+        "intent": "review",
+        "action": "analyze",
+        "polarity": "affirmed",
+        "clause": "检查用户编号的生成函数。"
+      }
+    ]
+  },
+  {
+    "text": "比较用于重命名文件的脚本。",
+    "primary": "review",
+    "readonly": true,
+    "operations": [
+      {
+        "intent": "review",
+        "action": "compare",
+        "polarity": "affirmed",
+        "clause": "比较用于重命名文件的脚本。"
+      }
+    ]
+  },
+  {
+    "text": "查看文件和删除文件的函数。",
+    "primary": "search",
+    "readonly": true,
+    "operations": [
+      {
+        "intent": "search",
+        "action": "read",
+        "polarity": "affirmed",
+        "clause": "查看文件和删除文件的函数。"
+      }
+    ]
+  },
+  {
+    "text": "解释 create 和 delete 命令的区别。",
+    "primary": "unknown",
+    "readonly": false,
+    "operations": []
+  },
+  {
+    "text": "Find the function that deletes files.",
+    "primary": "search",
+    "readonly": true,
+    "operations": [
+      {
+        "intent": "search",
+        "action": "read",
+        "polarity": "affirmed",
+        "clause": "Find the function that deletes files."
+      }
+    ]
+  },
+  {
+    "text": "Review the code and update the function.",
+    "primary": "code",
+    "readonly": false,
+    "operations": [
+      {
+        "intent": "review",
+        "action": "analyze",
+        "polarity": "affirmed",
+        "clause": "Review the code"
+      },
+      {
+        "intent": "code",
+        "action": "update",
+        "polarity": "affirmed",
+        "clause": "update the function."
+      }
+    ]
+  },
+  {
+    "text": "Review app.py then delete function old_handler.",
+    "primary": "code",
+    "readonly": false,
+    "operations": [
+      {
+        "intent": "review",
+        "action": "analyze",
+        "polarity": "affirmed",
+        "clause": "Review app.py"
+      },
+      {
+        "intent": "code",
+        "action": "delete",
+        "polarity": "affirmed",
+        "clause": "delete function old_handler."
+      }
+    ]
+  },
+  {
+    "text": "Find the rename command and explain its syntax.",
+    "primary": "search",
+    "readonly": true,
+    "operations": [
+      {
+        "intent": "search",
+        "action": "read",
+        "polarity": "affirmed",
+        "clause": "Find the rename command"
+      },
+      {
+        "intent": "explain",
+        "action": "read",
+        "polarity": "affirmed",
+        "clause": "explain its syntax."
+      }
+    ]
+  },
+  {
+    "text": "先读代码接着更新函数。",
+    "primary": "code",
+    "readonly": false,
+    "operations": [
+      {
+        "intent": "code",
+        "action": "update",
+        "polarity": "affirmed",
+        "clause": "更新函数。"
+      }
+    ]
+  },
+  {
+    "text": "检查代码完成后更新函数。",
+    "primary": "code",
+    "readonly": false,
+    "operations": [
+      {
+        "intent": "review",
+        "action": "analyze",
+        "polarity": "affirmed",
+        "clause": "检查代码"
+      },
+      {
+        "intent": "code",
+        "action": "update",
+        "polarity": "affirmed",
+        "clause": "更新函数。"
+      }
+    ]
+  },
+  {
+    "text": "读完 README.md 后立即删除函数。",
+    "primary": "code",
+    "readonly": false,
+    "operations": [
+      {
+        "intent": "code",
+        "action": "delete",
+        "polarity": "affirmed",
+        "clause": "读完 README.md 后立即删除函数。"
+      }
+    ]
+  }
+]

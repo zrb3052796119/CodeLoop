@@ -1,0 +1,15 @@
+{
+  "task_id": "T02",
+  "prompt": "Postgres queries die whenever the database hiccups for a second. Add retry with exponential backoff to our DB client wrapper so transient errors recover on their own.",
+  "scale": "S100",
+  "variant": "stale-summary",
+  "arm": "A",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-stale-summary",
+  "run_dir": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/live/S100-stale-summary/T02-A",
+  "snapshot": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/snapshot",
+  "fake_scenario": null,
+  "fake_target": "",
+  "max_steps": 8,
+  "call_timeout_seconds": 60.0,
+  "run_timeout_seconds": 480.0
+}

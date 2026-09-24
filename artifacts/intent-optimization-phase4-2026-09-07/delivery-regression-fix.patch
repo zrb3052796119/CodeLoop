@@ -1,0 +1,25 @@
+--- a/minicode/intent_parser.py
++++ b/minicode/intent_parser.py
+@@ -9452,6 +9452,22 @@
+             visible_end,
+         ):
+             separator = matching_text[match.start() : match.end()].strip()
++            if (
++                separator in {"。", "！", "？"}
++                and re.match(
++                    r"先\s*(?:请|帮我|麻烦)?\s*分析",
++                    matching_text[match.end() :],
++                )
++                and _HYPOTHETICAL_RENAME_PREFIX_RE.search(
++                    matching_text[start : match.start()]
++                ) is None
++            ):
++                # A factual report supplies the subject of its analysis.
++                # Splitting it creates two unresolved requests and prevents
++                # semantic fallback from classifying either one. Only close
++                # a hypothetical frame here so its discussed action cannot
++                # govern the following affirmative analysis.
++                continue
+             if (
+                 separator in {",", "，"}
+                 and re.match(

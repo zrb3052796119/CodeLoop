@@ -1,0 +1,41 @@
+{
+  "unchanged_during_run": true,
+  "at_start": {
+    "code-understanding/codebase-explanation": "e8a180242ce259904e469a00c4f745229dc549ea6c079d8adbaa69e2007692b2",
+    "code-understanding/design-review": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+    "code-understanding/minicode-learning-coach-demo": "9f8b473f7db0a0e955faa5901fbcfe4799e0d63568fc3d8a97939a41c5782176",
+    "documentation/readme-authoring": "6990db45ca8ef1abb0eb12dca4daf9f128e604f12575292f976649ec6524c706",
+    "quality/lint-and-static-cleanup": "4a5cbb6a767a7203956f19ca1dc458b15b099714851dd9bb99c6260b741d89bf",
+    "code-skills/minicode-study": "3759d5f3f8faed34a100c6638da7ffc20a479c1b0d5d8801c9f2518c44c0fe7b",
+    "security/secret-and-injection-review": "706a8e5e732bcdf8cd54f095fb9a09026a07f9ba605f533e06b7f67904d1e0db",
+    "debugging/pytest-debugging": "a0d2254a350cf3e84255d7b2a069d4a07081d8a40608d654b976c5261603ab4d",
+    "debugging/concurrency-debugging": "a497b728ff77f9ccf8d6a7ae118a27019c3966d9d401be7e1c817531e3a520e0",
+    "dependencies/dependency-hygiene": "134bc00fb694afd8cea65dc6b9d6e35c83cfe868dbe67475a07d35502ef0f15b",
+    "testing/regression-from-bug-report": "d889a82bd8f291c8a65d8446c405afbc3e5f4ca965e4040fee8c13c4c6603b48",
+    "testing/test-driven-development": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+    "refactoring/safe-refactor": "f7f778a3110a42383e46ca78bf7fe511317398195dc6799f179a8204d6e0a0db",
+    "refactoring/structural-rename": "cc7bef8055026ee29f6066f17ebfea9a9e67c542be7758c4beeb0989b7c0c203",
+    "performance/hotpath-profiling": "b78431346598aed8e8863247c7c5678971f1d1e5589c76a0e1fd377e1f252726",
+    "git/commit-hygiene": "2fc407284133dcb47bdc473b266ee7085e28f49143c9b6a183f2a0ec84a5e483",
+    "minicode": "21d8ab5727f1cb4442cb12f502e7bf517e51728d9bc08839b69bebff2d8a081f"
+  },
+  "at_end": {
+    "code-understanding/codebase-explanation": "e8a180242ce259904e469a00c4f745229dc549ea6c079d8adbaa69e2007692b2",
+    "code-understanding/design-review": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+    "code-understanding/minicode-learning-coach-demo": "9f8b473f7db0a0e955faa5901fbcfe4799e0d63568fc3d8a97939a41c5782176",
+    "documentation/readme-authoring": "6990db45ca8ef1abb0eb12dca4daf9f128e604f12575292f976649ec6524c706",
+    "quality/lint-and-static-cleanup": "4a5cbb6a767a7203956f19ca1dc458b15b099714851dd9bb99c6260b741d89bf",
+    "code-skills/minicode-study": "3759d5f3f8faed34a100c6638da7ffc20a479c1b0d5d8801c9f2518c44c0fe7b",
+    "security/secret-and-injection-review": "706a8e5e732bcdf8cd54f095fb9a09026a07f9ba605f533e06b7f67904d1e0db",
+    "debugging/pytest-debugging": "a0d2254a350cf3e84255d7b2a069d4a07081d8a40608d654b976c5261603ab4d",
+    "debugging/concurrency-debugging": "a497b728ff77f9ccf8d6a7ae118a27019c3966d9d401be7e1c817531e3a520e0",
+    "dependencies/dependency-hygiene": "134bc00fb694afd8cea65dc6b9d6e35c83cfe868dbe67475a07d35502ef0f15b",
+    "testing/regression-from-bug-report": "d889a82bd8f291c8a65d8446c405afbc3e5f4ca965e4040fee8c13c4c6603b48",
+    "testing/test-driven-development": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+    "refactoring/safe-refactor": "f7f778a3110a42383e46ca78bf7fe511317398195dc6799f179a8204d6e0a0db",
+    "refactoring/structural-rename": "cc7bef8055026ee29f6066f17ebfea9a9e67c542be7758c4beeb0989b7c0c203",
+    "performance/hotpath-profiling": "b78431346598aed8e8863247c7c5678971f1d1e5589c76a0e1fd377e1f252726",
+    "git/commit-hygiene": "2fc407284133dcb47bdc473b266ee7085e28f49143c9b6a183f2a0ec84a5e483",
+    "minicode": "21d8ab5727f1cb4442cb12f502e7bf517e51728d9bc08839b69bebff2d8a081f"
+  }
+}

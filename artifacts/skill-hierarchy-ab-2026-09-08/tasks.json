@@ -1,0 +1,363 @@
+{
+  "schema": "skill-hierarchy-ab/tasks/v1",
+  "authored": "2026-09-08",
+  "notes": "Fresh task set for the hierarchical skill-discovery paired A/B. Authored before the intent-hints implementation landed. Qualified names refer to the BASE catalog variant; the generator's per-variant manifest maps each task to its actual target location (see catalog-manifest.json task_targets). 'acceptable_alternatives' are other catalog skills that also count as a correct final load. 'decoy' is a plausible-but-wrong skill the generator materializes for this task. 'lure_directories' name directories a weak selector is expected to wander into. Negatives have target null; 'timeout' runs are never scored as correct or as clean non-triggers.",
+  "tasks": [
+    {
+      "id": "T01",
+      "category": "single-stage-colloquial",
+      "language": "en",
+      "prompt": "Our calls to the payments API from the backend HTTP layer fail randomly a few times a day. I want the HTTP client to retry failed requests automatically with exponential backoff instead of hammering the API. How should we set that up?",
+      "negative": false,
+      "target": {"qualified_name": "http-client/retry-backoff", "directory": "http-client"},
+      "acceptable_alternatives": [],
+      "decoy": {
+        "qualified_name": "payment-gateway/retry-helper-legacy",
+        "description": "Legacy helper that retries failed payment charge submissions with a fixed delay; superseded by idempotent charge creation and kept for one old integration."
+      },
+      "lure_directories": ["payment-gateway"],
+      "notes": "The word 'payments' lures toward payment-gateway; the task is about the outbound HTTP layer."
+    },
+    {
+      "id": "T02",
+      "category": "single-stage-colloquial",
+      "language": "en",
+      "prompt": "Postgres queries die whenever the database hiccups for a second. Add retry with exponential backoff to our DB client wrapper so transient errors recover on their own.",
+      "negative": false,
+      "target": {"qualified_name": "database/retry-backoff", "directory": "database"},
+      "acceptable_alternatives": [],
+      "decoy": {
+        "qualified_name": "job-scheduler/db-retry-tuning",
+        "description": "Tune retry counts and backoff for scheduled jobs that read from the database; covers job-level requeues, not the database client itself."
+      },
+      "lure_directories": ["job-scheduler"],
+      "notes": "Near-neighbor retry-backoff skills exist in http-client, message-queue and job-scheduler."
+    },
+    {
+      "id": "T03",
+      "category": "single-stage-colloquial",
+      "language": "zh",
+      "prompt": "我们的消息队列消费者偶尔会把同一条消息处理两次，导致重复发货。帮我设计一个幂等处理方案，让重复投递不会产生副作用。",
+      "negative": false,
+      "target": {"qualified_name": "message-queue/idempotency", "directory": "message-queue"},
+      "acceptable_alternatives": [],
+      "decoy": {
+        "qualified_name": "database/dedup-constraint-helper",
+        "description": "Use database unique constraints to deduplicate inserted rows; covers insert-time conflicts only, not message redelivery."
+      },
+      "lure_directories": ["database"],
+      "notes": "Chinese colloquial; dedup-by-constraint is plausible but answers a different layer."
+    },
+    {
+      "id": "T04",
+      "category": "single-stage-colloquial",
+      "language": "en",
+      "prompt": "Our GraphQL clients currently fetch entire lists in one shot and it's getting slow. I want proper cursor-based pagination on the server side connections.",
+      "negative": false,
+      "target": {"qualified_name": "graphql-api/pagination", "directory": "graphql-api"},
+      "acceptable_alternatives": [],
+      "decoy": {
+        "qualified_name": "search-index/cursor-scan-helper",
+        "description": "Scroll/scan cursor pagination for exporting large search result sets; not applicable to GraphQL connection specs."
+      },
+      "lure_directories": ["search-index", "database"],
+      "notes": "Pagination exists in several directories; only the GraphQL one covers connection cursors."
+    },
+    {
+      "id": "T05",
+      "category": "single-stage-colloquial",
+      "language": "en",
+      "prompt": "CI jobs flake a few times a week because artifact uploads hit an overly aggressive timeout. Where should we tune the timeout budgets for the pipeline steps?",
+      "negative": false,
+      "target": {"qualified_name": "ci-pipeline/timeout-tuning", "directory": "ci-pipeline"},
+      "acceptable_alternatives": ["ci-pipeline/retry-backoff"],
+      "decoy": {
+        "qualified_name": "object-storage/upload-timeout-profile",
+        "description": "Timeout profiles for direct browser-to-blob uploads; covers multipart upload sessions, not CI artifact steps."
+      },
+      "lure_directories": ["object-storage"],
+      "notes": "Artifact upload suggests object-storage, but the fix belongs to the pipeline definition."
+    },
+    {
+      "id": "T06",
+      "category": "single-stage-colloquial",
+      "language": "en",
+      "prompt": "When a hot cache key expires we get a stampede of recomputes that melts the service. I need a caching strategy that prevents that.",
+      "negative": false,
+      "target": {"qualified_name": "cache-layer/caching-strategy", "directory": "cache-layer"},
+      "acceptable_alternatives": [],
+      "decoy": {
+        "qualified_name": "database/query-result-cache",
+        "description": "Cache expensive SQL result sets inside the database layer; covers query plans and materialized results, not application hot keys."
+      },
+      "lure_directories": ["database"],
+      "notes": "Stampede protection (request coalescing) is the distinguishing topic."
+    },
+    {
+      "id": "T07",
+      "category": "single-stage-colloquial",
+      "language": "zh",
+      "prompt": "定时任务一并发起来就互相踩踏，把下游打爆。给我一套限流节流的方案，让任务按配额平滑执行。",
+      "negative": false,
+      "target": {"qualified_name": "job-scheduler/rate-limiting", "directory": "job-scheduler"},
+      "acceptable_alternatives": [],
+      "decoy": {
+        "qualified_name": "message-queue/consumer-throttle",
+        "description": "Throttle message consumers with prefetch caps and rate limits; applies to queue consumers, not cron-style scheduled jobs."
+      },
+      "lure_directories": ["message-queue"],
+      "notes": "Chinese; 'throttle' vocabulary overlaps with message-queue consumer throttling."
+    },
+    {
+      "id": "T08",
+      "category": "single-stage-colloquial",
+      "language": "en",
+      "prompt": "Full reindex runs are hammering the search cluster and hurting query latency. We need backpressure so indexing slows down when the cluster is busy.",
+      "negative": false,
+      "target": {"qualified_name": "search-index/backpressure", "directory": "search-index"},
+      "acceptable_alternatives": ["search-index/rate-limiting"],
+      "decoy": {
+        "qualified_name": "message-queue/index-feed-lag",
+        "description": "Handle consumer lag on the index-update feed; covers queue-side lag alarms, not cluster-aware indexing pressure."
+      },
+      "lure_directories": ["message-queue"],
+      "notes": "Backpressure vocabulary also exists in message-queue and etl-style directories."
+    },
+    {
+      "id": "T09",
+      "category": "explicit-qualified-name",
+      "language": "en",
+      "prompt": "Please follow the auth-service/security-hardening skill to review our token issuance endpoint before the launch.",
+      "negative": false,
+      "target": {"qualified_name": "auth-service/security-hardening", "directory": "auth-service"},
+      "acceptable_alternatives": [],
+      "decoy": {
+        "qualified_name": "payment-gateway/pci-hardening",
+        "description": "PCI-oriented hardening checklist for card data flows; covers PAN handling, not token issuance."
+      },
+      "lure_directories": [],
+      "notes": "Explicit qualified mention; tests direct resolution without browsing."
+    },
+    {
+      "id": "T10",
+      "category": "explicit-qualified-name",
+      "language": "en",
+      "prompt": "Use the `payment-gateway/idempotency` skill to make our charge creation endpoint safe to retry.",
+      "negative": false,
+      "target": {"qualified_name": "payment-gateway/idempotency", "directory": "payment-gateway"},
+      "acceptable_alternatives": [],
+      "decoy": {
+        "qualified_name": "message-queue/idempotent-consumer-template",
+        "description": "Template for idempotent queue consumers using processed-message tables; does not cover payment charge semantics."
+      },
+      "lure_directories": ["message-queue"],
+      "notes": "Explicit mention; T17 reaches the same skill colloquially."
+    },
+    {
+      "id": "T11",
+      "category": "explicit-qualified-name",
+      "language": "zh",
+      "prompt": "这次要给订单表加一个字段，请按照 `database/schema-migration` 技能的流程来做，要求可以安全回滚。",
+      "negative": false,
+      "target": {"qualified_name": "database/schema-migration", "directory": "database"},
+      "acceptable_alternatives": [],
+      "decoy": {
+        "qualified_name": "ci-pipeline/migration-job-runner",
+        "description": "Run schema migration jobs from CI with approvals; schedules migrations but does not define expand-contract or rollback procedure."
+      },
+      "lure_directories": ["ci-pipeline"],
+      "notes": "Chinese explicit mention; CI migration-runner is the classic wrong neighbour."
+    },
+    {
+      "id": "T12",
+      "category": "explicit-qualified-name",
+      "language": "en",
+      "prompt": "Follow notification-service/observability and instrument delivery metrics for our email and push channels.",
+      "negative": false,
+      "target": {"qualified_name": "notification-service/observability", "directory": "notification-service"},
+      "acceptable_alternatives": [],
+      "decoy": {
+        "qualified_name": "metrics-collector/delivery-dashboards",
+        "description": "Prebuilt Grafana dashboards for generic service delivery metrics; not specific to notification providers."
+      },
+      "lure_directories": [],
+      "notes": "Decoy lives in an S1000-only directory; at S100 the base near-neighbours carry the confusion."
+    },
+    {
+      "id": "T13",
+      "category": "multi-stage-conditional",
+      "language": "en",
+      "prompt": "Checkout has gotten slow this month. First figure out where the bottleneck is; if it turns out to be the payment API calls, then make those calls resilient to provider flakiness — but keep every public interface of the checkout module unchanged.",
+      "negative": false,
+      "target": {"qualified_name": "payment-gateway/performance-tuning", "directory": "payment-gateway"},
+      "acceptable_alternatives": ["payment-gateway/debugging-playbook"],
+      "stages": [
+        {"stage": 1, "goal": "locate the checkout bottleneck", "target": "payment-gateway/performance-tuning"},
+        {"stage": 2, "goal": "if payment API is the bottleneck, harden those calls", "target": "payment-gateway/circuit-breaker"}
+      ],
+      "decoy": {
+        "qualified_name": "http-client/latency-profiling",
+        "description": "Profile outbound HTTP latency with timing breakdowns; generic across services, with no payment-provider failure modes."
+      },
+      "lure_directories": ["http-client"],
+      "notes": "Probe stops at first successful load, so stage 1 is the scored target; stage 2 recorded for follow-up analysis."
+    },
+    {
+      "id": "T14",
+      "category": "multi-stage-conditional",
+      "language": "zh",
+      "prompt": "先定位一下为什么订单服务的内存一直在涨；如果确认是缓存层无界增长导致的，再给我改造方案，对外接口一个都不许变。",
+      "negative": false,
+      "target": {"qualified_name": "cache-layer/debugging-playbook", "directory": "cache-layer"},
+      "acceptable_alternatives": ["cache-layer/performance-tuning"],
+      "stages": [
+        {"stage": 1, "goal": "定位内存增长原因", "target": "cache-layer/debugging-playbook"},
+        {"stage": 2, "goal": "若缓存无界增长则改造缓存层", "target": "cache-layer/caching-strategy"}
+      ],
+      "decoy": {
+        "qualified_name": "database/connection-leak-hunt",
+        "description": "Hunt memory growth from leaked database connections; covers pool leaks, not cache eviction policy."
+      },
+      "lure_directories": ["database"],
+      "notes": "Chinese multi-stage; memory-growth debugging is also claimed by the database decoy."
+    },
+    {
+      "id": "T15",
+      "category": "multi-stage-conditional",
+      "language": "en",
+      "prompt": "A small fraction of our emails bounce at random times of day. Investigate why; if it turns out to be the provider rate-limiting us, add throttling on our side. Keep the sending API unchanged for callers.",
+      "negative": false,
+      "target": {"qualified_name": "notification-service/debugging-playbook", "directory": "notification-service"},
+      "acceptable_alternatives": [],
+      "stages": [
+        {"stage": 1, "goal": "find why emails bounce", "target": "notification-service/debugging-playbook"},
+        {"stage": 2, "goal": "if provider rate limits, throttle sending", "target": "notification-service/rate-limiting"}
+      ],
+      "decoy": {
+        "qualified_name": "message-queue/bounce-back-queue",
+        "description": "Route failed notification events to a bounce queue for later replay; assumes a queue-based pipeline, not direct provider calls."
+      },
+      "lure_directories": ["message-queue"],
+      "notes": "Multi-stage with an interface-preservation constraint."
+    },
+    {
+      "id": "T16",
+      "category": "multi-stage-conditional",
+      "language": "en",
+      "prompt": "The deploy pipeline flakes about once a day. First identify which step actually fails; if it's the integration test stage, fix our test strategy for it — and do not rename or reorder any pipeline stages.",
+      "negative": false,
+      "target": {"qualified_name": "ci-pipeline/debugging-playbook", "directory": "ci-pipeline"},
+      "acceptable_alternatives": [],
+      "stages": [
+        {"stage": 1, "goal": "identify the failing pipeline step", "target": "ci-pipeline/debugging-playbook"},
+        {"stage": 2, "goal": "if integration tests, fix the test strategy", "target": "ci-pipeline/testing-strategy"}
+      ],
+      "decoy": {
+        "qualified_name": "job-scheduler/flaky-cron-playbook",
+        "description": "Debug flaky cron jobs that silently skip runs; covers scheduler triggers, not pipeline stages."
+      },
+      "lure_directories": ["job-scheduler"],
+      "notes": "Flakiness vocabulary overlaps with job-scheduler."
+    },
+    {
+      "id": "T17",
+      "category": "paraphrased-oblique",
+      "language": "en",
+      "prompt": "On flaky hotel wifi our app sometimes fires the login call twice and users end up with weird broken sessions. The client should just quietly retry instead of confusing the session state.",
+      "negative": false,
+      "target": {"qualified_name": "auth-service/retry-backoff", "directory": "auth-service"},
+      "acceptable_alternatives": ["http-client/retry-backoff"],
+      "decoy": {
+        "qualified_name": "session-store/duplicate-session-cleanup",
+        "description": "Reap duplicate sessions created by double logins; cleans up after the fact instead of preventing duplicate calls."
+      },
+      "lure_directories": ["http-client"],
+      "notes": "Paraphrased: no 'retry' keyword in the domain sense until the last sentence; http-client is an acceptable alternative since the fix can live in the shared HTTP layer."
+    },
+    {
+      "id": "T18",
+      "category": "paraphrased-oblique",
+      "language": "en",
+      "prompt": "Every now and then the same welcome push goes out three times to a new user. It makes us look spammy. Make sure each welcome notification is sent exactly once.",
+      "negative": false,
+      "target": {"qualified_name": "notification-service/idempotency", "directory": "notification-service"},
+      "acceptable_alternatives": [],
+      "decoy": {
+        "qualified_name": "message-queue/dedup-exchange-filter",
+        "description": "Dedup filter at the message exchange using message IDs; works only when all notifications flow through the broker."
+      },
+      "lure_directories": ["message-queue"],
+      "notes": "Exactly-once phrasing without the word 'idempotent'."
+    },
+    {
+      "id": "T19",
+      "category": "paraphrased-oblique",
+      "language": "zh",
+      "prompt": "用户上传到大对象存储的文件偶尔传到一半就断了，整个文件得重传。希望客户端能自己断点续传、失败后带退避地重试分片。",
+      "negative": false,
+      "target": {"qualified_name": "object-storage/retry-backoff", "directory": "object-storage"},
+      "acceptable_alternatives": [],
+      "decoy": {
+        "qualified_name": "http-client/multipart-retry-generic",
+        "description": "Generic retry policy for multipart HTTP form posts; does not cover resumable chunked uploads or part-level recovery."
+      },
+      "lure_directories": ["http-client"],
+      "notes": "Chinese paraphrase; resumable multipart upload vs generic HTTP retry is the distinction."
+    },
+    {
+      "id": "T20",
+      "category": "negative-unrelated",
+      "language": "en",
+      "prompt": "What's a good name for my new cat? She's orange and very dramatic.",
+      "negative": true,
+      "target": null,
+      "acceptable_alternatives": [],
+      "lure_directories": [],
+      "notes": "Pure off-topic chat; any skill load is a false trigger."
+    },
+    {
+      "id": "T21",
+      "category": "negative-generic-coding",
+      "language": "en",
+      "prompt": "Rewrite this function to use a walrus operator: `def total(xs):\n    s = 0\n    for x in xs:\n        s = s + x\n    return s`",
+      "negative": true,
+      "target": null,
+      "acceptable_alternatives": [],
+      "lure_directories": [],
+      "notes": "Generic coding help; no catalog skill genuinely applies."
+    },
+    {
+      "id": "T22",
+      "category": "negative-concept-question",
+      "language": "en",
+      "prompt": "Can you explain the CAP theorem to me like I'm five? No code changes needed.",
+      "negative": true,
+      "target": null,
+      "acceptable_alternatives": [],
+      "lure_directories": ["database"],
+      "notes": "Conceptual question that lexically brushes database/distributed-systems topics."
+    },
+    {
+      "id": "T23",
+      "category": "negative-quoted-topic",
+      "language": "en",
+      "prompt": "How do you say 'retry with exponential backoff' in German? Just the translation, please.",
+      "negative": true,
+      "target": null,
+      "acceptable_alternatives": [],
+      "lure_directories": ["http-client", "database", "message-queue"],
+      "notes": "Quotes the exact target vocabulary of four retry-backoff skills but asks for a translation."
+    },
+    {
+      "id": "T24",
+      "category": "negative-explicit-optout",
+      "language": "zh",
+      "prompt": "这次不要加载任何技能（skill），直接回答：2+2 等于几？",
+      "negative": true,
+      "target": null,
+      "acceptable_alternatives": [],
+      "lure_directories": [],
+      "notes": "Explicit opt-out; deny-all suppression should keep every skill invisible. Any load is a hard failure."
+    }
+  ]
+}

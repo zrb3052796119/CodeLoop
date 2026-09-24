@@ -1,0 +1,670 @@
+[
+  {
+    "id": "C31",
+    "category": "否定/撤回",
+    "text": "别改 payment.py 的代码，也不要运行测试；只解释它里面 process_payment 为什么先校验金额。",
+    "expected": [
+      "explain"
+    ],
+    "required_affirmed": [
+      "explain"
+    ],
+    "forbidden_affirmed": [
+      "code",
+      "test"
+    ],
+    "required_negated": [
+      "code",
+      "test"
+    ],
+    "expected_entities": {
+      "files": [
+        "payment.py"
+      ]
+    },
+    "forbidden_actions": [
+      "create",
+      "update",
+      "delete",
+      "execute",
+      "merge",
+      "split",
+      "move",
+      "rename"
+    ],
+    "expected_read_only": true,
+    "rationale": "明确保留解释任务，并分别否定代码修改和测试执行；提到文件与函数不代表要求改动。"
+  },
+  {
+    "id": "C32",
+    "category": "否定/撤回",
+    "text": "刚才让你修复那个崩溃的问题先取消。现在只解释报错日志里“connection refused”的含义。",
+    "expected": [
+      "explain"
+    ],
+    "required_affirmed": [
+      "explain"
+    ],
+    "forbidden_affirmed": [
+      "debug"
+    ],
+    "required_negated": [
+      "debug"
+    ],
+    "expected_entities": {
+      "files": []
+    },
+    "forbidden_actions": [
+      "create",
+      "update",
+      "delete",
+      "execute",
+      "merge",
+      "split",
+      "move",
+      "rename"
+    ],
+    "expected_read_only": true,
+    "rationale": "取消的是之前的修复请求；当前只要求解释错误短语，不要求定位或修复本次崩溃。"
+  },
+  {
+    "id": "C33",
+    "category": "否定/撤回",
+    "text": "暂时不要重构 cache.py，也不要生成测试；只阅读现有代码，分析缓存命中率下降的可能原因。",
+    "expected": [
+      "debug"
+    ],
+    "required_affirmed": [
+      "debug"
+    ],
+    "forbidden_affirmed": [
+      "refactor",
+      "test"
+    ],
+    "required_negated": [
+      "refactor",
+      "test"
+    ],
+    "expected_entities": {
+      "files": [
+        "cache.py"
+      ]
+    },
+    "forbidden_actions": [
+      "create",
+      "update",
+      "delete",
+      "execute",
+      "merge",
+      "split",
+      "move",
+      "rename"
+    ],
+    "expected_read_only": true,
+    "rationale": "当前目标是分析性能异常的原因，重构和新增测试都被明确暂停；只阅读现有代码进一步限定了操作范围。"
+  },
+  {
+    "id": "C34",
+    "category": "否定/撤回",
+    "text": "不用搜索资料了，也别记住这段对话。直接解释一下 Python tuple 的不可变性。",
+    "expected": [
+      "explain"
+    ],
+    "required_affirmed": [
+      "explain"
+    ],
+    "forbidden_affirmed": [
+      "search",
+      "memory"
+    ],
+    "required_negated": [
+      "search",
+      "memory"
+    ],
+    "expected_entities": {
+      "files": []
+    },
+    "forbidden_actions": [
+      "create",
+      "update",
+      "delete",
+      "execute",
+      "merge",
+      "split",
+      "move",
+      "rename"
+    ],
+    "expected_read_only": true,
+    "rationale": "解释概念是唯一肯定任务；搜索资料和保存对话分别被明确否定。"
+  },
+  {
+    "id": "C35",
+    "category": "否定/撤回",
+    "text": "撤回刚才让你写单元测试的请求。现在只审查 cleanup.py，指出可能误删文件的地方。",
+    "expected": [
+      "review"
+    ],
+    "required_affirmed": [
+      "review"
+    ],
+    "forbidden_affirmed": [
+      "test"
+    ],
+    "required_negated": [
+      "test"
+    ],
+    "expected_entities": {
+      "files": [
+        "cleanup.py"
+      ]
+    },
+    "forbidden_actions": [
+      "create",
+      "update",
+      "delete",
+      "execute",
+      "merge",
+      "split",
+      "move",
+      "rename"
+    ],
+    "expected_read_only": true,
+    "rationale": "撤回测试编写后，当前任务是审查脚本的删除风险；风险描述中的删除不是执行指令。"
+  },
+  {
+    "id": "C36",
+    "category": "引用/假设",
+    "text": "工单标题是“重构缓存模块并补齐测试”。请解释这个标题涉及哪些工作，我想先弄懂它。",
+    "expected": [
+      "explain"
+    ],
+    "required_affirmed": [
+      "explain"
+    ],
+    "forbidden_affirmed": [
+      "refactor",
+      "test"
+    ],
+    "required_negated": [],
+    "expected_entities": {
+      "files": []
+    },
+    "forbidden_actions": [
+      "create",
+      "update",
+      "delete",
+      "execute",
+      "merge",
+      "split",
+      "move",
+      "rename"
+    ],
+    "expected_read_only": true,
+    "rationale": "重构和测试只出现在待解释的工单标题中；引用不应被当成执行指令，也不等同于否定。"
+  },
+  {
+    "id": "C37",
+    "category": "引用/假设",
+    "text": "同事留言“把 timeout 改成 60”。请审查这条建议是否有遗漏，重点说说风险。",
+    "expected": [
+      "review"
+    ],
+    "required_affirmed": [
+      "review"
+    ],
+    "forbidden_affirmed": [
+      "configure",
+      "code"
+    ],
+    "required_negated": [],
+    "expected_entities": {
+      "files": []
+    },
+    "forbidden_actions": [
+      "create",
+      "update",
+      "delete",
+      "execute",
+      "merge",
+      "split",
+      "move",
+      "rename"
+    ],
+    "expected_read_only": true,
+    "rationale": "用户要求评估别人提出的配置建议；不能把被审查的修改建议视为用户已经授权的修改。"
+  },
+  {
+    "id": "C38",
+    "category": "引用/假设",
+    "text": "假设有人把 api.py 删了，请解释 Python 导入它时通常会发生什么。",
+    "expected": [
+      "explain"
+    ],
+    "required_affirmed": [
+      "explain"
+    ],
+    "forbidden_affirmed": [
+      "code",
+      "system"
+    ],
+    "required_negated": [],
+    "expected_entities": {
+      "files": [
+        "api.py"
+      ]
+    },
+    "forbidden_actions": [
+      "create",
+      "update",
+      "delete",
+      "execute",
+      "merge",
+      "split",
+      "move",
+      "rename"
+    ],
+    "expected_read_only": true,
+    "rationale": "删除文件属于假设条件，实际请求是解释导入行为；api.py 是解释对象，不是待删除目标。"
+  },
+  {
+    "id": "C39",
+    "category": "引用/假设",
+    "text": "产品说明书里举了个例子：“搜索用户邮件并保存到本地”。帮我润色这句话，让操作范围更清楚。",
+    "expected": [
+      "document"
+    ],
+    "required_affirmed": [
+      "document"
+    ],
+    "forbidden_affirmed": [
+      "search",
+      "memory",
+      "system"
+    ],
+    "required_negated": [],
+    "expected_entities": {
+      "files": []
+    },
+    "expected_actions": {
+      "document": [
+        "update"
+      ]
+    },
+    "rationale": "当前操作对象是说明书中的一句文案；引用中的搜索与保存都不是待执行任务。只对文案编辑标注更新，不推断本地文件写入。"
+  },
+  {
+    "id": "C40",
+    "category": "引用/假设",
+    "text": "网页按钮的文案是“执行数据库迁移”。请解释“迁移”在这里是什么意思。",
+    "expected": [
+      "explain"
+    ],
+    "required_affirmed": [
+      "explain"
+    ],
+    "forbidden_affirmed": [
+      "system",
+      "code",
+      "configure"
+    ],
+    "required_negated": [],
+    "expected_entities": {
+      "files": []
+    },
+    "forbidden_actions": [
+      "create",
+      "update",
+      "delete",
+      "execute",
+      "merge",
+      "split",
+      "move",
+      "rename"
+    ],
+    "expected_read_only": true,
+    "rationale": "按钮文案是解释材料，用户没有要求点击按钮或执行迁移；引号中的执行不应成为肯定动作。"
+  },
+  {
+    "id": "C41",
+    "category": "多意图",
+    "text": "先修复 parser.py 在空输入时抛异常的问题，再为这个边界情况添加单元测试。",
+    "expected": [
+      "debug",
+      "test"
+    ],
+    "required_affirmed": [
+      "debug",
+      "test"
+    ],
+    "forbidden_affirmed": [],
+    "required_negated": [],
+    "expected_entities": {
+      "files": [
+        "parser.py"
+      ]
+    },
+    "expected_actions": {
+      "debug": [
+        "update"
+      ],
+      "test": [
+        "create",
+        "update"
+      ]
+    },
+    "expected_read_only": false,
+    "rationale": "包含修复异常和增加回归测试两个实际步骤；二者都应保留，主类型允许按优先级选其中之一。",
+    "expected_order": [
+      "debug",
+      "test"
+    ]
+  },
+  {
+    "id": "C42",
+    "category": "多意图",
+    "text": "重构 cache.py 里重复的淘汰逻辑，保留现有行为；同时补充 README.md 中的缓存策略说明。",
+    "expected": [
+      "refactor",
+      "document"
+    ],
+    "required_affirmed": [
+      "refactor",
+      "document"
+    ],
+    "forbidden_affirmed": [],
+    "required_negated": [],
+    "expected_entities": {
+      "files": [
+        "cache.py",
+        "README.md"
+      ]
+    },
+    "expected_actions": {
+      "refactor": [
+        "update"
+      ],
+      "document": [
+        "create",
+        "update"
+      ]
+    },
+    "expected_read_only": false,
+    "rationale": "代码内部重构与文档补充均为明确肯定任务；保留行为是重构约束，不是禁止修改。"
+  },
+  {
+    "id": "C43",
+    "category": "多意图",
+    "text": "搜索项目里所有调用 fetch_user 的地方，然后解释其中 request_handler.py 的调用链。",
+    "expected": [
+      "search",
+      "explain"
+    ],
+    "required_affirmed": [
+      "search",
+      "explain"
+    ],
+    "forbidden_affirmed": [],
+    "required_negated": [],
+    "expected_entities": {
+      "files": [
+        "request_handler.py"
+      ]
+    },
+    "forbidden_actions": [
+      "create",
+      "update",
+      "delete",
+      "execute",
+      "merge",
+      "split",
+      "move",
+      "rename"
+    ],
+    "expected_read_only": true,
+    "rationale": "先检索调用位置，再解释指定文件中的调用关系；两个只读任务都不可丢失。",
+    "expected_order": [
+      "search",
+      "explain"
+    ]
+  },
+  {
+    "id": "C44",
+    "category": "多意图",
+    "text": "审查 auth.py 的登录校验逻辑，并把发现的问题整理成 SECURITY_REVIEW.md。",
+    "expected": [
+      "review",
+      "document"
+    ],
+    "required_affirmed": [
+      "review",
+      "document"
+    ],
+    "forbidden_affirmed": [],
+    "required_negated": [],
+    "expected_entities": {
+      "files": [
+        "auth.py",
+        "SECURITY_REVIEW.md"
+      ]
+    },
+    "expected_actions": {
+      "review": [
+        "analyze"
+      ],
+      "document": [
+        "create",
+        "update"
+      ]
+    },
+    "expected_read_only": false,
+    "rationale": "审查和产出报告是两个明确步骤；审查对象与报告文件都需要识别，生成报告使整体任务包含写入。"
+  },
+  {
+    "id": "C45",
+    "category": "多意图",
+    "text": "在 settings.yaml 中把日志级别调为 DEBUG，然后运行 test_logging.py 验证日志输出。",
+    "expected": [
+      "configure",
+      "test"
+    ],
+    "required_affirmed": [
+      "configure",
+      "test"
+    ],
+    "forbidden_affirmed": [],
+    "required_negated": [],
+    "expected_entities": {
+      "files": [
+        "settings.yaml",
+        "test_logging.py"
+      ]
+    },
+    "expected_actions": {
+      "configure": [
+        "update"
+      ],
+      "test": [
+        "execute"
+      ]
+    },
+    "expected_read_only": false,
+    "rationale": "修改配置和执行测试均被明确要求；DEBUG 是日志级别值，不表示用户另有排错请求。",
+    "expected_order": [
+      "configure",
+      "test"
+    ]
+  },
+  {
+    "id": "C46",
+    "category": "上下文/模糊",
+    "text": "继续审查后一个文件有没有重复扣款的风险。",
+    "expected": [
+      "review"
+    ],
+    "required_affirmed": [
+      "review"
+    ],
+    "forbidden_affirmed": [],
+    "required_negated": [],
+    "expected_entities": {
+      "files": [
+        "payment.py"
+      ]
+    },
+    "forbidden_actions": [
+      "create",
+      "update",
+      "delete",
+      "execute",
+      "merge",
+      "split",
+      "move",
+      "rename"
+    ],
+    "expected_read_only": true,
+    "context": {
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "请帮我审查 order.py 和 payment.py 的实现。"
+        },
+        {
+          "role": "assistant",
+          "content": "我先从 order.py 开始，接下来会检查 payment.py。"
+        }
+      ]
+    },
+    "rationale": "后一个文件明确指向 payment.py；上下文中的 order.py 不应取代当前审查目标。"
+  },
+  {
+    "id": "C47",
+    "category": "上下文/模糊",
+    "text": "就按这个方案改，函数签名保持不变。",
+    "expected": [
+      "refactor"
+    ],
+    "required_affirmed": [
+      "refactor"
+    ],
+    "forbidden_affirmed": [],
+    "required_negated": [],
+    "expected_entities": {
+      "files": [
+        "cache.py"
+      ]
+    },
+    "expected_actions": {
+      "refactor": [
+        "update",
+        "split"
+      ]
+    },
+    "expected_read_only": false,
+    "context": {
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "在 cache.py 里，refresh_cache 函数特别长，我想重构它。"
+        },
+        {
+          "role": "assistant",
+          "content": "可以把拉取数据与更新缓存分开，同时保留外部接口。"
+        }
+      ]
+    },
+    "rationale": "当前短句确认上文的重构方案，目标继承为 cache.py；保持函数签名不变是修改约束。"
+  },
+  {
+    "id": "C48",
+    "category": "上下文/模糊",
+    "text": "再加一个 None 输入的用例。",
+    "expected": [
+      "test"
+    ],
+    "required_affirmed": [
+      "test"
+    ],
+    "forbidden_affirmed": [],
+    "required_negated": [],
+    "expected_entities": {
+      "files": [
+        "utils.py"
+      ]
+    },
+    "expected_actions": {
+      "test": [
+        "create",
+        "update"
+      ]
+    },
+    "expected_read_only": false,
+    "context": {
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "请给 utils.py 中的 normalize_name 加边界情况测试。"
+        },
+        {
+          "role": "assistant",
+          "content": "我会覆盖空字符串、前后空格和只有空格的输入。"
+        }
+      ]
+    },
+    "rationale": "用例承接上文的测试任务，None 是额外测试输入；utils.py 是被测目标，不推断测试文件名。"
+  },
+  {
+    "id": "C49",
+    "category": "上下文/模糊",
+    "text": "这个能处理一下吗？",
+    "expected": [
+      "unknown"
+    ],
+    "required_affirmed": [],
+    "forbidden_affirmed": [],
+    "required_negated": [],
+    "expected_entities": {
+      "files": []
+    },
+    "rationale": "没有历史、附件或可指代对象，也没有明确操作，无法合理确定实际任务；不凭疑问句形式强行归为知识问答。"
+  },
+  {
+    "id": "C50",
+    "category": "上下文/模糊",
+    "text": "把那一行改对就行，其他内容不动。",
+    "expected": [
+      "document"
+    ],
+    "required_affirmed": [
+      "document"
+    ],
+    "forbidden_affirmed": [
+      "system",
+      "configure"
+    ],
+    "required_negated": [],
+    "expected_entities": {
+      "files": [
+        "examples.md"
+      ]
+    },
+    "expected_actions": {
+      "document": [
+        "update"
+      ]
+    },
+    "expected_read_only": false,
+    "context": {
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "文档 examples.md 中的启动命令写错了，应该是 python -m demo。"
+        },
+        {
+          "role": "assistant",
+          "content": "已定位到“快速开始”的启动命令。"
+        }
+      ]
+    },
+    "rationale": "那一行指向文档中的启动命令，要求更新文档；出现命令文本不表示实际执行程序或更改运行配置。"
+  }
+]

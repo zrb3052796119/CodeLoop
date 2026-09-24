@@ -1,0 +1,6777 @@
+[
+  {
+    "case": {
+      "id": "C01",
+      "category": "代码编写",
+      "text": "帮我写一个 Python 函数，把一组订单按用户 ID 分组。",
+      "expected": [
+        "code"
+      ],
+      "required_affirmed": [
+        "code"
+      ],
+      "expected_actions": {
+        "code": [
+          "create"
+        ]
+      },
+      "rationale": "明确请求创建函数。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "帮我写一个 Python 函数，把一组订单按用户 ID 分组。",
+      "intent_type": "code",
+      "action_type": "create",
+      "confidence": 0.959,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": [
+          "python"
+        ]
+      },
+      "keywords": [
+        "帮我写一个",
+        "python",
+        "函数",
+        "把一组订单按用户",
+        "id",
+        "分组"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788771430.954974,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.959,
+          "clause": "帮我写一个 Python 函数，把一组订单按用户 ID 分组。",
+          "span": [
+            0,
+            31
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": [
+              "python"
+            ]
+          },
+          "keywords": [
+            "帮我写一个",
+            "python",
+            "函数",
+            "把一组订单按用户",
+            "id",
+            "分组"
+          ],
+          "evidence_codes": [
+            "rule:code.create"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.959,
+          "span": [
+            0,
+            31
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "帮我写一个 Python 函数，把一组订单按用户 ID 分组。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 40.736333001405,
+    "run_id": "run_3e17aebfe040402eaaf5bc821606d8c0",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C02",
+      "category": "代码编写",
+      "text": "给登录接口加上每分钟最多五次的限流功能。",
+      "expected": [
+        "code"
+      ],
+      "required_affirmed": [
+        "code"
+      ],
+      "expected_actions": {
+        "code": [
+          "create",
+          "update"
+        ]
+      },
+      "rationale": "为已有接口增加功能。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "给登录接口加上每分钟最多五次的限流功能。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.82,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "给登录接口加上每分钟最多五次的限流功能",
+        "authentication"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788771433.8767538,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.82,
+          "clause": "给登录接口加上每分钟最多五次的限流功能。",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "给登录接口加上每分钟最多五次的限流功能",
+            "authentication"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.82,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "accepted",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "给登录接口加上每分钟最多五次的限流功能。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2916.6730830911547,
+    "run_id": "run_8ca12e37521b485eb76fa64329568fb2",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 667,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 1,
+      "usedCostUsd": "0.0025026",
+      "usedInputTokens": 638,
+      "usedOutputTokens": 29
+    },
+    "events": [
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_0d46ecc650c348aa837f62d4268292e2",
+          "purpose": "intent_classification"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_0d46ecc650c348aa837f62d4268292e2",
+          "purpose": "intent_classification",
+          "resultType": "assistant",
+          "contentPresent": true,
+          "toolCallCount": 0,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 638,
+            "outputTokens": 29,
+            "cacheReadTokens": 512,
+            "cacheCreationTokens": null
+          },
+          "semanticStatus": "accepted",
+          "semanticOperationCount": 1,
+          "calibrationVersion": "bootstrap-conservative-v1",
+          "calibrationProductionFit": false,
+          "semanticContentChars": 87,
+          "semanticStopReason": "stop",
+          "semanticOutputLimitReached": false,
+          "semanticJsonMode": true,
+          "semanticReasoningEffort": "low",
+          "rawConfidenceMinimum": 0.9,
+          "calibratedConfidenceMinimum": 0.82,
+          "durationMs": 2907
+        }
+      },
+      {
+        "type": "model.costed",
+        "payload": {
+          "costVersion": 1,
+          "operationId": "modelop_0d46ecc650c348aa837f62d4268292e2",
+          "status": "unavailable",
+          "quality": "unavailable",
+          "currency": "USD",
+          "catalogId": "minicode-pricing-2026-07-17-v1",
+          "reason": "model_unpriced",
+          "purpose": "intent_classification"
+        }
+      }
+    ]
+  },
+  {
+    "case": {
+      "id": "C03",
+      "category": "代码编写",
+      "text": "把 src/cache.py 里的缓存过期时间改成 300 秒。",
+      "expected": [
+        "code"
+      ],
+      "required_affirmed": [
+        "code"
+      ],
+      "expected_actions": {
+        "code": [
+          "update"
+        ]
+      },
+      "expected_entities": {
+        "files": [
+          "src/cache.py"
+        ]
+      },
+      "rationale": "修改明确文件中的参数。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "把 src/cache.py 里的缓存过期时间改成 300 秒。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "src/cache.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "src/cache.py",
+        "里的缓存过期时间改成",
+        "300"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788771433.895874,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "把 src/cache.py 里的缓存过期时间改成 300 秒。",
+          "span": [
+            0,
+            32
+          ],
+          "entities": {
+            "files": [
+              "src/cache.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "src/cache.py",
+            "里的缓存过期时间改成",
+            "300"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            32
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "把 src/cache.py 里的缓存过期时间改成 300 秒。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 4.099165904335678,
+    "run_id": "run_1f64528e6af94ef5ab21980e38bc0d00",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C04",
+      "category": "代码编写",
+      "text": "Please add a CLI command that exports the current settings as JSON.",
+      "expected": [
+        "code"
+      ],
+      "required_affirmed": [
+        "code"
+      ],
+      "expected_actions": {
+        "code": [
+          "create",
+          "update"
+        ]
+      },
+      "rationale": "英文创建CLI命令，settings是数据对象。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "Please add a CLI command that exports the current settings as JSON.",
+      "intent_type": "code",
+      "action_type": "create",
+      "confidence": 0.918,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "please",
+        "add",
+        "cli",
+        "command",
+        "exports",
+        "current",
+        "settings",
+        "json."
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788771433.908083,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.918,
+          "clause": "Please add a CLI command that exports the current settings as JSON.",
+          "span": [
+            0,
+            67
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "please",
+            "add",
+            "cli",
+            "command",
+            "exports",
+            "current",
+            "settings",
+            "json."
+          ],
+          "evidence_codes": [
+            "rule:code.create"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.918,
+          "span": [
+            0,
+            67
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Please add a CLI command that exports the current settings as JSON.",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 4.023500019684434,
+    "run_id": "run_c83941dc143f401b85008030eb7e26b4",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C05",
+      "category": "故障排查",
+      "text": "服务一启动就报 ModuleNotFoundError，帮我定位原因。",
+      "expected": [
+        "debug"
+      ],
+      "required_affirmed": [
+        "debug"
+      ],
+      "rationale": "启动异常定位。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "服务一启动就报 ModuleNotFoundError，帮我定位原因。",
+      "intent_type": "debug",
+      "action_type": "analyze",
+      "confidence": 0.82,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "服务一启动就报",
+        "modulenotfounderror",
+        "帮我定位原因",
+        "startup"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771437.837694,
+      "operations": [
+        {
+          "intent_type": "debug",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.82,
+          "clause": "服务一启动就报 ModuleNotFoundError",
+          "span": [
+            0,
+            27
+          ],
+          "entities": {},
+          "keywords": [
+            "服务一启动就报",
+            "modulenotfounderror",
+            "startup"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-debug.analyze"
+          ]
+        },
+        {
+          "intent_type": "debug",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "帮我定位原因。",
+          "span": [
+            28,
+            35
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "帮我定位原因"
+          ],
+          "evidence_codes": [
+            "rule:debug.analyze"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-debug.analyze",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.82,
+          "span": [
+            0,
+            27
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:debug.analyze",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            28,
+            35
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "accepted",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "服务一启动就报 ModuleNotFoundError，帮我定位原因。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 3923.143499996513,
+    "run_id": "run_af6cb0ca76e34938a93ab72f2ccace8b",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 661,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 1,
+      "usedCostUsd": "0.0025038",
+      "usedInputTokens": 632,
+      "usedOutputTokens": 29
+    },
+    "events": [
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_28ead466272d4c8d8ef49e5f645375ff",
+          "purpose": "intent_classification"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_28ead466272d4c8d8ef49e5f645375ff",
+          "purpose": "intent_classification",
+          "resultType": "assistant",
+          "contentPresent": true,
+          "toolCallCount": 0,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 632,
+            "outputTokens": 29,
+            "cacheReadTokens": 576,
+            "cacheCreationTokens": null
+          },
+          "semanticStatus": "accepted",
+          "semanticOperationCount": 1,
+          "calibrationVersion": "bootstrap-conservative-v1",
+          "calibrationProductionFit": false,
+          "semanticContentChars": 90,
+          "semanticStopReason": "stop",
+          "semanticOutputLimitReached": false,
+          "semanticJsonMode": true,
+          "semanticReasoningEffort": "low",
+          "rawConfidenceMinimum": 0.95,
+          "calibratedConfidenceMinimum": 0.82,
+          "durationMs": 3912
+        }
+      },
+      {
+        "type": "model.costed",
+        "payload": {
+          "costVersion": 1,
+          "operationId": "modelop_28ead466272d4c8d8ef49e5f645375ff",
+          "status": "unavailable",
+          "quality": "unavailable",
+          "currency": "USD",
+          "catalogId": "minicode-pricing-2026-07-17-v1",
+          "reason": "model_unpriced",
+          "purpose": "intent_classification"
+        }
+      }
+    ]
+  },
+  {
+    "case": {
+      "id": "C06",
+      "category": "故障排查",
+      "text": "用户点一次支付却扣了两次钱，查一下是哪里出了问题。",
+      "expected": [
+        "debug"
+      ],
+      "required_affirmed": [
+        "debug"
+      ],
+      "rationale": "具体错误行为的故障排查，无须出现debug关键字。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "用户点一次支付却扣了两次钱，查一下是哪里出了问题。",
+      "intent_type": "debug",
+      "action_type": "analyze",
+      "confidence": 0.82,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "用户点一次支付却扣了两次钱",
+        "查一下是哪里出了问题"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771439.381477,
+      "operations": [
+        {
+          "intent_type": "debug",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.82,
+          "clause": "用户点一次支付却扣了两次钱，查一下是哪里出了问题。",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "用户点一次支付却扣了两次钱",
+            "查一下是哪里出了问题"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-debug.analyze"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-debug.analyze",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.82,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "accepted",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "用户点一次支付却扣了两次钱，查一下是哪里出了问题。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 1532.756415894255,
+    "run_id": "run_09429be16e684a5b80475bbf41b2d767",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 667,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 1,
+      "usedCostUsd": "0.0024546",
+      "usedInputTokens": 642,
+      "usedOutputTokens": 25
+    },
+    "events": [
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_c84d9545b60f4849bd9f1f7f00d80470",
+          "purpose": "intent_classification"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_c84d9545b60f4849bd9f1f7f00d80470",
+          "purpose": "intent_classification",
+          "resultType": "assistant",
+          "contentPresent": true,
+          "toolCallCount": 0,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 642,
+            "outputTokens": 25,
+            "cacheReadTokens": 512,
+            "cacheCreationTokens": null
+          },
+          "semanticStatus": "accepted",
+          "semanticOperationCount": 1,
+          "calibrationVersion": "bootstrap-conservative-v1",
+          "calibrationProductionFit": false,
+          "semanticContentChars": 90,
+          "semanticStopReason": "stop",
+          "semanticOutputLimitReached": false,
+          "semanticJsonMode": true,
+          "semanticReasoningEffort": "low",
+          "rawConfidenceMinimum": 0.95,
+          "calibratedConfidenceMinimum": 0.82,
+          "durationMs": 1522
+        }
+      },
+      {
+        "type": "model.costed",
+        "payload": {
+          "costVersion": 1,
+          "operationId": "modelop_c84d9545b60f4849bd9f1f7f00d80470",
+          "status": "unavailable",
+          "quality": "unavailable",
+          "currency": "USD",
+          "catalogId": "minicode-pricing-2026-07-17-v1",
+          "reason": "model_unpriced",
+          "purpose": "intent_classification"
+        }
+      }
+    ]
+  },
+  {
+    "case": {
+      "id": "C07",
+      "category": "故障排查",
+      "text": "Fix the race condition in worker.py that occasionally loses queued jobs.",
+      "expected": [
+        "debug",
+        "code"
+      ],
+      "required_affirmed": [],
+      "expected_entities": {
+        "files": [
+          "worker.py"
+        ]
+      },
+      "rationale": "修复并发bug，可合理归为debug或代码修复。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "Fix the race condition in worker.py that occasionally loses queued jobs.",
+      "intent_type": "debug",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "worker.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "fix",
+        "race",
+        "condition",
+        "worker.py",
+        "occasionally",
+        "loses",
+        "queued",
+        "jobs."
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788771439.403956,
+      "operations": [
+        {
+          "intent_type": "debug",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "Fix the race condition in worker.py that occasionally loses queued jobs.",
+          "span": [
+            0,
+            72
+          ],
+          "entities": {
+            "files": [
+              "worker.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "fix",
+            "race",
+            "condition",
+            "worker.py",
+            "occasionally",
+            "loses",
+            "queued",
+            "jobs."
+          ],
+          "evidence_codes": [
+            "rule:action-cue-debug.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-debug.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            72
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Fix the race condition in worker.py that occasionally loses queued jobs.",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 5.994791979901493,
+    "run_id": "run_c7855ff31bce471d9d37815ee2fd90e8",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C08",
+      "category": "重构",
+      "text": "重构一下订单模块，把重复的价格计算抽成公共函数，行为保持一致。",
+      "expected": [
+        "refactor"
+      ],
+      "required_affirmed": [
+        "refactor"
+      ],
+      "rationale": "明确不改行为的代码结构调整。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "重构一下订单模块，把重复的价格计算抽成公共函数，行为保持一致。",
+      "intent_type": "refactor",
+      "action_type": "update",
+      "confidence": 0.92,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "重构一下订单模块",
+        "把重复的价格计算抽成公共函数",
+        "行为保持一致",
+        "behavior preserving"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788771439.4153652,
+      "operations": [
+        {
+          "intent_type": "refactor",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.92,
+          "clause": "重构一下订单模块，把重复的价格计算抽成公共函数，行为保持一致。",
+          "span": [
+            0,
+            31
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "重构一下订单模块",
+            "把重复的价格计算抽成公共函数",
+            "行为保持一致",
+            "behavior preserving"
+          ],
+          "evidence_codes": [
+            "rule:refactor.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:refactor.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.92,
+          "span": [
+            0,
+            31
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "重构一下订单模块，把重复的价格计算抽成公共函数，行为保持一致。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.886250033043325,
+    "run_id": "run_a13f4496f5284b198cc6b063348ef470",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C09",
+      "category": "重构",
+      "text": "这个函数两百多行了，拆成几个职责单一的小函数。",
+      "expected": [
+        "refactor",
+        "code"
+      ],
+      "required_affirmed": [],
+      "rationale": "自然语言描述函数拆分。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "这个函数两百多行了，拆成几个职责单一的小函数。",
+      "intent_type": "refactor",
+      "action_type": "update",
+      "confidence": 0.82,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个函数两百多行了",
+        "拆成几个职责单一的小函数"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788771441.860327,
+      "operations": [
+        {
+          "intent_type": "refactor",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.82,
+          "clause": "这个函数两百多行了，拆成几个职责单一的小函数。",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "这个函数两百多行了",
+            "拆成几个职责单一的小函数"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-refactor.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-refactor.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.82,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "accepted",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个函数两百多行了，拆成几个职责单一的小函数。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2433.973499923013,
+    "run_id": "run_066097d32dce4bcc868d6f595e10ddc9",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 669,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 1,
+      "usedCostUsd": "0.0025206",
+      "usedInputTokens": 639,
+      "usedOutputTokens": 30
+    },
+    "events": [
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_24dfeab6a1054c2f8b0c9f259b4a8eb6",
+          "purpose": "intent_classification"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_24dfeab6a1054c2f8b0c9f259b4a8eb6",
+          "purpose": "intent_classification",
+          "resultType": "assistant",
+          "contentPresent": true,
+          "toolCallCount": 0,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 639,
+            "outputTokens": 30,
+            "cacheReadTokens": 512,
+            "cacheCreationTokens": null
+          },
+          "semanticStatus": "accepted",
+          "semanticOperationCount": 1,
+          "calibrationVersion": "bootstrap-conservative-v1",
+          "calibrationProductionFit": false,
+          "semanticContentChars": 92,
+          "semanticStopReason": "stop",
+          "semanticOutputLimitReached": false,
+          "semanticJsonMode": true,
+          "semanticReasoningEffort": "low",
+          "rawConfidenceMinimum": 0.95,
+          "calibratedConfidenceMinimum": 0.82,
+          "durationMs": 2426
+        }
+      },
+      {
+        "type": "model.costed",
+        "payload": {
+          "costVersion": 1,
+          "operationId": "modelop_24dfeab6a1054c2f8b0c9f259b4a8eb6",
+          "status": "unavailable",
+          "quality": "unavailable",
+          "currency": "USD",
+          "catalogId": "minicode-pricing-2026-07-17-v1",
+          "reason": "model_unpriced",
+          "purpose": "intent_classification"
+        }
+      }
+    ]
+  },
+  {
+    "case": {
+      "id": "C10",
+      "category": "解释",
+      "text": "解释一下 src/session.py 是怎么保存会话的。",
+      "expected": [
+        "explain"
+      ],
+      "required_affirmed": [
+        "explain"
+      ],
+      "expected_entities": {
+        "files": [
+          "src/session.py"
+        ]
+      },
+      "expected_read_only": true,
+      "rationale": "解释已有实现。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "解释一下 src/session.py 是怎么保存会话的。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "src/session.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "解释一下",
+        "src/session.py",
+        "是怎么保存会话的"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771441.882286,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "解释一下 src/session.py 是怎么保存会话的。",
+          "span": [
+            0,
+            29
+          ],
+          "entities": {
+            "files": [
+              "src/session.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "解释一下",
+            "src/session.py",
+            "是怎么保存会话的"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            29
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "解释一下 src/session.py 是怎么保存会话的。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 4.271292011253536,
+    "run_id": "run_a9632f7e17bb44ad8190dc9a91dddcef",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C11",
+      "category": "解释",
+      "text": "asyncio.gather 和 TaskGroup 有什么区别？举个小例子说明。",
+      "expected": [
+        "explain",
+        "question"
+      ],
+      "required_affirmed": [],
+      "expected_read_only": true,
+      "rationale": "概念比较与说明，不是项目实现请求。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "asyncio.gather 和 TaskGroup 有什么区别？举个小例子说明。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.72,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "asyncio.gather",
+        "taskgroup",
+        "有什么区别",
+        "举个小例子说明"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771443.38197,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.72,
+          "clause": "asyncio.gather 和 TaskGroup 有什么区别？举个小例子说明。",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "asyncio.gather",
+            "taskgroup",
+            "有什么区别",
+            "举个小例子说明"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-explain.read",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.72,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "accepted",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "asyncio.gather 和 TaskGroup 有什么区别？举个小例子说明。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 1490.8576669404283,
+    "run_id": "run_1df145cddac7461194e474a3f49889c1",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 666,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 1,
+      "usedCostUsd": "0.0024516",
+      "usedInputTokens": 641,
+      "usedOutputTokens": 25
+    },
+    "events": [
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_92df940a56284b62b83147e7ca3ece43",
+          "purpose": "intent_classification"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_92df940a56284b62b83147e7ca3ece43",
+          "purpose": "intent_classification",
+          "resultType": "assistant",
+          "contentPresent": true,
+          "toolCallCount": 0,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 641,
+            "outputTokens": 25,
+            "cacheReadTokens": 512,
+            "cacheCreationTokens": null
+          },
+          "semanticStatus": "accepted",
+          "semanticOperationCount": 1,
+          "calibrationVersion": "bootstrap-conservative-v1",
+          "calibrationProductionFit": false,
+          "semanticContentChars": 89,
+          "semanticStopReason": "stop",
+          "semanticOutputLimitReached": false,
+          "semanticJsonMode": true,
+          "semanticReasoningEffort": "low",
+          "rawConfidenceMinimum": 0.85,
+          "calibratedConfidenceMinimum": 0.72,
+          "durationMs": 1479
+        }
+      },
+      {
+        "type": "model.costed",
+        "payload": {
+          "costVersion": 1,
+          "operationId": "modelop_92df940a56284b62b83147e7ca3ece43",
+          "status": "unavailable",
+          "quality": "unavailable",
+          "currency": "USD",
+          "catalogId": "minicode-pricing-2026-07-17-v1",
+          "reason": "model_unpriced",
+          "purpose": "intent_classification"
+        }
+      }
+    ]
+  },
+  {
+    "case": {
+      "id": "C12",
+      "category": "解释",
+      "text": "Walk me through how a request reaches the database in this project.",
+      "expected": [
+        "explain"
+      ],
+      "required_affirmed": [
+        "explain"
+      ],
+      "expected_read_only": true,
+      "rationale": "英文项目调用链讲解。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "Walk me through how a request reaches the database in this project.",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.92,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "walk",
+        "request",
+        "reaches",
+        "database",
+        "project."
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771443.40658,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.92,
+          "clause": "Walk me through how a request reaches the database in this project.",
+          "span": [
+            0,
+            67
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "walk",
+            "request",
+            "reaches",
+            "database",
+            "project."
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.92,
+          "span": [
+            0,
+            67
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Walk me through how a request reaches the database in this project.",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 5.3302079904824495,
+    "run_id": "run_0b180c28e34345a0b32563c59e8fd758",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C13",
+      "category": "查找",
+      "text": "在项目里找出所有调用 refresh_token 的地方。",
+      "expected": [
+        "search"
+      ],
+      "required_affirmed": [
+        "search"
+      ],
+      "expected_read_only": true,
+      "rationale": "代码符号调用位置搜索。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "在项目里找出所有调用 refresh_token 的地方。",
+      "intent_type": "search",
+      "action_type": "read",
+      "confidence": 0.918,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "在项目里找出所有调用",
+        "的地方",
+        "project"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771443.4184709,
+      "operations": [
+        {
+          "intent_type": "search",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.918,
+          "clause": "在项目里找出所有调用 refresh_token 的地方。",
+          "span": [
+            0,
+            29
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "在项目里找出所有调用",
+            "的地方",
+            "project"
+          ],
+          "evidence_codes": [
+            "rule:search.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:search.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.918,
+          "span": [
+            0,
+            29
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "在项目里找出所有调用 refresh_token 的地方。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 2.8242500266060233,
+    "run_id": "run_3fb15f2d240f4ba08d7d513f44ef81aa",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C14",
+      "category": "查找",
+      "text": "帮我查一下 FastAPI 官方文档里关于流式响应的说明。",
+      "expected": [
+        "search"
+      ],
+      "required_affirmed": [
+        "search"
+      ],
+      "expected_read_only": true,
+      "rationale": "外部官方文档检索。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "帮我查一下 FastAPI 官方文档里关于流式响应的说明。",
+      "intent_type": "search",
+      "action_type": "read",
+      "confidence": 0.82,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "帮我查一下",
+        "fastapi",
+        "官方文档里关于流式响应的说明",
+        "documentation"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771446.2457101,
+      "operations": [
+        {
+          "intent_type": "search",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.82,
+          "clause": "帮我查一下 FastAPI 官方文档里关于流式响应的说明。",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "帮我查一下",
+            "fastapi",
+            "官方文档里关于流式响应的说明",
+            "documentation"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-search.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-search.read",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.82,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "accepted",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "帮我查一下 FastAPI 官方文档里关于流式响应的说明。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 2820.2580829383805,
+    "run_id": "run_baa3b20b28244d4c8ef332b229ea39c3",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 671,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 1,
+      "usedCostUsd": "0.0025146",
+      "usedInputTokens": 642,
+      "usedOutputTokens": 29
+    },
+    "events": [
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_19b6b3ea94ae4d2aa2b0cae4effe519c",
+          "purpose": "intent_classification"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_19b6b3ea94ae4d2aa2b0cae4effe519c",
+          "purpose": "intent_classification",
+          "resultType": "assistant",
+          "contentPresent": true,
+          "toolCallCount": 0,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 642,
+            "outputTokens": 29,
+            "cacheReadTokens": 512,
+            "cacheCreationTokens": null
+          },
+          "semanticStatus": "accepted",
+          "semanticOperationCount": 1,
+          "calibrationVersion": "bootstrap-conservative-v1",
+          "calibrationProductionFit": false,
+          "semanticContentChars": 87,
+          "semanticStopReason": "stop",
+          "semanticOutputLimitReached": false,
+          "semanticJsonMode": true,
+          "semanticReasoningEffort": "low",
+          "rawConfidenceMinimum": 0.9,
+          "calibratedConfidenceMinimum": 0.82,
+          "durationMs": 2816
+        }
+      },
+      {
+        "type": "model.costed",
+        "payload": {
+          "costVersion": 1,
+          "operationId": "modelop_19b6b3ea94ae4d2aa2b0cae4effe519c",
+          "status": "unavailable",
+          "quality": "unavailable",
+          "currency": "USD",
+          "catalogId": "minicode-pricing-2026-07-17-v1",
+          "reason": "model_unpriced",
+          "purpose": "intent_classification"
+        }
+      }
+    ]
+  },
+  {
+    "case": {
+      "id": "C15",
+      "category": "查找",
+      "text": "配置文件放在哪个目录？帮我在仓库里找找。",
+      "expected": [
+        "search",
+        "question"
+      ],
+      "required_affirmed": [
+        "search"
+      ],
+      "expected_read_only": true,
+      "rationale": "查找配置位置，而不是修改配置。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "配置文件放在哪个目录？帮我在仓库里找找。",
+      "intent_type": "search",
+      "action_type": "read",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "配置文件放在哪个目录",
+        "帮我在仓库里找找",
+        "config",
+        "configuration"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771446.25393,
+      "operations": [
+        {
+          "intent_type": "search",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "配置文件放在哪个目录？帮我在仓库里找找。",
+          "span": [
+            0,
+            20
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "配置文件放在哪个目录",
+            "帮我在仓库里找找",
+            "config",
+            "configuration"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-search.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-search.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            20
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "配置文件放在哪个目录？帮我在仓库里找找。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 1.7306669615209103,
+    "run_id": "run_36ab8823be564b6e9b5e48a5fbb7b68f",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C16",
+      "category": "代码审查",
+      "text": "Review the changes in auth.py and point out security issues.",
+      "expected": [
+        "review"
+      ],
+      "required_affirmed": [
+        "review"
+      ],
+      "expected_read_only": true,
+      "expected_entities": {
+        "files": [
+          "auth.py"
+        ]
+      },
+      "rationale": "只要求审查与指出问题。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "Review the changes in auth.py and point out security issues.",
+      "intent_type": "review",
+      "action_type": "analyze",
+      "confidence": 0.96,
+      "entities": {
+        "files": [
+          "auth.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "review",
+        "changes",
+        "auth.py",
+        "point",
+        "out",
+        "security",
+        "issues.",
+        "authentication",
+        "permission"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771446.261506,
+      "operations": [
+        {
+          "intent_type": "review",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "Review the changes in auth.py and point out security issues.",
+          "span": [
+            0,
+            60
+          ],
+          "entities": {
+            "files": [
+              "auth.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "review",
+            "changes",
+            "auth.py",
+            "point",
+            "out",
+            "security",
+            "issues.",
+            "authentication",
+            "permission"
+          ],
+          "evidence_codes": [
+            "rule:review.analyze"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:review.analyze",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            0,
+            60
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Review the changes in auth.py and point out security issues.",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 2.5514999870210886,
+    "run_id": "run_1fa64657d5c14f9fbadc23434479aa91",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C17",
+      "category": "代码审查",
+      "text": "帮我审查这个 PR，重点看异常处理有没有遗漏。",
+      "expected": [
+        "review"
+      ],
+      "required_affirmed": [
+        "review"
+      ],
+      "expected_read_only": true,
+      "rationale": "明确PR审查。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "帮我审查这个 PR，重点看异常处理有没有遗漏。",
+      "intent_type": "review",
+      "action_type": "analyze",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "帮我审查这个",
+        "pr",
+        "重点看异常处理有没有遗漏",
+        "audit",
+        "review"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771446.2737548,
+      "operations": [
+        {
+          "intent_type": "review",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "帮我审查这个 PR，重点看异常处理有没有遗漏。",
+          "span": [
+            0,
+            23
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "帮我审查这个",
+            "pr",
+            "重点看异常处理有没有遗漏",
+            "audit",
+            "review"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-review.analyze"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-review.analyze",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            23
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "帮我审查这个 PR，重点看异常处理有没有遗漏。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 1.750500057823956,
+    "run_id": "run_97511bc8f51447c0940f516b52c6654b",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C18",
+      "category": "测试",
+      "text": "给 parse_date 函数补单元测试，覆盖空字符串和非法日期。",
+      "expected": [
+        "test"
+      ],
+      "required_affirmed": [
+        "test"
+      ],
+      "expected_actions": {
+        "test": [
+          "create",
+          "update"
+        ]
+      },
+      "rationale": "编写测试用例。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "给 parse_date 函数补单元测试，覆盖空字符串和非法日期。",
+      "intent_type": "test",
+      "action_type": "create",
+      "confidence": 0.912,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "parse_date",
+        "函数补单元测试",
+        "覆盖空字符串和非法日期",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771446.281207,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.912,
+          "clause": "给 parse_date 函数补单元测试，覆盖空字符串和非法日期。",
+          "span": [
+            0,
+            33
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "parse_date",
+            "函数补单元测试",
+            "覆盖空字符串和非法日期",
+            "test"
+          ],
+          "evidence_codes": [
+            "rule:test.create"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:test.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.912,
+          "span": [
+            0,
+            33
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "给 parse_date 函数补单元测试，覆盖空字符串和非法日期。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.5797499110922217,
+    "run_id": "run_0574ac717778416b845fdc514c661cf0",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C19",
+      "category": "测试",
+      "text": "运行 tests/test_cache.py，告诉我哪些用例没通过。",
+      "expected": [
+        "test"
+      ],
+      "required_affirmed": [
+        "test"
+      ],
+      "expected_actions": {
+        "test": [
+          "execute"
+        ]
+      },
+      "expected_entities": {
+        "files": [
+          "tests/test_cache.py"
+        ]
+      },
+      "rationale": "执行现有测试。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "运行 tests/test_cache.py，告诉我哪些用例没通过。",
+      "intent_type": "test",
+      "action_type": "execute",
+      "confidence": 0.96,
+      "entities": {
+        "files": [
+          "tests/test_cache.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "运行",
+        "tests/test_cache.py",
+        "告诉我哪些用例没通过",
+        "test",
+        "test case"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771446.288693,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "运行 tests/test_cache.py，告诉我哪些用例没通过。",
+          "span": [
+            0,
+            34
+          ],
+          "entities": {
+            "files": [
+              "tests/test_cache.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "运行",
+            "tests/test_cache.py",
+            "告诉我哪些用例没通过",
+            "test",
+            "test case"
+          ],
+          "evidence_codes": [
+            "rule:test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:test.execute",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            0,
+            34
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "运行 tests/test_cache.py，告诉我哪些用例没通过。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.4837920209392905,
+    "run_id": "run_cff4dc298573403999d5713302f05479",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C20",
+      "category": "测试",
+      "text": "Add regression tests for the timeout bug we fixed in client.py.",
+      "expected": [
+        "test"
+      ],
+      "required_affirmed": [
+        "test"
+      ],
+      "forbidden_affirmed": [
+        "debug"
+      ],
+      "expected_actions": {
+        "test": [
+          "create",
+          "update"
+        ]
+      },
+      "rationale": "bug已修复，当前请求仅补回归测试。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "Add regression tests for the timeout bug we fixed in client.py.",
+      "intent_type": "test",
+      "action_type": "create",
+      "confidence": 0.96,
+      "entities": {
+        "files": [
+          "client.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "add",
+        "regression",
+        "tests",
+        "timeout",
+        "bug",
+        "fixed",
+        "client.py."
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771446.296994,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "Add regression tests for the timeout bug we fixed in client.py.",
+          "span": [
+            0,
+            63
+          ],
+          "entities": {
+            "files": [
+              "client.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "add",
+            "regression",
+            "tests",
+            "timeout",
+            "bug",
+            "fixed",
+            "client.py."
+          ],
+          "evidence_codes": [
+            "rule:test.create"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:test.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            0,
+            63
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Add regression tests for the timeout bug we fixed in client.py.",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.7619170723482966,
+    "run_id": "run_8e0969a70bb643bcaec93affd2ddfd4d",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C21",
+      "category": "文档",
+      "text": "更新 README.md，补上 Docker 部署步骤。",
+      "expected": [
+        "document"
+      ],
+      "required_affirmed": [
+        "document"
+      ],
+      "expected_entities": {
+        "files": [
+          "README.md"
+        ]
+      },
+      "expected_actions": {
+        "document": [
+          "update",
+          "create"
+        ]
+      },
+      "rationale": "更新文档而非执行部署。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "更新 README.md，补上 Docker 部署步骤。",
+      "intent_type": "document",
+      "action_type": "update",
+      "confidence": 0.96,
+      "entities": {
+        "files": [
+          "README.md"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "更新",
+        "readme.md",
+        "补上",
+        "docker",
+        "部署步骤",
+        "deploy"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771446.3064861,
+      "operations": [
+        {
+          "intent_type": "document",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "更新 README.md",
+          "span": [
+            0,
+            12
+          ],
+          "entities": {
+            "files": [
+              "README.md"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "更新",
+            "readme.md"
+          ],
+          "evidence_codes": [
+            "rule:document.update"
+          ]
+        },
+        {
+          "intent_type": "document",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.914,
+          "clause": "补上 Docker 部署步骤。",
+          "span": [
+            13,
+            28
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "补上",
+            "docker",
+            "部署步骤",
+            "deploy"
+          ],
+          "evidence_codes": [
+            "rule:document.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:document.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            0,
+            12
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:document.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.914,
+          "span": [
+            13,
+            28
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "更新 README.md，补上 Docker 部署步骤。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.5538750924170017,
+    "run_id": "run_6813780814bc4df08c52d57f3268ec0c",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C22",
+      "category": "文档",
+      "text": "给这个 API 写一份接入文档，说明请求参数和错误码。",
+      "expected": [
+        "document"
+      ],
+      "required_affirmed": [
+        "document"
+      ],
+      "expected_actions": {
+        "document": [
+          "create",
+          "update"
+        ]
+      },
+      "rationale": "API接入文档是交付物。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "给这个 API 写一份接入文档，说明请求参数和错误码。",
+      "intent_type": "document",
+      "action_type": "create",
+      "confidence": 0.91,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "给这个",
+        "api",
+        "写一份接入文档",
+        "说明请求参数和错误码",
+        "documentation"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771446.314015,
+      "operations": [
+        {
+          "intent_type": "document",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.91,
+          "clause": "给这个 API 写一份接入文档",
+          "span": [
+            0,
+            15
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "给这个",
+            "api",
+            "写一份接入文档",
+            "documentation"
+          ],
+          "evidence_codes": [
+            "rule:document.create"
+          ]
+        },
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.78,
+          "clause": "说明请求参数和错误码。",
+          "span": [
+            16,
+            27
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "说明请求参数和错误码"
+          ],
+          "evidence_codes": [
+            "rule:intra-turn-explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:document.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.91,
+          "span": [
+            0,
+            15
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:intra-turn-explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.78,
+          "span": [
+            16,
+            27
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "给这个 API 写一份接入文档，说明请求参数和错误码。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.145207952708006,
+    "run_id": "run_30eeaa173eef41bb8ffedb0a07e4bfd7",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C23",
+      "category": "配置",
+      "text": "把 pytest 的默认超时时间配置成 30 秒。",
+      "expected": [
+        "configure"
+      ],
+      "required_affirmed": [
+        "configure"
+      ],
+      "expected_actions": {
+        "configure": [
+          "create",
+          "update"
+        ]
+      },
+      "rationale": "修改测试工具配置而非执行测试。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['configure'], got unknown",
+      "missing affirmative intent: configure",
+      "action for configure: expected one of ['create', 'update']"
+    ],
+    "actual": {
+      "raw_input": "把 pytest 的默认超时时间配置成 30 秒。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "pytest",
+        "的默认超时时间配置成",
+        "30",
+        "config",
+        "configuration"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771451.32742,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "timeout",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "把 pytest 的默认超时时间配置成 30 秒。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 5007.577875046991,
+    "run_id": "run_3d3b5eed83814a44aac14cba2de965d6",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 698,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 1,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 698,
+      "usedOutputTokens": 0
+    },
+    "events": [
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_0945b2fc0378436b9af208cbd8af12f7",
+          "purpose": "intent_classification"
+        }
+      },
+      {
+        "type": "model.failed",
+        "payload": {
+          "operationId": "modelop_0945b2fc0378436b9af208cbd8af12f7",
+          "failureKind": "timeout",
+          "purpose": "intent_classification",
+          "durationMs": 5002
+        }
+      }
+    ]
+  },
+  {
+    "case": {
+      "id": "C24",
+      "category": "配置",
+      "text": "Set up GitHub Actions to run lint on every pull request.",
+      "expected": [
+        "configure",
+        "code"
+      ],
+      "required_affirmed": [],
+      "rationale": "配置CI流程，可合理归为配置或创建代码。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "Set up GitHub Actions to run lint on every pull request.",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.912,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "set",
+        "up",
+        "github",
+        "actions",
+        "run",
+        "lint",
+        "every",
+        "pull",
+        "request."
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788771451.3543282,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.912,
+          "clause": "Set up GitHub Actions to run lint on every pull request.",
+          "span": [
+            0,
+            56
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "set",
+            "up",
+            "github",
+            "actions",
+            "run",
+            "lint",
+            "every",
+            "pull",
+            "request."
+          ],
+          "evidence_codes": [
+            "rule:code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.912,
+          "span": [
+            0,
+            56
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Set up GitHub Actions to run lint on every pull request.",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 4.811250022612512,
+    "run_id": "run_45510f1baae34fafb616a3a016839172",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C25",
+      "category": "普通问答",
+      "text": "Python 的字典为什么能保持插入顺序？",
+      "expected": [
+        "question",
+        "explain"
+      ],
+      "required_affirmed": [],
+      "expected_read_only": true,
+      "rationale": "技术知识问答。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "Python 的字典为什么能保持插入顺序？",
+      "intent_type": "question",
+      "action_type": "read",
+      "confidence": 0.82,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": [
+          "python"
+        ]
+      },
+      "keywords": [
+        "python",
+        "的字典为什么能保持插入顺序"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771455.669634,
+      "operations": [
+        {
+          "intent_type": "question",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.82,
+          "clause": "Python 的字典为什么能保持插入顺序？",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "python",
+            "的字典为什么能保持插入顺序"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-question.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-question.read",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.82,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "accepted",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Python 的字典为什么能保持插入顺序？",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 4293.687791097909,
+    "run_id": "run_d51290008bc04b7d8698cef7afe4b937",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 659,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 1,
+      "usedCostUsd": "0.0024306",
+      "usedInputTokens": 634,
+      "usedOutputTokens": 25
+    },
+    "events": [
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_ba2f8cb8a29844258a7349a0c0e1faac",
+          "purpose": "intent_classification"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_ba2f8cb8a29844258a7349a0c0e1faac",
+          "purpose": "intent_classification",
+          "resultType": "assistant",
+          "contentPresent": true,
+          "toolCallCount": 0,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 634,
+            "outputTokens": 25,
+            "cacheReadTokens": 512,
+            "cacheCreationTokens": null
+          },
+          "semanticStatus": "accepted",
+          "semanticOperationCount": 1,
+          "calibrationVersion": "bootstrap-conservative-v1",
+          "calibrationProductionFit": false,
+          "semanticContentChars": 89,
+          "semanticStopReason": "stop",
+          "semanticOutputLimitReached": false,
+          "semanticJsonMode": true,
+          "semanticReasoningEffort": "low",
+          "rawConfidenceMinimum": 0.9,
+          "calibratedConfidenceMinimum": 0.82,
+          "durationMs": 4284
+        }
+      },
+      {
+        "type": "model.costed",
+        "payload": {
+          "costVersion": 1,
+          "operationId": "modelop_ba2f8cb8a29844258a7349a0c0e1faac",
+          "status": "unavailable",
+          "quality": "unavailable",
+          "currency": "USD",
+          "catalogId": "minicode-pricing-2026-07-17-v1",
+          "reason": "model_unpriced",
+          "purpose": "intent_classification"
+        }
+      }
+    ]
+  },
+  {
+    "case": {
+      "id": "C26",
+      "category": "普通问答",
+      "text": "这个项目适合用 SQLite 还是 PostgreSQL？说说取舍。",
+      "expected": [
+        "question",
+        "explain"
+      ],
+      "required_affirmed": [],
+      "expected_read_only": true,
+      "rationale": "架构选型讨论，不要求实施数据库变更。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['question', 'explain'], got unknown",
+      "read_only: expected True, got False"
+    ],
+    "actual": {
+      "raw_input": "这个项目适合用 SQLite 还是 PostgreSQL？说说取舍。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个项目适合用",
+        "sqlite",
+        "还是",
+        "postgresql",
+        "说说取舍",
+        "project",
+        "design review",
+        "tradeoffs"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771457.892725,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "low_confidence",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个项目适合用 SQLite 还是 PostgreSQL？说说取舍。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2208.0863330047578,
+    "run_id": "run_bd3de07cda5c4d36add32923bb0a710f",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 665,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 1,
+      "usedCostUsd": "0.0024966",
+      "usedInputTokens": 636,
+      "usedOutputTokens": 29
+    },
+    "events": [
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_01b3e0eaa30946d9844f5778bbd54d5a",
+          "purpose": "intent_classification"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_01b3e0eaa30946d9844f5778bbd54d5a",
+          "purpose": "intent_classification",
+          "resultType": "assistant",
+          "contentPresent": true,
+          "toolCallCount": 0,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 636,
+            "outputTokens": 29,
+            "cacheReadTokens": 512,
+            "cacheCreationTokens": null
+          },
+          "semanticStatus": "low_confidence",
+          "semanticOperationCount": 0,
+          "calibrationVersion": "bootstrap-conservative-v1",
+          "calibrationProductionFit": false,
+          "semanticContentChars": 90,
+          "semanticStopReason": "stop",
+          "semanticOutputLimitReached": false,
+          "semanticJsonMode": true,
+          "semanticReasoningEffort": "low",
+          "rawConfidenceMinimum": 0.7,
+          "calibratedConfidenceMinimum": 0.58,
+          "durationMs": 2198
+        }
+      },
+      {
+        "type": "model.costed",
+        "payload": {
+          "costVersion": 1,
+          "operationId": "modelop_01b3e0eaa30946d9844f5778bbd54d5a",
+          "status": "unavailable",
+          "quality": "unavailable",
+          "currency": "USD",
+          "catalogId": "minicode-pricing-2026-07-17-v1",
+          "reason": "model_unpriced",
+          "purpose": "intent_classification"
+        }
+      }
+    ]
+  },
+  {
+    "case": {
+      "id": "C27",
+      "category": "闲聊",
+      "text": "你好呀，今天状态怎么样？",
+      "expected": [
+        "chat"
+      ],
+      "required_affirmed": [
+        "chat"
+      ],
+      "rationale": "社交寒暄。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "你好呀，今天状态怎么样？",
+      "intent_type": "chat",
+      "action_type": "read",
+      "confidence": 0.82,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "你好呀",
+        "今天状态怎么样"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771459.744193,
+      "operations": [
+        {
+          "intent_type": "chat",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.82,
+          "clause": "你好呀，今天状态怎么样？",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "你好呀",
+            "今天状态怎么样"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-chat.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-chat.read",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.82,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "accepted",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "你好呀，今天状态怎么样？",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 1832.6214159606025,
+    "run_id": "run_25101a851e714c52a24b2c63a5f6020d",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 661,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 1,
+      "usedCostUsd": "0.0024846",
+      "usedInputTokens": 632,
+      "usedOutputTokens": 29
+    },
+    "events": [
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_d94415b845874d3b9490dd819681fd69",
+          "purpose": "intent_classification"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_d94415b845874d3b9490dd819681fd69",
+          "purpose": "intent_classification",
+          "resultType": "assistant",
+          "contentPresent": true,
+          "toolCallCount": 0,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 632,
+            "outputTokens": 29,
+            "cacheReadTokens": 512,
+            "cacheCreationTokens": null
+          },
+          "semanticStatus": "accepted",
+          "semanticOperationCount": 1,
+          "calibrationVersion": "bootstrap-conservative-v1",
+          "calibrationProductionFit": false,
+          "semanticContentChars": 86,
+          "semanticStopReason": "stop",
+          "semanticOutputLimitReached": false,
+          "semanticJsonMode": true,
+          "semanticReasoningEffort": "low",
+          "rawConfidenceMinimum": 0.95,
+          "calibratedConfidenceMinimum": 0.82,
+          "durationMs": 1822
+        }
+      },
+      {
+        "type": "model.costed",
+        "payload": {
+          "costVersion": 1,
+          "operationId": "modelop_d94415b845874d3b9490dd819681fd69",
+          "status": "unavailable",
+          "quality": "unavailable",
+          "currency": "USD",
+          "catalogId": "minicode-pricing-2026-07-17-v1",
+          "reason": "model_unpriced",
+          "purpose": "intent_classification"
+        }
+      }
+    ]
+  },
+  {
+    "case": {
+      "id": "C28",
+      "category": "记忆",
+      "text": "记住：以后给我举 Python 例子时，优先使用标准库。",
+      "expected": [
+        "memory"
+      ],
+      "required_affirmed": [
+        "memory"
+      ],
+      "rationale": "显式持久偏好请求。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "记住：以后给我举 Python 例子时，优先使用标准库。",
+      "intent_type": "memory",
+      "action_type": "create",
+      "confidence": 0.96,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": [
+          "python"
+        ]
+      },
+      "keywords": [
+        "记住",
+        "以后给我举",
+        "python",
+        "例子时",
+        "优先使用标准库"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771459.7637749,
+      "operations": [
+        {
+          "intent_type": "memory",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "记住：以后给我举 Python 例子时，优先使用标准库。",
+          "span": [
+            0,
+            28
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": [
+              "python"
+            ]
+          },
+          "keywords": [
+            "记住",
+            "以后给我举",
+            "python",
+            "例子时",
+            "优先使用标准库"
+          ],
+          "evidence_codes": [
+            "rule:memory.create"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:memory.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            0,
+            28
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "记住：以后给我举 Python 例子时，优先使用标准库。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 3.696999978274107,
+    "run_id": "run_ee97789cc38046938ee4439ef4fe1460",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C29",
+      "category": "记忆",
+      "text": "我之前让你记住的代码风格偏好是什么？",
+      "expected": [
+        "memory",
+        "question"
+      ],
+      "required_affirmed": [],
+      "expected_read_only": true,
+      "rationale": "检索用户偏好，而不是新建记忆。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "我之前让你记住的代码风格偏好是什么？",
+      "intent_type": "memory",
+      "action_type": "read",
+      "confidence": 0.82,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "我之前让你记住的代码风格偏好是什么",
+        "preference"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771461.445875,
+      "operations": [
+        {
+          "intent_type": "memory",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.82,
+          "clause": "我之前让你记住的代码风格偏好是什么？",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "我之前让你记住的代码风格偏好是什么",
+            "preference"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-memory.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-memory.read",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.82,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "accepted",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "我之前让你记住的代码风格偏好是什么？",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 1673.0186250060797,
+    "run_id": "run_9599260dcac2431994ddc97ff8bb3b26",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 660,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 1,
+      "usedCostUsd": "0.0024336",
+      "usedInputTokens": 635,
+      "usedOutputTokens": 25
+    },
+    "events": [
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_1dc54d93f8c74895a30f01aedc425747",
+          "purpose": "intent_classification"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_1dc54d93f8c74895a30f01aedc425747",
+          "purpose": "intent_classification",
+          "resultType": "assistant",
+          "contentPresent": true,
+          "toolCallCount": 0,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 635,
+            "outputTokens": 25,
+            "cacheReadTokens": 512,
+            "cacheCreationTokens": null
+          },
+          "semanticStatus": "accepted",
+          "semanticOperationCount": 1,
+          "calibrationVersion": "bootstrap-conservative-v1",
+          "calibrationProductionFit": false,
+          "semanticContentChars": 88,
+          "semanticStopReason": "stop",
+          "semanticOutputLimitReached": false,
+          "semanticJsonMode": true,
+          "semanticReasoningEffort": "low",
+          "rawConfidenceMinimum": 0.95,
+          "calibratedConfidenceMinimum": 0.82,
+          "durationMs": 1662
+        }
+      },
+      {
+        "type": "model.costed",
+        "payload": {
+          "costVersion": 1,
+          "operationId": "modelop_1dc54d93f8c74895a30f01aedc425747",
+          "status": "unavailable",
+          "quality": "unavailable",
+          "currency": "USD",
+          "catalogId": "minicode-pricing-2026-07-17-v1",
+          "reason": "model_unpriced",
+          "purpose": "intent_classification"
+        }
+      }
+    ]
+  },
+  {
+    "case": {
+      "id": "C30",
+      "category": "系统操作",
+      "text": "清空当前对话，开始一个新会话。",
+      "expected": [
+        "system"
+      ],
+      "required_affirmed": [
+        "system"
+      ],
+      "rationale": "对话系统控制请求，评估时只解析不执行。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['system'], got unknown",
+      "missing affirmative intent: system"
+    ],
+    "actual": {
+      "raw_input": "清空当前对话，开始一个新会话。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "清空当前对话",
+        "开始一个新会话"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771464.846317,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "abstained",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "清空当前对话，开始一个新会话。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 3380.433417041786,
+    "run_id": "run_3e20b601751b4ac78a39c924763467b8",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 687,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 1,
+      "usedCostUsd": "0.0028266",
+      "usedInputTokens": 636,
+      "usedOutputTokens": 51
+    },
+    "events": [
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_b738d8c579df4b74817f5d761e4c47f1",
+          "purpose": "intent_classification"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_b738d8c579df4b74817f5d761e4c47f1",
+          "purpose": "intent_classification",
+          "resultType": "assistant",
+          "contentPresent": true,
+          "toolCallCount": 0,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 636,
+            "outputTokens": 51,
+            "cacheReadTokens": 512,
+            "cacheCreationTokens": null
+          },
+          "semanticStatus": "abstained",
+          "semanticOperationCount": 0,
+          "calibrationVersion": "bootstrap-conservative-v1",
+          "calibrationProductionFit": false,
+          "semanticContentChars": 35,
+          "semanticStopReason": "stop",
+          "semanticOutputLimitReached": false,
+          "semanticJsonMode": true,
+          "semanticReasoningEffort": "low",
+          "durationMs": 3372
+        }
+      },
+      {
+        "type": "model.costed",
+        "payload": {
+          "costVersion": 1,
+          "operationId": "modelop_b738d8c579df4b74817f5d761e4c47f1",
+          "status": "unavailable",
+          "quality": "unavailable",
+          "currency": "USD",
+          "catalogId": "minicode-pricing-2026-07-17-v1",
+          "reason": "model_unpriced",
+          "purpose": "intent_classification"
+        }
+      }
+    ]
+  },
+  {
+    "case": {
+      "id": "C31",
+      "category": "否定/撤回",
+      "text": "别改 payment.py 的代码，也不要运行测试；只解释它里面 process_payment 为什么先校验金额。",
+      "expected": [
+        "explain"
+      ],
+      "required_affirmed": [
+        "explain"
+      ],
+      "forbidden_affirmed": [
+        "code",
+        "test"
+      ],
+      "required_negated": [
+        "code",
+        "test"
+      ],
+      "expected_entities": {
+        "files": [
+          "payment.py"
+        ]
+      },
+      "forbidden_actions": [
+        "create",
+        "update",
+        "delete",
+        "execute",
+        "merge",
+        "split",
+        "move",
+        "rename"
+      ],
+      "expected_read_only": true,
+      "rationale": "明确保留解释任务，并分别否定代码修改和测试执行；提到文件与函数不代表要求改动。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "别改 payment.py 的代码，也不要运行测试；只解释它里面 process_payment 为什么先校验金额。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.78,
+      "entities": {
+        "files": [
+          "payment.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "别改",
+        "payment.py",
+        "的代码",
+        "也不要运行测试",
+        "只解释它里面",
+        "process_payment",
+        "为什么先校验金额",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771464.865619,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "negated",
+          "confidence": 0.959,
+          "clause": "别改 payment.py 的代码，",
+          "span": [
+            0,
+            18
+          ],
+          "entities": {
+            "files": [
+              "payment.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "别改",
+            "payment.py",
+            "的代码"
+          ],
+          "evidence_codes": [
+            "explicit:negated-code.update"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "也不要运行测试",
+          "span": [
+            18,
+            25
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        },
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.78,
+          "clause": "只解释它里面 process_payment 为什么先校验金额。",
+          "span": [
+            26,
+            58
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "只解释它里面",
+            "process_payment",
+            "为什么先校验金额",
+            "不要运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "rule:intra-turn-explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 2,
+      "evidence": [
+        {
+          "code": "explicit:negated-code.update",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.959,
+          "span": [
+            0,
+            18
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:intra-turn-explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.78,
+          "span": [
+            26,
+            58
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "别改 payment.py 的代码，也不要运行测试；只解释它里面 process_payment 为什么先校验金额。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 5.138042033649981,
+    "run_id": "run_890ff9865d074d2493fb78d4edf5d811",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C32",
+      "category": "否定/撤回",
+      "text": "刚才让你修复那个崩溃的问题先取消。现在只解释报错日志里“connection refused”的含义。",
+      "expected": [
+        "explain"
+      ],
+      "required_affirmed": [
+        "explain"
+      ],
+      "forbidden_affirmed": [
+        "debug"
+      ],
+      "required_negated": [
+        "debug"
+      ],
+      "expected_entities": {
+        "files": []
+      },
+      "forbidden_actions": [
+        "create",
+        "update",
+        "delete",
+        "execute",
+        "merge",
+        "split",
+        "move",
+        "rename"
+      ],
+      "expected_read_only": true,
+      "rationale": "取消的是之前的修复请求；当前只要求解释错误短语，不要求定位或修复本次崩溃。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "刚才让你修复那个崩溃的问题先取消。现在只解释报错日志里“connection refused”的含义。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "刚才让你修复那个崩溃的问题先取消",
+        "现在只解释报错日志里",
+        "的含义"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771464.875477,
+      "operations": [
+        {
+          "intent_type": "debug",
+          "action_type": "update",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "刚才让你修复那个崩溃的问题先取消",
+          "span": [
+            0,
+            16
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "刚才让你修复那个崩溃的问题先取消"
+          ],
+          "evidence_codes": [
+            "explicit:negated-debug.update"
+          ]
+        },
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "现在只解释报错日志里“connection refused”的含义。",
+          "span": [
+            17,
+            51
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "现在只解释报错日志里",
+            "的含义"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "explicit:negated-debug.update",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            0,
+            16
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:action-cue-explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            17,
+            51
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "刚才让你修复那个崩溃的问题先取消。现在只解释报错日志里“connection refused”的含义。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 3.294000052846968,
+    "run_id": "run_be25ffed3e1a464589afe0c40d13e0c9",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C33",
+      "category": "否定/撤回",
+      "text": "暂时不要重构 cache.py，也不要生成测试；只阅读现有代码，分析缓存命中率下降的可能原因。",
+      "expected": [
+        "debug"
+      ],
+      "required_affirmed": [
+        "debug"
+      ],
+      "forbidden_affirmed": [
+        "refactor",
+        "test"
+      ],
+      "required_negated": [
+        "refactor",
+        "test"
+      ],
+      "expected_entities": {
+        "files": [
+          "cache.py"
+        ]
+      },
+      "forbidden_actions": [
+        "create",
+        "update",
+        "delete",
+        "execute",
+        "merge",
+        "split",
+        "move",
+        "rename"
+      ],
+      "expected_read_only": true,
+      "rationale": "当前目标是分析性能异常的原因，重构和新增测试都被明确暂停；只阅读现有代码进一步限定了操作范围。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "暂时不要重构 cache.py，也不要生成测试；只阅读现有代码，分析缓存命中率下降的可能原因。",
+      "intent_type": "debug",
+      "action_type": "analyze",
+      "confidence": 0.92,
+      "entities": {
+        "files": [
+          "cache.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "暂时不要重构",
+        "cache.py",
+        "也不要生成测试",
+        "只阅读现有代码",
+        "分析缓存命中率下降的可能原因",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771464.904316,
+      "operations": [
+        {
+          "intent_type": "refactor",
+          "action_type": "update",
+          "polarity": "negated",
+          "confidence": 0.958,
+          "clause": "暂时不要重构 cache.py，",
+          "span": [
+            0,
+            16
+          ],
+          "entities": {
+            "files": [
+              "cache.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "暂时不要重构",
+            "cache.py"
+          ],
+          "evidence_codes": [
+            "explicit:negated-refactor.update"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "create",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "也不要生成测试",
+          "span": [
+            16,
+            23
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.create",
+            "rule:typed-test-constraint"
+          ]
+        },
+        {
+          "intent_type": "search",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.917,
+          "clause": "只阅读现有代码",
+          "span": [
+            24,
+            31
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "只阅读现有代码"
+          ],
+          "evidence_codes": [
+            "rule:search.read"
+          ]
+        },
+        {
+          "intent_type": "debug",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.92,
+          "clause": "分析缓存命中率下降的可能原因。",
+          "span": [
+            32,
+            47
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "分析缓存命中率下降的可能原因"
+          ],
+          "evidence_codes": [
+            "rule:debug.analyze"
+          ]
+        }
+      ],
+      "primary_operation_index": 3,
+      "evidence": [
+        {
+          "code": "explicit:negated-refactor.update",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.958,
+          "span": [
+            0,
+            16
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:search.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.917,
+          "span": [
+            24,
+            31
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:debug.analyze",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.92,
+          "span": [
+            32,
+            47
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "暂时不要重构 cache.py，也不要生成测试；只阅读现有代码，分析缓存命中率下降的可能原因。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 3.988709067925811,
+    "run_id": "run_81e68054c9a04c228ba795feb164c6e6",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C34",
+      "category": "否定/撤回",
+      "text": "不用搜索资料了，也别记住这段对话。直接解释一下 Python tuple 的不可变性。",
+      "expected": [
+        "explain"
+      ],
+      "required_affirmed": [
+        "explain"
+      ],
+      "forbidden_affirmed": [
+        "search",
+        "memory"
+      ],
+      "required_negated": [
+        "search",
+        "memory"
+      ],
+      "expected_entities": {
+        "files": []
+      },
+      "forbidden_actions": [
+        "create",
+        "update",
+        "delete",
+        "execute",
+        "merge",
+        "split",
+        "move",
+        "rename"
+      ],
+      "expected_read_only": true,
+      "rationale": "解释概念是唯一肯定任务；搜索资料和保存对话分别被明确否定。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "不用搜索资料了，也别记住这段对话。直接解释一下 Python tuple 的不可变性。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.78,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": [
+          "python"
+        ]
+      },
+      "keywords": [
+        "不用搜索资料了",
+        "也别记住这段对话",
+        "直接解释一下",
+        "python",
+        "tuple",
+        "的不可变性"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771464.915339,
+      "operations": [
+        {
+          "intent_type": "search",
+          "action_type": "read",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "不用搜索资料了，",
+          "span": [
+            0,
+            8
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "不用搜索资料了"
+          ],
+          "evidence_codes": [
+            "explicit:negated-search.read"
+          ]
+        },
+        {
+          "intent_type": "memory",
+          "action_type": "create",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "别记住这段对话",
+          "span": [
+            9,
+            16
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "别记住这段对话",
+            "不用搜索资料了"
+          ],
+          "evidence_codes": [
+            "explicit:negated-memory.create"
+          ]
+        },
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.78,
+          "clause": "直接解释一下 Python tuple 的不可变性。",
+          "span": [
+            17,
+            43
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": [
+              "python"
+            ]
+          },
+          "keywords": [
+            "直接解释一下",
+            "python",
+            "tuple",
+            "的不可变性"
+          ],
+          "evidence_codes": [
+            "rule:intra-turn-explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 2,
+      "evidence": [
+        {
+          "code": "explicit:negated-search.read",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            0,
+            8
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-memory.create",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            9,
+            16
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:intra-turn-explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.78,
+          "span": [
+            17,
+            43
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "不用搜索资料了，也别记住这段对话。直接解释一下 Python tuple 的不可变性。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 3.9777089841663837,
+    "run_id": "run_1a17dd2d227c42938075e235dfc6a07c",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C35",
+      "category": "否定/撤回",
+      "text": "撤回刚才让你写单元测试的请求。现在只审查 cleanup.py，指出可能误删文件的地方。",
+      "expected": [
+        "review"
+      ],
+      "required_affirmed": [
+        "review"
+      ],
+      "forbidden_affirmed": [
+        "test"
+      ],
+      "required_negated": [
+        "test"
+      ],
+      "expected_entities": {
+        "files": [
+          "cleanup.py"
+        ]
+      },
+      "forbidden_actions": [
+        "create",
+        "update",
+        "delete",
+        "execute",
+        "merge",
+        "split",
+        "move",
+        "rename"
+      ],
+      "expected_read_only": true,
+      "rationale": "撤回测试编写后，当前任务是审查脚本的删除风险；风险描述中的删除不是执行指令。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "撤回刚才让你写单元测试的请求。现在只审查 cleanup.py，指出可能误删文件的地方。",
+      "intent_type": "review",
+      "action_type": "analyze",
+      "confidence": 0.958,
+      "entities": {
+        "files": [
+          "cleanup.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "撤回刚才让你写单元测试的请求",
+        "现在只审查",
+        "cleanup.py",
+        "指出可能误删文件的地方",
+        "test",
+        "audit",
+        "review"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771464.925241,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "create",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "撤回刚才让你写单元测试的请求",
+          "span": [
+            0,
+            14
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "撤回刚才让你写单元测试的请求",
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.create"
+          ]
+        },
+        {
+          "intent_type": "review",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.958,
+          "clause": "现在只审查 cleanup.py，指出可能误删文件的地方。",
+          "span": [
+            15,
+            44
+          ],
+          "entities": {
+            "files": [
+              "cleanup.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "现在只审查",
+            "cleanup.py",
+            "指出可能误删文件的地方",
+            "audit",
+            "review"
+          ],
+          "evidence_codes": [
+            "rule:review.analyze"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "explicit:negated-test.create",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            0,
+            14
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:review.analyze",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.958,
+          "span": [
+            15,
+            44
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "撤回刚才让你写单元测试的请求。现在只审查 cleanup.py，指出可能误删文件的地方。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 2.832458005286753,
+    "run_id": "run_356ff66c4ee341348458d935dad80126",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C36",
+      "category": "引用/假设",
+      "text": "工单标题是“重构缓存模块并补齐测试”。请解释这个标题涉及哪些工作，我想先弄懂它。",
+      "expected": [
+        "explain"
+      ],
+      "required_affirmed": [
+        "explain"
+      ],
+      "forbidden_affirmed": [
+        "refactor",
+        "test"
+      ],
+      "required_negated": [],
+      "expected_entities": {
+        "files": []
+      },
+      "forbidden_actions": [
+        "create",
+        "update",
+        "delete",
+        "execute",
+        "merge",
+        "split",
+        "move",
+        "rename"
+      ],
+      "expected_read_only": true,
+      "rationale": "重构和测试只出现在待解释的工单标题中；引用不应被当成执行指令，也不等同于否定。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "工单标题是“重构缓存模块并补齐测试”。请解释这个标题涉及哪些工作，我想先弄懂它。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "工单标题是",
+        "请解释这个标题涉及哪些工作",
+        "我想先弄懂它"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771464.935134,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "请解释这个标题涉及哪些工作，我想先弄懂它。",
+          "span": [
+            19,
+            40
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "请解释这个标题涉及哪些工作",
+            "我想先弄懂它"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            19,
+            40
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "工单标题是“重构缓存模块并补齐测试”。请解释这个标题涉及哪些工作，我想先弄懂它。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 2.1724170073866844,
+    "run_id": "run_3a233f2a281b44e3aea60d53d73c3ae1",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C37",
+      "category": "引用/假设",
+      "text": "同事留言“把 timeout 改成 60”。请审查这条建议是否有遗漏，重点说说风险。",
+      "expected": [
+        "review"
+      ],
+      "required_affirmed": [
+        "review"
+      ],
+      "forbidden_affirmed": [
+        "configure",
+        "code"
+      ],
+      "required_negated": [],
+      "expected_entities": {
+        "files": []
+      },
+      "forbidden_actions": [
+        "create",
+        "update",
+        "delete",
+        "execute",
+        "merge",
+        "split",
+        "move",
+        "rename"
+      ],
+      "expected_read_only": true,
+      "rationale": "用户要求评估别人提出的配置建议；不能把被审查的修改建议视为用户已经授权的修改。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "同事留言“把 timeout 改成 60”。请审查这条建议是否有遗漏，重点说说风险。",
+      "intent_type": "review",
+      "action_type": "analyze",
+      "confidence": 0.919,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "同事留言",
+        "请审查这条建议是否有遗漏",
+        "重点说说风险",
+        "audit",
+        "review"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771464.943935,
+      "operations": [
+        {
+          "intent_type": "review",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.919,
+          "clause": "请审查这条建议是否有遗漏，重点说说风险。",
+          "span": [
+            22,
+            42
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "请审查这条建议是否有遗漏",
+            "重点说说风险",
+            "audit",
+            "review"
+          ],
+          "evidence_codes": [
+            "rule:review.analyze"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:review.analyze",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.919,
+          "span": [
+            22,
+            42
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "同事留言“把 timeout 改成 60”。请审查这条建议是否有遗漏，重点说说风险。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 2.1121249301359057,
+    "run_id": "run_fdd0dd4d2dac4c4cadbf389ab465d0e1",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C38",
+      "category": "引用/假设",
+      "text": "假设有人把 api.py 删了，请解释 Python 导入它时通常会发生什么。",
+      "expected": [
+        "explain"
+      ],
+      "required_affirmed": [
+        "explain"
+      ],
+      "forbidden_affirmed": [
+        "code",
+        "system"
+      ],
+      "required_negated": [],
+      "expected_entities": {
+        "files": [
+          "api.py"
+        ]
+      },
+      "forbidden_actions": [
+        "create",
+        "update",
+        "delete",
+        "execute",
+        "merge",
+        "split",
+        "move",
+        "rename"
+      ],
+      "expected_read_only": true,
+      "rationale": "删除文件属于假设条件，实际请求是解释导入行为；api.py 是解释对象，不是待删除目标。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "假设有人把 api.py 删了，请解释 Python 导入它时通常会发生什么。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "api.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": [
+          "python"
+        ]
+      },
+      "keywords": [
+        "假设有人把",
+        "api.py",
+        "删了",
+        "请解释",
+        "python",
+        "导入它时通常会发生什么"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771464.95462,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "假设有人把 api.py 删了，请解释 Python 导入它时通常会发生什么。",
+          "span": [
+            0,
+            39
+          ],
+          "entities": {
+            "files": [
+              "api.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": [
+              "python"
+            ]
+          },
+          "keywords": [
+            "假设有人把",
+            "api.py",
+            "删了",
+            "请解释",
+            "python",
+            "导入它时通常会发生什么"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            39
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "假设有人把 api.py 删了，请解释 Python 导入它时通常会发生什么。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 2.91162496432662,
+    "run_id": "run_f5ab25628cc44522a9190276dbda636f",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C39",
+      "category": "引用/假设",
+      "text": "产品说明书里举了个例子：“搜索用户邮件并保存到本地”。帮我润色这句话，让操作范围更清楚。",
+      "expected": [
+        "document"
+      ],
+      "required_affirmed": [
+        "document"
+      ],
+      "forbidden_affirmed": [
+        "search",
+        "memory",
+        "system"
+      ],
+      "required_negated": [],
+      "expected_entities": {
+        "files": []
+      },
+      "expected_actions": {
+        "document": [
+          "update"
+        ]
+      },
+      "rationale": "当前操作对象是说明书中的一句文案；引用中的搜索与保存都不是待执行任务。只对文案编辑标注更新，不推断本地文件写入。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['document'], got explain",
+      "missing affirmative intent: document",
+      "action for document: expected one of ['update']"
+    ],
+    "actual": {
+      "raw_input": "产品说明书里举了个例子：“搜索用户邮件并保存到本地”。帮我润色这句话，让操作范围更清楚。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "产品说明书里举了个例子",
+        "帮我润色这句话",
+        "让操作范围更清楚"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771464.9648142,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "产品说明书里举了个例子：“搜索用户邮件并保存到本地”。帮我润色这句话，让操作范围更清楚。",
+          "span": [
+            0,
+            44
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "产品说明书里举了个例子",
+            "帮我润色这句话",
+            "让操作范围更清楚"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            44
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "产品说明书里举了个例子：“搜索用户邮件并保存到本地”。帮我润色这句话，让操作范围更清楚。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 3.2357500167563558,
+    "run_id": "run_d14409b5cda444f1a26de360af9e1c4d",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C40",
+      "category": "引用/假设",
+      "text": "网页按钮的文案是“执行数据库迁移”。请解释“迁移”在这里是什么意思。",
+      "expected": [
+        "explain"
+      ],
+      "required_affirmed": [
+        "explain"
+      ],
+      "forbidden_affirmed": [
+        "system",
+        "code",
+        "configure"
+      ],
+      "required_negated": [],
+      "expected_entities": {
+        "files": []
+      },
+      "forbidden_actions": [
+        "create",
+        "update",
+        "delete",
+        "execute",
+        "merge",
+        "split",
+        "move",
+        "rename"
+      ],
+      "expected_read_only": true,
+      "rationale": "按钮文案是解释材料，用户没有要求点击按钮或执行迁移；引号中的执行不应成为肯定动作。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['explain'], got question",
+      "missing affirmative intent: explain"
+    ],
+    "actual": {
+      "raw_input": "网页按钮的文案是“执行数据库迁移”。请解释“迁移”在这里是什么意思。",
+      "intent_type": "question",
+      "action_type": "read",
+      "confidence": 0.92,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "请解释",
+        "在这里是什么意思"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771464.97365,
+      "operations": [
+        {
+          "intent_type": "question",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.92,
+          "clause": "请解释“迁移”在这里是什么意思。",
+          "span": [
+            18,
+            34
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "请解释",
+            "在这里是什么意思"
+          ],
+          "evidence_codes": [
+            "rule:question.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:question.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.92,
+          "span": [
+            18,
+            34
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "网页按钮的文案是“执行数据库迁移”。请解释“迁移”在这里是什么意思。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 1.7959580291062593,
+    "run_id": "run_afc08469d915466ab81deadb04796970",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C41",
+      "category": "多意图",
+      "text": "先修复 parser.py 在空输入时抛异常的问题，再为这个边界情况添加单元测试。",
+      "expected": [
+        "debug",
+        "test"
+      ],
+      "required_affirmed": [
+        "debug",
+        "test"
+      ],
+      "forbidden_affirmed": [],
+      "required_negated": [],
+      "expected_entities": {
+        "files": [
+          "parser.py"
+        ]
+      },
+      "expected_actions": {
+        "debug": [
+          "update"
+        ],
+        "test": [
+          "create",
+          "update"
+        ]
+      },
+      "expected_read_only": false,
+      "rationale": "包含修复异常和增加回归测试两个实际步骤；二者都应保留，主类型允许按优先级选其中之一。",
+      "expected_order": [
+        "debug",
+        "test"
+      ]
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "先修复 parser.py 在空输入时抛异常的问题，再为这个边界情况添加单元测试。",
+      "intent_type": "debug",
+      "action_type": "update",
+      "confidence": 0.96,
+      "entities": {
+        "files": [
+          "parser.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "先修复",
+        "parser.py",
+        "在空输入时抛异常的问题",
+        "再为这个边界情况添加单元测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771464.998796,
+      "operations": [
+        {
+          "intent_type": "debug",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "先修复 parser.py 在空输入时抛异常的问题，再为这个边界情况",
+          "span": [
+            0,
+            34
+          ],
+          "entities": {
+            "files": [
+              "parser.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "先修复",
+            "parser.py",
+            "在空输入时抛异常的问题",
+            "再为这个边界情况"
+          ],
+          "evidence_codes": [
+            "rule:debug.update"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.905,
+          "clause": "添加单元测试。",
+          "span": [
+            34,
+            41
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "添加单元测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "rule:test.create"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:debug.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            0,
+            34
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:test.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.905,
+          "span": [
+            34,
+            41
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "先修复 parser.py 在空输入时抛异常的问题，再为这个边界情况添加单元测试。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.6070839958265424,
+    "run_id": "run_43f0ea75ef864377a9973221913f20d4",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C42",
+      "category": "多意图",
+      "text": "重构 cache.py 里重复的淘汰逻辑，保留现有行为；同时补充 README.md 中的缓存策略说明。",
+      "expected": [
+        "refactor",
+        "document"
+      ],
+      "required_affirmed": [
+        "refactor",
+        "document"
+      ],
+      "forbidden_affirmed": [],
+      "required_negated": [],
+      "expected_entities": {
+        "files": [
+          "cache.py",
+          "README.md"
+        ]
+      },
+      "expected_actions": {
+        "refactor": [
+          "update"
+        ],
+        "document": [
+          "create",
+          "update"
+        ]
+      },
+      "expected_read_only": false,
+      "rationale": "代码内部重构与文档补充均为明确肯定任务；保留行为是重构约束，不是禁止修改。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "重构 cache.py 里重复的淘汰逻辑，保留现有行为；同时补充 README.md 中的缓存策略说明。",
+      "intent_type": "refactor",
+      "action_type": "update",
+      "confidence": 0.96,
+      "entities": {
+        "files": [
+          "cache.py",
+          "README.md"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "重构",
+        "cache.py",
+        "里重复的淘汰逻辑",
+        "保留现有行为",
+        "同时补充",
+        "readme.md",
+        "中的缓存策略说明"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788771465.010249,
+      "operations": [
+        {
+          "intent_type": "refactor",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "重构 cache.py 里重复的淘汰逻辑，保留现有行为",
+          "span": [
+            0,
+            27
+          ],
+          "entities": {
+            "files": [
+              "cache.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "重构",
+            "cache.py",
+            "里重复的淘汰逻辑",
+            "保留现有行为"
+          ],
+          "evidence_codes": [
+            "rule:refactor.update"
+          ]
+        },
+        {
+          "intent_type": "document",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "补充 README.md 中的缓存策略说明。",
+          "span": [
+            30,
+            52
+          ],
+          "entities": {
+            "files": [
+              "README.md"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "补充",
+            "readme.md",
+            "中的缓存策略说明"
+          ],
+          "evidence_codes": [
+            "rule:document.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:refactor.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            0,
+            27
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:document.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            30,
+            52
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "重构 cache.py 里重复的淘汰逻辑，保留现有行为；同时补充 README.md 中的缓存策略说明。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2.8653329936787486,
+    "run_id": "run_6843a0811db94d299f4e145fea8b4e08",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C43",
+      "category": "多意图",
+      "text": "搜索项目里所有调用 fetch_user 的地方，然后解释其中 request_handler.py 的调用链。",
+      "expected": [
+        "search",
+        "explain"
+      ],
+      "required_affirmed": [
+        "search",
+        "explain"
+      ],
+      "forbidden_affirmed": [],
+      "required_negated": [],
+      "expected_entities": {
+        "files": [
+          "request_handler.py"
+        ]
+      },
+      "forbidden_actions": [
+        "create",
+        "update",
+        "delete",
+        "execute",
+        "merge",
+        "split",
+        "move",
+        "rename"
+      ],
+      "expected_read_only": true,
+      "rationale": "先检索调用位置，再解释指定文件中的调用关系；两个只读任务都不可丢失。",
+      "expected_order": [
+        "search",
+        "explain"
+      ]
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "搜索项目里所有调用 fetch_user 的地方，然后解释其中 request_handler.py 的调用链。",
+      "intent_type": "search",
+      "action_type": "read",
+      "confidence": 0.92,
+      "entities": {
+        "files": [
+          "request_handler.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "搜索项目里所有调用",
+        "的地方",
+        "然后解释其中",
+        "request_handler.py",
+        "的调用链",
+        "project",
+        "call flow"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771465.0213099,
+      "operations": [
+        {
+          "intent_type": "search",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.92,
+          "clause": "搜索项目里所有调用 fetch_user 的地方",
+          "span": [
+            0,
+            24
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "搜索项目里所有调用",
+            "的地方",
+            "project"
+          ],
+          "evidence_codes": [
+            "rule:search.read"
+          ]
+        },
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "解释其中 request_handler.py 的调用链。",
+          "span": [
+            27,
+            56
+          ],
+          "entities": {
+            "files": [
+              "request_handler.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "解释其中",
+            "request_handler.py",
+            "的调用链",
+            "call flow"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:search.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.92,
+          "span": [
+            0,
+            24
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            27,
+            56
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "搜索项目里所有调用 fetch_user 的地方，然后解释其中 request_handler.py 的调用链。",
+      "context_used": false
+    },
+    "read_only": true,
+    "elapsed_ms": 3.0239170882850885,
+    "run_id": "run_9f8f88075fc644c299d12fec7bebbe56",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C44",
+      "category": "多意图",
+      "text": "审查 auth.py 的登录校验逻辑，并把发现的问题整理成 SECURITY_REVIEW.md。",
+      "expected": [
+        "review",
+        "document"
+      ],
+      "required_affirmed": [
+        "review",
+        "document"
+      ],
+      "forbidden_affirmed": [],
+      "required_negated": [],
+      "expected_entities": {
+        "files": [
+          "auth.py",
+          "SECURITY_REVIEW.md"
+        ]
+      },
+      "expected_actions": {
+        "review": [
+          "analyze"
+        ],
+        "document": [
+          "create",
+          "update"
+        ]
+      },
+      "expected_read_only": false,
+      "rationale": "审查和产出报告是两个明确步骤；审查对象与报告文件都需要识别，生成报告使整体任务包含写入。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "审查 auth.py 的登录校验逻辑，并把发现的问题整理成 SECURITY_REVIEW.md。",
+      "intent_type": "document",
+      "action_type": "create",
+      "confidence": 0.956,
+      "entities": {
+        "files": [
+          "auth.py",
+          "SECURITY_REVIEW.md"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "审查",
+        "auth.py",
+        "的登录校验逻辑",
+        "并把发现的问题整理成",
+        "security_review.md",
+        "audit",
+        "review",
+        "authentication"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771465.0315552,
+      "operations": [
+        {
+          "intent_type": "review",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "审查 auth.py 的登录校验逻辑，",
+          "span": [
+            0,
+            19
+          ],
+          "entities": {
+            "files": [
+              "auth.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "审查",
+            "auth.py",
+            "的登录校验逻辑",
+            "audit",
+            "review",
+            "authentication"
+          ],
+          "evidence_codes": [
+            "rule:review.analyze"
+          ]
+        },
+        {
+          "intent_type": "document",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.956,
+          "clause": "把发现的问题整理成 SECURITY_REVIEW.md。",
+          "span": [
+            20,
+            49
+          ],
+          "entities": {
+            "files": [
+              "SECURITY_REVIEW.md",
+              "auth.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "把发现的问题整理成",
+            "security_review.md",
+            "审查",
+            "auth.py",
+            "的登录校验逻辑",
+            "audit",
+            "review",
+            "authentication"
+          ],
+          "evidence_codes": [
+            "rule:document.create"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "rule:review.analyze",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            0,
+            19
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:document.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.956,
+          "span": [
+            20,
+            49
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "审查 auth.py 的登录校验逻辑，并把发现的问题整理成 SECURITY_REVIEW.md。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 3.4354579402133822,
+    "run_id": "run_40bd04f090b74bdf8b457408a99aa08c",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C45",
+      "category": "多意图",
+      "text": "在 settings.yaml 中把日志级别调为 DEBUG，然后运行 test_logging.py 验证日志输出。",
+      "expected": [
+        "configure",
+        "test"
+      ],
+      "required_affirmed": [
+        "configure",
+        "test"
+      ],
+      "forbidden_affirmed": [],
+      "required_negated": [],
+      "expected_entities": {
+        "files": [
+          "settings.yaml",
+          "test_logging.py"
+        ]
+      },
+      "expected_actions": {
+        "configure": [
+          "update"
+        ],
+        "test": [
+          "execute"
+        ]
+      },
+      "expected_read_only": false,
+      "rationale": "修改配置和执行测试均被明确要求；DEBUG 是日志级别值，不表示用户另有排错请求。",
+      "expected_order": [
+        "configure",
+        "test"
+      ]
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "在 settings.yaml 中把日志级别调为 DEBUG，然后运行 test_logging.py 验证日志输出。",
+      "intent_type": "configure",
+      "action_type": "update",
+      "confidence": 0.82,
+      "entities": {
+        "files": [
+          "settings.yaml",
+          "test_logging.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "settings.yaml",
+        "中把日志级别调为",
+        "debug",
+        "然后运行",
+        "test_logging.py",
+        "验证日志输出"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771467.058461,
+      "operations": [
+        {
+          "intent_type": "configure",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.82,
+          "clause": "在 settings.yaml 中把日志级别调为 DEBUG",
+          "span": [
+            0,
+            30
+          ],
+          "entities": {},
+          "keywords": [
+            "settings.yaml",
+            "中把日志级别调为",
+            "debug"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-configure.update"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "运行 test_logging.py 验证日志输出。",
+          "span": [
+            33,
+            59
+          ],
+          "entities": {
+            "files": [
+              "test_logging.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "运行",
+            "test_logging.py",
+            "验证日志输出"
+          ],
+          "evidence_codes": [
+            "rule:test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-configure.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.82,
+          "span": [
+            0,
+            30
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:test.execute",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            33,
+            59
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "accepted",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "在 settings.yaml 中把日志级别调为 DEBUG，然后运行 test_logging.py 验证日志输出。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 2019.4513750029728,
+    "run_id": "run_47293e33e1494319b745ed782144fb02",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 664,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 1,
+      "usedCostUsd": "0.0024936",
+      "usedInputTokens": 635,
+      "usedOutputTokens": 29
+    },
+    "events": [
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_26862f6d9bc144a8b658997b0ce6ca7f",
+          "purpose": "intent_classification"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_26862f6d9bc144a8b658997b0ce6ca7f",
+          "purpose": "intent_classification",
+          "resultType": "assistant",
+          "contentPresent": true,
+          "toolCallCount": 0,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 635,
+            "outputTokens": 29,
+            "cacheReadTokens": 512,
+            "cacheCreationTokens": null
+          },
+          "semanticStatus": "accepted",
+          "semanticOperationCount": 1,
+          "calibrationVersion": "bootstrap-conservative-v1",
+          "calibrationProductionFit": false,
+          "semanticContentChars": 93,
+          "semanticStopReason": "stop",
+          "semanticOutputLimitReached": false,
+          "semanticJsonMode": true,
+          "semanticReasoningEffort": "low",
+          "rawConfidenceMinimum": 0.95,
+          "calibratedConfidenceMinimum": 0.82,
+          "durationMs": 2009
+        }
+      },
+      {
+        "type": "model.costed",
+        "payload": {
+          "costVersion": 1,
+          "operationId": "modelop_26862f6d9bc144a8b658997b0ce6ca7f",
+          "status": "unavailable",
+          "quality": "unavailable",
+          "currency": "USD",
+          "catalogId": "minicode-pricing-2026-07-17-v1",
+          "reason": "model_unpriced",
+          "purpose": "intent_classification"
+        }
+      }
+    ]
+  },
+  {
+    "case": {
+      "id": "C46",
+      "category": "上下文/模糊",
+      "text": "继续审查后一个文件有没有重复扣款的风险。",
+      "expected": [
+        "review"
+      ],
+      "required_affirmed": [
+        "review"
+      ],
+      "forbidden_affirmed": [],
+      "required_negated": [],
+      "expected_entities": {
+        "files": [
+          "payment.py"
+        ]
+      },
+      "forbidden_actions": [
+        "create",
+        "update",
+        "delete",
+        "execute",
+        "merge",
+        "split",
+        "move",
+        "rename"
+      ],
+      "expected_read_only": true,
+      "context": {
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "请帮我审查 order.py 和 payment.py 的实现。"
+          },
+          {
+            "role": "assistant",
+            "content": "我先从 order.py 开始，接下来会检查 payment.py。"
+          }
+        ]
+      },
+      "rationale": "后一个文件明确指向 payment.py；上下文中的 order.py 不应取代当前审查目标。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "继续审查后一个文件有没有重复扣款的风险。",
+      "intent_type": "review",
+      "action_type": "analyze",
+      "confidence": 0.918,
+      "entities": {
+        "files": [
+          "payment.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "继续审查后一个文件有没有重复扣款的风险",
+        "audit",
+        "review"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771467.090347,
+      "operations": [
+        {
+          "intent_type": "review",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.918,
+          "clause": "继续审查后一个文件有没有重复扣款的风险。",
+          "span": [
+            0,
+            20
+          ],
+          "entities": {
+            "files": [
+              "payment.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "继续审查后一个文件有没有重复扣款的风险",
+            "audit",
+            "review"
+          ],
+          "evidence_codes": [
+            "rule:review.analyze",
+            "context:file-reference"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:review.analyze",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.918,
+          "span": [
+            0,
+            20
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "context:file-reference",
+          "source": "context",
+          "reason": "the current file reference selects an unambiguous target in the active context",
+          "strength": 0.918,
+          "span": [
+            0,
+            20
+          ],
+          "turn_offset": -1
+        }
+      ],
+      "decision_reason": "contextual_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 2,
+        "warnings": []
+      },
+      "semantic_query": "继续审查后一个文件有没有重复扣款的风险。\nContext topics: payment.py",
+      "context_used": true
+    },
+    "read_only": true,
+    "elapsed_ms": 7.6622499618679285,
+    "run_id": "run_46cca5a69e4146c38ecdd94559c1c1ec",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C47",
+      "category": "上下文/模糊",
+      "text": "就按这个方案改，函数签名保持不变。",
+      "expected": [
+        "refactor"
+      ],
+      "required_affirmed": [
+        "refactor"
+      ],
+      "forbidden_affirmed": [],
+      "required_negated": [],
+      "expected_entities": {
+        "files": [
+          "cache.py"
+        ]
+      },
+      "expected_actions": {
+        "refactor": [
+          "update",
+          "split"
+        ]
+      },
+      "expected_read_only": false,
+      "context": {
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "在 cache.py 里，refresh_cache 函数特别长，我想重构它。"
+          },
+          {
+            "role": "assistant",
+            "content": "可以把拉取数据与更新缓存分开，同时保留外部接口。"
+          }
+        ]
+      },
+      "rationale": "当前短句确认上文的重构方案，目标继承为 cache.py；保持函数签名不变是修改约束。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['refactor'], got code",
+      "missing affirmative intent: refactor",
+      "action for refactor: expected one of ['update', 'split']"
+    ],
+    "actual": {
+      "raw_input": "就按这个方案改，函数签名保持不变。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.914,
+      "entities": {
+        "files": [
+          "cache.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "就按这个方案改",
+        "函数签名保持不变"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788771467.109453,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.914,
+          "clause": "就按这个方案改，函数签名保持不变。",
+          "span": [
+            0,
+            17
+          ],
+          "entities": {
+            "files": [
+              "cache.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "就按这个方案改",
+            "函数签名保持不变",
+            "refresh_cache"
+          ],
+          "evidence_codes": [
+            "rule:code.update",
+            "context:topic-continuation"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.914,
+          "span": [
+            0,
+            17
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "context:topic-continuation",
+          "source": "context",
+          "reason": "current operation continues the active task topic",
+          "strength": 0.62,
+          "span": [
+            0,
+            17
+          ],
+          "turn_offset": -1
+        }
+      ],
+      "decision_reason": "contextual_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 2,
+        "warnings": []
+      },
+      "semantic_query": "就按这个方案改，函数签名保持不变。\nContext topics: cache.py",
+      "context_used": true
+    },
+    "read_only": false,
+    "elapsed_ms": 5.16125001013279,
+    "run_id": "run_ff602c8dc77c4b60948c49ae1f432034",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C48",
+      "category": "上下文/模糊",
+      "text": "再加一个 None 输入的用例。",
+      "expected": [
+        "test"
+      ],
+      "required_affirmed": [
+        "test"
+      ],
+      "forbidden_affirmed": [],
+      "required_negated": [],
+      "expected_entities": {
+        "files": [
+          "utils.py"
+        ]
+      },
+      "expected_actions": {
+        "test": [
+          "create",
+          "update"
+        ]
+      },
+      "expected_read_only": false,
+      "context": {
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "请给 utils.py 中的 normalize_name 加边界情况测试。"
+          },
+          {
+            "role": "assistant",
+            "content": "我会覆盖空字符串、前后空格和只有空格的输入。"
+          }
+        ]
+      },
+      "rationale": "用例承接上文的测试任务，None 是额外测试输入；utils.py 是被测目标，不推断测试文件名。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "再加一个 None 输入的用例。",
+      "intent_type": "test",
+      "action_type": "create",
+      "confidence": 0.919,
+      "entities": {
+        "files": [
+          "utils.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "再加一个",
+        "none",
+        "输入的用例",
+        "test",
+        "test case"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771467.125859,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.919,
+          "clause": "再加一个 None 输入的用例。",
+          "span": [
+            0,
+            16
+          ],
+          "entities": {
+            "files": [
+              "utils.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "再加一个",
+            "none",
+            "输入的用例",
+            "test",
+            "test case"
+          ],
+          "evidence_codes": [
+            "rule:test.create",
+            "context:file-reference"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:test.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.919,
+          "span": [
+            0,
+            16
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "context:file-reference",
+          "source": "context",
+          "reason": "the current file reference selects an unambiguous target in the active context",
+          "strength": 0.919,
+          "span": [
+            0,
+            16
+          ],
+          "turn_offset": -1
+        }
+      ],
+      "decision_reason": "contextual_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 2,
+        "warnings": []
+      },
+      "semantic_query": "再加一个 None 输入的用例。\nContext topics: utils.py test",
+      "context_used": true
+    },
+    "read_only": false,
+    "elapsed_ms": 4.738459014333785,
+    "run_id": "run_0148d7d1dd9349ccb15ef865a101fd89",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  },
+  {
+    "case": {
+      "id": "C49",
+      "category": "上下文/模糊",
+      "text": "这个能处理一下吗？",
+      "expected": [
+        "unknown"
+      ],
+      "required_affirmed": [],
+      "forbidden_affirmed": [],
+      "required_negated": [],
+      "expected_entities": {
+        "files": []
+      },
+      "rationale": "没有历史、附件或可指代对象，也没有明确操作，无法合理确定实际任务；不凭疑问句形式强行归为知识问答。"
+    },
+    "primary_ok": true,
+    "all_labeled_checks_ok": true,
+    "issues": [],
+    "actual": {
+      "raw_input": "这个能处理一下吗？",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个能处理一下吗"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771470.763408,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "low_confidence",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个能处理一下吗？",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 3610.4059589561075,
+    "run_id": "run_afc14889f02b420cbad60ad44ff1617c",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 692,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 1,
+      "usedCostUsd": "0.0029616",
+      "usedInputTokens": 631,
+      "usedOutputTokens": 61
+    },
+    "events": [
+      {
+        "type": "model.started",
+        "payload": {
+          "operationId": "modelop_bd6fea35dc1e4bf2a0c2fe1a21340532",
+          "purpose": "intent_classification"
+        }
+      },
+      {
+        "type": "model.completed",
+        "payload": {
+          "operationId": "modelop_bd6fea35dc1e4bf2a0c2fe1a21340532",
+          "purpose": "intent_classification",
+          "resultType": "assistant",
+          "contentPresent": true,
+          "toolCallCount": 0,
+          "usage": {
+            "source": "provider",
+            "inputTokens": 631,
+            "outputTokens": 61,
+            "cacheReadTokens": 512,
+            "cacheCreationTokens": null
+          },
+          "semanticStatus": "low_confidence",
+          "semanticOperationCount": 0,
+          "calibrationVersion": "bootstrap-conservative-v1",
+          "calibrationProductionFit": false,
+          "semanticContentChars": 85,
+          "semanticStopReason": "stop",
+          "semanticOutputLimitReached": false,
+          "semanticJsonMode": true,
+          "semanticReasoningEffort": "low",
+          "rawConfidenceMinimum": 0.3,
+          "calibratedConfidenceMinimum": 0.45,
+          "durationMs": 3602
+        }
+      },
+      {
+        "type": "model.costed",
+        "payload": {
+          "costVersion": 1,
+          "operationId": "modelop_bd6fea35dc1e4bf2a0c2fe1a21340532",
+          "status": "unavailable",
+          "quality": "unavailable",
+          "currency": "USD",
+          "catalogId": "minicode-pricing-2026-07-17-v1",
+          "reason": "model_unpriced",
+          "purpose": "intent_classification"
+        }
+      }
+    ]
+  },
+  {
+    "case": {
+      "id": "C50",
+      "category": "上下文/模糊",
+      "text": "把那一行改对就行，其他内容不动。",
+      "expected": [
+        "document"
+      ],
+      "required_affirmed": [
+        "document"
+      ],
+      "forbidden_affirmed": [
+        "system",
+        "configure"
+      ],
+      "required_negated": [],
+      "expected_entities": {
+        "files": [
+          "examples.md"
+        ]
+      },
+      "expected_actions": {
+        "document": [
+          "update"
+        ]
+      },
+      "expected_read_only": false,
+      "context": {
+        "recent_turns": [
+          {
+            "role": "user",
+            "content": "文档 examples.md 中的启动命令写错了，应该是 python -m demo。"
+          },
+          {
+            "role": "assistant",
+            "content": "已定位到“快速开始”的启动命令。"
+          }
+        ]
+      },
+      "rationale": "那一行指向文档中的启动命令，要求更新文档；出现命令文本不表示实际执行程序或更改运行配置。"
+    },
+    "primary_ok": false,
+    "all_labeled_checks_ok": false,
+    "issues": [
+      "primary: expected ['document'], got unknown",
+      "missing affirmative intent: document",
+      "action for document: expected one of ['update']",
+      "missing entity files: examples.md"
+    ],
+    "actual": {
+      "raw_input": "把那一行改对就行，其他内容不动。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "把那一行改对就行",
+        "其他内容不动"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788771470.79526,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "把那一行改对就行，其他内容不动。",
+      "context_used": false
+    },
+    "read_only": false,
+    "elapsed_ms": 7.387500023469329,
+    "run_id": "run_de8c7cd9df9d49bdb63dcc153bf16537",
+    "budget": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "events": []
+  }
+]

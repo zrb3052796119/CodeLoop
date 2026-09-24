@@ -1,0 +1,29 @@
+{
+  "scope": "six representative failures; exact detailed projection except timestamp",
+  "checks": [
+    {
+      "id": "C15",
+      "public_entrypoint_matches": true
+    },
+    {
+      "id": "C32",
+      "public_entrypoint_matches": true
+    },
+    {
+      "id": "C35",
+      "public_entrypoint_matches": true
+    },
+    {
+      "id": "C38",
+      "public_entrypoint_matches": true
+    },
+    {
+      "id": "C45",
+      "public_entrypoint_matches": true
+    },
+    {
+      "id": "C46",
+      "public_entrypoint_matches": true
+    }
+  ]
+}

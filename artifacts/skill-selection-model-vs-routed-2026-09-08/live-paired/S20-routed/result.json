@@ -1,0 +1,261 @@
+{
+  "case_id": "S20",
+  "mode": "actual-model-pre-work-window",
+  "model": "glm-5.3-flash",
+  "provider": "custom",
+  "runtime_overrides": {
+    "modelTimeoutSeconds": 30.0,
+    "modelMaxRetries": 0,
+    "maxOutputTokens": 2048
+  },
+  "max_calls": 4,
+  "system_prompt_sha256": "cc8614944af55fd79e2f75a8ef5a95579a0c0d731742eb27ee5c0cfc88496215",
+  "tool_schemas_sha256": "84fe60abda296be22540e9673d2b60812eb6fd55c6a80e7896a9f59154bf956c",
+  "tool_names": [
+    "ask_user",
+    "list_files",
+    "grep_files",
+    "read_file",
+    "file_line_count",
+    "write_file",
+    "edit_file",
+    "patch_file",
+    "batch_copy",
+    "batch_move",
+    "batch_delete",
+    "run_command",
+    "web_fetch",
+    "web_search",
+    "todo_write",
+    "task",
+    "subagent_note_write",
+    "subagent_note_read",
+    "subagent_note_list",
+    "git",
+    "find_symbols",
+    "find_references",
+    "get_ast_info",
+    "code_review",
+    "file_tree",
+    "diff_viewer",
+    "test_runner",
+    "load_skill",
+    "propose_skill"
+  ],
+  "catalog_sha256": "30b06640cc20cb2ca683ae8f42ac6fa078f3d754efa6b6f72acdea8387d2dafd",
+  "policy": {
+    "version": 3,
+    "allowed_bindings": [
+      {
+        "qualified_name": "code-skills/minicode-study",
+        "source": "project",
+        "content_digest": "3759d5f3f8faed34a100c6638da7ffc20a479c1b0d5d8801c9f2518c44c0fe7b",
+        "routing_identity_digest": "5f86794285fdb3e51c489bef37cebd1c6efcdb9a17aa1d618abcf1763dbaca87"
+      },
+      {
+        "qualified_name": "code-understanding/codebase-explanation",
+        "source": "project",
+        "content_digest": "e8a180242ce259904e469a00c4f745229dc549ea6c079d8adbaa69e2007692b2",
+        "routing_identity_digest": "e5035fb53693ddde5a613898aedc588c99e29f19516b60c9ace463ece320d86a"
+      },
+      {
+        "qualified_name": "code-understanding/design-review",
+        "source": "project",
+        "content_digest": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+        "routing_identity_digest": "5474e2c40f8cd27630aedd67aa1fe241dd6d066ce19d6d9598ac6f7ec49df830"
+      },
+      {
+        "qualified_name": "code-understanding/minicode-learning-coach-demo",
+        "source": "project",
+        "content_digest": "9f8b473f7db0a0e955faa5901fbcfe4799e0d63568fc3d8a97939a41c5782176",
+        "routing_identity_digest": "1e5ea39f536bc30529a039abeb4a40a48bc5083dfd6d2996b075241d0ecdcf96"
+      },
+      {
+        "qualified_name": "debugging/concurrency-debugging",
+        "source": "project",
+        "content_digest": "a497b728ff77f9ccf8d6a7ae118a27019c3966d9d401be7e1c817531e3a520e0",
+        "routing_identity_digest": "ad4a3c47f7079ae99e08f3d9eadf8dff92ffa889a0734984fdff8d3ea9f2f412"
+      },
+      {
+        "qualified_name": "debugging/pytest-debugging",
+        "source": "project",
+        "content_digest": "a0d2254a350cf3e84255d7b2a069d4a07081d8a40608d654b976c5261603ab4d",
+        "routing_identity_digest": "f8c756241ceb5f31ce94288c0d7e911761e608f6c0ea6e4430180bc06716911b"
+      },
+      {
+        "qualified_name": "dependencies/dependency-hygiene",
+        "source": "project",
+        "content_digest": "134bc00fb694afd8cea65dc6b9d6e35c83cfe868dbe67475a07d35502ef0f15b",
+        "routing_identity_digest": "bd8fece2a9ba2ed5f5c601ba8164b14964eb259dfbe54232d4d94a51bfc54e60"
+      },
+      {
+        "qualified_name": "documentation/readme-authoring",
+        "source": "project",
+        "content_digest": "6990db45ca8ef1abb0eb12dca4daf9f128e604f12575292f976649ec6524c706",
+        "routing_identity_digest": "65bd3534d197fac472b9f083a0921bdbe38cfbf1fa5cd588b18d4b9559583bb8"
+      },
+      {
+        "qualified_name": "git/commit-hygiene",
+        "source": "project",
+        "content_digest": "2fc407284133dcb47bdc473b266ee7085e28f49143c9b6a183f2a0ec84a5e483",
+        "routing_identity_digest": "119444341c2252c379caa043e5182ccbf49cbc8a4330ec3d63a65eb7a3bbd0ce"
+      },
+      {
+        "qualified_name": "minicode",
+        "source": "compat_project",
+        "content_digest": "21d8ab5727f1cb4442cb12f502e7bf517e51728d9bc08839b69bebff2d8a081f",
+        "routing_identity_digest": "21d8ab5727f1cb4442cb12f502e7bf517e51728d9bc08839b69bebff2d8a081f"
+      },
+      {
+        "qualified_name": "performance/hotpath-profiling",
+        "source": "project",
+        "content_digest": "b78431346598aed8e8863247c7c5678971f1d1e5589c76a0e1fd377e1f252726",
+        "routing_identity_digest": "ffadcff622392ef3fc9d2c6d7e9eaeaef55d4bb6c53b59d1ca6d600ac099c7db"
+      },
+      {
+        "qualified_name": "quality/lint-and-static-cleanup",
+        "source": "project",
+        "content_digest": "4a5cbb6a767a7203956f19ca1dc458b15b099714851dd9bb99c6260b741d89bf",
+        "routing_identity_digest": "819b2c53423ea303aa8bdc4f76ec3b0fe2d54bee8892b45045a6fd05838c05cc"
+      },
+      {
+        "qualified_name": "refactoring/safe-refactor",
+        "source": "project",
+        "content_digest": "f7f778a3110a42383e46ca78bf7fe511317398195dc6799f179a8204d6e0a0db",
+        "routing_identity_digest": "3cfb7d257548ee8c9bd121f153f3861a05819de2be8729a0841029587d7a24bd"
+      },
+      {
+        "qualified_name": "refactoring/structural-rename",
+        "source": "project",
+        "content_digest": "cc7bef8055026ee29f6066f17ebfea9a9e67c542be7758c4beeb0989b7c0c203",
+        "routing_identity_digest": "ee338a2f5fa51a4d796bf23f386781cf466d55c30b39ec85fa921981d43f304a"
+      },
+      {
+        "qualified_name": "security/secret-and-injection-review",
+        "source": "project",
+        "content_digest": "706a8e5e732bcdf8cd54f095fb9a09026a07f9ba605f533e06b7f67904d1e0db",
+        "routing_identity_digest": "93ade5049a8cc8f674495e77c35cedb656d25195b08c6128c2af92e80aea14a6"
+      },
+      {
+        "qualified_name": "testing/regression-from-bug-report",
+        "source": "project",
+        "content_digest": "d889a82bd8f291c8a65d8446c405afbc3e5f4ca965e4040fee8c13c4c6603b48",
+        "routing_identity_digest": "82f1511f9f03c574b1398010d7fcc32f88ec3b1fcfe36a9371541cd66e052de8"
+      },
+      {
+        "qualified_name": "testing/test-driven-development",
+        "source": "project",
+        "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+        "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7"
+      }
+    ],
+    "denied_qualified_names": [],
+    "reason_code": "inventory-fallback",
+    "allow_catalog_scope": false
+  },
+  "required_skill_names": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "operation_id": "modelop_2068473fd30b4115b24e23650dc8a74f",
+      "input_sha256": "b2f4accbdbf4fec1866466f21bf433628e066b863063555ac47e64fabaede8ba",
+      "provider_message_projection_sha256": "b2f4accbdbf4fec1866466f21bf433628e066b863063555ac47e64fabaede8ba",
+      "request_file": "call-01-request.json",
+      "completed": true,
+      "elapsed_ms": 11291.993333026767,
+      "response": {
+        "type": "assistant",
+        "content": "哈哈，辛苦啦！来一个：\n\n猫为什么走路悄无声息？因为它穿了“喵”鞋（棉鞋）。🐱\n\n希望你笑一下（或者冷到打个哆嗦也行），早点休息～",
+        "kind": null,
+        "calls": [],
+        "contentKind": null,
+        "reasoningContent": "The user is asking for a quick cold joke (冷笑话) about a cat, preferably one sentence. This is a casual request, not a coding task. I should just respond with a light, one-sentence cat joke in Chinese.\n\nLet me think of a good Chinese cat cold joke (冷笑话):\n\nSome options:\n- 为什么猫从不写作业？因为它怕被抓到\"抄\"（喵）的。\n- 小猫为什么总是很自信？因为它知道自己有\"猫\"力。\n- 猫为什么不喜欢上网？因为怕踩到\"鼠标\"。\n- 有一天小猫掉进河里，狗把它救了上来，猫说了什么？——\"喵\"（没关系→喵关系？）\n\nClassic one: 小猫掉进水里，小狗救了它，小猫说：\"喵呜~\" 狗问：\"你说什么？\" 猫说：\"我说'喵（没）关系'。\"\n\nOr shorter: 猫为什么不会玩游戏机？因为它只有九条命（命/手柄?）hmm.\n\nOne-sentence cold joke: \"猫为什么走路没声音？因为它穿的是'喵'鞋（棉鞋）。\" — 喵鞋 sounds like 棉鞋. That's decent and one sentence.\n\nOr: \"小猫为什么考了满分？因为它做过'喵'题（妙题）。\"\n\nThe 棉鞋/喵鞋 one is a classic style cold joke. Keep it one sentence as requested. Short response, no tools needed.",
+        "diagnostics": {
+          "stopReason": "stop",
+          "blockTypes": [
+            "text"
+          ],
+          "ignoredBlockTypes": []
+        },
+        "usage": {
+          "input_tokens": 7233,
+          "output_tokens": 358,
+          "cache_read_tokens": 7232,
+          "cache_creation_tokens": null,
+          "source": "provider"
+        }
+      },
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7233,
+        "outputTokens": 358,
+        "cacheReadTokens": 7232,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "load_calls": [],
+  "blocked_nonload_calls": [],
+  "unexecuted_calls": [],
+  "stop_reason": "assistant_response_without_tool_calls",
+  "probe_interventions": [],
+  "limitations": [
+    "At most four provider calls before the first non-load tool request or assistant-only response.",
+    "No task operation is executed; this does not establish full task completion or workflow adherence.",
+    "The AgentLoop required-Skill final nudge/gate is not run; initial spontaneous loading is measured separately.",
+    "No synthetic response is supplied for a non-load request; a load preceding it may remain unsent.",
+    "A completed observation journal means the probe finished, never that the synthetic task succeeded.",
+    "Body submission on a failed provider call is not counted as confirmed provider handoff."
+  ],
+  "run_id": "run_f27399b04a2b40088fce6a1b2e34b0b4",
+  "elapsed_ms": 11297.893040929921,
+  "loaded_skills": [],
+  "loaded_skills_truncated": false,
+  "events": [
+    {
+      "type": "run.queued",
+      "payload": {}
+    },
+    {
+      "type": "run.started",
+      "payload": {}
+    },
+    {
+      "type": "model.started",
+      "payload": {
+        "operationId": "modelop_2068473fd30b4115b24e23650dc8a74f"
+      }
+    },
+    {
+      "type": "model.completed",
+      "payload": {
+        "operationId": "modelop_2068473fd30b4115b24e23650dc8a74f",
+        "resultType": "assistant",
+        "contentPresent": true,
+        "toolCallCount": 0,
+        "usage": {
+          "source": "provider",
+          "inputTokens": 7233,
+          "outputTokens": 358,
+          "cacheReadTokens": 7232,
+          "cacheCreationTokens": null
+        },
+        "durationMs": 11291
+      }
+    },
+    {
+      "type": "run.completed",
+      "payload": {
+        "coordination": {
+          "parentInputTokens": 7233,
+          "parentOutputTokens": 358,
+          "subagentInputTokens": 0,
+          "subagentOutputTokens": 0
+        }
+      }
+    }
+  ],
+  "loaded_qualified_names": [],
+  "body_handoff_qualified_names": [],
+  "required_skills_missing_at_stop": []
+}

@@ -1,0 +1,5305 @@
+[
+  {
+    "text": "如果这样重构，会破坏现有接口吗？只分析风险。",
+    "expected": "readonly",
+    "ok": false,
+    "effects": [
+      "update"
+    ],
+    "intent": {
+      "raw_input": "如果这样重构，会破坏现有接口吗？只分析风险。",
+      "intent_type": "refactor",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "如果这样重构",
+        "会破坏现有接口吗",
+        "只分析风险"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.690399,
+      "operations": [
+        {
+          "intent_type": "refactor",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "如果这样重构，会破坏现有接口吗",
+          "span": [
+            0,
+            15
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "如果这样重构",
+            "会破坏现有接口吗"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-refactor.update"
+          ]
+        },
+        {
+          "intent_type": "review",
+          "action_type": "analyze",
+          "polarity": "affirmed",
+          "confidence": 0.78,
+          "clause": "只分析风险。",
+          "span": [
+            16,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "只分析风险"
+          ],
+          "evidence_codes": [
+            "rule:intra-turn-review.analyze"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-refactor.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            15
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:intra-turn-review.analyze",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.78,
+          "span": [
+            16,
+            22
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "如果这样重构，会破坏现有接口吗？只分析风险。",
+      "context_used": false
+    },
+    "helper": [
+      [
+        16,
+        22
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "你觉得这段代码应该怎么重构？",
+    "expected": "readonly",
+    "ok": false,
+    "effects": [
+      "update"
+    ],
+    "intent": {
+      "raw_input": "你觉得这段代码应该怎么重构？",
+      "intent_type": "refactor",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "你觉得这段代码应该怎么重构"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.6914759,
+      "operations": [
+        {
+          "intent_type": "refactor",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "你觉得这段代码应该怎么重构？",
+          "span": [
+            0,
+            14
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "你觉得这段代码应该怎么重构"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-refactor.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-refactor.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            14
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "你觉得这段代码应该怎么重构？",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "你觉得我应该怎样修改这个函数？",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "你觉得我应该怎样修改这个函数？",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.91,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "你觉得我应该怎样修改这个函数"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.692548,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.91,
+          "clause": "你觉得我应该怎样修改这个函数？",
+          "span": [
+            0,
+            15
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "你觉得我应该怎样修改这个函数"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.91,
+          "span": [
+            0,
+            15
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "你觉得我应该怎样修改这个函数？",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        15
+      ]
+    ],
+    "bounded": true
+  },
+  {
+    "text": "怎么删除这个缓存目录？我只想知道命令。",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "怎么删除这个缓存目录？我只想知道命令。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.915,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "怎么删除这个缓存目录",
+        "我只想知道命令"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.69376,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "怎么删除这个缓存目录？我只想知道命令。",
+          "span": [
+            0,
+            19
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "怎么删除这个缓存目录",
+            "我只想知道命令"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            19
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "怎么删除这个缓存目录？我只想知道命令。",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        11
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "如何在不改变行为的情况下重构这个类？",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "如何在不改变行为的情况下重构这个类？",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.915,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "如何在不改变行为的情况下重构这个类"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.696028,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "如何在不",
+          "span": [
+            0,
+            4
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "如何在不"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        },
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "改变行为的情况下",
+          "span": [
+            4,
+            12
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "改变行为的情况下"
+          ],
+          "evidence_codes": [
+            "explicit:negated-code.update"
+          ]
+        },
+        {
+          "intent_type": "refactor",
+          "action_type": "update",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "重构这个类？",
+          "span": [
+            12,
+            18
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "重构这个类",
+            "改变行为的情况下"
+          ],
+          "evidence_codes": [
+            "explicit:negated-refactor.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            4
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-code.update",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            4,
+            12
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-refactor.update",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            12,
+            18
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "如何在不改变行为的情况下重构这个类？",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        18
+      ]
+    ],
+    "bounded": true
+  },
+  {
+    "text": "请告诉我应该如何修改配置文件。",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "请告诉我应该如何修改配置文件。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "请告诉我应该如何修改配置文件",
+        "config",
+        "configuration"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.69697,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "请告诉我应该如何修改配置文件。",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "这个脚本能删除缓存文件吗？",
+    "expected": "readonly",
+    "ok": false,
+    "effects": [
+      "delete"
+    ],
+    "intent": {
+      "raw_input": "这个脚本能删除缓存文件吗？",
+      "intent_type": "code",
+      "action_type": "delete",
+      "confidence": 0.913,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个脚本能删除缓存文件吗"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.6979752,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "delete",
+          "polarity": "affirmed",
+          "confidence": 0.913,
+          "clause": "这个脚本能删除缓存文件吗？",
+          "span": [
+            0,
+            13
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个脚本能删除缓存文件吗"
+          ],
+          "evidence_codes": [
+            "rule:code.delete"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.delete",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.913,
+          "span": [
+            0,
+            13
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个脚本能删除缓存文件吗？",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "这个命令是否删除文件？",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "这个命令是否删除文件？",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.91,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个命令是否删除文件"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.698932,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.91,
+          "clause": "这个命令是否删除文件？",
+          "span": [
+            0,
+            11
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个命令是否删除文件"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.91,
+          "span": [
+            0,
+            11
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个命令是否删除文件？",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        11
+      ]
+    ],
+    "bounded": true
+  },
+  {
+    "text": "这段脚本会把文件从 src 移动到 dest 吗？",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "这段脚本会把文件从 src 移动到 dest 吗？",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.916,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这段脚本会把文件从",
+        "src",
+        "移动到",
+        "dest"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.700246,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.916,
+          "clause": "这段脚本会把文件从 src 移动到 dest 吗？",
+          "span": [
+            0,
+            25
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这段脚本会把文件从",
+            "src",
+            "移动到",
+            "dest"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.916,
+          "span": [
+            0,
+            25
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这段脚本会把文件从 src 移动到 dest 吗？",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        25
+      ]
+    ],
+    "bounded": true
+  },
+  {
+    "text": "执行这个命令会删除文件吗？",
+    "expected": "readonly",
+    "ok": false,
+    "effects": [
+      "execute",
+      "delete"
+    ],
+    "intent": {
+      "raw_input": "执行这个命令会删除文件吗？",
+      "intent_type": "code",
+      "action_type": "delete",
+      "confidence": 0.91,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "执行这个命令会删除文件吗"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.7018108,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "affirmed",
+          "confidence": 0.92,
+          "clause": "执行这个命令会",
+          "span": [
+            0,
+            7
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "执行这个命令会"
+          ],
+          "evidence_codes": [
+            "rule:test.execute"
+          ]
+        },
+        {
+          "intent_type": "code",
+          "action_type": "delete",
+          "polarity": "affirmed",
+          "confidence": 0.91,
+          "clause": "删除文件吗？",
+          "span": [
+            7,
+            13
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "删除文件吗"
+          ],
+          "evidence_codes": [
+            "rule:code.delete"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "rule:test.execute",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.92,
+          "span": [
+            0,
+            7
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:code.delete",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.91,
+          "span": [
+            7,
+            13
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "执行这个命令会删除文件吗？",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "为什么运行这个脚本会删除文件？",
+    "expected": "readonly",
+    "ok": false,
+    "effects": [
+      "delete"
+    ],
+    "intent": {
+      "raw_input": "为什么运行这个脚本会删除文件？",
+      "intent_type": "code",
+      "action_type": "delete",
+      "confidence": 0.908,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "为什么运行这个脚本会删除文件"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.702847,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "delete",
+          "polarity": "affirmed",
+          "confidence": 0.908,
+          "clause": "为什么运行这个脚本会删除文件？",
+          "span": [
+            0,
+            15
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "为什么运行这个脚本会删除文件"
+          ],
+          "evidence_codes": [
+            "rule:code.delete"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.delete",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.908,
+          "span": [
+            0,
+            15
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "为什么运行这个脚本会删除文件？",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "这个函数会不会创建目录并覆盖配置？",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "这个函数会不会创建目录并覆盖配置？",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.915,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个函数会不会创建目录并覆盖配置",
+        "config",
+        "configuration"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.7039082,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "这个函数会不会创建目录并覆盖配置？",
+          "span": [
+            0,
+            17
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个函数会不会创建目录并覆盖配置",
+            "config",
+            "configuration"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            17
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个函数会不会创建目录并覆盖配置？",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        17
+      ]
+    ],
+    "bounded": true
+  },
+  {
+    "text": "这个脚本运行后会更新文件吗？",
+    "expected": "readonly",
+    "ok": false,
+    "effects": [
+      "execute"
+    ],
+    "intent": {
+      "raw_input": "这个脚本运行后会更新文件吗？",
+      "intent_type": "test",
+      "action_type": "execute",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个脚本运行后会更新文件吗"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.704938,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "这个脚本运行后会更新文件吗？",
+          "span": [
+            0,
+            14
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个脚本运行后会更新文件吗"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-test.execute",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            14
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个脚本运行后会更新文件吗？",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "下面这个命令会删除缓存吗？",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "下面这个命令会删除缓存吗？",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "下面这个命令会删除缓存吗"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.705815,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "下面这个命令会删除缓存吗？",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "这两个脚本都会删除缓存吗？",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "这两个脚本都会删除缓存吗？",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这两个脚本都会删除缓存吗"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.7066848,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这两个脚本都会删除缓存吗？",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "这个工具是否会重命名所有文件？",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "这个工具是否会重命名所有文件？",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.912,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个工具是否会重命名所有文件",
+        "rename"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.707788,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.912,
+          "clause": "这个工具是否会重命名所有文件？",
+          "span": [
+            0,
+            15
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个工具是否会重命名所有文件",
+            "rename"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.912,
+          "span": [
+            0,
+            15
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个工具是否会重命名所有文件？",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        15
+      ]
+    ],
+    "bounded": true
+  },
+  {
+    "text": "这个改动是否会执行数据库迁移？",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "这个改动是否会执行数据库迁移？",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.915,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个改动是否会执行数据库迁移",
+        "diff",
+        "change",
+        "database"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.708797,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "这个改动是否会执行数据库迁移？",
+          "span": [
+            0,
+            15
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个改动是否会执行数据库迁移",
+            "diff",
+            "change",
+            "database"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            15
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个改动是否会执行数据库迁移？",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        15
+      ]
+    ],
+    "bounded": true
+  },
+  {
+    "text": "这个函数会修改 state 对象吗？",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "这个函数会修改 state 对象吗？",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.915,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个函数会修改",
+        "state",
+        "对象吗"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.709882,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "这个函数会修改 state 对象吗？",
+          "span": [
+            0,
+            18
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个函数会修改",
+            "state",
+            "对象吗"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            18
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个函数会修改 state 对象吗？",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        18
+      ]
+    ],
+    "bounded": true
+  },
+  {
+    "text": "Will the cleanup script delete cached files?",
+    "expected": "readonly",
+    "ok": false,
+    "effects": [
+      "delete"
+    ],
+    "intent": {
+      "raw_input": "Will the cleanup script delete cached files?",
+      "intent_type": "code",
+      "action_type": "delete",
+      "confidence": 0.91,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "cleanup",
+        "script",
+        "delete",
+        "cached",
+        "files"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.711423,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "delete",
+          "polarity": "affirmed",
+          "confidence": 0.91,
+          "clause": "Will the cleanup script delete cached files?",
+          "span": [
+            0,
+            44
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "cleanup",
+            "script",
+            "delete",
+            "cached",
+            "files"
+          ],
+          "evidence_codes": [
+            "rule:code.delete"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.delete",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.91,
+          "span": [
+            0,
+            44
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Will the cleanup script delete cached files?",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "Does this function update the file and restart the server?",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "Does this function update the file and restart the server?",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.954,
+      "entities": {
+        "files": [],
+        "functions": [
+          "update"
+        ],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "function",
+        "update",
+        "file",
+        "restart",
+        "server"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.713346,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.954,
+          "clause": "Does this function update the file and restart the server?",
+          "span": [
+            0,
+            58
+          ],
+          "entities": {
+            "files": [],
+            "functions": [
+              "update"
+            ],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "function",
+            "update",
+            "file",
+            "restart",
+            "server"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.954,
+          "span": [
+            0,
+            58
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Does this function update the file and restart the server?",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        58
+      ]
+    ],
+    "bounded": true
+  },
+  {
+    "text": "How can you delete a cache directory safely?",
+    "expected": "readonly",
+    "ok": false,
+    "effects": [
+      "delete"
+    ],
+    "intent": {
+      "raw_input": "How can you delete a cache directory safely?",
+      "intent_type": "code",
+      "action_type": "delete",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "delete",
+        "cache",
+        "directory",
+        "safely"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.714947,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "delete",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "How can you delete a cache directory safely?",
+          "span": [
+            0,
+            44
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "delete",
+            "cache",
+            "directory",
+            "safely"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-code.delete"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-code.delete",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            44
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "How can you delete a cache directory safely?",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "Why does this command delete files?",
+    "expected": "readonly",
+    "ok": false,
+    "effects": [
+      "delete"
+    ],
+    "intent": {
+      "raw_input": "Why does this command delete files?",
+      "intent_type": "code",
+      "action_type": "delete",
+      "confidence": 0.909,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "command",
+        "delete",
+        "files"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.7162938,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "delete",
+          "polarity": "affirmed",
+          "confidence": 0.909,
+          "clause": "Why does this command delete files?",
+          "span": [
+            0,
+            35
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "command",
+            "delete",
+            "files"
+          ],
+          "evidence_codes": [
+            "rule:code.delete"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.delete",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.909,
+          "span": [
+            0,
+            35
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Why does this command delete files?",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "How should the script update files?",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "How should the script update files?",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.909,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "script",
+        "update",
+        "files"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.7176871,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.909,
+          "clause": "How should the script update files?",
+          "span": [
+            0,
+            35
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "script",
+            "update",
+            "files"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.909,
+          "span": [
+            0,
+            35
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "How should the script update files?",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        35
+      ]
+    ],
+    "bounded": true
+  },
+  {
+    "text": "How would updating app.py affect the API?",
+    "expected": "readonly",
+    "ok": false,
+    "effects": [
+      "update"
+    ],
+    "intent": {
+      "raw_input": "How would updating app.py affect the API?",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "app.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "updating",
+        "app.py",
+        "affect",
+        "api"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.7192042,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "How would updating app.py affect the API?",
+          "span": [
+            0,
+            41
+          ],
+          "entities": {
+            "files": [
+              "app.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "updating",
+            "app.py",
+            "affect",
+            "api"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            41
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "How would updating app.py affect the API?",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "Should we refactor this function? Just discuss the approach.",
+    "expected": "readonly",
+    "ok": false,
+    "effects": [
+      "update"
+    ],
+    "intent": {
+      "raw_input": "Should we refactor this function? Just discuss the approach.",
+      "intent_type": "refactor",
+      "action_type": "update",
+      "confidence": 0.917,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "refactor",
+        "function",
+        "discuss",
+        "approach."
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.721029,
+      "operations": [
+        {
+          "intent_type": "refactor",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.917,
+          "clause": "Should we refactor this function? Just discuss the approach.",
+          "span": [
+            0,
+            60
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "refactor",
+            "function",
+            "discuss",
+            "approach."
+          ],
+          "evidence_codes": [
+            "rule:refactor.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:refactor.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.917,
+          "span": [
+            0,
+            60
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Should we refactor this function? Just discuss the approach.",
+      "context_used": false
+    },
+    "helper": [
+      [
+        33,
+        60
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "Would running the script delete these files?",
+    "expected": "readonly",
+    "ok": false,
+    "effects": [
+      "delete"
+    ],
+    "intent": {
+      "raw_input": "Would running the script delete these files?",
+      "intent_type": "code",
+      "action_type": "delete",
+      "confidence": 0.91,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "running",
+        "script",
+        "delete",
+        "files"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.722525,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "delete",
+          "polarity": "affirmed",
+          "confidence": 0.91,
+          "clause": "Would running the script delete these files?",
+          "span": [
+            0,
+            44
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "running",
+            "script",
+            "delete",
+            "files"
+          ],
+          "evidence_codes": [
+            "rule:code.delete"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.delete",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.91,
+          "span": [
+            0,
+            44
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Would running the script delete these files?",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "Can this script be changed to write JSON? Explain the options.",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "Can this script be changed to write JSON? Explain the options.",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.915,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "script",
+        "changed",
+        "write",
+        "json",
+        "options."
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.724792,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "Can this script be changed to write JSON",
+          "span": [
+            0,
+            40
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "script",
+            "changed",
+            "write",
+            "json"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        },
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.78,
+          "clause": "Explain the options.",
+          "span": [
+            42,
+            62
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "options."
+          ],
+          "evidence_codes": [
+            "rule:intra-turn-explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            40
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:intra-turn-explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.78,
+          "span": [
+            42,
+            62
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Can this script be changed to write JSON? Explain the options.",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        41
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "Does the build script run all tests?",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "Does the build script run all tests?",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.909,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "build",
+        "script",
+        "run",
+        "tests"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.7268429,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.909,
+          "clause": "Does the build script run all tests?",
+          "span": [
+            0,
+            36
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "build",
+            "script",
+            "run",
+            "tests"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.909,
+          "span": [
+            0,
+            36
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Does the build script run all tests?",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        36
+      ]
+    ],
+    "bounded": true
+  },
+  {
+    "text": "这次只讨论重构方案。",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "这次只讨论重构方案。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这次只讨论重构方案"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.727762,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这次只讨论重构方案。",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "我只是想分析修改配置的风险。",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "我只是想分析修改配置的风险。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "我只是想分析修改配置的风险",
+        "config",
+        "configuration"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.728949,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "我只是想分析修改配置的风险。",
+          "span": [
+            0,
+            14
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "我只是想分析修改配置的风险",
+            "config",
+            "configuration"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            14
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "我只是想分析修改配置的风险。",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "只讨论如何重构这个类。",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "只讨论如何重构这个类。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "只讨论如何重构这个类"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.729737,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "只讨论如何重构这个类。",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "Just discuss how to refactor this class.",
+    "expected": "readonly",
+    "ok": true,
+    "effects": [],
+    "intent": {
+      "raw_input": "Just discuss how to refactor this class.",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.914,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "discuss",
+        "refactor",
+        "class."
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.731161,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.914,
+          "clause": "Just discuss how to refactor this class.",
+          "span": [
+            0,
+            40
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "discuss",
+            "refactor",
+            "class."
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.914,
+          "span": [
+            0,
+            40
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Just discuss how to refactor this class.",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "你能帮我修改 app.py 吗？",
+    "expected": "update",
+    "ok": true,
+    "effects": [
+      "update"
+    ],
+    "intent": {
+      "raw_input": "你能帮我修改 app.py 吗？",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.956,
+      "entities": {
+        "files": [
+          "app.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "你能帮我修改",
+        "app.py"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.732265,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.956,
+          "clause": "你能帮我修改 app.py 吗？",
+          "span": [
+            0,
+            16
+          ],
+          "entities": {
+            "files": [
+              "app.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "你能帮我修改",
+            "app.py"
+          ],
+          "evidence_codes": [
+            "rule:code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.956,
+          "span": [
+            0,
+            16
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "你能帮我修改 app.py 吗？",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "这个函数应该重构了，请直接修改。",
+    "expected": "update",
+    "ok": false,
+    "effects": [],
+    "intent": {
+      "raw_input": "这个函数应该重构了，请直接修改。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个函数应该重构了",
+        "请直接修改"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.7333262,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个函数应该重构了，请直接修改。",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "How about you update app.py now?",
+    "expected": "update",
+    "ok": true,
+    "effects": [
+      "update"
+    ],
+    "intent": {
+      "raw_input": "How about you update app.py now?",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "app.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "about",
+        "update",
+        "app.py",
+        "now"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.7346802,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "How about you update app.py now?",
+          "span": [
+            0,
+            32
+          ],
+          "entities": {
+            "files": [
+              "app.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "about",
+            "update",
+            "app.py",
+            "now"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            32
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "How about you update app.py now?",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "Could we update app.py to support JSON? Please implement it.",
+    "expected": "update",
+    "ok": true,
+    "effects": [
+      "update"
+    ],
+    "intent": {
+      "raw_input": "Could we update app.py to support JSON? Please implement it.",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "app.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "update",
+        "app.py",
+        "support",
+        "json",
+        "please",
+        "implement",
+        "it."
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.736606,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "Could we update app.py to support JSON? Please implement it.",
+          "span": [
+            0,
+            60
+          ],
+          "entities": {
+            "files": [
+              "app.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "update",
+            "app.py",
+            "support",
+            "json",
+            "please",
+            "implement",
+            "it."
+          ],
+          "evidence_codes": [
+            "rule:action-cue-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            60
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Could we update app.py to support JSON? Please implement it.",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "Can you make this command update app.py?",
+    "expected": "update",
+    "ok": true,
+    "effects": [
+      "update"
+    ],
+    "intent": {
+      "raw_input": "Can you make this command update app.py?",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "app.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "make",
+        "command",
+        "update",
+        "app.py"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.738077,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "Can you make this command update app.py?",
+          "span": [
+            0,
+            40
+          ],
+          "entities": {
+            "files": [
+              "app.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "make",
+            "command",
+            "update",
+            "app.py"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            40
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Can you make this command update app.py?",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "Please ensure this script updates the configuration.",
+    "expected": "update",
+    "ok": false,
+    "effects": [],
+    "intent": {
+      "raw_input": "Please ensure this script updates the configuration.",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "please",
+        "ensure",
+        "script",
+        "updates",
+        "configuration."
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.739614,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Please ensure this script updates the configuration.",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "确保这个脚本会更新配置文件。",
+    "expected": "update",
+    "ok": true,
+    "effects": [
+      "update"
+    ],
+    "intent": {
+      "raw_input": "确保这个脚本会更新配置文件。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.911,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "确保这个脚本会更新配置文件",
+        "config",
+        "configuration"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.740614,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.911,
+          "clause": "确保这个脚本会更新配置文件。",
+          "span": [
+            0,
+            14
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "确保这个脚本会更新配置文件",
+            "config",
+            "configuration"
+          ],
+          "evidence_codes": [
+            "rule:code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.911,
+          "span": [
+            0,
+            14
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "确保这个脚本会更新配置文件。",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "保证这个函数不会删除文件，请修改它。",
+    "expected": "update",
+    "ok": true,
+    "effects": [
+      "update"
+    ],
+    "intent": {
+      "raw_input": "保证这个函数不会删除文件，请修改它。",
+      "intent_type": "debug",
+      "action_type": "update",
+      "confidence": 0.78,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "保证这个函数不会删除文件",
+        "请修改它"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.742075,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "delete",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "保证这个函数不会删除文件",
+          "span": [
+            0,
+            12
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "保证这个函数不会删除文件"
+          ],
+          "evidence_codes": [
+            "explicit:negated-code.delete"
+          ]
+        },
+        {
+          "intent_type": "debug",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.78,
+          "clause": "请修改它。",
+          "span": [
+            13,
+            18
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "保证这个函数",
+            "保证这个函数不会删除文件",
+            "请修改它"
+          ],
+          "evidence_codes": [
+            "rule:intra-turn-debug.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "explicit:negated-code.delete",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            0,
+            12
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:intra-turn-debug.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.78,
+          "span": [
+            13,
+            18
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "保证这个函数不会删除文件，请修改它。",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "这个命令会修改文件吗？如果会，把它改成只打印计划。",
+    "expected": "update",
+    "ok": true,
+    "effects": [
+      "update"
+    ],
+    "intent": {
+      "raw_input": "这个命令会修改文件吗？如果会，把它改成只打印计划。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.78,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个命令会修改文件吗",
+        "如果会",
+        "把它改成只打印计划"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.7437818,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "这个命令会修改文件吗？如果会，",
+          "span": [
+            0,
+            15
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个命令会修改文件吗",
+            "如果会"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        },
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.78,
+          "clause": "把它改成只打印计划。",
+          "span": [
+            15,
+            25
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "把它改成只打印计划",
+            "这个命令会修改文件吗",
+            "如果会"
+          ],
+          "evidence_codes": [
+            "rule:intra-turn-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            15
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:intra-turn-code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.78,
+          "span": [
+            15,
+            25
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个命令会修改文件吗？如果会，把它改成只打印计划。",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        11
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "这个函数会改动输入吗？请改成不修改输入。",
+    "expected": "update",
+    "ok": false,
+    "effects": [],
+    "intent": {
+      "raw_input": "这个函数会改动输入吗？请改成不修改输入。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.915,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个函数会改动输入吗",
+        "请改成不修改输入",
+        "diff",
+        "change"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.7453618,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "这个函数会改动输入吗？请改成",
+          "span": [
+            0,
+            14
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个函数会改动输入吗",
+            "请改成",
+            "diff",
+            "change"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        },
+        {
+          "intent_type": "debug",
+          "action_type": "update",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "不修改输入。",
+          "span": [
+            14,
+            20
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "不修改输入"
+          ],
+          "evidence_codes": [
+            "explicit:negated-debug.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            14
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-debug.update",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            14,
+            20
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个函数会改动输入吗？请改成不修改输入。",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        11
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "你觉得应该怎样重构？选一个方案实现。",
+    "expected": "update",
+    "ok": false,
+    "effects": [],
+    "intent": {
+      "raw_input": "你觉得应该怎样重构？选一个方案实现。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.915,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "你觉得应该怎样重构",
+        "选一个方案实现"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.746563,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "你觉得应该怎样重构？选一个方案实现。",
+          "span": [
+            0,
+            18
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "你觉得应该怎样重构",
+            "选一个方案实现"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            18
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "你觉得应该怎样重构？选一个方案实现。",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        10
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "只讨论方案是不够的，请实际重构这个类。",
+    "expected": "update",
+    "ok": true,
+    "effects": [
+      "update"
+    ],
+    "intent": {
+      "raw_input": "只讨论方案是不够的，请实际重构这个类。",
+      "intent_type": "refactor",
+      "action_type": "update",
+      "confidence": 0.914,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "只讨论方案是不够的",
+        "请实际重构这个类"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.7477481,
+      "operations": [
+        {
+          "intent_type": "refactor",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.914,
+          "clause": "请实际重构这个类。",
+          "span": [
+            10,
+            19
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "请实际重构这个类"
+          ],
+          "evidence_codes": [
+            "rule:refactor.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:refactor.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.914,
+          "span": [
+            10,
+            19
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "只讨论方案是不够的，请实际重构这个类。",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "不用讨论方案，删除 tmp/cache.json。",
+    "expected": "delete",
+    "ok": true,
+    "effects": [
+      "delete"
+    ],
+    "intent": {
+      "raw_input": "不用讨论方案，删除 tmp/cache.json。",
+      "intent_type": "code",
+      "action_type": "delete",
+      "confidence": 0.96,
+      "entities": {
+        "files": [
+          "tmp/cache.json"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "不用讨论方案",
+        "删除",
+        "tmp/cache.json"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.749096,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "delete",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "删除 tmp/cache.json。",
+          "span": [
+            7,
+            25
+          ],
+          "entities": {
+            "files": [
+              "tmp/cache.json"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "删除",
+            "tmp/cache.json"
+          ],
+          "evidence_codes": [
+            "rule:code.delete"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:code.delete",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            7,
+            25
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "不用讨论方案，删除 tmp/cache.json。",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "这个脚本会删除缓存吗？顺便删除 tmp/cache.json。",
+    "expected": "delete",
+    "ok": true,
+    "effects": [
+      "delete"
+    ],
+    "intent": {
+      "raw_input": "这个脚本会删除缓存吗？顺便删除 tmp/cache.json。",
+      "intent_type": "code",
+      "action_type": "delete",
+      "confidence": 0.96,
+      "entities": {
+        "files": [
+          "tmp/cache.json"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个脚本会删除缓存吗",
+        "顺便删除",
+        "tmp/cache.json"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.750751,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "这个脚本会删除缓存吗？",
+          "span": [
+            0,
+            11
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个脚本会删除缓存吗"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        },
+        {
+          "intent_type": "code",
+          "action_type": "delete",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "删除 tmp/cache.json。",
+          "span": [
+            13,
+            31
+          ],
+          "entities": {
+            "files": [
+              "tmp/cache.json"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "删除",
+            "tmp/cache.json"
+          ],
+          "evidence_codes": [
+            "rule:code.delete"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            11
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:code.delete",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            13,
+            31
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个脚本会删除缓存吗？顺便删除 tmp/cache.json。",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        11
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "这个脚本会删除文件吗，另外请删除 tmp/cache.json？",
+    "expected": "delete",
+    "ok": true,
+    "effects": [
+      "delete"
+    ],
+    "intent": {
+      "raw_input": "这个脚本会删除文件吗，另外请删除 tmp/cache.json？",
+      "intent_type": "code",
+      "action_type": "delete",
+      "confidence": 0.959,
+      "entities": {
+        "files": [
+          "tmp/cache.json"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个脚本会删除文件吗",
+        "另外请删除",
+        "tmp/cache.json"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.752403,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.911,
+          "clause": "这个脚本会删除文件吗",
+          "span": [
+            0,
+            10
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个脚本会删除文件吗"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        },
+        {
+          "intent_type": "code",
+          "action_type": "delete",
+          "polarity": "affirmed",
+          "confidence": 0.959,
+          "clause": "请删除 tmp/cache.json？",
+          "span": [
+            13,
+            32
+          ],
+          "entities": {
+            "files": [
+              "tmp/cache.json"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "请删除",
+            "tmp/cache.json"
+          ],
+          "evidence_codes": [
+            "rule:code.delete"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.911,
+          "span": [
+            0,
+            10
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:code.delete",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.959,
+          "span": [
+            13,
+            32
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个脚本会删除文件吗，另外请删除 tmp/cache.json？",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        10
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "这个脚本会删除文件吗（顺便删除 tmp/cache.json）？",
+    "expected": "delete",
+    "ok": true,
+    "effects": [
+      "delete"
+    ],
+    "intent": {
+      "raw_input": "这个脚本会删除文件吗（顺便删除 tmp/cache.json）？",
+      "intent_type": "code",
+      "action_type": "delete",
+      "confidence": 0.96,
+      "entities": {
+        "files": [
+          "tmp/cache.json"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个脚本会删除文件吗",
+        "顺便删除",
+        "tmp/cache.json"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.754003,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.911,
+          "clause": "这个脚本会删除文件吗",
+          "span": [
+            0,
+            10
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个脚本会删除文件吗"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        },
+        {
+          "intent_type": "code",
+          "action_type": "delete",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "删除 tmp/cache.json）？",
+          "span": [
+            13,
+            32
+          ],
+          "entities": {
+            "files": [
+              "tmp/cache.json"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "删除",
+            "tmp/cache.json"
+          ],
+          "evidence_codes": [
+            "rule:code.delete"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.911,
+          "span": [
+            0,
+            10
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:code.delete",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            13,
+            32
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个脚本会删除文件吗（顺便删除 tmp/cache.json）？",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        10
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "这个函数会修改状态吗，顺便帮我把 app.py 改成异步？",
+    "expected": "update",
+    "ok": true,
+    "effects": [
+      "update"
+    ],
+    "intent": {
+      "raw_input": "这个函数会修改状态吗，顺便帮我把 app.py 改成异步？",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "app.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个函数会修改状态吗",
+        "顺便帮我把",
+        "app.py",
+        "改成异步"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.755606,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "这个函数会修改状态吗",
+          "span": [
+            0,
+            10
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个函数会修改状态吗"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        },
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "帮我把 app.py 改成异步？",
+          "span": [
+            13,
+            29
+          ],
+          "entities": {
+            "files": [
+              "app.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "帮我把",
+            "app.py",
+            "改成异步"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            10
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:action-cue-code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            13,
+            29
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个函数会修改状态吗，顺便帮我把 app.py 改成异步？",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        10
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "How should we refactor this class, and please update app.py?",
+    "expected": "update",
+    "ok": true,
+    "effects": [
+      "update"
+    ],
+    "intent": {
+      "raw_input": "How should we refactor this class, and please update app.py?",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "app.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "refactor",
+        "class",
+        "please",
+        "update",
+        "app.py"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.757592,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "How should we refactor this class",
+          "span": [
+            0,
+            33
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "refactor",
+            "class"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        },
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "please update app.py?",
+          "span": [
+            39,
+            60
+          ],
+          "entities": {
+            "files": [
+              "app.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "please",
+            "update",
+            "app.py"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            33
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:action-cue-code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            39,
+            60
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "How should we refactor this class, and please update app.py?",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        33
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "How should we refactor this class? Go ahead and update app.py.",
+    "expected": "update",
+    "ok": true,
+    "effects": [
+      "update"
+    ],
+    "intent": {
+      "raw_input": "How should we refactor this class? Go ahead and update app.py.",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "app.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": [
+          "go"
+        ]
+      },
+      "keywords": [
+        "refactor",
+        "class",
+        "go",
+        "ahead",
+        "update",
+        "app.py."
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.7596931,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.955,
+          "clause": "How should we refactor this class? Go ahead",
+          "span": [
+            0,
+            43
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": [
+              "go"
+            ]
+          },
+          "keywords": [
+            "refactor",
+            "class",
+            "go",
+            "ahead"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        },
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "update app.py.",
+          "span": [
+            48,
+            62
+          ],
+          "entities": {
+            "files": [
+              "app.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "update",
+            "app.py."
+          ],
+          "evidence_codes": [
+            "rule:action-cue-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.955,
+          "span": [
+            0,
+            43
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:action-cue-code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            48,
+            62
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "How should we refactor this class? Go ahead and update app.py.",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        34
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "Could you run python build.py?",
+    "expected": "execute",
+    "ok": true,
+    "effects": [
+      "execute"
+    ],
+    "intent": {
+      "raw_input": "Could you run python build.py?",
+      "intent_type": "test",
+      "action_type": "execute",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "build.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": [
+          "python"
+        ]
+      },
+      "keywords": [
+        "run",
+        "python",
+        "build.py"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.761035,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "Could you run python build.py?",
+          "span": [
+            0,
+            30
+          ],
+          "entities": {
+            "files": [
+              "build.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": [
+              "python"
+            ]
+          },
+          "keywords": [
+            "run",
+            "python",
+            "build.py"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-test.execute",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            30
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Could you run python build.py?",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "Can this command run correctly? Please run python build.py.",
+    "expected": "execute",
+    "ok": true,
+    "effects": [
+      "execute"
+    ],
+    "intent": {
+      "raw_input": "Can this command run correctly? Please run python build.py.",
+      "intent_type": "test",
+      "action_type": "execute",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "build.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": [
+          "python"
+        ]
+      },
+      "keywords": [
+        "command",
+        "run",
+        "correctly",
+        "please",
+        "python",
+        "build.py."
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.763333,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "Can this command run correctly",
+          "span": [
+            0,
+            30
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "command",
+            "run",
+            "correctly"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "Please run python build.py.",
+          "span": [
+            32,
+            59
+          ],
+          "entities": {
+            "files": [
+              "build.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": [
+              "python"
+            ]
+          },
+          "keywords": [
+            "please",
+            "run",
+            "python",
+            "build.py."
+          ],
+          "evidence_codes": [
+            "rule:action-cue-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            30
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:action-cue-test.execute",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            32,
+            59
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Can this command run correctly? Please run python build.py.",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        31
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "这个命令会执行迁移吗？请执行 python build.py。",
+    "expected": "execute",
+    "ok": true,
+    "effects": [
+      "execute"
+    ],
+    "intent": {
+      "raw_input": "这个命令会执行迁移吗？请执行 python build.py。",
+      "intent_type": "test",
+      "action_type": "execute",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "build.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": [
+          "python"
+        ]
+      },
+      "keywords": [
+        "这个命令会执行迁移吗",
+        "请执行",
+        "python",
+        "build.py"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.765113,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "这个命令会执行迁移吗",
+          "span": [
+            0,
+            10
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个命令会执行迁移吗"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "请执行 python build.py。",
+          "span": [
+            11,
+            31
+          ],
+          "entities": {
+            "files": [
+              "build.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": [
+              "python"
+            ]
+          },
+          "keywords": [
+            "请执行",
+            "python",
+            "build.py"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            10
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:action-cue-test.execute",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            11,
+            31
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个命令会执行迁移吗？请执行 python build.py。",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        11
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "不要分析，运行 pytest。",
+    "expected": "execute",
+    "ok": true,
+    "effects": [
+      "execute"
+    ],
+    "intent": {
+      "raw_input": "不要分析，运行 pytest。",
+      "intent_type": "test",
+      "action_type": "execute",
+      "confidence": 0.92,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "不要分析",
+        "运行",
+        "pytest"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.766517,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "不要分析",
+          "span": [
+            0,
+            4
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "不要分析"
+          ],
+          "evidence_codes": [
+            "explicit:negated-explain.read"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "affirmed",
+          "confidence": 0.92,
+          "clause": "运行 pytest。",
+          "span": [
+            5,
+            15
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "运行",
+            "pytest"
+          ],
+          "evidence_codes": [
+            "rule:test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "explicit:negated-explain.read",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            0,
+            4
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:test.execute",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.92,
+          "span": [
+            5,
+            15
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "不要分析，运行 pytest。",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "Discuss the risks and write your analysis to risk.md.",
+    "expected": "create",
+    "ok": true,
+    "effects": [
+      "create"
+    ],
+    "intent": {
+      "raw_input": "Discuss the risks and write your analysis to risk.md.",
+      "intent_type": "document",
+      "action_type": "create",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "risk.md"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "discuss",
+        "risks",
+        "write",
+        "analysis",
+        "risk.md."
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.768218,
+      "operations": [
+        {
+          "intent_type": "document",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "write your analysis to risk.md.",
+          "span": [
+            22,
+            53
+          ],
+          "entities": {
+            "files": [
+              "risk.md"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "write",
+            "analysis",
+            "risk.md."
+          ],
+          "evidence_codes": [
+            "rule:action-cue-document.create"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-document.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            22,
+            53
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Discuss the risks and write your analysis to risk.md.",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "只讨论方案，并把方案写入 plan.md。",
+    "expected": "create",
+    "ok": true,
+    "effects": [
+      "create"
+    ],
+    "intent": {
+      "raw_input": "只讨论方案，并把方案写入 plan.md。",
+      "intent_type": "document",
+      "action_type": "create",
+      "confidence": 0.956,
+      "entities": {
+        "files": [
+          "plan.md"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "只讨论方案",
+        "并把方案写入",
+        "plan.md"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.7694569,
+      "operations": [
+        {
+          "intent_type": "document",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.956,
+          "clause": "把方案写入 plan.md。",
+          "span": [
+            7,
+            21
+          ],
+          "entities": {
+            "files": [
+              "plan.md"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "把方案写入",
+            "plan.md"
+          ],
+          "evidence_codes": [
+            "rule:document.create"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:document.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.956,
+          "span": [
+            7,
+            21
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "只讨论方案，并把方案写入 plan.md。",
+      "context_used": false
+    },
+    "helper": [],
+    "bounded": false
+  },
+  {
+    "text": "你觉得应该怎样重构？把建议写入 plan.md。",
+    "expected": "create",
+    "ok": true,
+    "effects": [
+      "create"
+    ],
+    "intent": {
+      "raw_input": "你觉得应该怎样重构？把建议写入 plan.md。",
+      "intent_type": "document",
+      "action_type": "create",
+      "confidence": 0.95,
+      "entities": {
+        "files": [
+          "plan.md"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "你觉得应该怎样重构",
+        "把建议写入",
+        "plan.md"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.770964,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "你觉得应该怎样重构？把建议",
+          "span": [
+            0,
+            13
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "你觉得应该怎样重构",
+            "把建议"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        },
+        {
+          "intent_type": "document",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.95,
+          "clause": "写入 plan.md。",
+          "span": [
+            13,
+            24
+          ],
+          "entities": {
+            "files": [
+              "plan.md"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "写入",
+            "plan.md"
+          ],
+          "evidence_codes": [
+            "rule:document.create"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            13
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:document.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.95,
+          "span": [
+            13,
+            24
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "你觉得应该怎样重构？把建议写入 plan.md。",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        10
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "How should we refactor this class? Write the plan to plan.md.",
+    "expected": "create",
+    "ok": true,
+    "effects": [
+      "create"
+    ],
+    "intent": {
+      "raw_input": "How should we refactor this class? Write the plan to plan.md.",
+      "intent_type": "document",
+      "action_type": "create",
+      "confidence": 0.84,
+      "entities": {
+        "files": [
+          "plan.md"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "refactor",
+        "class",
+        "write",
+        "plan",
+        "plan.md."
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787661.773119,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.915,
+          "clause": "How should we refactor this class",
+          "span": [
+            0,
+            33
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "refactor",
+            "class"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        },
+        {
+          "intent_type": "document",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "Write the plan to plan.md.",
+          "span": [
+            35,
+            61
+          ],
+          "entities": {
+            "files": [
+              "plan.md"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "write",
+            "plan",
+            "plan.md."
+          ],
+          "evidence_codes": [
+            "rule:action-cue-document.create"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.915,
+          "span": [
+            0,
+            33
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:action-cue-document.create",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            35,
+            61
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "How should we refactor this class? Write the plan to plan.md.",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        34
+      ]
+    ],
+    "bounded": false
+  },
+  {
+    "text": "这个命令会重命名文件吗？然后把 old.py 重命名为 new.py。",
+    "expected": "rename",
+    "ok": true,
+    "effects": [
+      "rename"
+    ],
+    "intent": {
+      "raw_input": "这个命令会重命名文件吗？然后把 old.py 重命名为 new.py。",
+      "intent_type": "code",
+      "action_type": "rename",
+      "confidence": 0.96,
+      "entities": {
+        "files": [
+          "old.py",
+          "new.py"
+        ],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个命令会重命名文件吗",
+        "然后把",
+        "old.py",
+        "重命名为",
+        "new.py",
+        "rename"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787661.774979,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.912,
+          "clause": "这个命令会重命名文件吗？",
+          "span": [
+            0,
+            12
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个命令会重命名文件吗",
+            "rename"
+          ],
+          "evidence_codes": [
+            "rule:explain.read"
+          ]
+        },
+        {
+          "intent_type": "code",
+          "action_type": "rename",
+          "polarity": "affirmed",
+          "confidence": 0.96,
+          "clause": "把 old.py 重命名为 new.py。",
+          "span": [
+            14,
+            35
+          ],
+          "entities": {
+            "files": [
+              "old.py",
+              "new.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "old.py",
+            "重命名为",
+            "new.py",
+            "rename"
+          ],
+          "evidence_codes": [
+            "rule:code.rename"
+          ]
+        }
+      ],
+      "primary_operation_index": 1,
+      "evidence": [
+        {
+          "code": "rule:explain.read",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.912,
+          "span": [
+            0,
+            12
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "rule:code.rename",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.96,
+          "span": [
+            14,
+            35
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "compound_direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个命令会重命名文件吗？然后把 old.py 重命名为 new.py。",
+      "context_used": false
+    },
+    "helper": [
+      [
+        0,
+        12
+      ]
+    ],
+    "bounded": false
+  }
+]

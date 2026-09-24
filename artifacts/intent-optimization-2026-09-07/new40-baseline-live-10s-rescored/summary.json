@@ -1,0 +1,64 @@
+{
+  "total": 40,
+  "primary_correct": 27,
+  "all_labeled_checks_correct": 21,
+  "failed_ids": [
+    "N01",
+    "N03",
+    "N04",
+    "N05",
+    "N06",
+    "N08",
+    "N09",
+    "N10",
+    "N14",
+    "N18",
+    "N19",
+    "N20",
+    "N21",
+    "N28",
+    "N31",
+    "N32",
+    "N33",
+    "N37",
+    "N39"
+  ],
+  "semantic_status": {
+    "skipped": 24,
+    "invalid_response": 9,
+    "accepted": 7
+  },
+  "event_counts": {
+    "model.started": 16,
+    "model.completed": 16,
+    "model.costed": 16
+  },
+  "called_ids": [
+    "N04",
+    "N07",
+    "N08",
+    "N10",
+    "N13",
+    "N15",
+    "N18",
+    "N22",
+    "N24",
+    "N28",
+    "N30",
+    "N31",
+    "N36",
+    "N38",
+    "N39",
+    "N40"
+  ],
+  "called_median_ms": 5959.030875033932,
+  "latency_ms": {
+    "median": 4.2721665231511,
+    "p95": 7151.420041976962,
+    "max": 7380.636499961838
+  },
+  "wall_seconds": 88.46563275001245,
+  "source_unchanged": true,
+  "cases_unchanged": true,
+  "scoring_revision": "pre-candidate author clarification; outputs unchanged"
+}

@@ -1,0 +1,439 @@
+[
+  {
+    "text": "这个函数能否帮我重构一下？",
+    "actual": {
+      "raw_input": "这个函数能否帮我重构一下？",
+      "intent_type": "refactor",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个函数能否帮我重构一下"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788786985.350821,
+      "operations": [
+        {
+          "intent_type": "refactor",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "这个函数能否帮我重构一下？",
+          "span": [
+            0,
+            13
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个函数能否帮我重构一下"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-refactor.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-refactor.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            13
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个函数能否帮我重构一下？",
+      "context_used": false
+    }
+  },
+  {
+    "text": "这个函数可否请你帮我重构一下？",
+    "actual": {
+      "raw_input": "这个函数可否请你帮我重构一下？",
+      "intent_type": "refactor",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个函数可否请你帮我重构一下"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788786985.351941,
+      "operations": [
+        {
+          "intent_type": "refactor",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "这个函数可否请你帮我重构一下？",
+          "span": [
+            0,
+            15
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个函数可否请你帮我重构一下"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-refactor.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-refactor.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            15
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个函数可否请你帮我重构一下？",
+      "context_used": false
+    }
+  },
+  {
+    "text": "这个配置是不是可以帮我修改一下？",
+    "actual": {
+      "raw_input": "这个配置是不是可以帮我修改一下？",
+      "intent_type": "debug",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个配置是不是可以帮我修改一下",
+        "config",
+        "configuration"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788786985.353111,
+      "operations": [
+        {
+          "intent_type": "debug",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "这个配置是不是可以帮我修改一下？",
+          "span": [
+            0,
+            16
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这个配置是不是可以帮我修改一下",
+            "config",
+            "configuration"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-debug.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-debug.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            16
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个配置是不是可以帮我修改一下？",
+      "context_used": false
+    }
+  },
+  {
+    "text": "该函数能否帮我改成异步？",
+    "actual": {
+      "raw_input": "该函数能否帮我改成异步？",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.84,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "该函数能否帮我改成异步"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788786985.3540769,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.84,
+          "clause": "该函数能否帮我改成异步？",
+          "span": [
+            0,
+            12
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "该函数能否帮我改成异步"
+          ],
+          "evidence_codes": [
+            "rule:action-cue-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:action-cue-code.update",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.84,
+          "span": [
+            0,
+            12
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "该函数能否帮我改成异步？",
+      "context_used": false
+    }
+  },
+  {
+    "text": "这个脚本是否可以请你修改一下？",
+    "actual": {
+      "raw_input": "这个脚本是否可以请你修改一下？",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个脚本是否可以请你修改一下"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788786985.356242,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个脚本是否可以请你修改一下？",
+      "context_used": false
+    }
+  },
+  {
+    "text": "这个命令能否请你执行一下？",
+    "actual": {
+      "raw_input": "这个命令能否请你执行一下？",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这个命令能否请你执行一下"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788786985.357482,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这个命令能否请你执行一下？",
+      "context_used": false
+    }
+  },
+  {
+    "text": "Can this file please be updated?",
+    "actual": {
+      "raw_input": "Can this file please be updated?",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "file",
+        "please",
+        "updated"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788786985.358735,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Can this file please be updated?",
+      "context_used": false
+    }
+  },
+  {
+    "text": "Could this function please be refactored?",
+    "actual": {
+      "raw_input": "Could this function please be refactored?",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [
+          "please"
+        ],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "function",
+        "please",
+        "refactored"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788786985.360055,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Could this function please be refactored?",
+      "context_used": false
+    }
+  },
+  {
+    "text": "Would this script please be updated to support JSON?",
+    "actual": {
+      "raw_input": "Would this script please be updated to support JSON?",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "script",
+        "please",
+        "updated",
+        "support",
+        "json"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788786985.361582,
+      "operations": [],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "no_evidence",
+      "diagnostics": {
+        "semantic_status": "disabled",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "Would this script please be updated to support JSON?",
+      "context_used": false
+    }
+  }
+]

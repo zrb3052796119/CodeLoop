@@ -1,0 +1,51 @@
+{
+  "started_at": "2026-09-07T05:43:48.325723+00:00",
+  "config": {
+    "provider": "custom",
+    "model": "glm-5.3-flash",
+    "endpoint_host": "open.bigmodel.cn",
+    "adapter_class": "OpenAIModelAdapter",
+    "configured_enabled_before_run": false,
+    "intentSemanticClassifier": {
+      "enabled": true,
+      "timeoutSeconds": 1.5,
+      "minConfidence": 0.72,
+      "maxInputChars": 4000,
+      "maxOutputBytes": 4096,
+      "maxOutputTokens": 256,
+      "reserveModelCalls": 1,
+      "allowUnreviewedCalibration": false
+    },
+    "calibration_path_present": false,
+    "enableThinking": null,
+    "sample_count": 50,
+    "budget_per_case": {
+      "limitTotalTokens": 3000000,
+      "limitModelCalls": 150,
+      "limitCostUsd": "5.00",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "effective_changes": {
+      "enabled": true
+    }
+  },
+  "baseline_freeze_sha256": "09834d9c402f6c2a0f6aac640aa199569d1bedcd71c62c3f74acb3b0b15b4391",
+  "baseline_results_sha256": "f7beeed8b6ace3da43f49d03cce50a048150dad83571ab4d8be44b750118f804",
+  "runner_sha256": "d94615fa2388ffb4519ef6c05bfb24b1764b0198c01f4cb922cd86877148fd0c",
+  "source_hashes": {
+    "artifacts/intent-evaluation-2026-09-07/routine_cases.json": "f3255aab55ba0fbcbc484f77fefc9c68719e604bb4e24c7a1350d74d52e172f7",
+    "artifacts/intent-evaluation-2026-09-07/independent_cases.json": "dfef398b68b4121727938e69eb02eaeecb4b8063edf91826ca0194c1689117ec",
+    "minicode/intent_parser.py": "98b68926875574a6fc967785374db48a07f0245660fbe69bd084660061cc85aa",
+    "minicode/intent_constraints.py": "8d5ebe0a663935ef8950c0ad59f1254759a4ab90831f2634b4806d58d98b16f3",
+    "minicode/intent_negation.py": "827e51d4b45c9a24c6ef67094021470296b1fa2d08da8ddcaabfdd94ad84241f",
+    "minicode/intent_semantic_classifier.py": "50195e087b29493b109bbe3c095b3aab665e6e89b2ede7d91acac2ae8d2d4677",
+    "minicode/skill_routing_turn.py": "227257f10e31a90c2b7a643f0589ce5d31928ba3fe90172ea31163de4ccf57bc",
+    "artifacts/intent-evaluation-2026-09-07/run_evaluation.py": "d7239de029e47782e4fc2d220964c6640e65b88d09c9777f3469ac4221a680f0"
+  },
+  "python": "3.12.8 (v3.12.8:2dc476bcb91, Dec  3 2024, 14:43:19) [Clang 13.0.0 (clang-1300.0.29.30)]"
+}

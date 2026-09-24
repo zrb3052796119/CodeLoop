@@ -1,0 +1,46 @@
+{
+  "index": 1,
+  "operation_id": "modelop_b1203fb6ffce40df833175a5d3f70c7e",
+  "input_sha256": "d351227167cae2d87f324e6d9b6573a8c6c83e6408629dde00da48c3f6ef818e",
+  "provider_message_projection_sha256": "d351227167cae2d87f324e6d9b6573a8c6c83e6408629dde00da48c3f6ef818e",
+  "request_file": "call-01-request.json",
+  "completed": true,
+  "elapsed_ms": 2325.811624992639,
+  "response": {
+    "type": "tool_calls",
+    "content": "",
+    "kind": null,
+    "calls": [
+      {
+        "id": "call_-7283785971580009139",
+        "toolName": "load_skill",
+        "input": {
+          "name": "git/commit-hygiene"
+        }
+      }
+    ],
+    "contentKind": null,
+    "reasoningContent": "The user wants me to use the git/commit-hygiene skill to handle their changes: verify the actual diff, only stage files related to the current fix, check no local secrets/credentials are included, then create a clear commit.\n\nLet me load the skill first.",
+    "diagnostics": {
+      "stopReason": "tool_calls",
+      "blockTypes": [
+        "tool_calls"
+      ],
+      "ignoredBlockTypes": []
+    },
+    "usage": {
+      "input_tokens": 7600,
+      "output_tokens": 72,
+      "cache_read_tokens": 7552,
+      "cache_creation_tokens": null,
+      "source": "provider"
+    }
+  },
+  "usage": {
+    "source": "provider",
+    "inputTokens": 7600,
+    "outputTokens": 72,
+    "cacheReadTokens": 7552,
+    "cacheCreationTokens": null
+  }
+}

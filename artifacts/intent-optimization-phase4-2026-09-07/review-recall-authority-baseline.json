@@ -1,0 +1,1438 @@
+[
+  {
+    "text": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+    "proposal": [
+      "code",
+      "update"
+    ],
+    "actual": {
+      "raw_input": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "先聊聊这些开关对输出的影响",
+        "不用实际执行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.273291,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用实际执行测试",
+          "span": [
+            14,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+    "proposal": [
+      "code",
+      "create"
+    ],
+    "actual": {
+      "raw_input": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "先聊聊这些开关对输出的影响",
+        "不用实际执行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.2750878,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用实际执行测试",
+          "span": [
+            14,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+    "proposal": [
+      "test",
+      "execute"
+    ],
+    "actual": {
+      "raw_input": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "先聊聊这些开关对输出的影响",
+        "不用实际执行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.276833,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用实际执行测试",
+          "span": [
+            14,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+    "proposal": [
+      "explain",
+      "read"
+    ],
+    "actual": {
+      "raw_input": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "先聊聊这些开关对输出的影响",
+        "不用实际执行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.278573,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用实际执行测试",
+          "span": [
+            14,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+    "proposal": [
+      "code",
+      "update"
+    ],
+    "actual": {
+      "raw_input": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这俩选项是咋配合起来的啊",
+        "不必急着运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.280263,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+          "span": [
+            0,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这俩选项是咋配合起来的啊",
+            "不必急着运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            0,
+            22
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+    "proposal": [
+      "code",
+      "create"
+    ],
+    "actual": {
+      "raw_input": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这俩选项是咋配合起来的啊",
+        "不必急着运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.282041,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+          "span": [
+            0,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这俩选项是咋配合起来的啊",
+            "不必急着运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            0,
+            22
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+    "proposal": [
+      "test",
+      "execute"
+    ],
+    "actual": {
+      "raw_input": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这俩选项是咋配合起来的啊",
+        "不必急着运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.283733,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+          "span": [
+            0,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这俩选项是咋配合起来的啊",
+            "不必急着运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            0,
+            22
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+    "proposal": [
+      "explain",
+      "read"
+    ],
+    "actual": {
+      "raw_input": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这俩选项是咋配合起来的啊",
+        "不必急着运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.285356,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+          "span": [
+            0,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这俩选项是咋配合起来的啊",
+            "不必急着运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            0,
+            22
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "这段说明得怎么看呀？我暂时不打算运行测试。",
+    "proposal": [
+      "code",
+      "update"
+    ],
+    "actual": {
+      "raw_input": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "intent_type": "test",
+      "action_type": "execute",
+      "confidence": 0.906,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这段说明得怎么看呀",
+        "我暂时不打算运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.286996,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "affirmed",
+          "confidence": 0.906,
+          "clause": "这段说明得怎么看呀？我暂时不打算运行测试。",
+          "span": [
+            0,
+            21
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这段说明得怎么看呀",
+            "我暂时不打算运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "rule:test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:test.execute",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.906,
+          "span": [
+            0,
+            21
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "这段说明得怎么看呀？我暂时不打算运行测试。",
+    "proposal": [
+      "code",
+      "create"
+    ],
+    "actual": {
+      "raw_input": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "intent_type": "test",
+      "action_type": "execute",
+      "confidence": 0.906,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这段说明得怎么看呀",
+        "我暂时不打算运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.288496,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "affirmed",
+          "confidence": 0.906,
+          "clause": "这段说明得怎么看呀？我暂时不打算运行测试。",
+          "span": [
+            0,
+            21
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这段说明得怎么看呀",
+            "我暂时不打算运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "rule:test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:test.execute",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.906,
+          "span": [
+            0,
+            21
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "这段说明得怎么看呀？我暂时不打算运行测试。",
+    "proposal": [
+      "test",
+      "execute"
+    ],
+    "actual": {
+      "raw_input": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "intent_type": "test",
+      "action_type": "execute",
+      "confidence": 0.906,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这段说明得怎么看呀",
+        "我暂时不打算运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.2900858,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "affirmed",
+          "confidence": 0.906,
+          "clause": "这段说明得怎么看呀？我暂时不打算运行测试。",
+          "span": [
+            0,
+            21
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这段说明得怎么看呀",
+            "我暂时不打算运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "rule:test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:test.execute",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.906,
+          "span": [
+            0,
+            21
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "这段说明得怎么看呀？我暂时不打算运行测试。",
+    "proposal": [
+      "explain",
+      "read"
+    ],
+    "actual": {
+      "raw_input": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "intent_type": "test",
+      "action_type": "execute",
+      "confidence": 0.906,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这段说明得怎么看呀",
+        "我暂时不打算运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.2915971,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "affirmed",
+          "confidence": 0.906,
+          "clause": "这段说明得怎么看呀？我暂时不打算运行测试。",
+          "span": [
+            0,
+            21
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "这段说明得怎么看呀",
+            "我暂时不打算运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "rule:test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "rule:test.execute",
+          "source": "rule",
+          "reason": "current clause contains a direct action and technical target",
+          "strength": 0.906,
+          "span": [
+            0,
+            21
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "direct_evidence",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+    "proposal": [
+      "code",
+      "update"
+    ],
+    "actual": {
+      "raw_input": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "pytest",
+        "里的",
+        "-k",
+        "-m",
+        "分别有什么用",
+        "给我举例就行",
+        "不用真的运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.293919,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用真的运行测试",
+          "span": [
+            32,
+            40
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+    "proposal": [
+      "code",
+      "create"
+    ],
+    "actual": {
+      "raw_input": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "pytest",
+        "里的",
+        "-k",
+        "-m",
+        "分别有什么用",
+        "给我举例就行",
+        "不用真的运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.296185,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用真的运行测试",
+          "span": [
+            32,
+            40
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+    "proposal": [
+      "test",
+      "execute"
+    ],
+    "actual": {
+      "raw_input": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "pytest",
+        "里的",
+        "-k",
+        "-m",
+        "分别有什么用",
+        "给我举例就行",
+        "不用真的运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.298548,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用真的运行测试",
+          "span": [
+            32,
+            40
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+    "proposal": [
+      "explain",
+      "read"
+    ],
+    "actual": {
+      "raw_input": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "pytest",
+        "里的",
+        "-k",
+        "-m",
+        "分别有什么用",
+        "给我举例就行",
+        "不用真的运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.3009431,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用真的运行测试",
+          "span": [
+            32,
+            40
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+    "proposal": [
+      "code",
+      "update"
+    ],
+    "actual": {
+      "raw_input": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "终端提示",
+        "这两步各自做什么",
+        "我还不准备执行"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787192.3050728,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+          "span": [
+            0,
+            56
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "终端提示",
+            "这两步各自做什么",
+            "我还不准备执行"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            0,
+            56
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+    "proposal": [
+      "code",
+      "create"
+    ],
+    "actual": {
+      "raw_input": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "终端提示",
+        "这两步各自做什么",
+        "我还不准备执行"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787192.3079522,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+          "span": [
+            0,
+            56
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "终端提示",
+            "这两步各自做什么",
+            "我还不准备执行"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            0,
+            56
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+    "proposal": [
+      "test",
+      "execute"
+    ],
+    "actual": {
+      "raw_input": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "终端提示",
+        "这两步各自做什么",
+        "我还不准备执行"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787192.310891,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+          "span": [
+            0,
+            56
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "终端提示",
+            "这两步各自做什么",
+            "我还不准备执行"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            0,
+            56
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "context_used": false
+    },
+    "requests": []
+  },
+  {
+    "text": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+    "proposal": [
+      "explain",
+      "read"
+    ],
+    "actual": {
+      "raw_input": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "终端提示",
+        "这两步各自做什么",
+        "我还不准备执行"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787192.3138812,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+          "span": [
+            0,
+            56
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "终端提示",
+            "这两步各自做什么",
+            "我还不准备执行"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            0,
+            56
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "skipped",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "context_used": false
+    },
+    "requests": []
+  }
+]

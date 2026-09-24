@@ -1,0 +1,55 @@
+{
+  "total": 50,
+  "primary_correct": 26,
+  "all_labeled_checks_correct": 23,
+  "primary_improvements": [],
+  "primary_regressions": [],
+  "improvements": [],
+  "regressions": [],
+  "semantic_status": {
+    "skipped": 32,
+    "timeout": 18
+  },
+  "event_counts": {
+    "model.started": 18,
+    "model.failed": 18
+  },
+  "called_case_ids": [
+    "C02",
+    "C06",
+    "C09",
+    "C11",
+    "C14",
+    "C23",
+    "C25",
+    "C26",
+    "C27",
+    "C28",
+    "C29",
+    "C30",
+    "C33",
+    "C36",
+    "C37",
+    "C40",
+    "C45",
+    "C49"
+  ],
+  "token_totals": {
+    "usedInputTokens": 12561,
+    "usedOutputTokens": 0,
+    "usedTotalTokens": 12561
+  },
+  "usage_sources": {},
+  "cost_status": {},
+  "latency_ms": {
+    "median": 4.253896040609106,
+    "p95_nearest_rank": 1508.9504169882275,
+    "max": 1509.9234170047566,
+    "total": 27275.21404385334
+  },
+  "called_latency_ms": {
+    "median": 1507.5678959838115
+  },
+  "wall_seconds": 27.872614625026472,
+  "source_and_labels_unchanged": true
+}

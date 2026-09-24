@@ -1,0 +1,826 @@
+{
+  "parser_sha256": "81fbcacbc0643e3944842c71015c6603d0362321305acde40bd564c669dce466",
+  "baseline": [
+    {
+      "text": "运行 app.py 时如果失败立即退出。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "运行 app.py 期间发生错误立刻记录日志。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "执行 script.py 时捕获异常并继续运行。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "When running app.py, if it fails, abort.",
+      "main": [
+        "code",
+        "update"
+      ],
+      "ops": [
+        [
+          "code",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": [
+        "When running app.py, if it fails, abort."
+      ]
+    },
+    {
+      "text": "When running app.py, record any errors.",
+      "main": [
+        "code",
+        "update"
+      ],
+      "ops": [
+        [
+          "code",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": [
+        "When running app.py, record any errors."
+      ]
+    },
+    {
+      "text": "运行 app.py 时，若出现异常，停止进程。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "如果运行 app.py 时报错，告诉我。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "请执行 app.py 时处理出现的错误。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "运行 app.py 时遇到失败就报个警。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "执行 process.py 时一旦发生错误发邮件给我。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "分析比赛失败的原因。",
+      "main": [
+        "debug",
+        "analyze"
+      ],
+      "ops": [
+        [
+          "debug",
+          "analyze",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "分析招聘成功率下降的原因。",
+      "main": [
+        "explain",
+        "read"
+      ],
+      "ops": [
+        [
+          "explain",
+          "read",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "诊断叶片出现异常的原因。",
+      "main": [
+        "code",
+        "update"
+      ],
+      "ops": [
+        [
+          "code",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": [
+        "诊断叶片出现异常的原因。"
+      ]
+    },
+    {
+      "text": "排查快递延迟的原因。",
+      "main": [
+        "debug",
+        "analyze"
+      ],
+      "ops": [
+        [
+          "debug",
+          "analyze",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "Explain what this code does and update README.md.",
+      "main": [
+        "document",
+        "update"
+      ],
+      "ops": [
+        [
+          "explain",
+          "read",
+          "affirmed"
+        ],
+        [
+          "document",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "解释这些脚本有什么问题并修复 app.py。",
+      "main": [
+        "code",
+        "update"
+      ],
+      "ops": [
+        [
+          "code",
+          "update",
+          "affirmed"
+        ],
+        [
+          "debug",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": [
+        "解释这些脚本有什么问题"
+      ]
+    },
+    {
+      "text": "Explain what this script does and fix parser.py.",
+      "main": [
+        "debug",
+        "update"
+      ],
+      "ops": [
+        [
+          "explain",
+          "read",
+          "affirmed"
+        ],
+        [
+          "debug",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "解释什么是缓存同时删除 tmp.py。",
+      "main": [
+        "code",
+        "delete"
+      ],
+      "ops": [
+        [
+          "code",
+          "update",
+          "affirmed"
+        ],
+        [
+          "code",
+          "delete",
+          "affirmed"
+        ]
+      ],
+      "calls": [
+        "解释什么是缓存"
+      ]
+    },
+    {
+      "text": "Explain which tests failed; fix failing tests.",
+      "main": [
+        "debug",
+        "update"
+      ],
+      "ops": [
+        [
+          "explain",
+          "read",
+          "affirmed"
+        ],
+        [
+          "debug",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "说明这条建议希望修复什么问题，背景是依赖过旧。",
+      "main": [
+        "debug",
+        "update"
+      ],
+      "ops": [
+        [
+          "debug",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "日志里的 `delete cache.py` 是程序提出的建议，背景是存储空间不足。",
+      "main": [
+        "unknown",
+        "unknown"
+      ],
+      "ops": [],
+      "calls": [
+        "日志里的 `delete cache.py` 是程序提出的建议，背景是存储空间不足。"
+      ]
+    },
+    {
+      "text": "When running app.py, it fails. Now run app.py again.",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "运行 app.py 时出现了错误，请分析原因。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ],
+        [
+          "explain",
+          "read",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "运行 app.py 时记录所有失败请求。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "When executing loader.py, report errors as they appear.",
+      "main": [
+        "code",
+        "update"
+      ],
+      "ops": [
+        [
+          "code",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": [
+        "When executing loader.py, report errors as they appear."
+      ]
+    }
+  ],
+  "candidate": [
+    {
+      "text": "运行 app.py 时如果失败立即退出。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "运行 app.py 期间发生错误立刻记录日志。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "执行 script.py 时捕获异常并继续运行。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "When running app.py, if it fails, abort.",
+      "main": [
+        "code",
+        "update"
+      ],
+      "ops": [
+        [
+          "code",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": [
+        "When running app.py, if it fails, abort."
+      ]
+    },
+    {
+      "text": "When running app.py, record any errors.",
+      "main": [
+        "code",
+        "update"
+      ],
+      "ops": [
+        [
+          "code",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": [
+        "When running app.py, record any errors."
+      ]
+    },
+    {
+      "text": "运行 app.py 时，若出现异常，停止进程。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "如果运行 app.py 时报错，告诉我。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "请执行 app.py 时处理出现的错误。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "运行 app.py 时遇到失败就报个警。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "执行 process.py 时一旦发生错误发邮件给我。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "分析比赛失败的原因。",
+      "main": [
+        "explain",
+        "read"
+      ],
+      "ops": [
+        [
+          "explain",
+          "read",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "分析招聘成功率下降的原因。",
+      "main": [
+        "explain",
+        "read"
+      ],
+      "ops": [
+        [
+          "explain",
+          "read",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "诊断叶片出现异常的原因。",
+      "main": [
+        "explain",
+        "read"
+      ],
+      "ops": [
+        [
+          "explain",
+          "read",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "排查快递延迟的原因。",
+      "main": [
+        "explain",
+        "read"
+      ],
+      "ops": [
+        [
+          "explain",
+          "read",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "Explain what this code does and update README.md.",
+      "main": [
+        "document",
+        "update"
+      ],
+      "ops": [
+        [
+          "explain",
+          "read",
+          "affirmed"
+        ],
+        [
+          "document",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "解释这些脚本有什么问题并修复 app.py。",
+      "main": [
+        "code",
+        "update"
+      ],
+      "ops": [
+        [
+          "code",
+          "update",
+          "affirmed"
+        ],
+        [
+          "debug",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": [
+        "解释这些脚本有什么问题"
+      ]
+    },
+    {
+      "text": "Explain what this script does and fix parser.py.",
+      "main": [
+        "debug",
+        "update"
+      ],
+      "ops": [
+        [
+          "explain",
+          "read",
+          "affirmed"
+        ],
+        [
+          "debug",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "解释什么是缓存同时删除 tmp.py。",
+      "main": [
+        "code",
+        "delete"
+      ],
+      "ops": [
+        [
+          "code",
+          "update",
+          "affirmed"
+        ],
+        [
+          "code",
+          "delete",
+          "affirmed"
+        ]
+      ],
+      "calls": [
+        "解释什么是缓存"
+      ]
+    },
+    {
+      "text": "Explain which tests failed; fix failing tests.",
+      "main": [
+        "debug",
+        "update"
+      ],
+      "ops": [
+        [
+          "explain",
+          "read",
+          "affirmed"
+        ],
+        [
+          "debug",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "说明这条建议希望修复什么问题，背景是依赖过旧。",
+      "main": [
+        "explain",
+        "read"
+      ],
+      "ops": [
+        [
+          "explain",
+          "read",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "日志里的 `delete cache.py` 是程序提出的建议，背景是存储空间不足。",
+      "main": [
+        "unknown",
+        "unknown"
+      ],
+      "ops": [],
+      "calls": [
+        "日志里的 `delete cache.py` 是程序提出的建议，背景是存储空间不足。"
+      ]
+    },
+    {
+      "text": "When running app.py, it fails. Now run app.py again.",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "运行 app.py 时出现了错误，请分析原因。",
+      "main": [
+        "explain",
+        "read"
+      ],
+      "ops": [
+        [
+          "explain",
+          "read",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "运行 app.py 时记录所有失败请求。",
+      "main": [
+        "test",
+        "execute"
+      ],
+      "ops": [
+        [
+          "test",
+          "execute",
+          "affirmed"
+        ]
+      ],
+      "calls": []
+    },
+    {
+      "text": "When executing loader.py, report errors as they appear.",
+      "main": [
+        "code",
+        "update"
+      ],
+      "ops": [
+        [
+          "code",
+          "update",
+          "affirmed"
+        ]
+      ],
+      "calls": [
+        "When executing loader.py, report errors as they appear."
+      ]
+    }
+  ]
+}

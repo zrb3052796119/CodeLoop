@@ -1,0 +1,125 @@
+{
+  "task_id": "T07",
+  "scale": "S1000",
+  "variant": "wrong-placement",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-wrong-placement",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283500717032073814",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "job-scheduler"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "dba5660997c27211d831957ff73c13156b566ee50ba1e40a32a4fa0c11177d31",
+      "output_chars": 3666,
+      "seen_qualified_names": [
+        "job-scheduler/backpressure",
+        "job-scheduler/batch-processing",
+        "job-scheduler/caching-strategy",
+        "job-scheduler/circuit-breaker",
+        "job-scheduler/config-management",
+        "job-scheduler/connection-pooling",
+        "job-scheduler/db-retry-tuning",
+        "job-scheduler/dead-letter-handling",
+        "job-scheduler/debugging-playbook",
+        "job-scheduler/error-mapping",
+        "job-scheduler/flaky-cron-playbook",
+        "job-scheduler/idempotency",
+        "job-scheduler/observability",
+        "job-scheduler/pagination",
+        "job-scheduler/performance-tuning",
+        "job-scheduler/rate-limiting",
+        "job-scheduler/retry-backoff",
+        "job-scheduler/schema-migration",
+        "job-scheduler/security-hardening",
+        "job-scheduler/testing-strategy",
+        "job-scheduler/timeout-tuning",
+        "job-scheduler/upgrade-runbook"
+      ],
+      "seen_directories": [
+        "job-scheduler"
+      ],
+      "elapsed_ms": 6.581375026144087
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "8fda493ec109dfa0da21a8f4559bbb7bc9669ffcd8a1ae0b9304abcc6af98ecd",
+      "elapsed_ms": 8582.595042069443,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "list_files",
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 10128,
+        "outputTokens": 355,
+        "cacheReadTokens": 9344,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "5636c19afc92166c307441be02168816aafe2febba244dfa1ebec367e46c149f",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "2b149811bcf5b7611f2afb36496a56c9e5a0cc8b18c53da24312c96ce4ef6ac7",
+  "system_prompt_chars": 21980,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 10128,
+  "output_tokens": 355,
+  "routing_events": [],
+  "elapsed_ms": 13340.940166963264
+}

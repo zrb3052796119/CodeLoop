@@ -1,0 +1,14 @@
+{
+  "all_final_source_hashes_match": true,
+  "all_six_final_runs_same_source": true,
+  "final_test_bytes_match_counterexample_evidence": true,
+  "modified_production_files": [
+    "minicode/intent_negation.py",
+    "minicode/intent_parser.py"
+  ],
+  "added_production_files": [
+    "minicode/intent_entity_targets.py"
+  ],
+  "production_file_count": 257,
+  "production_patch_matches_current_vs_actual_baseline": true
+}

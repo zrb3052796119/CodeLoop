@@ -1,0 +1,4791 @@
+{
+  "schemaVersion": 1,
+  "topK": 5,
+  "catalog": [
+    {
+      "name": "pytest-debugging",
+      "qualified_name": "pytest-debugging",
+      "description": "Debug pytest failures, test errors, fixtures, and Python tracebacks",
+      "keywords": [
+        "pytest",
+        "test failure",
+        "traceback",
+        "fixture"
+      ],
+      "source": "project",
+      "tools": [
+        "read_file",
+        "search_files",
+        "run_tests"
+      ]
+    },
+    {
+      "name": "codebase-explanation",
+      "qualified_name": "codebase-explanation",
+      "description": "Explain code architecture, call flow, modules, classes, and references",
+      "keywords": [
+        "architecture",
+        "call flow",
+        "explain code",
+        "reference"
+      ],
+      "source": "project",
+      "tools": [
+        "read_file",
+        "search_files"
+      ]
+    },
+    {
+      "name": "documentation-writing",
+      "qualified_name": "documentation-writing",
+      "description": "Write and revise README, API documentation, guides, and docstrings",
+      "keywords": [
+        "readme",
+        "documentation",
+        "guide",
+        "docstring"
+      ],
+      "source": "project",
+      "tools": [
+        "read_file",
+        "write_file"
+      ]
+    },
+    {
+      "name": "frontend-design",
+      "qualified_name": "frontend-design",
+      "description": "Design production frontend pages, components, layouts, and visual interfaces",
+      "keywords": [
+        "frontend",
+        "landing page",
+        "component",
+        "layout"
+      ],
+      "source": "project",
+      "tools": [
+        "read_file",
+        "write_file",
+        "browser_preview"
+      ]
+    },
+    {
+      "name": "security-audit",
+      "qualified_name": "security-audit",
+      "description": "Audit application security, vulnerabilities, authentication, secrets, and permissions",
+      "keywords": [
+        "security",
+        "vulnerability",
+        "authentication",
+        "secret"
+      ],
+      "source": "project",
+      "tools": [
+        "read_file",
+        "search_files"
+      ]
+    },
+    {
+      "name": "database-tuning",
+      "qualified_name": "database-tuning",
+      "description": "Optimize database queries, SQL performance, indexes, transactions, and slow queries",
+      "keywords": [
+        "database",
+        "sql",
+        "index",
+        "slow query"
+      ],
+      "source": "project",
+      "tools": [
+        "read_file",
+        "search_files",
+        "run_command"
+      ],
+      "supported_operations": [
+        "review.analyze",
+        "refactor.update",
+        "debug.analyze"
+      ]
+    },
+    {
+      "name": "deployment-automation",
+      "qualified_name": "deployment-automation",
+      "description": "Automate Docker deployment, release pipelines, containers, and production rollout",
+      "keywords": [
+        "docker",
+        "deploy",
+        "release",
+        "container"
+      ],
+      "source": "project",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command"
+      ]
+    },
+    {
+      "name": "memory-audit",
+      "qualified_name": "memory-audit",
+      "description": "Audit persistent agent memory, retrieval, lessons, provenance, and feedback",
+      "keywords": [
+        "persistent memory",
+        "retrieval",
+        "lesson",
+        "provenance"
+      ],
+      "source": "project",
+      "tools": [
+        "read_file",
+        "search_files",
+        "memory_search"
+      ]
+    },
+    {
+      "name": "context-compaction",
+      "qualified_name": "context-compaction",
+      "description": "Analyze context windows, token pressure, conversation compaction, and summary fidelity",
+      "keywords": [
+        "context",
+        "compaction",
+        "token",
+        "summary"
+      ],
+      "source": "project",
+      "tools": [
+        "read_file",
+        "search_files"
+      ]
+    },
+    {
+      "name": "multi-agent-orchestration",
+      "qualified_name": "multi-agent-orchestration",
+      "description": "Design sub-agent collaboration, parallel agents, task delegation, and orchestration",
+      "keywords": [
+        "multi-agent",
+        "sub-agent",
+        "parallel agent",
+        "delegation"
+      ],
+      "source": "project",
+      "tools": [
+        "read_file",
+        "write_file"
+      ]
+    },
+    {
+      "name": "git-workflow",
+      "qualified_name": "git-workflow",
+      "description": "Manage Git branches, commits, merge conflicts, rebases, and release history",
+      "keywords": [
+        "git",
+        "commit",
+        "branch",
+        "merge conflict"
+      ],
+      "source": "project",
+      "tools": [
+        "git_inspect",
+        "git_modify"
+      ]
+    },
+    {
+      "name": "performance-profiling",
+      "qualified_name": "performance-profiling",
+      "description": "Profile CPU, memory, latency, throughput, and application performance regressions",
+      "keywords": [
+        "profile",
+        "cpu",
+        "latency",
+        "performance"
+      ],
+      "source": "project",
+      "tools": [
+        "read_file",
+        "search_files",
+        "run_command"
+      ]
+    }
+  ],
+  "capabilities": [
+    {
+      "name": "read_file",
+      "domain": "file",
+      "scope": "readonly",
+      "description": "Read workspace files",
+      "tags": [
+        "file",
+        "readonly",
+        "joined-routing-fixture"
+      ]
+    },
+    {
+      "name": "write_file",
+      "domain": "file",
+      "scope": "write",
+      "description": "Create or update workspace files",
+      "tags": [
+        "file",
+        "write",
+        "joined-routing-fixture"
+      ]
+    },
+    {
+      "name": "search_files",
+      "domain": "search",
+      "scope": "readonly",
+      "description": "Search workspace paths and text",
+      "tags": [
+        "search",
+        "readonly",
+        "joined-routing-fixture"
+      ]
+    },
+    {
+      "name": "run_tests",
+      "domain": "execution",
+      "scope": "readonly",
+      "description": "Run bounded project test commands",
+      "tags": [
+        "execution",
+        "readonly",
+        "joined-routing-fixture"
+      ]
+    },
+    {
+      "name": "run_command",
+      "domain": "execution",
+      "scope": "destructive",
+      "description": "Run a bounded workspace command",
+      "tags": [
+        "execution",
+        "destructive",
+        "joined-routing-fixture"
+      ]
+    },
+    {
+      "name": "browser_preview",
+      "domain": "web",
+      "scope": "readonly",
+      "description": "Inspect a local browser preview",
+      "tags": [
+        "web",
+        "readonly",
+        "joined-routing-fixture"
+      ]
+    },
+    {
+      "name": "memory_search",
+      "domain": "memory",
+      "scope": "readonly",
+      "description": "Read persistent memory records",
+      "tags": [
+        "memory",
+        "readonly",
+        "joined-routing-fixture"
+      ]
+    },
+    {
+      "name": "git_inspect",
+      "domain": "code",
+      "scope": "readonly",
+      "description": "Inspect Git history and state",
+      "tags": [
+        "code",
+        "readonly",
+        "joined-routing-fixture"
+      ]
+    },
+    {
+      "name": "git_modify",
+      "domain": "code",
+      "scope": "write",
+      "description": "Create branches and commits",
+      "tags": [
+        "code",
+        "write",
+        "joined-routing-fixture"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "contrast-auth-explain",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "intent_sensitive",
+        "zh"
+      ],
+      "pairId": "pair-auth-purpose",
+      "prompt": "说明 auth.py 从 token 校验到角色判断的调用链。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "explain",
+            "action": "read",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "codebase-explanation"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "codebase-explanation"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "codebase-explanation"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "security-audit"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-auth-audit",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "intent_sensitive",
+        "zh"
+      ],
+      "pairId": "pair-auth-purpose",
+      "prompt": "检查 auth.py 从 token 校验到角色判断是否能被绕过。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "security-audit"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "security-audit"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "security-audit"
+        ],
+        "allowedInferredSkills": [
+          "codebase-explanation"
+        ],
+        "forbiddenSkills": [
+          "performance-profiling"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-query-explain",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "intent_sensitive",
+        "mixed"
+      ],
+      "pairId": "pair-query-purpose",
+      "prompt": "说明 orders 查询从 repository 到数据库的调用路径。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "explain",
+            "action": "read",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "codebase-explanation"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "codebase-explanation"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "codebase-explanation"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "database-tuning"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-query-tune",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "intent_sensitive",
+        "zh"
+      ],
+      "pairId": "pair-query-purpose",
+      "prompt": "减少 orders 查询的全表扫描，并给出索引改法。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "refactor",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "database-tuning"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "database-tuning"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "database-tuning"
+        ],
+        "allowedInferredSkills": [
+          "performance-profiling"
+        ],
+        "forbiddenSkills": [
+          "codebase-explanation"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-fixture-diagnose",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "negation",
+        "mixed"
+      ],
+      "pairId": "pair-fixture-purpose",
+      "prompt": "CI 里订单 fixture 偶发失败，只定位根因，先别改代码。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "debug",
+            "action": "analyze",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "code",
+            "action": "update",
+            "polarity": "negated"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "pytest-debugging"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "pytest-debugging"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [
+          "pytest-debugging"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "documentation-writing"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-fixture-document",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "task_switch",
+        "zh"
+      ],
+      "pairId": "pair-fixture-purpose",
+      "prompt": "根据已经给出的结论，把订单 fixture 的处理步骤补进维护手册。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "document",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "pytest-debugging"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-page-explain",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "intent_sensitive",
+        "mixed"
+      ],
+      "pairId": "pair-page-purpose",
+      "prompt": "说明 SettingsPage 现有组件层级和状态流。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "explain",
+            "action": "read",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "codebase-explanation"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "codebase-explanation"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "codebase-explanation"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "frontend-design"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-page-redesign",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "intent_sensitive",
+        "mixed"
+      ],
+      "pairId": "pair-page-purpose",
+      "prompt": "重做 SettingsPage 的组件层级和移动端布局。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "code",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "frontend-design"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "frontend-design"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "frontend-design"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "codebase-explanation"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-release-document",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "task_switch",
+        "zh"
+      ],
+      "pairId": "pair-release-purpose",
+      "prompt": "根据下面已经给出的发布步骤，写一份新人可照着执行的运维指南。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "document",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "deployment-automation"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-release-automate",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "implicit_domain",
+        "mixed"
+      ],
+      "pairId": "pair-release-purpose",
+      "prompt": "让打 tag 后自动灰度，并在失败时回滚。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "configure",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "deployment-automation"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "deployment-automation"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "deployment-automation"
+        ],
+        "allowedInferredSkills": [
+          "git-workflow"
+        ],
+        "forbiddenSkills": [
+          "documentation-writing"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-memory-audit",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "adjacent_domain",
+        "zh"
+      ],
+      "pairId": "pair-memory-purpose",
+      "prompt": "用户明确要求一直用中文，下一轮却没取回这条偏好；核对保存、召回和来源链。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "memory-audit"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "memory-audit"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "memory-audit"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "context-compaction"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-memory-document",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "task_switch",
+        "zh"
+      ],
+      "pairId": "pair-memory-purpose",
+      "prompt": "根据上面已经给出的偏好召回结论，补一份故障处理文档。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "document",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "memory-audit"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-summary-audit",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "adjacent_domain",
+        "zh"
+      ],
+      "pairId": "pair-summary-purpose",
+      "prompt": "核对三次压缩后的摘要，有没有漏掉用户的禁止事项。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "context-compaction"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "context-compaction"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "context-compaction"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "memory-audit",
+          "documentation-writing"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-summary-document",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "task_switch",
+        "zh"
+      ],
+      "pairId": "pair-summary-purpose",
+      "prompt": "把已经给出的摘要整理成一页 Markdown 交接文档。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "document",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "context-compaction"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-workers-delegate",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "implicit_domain",
+        "zh"
+      ],
+      "pairId": "pair-workers-purpose",
+      "prompt": "把三个独立模块分给三个工作单元同时处理，并定义汇总顺序。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "code",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "multi-agent-orchestration"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "multi-agent-orchestration"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "multi-agent-orchestration"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "performance-profiling"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-workers-profile",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "polysemy",
+        "mixed"
+      ],
+      "pairId": "pair-workers-purpose",
+      "prompt": "程序的三个 worker 同时运行时 CPU 飙升，定位锁等待和热点。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "debug",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "performance-profiling"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "performance-profiling"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "performance-profiling"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "multi-agent-orchestration"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-release-git",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "implicit_domain",
+        "zh"
+      ],
+      "pairId": "pair-release-boundary",
+      "prompt": "把当前改动按功能拆成两个可回滚记录，并放到一条独立开发线上。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "configure",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "git-workflow"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "git-workflow"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "git-workflow"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "deployment-automation"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-release-deploy",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "adjacent_domain",
+        "zh"
+      ],
+      "pairId": "pair-release-boundary",
+      "prompt": "主线合并后自动构建镜像，并逐步放量上线。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "configure",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "deployment-automation"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "deployment-automation"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "deployment-automation"
+        ],
+        "allowedInferredSkills": [
+          "git-workflow"
+        ],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-login-profile",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "adjacent_domain",
+        "zh"
+      ],
+      "pairId": "pair-login-purpose",
+      "prompt": "登录接口变慢了，数据库只有 15ms；找出 Python 侧耗时函数。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "debug",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "performance-profiling"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "performance-profiling"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "performance-profiling"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "security-audit",
+          "database-tuning"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-login-security",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "adjacent_domain",
+        "zh"
+      ],
+      "pairId": "pair-login-purpose",
+      "prompt": "普通账号能读取管理员订单，查清哪一层少了权限判断。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "security-audit"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "security-audit"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "security-audit"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "performance-profiling"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-orchestration-explain",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "intent_sensitive",
+        "zh"
+      ],
+      "pairId": "pair-orchestration-purpose",
+      "prompt": "说明当前工作单元的任务分配、重试和汇总路径。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "explain",
+            "action": "read",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "codebase-explanation"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "codebase-explanation"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "codebase-explanation"
+        ],
+        "allowedInferredSkills": [
+          "multi-agent-orchestration"
+        ],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-orchestration-redesign",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "intent_sensitive",
+        "zh"
+      ],
+      "pairId": "pair-orchestration-purpose",
+      "prompt": "重新设计工作单元的分配、重试和汇总策略。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "code",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "multi-agent-orchestration"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "multi-agent-orchestration"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "multi-agent-orchestration"
+        ],
+        "allowedInferredSkills": [
+          "codebase-explanation"
+        ],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-profile-document",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "task_switch",
+        "mixed"
+      ],
+      "pairId": "pair-profile-purpose",
+      "prompt": "根据已经测好的 CPU 热点，写一份调优指南。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "document",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "performance-profiling"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "contrast-profile-investigate",
+      "category": "same-topic-intent",
+      "tags": [
+        "minimal_pair",
+        "implicit_domain",
+        "mixed"
+      ],
+      "pairId": "pair-profile-purpose",
+      "prompt": "找出 CPU 时间主要花在哪些函数和锁等待上。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "debug",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "performance-profiling"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "performance-profiling"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "performance-profiling"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "documentation-writing"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-fix-pytest",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "zh"
+      ],
+      "pairId": "context-same-fix",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "CI 中订单 fixture 在 Python 3.12 下失败，单独运行正常。"
+          },
+          {
+            "role": "assistant",
+            "content": "我已经定位到测试夹具的隔离问题。"
+          }
+        ],
+        "activeTask": "修复 CI 中的订单测试失败"
+      },
+      "prompt": "你修一下吧。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "debug",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "pytest-debugging"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "pytest-debugging"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "pytest-debugging"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "frontend-design"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-fix-frontend",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "zh"
+      ],
+      "pairId": "context-same-fix",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "SettingsPage 在手机上按钮挤出屏幕，桌面端正常。"
+          },
+          {
+            "role": "assistant",
+            "content": "问题来自移动端组件间距和容器宽度。"
+          }
+        ],
+        "activeTask": "修复设置页移动端布局"
+      },
+      "prompt": "你修一下吧。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "code",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "frontend-design"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "frontend-design"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "frontend-design"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "pytest-debugging"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-analyze-codebase",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "negation"
+      ],
+      "pairId": "context-same-analyze",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "先帮我理解 auth.py 里 token 到角色判断的调用过程。"
+          },
+          {
+            "role": "assistant",
+            "content": "我已经找到入口函数和中间调用层。"
+          }
+        ],
+        "activeTask": "解释 auth.py 的鉴权调用链"
+      },
+      "prompt": "继续，只分析，别改。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "explain",
+            "action": "read",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "code",
+            "action": "update",
+            "polarity": "negated"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "codebase-explanation"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "codebase-explanation"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [
+          "codebase-explanation"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "security-audit"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-analyze-security",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "negation"
+      ],
+      "pairId": "context-same-analyze",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "普通用户能读取管理员订单，先审查越权路径。"
+          },
+          {
+            "role": "assistant",
+            "content": "我已经缩小到角色检查和资源所有权验证。"
+          }
+        ],
+        "activeTask": "审计订单接口的越权风险"
+      },
+      "prompt": "继续，只分析，别改。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "code",
+            "action": "update",
+            "polarity": "negated"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "security-audit"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "security-audit"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [
+          "security-audit"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "codebase-explanation"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-continue-memory",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "adjacent_domain"
+      ],
+      "pairId": "context-same-continue",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "我让系统长期记住回答用中文，但下一轮没有召回。"
+          },
+          {
+            "role": "assistant",
+            "content": "保存记录存在，需要继续核对检索条件和来源链。"
+          }
+        ],
+        "activeTask": "调查持久化偏好未召回"
+      },
+      "prompt": "继续查。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "memory-audit"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "memory-audit"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "memory-audit"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "context-compaction"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-continue-compaction",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "adjacent_domain"
+      ],
+      "pairId": "context-same-continue",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "长会话压缩后，最早的“不要改文件”从摘要里消失了。"
+          },
+          {
+            "role": "assistant",
+            "content": "需要继续比对压缩前记录和压缩摘要。"
+          }
+        ],
+        "activeTask": "调查上下文压缩丢失用户约束"
+      },
+      "prompt": "继续查。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "context-compaction"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "context-compaction"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "context-compaction"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "memory-audit"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-apply-agents",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "implicit_domain"
+      ],
+      "pairId": "context-same-apply",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "三个模块互不依赖，怎样安排能更快完成？"
+          },
+          {
+            "role": "assistant",
+            "content": "方案是分给三个工作单元并行处理，最后统一检查接口。"
+          }
+        ],
+        "activeTask": "实施多工作单元并行分工"
+      },
+      "prompt": "按这个方案做。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "code",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "multi-agent-orchestration"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "multi-agent-orchestration"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "multi-agent-orchestration"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "deployment-automation"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-apply-deploy",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "implicit_domain"
+      ],
+      "pairId": "context-same-apply",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "每次发版都手动构建和重启，怎么改？"
+          },
+          {
+            "role": "assistant",
+            "content": "方案是 tag 触发构建，先灰度 5%，异常自动回滚。"
+          }
+        ],
+        "activeTask": "实施自动灰度发布方案"
+      },
+      "prompt": "按这个方案做。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "configure",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "deployment-automation"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "deployment-automation"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "deployment-automation"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "multi-agent-orchestration"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-optimize-database",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "adjacent_domain"
+      ],
+      "pairId": "context-same-optimize",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "订单接口越来越慢，先找原因。"
+          },
+          {
+            "role": "assistant",
+            "content": "执行计划确认 orders 表发生全表扫描。"
+          }
+        ],
+        "activeTask": "优化订单查询访问路径"
+      },
+      "prompt": "按刚才定位的瓶颈优化一下。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "refactor",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "database-tuning"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "database-tuning"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "database-tuning"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "performance-profiling"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-optimize-runtime",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "adjacent_domain"
+      ],
+      "pairId": "context-same-optimize",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "订单接口越来越慢，先找原因。"
+          },
+          {
+            "role": "assistant",
+            "content": "数据库只用 12ms，主要耗时来自 Python 锁竞争。"
+          }
+        ],
+        "activeTask": "优化 Python 运行时热点"
+      },
+      "prompt": "按刚才定位的瓶颈优化一下。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "refactor",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "performance-profiling"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "performance-profiling"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "performance-profiling"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "database-tuning"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-document-compaction",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "task_switch"
+      ],
+      "pairId": "context-same-document",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "核对多轮压缩后是否丢了用户约束。"
+          },
+          {
+            "role": "assistant",
+            "content": "审计完成，结论和证据已经列出。"
+          }
+        ],
+        "activeTask": "记录上下文压缩审计结论"
+      },
+      "prompt": "把结论整理成 Markdown 交接文档。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "document",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "context-compaction"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-document-security",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "task_switch"
+      ],
+      "pairId": "context-same-document",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "审查登录接口是否存在越权。"
+          },
+          {
+            "role": "assistant",
+            "content": "安全审计完成，风险和证据已经列出。"
+          }
+        ],
+        "activeTask": "记录登录安全审计结论"
+      },
+      "prompt": "把结论整理成 Markdown 交接文档。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "document",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "security-audit"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-land-git",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "adjacent_domain"
+      ],
+      "pairId": "context-same-land",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "这些改动混在一起，回滚很困难。"
+          },
+          {
+            "role": "assistant",
+            "content": "建议按功能拆成两个提交，并新建修复分支。"
+          }
+        ],
+        "activeTask": "整理分支和提交历史"
+      },
+      "prompt": "照刚才说的落地。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "configure",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "git-workflow"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "git-workflow"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "git-workflow"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "deployment-automation"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-land-deploy",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "adjacent_domain"
+      ],
+      "pairId": "context-same-land",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "上线全靠手工，失败后恢复很慢。"
+          },
+          {
+            "role": "assistant",
+            "content": "建议镜像构建后自动灰度，并配置失败回滚。"
+          }
+        ],
+        "activeTask": "实施发布自动化"
+      },
+      "prompt": "照刚才说的落地。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "configure",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "deployment-automation"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "deployment-automation"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "deployment-automation"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "git-workflow"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-why-pytest",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "zh"
+      ],
+      "pairId": "context-same-why",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "这条用例只在完整测试套件里失败，单跑正常。"
+          },
+          {
+            "role": "assistant",
+            "content": "现象已复现，但还没有定位根因。"
+          }
+        ],
+        "activeTask": "调查测试隔离失败"
+      },
+      "prompt": "先弄清楚为什么。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "debug",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "pytest-debugging"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "pytest-debugging"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "pytest-debugging"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "memory-audit"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-why-memory",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "zh"
+      ],
+      "pairId": "context-same-why",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "已经保存的用户偏好，下一轮检索不到。"
+          },
+          {
+            "role": "assistant",
+            "content": "保存成功，但召回阶段没有返回。"
+          }
+        ],
+        "activeTask": "调查持久化记忆召回"
+      },
+      "prompt": "先弄清楚为什么。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "memory-audit"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "memory-audit"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "memory-audit"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "pytest-debugging"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-slow-database",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "adjacent_domain"
+      ],
+      "pairId": "context-same-slow",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "orders 查询随数据量增长越来越慢。"
+          },
+          {
+            "role": "assistant",
+            "content": "执行计划已经采集，可以继续分析。"
+          }
+        ],
+        "activeTask": "调查 orders 查询性能"
+      },
+      "prompt": "它具体为什么慢？",
+      "expected": {
+        "operations": [
+          {
+            "intent": "debug",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "database-tuning"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "database-tuning"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "database-tuning"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "performance-profiling"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-slow-runtime",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "adjacent_domain"
+      ],
+      "pairId": "context-same-slow",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "批处理的数据库耗时很低，但总耗时持续升高。"
+          },
+          {
+            "role": "assistant",
+            "content": "采样显示时间集中在 Python worker。"
+          }
+        ],
+        "activeTask": "调查应用运行时性能"
+      },
+      "prompt": "它具体为什么慢？",
+      "expected": {
+        "operations": [
+          {
+            "intent": "debug",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "performance-profiling"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "performance-profiling"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "performance-profiling"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "database-tuning"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-change-docs",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "zh"
+      ],
+      "pairId": "context-same-change",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "README 的安装命令已经过期，迁移说明也不准确。"
+          },
+          {
+            "role": "assistant",
+            "content": "安装段落已定位，迁移说明还需要同步。"
+          }
+        ],
+        "activeTask": "更新项目使用文档"
+      },
+      "prompt": "这个也一起改掉。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "document",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "frontend-design"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-change-frontend",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "zh"
+      ],
+      "pairId": "context-same-change",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "登录页桌面端修好了，但手机端输入框仍然溢出。"
+          },
+          {
+            "role": "assistant",
+            "content": "移动端使用另一组间距规则。"
+          }
+        ],
+        "activeTask": "修复登录页移动端布局"
+      },
+      "prompt": "这个也一起改掉。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "code",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "frontend-design"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "frontend-design"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "frontend-design"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "documentation-writing"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-check-compaction",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "adjacent_domain"
+      ],
+      "pairId": "context-same-check",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "对比压缩前后的摘要，重点看用户禁止事项。"
+          },
+          {
+            "role": "assistant",
+            "content": "第一轮决定已经核对，后续约束还没检查完。"
+          }
+        ],
+        "activeTask": "核对摘要保真度"
+      },
+      "prompt": "继续检查有没有遗漏。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "context-compaction"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "context-compaction"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "context-compaction"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "security-audit"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-check-security",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "adjacent_domain"
+      ],
+      "pairId": "context-same-check",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "审计订单接口的角色和资源所有权验证。"
+          },
+          {
+            "role": "assistant",
+            "content": "角色检查已核对，其他权限路径还没检查完。"
+          }
+        ],
+        "activeTask": "审计订单接口权限"
+      },
+      "prompt": "继续检查有没有遗漏。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "security-audit"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "security-audit"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "security-audit"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "context-compaction"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-split-agents",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "implicit_domain"
+      ],
+      "pairId": "context-same-split",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "路由、遥测和评测三块可以独立推进。"
+          },
+          {
+            "role": "assistant",
+            "content": "我已经按依赖关系划定三个工作流边界。"
+          }
+        ],
+        "activeTask": "拆分并行工作单元"
+      },
+      "prompt": "按刚才的边界拆开。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "code",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "multi-agent-orchestration"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "multi-agent-orchestration"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "multi-agent-orchestration"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "git-workflow"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "context-split-git",
+      "category": "context-continuation-switch",
+      "tags": [
+        "same_prompt_pair",
+        "context_required",
+        "implicit_domain"
+      ],
+      "pairId": "context-same-split",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "功能改动和测试修复混在一个变更里。"
+          },
+          {
+            "role": "assistant",
+            "content": "我已经标出两个可独立回滚的逻辑边界。"
+          }
+        ],
+        "activeTask": "拆分提交历史"
+      },
+      "prompt": "按刚才的边界拆开。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "configure",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "git-workflow"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "git-workflow"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "git-workflow"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "multi-agent-orchestration"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-auth-explain-audit",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "ordered",
+        "two_operation",
+        "intent_sensitive"
+      ],
+      "prompt": "先说明 auth.py 的登录调用链，再检查是否存在越权。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "explain",
+            "action": "read",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "codebase-explanation",
+          "security-audit"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "codebase-explanation"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "security-audit"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "codebase-explanation",
+          "security-audit"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-pytest-diagnose-fix",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "ordered",
+        "same_skill_multi_operation",
+        "mixed"
+      ],
+      "prompt": "先定位 fixture 为什么只在 Python 3.12 失败，再把它修好。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "debug",
+            "action": "analyze",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "debug",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "pytest-debugging"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "pytest-debugging"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "pytest-debugging"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "pytest-debugging"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "documentation-writing"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-query-find-tune",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "ordered",
+        "two_operation",
+        "mixed"
+      ],
+      "prompt": "先找出 orders 查询在哪里定义，再减少它的全表扫描。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "search",
+            "action": "read",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "refactor",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "codebase-explanation",
+          "database-tuning"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "codebase-explanation"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "database-tuning"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "codebase-explanation",
+          "database-tuning"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-release-explain-automate",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "ordered",
+        "adjacent_domain",
+        "mixed"
+      ],
+      "prompt": "梳理发布脚本从 tag 到 rollout 的调用链，再加入失败回滚。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "explain",
+            "action": "read",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "configure",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "codebase-explanation",
+          "deployment-automation"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "codebase-explanation"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "deployment-automation"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "codebase-explanation",
+          "deployment-automation"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "git-workflow"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-memory-context-audit",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "ordered",
+        "adjacent_domain",
+        "zh"
+      ],
+      "prompt": "核对长期记忆条目的来源，再检查压缩摘要是否保留同一条约束。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "memory-audit",
+          "context-compaction"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "memory-audit"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "context-compaction"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "memory-audit",
+          "context-compaction"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-agents-git",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "ordered",
+        "two_operation",
+        "zh"
+      ],
+      "prompt": "把三个模块并行分工，完成后按模块各建一个可回滚记录。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "code",
+            "action": "create",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "configure",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "multi-agent-orchestration",
+          "git-workflow"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "multi-agent-orchestration"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "git-workflow"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "multi-agent-orchestration",
+          "git-workflow"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-frontend-security",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "ordered",
+        "two_operation",
+        "mixed"
+      ],
+      "prompt": "重做移动端登录页，再检查 token 是否被写进 localStorage。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "code",
+            "action": "update",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "frontend-design",
+          "security-audit"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "frontend-design"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "security-audit"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "frontend-design",
+          "security-audit"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-performance-database",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "ordered",
+        "adjacent_domain",
+        "mixed"
+      ],
+      "prompt": "先定位接口的 Python CPU 热点，同时优化已经确认全表扫描的 orders 查询。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "debug",
+            "action": "analyze",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "refactor",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "performance-profiling",
+          "database-tuning"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "performance-profiling"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "database-tuning"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "performance-profiling",
+          "database-tuning"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-deploy-performance",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "ordered",
+        "two_operation",
+        "mixed"
+      ],
+      "prompt": "让流水线自动灰度，再检查灰度阶段的 p95 是否回归。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "configure",
+            "action": "update",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "deployment-automation",
+          "performance-profiling"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "deployment-automation"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "performance-profiling"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "deployment-automation",
+          "performance-profiling"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-context-docs",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "ordered",
+        "task_switch",
+        "zh"
+      ],
+      "prompt": "核对摘要保真度，然后把发现写成 Markdown 交接文档。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "document",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "context-compaction",
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "context-compaction"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "context-compaction",
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-memory-docs",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "ordered",
+        "task_switch",
+        "zh"
+      ],
+      "prompt": "审查偏好召回的来源链，并把审计结果补进故障手册。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "document",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "memory-audit",
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "memory-audit"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "memory-audit",
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-pytest-git",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "ordered",
+        "two_operation",
+        "mixed"
+      ],
+      "prompt": "修复 pytest 失败，完成后整理成一个 conventional commit。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "debug",
+            "action": "update",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "configure",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "pytest-debugging",
+          "git-workflow"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "pytest-debugging"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "git-workflow"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "pytest-debugging",
+          "git-workflow"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-rag-explain-doc",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "partial_semantic",
+        "production_shape",
+        "zh"
+      ],
+      "prompt": "把这个 RAG 主链路讲清楚，并写成 Markdown 文件。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "explain",
+            "action": "read",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "document",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "codebase-explanation",
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "codebase-explanation"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "codebase-explanation",
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-auth-question-audit",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "partial_semantic",
+        "intent_sensitive",
+        "mixed"
+      ],
+      "prompt": "auth.py 的 token 怎么一路到角色判断？再审计是否会越权。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "explain",
+            "action": "read",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "codebase-explanation",
+          "security-audit"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "codebase-explanation"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "security-audit"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "codebase-explanation",
+          "security-audit"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-query-cause-doc",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "partial_semantic",
+        "task_switch",
+        "zh"
+      ],
+      "prompt": "先搞清订单页为何扫全表，再把已确认结论补进性能手册。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "debug",
+            "action": "analyze",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "document",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "database-tuning",
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "database-tuning"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "database-tuning",
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "performance-profiling"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-agents-rules-doc",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "partial_semantic",
+        "implicit_domain",
+        "zh"
+      ],
+      "prompt": "三个模块互不依赖；安排成并行工作流，然后写一份汇总规则。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "code",
+            "action": "create",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "document",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "multi-agent-orchestration",
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "multi-agent-orchestration"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "multi-agent-orchestration",
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-frontend-docs",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "partial_semantic",
+        "task_switch",
+        "zh"
+      ],
+      "prompt": "让设置页在手机上不再溢出，并把响应式约束补进组件指南。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "code",
+            "action": "update",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "document",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "frontend-design",
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "frontend-design"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "frontend-design",
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-security-git",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "partial_semantic",
+        "two_operation",
+        "zh"
+      ],
+      "prompt": "查清普通用户读取管理员订单的风险，确认后把审计修订整理成独立提交。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "configure",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "security-audit",
+          "git-workflow"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "security-audit"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "git-workflow"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "security-audit",
+          "git-workflow"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-database-deploy",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "partial_semantic",
+        "two_operation",
+        "zh"
+      ],
+      "prompt": "先减少迁移脚本里的全表扫描，再让数据库变更随灰度流程自动上线。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "refactor",
+            "action": "update",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "configure",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "database-tuning",
+          "deployment-automation"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "database-tuning"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "deployment-automation"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "database-tuning",
+          "deployment-automation"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "compound-memory-context-docs",
+      "category": "compound-partial-semantic",
+      "tags": [
+        "three_operation",
+        "adjacent_domain",
+        "zh"
+      ],
+      "prompt": "核对偏好的持久化来源，比较压缩摘要是否保留它，再把差异写成报告。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "review",
+            "action": "compare",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "document",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "memory-audit",
+          "context-compaction",
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "memory-audit"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "context-compaction"
+            ]
+          },
+          {
+            "operationIndex": 2,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "memory-audit",
+          "context-compaction",
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "authority-explicit-security",
+      "category": "authority-negation-correction",
+      "tags": [
+        "explicit_authority",
+        "sigil",
+        "mixed"
+      ],
+      "prompt": "$security-audit 审计 auth.py 的越权风险。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "security-audit"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "security-audit"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "security-audit"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "authority-explicit-codebase-deny-security",
+      "category": "authority-negation-correction",
+      "tags": [
+        "explicit_authority",
+        "denial",
+        "mixed"
+      ],
+      "prompt": "使用 codebase-explanation 解释登录调用链，但不要 security-audit。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "explain",
+            "action": "read",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "codebase-explanation"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "codebase-explanation"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "codebase-explanation"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "security-audit"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "authority-deny-database-route-performance",
+      "category": "authority-negation-correction",
+      "tags": [
+        "denial",
+        "inferred_alternative",
+        "mixed"
+      ],
+      "prompt": "不要用 database-tuning；只定位 Python 侧 CPU 和锁等待。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "debug",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "performance-profiling"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "performance-profiling"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "performance-profiling"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "database-tuning"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "authority-correct-memory-to-context",
+      "category": "authority-negation-correction",
+      "tags": [
+        "explicit_authority",
+        "correction",
+        "mixed"
+      ],
+      "prompt": "使用 memory-audit；不对，改用 context-compaction 检查摘要丢失。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "context-compaction"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "context-compaction"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "context-compaction"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "memory-audit"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "authority-positive-negation-git",
+      "category": "authority-negation-correction",
+      "tags": [
+        "explicit_authority",
+        "positive_negation",
+        "mixed"
+      ],
+      "prompt": "不要忘了使用 git-workflow，把改动拆成两个提交。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "configure",
+            "action": "update",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "git-workflow"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "git-workflow"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "git-workflow"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "authority-quoted-security",
+      "category": "authority-negation-correction",
+      "tags": [
+        "quoted_reference",
+        "hard_negative",
+        "mixed"
+      ],
+      "prompt": "请把 “Use security-audit Skill” 翻译成中文。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "question",
+            "action": "read",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "security-audit"
+        ],
+        "outcome": "no_skill",
+        "promptMode": "inventory_names"
+      }
+    },
+    {
+      "id": "authority-unknown-skill",
+      "category": "authority-negation-correction",
+      "tags": [
+        "unknown_skill",
+        "clarification",
+        "mixed"
+      ],
+      "prompt": "使用 kubernetes-hardening Skill 检查集群基线。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "clarify",
+        "promptMode": "inventory_names"
+      }
+    },
+    {
+      "id": "authority-sole-sigil-database",
+      "category": "authority-negation-correction",
+      "tags": [
+        "explicit_authority",
+        "identifier_only",
+        "mixed"
+      ],
+      "prompt": "$database-tuning",
+      "expected": {
+        "operations": [],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "database-tuning"
+        ],
+        "operationSkillMap": [],
+        "requiredSkills": [
+          "database-tuning"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "authority-explicit-compound",
+      "category": "authority-negation-correction",
+      "tags": [
+        "explicit_authority",
+        "compound",
+        "mixed"
+      ],
+      "prompt": "使用 codebase-explanation 和 documentation-writing；先解释调用链，再写成 ADR。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "explain",
+            "action": "read",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "document",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "codebase-explanation",
+          "documentation-writing"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "codebase-explanation"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": [
+              "documentation-writing"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "codebase-explanation",
+          "documentation-writing"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "authority-explicit-agent-deny-git",
+      "category": "authority-negation-correction",
+      "tags": [
+        "explicit_authority",
+        "denial",
+        "mixed"
+      ],
+      "prompt": "使用 multi-agent-orchestration 安排并行分工，不要调用 git-workflow。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "code",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [
+          "multi-agent-orchestration"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "multi-agent-orchestration"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "multi-agent-orchestration"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "git-workflow"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "authority-global-no-skill",
+      "category": "authority-negation-correction",
+      "tags": [
+        "global_denial",
+        "no_skill",
+        "zh"
+      ],
+      "prompt": "不要加载任何 Skill，只回答 2 加 2 等于多少。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "question",
+            "action": "read",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "pytest-debugging",
+          "codebase-explanation",
+          "documentation-writing",
+          "frontend-design",
+          "security-audit",
+          "database-tuning",
+          "deployment-automation",
+          "memory-audit",
+          "context-compaction",
+          "multi-agent-orchestration",
+          "git-workflow",
+          "performance-profiling"
+        ],
+        "outcome": "no_skill",
+        "promptMode": "suppressed"
+      }
+    },
+    {
+      "id": "authority-incidental-docs-name",
+      "category": "authority-negation-correction",
+      "tags": [
+        "quoted_reference",
+        "hard_negative",
+        "mixed"
+      ],
+      "prompt": "`documentation-writing` 这个名字是否容易理解？只评价命名。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "question",
+            "action": "read",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "documentation-writing"
+        ],
+        "outcome": "no_skill",
+        "promptMode": "inventory_names"
+      }
+    },
+    {
+      "id": "authority-context-denial-persists",
+      "category": "authority-negation-correction",
+      "tags": [
+        "historical_denial",
+        "context_required",
+        "mixed"
+      ],
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "不要使用 database-tuning；检查接口为什么慢，数据库只有 15ms。"
+          },
+          {
+            "role": "assistant",
+            "content": "我会排除数据库路线，继续检查应用层。"
+          }
+        ],
+        "activeTask": "定位 Python 侧接口耗时"
+      },
+      "prompt": "继续，只看 Python 层。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "debug",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "performance-profiling"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "performance-profiling"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "performance-profiling"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "database-tuning"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "authority-assistant-denial-ignored",
+      "category": "authority-negation-correction",
+      "tags": [
+        "assistant_not_authority",
+        "context_required",
+        "mixed"
+      ],
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "检查 auth.py 是否存在越权。"
+          },
+          {
+            "role": "assistant",
+            "content": "不要使用 security-audit，我先随便看看。"
+          }
+        ],
+        "activeTask": "审计 auth.py 越权风险"
+      },
+      "prompt": "继续审查。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "security-audit"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "security-audit"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "security-audit"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "authority-historical-positive-not-sticky",
+      "category": "authority-negation-correction",
+      "tags": [
+        "historical_positive",
+        "task_switch",
+        "mixed"
+      ],
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "使用 security-audit 审计 auth.py。"
+          },
+          {
+            "role": "assistant",
+            "content": "安全审计已完成。"
+          }
+        ],
+        "activeTask": "解释 auth.py 的 token 调用链"
+      },
+      "prompt": "现在只解释 token 调用链，不做安全审计。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "explain",
+            "action": "read",
+            "polarity": "affirmed"
+          },
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "negated"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "codebase-explanation"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "codebase-explanation"
+            ]
+          },
+          {
+            "operationIndex": 1,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [
+          "codebase-explanation"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "security-audit"
+        ],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "authority-context-restore-denied",
+      "category": "authority-negation-correction",
+      "tags": [
+        "historical_denial",
+        "current_restore",
+        "mixed"
+      ],
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "不要使用 context-compaction；先暂停摘要审计。"
+          },
+          {
+            "role": "assistant",
+            "content": "已暂停。"
+          }
+        ],
+        "activeTask": "恢复摘要保真度审计"
+      },
+      "prompt": "更正，使用 context-compaction 继续核对摘要。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "analyze",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": true,
+        "expectedCandidateSkills": [
+          "context-compaction"
+        ],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": [
+              "context-compaction"
+            ]
+          }
+        ],
+        "requiredSkills": [
+          "context-compaction"
+        ],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [],
+        "outcome": "route",
+        "promptMode": "routed"
+      }
+    },
+    {
+      "id": "no-skill-greeting",
+      "category": "no-skill-clarify",
+      "tags": [
+        "chat",
+        "production_shape",
+        "zh"
+      ],
+      "prompt": "你好。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "chat",
+            "action": "read",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "pytest-debugging",
+          "codebase-explanation",
+          "documentation-writing",
+          "frontend-design",
+          "security-audit",
+          "database-tuning",
+          "deployment-automation",
+          "memory-audit",
+          "context-compaction",
+          "multi-agent-orchestration",
+          "git-workflow",
+          "performance-profiling"
+        ],
+        "outcome": "no_skill",
+        "promptMode": "inventory_names"
+      }
+    },
+    {
+      "id": "no-skill-date",
+      "category": "no-skill-clarify",
+      "tags": [
+        "question",
+        "production_shape",
+        "zh"
+      ],
+      "prompt": "今天是几月几日？",
+      "expected": {
+        "operations": [
+          {
+            "intent": "question",
+            "action": "read",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "pytest-debugging",
+          "codebase-explanation",
+          "documentation-writing",
+          "frontend-design",
+          "security-audit",
+          "database-tuning",
+          "deployment-automation",
+          "memory-audit",
+          "context-compaction",
+          "multi-agent-orchestration",
+          "git-workflow",
+          "performance-profiling"
+        ],
+        "outcome": "no_skill",
+        "promptMode": "inventory_names"
+      }
+    },
+    {
+      "id": "no-skill-news",
+      "category": "no-skill-clarify",
+      "tags": [
+        "search",
+        "production_shape",
+        "zh"
+      ],
+      "prompt": "帮我搜一下今天的热点新闻。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "search",
+            "action": "read",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "pytest-debugging",
+          "codebase-explanation",
+          "documentation-writing",
+          "frontend-design",
+          "security-audit",
+          "database-tuning",
+          "deployment-automation",
+          "memory-audit",
+          "context-compaction",
+          "multi-agent-orchestration",
+          "git-workflow",
+          "performance-profiling"
+        ],
+        "outcome": "no_skill",
+        "promptMode": "inventory_names"
+      }
+    },
+    {
+      "id": "no-skill-destructive-code",
+      "category": "no-skill-clarify",
+      "tags": [
+        "understood_no_match",
+        "destructive",
+        "zh"
+      ],
+      "prompt": "把根目录删了。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "code",
+            "action": "delete",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "pytest-debugging",
+          "codebase-explanation",
+          "documentation-writing",
+          "frontend-design",
+          "security-audit",
+          "database-tuning",
+          "deployment-automation",
+          "memory-audit",
+          "context-compaction",
+          "multi-agent-orchestration",
+          "git-workflow",
+          "performance-profiling"
+        ],
+        "outcome": "no_skill",
+        "promptMode": "inventory_names"
+      }
+    },
+    {
+      "id": "no-skill-ambiguous-reference",
+      "category": "no-skill-clarify",
+      "tags": [
+        "clarification",
+        "missing_context",
+        "zh"
+      ],
+      "prompt": "这个呢？",
+      "expected": {
+        "operations": [],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "pytest-debugging",
+          "codebase-explanation",
+          "documentation-writing",
+          "frontend-design",
+          "security-audit",
+          "database-tuning",
+          "deployment-automation",
+          "memory-audit",
+          "context-compaction",
+          "multi-agent-orchestration",
+          "git-workflow",
+          "performance-profiling"
+        ],
+        "outcome": "clarify",
+        "promptMode": "inventory_names"
+      }
+    },
+    {
+      "id": "no-skill-release-word",
+      "category": "no-skill-clarify",
+      "tags": [
+        "polysemy",
+        "question",
+        "mixed"
+      ],
+      "prompt": "release 这个词怎么翻译？",
+      "expected": {
+        "operations": [
+          {
+            "intent": "question",
+            "action": "read",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "deployment-automation",
+          "git-workflow"
+        ],
+        "outcome": "no_skill",
+        "promptMode": "inventory_names"
+      }
+    },
+    {
+      "id": "no-skill-docker-poem",
+      "category": "no-skill-clarify",
+      "tags": [
+        "domain_word",
+        "creative",
+        "mixed"
+      ],
+      "prompt": "写一首关于 Docker 的短诗。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "document",
+            "action": "create",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "deployment-automation",
+          "documentation-writing"
+        ],
+        "outcome": "no_skill",
+        "promptMode": "inventory_names"
+      }
+    },
+    {
+      "id": "no-skill-travel-agent",
+      "category": "no-skill-clarify",
+      "tags": [
+        "polysemy",
+        "review",
+        "mixed"
+      ],
+      "prompt": "比较两个旅游 agent 给出的海岛行程。",
+      "expected": {
+        "operations": [
+          {
+            "intent": "review",
+            "action": "compare",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "multi-agent-orchestration"
+        ],
+        "outcome": "no_skill",
+        "promptMode": "inventory_names"
+      }
+    },
+    {
+      "id": "no-skill-museum-frontend",
+      "category": "no-skill-clarify",
+      "tags": [
+        "polysemy",
+        "question",
+        "mixed"
+      ],
+      "prompt": "博物馆的 frontend 朝哪个方向？",
+      "expected": {
+        "operations": [
+          {
+            "intent": "question",
+            "action": "read",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "frontend-design"
+        ],
+        "outcome": "no_skill",
+        "promptMode": "inventory_names"
+      }
+    },
+    {
+      "id": "no-skill-bank-branch",
+      "category": "no-skill-clarify",
+      "tags": [
+        "polysemy",
+        "question",
+        "mixed"
+      ],
+      "prompt": "附近哪个 bank branch 周日营业？",
+      "expected": {
+        "operations": [
+          {
+            "intent": "question",
+            "action": "read",
+            "polarity": "affirmed"
+          }
+        ],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [
+          {
+            "operationIndex": 0,
+            "skills": []
+          }
+        ],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "git-workflow"
+        ],
+        "outcome": "no_skill",
+        "promptMode": "inventory_names"
+      }
+    },
+    {
+      "id": "no-skill-gibberish",
+      "category": "no-skill-clarify",
+      "tags": [
+        "abstention",
+        "unparseable"
+      ],
+      "prompt": "……xqz-17……",
+      "expected": {
+        "operations": [],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "pytest-debugging",
+          "codebase-explanation",
+          "documentation-writing",
+          "frontend-design",
+          "security-audit",
+          "database-tuning",
+          "deployment-automation",
+          "memory-audit",
+          "context-compaction",
+          "multi-agent-orchestration",
+          "git-workflow",
+          "performance-profiling"
+        ],
+        "outcome": "abstain",
+        "promptMode": "inventory_names"
+      }
+    },
+    {
+      "id": "no-skill-vague-action",
+      "category": "no-skill-clarify",
+      "tags": [
+        "clarification",
+        "missing_context",
+        "zh"
+      ],
+      "prompt": "把它处理一下。",
+      "expected": {
+        "operations": [],
+        "contextUsed": false,
+        "expectedCandidateSkills": [],
+        "operationSkillMap": [],
+        "requiredSkills": [],
+        "allowedInferredSkills": [],
+        "forbiddenSkills": [
+          "pytest-debugging",
+          "codebase-explanation",
+          "documentation-writing",
+          "frontend-design",
+          "security-audit",
+          "database-tuning",
+          "deployment-automation",
+          "memory-audit",
+          "context-compaction",
+          "multi-agent-orchestration",
+          "git-workflow",
+          "performance-profiling"
+        ],
+        "outcome": "clarify",
+        "promptMode": "inventory_names"
+      }
+    }
+  ]
+}

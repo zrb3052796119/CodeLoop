@@ -1,0 +1,704 @@
+--- baseline/minicode/intent_entity_targets.py
++++ candidate/minicode/intent_entity_targets.py
+@@ -0,0 +1,169 @@
++"""Literal file names and bounded references, independent of action authority.
++
++Callers must mask quoted/protected prose before extracting ordinary targets.
++These helpers return entity candidates only; they never infer an operation.
++"""
++
++from __future__ import annotations
++
++import re
++from collections.abc import Sequence
++
++
++_FILE_EXTENSIONS = (
++    r"py|pyi|js|mjs|cjs|ts|jsx|tsx|java|go|rs|cpp|cc|c|h|hpp|"
++    r"md|mdx|rst|txt|json|jsonl|yaml|yml|toml|ini|cfg|conf|"
++    r"log|csv|tsv|sql|sh|bash|zsh|ps1|bat|html|htm|css|scss|"
++    r"svg|png|jpe?g|gif|webp|ico|xml|lock|ipynb|env"
++)
++_DOT_FILES = (
++    r"\.(?:coveragerc|gitignore|gitattributes|dockerignore|editorconfig|"
++    r"npmrc|yarnrc|pypirc|prettierrc|babelrc|eslintrc|env(?:\.[A-Za-z0-9_-]+)?)"
++)
++# ASCII tokens may touch Chinese prose. Unicode names remain supported when
++# separated from prose, or when an ASCII directory establishes the path start.
++# Require a known extension or dotfile rather than treating arbitrary dotted
++# prose, version numbers or hostnames as files.
++FILE_TOKEN_RE = re.compile(
++    rf"(?<![A-Za-z0-9_./\\-])("
++    rf"(?:[A-Za-z0-9_./\\-]+\.(?:{_FILE_EXTENSIONS})|"
++    rf"[A-Za-z0-9_.-]+[/\\][\w/\\._-]+\.(?:{_FILE_EXTENSIONS})|"
++    rf"(?<=[\s`'\"“‘（(])[\w/\\._-]+\.(?:{_FILE_EXTENSIONS})|"
++    rf"[^\W\x00-\x7f]+(?:[_-][\w-]+)?\.(?:{_FILE_EXTENSIONS})|"
++    rf"(?:[A-Za-z0-9_./\\-]+[/\\])?{_DOT_FILES})"
++    rf")(?![A-Za-z0-9_/\\-]|\.[A-Za-z0-9_])",
++    re.IGNORECASE,
++)
++
++_REFERENCE_SWITCH_RE = re.compile(
++    r"(?:换到|切到|转到|另一个任务|另一个问题|先别管|别管|不是(?:它|这个|那个))|"
++    r"\b(?:switch\s+to|different\s+(?:task|issue)|not\s+(?:it|that))\b",
++    re.IGNORECASE,
++)
++_FILE_ANAPHOR_RE = re.compile(
++    r"(?:这|那)(?:一)?(?:份|个|段|条)?(?:文件|文档|日志|快照|导出(?:快照|文件)|配置)|"
++    r"(?:该|上述|前述)(?:文件|文档|日志|快照|配置)|"
++    r"(?:这|那)(?:一)?(?:行|段)|"
++    r"\b(?:this|that|the\s+same)\s+(?:file|document|log|snapshot|line|paragraph)\b",
++    re.IGNORECASE,
++)
++_ORDINAL_FILE_RE = re.compile(
++    r"(?P<latter>后一个文件|后者|\blatter\s+file\b)|"
++    r"(?P<former>前一个文件|前者|\bformer\s+file\b)|"
++    r"(?P<first>第一个文件|\bfirst\s+file\b)|"
++    r"(?P<second>第二个文件|\bsecond\s+file\b)|"
++    r"(?P<last>最后一个文件|\blast\s+file\b)",
++    re.IGNORECASE,
++)
++_TEST_EXTENSION_RE = re.compile(
++    r"^\s*(?:请|帮我)?\s*(?:(?:再|另外|额外)\s*(?:加|补|添加|增加)|追加)"
++    r"[^。！？;；\n]{0,80}(?:测试|用例|测例)|"
++    r"^\s*(?:please\s+)?(?:add|include)\s+(?:another|one\s+more|an?\s+additional)"
++    r"\b[^.!?;\n]{0,80}\b(?:test|case)\b",
++    re.IGNORECASE,
++)
++_TEST_REQUEST_RE = re.compile(
++    r"(?:添加|增加|新增|补充|编写|创建|生成|加|补|写)"
++    r"[^。！？;；\n]{0,64}(?:测试|用例|测例)|"
++    r"\b(?:add|write|create|implement|generate|extend|include)\b"
++    r"[^.!?;\n]{0,64}\b(?:tests?|cases?)\b",
++    re.IGNORECASE,
++)
++_TEST_SUBJECT_PREFIX_RE = re.compile(
++    r"^\s*(?:(?:请|帮我|麻烦)(?:先)?\s*)?(?:给|为|针对|对|在)\s*$|"
++    r"^\s*(?:please\s+)?(?:add|write|create|implement|generate|extend|include)\s+"
++    r"(?:(?:some|more|new|additional|unit|regression|boundary)\s+)*"
++    r"(?:tests?|test\s+cases?)\s+(?:for|in|to)\s*(?:the\s+)?$|"
++    r"^\s*(?:please\s+)?in\s+(?:the\s+)?$",
++    re.IGNORECASE,
++)
++_FILE_LIST_SEPARATOR_RE = re.compile(
++    r"^\s*(?:和|与|及|、|,|，|\band\b|\bor\b)\s*$", re.IGNORECASE
++)
++
++
++def extract_file_tokens(text: str) -> tuple[str, ...]:
++    """Return visible file literals in source order without duplicate names."""
++
++    return tuple(
++        dict.fromkeys(match.group(1) for match in FILE_TOKEN_RE.finditer(text))
++    )
++
++
++def has_file_reference(text: str, *, test_extension: bool = False) -> bool:
++    """Whether this text contains one of the bounded reference grammars."""
++
++    return bool(
++        _FILE_ANAPHOR_RE.search(text)
++        or _ORDINAL_FILE_RE.search(text)
++        or (test_extension and _TEST_EXTENSION_RE.search(text))
++    )
++
++
++def explicit_test_subject_files(text: str) -> tuple[str, ...]:
++    """Return files explicitly targeted by an earlier test-writing request.
++
++    A filename elsewhere in the same turn (for example an old result log)
++    cannot supply a new test write target. The caller masks protected prose
++    first. Unknown target syntax deliberately abstains.
++    """
++
++    targets: list[str] = []
++    for fragment in re.split(r"[。！？;；\n]|(?<=[.!?])\s+", text):
++        if not _TEST_REQUEST_RE.search(fragment):
++            continue
++        matches = tuple(FILE_TOKEN_RE.finditer(fragment))
++        for index, match in enumerate(matches):
++            if not _TEST_SUBJECT_PREFIX_RE.search(fragment[: match.start()]):
++                continue
++            targets.append(match.group(1))
++            previous = match
++            for following in matches[index + 1 :]:
++                if not _FILE_LIST_SEPARATOR_RE.fullmatch(
++                    fragment[previous.end() : following.start()]
++                ):
++                    break
++                targets.append(following.group(1))
++                previous = following
++    return tuple(dict.fromkeys(targets))
++
++
++def select_referenced_files(
++    text: str,
++    candidates: Sequence[str],
++    *,
++    test_extension: bool = False,
++) -> tuple[str, ...]:
++    """Resolve a narrow current reference without selecting an ambiguous file.
++
++    ``test_extension`` is permission to resolve a test *target*, not to create
++    a test operation. The caller must already have a current test operation
++    and a compatible, safe test context before enabling it.
++    """
++
++    files = tuple(dict.fromkeys(str(candidate) for candidate in candidates))
++    if not files or len(text) > 240 or extract_file_tokens(text):
++        return ()
++    if _REFERENCE_SWITCH_RE.search(text):
++        return ()
++    positional = tuple(_ORDINAL_FILE_RE.finditer(text))
++    if positional:
++        if len(positional) != 1:
++            return ()
++        reference = positional[0]
++        # Relative former/latter references require an actual pair, whereas
++        # an explicit first/second/last index is defined for longer lists.
++        if reference.group("latter") or reference.group("former"):
++            if len(files) != 2:
++                return ()
++            return (files[1] if reference.group("latter") else files[0],)
++        if reference.group("second"):
++            return (files[1],) if len(files) >= 2 else ()
++        return (files[-1] if reference.group("last") else files[0],)
++    if len(files) != 1:
++        return ()
++    if _FILE_ANAPHOR_RE.search(text):
++        return files
++    if test_extension and _TEST_EXTENSION_RE.search(text):
++        return files
++    return ()
+--- baseline/minicode/intent_negation.py
++++ candidate/minicode/intent_negation.py
+@@ -41,7 +41,7 @@
+ )
+ _CHINESE_ACTION_PATTERN = (
+     r"(?:使用|用|调用|加载|应用|按照|选择|选用|修改|改|更新|调整|删除|删|"
+-    r"移除|运行|执行|跑|触碰|碰|动|变|写|编写|创建|建|生成|新增|添加|实现|补齐|补充|"
++    r"移除|移到|运行|执行|跑|触碰|碰|动|变|写|编写|创建|建|生成|新增|添加|实现|补齐|补充|"
+     r"给(?=(?:我)?(?:写)?(?:代码|程序))|"
+     r"提交|升级|升(?=一?下|版)|复现|讲清(?:楚)?|"
+     r"讲(?=流程|链路|调用|大道理|空话|套话|原因|原理|过程|细节)|换掉|挪|"
+--- baseline/minicode/intent_parser.py
++++ candidate/minicode/intent_parser.py
+@@ -20,6 +20,12 @@
+     TestConstraintAction,
+     TestConstraintState,
+     extract_test_constraints,
++)
++from minicode.intent_entity_targets import (
++    FILE_TOKEN_RE,
++    extract_file_tokens,
++    has_file_reference,
++    select_referenced_files,
+ )
+ from minicode.intent_negation import (
+     ACTION_MARKER_RE,
+@@ -140,6 +146,16 @@
+ 
+ _CODE_PATTERNS = [
+     (
++        # An explicit existing source file makes an added behavior an update,
++        # including object-fronted requests followed by a separate document.
++        r"(?:给|为|在)\s*[\w/\\._-]+\."
++        r"(?:py|js|ts|jsx|tsx|java|go|rs|cpp|c|h)\b\s*(?:中|里)?\s*"
++        r"(?P<action_extend_source>增加|添加|新增|补充)"
++        r"[^,，。！？;；\n]{0,64}(?:逻辑|功能|支持|处理)",
++        IntentType.CODE,
++        ActionType.UPDATE,
++    ),
++    (
+         r"\b(?P<action_release_unchanged>it\s+is\s+not\s+the\s+case\s+that)\s+"
+         r"[\w/\\._-]+\.(?:py|js|ts|jsx|tsx|java|go|rs|cpp|c|h|"
+         r"json|yaml|yml|toml)\s+(?:must|should|has\s+to)\s+"
+@@ -534,6 +550,18 @@
+ # turn a failing test or a measured latency investigation into a code review.
+ _PRECISE_DEBUG_PATTERNS = [
+     (
++        # The requested output is a cause of observed software behavior.
++        # These diagnostic goals outrank a preceding generic reading step.
++        r"(?P<action_causal_diagnosis>分析|诊断|排查)"
++        r"[^,，。！？;；\n]{0,48}"
++        r"(?:错误|故障|失败|异常|报错|缓存|命中率|成功率|延迟|耗时|吞吐量)"
++        r"[^,，。！？;；\n]{0,48}(?:原因|根因)|"
++        r"\b(?P<action_diagnose_cause>diagnose|investigate)\s+"
++        r"(?:the\s+)?(?:root\s+)?cause\b",
++        IntentType.DEBUG,
++        ActionType.ANALYZE,
++    ),
++    (
+         r"(?:只|仅)\s*(?P<action_checkout_probe>看|查|分析)(?:一?下)?"
+         r"[^,，。！？;；\n]{0,32}(?:结账|支付|订单)"
+         r"[^,，。！？;；\n]{0,24}(?:服务|接口|链路|查询)"
+@@ -741,6 +769,15 @@
+ )
+ 
+ _EXPLAIN_PATTERNS = [
++    (
++        r"^\s*(?:请\s*)?(?:只|仅)?\s*"
++        r"(?P<action_described_goal>解释|说明)(?:一?下)?"
++        r"[^,，。！？;；\n]{0,24}(?:命令|代码|脚本|建议|方案|操作)"
++        r"[^,，。！？;；\n]{0,32}(?:为什么|为何|希望|打算|试图|旨在)"
++        r"[^,，。！？;；\n]{0,48}(?:什么|哪些|问题|文件)",
++        IntentType.EXPLAIN,
++        ActionType.READ,
++    ),
+     (
+         r"(?P<action_explain_hypothetical>只讲(?:一?下)?|解释|说明)"
+         r"[^。！？!?;；\n]{0,40}(?:如果|假如|要是)[^。！？!?;；\n]{0,32}"
+@@ -1055,6 +1092,12 @@
+ ]
+ 
+ _SEARCH_PATTERNS = [
++    (
++        r"(?P<action_read_implementation>阅读)\s*"
++        r"(?:现有|当前|已有|现行)?\s*(?:代码|实现|源码)",
++        IntentType.SEARCH,
++        ActionType.READ,
++    ),
+     (
+         r"\b(?:rather\s+than\s+continuing\s+(?:that|it)\s*[,，]?\s*)?"
+         r"(?P<action_read_file>read)\s+"
+@@ -1200,6 +1243,15 @@
+ ]
+ 
+ _MOVE_PATTERNS = [
++    (
++        # Two explicitly named files make the colloquial destination verb a
++        # bounded file operation; filename recognition is shared downstream.
++        r"(?:把|将)\s*[\w/\\.-]+\.[a-z0-9]{1,10}\s*"
++        r"(?P<action_path_move>移到|挪到|移动到)\s*"
++        r"[\w/\\.-]+\.[a-z0-9]{1,10}(?![a-z0-9_])",
++        IntentType.CODE,
++        ActionType.MOVE,
++    ),
+     (
+         r"\b(?P<action>move)\b.{0,40}\b(?:files?|modules?|packages?)\b"
+         r".{0,48}\b(?:update|change|fix)\b.{0,24}"
+@@ -4513,6 +4565,61 @@
+     r"(?:然后|再|现在|而是|马上|立即)",
+     re.IGNORECASE,
+ )
++_EXPLANATION_EMBEDDED_QUESTION_RE = re.compile(
++    r"(?:为什么|为何|怎样|如何|哪些|什么|是否)|"
++    r"\b(?:why|how|what|which|whether)\b",
++    re.IGNORECASE,
++)
++_EXPLANATION_DESCRIBED_SUBJECT_RE = re.compile(
++    r"(?:它|这(?:条|段|个|项)|该)(?:命令|代码|脚本|建议|方案|操作|功能)?"
++    r"[^,，。！？;；\n]{0,24}(?:想|希望|打算|试图|旨在|要|会)\s*$|"
++    r"\b(?:this|that|the)\s+(?:command|code|script|suggestion|operation)\b"
++    r"[^.!?;\n]{0,32}\b(?:to|would|will)\s*$",
++    re.IGNORECASE,
++)
++_POSTPOSED_SOURCE_ADVICE_RE = re.compile(
++    r"^\s*(?:日志|控制台|报告|输出|文档)(?:里|中)(?:的)?\s+"
++    r"(?:只是|仅是|是)\s*(?:应用|程序|系统|工具|作者)"
++    r"(?:打印出|输出|给出|提出)(?:来)?的\s*(?:建议|提示|说明)"
++    r"[。.!！]?\s*$",
++    re.IGNORECASE,
++)
++_EXECUTION_CIRCUMSTANCE_SUFFIX_RE = re.compile(
++    r"^\s*[^,，。！？;；\n]{1,96}?(?:的时候|期间|时)\s*[,，]?"
++    r"(?P<result>[^。！？;；\n]{0,120})",
++    re.IGNORECASE,
++)
++_EXECUTION_CIRCUMSTANCE_RESULT_RE = re.compile(
++    r"(?:导致|出现|发生|取不到|无法|不能|返回了)|"
++    r"(?:报错|失败|崩溃|卡住)(?:了|啦)?(?=$|[\s,，。.!！]|的?原因)|"
++    r"\b(?:fails?|failed|crashes?|crashed|raises?|raised|returns?|returned)\b|"
++    r"\b(?:is|are|was|were)\s+missing\b",
++    re.IGNORECASE,
++)
++_EXECUTION_CIRCUMSTANCE_PREFIX_RE = re.compile(
++    r"^\s*(?:when|while)\s*$", re.IGNORECASE
++)
++_EXECUTION_CONDITIONAL_OR_DIRECTIVE_RE = re.compile(
++    # A condition or prescribed consequence does not assert an observed
++    # result. Recognize its grammar independently of the handler's vocabulary.
++    r"(?:如果|一旦|倘若|若是|若|就|则|那么|应当|应该|需要|必须|请)|"
++    r"(?<!需)要(?!求)|\b(?:if|unless|whenever|then|must|should|please)\b",
++    re.IGNORECASE,
++)
++_EXECUTION_CONSEQUENCE_ADVERB_RE = re.compile(
++    r"(?:立即|立刻|马上)|\bimmediately\b", re.IGNORECASE
++)
++_GENERIC_CAUSE_DIAGNOSIS_RE = re.compile(
++    r"\b(?:diagnose|investigate)\s+(?:the\s+)?(?:root\s+)?cause\b|"
++    r"(?:分析|诊断|排查)[^,，。！？;；\n]{0,48}"
++    r"(?:错误|故障|失败|异常|报错|缓存|命中率|成功率|延迟|耗时|吞吐量)"
++    r"[^,，。！？;；\n]{0,48}(?:原因|根因)",
++    re.IGNORECASE,
++)
++_CAUSAL_SOFTWARE_SUBJECT_RE = re.compile(
++    r"(?:缓存|源码|(?:现有|当前|已有)实现)|\b(?:cache|source\s+code)\b",
++    re.IGNORECASE,
++)
+ _INSTRUCTIONAL_EXECUTION_PREFIX_RE = re.compile(
+     r"^\s*(?:(?:请|麻烦)?\s*"
+     r"(?:说说|讲讲|解释|说明|告诉我|教我|请问|想知道)"
+@@ -4700,6 +4807,16 @@
+         return False
+     if _EXPLANATION_COMPLEMENT_PREFIX_RE.fullmatch(before):
+         return True
++    if governor is not None and _EXPLANATION_EMBEDDED_QUESTION_RE.search(
++        clause[governor.start() :]
++    ):
++        # ``explain what the command fixes`` and ``说明它想解决什么``
++        # embed an action below an explanatory question. The outer request
++        # grants reading authority; its subject's verb grants none.
++        if _EXPLANATION_EMBEDDED_QUESTION_RE.search(before) or (
++            _EXPLANATION_DESCRIBED_SUBJECT_RE.search(before)
++        ):
++            return True
+     return bool(
+         governor is not None
+         and _RENAME_EFFECT_QUESTION_RE.search(after)
+@@ -4731,12 +4848,53 @@
+ def _is_reported_execution_mention(
+     clause: str,
+     trigger_span: tuple[int, int],
++    *,
++    following_text: str = "",
+ ) -> bool:
+     """Reject status prose that happens to contain an execution verb."""
+ 
+     start, end = trigger_span
+     before = clause[:start]
+     after = clause[end:]
++    # A comma before a handler can be split into another parser clause. Keep
++    # that immediate continuation in the execution frame; a new sentence has
++    # independent authority and cannot turn a report back into a command.
++    continuation = re.split(
++        r"[。！？;；\n]|\.(?=\s|$)", following_text, maxsplit=1
++    )[0]
++    if re.match(
++        r"^[,，]\s*(?:(?:请|麻烦|帮我|please)\s*)?"
++        + _CONTEXT_SAFE_PROBE_FRAGMENT,
++        continuation,
++        re.IGNORECASE,
++    ):
++        # Asking to inspect a reported outcome is a separate read-only task,
++        # not an instruction for how to handle a future process failure.
++        continuation = ""
++    circumstance = _EXECUTION_CIRCUMSTANCE_SUFFIX_RE.match(after)
++    result = (
++        circumstance.group("result")
++        if circumstance is not None
++        else after.split(",", 1)[-1]
++        if _EXECUTION_CIRCUMSTANCE_PREFIX_RE.fullmatch(before)
++        else ""
++    ).lstrip()
++    fact = _EXECUTION_CIRCUMSTANCE_RESULT_RE.search(result)
++    leading_action = ACTION_MARKER_RE.match(result)
++    if (
++        fact is not None
++        and not is_span_negated(clause, trigger_span)
++        and not _EXPLICIT_ACTION_REQUEST_PREFIX_RE.search(before)
++        and not _EXECUTION_CONDITIONAL_OR_DIRECTIVE_RE.search(
++            before + result + continuation
++        )
++        and not _EXECUTION_CONSEQUENCE_ADVERB_RE.search(result[fact.end() :])
++        and not (leading_action is not None and leading_action.start() < fact.start())
++    ):
++        # A factual predicate is positive evidence of background discourse.
++        # A leading task verb such as ``记录所有失败请求`` governs its failure
++        # noun; a conditional such as ``如果失败立即退出`` asserts no result.
++        return True
+     return bool(
+         (
+             _EXECUTION_SUBJECT_BEFORE_STATUS_RE.search(before)
+@@ -5121,11 +5279,7 @@
+     r"(?:different|new)\s+(?:task|issue|target|file))\b",
+     re.IGNORECASE,
+ )
+-_CONTEXT_FILE_TARGET_RE = re.compile(
+-    r"\b([\w/\\._-]+\.(?:py|js|ts|jsx|tsx|java|go|rs|cpp|c|h|md|"
+-    r"json|yaml|yml|toml))\b",
+-    re.IGNORECASE,
+-)
++_CONTEXT_FILE_TARGET_RE = FILE_TOKEN_RE
+ 
+ 
+ def _isolated_protected_file_targets(text: str) -> tuple[str, ...]:
+@@ -6098,6 +6252,20 @@
+             context_frame_conflict=context_frame_conflict,
+         )
+ 
++        operations, evidence, reference_context_used, referenced_files = (
++            self._bind_current_file_references(
++                text,
++                operations,
++                evidence,
++                bounded_context,
++                previous_intent=previous_intent,
++                context_frame_conflict=context_frame_conflict,
++            )
++        )
++        context_used = context_used or reference_context_used
++        if referenced_files is not None:
++            context_entities = {**context_entities, "files": list(referenced_files)}
++
+         semantic_status = "disabled"
+         warnings: list[str] = []
+         if self._semantic_adapter is not None:
+@@ -6203,8 +6371,22 @@
+             confidence = primary.confidence
+ 
+         entities = self._extract_entities(text)
++        visible_or_named_files = set(entities["files"]) | set(_isolated_protected_file_targets(text))
++        current_file_reference = has_file_reference(_mask_protected_intent_literals(text))
++        operation_files = self._stable_values(
++            [
++                target
++                for operation in operations
++                for target in operation.entities.get("files", ())
++                if context_used or target in visible_or_named_files or current_file_reference
++            ]
++        )
+         if context_used:
+-            entities = self._merge_entities(entities, context_entities)
++            context_projection = dict(context_entities)
++            if operation_files:
++                context_projection["files"] = operation_files
++            entities = self._merge_entities(entities, context_projection)
++        entities = self._merge_entities(entities, {"files": operation_files})
+         keywords = self._extract_keywords(text)
+         if context_used:
+             for topic in context_topics:
+@@ -6263,6 +6445,115 @@
+                 if turn.role == "user"
+             ),
+         )
++
++    def _bind_current_file_references(
++        self,
++        text: str,
++        operations: tuple[IntentOperation, ...],
++        evidence: tuple[IntentEvidence, ...],
++        context: IntentContext,
++        *,
++        previous_intent: ParsedIntent | None,
++        context_frame_conflict: bool,
++    ) -> tuple[
++        tuple[IntentOperation, ...], tuple[IntentEvidence, ...], bool, tuple[str, ...] | None
++    ]:
++        """Bind an already recognized operation to a bounded file reference.
++
++        History can supply an entity, never an operation. Read-only references
++        may describe a canceled command's object; a test continuation needs an
++        explicit earlier test target, not merely a file mentioned in that turn.
++        """
++
++        from minicode.intent_entity_targets import explicit_test_subject_files
++
++        if context_frame_conflict:
++            return operations, evidence, False, None
++        matching_text = _mask_protected_intent_literals(text)
++        if extract_file_tokens(matching_text) or _isolated_protected_file_targets(text):
++            return operations, evidence, False, None
++        if context.active_task:
++            frame = context.active_task
++        elif context.previous_intent is not None:
++            frame = context.previous_intent.raw_input
++        else:
++            frame = next(
++                (turn.content for turn in reversed(context.recent_turns) if turn.role == "user"),
++                "",
++            )
++        candidates = self._extract_entities(frame)["files"]
++        if not candidates:
++            return operations, evidence, False, None
++        previous = previous_intent.primary_operation if previous_intent is not None else None
++        safe_previous = bool(previous and previous.action_type not in _UNSAFE_CONTEXT_ACTIONS)
++        test_subjects: tuple[str, ...] = ()
++        if safe_previous and previous is not None and previous.intent_type is IntentType.TEST:
++            frame_intent = (
++                previous_intent
++                if previous_intent is not None and previous_intent.raw_input == frame
++                else self._parse_internal(
++                    frame, context=None, call_context=None, allow_semantic=False
++                )
++            )
++            test_subjects = tuple(dict.fromkeys(
++                target
++                for prior_operation in frame_intent.affirmed_operations
++                if prior_operation.intent_type is IntentType.TEST
++                and prior_operation.action_type in {ActionType.CREATE, ActionType.UPDATE}
++                for target in explicit_test_subject_files(
++                    _mask_protected_intent_literals(prior_operation.clause)
++                )
++            ))
++        updated: list[IntentOperation] = []
++        added: list[IntentEvidence] = []
++        projection: tuple[str, ...] | None = None
++        for operation in operations:
++            clause = _mask_protected_intent_literals(operation.clause)
++            test_extension = bool(
++                operation.intent_type is IntentType.TEST
++                and operation.action_type in {ActionType.CREATE, ActionType.UPDATE}
++                and safe_previous
++                and previous is not None
++                and previous.intent_type is IntentType.TEST
++            )
++            read_only = operation.action_type in _READ_ONLY_CONTEXT_ACTIONS
++            if (
++                operation.polarity is not IntentPolarity.AFFIRMED
++                or not (read_only or test_extension)
++                or not has_file_reference(clause, test_extension=test_extension)
++            ):
++                updated.append(operation)
++                continue
++            operation_candidates = (
++                test_subjects
++                if test_extension
++                else candidates
++            )
++            selected = select_referenced_files(
++                clause, operation_candidates, test_extension=test_extension
++            )
++            projection = selected
++            replacement_entities = {**operation.entities, "files": selected}
++            if not selected:
++                # Keep the current operation but refuse an ambiguous or
++                # explicitly switched target inherited by a broader rule.
++                updated.append(replace(operation, entities=replacement_entities))
++                continue
++            code = "context:file-reference"
++            updated.append(replace(
++                operation,
++                entities=replacement_entities,
++                evidence_codes=tuple(dict.fromkeys((*operation.evidence_codes, code))),
++            ))
++            added.append(IntentEvidence(
++                code=code,
++                source=EvidenceSource.CONTEXT,
++                reason="the current file reference selects an unambiguous target in the active context",
++                strength=operation.confidence,
++                span=operation.span,
++                turn_offset=-1,
++            ))
++        return tuple(updated), (*evidence, *added), bool(added), projection
+ 
+     def _retracted_safety_constraints(
+         self,
+@@ -6641,6 +6932,31 @@
+                 shared_leading_subject_keywords = self._extract_keywords(
+                     matching_clause
+                 )
++            if (
++                _GENERIC_CAUSE_DIAGNOSIS_RE.search(matching_clause)
++                and not _has_affirmed_software_subject(detection_text)
++                and not _CAUSAL_SOFTWARE_SUBJECT_RE.search(
++                    _affirmed_evidence_projection(detection_text)
++                )
++                and not (
++                    context_available
++                    and _DIAGNOSTIC_CONTEXT_TOPICS.intersection(context_topics)
++                )
++            ):
++                # A causal question remains meaningful outside software.
++                # Specialize only its domain; do not discard the outer read
++                # request after the debug rule won the same-verb competition.
++                pattern_candidates = tuple(
++                    replace(
++                        candidate,
++                        intent_type=IntentType.EXPLAIN,
++                        action_type=ActionType.READ,
++                    )
++                    if candidate.intent_type is IntentType.DEBUG
++                    and candidate.action_type is ActionType.ANALYZE
++                    else candidate
++                    for candidate in pattern_candidates
++                )
+             pattern_candidates = tuple(
+                 candidate
+                 for candidate in pattern_candidates
+@@ -6690,6 +7006,7 @@
+                     and _is_reported_execution_mention(
+                         matching_clause,
+                         candidate.trigger_span,
++                        following_text=detection_text[clause_span[1] :],
+                     )
+                 )
+                 and not (
+@@ -6873,6 +7190,7 @@
+                     and _is_reported_execution_mention(
+                         matching_clause,
+                         cue[2],
++                        following_text=detection_text[clause_span[1] :],
+                     )
+                 ):
+                     cue = None
+@@ -8476,7 +8794,9 @@
+         actionable_clauses = [
+             (clause, span)
+             for clause, span in clauses
+-            if not self._semantic_clause_is_non_instruction(clause)
++            if not self._semantic_clause_is_non_instruction(
++                clause, following_text=active_text[span[1] :]
++            )
+         ]
+         if not actionable_clauses:
+             return None
+@@ -8504,7 +8824,9 @@
+                 unresolved.append((clause, clause_span))
+         return unresolved[0] if len(unresolved) == 1 else None
+ 
+-    def _semantic_clause_is_non_instruction(self, clause: str) -> bool:
++    def _semantic_clause_is_non_instruction(
++        self, clause: str, *, following_text: str = ""
++    ) -> bool:
+         """Do not reoffer inert source material as missing command evidence.
+ 
+         The deterministic filters and semantic admission must agree: otherwise
+@@ -8514,6 +8836,17 @@
+ 
+         matching_clause = _mask_protected_intent_literals(clause)
+         if re.search(r"\w", matching_clause) is None:
++            return True
++        if _POSTPOSED_SOURCE_ADVICE_RE.fullmatch(matching_clause):
++            return True
++        action_markers = tuple(ACTION_MARKER_RE.finditer(matching_clause))
++        if action_markers and all(
++            re.fullmatch(r"run(?:ning)?|execut(?:e|ing)|运行|执行|跑", marker[0], re.I)
++            and _is_reported_execution_mention(
++                matching_clause, marker.span(), following_text=following_text
++            )
++            for marker in action_markers
++        ):
+             return True
+         report_prefix = _REPORTED_OPERATION_SOURCE_PREFIX_RE.match(matching_clause)
+         if report_prefix is not None and re.search(
+@@ -8535,6 +8868,14 @@
+                     matching_clause.rstrip(" \t\r\n。.!！?？，,")
+                 )
+             )
++        if all(
++            action is ActionType.EXECUTE
++            and _is_reported_execution_mention(
++                matching_clause, span, following_text=following_text
++            )
++            for action, span in candidates
++        ):
++            return True
+         return bool(
+             candidates
+             and any(
+@@ -9786,13 +10127,7 @@
+         }
+         matching_text = _mask_protected_intent_literals(text)
+ 
+-        file_pattern = re.compile(
+-            r"\b([\w/\\._-]+\.(?:py|js|ts|jsx|tsx|java|go|rs|cpp|c|h|md|json|yaml|yml|toml))\b",
+-            re.IGNORECASE,
+-        )
+-        for m in file_pattern.finditer(matching_text):
+-            if m.group(1) not in entities["files"]:
+-                entities["files"].append(m.group(1))
++        entities["files"] = list(extract_file_tokens(matching_text))
+ 
+         func_pattern = re.compile(
+             r"\b(def|fn|func|function)\s+([\w_]+)\b", re.IGNORECASE

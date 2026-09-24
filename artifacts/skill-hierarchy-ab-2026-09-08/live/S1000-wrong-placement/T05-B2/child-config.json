@@ -1,0 +1,15 @@
+{
+  "task_id": "T05",
+  "prompt": "CI jobs flake a few times a week because artifact uploads hit an overly aggressive timeout. Where should we tune the timeout budgets for the pipeline steps?",
+  "scale": "S1000",
+  "variant": "wrong-placement",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-wrong-placement",
+  "run_dir": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/live/S1000-wrong-placement/T05-B2",
+  "snapshot": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/snapshot",
+  "fake_scenario": null,
+  "fake_target": "",
+  "max_steps": 8,
+  "call_timeout_seconds": 60.0,
+  "run_timeout_seconds": 480.0
+}

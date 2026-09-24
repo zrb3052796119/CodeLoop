@@ -1,0 +1,94 @@
+{
+  "old50_disabled": {
+    "metrics_all_equal": true,
+    "cases_equal": true,
+    "sources_match": true,
+    "live_runtime_equal": null,
+    "improved_ids": [],
+    "regressed_ids": []
+  },
+  "old50_live": {
+    "metrics_all_equal": true,
+    "cases_equal": true,
+    "sources_match": true,
+    "live_runtime_equal": true,
+    "improved_ids": [
+      "C09"
+    ],
+    "regressed_ids": [
+      "C23"
+    ]
+  },
+  "prior40_disabled": {
+    "metrics_all_equal": true,
+    "cases_equal": true,
+    "sources_match": true,
+    "live_runtime_equal": null,
+    "improved_ids": [],
+    "regressed_ids": []
+  },
+  "prior40_live": {
+    "metrics_all_equal": true,
+    "cases_equal": true,
+    "sources_match": true,
+    "live_runtime_equal": true,
+    "improved_ids": [],
+    "regressed_ids": []
+  },
+  "priorfresh40_disabled": {
+    "metrics_all_equal": true,
+    "cases_equal": true,
+    "sources_match": true,
+    "live_runtime_equal": null,
+    "improved_ids": [
+      "H13",
+      "H33",
+      "H36"
+    ],
+    "regressed_ids": []
+  },
+  "priorfresh40_live": {
+    "metrics_all_equal": true,
+    "cases_equal": true,
+    "sources_match": true,
+    "live_runtime_equal": true,
+    "improved_ids": [
+      "H13",
+      "H33",
+      "H36"
+    ],
+    "regressed_ids": [
+      "H03",
+      "H07",
+      "H24",
+      "H26"
+    ]
+  },
+  "fresh50_disabled": {
+    "metrics_all_equal": true,
+    "cases_equal": true,
+    "sources_match": true,
+    "live_runtime_equal": null,
+    "improved_ids": [],
+    "regressed_ids": []
+  },
+  "fresh50_live": {
+    "metrics_all_equal": true,
+    "cases_equal": true,
+    "sources_match": true,
+    "live_runtime_equal": true,
+    "improved_ids": [
+      "T19",
+      "T42",
+      "T44"
+    ],
+    "regressed_ids": [
+      "T01",
+      "T08",
+      "T17",
+      "T21",
+      "T23",
+      "T38"
+    ]
+  }
+}

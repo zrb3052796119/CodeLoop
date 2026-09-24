@@ -1,0 +1,152 @@
+{
+  "task_id": "T01",
+  "scale": "S100",
+  "variant": "wrong-placement",
+  "arm": "B",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-wrong-placement",
+  "fake": true,
+  "fake_scenario": "oracle",
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "fake-1",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "message-queue"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "de6a7d95da4de7ce6869ff6d26b4965b3df42b1ba7f2d6a4132fddc77e5fdc31",
+      "output_chars": 2514,
+      "seen_qualified_names": [
+        "message-queue/backpressure",
+        "message-queue/bounce-back-queue",
+        "message-queue/circuit-breaker",
+        "message-queue/consumer-throttle",
+        "message-queue/debugging-playbook",
+        "message-queue/dedup-exchange-filter",
+        "message-queue/idempotency",
+        "message-queue/idempotent-consumer-template",
+        "message-queue/index-feed-lag",
+        "message-queue/pagination",
+        "message-queue/performance-tuning",
+        "message-queue/rate-limiting",
+        "message-queue/retry-backoff",
+        "message-queue/security-hardening",
+        "message-queue/timeout-tuning"
+      ],
+      "seen_directories": [
+        "message-queue"
+      ],
+      "elapsed_ms": 0.35466591361910105
+    },
+    {
+      "step": 2,
+      "tool_call_id": "fake-2",
+      "name": "load_skill",
+      "args": {
+        "name": "message-queue/retry-backoff"
+      },
+      "ok": true,
+      "output_sha256": "2cdf1663cd00f4fa5d5305acdfeb004da7380987a19eebf2330942f32b87e2d6",
+      "output_chars": 1725,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 0.24737499188631773
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "fake-2",
+      "requested_name": "message-queue/retry-backoff",
+      "qualified_name": "message-queue/retry-backoff",
+      "ok": true,
+      "body_chars": 1500,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "fc804a09bf3cce23c28606483e563501527d0182bd69ab6cf4013578cf46d8e0",
+      "elapsed_ms": 0.09949994273483753,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "estimated",
+        "inputTokens": 2787,
+        "outputTokens": 8,
+        "cacheReadTokens": null,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "c8ad2de8ff42d13a223a94d8432bf7a2140f0dc2befd5ef4b1913c0ded0f1877",
+      "elapsed_ms": 0.0730000901967287,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "estimated",
+        "inputTokens": 3416,
+        "outputTokens": 8,
+        "cacheReadTokens": null,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; any other tool request stops the run and is recorded as blocked.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "f8d0ff2c5402c35727774d20d9d50c4ef18bfaa9e27f114ed2d4262c4564740b",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "410a067d65fcf8e7576ba5aa58491f208adf5368d5afe8fe360020bc7c97a226",
+  "system_prompt_chars": 10916,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "ScriptedSkillModel",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 6203,
+  "output_tokens": 16,
+  "routing_events": [],
+  "elapsed_ms": 550.1140840351582
+}

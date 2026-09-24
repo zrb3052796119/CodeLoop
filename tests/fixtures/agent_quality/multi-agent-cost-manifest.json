@@ -1,0 +1,596 @@
+{
+  "schemaVersion": 1,
+  "suiteId": "minicode-multi-agent-cost-v1",
+  "description": "Frozen multi-agent cost-efficiency cases. All 12 cases carry recorded live evidence: the 5 fan-out cases reuse the sealed north-star multi-agent identities and oracles; the 3 direct-general-rejection and 4 workflow-chain cases embed their executable definitions (turns, files, oracles, authorizedPaths) and were recorded by scripts/run_multi_agent_cost_live.py. The direct-general-rejection cases pin the sealed production refusal of direct state-changing 'general' dispatch (error[central_scheduler_required], zero sub-agents, zero writes) instead of the pre-enforcement delegation shape.",
+  "cases": [
+    {
+      "id": "multiagent-architecture",
+      "category": "parallel-readonly-fanout",
+      "mutability": "read_only",
+      "evidenceStatus": "recorded",
+      "northStarCaseId": "multiagent-architecture",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-subagents",
+        "synthesis-facts"
+      ],
+      "topology": {
+        "expectedSubagents": {
+          "explore": 2
+        },
+        "maxSubagents": 4
+      },
+      "description": "Spawn two read-only explore sub-agents in parallel (implementation and tests) and synthesize the architecture answer without edits."
+    },
+    {
+      "id": "multiagent-test-risk",
+      "category": "parallel-readonly-fanout",
+      "mutability": "read_only",
+      "evidenceStatus": "recorded",
+      "northStarCaseId": "multiagent-test-risk",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-subagents",
+        "synthesis-facts"
+      ],
+      "topology": {
+        "expectedSubagents": {
+          "explore": 2
+        },
+        "maxSubagents": 4
+      },
+      "description": "Same parallel explore fan-out answering the test-risk question. The accepted rerun needed a second explore wave after four turn-limited attempts, which the maxSubagents bound accommodates."
+    },
+    {
+      "id": "multiagent-data-flow",
+      "category": "parallel-readonly-fanout",
+      "mutability": "read_only",
+      "evidenceStatus": "recorded",
+      "northStarCaseId": "multiagent-data-flow",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-subagents",
+        "synthesis-facts"
+      ],
+      "topology": {
+        "expectedSubagents": {
+          "explore": 2
+        },
+        "maxSubagents": 4
+      },
+      "description": "Parallel explore fan-out tracing the order data flow without edits."
+    },
+    {
+      "id": "multiagent-reliability",
+      "category": "parallel-readonly-fanout",
+      "mutability": "read_only",
+      "evidenceStatus": "recorded",
+      "northStarCaseId": "multiagent-reliability",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-subagents",
+        "synthesis-facts"
+      ],
+      "topology": {
+        "expectedSubagents": {
+          "explore": 2
+        },
+        "maxSubagents": 4
+      },
+      "description": "Parallel explore fan-out auditing reliability and retry behavior without edits."
+    },
+    {
+      "id": "multiagent-change-impact",
+      "category": "parallel-readonly-fanout",
+      "mutability": "read_only",
+      "evidenceStatus": "recorded",
+      "northStarCaseId": "multiagent-change-impact",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-subagents",
+        "synthesis-facts"
+      ],
+      "topology": {
+        "expectedSubagents": {
+          "explore": 2
+        },
+        "maxSubagents": 4
+      },
+      "description": "Parallel explore fan-out assessing change impact across modules without edits."
+    },
+    {
+      "id": "mac-single-general-bugfix-delegation",
+      "category": "direct-general-rejection",
+      "mutability": "read_only",
+      "evidenceStatus": "recorded",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "delegation-rejected",
+        "no-writes"
+      ],
+      "topology": {
+        "expectedSubagents": {
+          "general": 1
+        },
+        "maxSubagents": 2
+      },
+      "description": "Rejection contract: a direct state-changing 'general' dispatch must be refused with error[central_scheduler_required], no sub-agent may start, and the workspace must stay byte-identical (mutability read_only denies every edit). Production routing hard-codes central scheduling, so the sealed refusal is the behavior under test.",
+      "files": {
+        ".mini-code/skills/reliability-review/SKILL.md": "---\nname: reliability-review\ndescription: Use for reliability review, risk inspection, and verification planning.\nkeywords: [reliability, risk, verification, review]\n---\n\n# Reliability Review\n\nInspect implementation and tests before making claims. Distinguish verified\nfacts from hypotheses. Every final response must contain the exact marker\n`RELIABILITY_SKILL_APPLIED` and name at least one concrete verifier.\n",
+        "README.md": "# Northstar Sample\n\nA small deterministic Python service.\n",
+        "northstar/__init__.py": "\"\"\"Northstar acceptance fixture.\"\"\"\n",
+        "northstar/architecture.py": "\"\"\"Call-flow facts for read-only and multi-agent cases.\"\"\"\n\n\ndef validate_order(order: dict) -> None:\n    if not order.get(\"lines\"):\n        raise ValueError(\"empty order\")\n\n\ndef reserve_stock(order: dict) -> str:\n    return \"reservation:\" + order[\"id\"]\n\n\ndef charge_card(order: dict, reservation: str) -> str:\n    return \"payment:\" + reservation\n\n\ndef publish_order_created(order: dict, payment: str) -> str:\n    return f\"created:{order['id']}:{payment}\"\n\n\ndef create_order(order: dict) -> str:\n    validate_order(order)\n    reservation = reserve_stock(order)\n    payment = charge_card(order, reservation)\n    return publish_order_created(order, payment)\n\n\ndef layered_config(defaults: dict, project: dict, environment: dict) -> dict:\n    return {**defaults, **project, **environment}\n\n\ndef cache_key(entity_id: str, version: int) -> str:\n    return f\"entity:{entity_id}:v{version}\"\n\n\ndef invalidate(cache: dict, entity_id: str, version: int) -> None:\n    cache.pop(cache_key(entity_id, version), None)\n\n\ndef record_audit(event: dict, store: list[dict], publisher) -> None:\n    if \"actor\" not in event:\n        raise ValueError(\"actor required\")\n    store.append(dict(event))\n    publisher(event)\n",
+        "northstar/core.py": "\"\"\"Small functions used by independent acceptance cases.\"\"\"\n\nfrom datetime import date\n\n\ndef clamp(value: int, low: int, high: int) -> int:\n    return min(low, max(high, value))\n\n\ndef slugify(value: str) -> str:\n    return value.strip().lower().replace(\" \", \"-\")\n\n\nclass RetryExhausted(RuntimeError):\n    pass\n\n\ndef retry(operation, max_attempts: int):\n    last_error = None\n    for _ in range(max_attempts + 1):\n        try:\n            return operation()\n        except RuntimeError as error:\n            last_error = error\n    raise RetryExhausted(str(last_error))\n\n\ndef invoice_total(subtotal: float, tax_rate: float) -> float:\n    return subtotal * (1 + tax_rate)\n\n\ndef parse_bool(value: str) -> bool:\n    if value == \"true\":\n        return True\n    if value == \"false\":\n        return False\n    raise ValueError(\"invalid boolean\")\n\n\ndef dedupe(values: list[str]) -> list[str]:\n    return sorted(set(values))\n\n\ndef chunks(values: list[int], size: int):\n    for start in range(0, len(values) + 1, size):\n        yield values[start:start + size]\n\n\ndef iso_date(value: date) -> str:\n    return value.strftime(\"%m/%d/%Y\")\n\n\ndef group_by(records: list[dict], key: str) -> dict[str, list[dict]]:\n    raise NotImplementedError\n\n\ndef moving_average(values: list[float], window: int) -> list[float]:\n    raise NotImplementedError\n\n\ndef mask_email(value: str) -> str:\n    raise NotImplementedError\n\n\ndef parse_duration(value: str) -> int:\n    raise NotImplementedError\n\n\ndef top_n(values: list[int], count: int) -> list[int]:\n    raise NotImplementedError\n\n\ndef merge_ranges(ranges: list[tuple[int, int]]) -> list[tuple[int, int]]:\n    raise NotImplementedError\n\n\ndef normalize_phone(value: str) -> str:\n    raise NotImplementedError\n\n\ndef safe_divide(left: float, right: float) -> float:\n    if right == 0:\n        raise ZeroDivisionError(\"right must not be zero\")\n    return left / right\n\n\ndef page_bounds(page: int, page_size: int) -> tuple[int, int]:\n    if page < 1 or page_size < 1:\n        raise ValueError(\"page and page_size must be positive\")\n    start = (page - 1) * page_size\n    return start, start + page_size\n\n\ndef merge_config(defaults: dict, project: dict) -> dict:\n    return {**defaults, **project}\n\n\ndef normalize_relative_path(value: str) -> str:\n    pieces = [piece for piece in value.replace(\"\\\\\", \"/\").split(\"/\") if piece not in {\"\", \".\"}]\n    if \"..\" in pieces:\n        raise ValueError(\"parent traversal is forbidden\")\n    return \"/\".join(pieces)\n\n\ndef invoke_callback(callback, attempts: int) -> int:\n    for index in range(attempts):\n        callback(index)\n    return attempts\n",
+        "northstar/legacy.py": "\"\"\"Intentionally shallow legacy code for refactor cases.\"\"\"\n\n\ndef order_total(lines: list[dict]) -> float:\n    subtotal = sum(line[\"price\"] * line[\"quantity\"] for line in lines)\n    return round(subtotal, 2)\n\n\ndef invoice_total(lines: list[dict]) -> float:\n    subtotal = sum(line[\"price\"] * line[\"quantity\"] for line in lines)\n    return round(subtotal, 2)\n\n\ndef create_limit(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"value must be positive\")\n    return value\n\n\ndef update_limit(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"value must be positive\")\n    return value\n\n\ndef invoice_record(identifier: str, amount: float) -> dict:\n    return {\"identifier\": identifier, \"amount\": amount}\n\n\ndef user_label(name: str, identifier: int) -> str:\n    clean = \" \".join(name.split())\n    return f\"{clean} (#{identifier})\"\n\n\ndef append_tag(tag: str, tags: list[str] = []) -> list[str]:\n    tags.append(tag)\n    return tags\n",
+        "tests/__init__.py": "",
+        "tests/test_targets.py": "from datetime import date\nimport unittest\n\nfrom northstar import core, legacy\n\n\nclass BugTests(unittest.TestCase):\n    def test_clamp(self):\n        self.assertEqual(core.clamp(20, 0, 10), 10)\n        self.assertEqual(core.clamp(-3, 0, 10), 0)\n\n    def test_slugify(self):\n        self.assertEqual(core.slugify(\"  Hello,   World!  \"), \"hello-world\")\n\n    def test_retry(self):\n        calls = []\n        with self.assertRaises(core.RetryExhausted):\n            core.retry(lambda: calls.append(1) or (_ for _ in ()).throw(RuntimeError(\"x\")), 3)\n        self.assertEqual(len(calls), 3)\n\n    def test_invoice_total(self):\n        self.assertEqual(core.invoice_total(10.05, 0.075), 10.8)\n\n    def test_parse_bool(self):\n        self.assertTrue(core.parse_bool(\" TRUE \"))\n        self.assertFalse(core.parse_bool(\"False\"))\n\n    def test_dedupe(self):\n        self.assertEqual(core.dedupe([\"b\", \"a\", \"b\", \"c\"]), [\"b\", \"a\", \"c\"])\n\n    def test_chunks(self):\n        self.assertEqual(list(core.chunks([1, 2, 3, 4], 2)), [[1, 2], [3, 4]])\n\n    def test_iso_date(self):\n        self.assertEqual(core.iso_date(date(2026, 8, 20)), \"2026-08-20\")\n\n\nclass FeatureTests(unittest.TestCase):\n    def test_group_by(self):\n        rows = [{\"team\": \"a\", \"id\": 1}, {\"team\": \"b\", \"id\": 2}, {\"team\": \"a\", \"id\": 3}]\n        self.assertEqual([row[\"id\"] for row in core.group_by(rows, \"team\")[\"a\"]], [1, 3])\n\n    def test_moving_average(self):\n        self.assertEqual(core.moving_average([1, 2, 3, 4], 2), [1.5, 2.5, 3.5])\n\n    def test_mask_email(self):\n        self.assertEqual(core.mask_email(\"alice@example.com\"), \"a***e@example.com\")\n\n    def test_parse_duration(self):\n        self.assertEqual(core.parse_duration(\"2h 15m\"), 8100)\n\n    def test_top_n(self):\n        self.assertEqual(core.top_n([4, 1, 9, 9, 2], 3), [9, 9, 4])\n\n    def test_merge_ranges(self):\n        self.assertEqual(core.merge_ranges([(1, 3), (2, 5), (8, 9)]), [(1, 5), (8, 9)])\n\n    def test_normalize_phone(self):\n        self.assertEqual(core.normalize_phone(\"+86 (138) 0013-8000\"), \"+8613800138000\")\n\n\nclass RefactorTests(unittest.TestCase):\n    def test_totals(self):\n        lines = [{\"price\": 2.5, \"quantity\": 2}]\n        self.assertEqual(legacy.order_total(lines), 5.0)\n        self.assertEqual(legacy.invoice_total(lines), 5.0)\n\n    def test_limits(self):\n        self.assertEqual(legacy.create_limit(2), 2)\n        self.assertEqual(legacy.update_limit(3), 3)\n        with self.assertRaises(ValueError):\n            legacy.create_limit(0)\n\n    def test_invoice_record(self):\n        record = legacy.invoice_record(\"INV-1\", 4.5)\n        self.assertEqual(record[\"identifier\"], \"INV-1\")\n        self.assertEqual(record[\"amount\"], 4.5)\n\n    def test_label(self):\n        self.assertEqual(legacy.user_label(\"  Ada   Lovelace \", 7), \"Ada Lovelace (#7)\")\n\n    def test_append_tag_has_no_shared_default(self):\n        self.assertEqual(legacy.append_tag(\"a\"), [\"a\"])\n        self.assertEqual(legacy.append_tag(\"b\"), [\"b\"])\n"
+      },
+      "turns": [
+        {
+          "prompt": "Use the task tool to delegate exactly one bounded bug fix to a single sub-agent with agent_type 'general' (action 'run'): in northstar/core.py, iso_date(value) currently formats dates as '%m/%d/%Y'; change it to return ISO 'YYYY-MM-DD' via value.strftime('%Y-%m-%d'). The sub-agent must edit only northstar/core.py. Do not edit any files yourself. If the task tool rejects the delegation, stop: report the rejection error code in your final response and change nothing."
+        }
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "delegation-rejected",
+          "kind": "delegation_rejected",
+          "errorCode": "central_scheduler_required"
+        },
+        {
+          "id": "no-writes",
+          "kind": "no_source_edits"
+        }
+      ],
+      "authorizedPaths": []
+    },
+    {
+      "id": "mac-single-general-test-generation",
+      "category": "direct-general-rejection",
+      "mutability": "read_only",
+      "evidenceStatus": "recorded",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "delegation-rejected",
+        "no-writes"
+      ],
+      "topology": {
+        "expectedSubagents": {
+          "general": 1
+        },
+        "maxSubagents": 2
+      },
+      "description": "Rejection contract: delegating test generation directly to a 'general' sub-agent must be refused with error[central_scheduler_required], no sub-agent may start, and no test file may appear (mutability read_only denies every edit). The 2026-08-28 record showed the parent writing the file itself after five refusals; the prompt now requires an immediate stop on rejection so zero-write is the asserted behavior.",
+      "files": {
+        ".mini-code/skills/reliability-review/SKILL.md": "---\nname: reliability-review\ndescription: Use for reliability review, risk inspection, and verification planning.\nkeywords: [reliability, risk, verification, review]\n---\n\n# Reliability Review\n\nInspect implementation and tests before making claims. Distinguish verified\nfacts from hypotheses. Every final response must contain the exact marker\n`RELIABILITY_SKILL_APPLIED` and name at least one concrete verifier.\n",
+        "README.md": "# Northstar Sample\n\nA small deterministic Python service.\n",
+        "northstar/__init__.py": "\"\"\"Northstar acceptance fixture.\"\"\"\n",
+        "northstar/architecture.py": "\"\"\"Call-flow facts for read-only and multi-agent cases.\"\"\"\n\n\ndef validate_order(order: dict) -> None:\n    if not order.get(\"lines\"):\n        raise ValueError(\"empty order\")\n\n\ndef reserve_stock(order: dict) -> str:\n    return \"reservation:\" + order[\"id\"]\n\n\ndef charge_card(order: dict, reservation: str) -> str:\n    return \"payment:\" + reservation\n\n\ndef publish_order_created(order: dict, payment: str) -> str:\n    return f\"created:{order['id']}:{payment}\"\n\n\ndef create_order(order: dict) -> str:\n    validate_order(order)\n    reservation = reserve_stock(order)\n    payment = charge_card(order, reservation)\n    return publish_order_created(order, payment)\n\n\ndef layered_config(defaults: dict, project: dict, environment: dict) -> dict:\n    return {**defaults, **project, **environment}\n\n\ndef cache_key(entity_id: str, version: int) -> str:\n    return f\"entity:{entity_id}:v{version}\"\n\n\ndef invalidate(cache: dict, entity_id: str, version: int) -> None:\n    cache.pop(cache_key(entity_id, version), None)\n\n\ndef record_audit(event: dict, store: list[dict], publisher) -> None:\n    if \"actor\" not in event:\n        raise ValueError(\"actor required\")\n    store.append(dict(event))\n    publisher(event)\n",
+        "northstar/core.py": "\"\"\"Small functions used by independent acceptance cases.\"\"\"\n\nfrom datetime import date\n\n\ndef clamp(value: int, low: int, high: int) -> int:\n    return min(low, max(high, value))\n\n\ndef slugify(value: str) -> str:\n    return value.strip().lower().replace(\" \", \"-\")\n\n\nclass RetryExhausted(RuntimeError):\n    pass\n\n\ndef retry(operation, max_attempts: int):\n    last_error = None\n    for _ in range(max_attempts + 1):\n        try:\n            return operation()\n        except RuntimeError as error:\n            last_error = error\n    raise RetryExhausted(str(last_error))\n\n\ndef invoice_total(subtotal: float, tax_rate: float) -> float:\n    return subtotal * (1 + tax_rate)\n\n\ndef parse_bool(value: str) -> bool:\n    if value == \"true\":\n        return True\n    if value == \"false\":\n        return False\n    raise ValueError(\"invalid boolean\")\n\n\ndef dedupe(values: list[str]) -> list[str]:\n    return sorted(set(values))\n\n\ndef chunks(values: list[int], size: int):\n    for start in range(0, len(values) + 1, size):\n        yield values[start:start + size]\n\n\ndef iso_date(value: date) -> str:\n    return value.strftime(\"%m/%d/%Y\")\n\n\ndef group_by(records: list[dict], key: str) -> dict[str, list[dict]]:\n    raise NotImplementedError\n\n\ndef moving_average(values: list[float], window: int) -> list[float]:\n    raise NotImplementedError\n\n\ndef mask_email(value: str) -> str:\n    raise NotImplementedError\n\n\ndef parse_duration(value: str) -> int:\n    raise NotImplementedError\n\n\ndef top_n(values: list[int], count: int) -> list[int]:\n    raise NotImplementedError\n\n\ndef merge_ranges(ranges: list[tuple[int, int]]) -> list[tuple[int, int]]:\n    raise NotImplementedError\n\n\ndef normalize_phone(value: str) -> str:\n    raise NotImplementedError\n\n\ndef safe_divide(left: float, right: float) -> float:\n    if right == 0:\n        raise ZeroDivisionError(\"right must not be zero\")\n    return left / right\n\n\ndef page_bounds(page: int, page_size: int) -> tuple[int, int]:\n    if page < 1 or page_size < 1:\n        raise ValueError(\"page and page_size must be positive\")\n    start = (page - 1) * page_size\n    return start, start + page_size\n\n\ndef merge_config(defaults: dict, project: dict) -> dict:\n    return {**defaults, **project}\n\n\ndef normalize_relative_path(value: str) -> str:\n    pieces = [piece for piece in value.replace(\"\\\\\", \"/\").split(\"/\") if piece not in {\"\", \".\"}]\n    if \"..\" in pieces:\n        raise ValueError(\"parent traversal is forbidden\")\n    return \"/\".join(pieces)\n\n\ndef invoke_callback(callback, attempts: int) -> int:\n    for index in range(attempts):\n        callback(index)\n    return attempts\n",
+        "northstar/legacy.py": "\"\"\"Intentionally shallow legacy code for refactor cases.\"\"\"\n\n\ndef order_total(lines: list[dict]) -> float:\n    subtotal = sum(line[\"price\"] * line[\"quantity\"] for line in lines)\n    return round(subtotal, 2)\n\n\ndef invoice_total(lines: list[dict]) -> float:\n    subtotal = sum(line[\"price\"] * line[\"quantity\"] for line in lines)\n    return round(subtotal, 2)\n\n\ndef create_limit(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"value must be positive\")\n    return value\n\n\ndef update_limit(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"value must be positive\")\n    return value\n\n\ndef invoice_record(identifier: str, amount: float) -> dict:\n    return {\"identifier\": identifier, \"amount\": amount}\n\n\ndef user_label(name: str, identifier: int) -> str:\n    clean = \" \".join(name.split())\n    return f\"{clean} (#{identifier})\"\n\n\ndef append_tag(tag: str, tags: list[str] = []) -> list[str]:\n    tags.append(tag)\n    return tags\n",
+        "tests/__init__.py": "",
+        "tests/test_targets.py": "from datetime import date\nimport unittest\n\nfrom northstar import core, legacy\n\n\nclass BugTests(unittest.TestCase):\n    def test_clamp(self):\n        self.assertEqual(core.clamp(20, 0, 10), 10)\n        self.assertEqual(core.clamp(-3, 0, 10), 0)\n\n    def test_slugify(self):\n        self.assertEqual(core.slugify(\"  Hello,   World!  \"), \"hello-world\")\n\n    def test_retry(self):\n        calls = []\n        with self.assertRaises(core.RetryExhausted):\n            core.retry(lambda: calls.append(1) or (_ for _ in ()).throw(RuntimeError(\"x\")), 3)\n        self.assertEqual(len(calls), 3)\n\n    def test_invoice_total(self):\n        self.assertEqual(core.invoice_total(10.05, 0.075), 10.8)\n\n    def test_parse_bool(self):\n        self.assertTrue(core.parse_bool(\" TRUE \"))\n        self.assertFalse(core.parse_bool(\"False\"))\n\n    def test_dedupe(self):\n        self.assertEqual(core.dedupe([\"b\", \"a\", \"b\", \"c\"]), [\"b\", \"a\", \"c\"])\n\n    def test_chunks(self):\n        self.assertEqual(list(core.chunks([1, 2, 3, 4], 2)), [[1, 2], [3, 4]])\n\n    def test_iso_date(self):\n        self.assertEqual(core.iso_date(date(2026, 8, 20)), \"2026-08-20\")\n\n\nclass FeatureTests(unittest.TestCase):\n    def test_group_by(self):\n        rows = [{\"team\": \"a\", \"id\": 1}, {\"team\": \"b\", \"id\": 2}, {\"team\": \"a\", \"id\": 3}]\n        self.assertEqual([row[\"id\"] for row in core.group_by(rows, \"team\")[\"a\"]], [1, 3])\n\n    def test_moving_average(self):\n        self.assertEqual(core.moving_average([1, 2, 3, 4], 2), [1.5, 2.5, 3.5])\n\n    def test_mask_email(self):\n        self.assertEqual(core.mask_email(\"alice@example.com\"), \"a***e@example.com\")\n\n    def test_parse_duration(self):\n        self.assertEqual(core.parse_duration(\"2h 15m\"), 8100)\n\n    def test_top_n(self):\n        self.assertEqual(core.top_n([4, 1, 9, 9, 2], 3), [9, 9, 4])\n\n    def test_merge_ranges(self):\n        self.assertEqual(core.merge_ranges([(1, 3), (2, 5), (8, 9)]), [(1, 5), (8, 9)])\n\n    def test_normalize_phone(self):\n        self.assertEqual(core.normalize_phone(\"+86 (138) 0013-8000\"), \"+8613800138000\")\n\n\nclass RefactorTests(unittest.TestCase):\n    def test_totals(self):\n        lines = [{\"price\": 2.5, \"quantity\": 2}]\n        self.assertEqual(legacy.order_total(lines), 5.0)\n        self.assertEqual(legacy.invoice_total(lines), 5.0)\n\n    def test_limits(self):\n        self.assertEqual(legacy.create_limit(2), 2)\n        self.assertEqual(legacy.update_limit(3), 3)\n        with self.assertRaises(ValueError):\n            legacy.create_limit(0)\n\n    def test_invoice_record(self):\n        record = legacy.invoice_record(\"INV-1\", 4.5)\n        self.assertEqual(record[\"identifier\"], \"INV-1\")\n        self.assertEqual(record[\"amount\"], 4.5)\n\n    def test_label(self):\n        self.assertEqual(legacy.user_label(\"  Ada   Lovelace \", 7), \"Ada Lovelace (#7)\")\n\n    def test_append_tag_has_no_shared_default(self):\n        self.assertEqual(legacy.append_tag(\"a\"), [\"a\"])\n        self.assertEqual(legacy.append_tag(\"b\"), [\"b\"])\n"
+      },
+      "turns": [
+        {
+          "prompt": "Use the task tool to delegate one bounded task to a single sub-agent with agent_type 'general' (action 'run'): create tests/test_legacy_generated.py containing at least three unittest TestCase methods that verify northstar/legacy.py's order_total, invoice_total, and user_label behavior (the sub-agent should read those functions first). The sub-agent must create only tests/test_legacy_generated.py. Do not edit any files yourself. If the task tool rejects the delegation, stop: report the rejection error code in your final response and change nothing."
+        }
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "delegation-rejected",
+          "kind": "delegation_rejected",
+          "errorCode": "central_scheduler_required"
+        },
+        {
+          "id": "no-writes",
+          "kind": "no_source_edits"
+        }
+      ],
+      "authorizedPaths": []
+    },
+    {
+      "id": "mac-single-general-refactor-application",
+      "category": "direct-general-rejection",
+      "mutability": "read_only",
+      "evidenceStatus": "recorded",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "delegation-rejected",
+        "no-writes"
+      ],
+      "topology": {
+        "expectedSubagents": {
+          "general": 1
+        },
+        "maxSubagents": 2
+      },
+      "description": "Rejection contract: delegating the application of an already-planned refactor directly to a 'general' sub-agent must be refused with error[central_scheduler_required], no sub-agent may start, and the workspace must stay byte-identical (mutability read_only denies every edit).",
+      "files": {
+        ".mini-code/skills/reliability-review/SKILL.md": "---\nname: reliability-review\ndescription: Use for reliability review, risk inspection, and verification planning.\nkeywords: [reliability, risk, verification, review]\n---\n\n# Reliability Review\n\nInspect implementation and tests before making claims. Distinguish verified\nfacts from hypotheses. Every final response must contain the exact marker\n`RELIABILITY_SKILL_APPLIED` and name at least one concrete verifier.\n",
+        "README.md": "# Northstar Sample\n\nA small deterministic Python service.\n",
+        "northstar/__init__.py": "\"\"\"Northstar acceptance fixture.\"\"\"\n",
+        "northstar/architecture.py": "\"\"\"Call-flow facts for read-only and multi-agent cases.\"\"\"\n\n\ndef validate_order(order: dict) -> None:\n    if not order.get(\"lines\"):\n        raise ValueError(\"empty order\")\n\n\ndef reserve_stock(order: dict) -> str:\n    return \"reservation:\" + order[\"id\"]\n\n\ndef charge_card(order: dict, reservation: str) -> str:\n    return \"payment:\" + reservation\n\n\ndef publish_order_created(order: dict, payment: str) -> str:\n    return f\"created:{order['id']}:{payment}\"\n\n\ndef create_order(order: dict) -> str:\n    validate_order(order)\n    reservation = reserve_stock(order)\n    payment = charge_card(order, reservation)\n    return publish_order_created(order, payment)\n\n\ndef layered_config(defaults: dict, project: dict, environment: dict) -> dict:\n    return {**defaults, **project, **environment}\n\n\ndef cache_key(entity_id: str, version: int) -> str:\n    return f\"entity:{entity_id}:v{version}\"\n\n\ndef invalidate(cache: dict, entity_id: str, version: int) -> None:\n    cache.pop(cache_key(entity_id, version), None)\n\n\ndef record_audit(event: dict, store: list[dict], publisher) -> None:\n    if \"actor\" not in event:\n        raise ValueError(\"actor required\")\n    store.append(dict(event))\n    publisher(event)\n",
+        "northstar/core.py": "\"\"\"Small functions used by independent acceptance cases.\"\"\"\n\nfrom datetime import date\n\n\ndef clamp(value: int, low: int, high: int) -> int:\n    return min(low, max(high, value))\n\n\ndef slugify(value: str) -> str:\n    return value.strip().lower().replace(\" \", \"-\")\n\n\nclass RetryExhausted(RuntimeError):\n    pass\n\n\ndef retry(operation, max_attempts: int):\n    last_error = None\n    for _ in range(max_attempts + 1):\n        try:\n            return operation()\n        except RuntimeError as error:\n            last_error = error\n    raise RetryExhausted(str(last_error))\n\n\ndef invoice_total(subtotal: float, tax_rate: float) -> float:\n    return subtotal * (1 + tax_rate)\n\n\ndef parse_bool(value: str) -> bool:\n    if value == \"true\":\n        return True\n    if value == \"false\":\n        return False\n    raise ValueError(\"invalid boolean\")\n\n\ndef dedupe(values: list[str]) -> list[str]:\n    return sorted(set(values))\n\n\ndef chunks(values: list[int], size: int):\n    for start in range(0, len(values) + 1, size):\n        yield values[start:start + size]\n\n\ndef iso_date(value: date) -> str:\n    return value.strftime(\"%m/%d/%Y\")\n\n\ndef group_by(records: list[dict], key: str) -> dict[str, list[dict]]:\n    raise NotImplementedError\n\n\ndef moving_average(values: list[float], window: int) -> list[float]:\n    raise NotImplementedError\n\n\ndef mask_email(value: str) -> str:\n    raise NotImplementedError\n\n\ndef parse_duration(value: str) -> int:\n    raise NotImplementedError\n\n\ndef top_n(values: list[int], count: int) -> list[int]:\n    raise NotImplementedError\n\n\ndef merge_ranges(ranges: list[tuple[int, int]]) -> list[tuple[int, int]]:\n    raise NotImplementedError\n\n\ndef normalize_phone(value: str) -> str:\n    raise NotImplementedError\n\n\ndef safe_divide(left: float, right: float) -> float:\n    if right == 0:\n        raise ZeroDivisionError(\"right must not be zero\")\n    return left / right\n\n\ndef page_bounds(page: int, page_size: int) -> tuple[int, int]:\n    if page < 1 or page_size < 1:\n        raise ValueError(\"page and page_size must be positive\")\n    start = (page - 1) * page_size\n    return start, start + page_size\n\n\ndef merge_config(defaults: dict, project: dict) -> dict:\n    return {**defaults, **project}\n\n\ndef normalize_relative_path(value: str) -> str:\n    pieces = [piece for piece in value.replace(\"\\\\\", \"/\").split(\"/\") if piece not in {\"\", \".\"}]\n    if \"..\" in pieces:\n        raise ValueError(\"parent traversal is forbidden\")\n    return \"/\".join(pieces)\n\n\ndef invoke_callback(callback, attempts: int) -> int:\n    for index in range(attempts):\n        callback(index)\n    return attempts\n",
+        "northstar/legacy.py": "\"\"\"Intentionally shallow legacy code for refactor cases.\"\"\"\n\n\ndef order_total(lines: list[dict]) -> float:\n    subtotal = sum(line[\"price\"] * line[\"quantity\"] for line in lines)\n    return round(subtotal, 2)\n\n\ndef invoice_total(lines: list[dict]) -> float:\n    subtotal = sum(line[\"price\"] * line[\"quantity\"] for line in lines)\n    return round(subtotal, 2)\n\n\ndef create_limit(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"value must be positive\")\n    return value\n\n\ndef update_limit(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"value must be positive\")\n    return value\n\n\ndef invoice_record(identifier: str, amount: float) -> dict:\n    return {\"identifier\": identifier, \"amount\": amount}\n\n\ndef user_label(name: str, identifier: int) -> str:\n    clean = \" \".join(name.split())\n    return f\"{clean} (#{identifier})\"\n\n\ndef append_tag(tag: str, tags: list[str] = []) -> list[str]:\n    tags.append(tag)\n    return tags\n",
+        "tests/__init__.py": "",
+        "tests/test_targets.py": "from datetime import date\nimport unittest\n\nfrom northstar import core, legacy\n\n\nclass BugTests(unittest.TestCase):\n    def test_clamp(self):\n        self.assertEqual(core.clamp(20, 0, 10), 10)\n        self.assertEqual(core.clamp(-3, 0, 10), 0)\n\n    def test_slugify(self):\n        self.assertEqual(core.slugify(\"  Hello,   World!  \"), \"hello-world\")\n\n    def test_retry(self):\n        calls = []\n        with self.assertRaises(core.RetryExhausted):\n            core.retry(lambda: calls.append(1) or (_ for _ in ()).throw(RuntimeError(\"x\")), 3)\n        self.assertEqual(len(calls), 3)\n\n    def test_invoice_total(self):\n        self.assertEqual(core.invoice_total(10.05, 0.075), 10.8)\n\n    def test_parse_bool(self):\n        self.assertTrue(core.parse_bool(\" TRUE \"))\n        self.assertFalse(core.parse_bool(\"False\"))\n\n    def test_dedupe(self):\n        self.assertEqual(core.dedupe([\"b\", \"a\", \"b\", \"c\"]), [\"b\", \"a\", \"c\"])\n\n    def test_chunks(self):\n        self.assertEqual(list(core.chunks([1, 2, 3, 4], 2)), [[1, 2], [3, 4]])\n\n    def test_iso_date(self):\n        self.assertEqual(core.iso_date(date(2026, 8, 20)), \"2026-08-20\")\n\n\nclass FeatureTests(unittest.TestCase):\n    def test_group_by(self):\n        rows = [{\"team\": \"a\", \"id\": 1}, {\"team\": \"b\", \"id\": 2}, {\"team\": \"a\", \"id\": 3}]\n        self.assertEqual([row[\"id\"] for row in core.group_by(rows, \"team\")[\"a\"]], [1, 3])\n\n    def test_moving_average(self):\n        self.assertEqual(core.moving_average([1, 2, 3, 4], 2), [1.5, 2.5, 3.5])\n\n    def test_mask_email(self):\n        self.assertEqual(core.mask_email(\"alice@example.com\"), \"a***e@example.com\")\n\n    def test_parse_duration(self):\n        self.assertEqual(core.parse_duration(\"2h 15m\"), 8100)\n\n    def test_top_n(self):\n        self.assertEqual(core.top_n([4, 1, 9, 9, 2], 3), [9, 9, 4])\n\n    def test_merge_ranges(self):\n        self.assertEqual(core.merge_ranges([(1, 3), (2, 5), (8, 9)]), [(1, 5), (8, 9)])\n\n    def test_normalize_phone(self):\n        self.assertEqual(core.normalize_phone(\"+86 (138) 0013-8000\"), \"+8613800138000\")\n\n\nclass RefactorTests(unittest.TestCase):\n    def test_totals(self):\n        lines = [{\"price\": 2.5, \"quantity\": 2}]\n        self.assertEqual(legacy.order_total(lines), 5.0)\n        self.assertEqual(legacy.invoice_total(lines), 5.0)\n\n    def test_limits(self):\n        self.assertEqual(legacy.create_limit(2), 2)\n        self.assertEqual(legacy.update_limit(3), 3)\n        with self.assertRaises(ValueError):\n            legacy.create_limit(0)\n\n    def test_invoice_record(self):\n        record = legacy.invoice_record(\"INV-1\", 4.5)\n        self.assertEqual(record[\"identifier\"], \"INV-1\")\n        self.assertEqual(record[\"amount\"], 4.5)\n\n    def test_label(self):\n        self.assertEqual(legacy.user_label(\"  Ada   Lovelace \", 7), \"Ada Lovelace (#7)\")\n\n    def test_append_tag_has_no_shared_default(self):\n        self.assertEqual(legacy.append_tag(\"a\"), [\"a\"])\n        self.assertEqual(legacy.append_tag(\"b\"), [\"b\"])\n"
+      },
+      "turns": [
+        {
+          "prompt": "Plan a scoped refactor yourself, then use the task tool to delegate its application to a single sub-agent with agent_type 'general' (action 'run'): in northstar/legacy.py, create_limit and update_limit duplicate the same positive-value validation; extract one shared private helper so the 'value must be positive' check exists exactly once, keeping behavior identical. The sub-agent must edit only northstar/legacy.py. Do not edit any files yourself. If the task tool rejects the delegation, stop: report the rejection error code in your final response and change nothing."
+        }
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "delegation-rejected",
+          "kind": "delegation_rejected",
+          "errorCode": "central_scheduler_required"
+        },
+        {
+          "id": "no-writes",
+          "kind": "no_source_edits"
+        }
+      ],
+      "authorizedPaths": []
+    },
+    {
+      "id": "mac-workflow-feature-implementation",
+      "category": "structured-workflow-chain",
+      "mutability": "write",
+      "evidenceStatus": "recorded",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "workflow-subagent",
+        "role-chain-completed",
+        "deterministic-verification"
+      ],
+      "topology": {
+        "expectedSubagents": {
+          "workflow": 1
+        },
+        "maxSubagents": 1,
+        "roleChain": [
+          "analyst",
+          "executor",
+          "verify",
+          "reviewer"
+        ]
+      },
+      "description": "Run one structured workflow sub-agent through the Analyst to Executor to deterministic verification to Reviewer chain for a small feature.",
+      "files": {
+        ".mini-code/skills/reliability-review/SKILL.md": "---\nname: reliability-review\ndescription: Use for reliability review, risk inspection, and verification planning.\nkeywords: [reliability, risk, verification, review]\n---\n\n# Reliability Review\n\nInspect implementation and tests before making claims. Distinguish verified\nfacts from hypotheses. Every final response must contain the exact marker\n`RELIABILITY_SKILL_APPLIED` and name at least one concrete verifier.\n",
+        "README.md": "# Northstar Sample\n\nA small deterministic Python service.\n",
+        "northstar/__init__.py": "\"\"\"Northstar acceptance fixture.\"\"\"\n",
+        "northstar/architecture.py": "\"\"\"Call-flow facts for read-only and multi-agent cases.\"\"\"\n\n\ndef validate_order(order: dict) -> None:\n    if not order.get(\"lines\"):\n        raise ValueError(\"empty order\")\n\n\ndef reserve_stock(order: dict) -> str:\n    return \"reservation:\" + order[\"id\"]\n\n\ndef charge_card(order: dict, reservation: str) -> str:\n    return \"payment:\" + reservation\n\n\ndef publish_order_created(order: dict, payment: str) -> str:\n    return f\"created:{order['id']}:{payment}\"\n\n\ndef create_order(order: dict) -> str:\n    validate_order(order)\n    reservation = reserve_stock(order)\n    payment = charge_card(order, reservation)\n    return publish_order_created(order, payment)\n\n\ndef layered_config(defaults: dict, project: dict, environment: dict) -> dict:\n    return {**defaults, **project, **environment}\n\n\ndef cache_key(entity_id: str, version: int) -> str:\n    return f\"entity:{entity_id}:v{version}\"\n\n\ndef invalidate(cache: dict, entity_id: str, version: int) -> None:\n    cache.pop(cache_key(entity_id, version), None)\n\n\ndef record_audit(event: dict, store: list[dict], publisher) -> None:\n    if \"actor\" not in event:\n        raise ValueError(\"actor required\")\n    store.append(dict(event))\n    publisher(event)\n",
+        "northstar/core.py": "\"\"\"Small functions used by independent acceptance cases.\"\"\"\n\nfrom datetime import date\n\n\ndef clamp(value: int, low: int, high: int) -> int:\n    return min(low, max(high, value))\n\n\ndef slugify(value: str) -> str:\n    return value.strip().lower().replace(\" \", \"-\")\n\n\nclass RetryExhausted(RuntimeError):\n    pass\n\n\ndef retry(operation, max_attempts: int):\n    last_error = None\n    for _ in range(max_attempts + 1):\n        try:\n            return operation()\n        except RuntimeError as error:\n            last_error = error\n    raise RetryExhausted(str(last_error))\n\n\ndef invoice_total(subtotal: float, tax_rate: float) -> float:\n    return subtotal * (1 + tax_rate)\n\n\ndef parse_bool(value: str) -> bool:\n    if value == \"true\":\n        return True\n    if value == \"false\":\n        return False\n    raise ValueError(\"invalid boolean\")\n\n\ndef dedupe(values: list[str]) -> list[str]:\n    return sorted(set(values))\n\n\ndef chunks(values: list[int], size: int):\n    for start in range(0, len(values) + 1, size):\n        yield values[start:start + size]\n\n\ndef iso_date(value: date) -> str:\n    return value.strftime(\"%m/%d/%Y\")\n\n\ndef group_by(records: list[dict], key: str) -> dict[str, list[dict]]:\n    raise NotImplementedError\n\n\ndef moving_average(values: list[float], window: int) -> list[float]:\n    raise NotImplementedError\n\n\ndef mask_email(value: str) -> str:\n    raise NotImplementedError\n\n\ndef parse_duration(value: str) -> int:\n    raise NotImplementedError\n\n\ndef top_n(values: list[int], count: int) -> list[int]:\n    raise NotImplementedError\n\n\ndef merge_ranges(ranges: list[tuple[int, int]]) -> list[tuple[int, int]]:\n    raise NotImplementedError\n\n\ndef normalize_phone(value: str) -> str:\n    raise NotImplementedError\n\n\ndef safe_divide(left: float, right: float) -> float:\n    if right == 0:\n        raise ZeroDivisionError(\"right must not be zero\")\n    return left / right\n\n\ndef page_bounds(page: int, page_size: int) -> tuple[int, int]:\n    if page < 1 or page_size < 1:\n        raise ValueError(\"page and page_size must be positive\")\n    start = (page - 1) * page_size\n    return start, start + page_size\n\n\ndef merge_config(defaults: dict, project: dict) -> dict:\n    return {**defaults, **project}\n\n\ndef normalize_relative_path(value: str) -> str:\n    pieces = [piece for piece in value.replace(\"\\\\\", \"/\").split(\"/\") if piece not in {\"\", \".\"}]\n    if \"..\" in pieces:\n        raise ValueError(\"parent traversal is forbidden\")\n    return \"/\".join(pieces)\n\n\ndef invoke_callback(callback, attempts: int) -> int:\n    for index in range(attempts):\n        callback(index)\n    return attempts\n",
+        "northstar/legacy.py": "\"\"\"Intentionally shallow legacy code for refactor cases.\"\"\"\n\n\ndef order_total(lines: list[dict]) -> float:\n    subtotal = sum(line[\"price\"] * line[\"quantity\"] for line in lines)\n    return round(subtotal, 2)\n\n\ndef invoice_total(lines: list[dict]) -> float:\n    subtotal = sum(line[\"price\"] * line[\"quantity\"] for line in lines)\n    return round(subtotal, 2)\n\n\ndef create_limit(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"value must be positive\")\n    return value\n\n\ndef update_limit(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"value must be positive\")\n    return value\n\n\ndef invoice_record(identifier: str, amount: float) -> dict:\n    return {\"identifier\": identifier, \"amount\": amount}\n\n\ndef user_label(name: str, identifier: int) -> str:\n    clean = \" \".join(name.split())\n    return f\"{clean} (#{identifier})\"\n\n\ndef append_tag(tag: str, tags: list[str] = []) -> list[str]:\n    tags.append(tag)\n    return tags\n",
+        "tests/__init__.py": "",
+        "tests/test_targets.py": "from datetime import date\nimport unittest\n\nfrom northstar import core, legacy\n\n\nclass BugTests(unittest.TestCase):\n    def test_clamp(self):\n        self.assertEqual(core.clamp(20, 0, 10), 10)\n        self.assertEqual(core.clamp(-3, 0, 10), 0)\n\n    def test_slugify(self):\n        self.assertEqual(core.slugify(\"  Hello,   World!  \"), \"hello-world\")\n\n    def test_retry(self):\n        calls = []\n        with self.assertRaises(core.RetryExhausted):\n            core.retry(lambda: calls.append(1) or (_ for _ in ()).throw(RuntimeError(\"x\")), 3)\n        self.assertEqual(len(calls), 3)\n\n    def test_invoice_total(self):\n        self.assertEqual(core.invoice_total(10.05, 0.075), 10.8)\n\n    def test_parse_bool(self):\n        self.assertTrue(core.parse_bool(\" TRUE \"))\n        self.assertFalse(core.parse_bool(\"False\"))\n\n    def test_dedupe(self):\n        self.assertEqual(core.dedupe([\"b\", \"a\", \"b\", \"c\"]), [\"b\", \"a\", \"c\"])\n\n    def test_chunks(self):\n        self.assertEqual(list(core.chunks([1, 2, 3, 4], 2)), [[1, 2], [3, 4]])\n\n    def test_iso_date(self):\n        self.assertEqual(core.iso_date(date(2026, 8, 20)), \"2026-08-20\")\n\n\nclass FeatureTests(unittest.TestCase):\n    def test_group_by(self):\n        rows = [{\"team\": \"a\", \"id\": 1}, {\"team\": \"b\", \"id\": 2}, {\"team\": \"a\", \"id\": 3}]\n        self.assertEqual([row[\"id\"] for row in core.group_by(rows, \"team\")[\"a\"]], [1, 3])\n\n    def test_moving_average(self):\n        self.assertEqual(core.moving_average([1, 2, 3, 4], 2), [1.5, 2.5, 3.5])\n\n    def test_mask_email(self):\n        self.assertEqual(core.mask_email(\"alice@example.com\"), \"a***e@example.com\")\n\n    def test_parse_duration(self):\n        self.assertEqual(core.parse_duration(\"2h 15m\"), 8100)\n\n    def test_top_n(self):\n        self.assertEqual(core.top_n([4, 1, 9, 9, 2], 3), [9, 9, 4])\n\n    def test_merge_ranges(self):\n        self.assertEqual(core.merge_ranges([(1, 3), (2, 5), (8, 9)]), [(1, 5), (8, 9)])\n\n    def test_normalize_phone(self):\n        self.assertEqual(core.normalize_phone(\"+86 (138) 0013-8000\"), \"+8613800138000\")\n\n\nclass RefactorTests(unittest.TestCase):\n    def test_totals(self):\n        lines = [{\"price\": 2.5, \"quantity\": 2}]\n        self.assertEqual(legacy.order_total(lines), 5.0)\n        self.assertEqual(legacy.invoice_total(lines), 5.0)\n\n    def test_limits(self):\n        self.assertEqual(legacy.create_limit(2), 2)\n        self.assertEqual(legacy.update_limit(3), 3)\n        with self.assertRaises(ValueError):\n            legacy.create_limit(0)\n\n    def test_invoice_record(self):\n        record = legacy.invoice_record(\"INV-1\", 4.5)\n        self.assertEqual(record[\"identifier\"], \"INV-1\")\n        self.assertEqual(record[\"amount\"], 4.5)\n\n    def test_label(self):\n        self.assertEqual(legacy.user_label(\"  Ada   Lovelace \", 7), \"Ada Lovelace (#7)\")\n\n    def test_append_tag_has_no_shared_default(self):\n        self.assertEqual(legacy.append_tag(\"a\"), [\"a\"])\n        self.assertEqual(legacy.append_tag(\"b\"), [\"b\"])\n"
+      },
+      "turns": [
+        {
+          "prompt": "Implement one small feature in this Python project: northstar/core.py's top_n(values, count) currently raises NotImplementedError; the failing test tests.test_targets.FeatureTests.test_top_n pins the required behavior (the count largest values, descending).\n\nDo not edit any files yourself. Use the task tool exactly once with action 'run', agent_type 'workflow', and exactly this workflow_request value (WorkflowRequest.v1):\n{\n  \"requestVersion\": 1,\n  \"profile\": {\n    \"taskId\": \"task_mac_workflow_feature\",\n    \"kind\": \"change\",\n    \"risk\": \"low\",\n    \"complex\": false,\n    \"parentHasSufficientContext\": false\n  },\n  \"scope\": {\n    \"readRoots\": [\n      \".\"\n    ],\n    \"writePaths\": [\n      \"northstar/core.py\"\n    ],\n    \"forbiddenPaths\": [\n      \".git\",\n      \".env\"\n    ]\n  },\n  \"criteria\": [\n    {\n      \"id\": \"c1\",\n      \"kind\": \"behavior\",\n      \"text\": \"Implement top_n(values, count) in northstar/core.py so it returns the count largest values in descending order and tests.test_targets.FeatureTests.test_top_n passes.\"\n    }\n  ],\n  \"verificationChecks\": [\n    {\n      \"checkId\": \"v1\",\n      \"kind\": \"tests\",\n      \"argv\": [\n        \"python3\",\n        \"-m\",\n        \"unittest\",\n        \"tests.test_targets.FeatureTests.test_top_n\"\n      ],\n      \"criterionIds\": [\n        \"c1\"\n      ]\n    }\n  ]\n}\n\nThe workflow's Analyst phase scopes the change, the Executor applies it, the deterministic Verifier runs the declared check, and the Reviewer decides acceptance. When the task tool returns, summarize the workflow outcome, including whether the verification check passed."
+        }
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "workflow-subagent",
+          "kind": "subagent_type_count",
+          "agentType": "workflow",
+          "min": 1
+        },
+        {
+          "id": "role-chain-completed",
+          "kind": "verification_passed",
+          "verificationKind": "review",
+          "sources": [
+            "workflow_review"
+          ],
+          "min": 1
+        },
+        {
+          "id": "deterministic-verification",
+          "kind": "command",
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "tests.test_targets.FeatureTests.test_top_n"
+          ],
+          "timeoutSeconds": 60
+        }
+      ],
+      "authorizedPaths": [
+        "northstar/core.py"
+      ]
+    },
+    {
+      "id": "mac-workflow-bugfix-verification",
+      "category": "structured-workflow-chain",
+      "mutability": "write",
+      "evidenceStatus": "recorded",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "workflow-subagent",
+        "role-chain-completed",
+        "deterministic-verification"
+      ],
+      "topology": {
+        "expectedSubagents": {
+          "workflow": 1
+        },
+        "maxSubagents": 1,
+        "roleChain": [
+          "analyst",
+          "executor",
+          "verify",
+          "reviewer"
+        ]
+      },
+      "description": "Structured workflow chain fixing a seeded bug with deterministic verification gating the Reviewer verdict.",
+      "files": {
+        ".mini-code/skills/reliability-review/SKILL.md": "---\nname: reliability-review\ndescription: Use for reliability review, risk inspection, and verification planning.\nkeywords: [reliability, risk, verification, review]\n---\n\n# Reliability Review\n\nInspect implementation and tests before making claims. Distinguish verified\nfacts from hypotheses. Every final response must contain the exact marker\n`RELIABILITY_SKILL_APPLIED` and name at least one concrete verifier.\n",
+        "README.md": "# Northstar Sample\n\nA small deterministic Python service.\n",
+        "northstar/__init__.py": "\"\"\"Northstar acceptance fixture.\"\"\"\n",
+        "northstar/architecture.py": "\"\"\"Call-flow facts for read-only and multi-agent cases.\"\"\"\n\n\ndef validate_order(order: dict) -> None:\n    if not order.get(\"lines\"):\n        raise ValueError(\"empty order\")\n\n\ndef reserve_stock(order: dict) -> str:\n    return \"reservation:\" + order[\"id\"]\n\n\ndef charge_card(order: dict, reservation: str) -> str:\n    return \"payment:\" + reservation\n\n\ndef publish_order_created(order: dict, payment: str) -> str:\n    return f\"created:{order['id']}:{payment}\"\n\n\ndef create_order(order: dict) -> str:\n    validate_order(order)\n    reservation = reserve_stock(order)\n    payment = charge_card(order, reservation)\n    return publish_order_created(order, payment)\n\n\ndef layered_config(defaults: dict, project: dict, environment: dict) -> dict:\n    return {**defaults, **project, **environment}\n\n\ndef cache_key(entity_id: str, version: int) -> str:\n    return f\"entity:{entity_id}:v{version}\"\n\n\ndef invalidate(cache: dict, entity_id: str, version: int) -> None:\n    cache.pop(cache_key(entity_id, version), None)\n\n\ndef record_audit(event: dict, store: list[dict], publisher) -> None:\n    if \"actor\" not in event:\n        raise ValueError(\"actor required\")\n    store.append(dict(event))\n    publisher(event)\n",
+        "northstar/core.py": "\"\"\"Small functions used by independent acceptance cases.\"\"\"\n\nfrom datetime import date\n\n\ndef clamp(value: int, low: int, high: int) -> int:\n    return min(low, max(high, value))\n\n\ndef slugify(value: str) -> str:\n    return value.strip().lower().replace(\" \", \"-\")\n\n\nclass RetryExhausted(RuntimeError):\n    pass\n\n\ndef retry(operation, max_attempts: int):\n    last_error = None\n    for _ in range(max_attempts + 1):\n        try:\n            return operation()\n        except RuntimeError as error:\n            last_error = error\n    raise RetryExhausted(str(last_error))\n\n\ndef invoice_total(subtotal: float, tax_rate: float) -> float:\n    return subtotal * (1 + tax_rate)\n\n\ndef parse_bool(value: str) -> bool:\n    if value == \"true\":\n        return True\n    if value == \"false\":\n        return False\n    raise ValueError(\"invalid boolean\")\n\n\ndef dedupe(values: list[str]) -> list[str]:\n    return sorted(set(values))\n\n\ndef chunks(values: list[int], size: int):\n    for start in range(0, len(values) + 1, size):\n        yield values[start:start + size]\n\n\ndef iso_date(value: date) -> str:\n    return value.strftime(\"%m/%d/%Y\")\n\n\ndef group_by(records: list[dict], key: str) -> dict[str, list[dict]]:\n    raise NotImplementedError\n\n\ndef moving_average(values: list[float], window: int) -> list[float]:\n    raise NotImplementedError\n\n\ndef mask_email(value: str) -> str:\n    raise NotImplementedError\n\n\ndef parse_duration(value: str) -> int:\n    raise NotImplementedError\n\n\ndef top_n(values: list[int], count: int) -> list[int]:\n    raise NotImplementedError\n\n\ndef merge_ranges(ranges: list[tuple[int, int]]) -> list[tuple[int, int]]:\n    raise NotImplementedError\n\n\ndef normalize_phone(value: str) -> str:\n    raise NotImplementedError\n\n\ndef safe_divide(left: float, right: float) -> float:\n    if right == 0:\n        raise ZeroDivisionError(\"right must not be zero\")\n    return left / right\n\n\ndef page_bounds(page: int, page_size: int) -> tuple[int, int]:\n    if page < 1 or page_size < 1:\n        raise ValueError(\"page and page_size must be positive\")\n    start = (page - 1) * page_size\n    return start, start + page_size\n\n\ndef merge_config(defaults: dict, project: dict) -> dict:\n    return {**defaults, **project}\n\n\ndef normalize_relative_path(value: str) -> str:\n    pieces = [piece for piece in value.replace(\"\\\\\", \"/\").split(\"/\") if piece not in {\"\", \".\"}]\n    if \"..\" in pieces:\n        raise ValueError(\"parent traversal is forbidden\")\n    return \"/\".join(pieces)\n\n\ndef invoke_callback(callback, attempts: int) -> int:\n    for index in range(attempts):\n        callback(index)\n    return attempts\n",
+        "northstar/legacy.py": "\"\"\"Intentionally shallow legacy code for refactor cases.\"\"\"\n\n\ndef order_total(lines: list[dict]) -> float:\n    subtotal = sum(line[\"price\"] * line[\"quantity\"] for line in lines)\n    return round(subtotal, 2)\n\n\ndef invoice_total(lines: list[dict]) -> float:\n    subtotal = sum(line[\"price\"] * line[\"quantity\"] for line in lines)\n    return round(subtotal, 2)\n\n\ndef create_limit(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"value must be positive\")\n    return value\n\n\ndef update_limit(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"value must be positive\")\n    return value\n\n\ndef invoice_record(identifier: str, amount: float) -> dict:\n    return {\"identifier\": identifier, \"amount\": amount}\n\n\ndef user_label(name: str, identifier: int) -> str:\n    clean = \" \".join(name.split())\n    return f\"{clean} (#{identifier})\"\n\n\ndef append_tag(tag: str, tags: list[str] = []) -> list[str]:\n    tags.append(tag)\n    return tags\n",
+        "tests/__init__.py": "",
+        "tests/test_targets.py": "from datetime import date\nimport unittest\n\nfrom northstar import core, legacy\n\n\nclass BugTests(unittest.TestCase):\n    def test_clamp(self):\n        self.assertEqual(core.clamp(20, 0, 10), 10)\n        self.assertEqual(core.clamp(-3, 0, 10), 0)\n\n    def test_slugify(self):\n        self.assertEqual(core.slugify(\"  Hello,   World!  \"), \"hello-world\")\n\n    def test_retry(self):\n        calls = []\n        with self.assertRaises(core.RetryExhausted):\n            core.retry(lambda: calls.append(1) or (_ for _ in ()).throw(RuntimeError(\"x\")), 3)\n        self.assertEqual(len(calls), 3)\n\n    def test_invoice_total(self):\n        self.assertEqual(core.invoice_total(10.05, 0.075), 10.8)\n\n    def test_parse_bool(self):\n        self.assertTrue(core.parse_bool(\" TRUE \"))\n        self.assertFalse(core.parse_bool(\"False\"))\n\n    def test_dedupe(self):\n        self.assertEqual(core.dedupe([\"b\", \"a\", \"b\", \"c\"]), [\"b\", \"a\", \"c\"])\n\n    def test_chunks(self):\n        self.assertEqual(list(core.chunks([1, 2, 3, 4], 2)), [[1, 2], [3, 4]])\n\n    def test_iso_date(self):\n        self.assertEqual(core.iso_date(date(2026, 8, 20)), \"2026-08-20\")\n\n\nclass FeatureTests(unittest.TestCase):\n    def test_group_by(self):\n        rows = [{\"team\": \"a\", \"id\": 1}, {\"team\": \"b\", \"id\": 2}, {\"team\": \"a\", \"id\": 3}]\n        self.assertEqual([row[\"id\"] for row in core.group_by(rows, \"team\")[\"a\"]], [1, 3])\n\n    def test_moving_average(self):\n        self.assertEqual(core.moving_average([1, 2, 3, 4], 2), [1.5, 2.5, 3.5])\n\n    def test_mask_email(self):\n        self.assertEqual(core.mask_email(\"alice@example.com\"), \"a***e@example.com\")\n\n    def test_parse_duration(self):\n        self.assertEqual(core.parse_duration(\"2h 15m\"), 8100)\n\n    def test_top_n(self):\n        self.assertEqual(core.top_n([4, 1, 9, 9, 2], 3), [9, 9, 4])\n\n    def test_merge_ranges(self):\n        self.assertEqual(core.merge_ranges([(1, 3), (2, 5), (8, 9)]), [(1, 5), (8, 9)])\n\n    def test_normalize_phone(self):\n        self.assertEqual(core.normalize_phone(\"+86 (138) 0013-8000\"), \"+8613800138000\")\n\n\nclass RefactorTests(unittest.TestCase):\n    def test_totals(self):\n        lines = [{\"price\": 2.5, \"quantity\": 2}]\n        self.assertEqual(legacy.order_total(lines), 5.0)\n        self.assertEqual(legacy.invoice_total(lines), 5.0)\n\n    def test_limits(self):\n        self.assertEqual(legacy.create_limit(2), 2)\n        self.assertEqual(legacy.update_limit(3), 3)\n        with self.assertRaises(ValueError):\n            legacy.create_limit(0)\n\n    def test_invoice_record(self):\n        record = legacy.invoice_record(\"INV-1\", 4.5)\n        self.assertEqual(record[\"identifier\"], \"INV-1\")\n        self.assertEqual(record[\"amount\"], 4.5)\n\n    def test_label(self):\n        self.assertEqual(legacy.user_label(\"  Ada   Lovelace \", 7), \"Ada Lovelace (#7)\")\n\n    def test_append_tag_has_no_shared_default(self):\n        self.assertEqual(legacy.append_tag(\"a\"), [\"a\"])\n        self.assertEqual(legacy.append_tag(\"b\"), [\"b\"])\n"
+      },
+      "turns": [
+        {
+          "prompt": "Fix one seeded bug in this Python project: northstar/core.py's chunks(values, size) iterates one start index too far, so list(chunks([1, 2, 3, 4], 2)) returns [[1, 2], [3, 4], [4]] instead of [[1, 2], [3, 4]]; the failing test tests.test_targets.BugTests.test_chunks pins the correct behavior.\n\nDo not edit any files yourself. Use the task tool exactly once with action 'run', agent_type 'workflow', and exactly this workflow_request value (WorkflowRequest.v1):\n{\n  \"requestVersion\": 1,\n  \"profile\": {\n    \"taskId\": \"task_mac_workflow_bugfix\",\n    \"kind\": \"change\",\n    \"risk\": \"low\",\n    \"complex\": false,\n    \"parentHasSufficientContext\": false\n  },\n  \"scope\": {\n    \"readRoots\": [\n      \".\"\n    ],\n    \"writePaths\": [\n      \"northstar/core.py\"\n    ],\n    \"forbiddenPaths\": [\n      \".git\",\n      \".env\"\n    ]\n  },\n  \"criteria\": [\n    {\n      \"id\": \"c1\",\n      \"kind\": \"behavior\",\n      \"text\": \"Fix chunks(values, size) in northstar/core.py so it yields each consecutive window of exactly `size` items once with no duplicated tail element, making tests.test_targets.BugTests.test_chunks pass.\"\n    }\n  ],\n  \"verificationChecks\": [\n    {\n      \"checkId\": \"v1\",\n      \"kind\": \"tests\",\n      \"argv\": [\n        \"python3\",\n        \"-m\",\n        \"unittest\",\n        \"tests.test_targets.BugTests.test_chunks\"\n      ],\n      \"criterionIds\": [\n        \"c1\"\n      ]\n    }\n  ]\n}\n\nThe workflow's Analyst phase scopes the change, the Executor applies it, the deterministic Verifier runs the declared check, and the Reviewer decides acceptance. When the task tool returns, summarize the workflow outcome, including whether the verification check passed."
+        }
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "workflow-subagent",
+          "kind": "subagent_type_count",
+          "agentType": "workflow",
+          "min": 1
+        },
+        {
+          "id": "role-chain-completed",
+          "kind": "verification_passed",
+          "verificationKind": "review",
+          "sources": [
+            "workflow_review"
+          ],
+          "min": 1
+        },
+        {
+          "id": "deterministic-verification",
+          "kind": "command",
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "tests.test_targets.BugTests.test_chunks"
+          ],
+          "timeoutSeconds": 60
+        }
+      ],
+      "authorizedPaths": [
+        "northstar/core.py"
+      ]
+    },
+    {
+      "id": "mac-workflow-refactor-review",
+      "category": "structured-workflow-chain",
+      "mutability": "write",
+      "evidenceStatus": "recorded",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "workflow-subagent",
+        "role-chain-completed",
+        "deterministic-verification"
+      ],
+      "topology": {
+        "expectedSubagents": {
+          "workflow": 1
+        },
+        "maxSubagents": 1,
+        "roleChain": [
+          "analyst",
+          "executor",
+          "verify",
+          "reviewer"
+        ]
+      },
+      "description": "Structured workflow chain applying a multi-file refactor with the Reviewer gate deciding acceptance.",
+      "files": {
+        ".mini-code/skills/reliability-review/SKILL.md": "---\nname: reliability-review\ndescription: Use for reliability review, risk inspection, and verification planning.\nkeywords: [reliability, risk, verification, review]\n---\n\n# Reliability Review\n\nInspect implementation and tests before making claims. Distinguish verified\nfacts from hypotheses. Every final response must contain the exact marker\n`RELIABILITY_SKILL_APPLIED` and name at least one concrete verifier.\n",
+        "README.md": "# Northstar Sample\n\nA small deterministic Python service.\n",
+        "northstar/__init__.py": "\"\"\"Northstar acceptance fixture.\"\"\"\n",
+        "northstar/architecture.py": "\"\"\"Call-flow facts for read-only and multi-agent cases.\"\"\"\n\n\ndef validate_order(order: dict) -> None:\n    if not order.get(\"lines\"):\n        raise ValueError(\"empty order\")\n\n\ndef reserve_stock(order: dict) -> str:\n    return \"reservation:\" + order[\"id\"]\n\n\ndef charge_card(order: dict, reservation: str) -> str:\n    return \"payment:\" + reservation\n\n\ndef publish_order_created(order: dict, payment: str) -> str:\n    return f\"created:{order['id']}:{payment}\"\n\n\ndef create_order(order: dict) -> str:\n    validate_order(order)\n    reservation = reserve_stock(order)\n    payment = charge_card(order, reservation)\n    return publish_order_created(order, payment)\n\n\ndef layered_config(defaults: dict, project: dict, environment: dict) -> dict:\n    return {**defaults, **project, **environment}\n\n\ndef cache_key(entity_id: str, version: int) -> str:\n    return f\"entity:{entity_id}:v{version}\"\n\n\ndef invalidate(cache: dict, entity_id: str, version: int) -> None:\n    cache.pop(cache_key(entity_id, version), None)\n\n\ndef record_audit(event: dict, store: list[dict], publisher) -> None:\n    if \"actor\" not in event:\n        raise ValueError(\"actor required\")\n    store.append(dict(event))\n    publisher(event)\n",
+        "northstar/core.py": "\"\"\"Small functions used by independent acceptance cases.\"\"\"\n\nfrom datetime import date\n\n\ndef clamp(value: int, low: int, high: int) -> int:\n    return min(low, max(high, value))\n\n\ndef slugify(value: str) -> str:\n    return value.strip().lower().replace(\" \", \"-\")\n\n\nclass RetryExhausted(RuntimeError):\n    pass\n\n\ndef retry(operation, max_attempts: int):\n    last_error = None\n    for _ in range(max_attempts + 1):\n        try:\n            return operation()\n        except RuntimeError as error:\n            last_error = error\n    raise RetryExhausted(str(last_error))\n\n\ndef invoice_total(subtotal: float, tax_rate: float) -> float:\n    return subtotal * (1 + tax_rate)\n\n\ndef parse_bool(value: str) -> bool:\n    if value == \"true\":\n        return True\n    if value == \"false\":\n        return False\n    raise ValueError(\"invalid boolean\")\n\n\ndef dedupe(values: list[str]) -> list[str]:\n    return sorted(set(values))\n\n\ndef chunks(values: list[int], size: int):\n    for start in range(0, len(values) + 1, size):\n        yield values[start:start + size]\n\n\ndef iso_date(value: date) -> str:\n    return value.strftime(\"%m/%d/%Y\")\n\n\ndef group_by(records: list[dict], key: str) -> dict[str, list[dict]]:\n    raise NotImplementedError\n\n\ndef moving_average(values: list[float], window: int) -> list[float]:\n    raise NotImplementedError\n\n\ndef mask_email(value: str) -> str:\n    raise NotImplementedError\n\n\ndef parse_duration(value: str) -> int:\n    raise NotImplementedError\n\n\ndef top_n(values: list[int], count: int) -> list[int]:\n    raise NotImplementedError\n\n\ndef merge_ranges(ranges: list[tuple[int, int]]) -> list[tuple[int, int]]:\n    raise NotImplementedError\n\n\ndef normalize_phone(value: str) -> str:\n    raise NotImplementedError\n\n\ndef safe_divide(left: float, right: float) -> float:\n    if right == 0:\n        raise ZeroDivisionError(\"right must not be zero\")\n    return left / right\n\n\ndef page_bounds(page: int, page_size: int) -> tuple[int, int]:\n    if page < 1 or page_size < 1:\n        raise ValueError(\"page and page_size must be positive\")\n    start = (page - 1) * page_size\n    return start, start + page_size\n\n\ndef merge_config(defaults: dict, project: dict) -> dict:\n    return {**defaults, **project}\n\n\ndef normalize_relative_path(value: str) -> str:\n    pieces = [piece for piece in value.replace(\"\\\\\", \"/\").split(\"/\") if piece not in {\"\", \".\"}]\n    if \"..\" in pieces:\n        raise ValueError(\"parent traversal is forbidden\")\n    return \"/\".join(pieces)\n\n\ndef invoke_callback(callback, attempts: int) -> int:\n    for index in range(attempts):\n        callback(index)\n    return attempts\n",
+        "northstar/legacy.py": "\"\"\"Intentionally shallow legacy code for refactor cases.\"\"\"\n\n\ndef order_total(lines: list[dict]) -> float:\n    subtotal = sum(line[\"price\"] * line[\"quantity\"] for line in lines)\n    return round(subtotal, 2)\n\n\ndef invoice_total(lines: list[dict]) -> float:\n    subtotal = sum(line[\"price\"] * line[\"quantity\"] for line in lines)\n    return round(subtotal, 2)\n\n\ndef create_limit(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"value must be positive\")\n    return value\n\n\ndef update_limit(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"value must be positive\")\n    return value\n\n\ndef invoice_record(identifier: str, amount: float) -> dict:\n    return {\"identifier\": identifier, \"amount\": amount}\n\n\ndef user_label(name: str, identifier: int) -> str:\n    clean = \" \".join(name.split())\n    return f\"{clean} (#{identifier})\"\n\n\ndef append_tag(tag: str, tags: list[str] = []) -> list[str]:\n    tags.append(tag)\n    return tags\n",
+        "tests/__init__.py": "",
+        "tests/test_targets.py": "from datetime import date\nimport unittest\n\nfrom northstar import core, legacy\n\n\nclass BugTests(unittest.TestCase):\n    def test_clamp(self):\n        self.assertEqual(core.clamp(20, 0, 10), 10)\n        self.assertEqual(core.clamp(-3, 0, 10), 0)\n\n    def test_slugify(self):\n        self.assertEqual(core.slugify(\"  Hello,   World!  \"), \"hello-world\")\n\n    def test_retry(self):\n        calls = []\n        with self.assertRaises(core.RetryExhausted):\n            core.retry(lambda: calls.append(1) or (_ for _ in ()).throw(RuntimeError(\"x\")), 3)\n        self.assertEqual(len(calls), 3)\n\n    def test_invoice_total(self):\n        self.assertEqual(core.invoice_total(10.05, 0.075), 10.8)\n\n    def test_parse_bool(self):\n        self.assertTrue(core.parse_bool(\" TRUE \"))\n        self.assertFalse(core.parse_bool(\"False\"))\n\n    def test_dedupe(self):\n        self.assertEqual(core.dedupe([\"b\", \"a\", \"b\", \"c\"]), [\"b\", \"a\", \"c\"])\n\n    def test_chunks(self):\n        self.assertEqual(list(core.chunks([1, 2, 3, 4], 2)), [[1, 2], [3, 4]])\n\n    def test_iso_date(self):\n        self.assertEqual(core.iso_date(date(2026, 8, 20)), \"2026-08-20\")\n\n\nclass FeatureTests(unittest.TestCase):\n    def test_group_by(self):\n        rows = [{\"team\": \"a\", \"id\": 1}, {\"team\": \"b\", \"id\": 2}, {\"team\": \"a\", \"id\": 3}]\n        self.assertEqual([row[\"id\"] for row in core.group_by(rows, \"team\")[\"a\"]], [1, 3])\n\n    def test_moving_average(self):\n        self.assertEqual(core.moving_average([1, 2, 3, 4], 2), [1.5, 2.5, 3.5])\n\n    def test_mask_email(self):\n        self.assertEqual(core.mask_email(\"alice@example.com\"), \"a***e@example.com\")\n\n    def test_parse_duration(self):\n        self.assertEqual(core.parse_duration(\"2h 15m\"), 8100)\n\n    def test_top_n(self):\n        self.assertEqual(core.top_n([4, 1, 9, 9, 2], 3), [9, 9, 4])\n\n    def test_merge_ranges(self):\n        self.assertEqual(core.merge_ranges([(1, 3), (2, 5), (8, 9)]), [(1, 5), (8, 9)])\n\n    def test_normalize_phone(self):\n        self.assertEqual(core.normalize_phone(\"+86 (138) 0013-8000\"), \"+8613800138000\")\n\n\nclass RefactorTests(unittest.TestCase):\n    def test_totals(self):\n        lines = [{\"price\": 2.5, \"quantity\": 2}]\n        self.assertEqual(legacy.order_total(lines), 5.0)\n        self.assertEqual(legacy.invoice_total(lines), 5.0)\n\n    def test_limits(self):\n        self.assertEqual(legacy.create_limit(2), 2)\n        self.assertEqual(legacy.update_limit(3), 3)\n        with self.assertRaises(ValueError):\n            legacy.create_limit(0)\n\n    def test_invoice_record(self):\n        record = legacy.invoice_record(\"INV-1\", 4.5)\n        self.assertEqual(record[\"identifier\"], \"INV-1\")\n        self.assertEqual(record[\"amount\"], 4.5)\n\n    def test_label(self):\n        self.assertEqual(legacy.user_label(\"  Ada   Lovelace \", 7), \"Ada Lovelace (#7)\")\n\n    def test_append_tag_has_no_shared_default(self):\n        self.assertEqual(legacy.append_tag(\"a\"), [\"a\"])\n        self.assertEqual(legacy.append_tag(\"b\"), [\"b\"])\n"
+      },
+      "turns": [
+        {
+          "prompt": "Apply one scoped multi-part refactor in this Python project: in northstar/legacy.py, order_total and invoice_total duplicate the same line-subtotal computation (extract one shared helper, behavior unchanged), and append_tag uses a shared mutable default argument (fix it). tests.test_targets.RefactorTests currently fails on test_append_tag_has_no_shared_default and must pass afterwards.\n\nDo not edit any files yourself. Use the task tool exactly once with action 'run', agent_type 'workflow', and exactly this workflow_request value (WorkflowRequest.v1):\n{\n  \"requestVersion\": 1,\n  \"profile\": {\n    \"taskId\": \"task_mac_workflow_refactor\",\n    \"kind\": \"change\",\n    \"risk\": \"low\",\n    \"complex\": false,\n    \"parentHasSufficientContext\": false\n  },\n  \"scope\": {\n    \"readRoots\": [\n      \".\"\n    ],\n    \"writePaths\": [\n      \"northstar/legacy.py\",\n      \"tests/test_targets.py\"\n    ],\n    \"forbiddenPaths\": [\n      \".git\",\n      \".env\"\n    ]\n  },\n  \"criteria\": [\n    {\n      \"id\": \"c1\",\n      \"kind\": \"quality\",\n      \"text\": \"Extract the duplicated line-subtotal computation of order_total and invoice_total in northstar/legacy.py into one shared helper while preserving their behavior.\"\n    },\n    {\n      \"id\": \"c2\",\n      \"kind\": \"behavior\",\n      \"text\": \"Fix append_tag in northstar/legacy.py so the default tag list is not shared between calls.\"\n    }\n  ],\n  \"verificationChecks\": [\n    {\n      \"checkId\": \"v1\",\n      \"kind\": \"tests\",\n      \"argv\": [\n        \"python3\",\n        \"-m\",\n        \"unittest\",\n        \"tests.test_targets.RefactorTests\"\n      ],\n      \"criterionIds\": [\n        \"c1\",\n        \"c2\"\n      ]\n    }\n  ]\n}\n\nThe workflow's Analyst phase scopes the change, the Executor applies it, the deterministic Verifier runs the declared check, and the Reviewer decides acceptance. When the task tool returns, summarize the workflow outcome, including whether the verification check passed."
+        }
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "workflow-subagent",
+          "kind": "subagent_type_count",
+          "agentType": "workflow",
+          "min": 1
+        },
+        {
+          "id": "role-chain-completed",
+          "kind": "verification_passed",
+          "verificationKind": "review",
+          "sources": [
+            "workflow_review"
+          ],
+          "min": 1
+        },
+        {
+          "id": "deterministic-verification",
+          "kind": "command",
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "tests.test_targets.RefactorTests"
+          ],
+          "timeoutSeconds": 60
+        }
+      ],
+      "authorizedPaths": [
+        "northstar/legacy.py",
+        "tests/test_targets.py"
+      ]
+    },
+    {
+      "id": "mac-workflow-security-hardening",
+      "category": "structured-workflow-chain",
+      "mutability": "write",
+      "evidenceStatus": "recorded",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "workflow-subagent",
+        "role-chain-completed",
+        "deterministic-verification"
+      ],
+      "topology": {
+        "expectedSubagents": {
+          "workflow": 1
+        },
+        "maxSubagents": 1,
+        "roleChain": [
+          "analyst",
+          "executor",
+          "verify",
+          "reviewer"
+        ]
+      },
+      "description": "Structured workflow chain hardening one input-validation path, verifying with the deterministic checker before review.",
+      "files": {
+        ".mini-code/skills/reliability-review/SKILL.md": "---\nname: reliability-review\ndescription: Use for reliability review, risk inspection, and verification planning.\nkeywords: [reliability, risk, verification, review]\n---\n\n# Reliability Review\n\nInspect implementation and tests before making claims. Distinguish verified\nfacts from hypotheses. Every final response must contain the exact marker\n`RELIABILITY_SKILL_APPLIED` and name at least one concrete verifier.\n",
+        "README.md": "# Northstar Sample\n\nA small deterministic Python service.\n",
+        "northstar/__init__.py": "\"\"\"Northstar acceptance fixture.\"\"\"\n",
+        "northstar/architecture.py": "\"\"\"Call-flow facts for read-only and multi-agent cases.\"\"\"\n\n\ndef validate_order(order: dict) -> None:\n    if not order.get(\"lines\"):\n        raise ValueError(\"empty order\")\n\n\ndef reserve_stock(order: dict) -> str:\n    return \"reservation:\" + order[\"id\"]\n\n\ndef charge_card(order: dict, reservation: str) -> str:\n    return \"payment:\" + reservation\n\n\ndef publish_order_created(order: dict, payment: str) -> str:\n    return f\"created:{order['id']}:{payment}\"\n\n\ndef create_order(order: dict) -> str:\n    validate_order(order)\n    reservation = reserve_stock(order)\n    payment = charge_card(order, reservation)\n    return publish_order_created(order, payment)\n\n\ndef layered_config(defaults: dict, project: dict, environment: dict) -> dict:\n    return {**defaults, **project, **environment}\n\n\ndef cache_key(entity_id: str, version: int) -> str:\n    return f\"entity:{entity_id}:v{version}\"\n\n\ndef invalidate(cache: dict, entity_id: str, version: int) -> None:\n    cache.pop(cache_key(entity_id, version), None)\n\n\ndef record_audit(event: dict, store: list[dict], publisher) -> None:\n    if \"actor\" not in event:\n        raise ValueError(\"actor required\")\n    store.append(dict(event))\n    publisher(event)\n",
+        "northstar/core.py": "\"\"\"Small functions used by independent acceptance cases.\"\"\"\n\nfrom datetime import date\n\n\ndef clamp(value: int, low: int, high: int) -> int:\n    return min(low, max(high, value))\n\n\ndef slugify(value: str) -> str:\n    return value.strip().lower().replace(\" \", \"-\")\n\n\nclass RetryExhausted(RuntimeError):\n    pass\n\n\ndef retry(operation, max_attempts: int):\n    last_error = None\n    for _ in range(max_attempts + 1):\n        try:\n            return operation()\n        except RuntimeError as error:\n            last_error = error\n    raise RetryExhausted(str(last_error))\n\n\ndef invoice_total(subtotal: float, tax_rate: float) -> float:\n    return subtotal * (1 + tax_rate)\n\n\ndef parse_bool(value: str) -> bool:\n    if value == \"true\":\n        return True\n    if value == \"false\":\n        return False\n    raise ValueError(\"invalid boolean\")\n\n\ndef dedupe(values: list[str]) -> list[str]:\n    return sorted(set(values))\n\n\ndef chunks(values: list[int], size: int):\n    for start in range(0, len(values) + 1, size):\n        yield values[start:start + size]\n\n\ndef iso_date(value: date) -> str:\n    return value.strftime(\"%m/%d/%Y\")\n\n\ndef group_by(records: list[dict], key: str) -> dict[str, list[dict]]:\n    raise NotImplementedError\n\n\ndef moving_average(values: list[float], window: int) -> list[float]:\n    raise NotImplementedError\n\n\ndef mask_email(value: str) -> str:\n    raise NotImplementedError\n\n\ndef parse_duration(value: str) -> int:\n    raise NotImplementedError\n\n\ndef top_n(values: list[int], count: int) -> list[int]:\n    raise NotImplementedError\n\n\ndef merge_ranges(ranges: list[tuple[int, int]]) -> list[tuple[int, int]]:\n    raise NotImplementedError\n\n\ndef normalize_phone(value: str) -> str:\n    raise NotImplementedError\n\n\ndef safe_divide(left: float, right: float) -> float:\n    if right == 0:\n        raise ZeroDivisionError(\"right must not be zero\")\n    return left / right\n\n\ndef page_bounds(page: int, page_size: int) -> tuple[int, int]:\n    if page < 1 or page_size < 1:\n        raise ValueError(\"page and page_size must be positive\")\n    start = (page - 1) * page_size\n    return start, start + page_size\n\n\ndef merge_config(defaults: dict, project: dict) -> dict:\n    return {**defaults, **project}\n\n\ndef normalize_relative_path(value: str) -> str:\n    pieces = [piece for piece in value.replace(\"\\\\\", \"/\").split(\"/\") if piece not in {\"\", \".\"}]\n    if \"..\" in pieces:\n        raise ValueError(\"parent traversal is forbidden\")\n    return \"/\".join(pieces)\n\n\ndef invoke_callback(callback, attempts: int) -> int:\n    for index in range(attempts):\n        callback(index)\n    return attempts\n",
+        "northstar/legacy.py": "\"\"\"Intentionally shallow legacy code for refactor cases.\"\"\"\n\n\ndef order_total(lines: list[dict]) -> float:\n    subtotal = sum(line[\"price\"] * line[\"quantity\"] for line in lines)\n    return round(subtotal, 2)\n\n\ndef invoice_total(lines: list[dict]) -> float:\n    subtotal = sum(line[\"price\"] * line[\"quantity\"] for line in lines)\n    return round(subtotal, 2)\n\n\ndef create_limit(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"value must be positive\")\n    return value\n\n\ndef update_limit(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"value must be positive\")\n    return value\n\n\ndef invoice_record(identifier: str, amount: float) -> dict:\n    return {\"identifier\": identifier, \"amount\": amount}\n\n\ndef user_label(name: str, identifier: int) -> str:\n    clean = \" \".join(name.split())\n    return f\"{clean} (#{identifier})\"\n\n\ndef append_tag(tag: str, tags: list[str] = []) -> list[str]:\n    tags.append(tag)\n    return tags\n",
+        "tests/__init__.py": "",
+        "tests/test_targets.py": "from datetime import date\nimport unittest\n\nfrom northstar import core, legacy\n\n\nclass BugTests(unittest.TestCase):\n    def test_clamp(self):\n        self.assertEqual(core.clamp(20, 0, 10), 10)\n        self.assertEqual(core.clamp(-3, 0, 10), 0)\n\n    def test_slugify(self):\n        self.assertEqual(core.slugify(\"  Hello,   World!  \"), \"hello-world\")\n\n    def test_retry(self):\n        calls = []\n        with self.assertRaises(core.RetryExhausted):\n            core.retry(lambda: calls.append(1) or (_ for _ in ()).throw(RuntimeError(\"x\")), 3)\n        self.assertEqual(len(calls), 3)\n\n    def test_invoice_total(self):\n        self.assertEqual(core.invoice_total(10.05, 0.075), 10.8)\n\n    def test_parse_bool(self):\n        self.assertTrue(core.parse_bool(\" TRUE \"))\n        self.assertFalse(core.parse_bool(\"False\"))\n\n    def test_dedupe(self):\n        self.assertEqual(core.dedupe([\"b\", \"a\", \"b\", \"c\"]), [\"b\", \"a\", \"c\"])\n\n    def test_chunks(self):\n        self.assertEqual(list(core.chunks([1, 2, 3, 4], 2)), [[1, 2], [3, 4]])\n\n    def test_iso_date(self):\n        self.assertEqual(core.iso_date(date(2026, 8, 20)), \"2026-08-20\")\n\n\nclass FeatureTests(unittest.TestCase):\n    def test_group_by(self):\n        rows = [{\"team\": \"a\", \"id\": 1}, {\"team\": \"b\", \"id\": 2}, {\"team\": \"a\", \"id\": 3}]\n        self.assertEqual([row[\"id\"] for row in core.group_by(rows, \"team\")[\"a\"]], [1, 3])\n\n    def test_moving_average(self):\n        self.assertEqual(core.moving_average([1, 2, 3, 4], 2), [1.5, 2.5, 3.5])\n\n    def test_mask_email(self):\n        self.assertEqual(core.mask_email(\"alice@example.com\"), \"a***e@example.com\")\n\n    def test_parse_duration(self):\n        self.assertEqual(core.parse_duration(\"2h 15m\"), 8100)\n\n    def test_top_n(self):\n        self.assertEqual(core.top_n([4, 1, 9, 9, 2], 3), [9, 9, 4])\n\n    def test_merge_ranges(self):\n        self.assertEqual(core.merge_ranges([(1, 3), (2, 5), (8, 9)]), [(1, 5), (8, 9)])\n\n    def test_normalize_phone(self):\n        self.assertEqual(core.normalize_phone(\"+86 (138) 0013-8000\"), \"+8613800138000\")\n\n\nclass RefactorTests(unittest.TestCase):\n    def test_totals(self):\n        lines = [{\"price\": 2.5, \"quantity\": 2}]\n        self.assertEqual(legacy.order_total(lines), 5.0)\n        self.assertEqual(legacy.invoice_total(lines), 5.0)\n\n    def test_limits(self):\n        self.assertEqual(legacy.create_limit(2), 2)\n        self.assertEqual(legacy.update_limit(3), 3)\n        with self.assertRaises(ValueError):\n            legacy.create_limit(0)\n\n    def test_invoice_record(self):\n        record = legacy.invoice_record(\"INV-1\", 4.5)\n        self.assertEqual(record[\"identifier\"], \"INV-1\")\n        self.assertEqual(record[\"amount\"], 4.5)\n\n    def test_label(self):\n        self.assertEqual(legacy.user_label(\"  Ada   Lovelace \", 7), \"Ada Lovelace (#7)\")\n\n    def test_append_tag_has_no_shared_default(self):\n        self.assertEqual(legacy.append_tag(\"a\"), [\"a\"])\n        self.assertEqual(legacy.append_tag(\"b\"), [\"b\"])\n",
+        "tests/test_security_hardening.py": "\"\"\"Seeded input-validation gap for the security-hardening workflow case.\"\"\"\n\nimport unittest\n\nfrom northstar import core\n\n\nclass SecurityHardeningTests(unittest.TestCase):\n    def test_safe_divide_rejects_bool(self):\n        with self.assertRaises(TypeError):\n            core.safe_divide(True, 2)\n\n    def test_safe_divide_rejects_text(self):\n        with self.assertRaises(TypeError):\n            core.safe_divide(\"10\", 2)\n\n    def test_safe_divide_zero(self):\n        with self.assertRaises(ZeroDivisionError):\n            core.safe_divide(1, 0)\n\n    def test_safe_divide_normal(self):\n        self.assertEqual(core.safe_divide(10, 4), 2.5)\n"
+      },
+      "turns": [
+        {
+          "prompt": "Harden one input-validation path in this Python project: northstar/core.py's safe_divide(left, right) currently accepts bool operands (True / 2 returns 0.5) and relies on incidental TypeErrors for text; the seeded suite tests.test_security_hardening pins the required contract (TypeError for bool and non-numeric operands, ZeroDivisionError for a zero right operand).\n\nDo not edit any files yourself. Use the task tool exactly once with action 'run', agent_type 'workflow', and exactly this workflow_request value (WorkflowRequest.v1):\n{\n  \"requestVersion\": 1,\n  \"profile\": {\n    \"taskId\": \"task_mac_workflow_security\",\n    \"kind\": \"change\",\n    \"risk\": \"low\",\n    \"complex\": false,\n    \"parentHasSufficientContext\": false\n  },\n  \"scope\": {\n    \"readRoots\": [\n      \".\"\n    ],\n    \"writePaths\": [\n      \"northstar/core.py\"\n    ],\n    \"forbiddenPaths\": [\n      \".git\",\n      \".env\"\n    ]\n  },\n  \"criteria\": [\n    {\n      \"id\": \"c1\",\n      \"kind\": \"safety\",\n      \"text\": \"Harden safe_divide in northstar/core.py so bool and non-numeric operands are rejected with TypeError while a zero right operand still raises ZeroDivisionError, making tests.test_security_hardening pass.\"\n    }\n  ],\n  \"verificationChecks\": [\n    {\n      \"checkId\": \"v1\",\n      \"kind\": \"tests\",\n      \"argv\": [\n        \"python3\",\n        \"-m\",\n        \"unittest\",\n        \"tests.test_security_hardening\"\n      ],\n      \"criterionIds\": [\n        \"c1\"\n      ]\n    }\n  ]\n}\n\nThe workflow's Analyst phase scopes the change, the Executor applies it, the deterministic Verifier runs the declared check, and the Reviewer decides acceptance. When the task tool returns, summarize the workflow outcome, including whether the verification check passed."
+        }
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "workflow-subagent",
+          "kind": "subagent_type_count",
+          "agentType": "workflow",
+          "min": 1
+        },
+        {
+          "id": "role-chain-completed",
+          "kind": "verification_passed",
+          "verificationKind": "review",
+          "sources": [
+            "workflow_review"
+          ],
+          "min": 1
+        },
+        {
+          "id": "deterministic-verification",
+          "kind": "command",
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "tests.test_security_hardening"
+          ],
+          "timeoutSeconds": 60
+        }
+      ],
+      "authorizedPaths": [
+        "northstar/core.py"
+      ]
+    }
+  ]
+}

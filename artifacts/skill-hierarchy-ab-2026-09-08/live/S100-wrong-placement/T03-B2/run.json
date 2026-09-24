@@ -1,0 +1,207 @@
+{
+  "task_id": "T03",
+  "scale": "S100",
+  "variant": "wrong-placement",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-wrong-placement",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283348915707963484",
+      "name": "search_skills",
+      "args": {
+        "directory_names": [
+          "message-queue"
+        ],
+        "query": "message queue consumer duplicate delivery idempotency"
+      },
+      "ok": true,
+      "output_sha256": "6cdbd573c0254e50e9d0d7df985f1bd6fbdfd32b0b1788b1ad41788768c3991c",
+      "output_chars": 4077,
+      "seen_qualified_names": [
+        "message-queue/backpressure",
+        "message-queue/consumer-throttle",
+        "message-queue/idempotency",
+        "message-queue/idempotent-consumer-template",
+        "message-queue/index-feed-lag",
+        "message-queue/bounce-back-queue",
+        "message-queue/circuit-breaker",
+        "message-queue/debugging-playbook",
+        "message-queue/dedup-exchange-filter",
+        "message-queue/pagination",
+        "message-queue/performance-tuning",
+        "message-queue/rate-limiting",
+        "message-queue/retry-backoff",
+        "message-queue/security-hardening",
+        "message-queue/timeout-tuning",
+        "database/idempotency",
+        "http-client/retry-backoff",
+        "job-scheduler/rate-limiting",
+        "auth-service/backpressure",
+        "auth-service/idempotency",
+        "cache-layer/idempotency",
+        "ci-pipeline/idempotency"
+      ],
+      "seen_directories": [
+        "auth-service",
+        "cache-layer",
+        "ci-pipeline",
+        "database",
+        "http-client",
+        "job-scheduler",
+        "message-queue"
+      ],
+      "elapsed_ms": 52.03795793931931
+    },
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283348915707963483",
+      "name": "search_skills",
+      "args": {
+        "query": "idempotency key deduplication duplicate side effects"
+      },
+      "ok": true,
+      "output_sha256": "dcae827e719d69a678223b6afb7e9a16987b49103781a7de4398023c7a8c5bb5",
+      "output_chars": 2053,
+      "seen_qualified_names": [
+        "auth-service/idempotency",
+        "cache-layer/idempotency",
+        "ci-pipeline/idempotency",
+        "database/idempotency",
+        "graphql-api/idempotency",
+        "http-client/idempotency",
+        "job-scheduler/idempotency",
+        "message-queue/idempotency",
+        "notification-service/idempotency",
+        "object-storage/idempotency",
+        "payment-gateway/idempotency",
+        "search-index/idempotency"
+      ],
+      "seen_directories": [
+        "auth-service",
+        "cache-layer",
+        "ci-pipeline",
+        "database",
+        "graphql-api",
+        "http-client",
+        "job-scheduler",
+        "message-queue",
+        "notification-service",
+        "object-storage",
+        "payment-gateway",
+        "search-index"
+      ],
+      "elapsed_ms": 26.273375027813017
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283528445340937232",
+      "name": "load_skill",
+      "args": {
+        "name": "message-queue/idempotent-consumer-template"
+      },
+      "ok": true,
+      "output_sha256": "afc1bb5f5dd7ef880c06bc99d956d88cf94001bb0e8d64df3cdcb332c90f188f",
+      "output_chars": 1775,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 2.0979170221835375
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283528445340937232",
+      "requested_name": "message-queue/idempotent-consumer-template",
+      "qualified_name": "message-queue/idempotent-consumer-template",
+      "ok": true,
+      "body_chars": 1520,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "d46e479c033d46e9afcc8b7aba52e84ef3846b320f88f9ab5185f1a9b7e3ce38",
+      "elapsed_ms": 5775.108458008617,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "search_skills",
+        "search_skills"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7667,
+        "outputTokens": 155,
+        "cacheReadTokens": 7616,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "fde8d6485b81cea44680f00be61902ff018ac307087299d6b16902b52b30a834",
+      "elapsed_ms": 6986.037541995756,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9067,
+        "outputTokens": 133,
+        "cacheReadTokens": 7616,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "f8d0ff2c5402c35727774d20d9d50c4ef18bfaa9e27f114ed2d4262c4564740b",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "f005e1a1e580fdd0c525b30ac4ba1d29e5ab429ad61b4665407285183bdd6725",
+  "system_prompt_chars": 11039,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 16734,
+  "output_tokens": 288,
+  "routing_events": [],
+  "elapsed_ms": 13374.544083024375
+}

@@ -1,0 +1,632 @@
+{
+  "description": "Live multi-agent cost evidence collected by scripts/run_multi_agent_cost_live.py against the real runtime (provider custom / glm-5.3-flash), one isolated child process per case with a 20-minute wall cap and a 100 model-call turn budget. Recorded 2026-08-28; the three mac-single-general-* cases were re-run on the same suite root after their rewrite as delegation-rejection contracts (every other case resumed from its sealed record). The rewrite pins the sealed production refusal of direct state-changing 'general' dispatch: each case asserts the bounded error[central_scheduler_required] code captured at the task-tool boundary, zero journaled sub-agents, and a byte-identical workspace (mutability read_only denies every edit), turning the safety degradation path into measured behavior. All 12 cases now pass: 5/5 fan-out, 3/3 rejection contracts, 4/4 workflow chains.",
+  "recordedAt": "2026-08-28T08:34:50Z",
+  "results": [
+    {
+      "coordination": {
+        "parentInputTokens": 212076,
+        "parentOutputTokens": 6055,
+        "subagentInputTokens": 100165,
+        "subagentOutputTokens": 10267
+      },
+      "durationMs": 309135,
+      "id": "multiagent-architecture",
+      "inputTokens": 312241,
+      "modelCalls": 28,
+      "outputTokens": 16322,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-subagents",
+        "synthesis-facts"
+      ],
+      "runId": "run_20e34f0fc9a04a52a976095ac234fac3",
+      "status": "passed",
+      "subagents": [
+        {
+          "agentType": "explore",
+          "durationMs": 70028,
+          "inputTokens": 33209,
+          "modelTurns": 5,
+          "outcome": "completed",
+          "outputTokens": 3701,
+          "subagentId": "sub_0d75ce26f4cc4f4f8775c9a22098db09",
+          "toolCalls": 6
+        },
+        {
+          "agentType": "explore",
+          "durationMs": 67771,
+          "inputTokens": 33546,
+          "modelTurns": 6,
+          "outcome": "completed",
+          "outputTokens": 3488,
+          "subagentId": "sub_7bff10b1294a4efdae3f8986ab8eaebb",
+          "toolCalls": 7
+        },
+        {
+          "agentType": "explore",
+          "durationMs": 120260,
+          "inputTokens": 33410,
+          "modelTurns": 0,
+          "outcome": "failed",
+          "outputTokens": 3078,
+          "subagentId": "sub_d900dde2e3da4f588a3185a9c1e4a59a",
+          "toolCalls": 0
+        }
+      ],
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "coordination": {
+        "parentInputTokens": 139093,
+        "parentOutputTokens": 7233,
+        "subagentInputTokens": 64685,
+        "subagentOutputTokens": 11060
+      },
+      "durationMs": 267458,
+      "id": "multiagent-test-risk",
+      "inputTokens": 203778,
+      "modelCalls": 25,
+      "outputTokens": 18293,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-subagents",
+        "synthesis-facts"
+      ],
+      "runId": "run_b529627bfb6f4910aa54b85354b5bc27",
+      "status": "passed",
+      "subagents": [
+        {
+          "agentType": "explore",
+          "durationMs": 98437,
+          "inputTokens": 28826,
+          "modelTurns": 6,
+          "outcome": "completed",
+          "outputTokens": 5386,
+          "subagentId": "sub_90c5b9d8ace04bcaa36ca07954210d6c",
+          "toolCalls": 7
+        },
+        {
+          "agentType": "explore",
+          "durationMs": 102770,
+          "inputTokens": 35859,
+          "modelTurns": 6,
+          "outcome": "completed",
+          "outputTokens": 5674,
+          "subagentId": "sub_b42bd67e4e4548478accb3140cde71e5",
+          "toolCalls": 7
+        }
+      ],
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "coordination": {
+        "parentInputTokens": 92112,
+        "parentOutputTokens": 5524,
+        "subagentInputTokens": 52303,
+        "subagentOutputTokens": 9918
+      },
+      "durationMs": 213117,
+      "id": "multiagent-data-flow",
+      "inputTokens": 144415,
+      "modelCalls": 18,
+      "outputTokens": 15442,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-subagents",
+        "synthesis-facts"
+      ],
+      "runId": "run_5c36e8444a20432fbc22e8a6f252c73e",
+      "status": "passed",
+      "subagents": [
+        {
+          "agentType": "explore",
+          "durationMs": 113708,
+          "inputTokens": 32200,
+          "modelTurns": 5,
+          "outcome": "completed",
+          "outputTokens": 6281,
+          "subagentId": "sub_92044e2e07d44acd9fd7233f892102f7",
+          "toolCalls": 8
+        },
+        {
+          "agentType": "explore",
+          "durationMs": 67806,
+          "inputTokens": 20103,
+          "modelTurns": 4,
+          "outcome": "completed",
+          "outputTokens": 3637,
+          "subagentId": "sub_d3252cd6df764418815442a4f046663a",
+          "toolCalls": 5
+        }
+      ],
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "coordination": {
+        "parentInputTokens": 186049,
+        "parentOutputTokens": 9823,
+        "subagentInputTokens": 86558,
+        "subagentOutputTokens": 14293
+      },
+      "durationMs": 384243,
+      "id": "multiagent-reliability",
+      "inputTokens": 272607,
+      "modelCalls": 23,
+      "outputTokens": 24116,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-subagents",
+        "synthesis-facts"
+      ],
+      "runId": "run_f83ff182581c48888ad4118c9c7b65ba",
+      "status": "passed",
+      "subagents": [
+        {
+          "agentType": "explore",
+          "durationMs": 89269,
+          "inputTokens": 22277,
+          "modelTurns": 5,
+          "outcome": "completed",
+          "outputTokens": 4018,
+          "subagentId": "sub_25ba396dc7fe4b9ca09a4d9574427663",
+          "toolCalls": 5
+        },
+        {
+          "agentType": "explore",
+          "durationMs": 120209,
+          "inputTokens": 31337,
+          "modelTurns": 0,
+          "outcome": "failed",
+          "outputTokens": 4416,
+          "subagentId": "sub_26af2780e5484b158e9c460ec6f339fa",
+          "toolCalls": 0
+        },
+        {
+          "agentType": "explore",
+          "durationMs": 107329,
+          "inputTokens": 32944,
+          "modelTurns": 5,
+          "outcome": "completed",
+          "outputTokens": 5859,
+          "subagentId": "sub_51aa2ceda40c45158ebdc9dfb671336f",
+          "toolCalls": 8
+        }
+      ],
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "coordination": {
+        "parentInputTokens": 194382,
+        "parentOutputTokens": 8012,
+        "subagentInputTokens": 89000,
+        "subagentOutputTokens": 10399
+      },
+      "durationMs": 330211,
+      "id": "multiagent-change-impact",
+      "inputTokens": 283382,
+      "modelCalls": 24,
+      "outputTokens": 18411,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "two-subagents",
+        "synthesis-facts"
+      ],
+      "runId": "run_f6ccd49dbd9440f1a18654ac656f1da6",
+      "status": "passed",
+      "subagents": [
+        {
+          "agentType": "explore",
+          "durationMs": 120315,
+          "inputTokens": 38246,
+          "modelTurns": 0,
+          "outcome": "failed",
+          "outputTokens": 2209,
+          "subagentId": "sub_56f262e819d04658aca5ee0192f3c4fa",
+          "toolCalls": 0
+        },
+        {
+          "agentType": "explore",
+          "durationMs": 112879,
+          "inputTokens": 32141,
+          "modelTurns": 5,
+          "outcome": "completed",
+          "outputTokens": 6313,
+          "subagentId": "sub_706e045a34e84c1f9af3684deba0a4b6",
+          "toolCalls": 7
+        },
+        {
+          "agentType": "explore",
+          "durationMs": 36452,
+          "inputTokens": 18613,
+          "modelTurns": 4,
+          "outcome": "completed",
+          "outputTokens": 1877,
+          "subagentId": "sub_fd5f5523348741019f47ada4ed4034dc",
+          "toolCalls": 4
+        }
+      ],
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "coordination": {
+        "parentInputTokens": 23664,
+        "parentOutputTokens": 1376,
+        "subagentInputTokens": 0,
+        "subagentOutputTokens": 0
+      },
+      "durationMs": 38996,
+      "id": "mac-single-general-bugfix-delegation",
+      "inputTokens": 23664,
+      "modelCalls": 4,
+      "outputTokens": 1376,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "delegation-rejected",
+        "no-writes"
+      ],
+      "runId": "run_6b362ab9b7ff4db7955b2a1d9ed85cf4",
+      "status": "passed",
+      "subagents": [],
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "coordination": {
+        "parentInputTokens": 23506,
+        "parentOutputTokens": 1685,
+        "subagentInputTokens": 0,
+        "subagentOutputTokens": 0
+      },
+      "durationMs": 59865,
+      "id": "mac-single-general-test-generation",
+      "inputTokens": 23506,
+      "modelCalls": 5,
+      "outputTokens": 1685,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "delegation-rejected",
+        "no-writes"
+      ],
+      "runId": "run_431b20aedef94b3683362cc7fe0150fb",
+      "status": "passed",
+      "subagents": [],
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "coordination": {
+        "parentInputTokens": 40285,
+        "parentOutputTokens": 2026,
+        "subagentInputTokens": 0,
+        "subagentOutputTokens": 0
+      },
+      "durationMs": 70578,
+      "id": "mac-single-general-refactor-application",
+      "inputTokens": 40285,
+      "modelCalls": 7,
+      "outputTokens": 2026,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "delegation-rejected",
+        "no-writes"
+      ],
+      "runId": "run_736fde1ce96f4fcb81331ddad6247ead",
+      "status": "passed",
+      "subagents": [],
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "coordination": {
+        "parentInputTokens": 16235,
+        "parentOutputTokens": 975,
+        "subagentInputTokens": 368182,
+        "subagentOutputTokens": 13294
+      },
+      "durationMs": 152734,
+      "id": "mac-workflow-feature-implementation",
+      "inputTokens": 384417,
+      "modelCalls": 53,
+      "outputTokens": 14269,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "workflow-subagent",
+        "role-chain-completed",
+        "deterministic-verification"
+      ],
+      "runId": "run_bef58d7bacf8423aa0cef2dff5161af7",
+      "status": "passed",
+      "subagents": [
+        {
+          "agentType": "general",
+          "durationMs": 19790,
+          "inputTokens": 40549,
+          "modelTurns": 7,
+          "outcome": "completed",
+          "outputTokens": 842,
+          "subagentId": "sub_00514aaeba927a11bda97e0a1daf3d93",
+          "toolCalls": 6
+        },
+        {
+          "agentType": "plan",
+          "durationMs": 26737,
+          "inputTokens": 27996,
+          "modelTurns": 6,
+          "outcome": "completed",
+          "outputTokens": 1502,
+          "subagentId": "sub_458ea3e6da33816272693b940c52c32b",
+          "toolCalls": 6
+        },
+        {
+          "agentType": "plan",
+          "durationMs": 38492,
+          "inputTokens": 55780,
+          "modelTurns": 8,
+          "outcome": "completed",
+          "outputTokens": 2030,
+          "subagentId": "sub_512d59db70b2ac3f7a4b6ddb0c2ac61c",
+          "toolCalls": 9
+        },
+        {
+          "agentType": "plan",
+          "durationMs": 42642,
+          "inputTokens": 59766,
+          "modelTurns": 8,
+          "outcome": "failed",
+          "outputTokens": 2273,
+          "subagentId": "sub_99401b3c47983ff565c2cb3286ab8f06",
+          "toolCalls": 11
+        },
+        {
+          "agentType": "workflow",
+          "durationMs": 128071,
+          "inputTokens": 184091,
+          "modelTurns": 21,
+          "outcome": "completed",
+          "outputTokens": 6647,
+          "subagentId": "sub_a27ac4b1313440ce953664a7d942ebe0",
+          "toolCalls": 21
+        }
+      ],
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "coordination": {
+        "parentInputTokens": 16998,
+        "parentOutputTokens": 1009,
+        "subagentInputTokens": 203928,
+        "subagentOutputTokens": 12082
+      },
+      "durationMs": 129249,
+      "id": "mac-workflow-bugfix-verification",
+      "inputTokens": 220926,
+      "modelCalls": 35,
+      "outputTokens": 13091,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "workflow-subagent",
+        "role-chain-completed",
+        "deterministic-verification"
+      ],
+      "runId": "run_861fd39087fc473eb6e8a1587c172e91",
+      "status": "passed",
+      "subagents": [
+        {
+          "agentType": "plan",
+          "durationMs": 57621,
+          "inputTokens": 34823,
+          "modelTurns": 6,
+          "outcome": "completed",
+          "outputTokens": 3323,
+          "subagentId": "sub_1b6b3661e5c7194f7c411cf479c11841",
+          "toolCalls": 7
+        },
+        {
+          "agentType": "workflow",
+          "durationMs": 107073,
+          "inputTokens": 101964,
+          "modelTurns": 16,
+          "outcome": "completed",
+          "outputTokens": 6041,
+          "subagentId": "sub_3022ae9d6c86440fa6c92fb43db1ac26",
+          "toolCalls": 19
+        },
+        {
+          "agentType": "plan",
+          "durationMs": 32922,
+          "inputTokens": 31674,
+          "modelTurns": 4,
+          "outcome": "completed",
+          "outputTokens": 2022,
+          "subagentId": "sub_510f6d289d7f72df2e10f2571bdd0b1c",
+          "toolCalls": 7
+        },
+        {
+          "agentType": "general",
+          "durationMs": 16112,
+          "inputTokens": 35467,
+          "modelTurns": 6,
+          "outcome": "completed",
+          "outputTokens": 696,
+          "subagentId": "sub_8512363ccca77721569b4eab0e3f6e3f",
+          "toolCalls": 5
+        }
+      ],
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "coordination": {
+        "parentInputTokens": 16943,
+        "parentOutputTokens": 1054,
+        "subagentInputTokens": 170188,
+        "subagentOutputTokens": 13042
+      },
+      "durationMs": 144185,
+      "id": "mac-workflow-refactor-review",
+      "inputTokens": 187131,
+      "modelCalls": 29,
+      "outputTokens": 14096,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "workflow-subagent",
+        "role-chain-completed",
+        "deterministic-verification"
+      ],
+      "runId": "run_506c3b614a194a0ea7caf675ea2472a2",
+      "status": "passed",
+      "subagents": [
+        {
+          "agentType": "plan",
+          "durationMs": 44379,
+          "inputTokens": 19136,
+          "modelTurns": 4,
+          "outcome": "completed",
+          "outputTokens": 2809,
+          "subagentId": "sub_76437bb6d34d62af2fe2cd40b3a9b32e",
+          "toolCalls": 4
+        },
+        {
+          "agentType": "workflow",
+          "durationMs": 112234,
+          "inputTokens": 85094,
+          "modelTurns": 13,
+          "outcome": "completed",
+          "outputTokens": 6521,
+          "subagentId": "sub_89fd2a12d4254745a78a831ecfd5874b",
+          "toolCalls": 15
+        },
+        {
+          "agentType": "plan",
+          "durationMs": 44808,
+          "inputTokens": 33069,
+          "modelTurns": 4,
+          "outcome": "completed",
+          "outputTokens": 2611,
+          "subagentId": "sub_a32a3347884011e75d39bf65a25db0e4",
+          "toolCalls": 6
+        },
+        {
+          "agentType": "general",
+          "durationMs": 21708,
+          "inputTokens": 32889,
+          "modelTurns": 5,
+          "outcome": "completed",
+          "outputTokens": 1101,
+          "subagentId": "sub_e3f8579f434a71bbfd6a322c9a07d33b",
+          "toolCalls": 5
+        }
+      ],
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "coordination": {
+        "parentInputTokens": 7708,
+        "parentOutputTokens": 788,
+        "subagentInputTokens": 219086,
+        "subagentOutputTokens": 14286
+      },
+      "durationMs": 146585,
+      "id": "mac-workflow-security-hardening",
+      "inputTokens": 226794,
+      "modelCalls": 36,
+      "outputTokens": 15074,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "workflow-subagent",
+        "role-chain-completed",
+        "deterministic-verification"
+      ],
+      "runId": "run_89d2d9a53f384e9d8465e7dd40a17dbb",
+      "status": "passed",
+      "subagents": [
+        {
+          "agentType": "workflow",
+          "durationMs": 128798,
+          "inputTokens": 109543,
+          "modelTurns": 17,
+          "outcome": "completed",
+          "outputTokens": 7143,
+          "subagentId": "sub_555bc5d9b36a4488862dcb4118b9ffe5",
+          "toolCalls": 21
+        },
+        {
+          "agentType": "general",
+          "durationMs": 30519,
+          "inputTokens": 41349,
+          "modelTurns": 6,
+          "outcome": "completed",
+          "outputTokens": 1642,
+          "subagentId": "sub_802d00433fd248ecde1b68aae4b457f1",
+          "toolCalls": 6
+        },
+        {
+          "agentType": "plan",
+          "durationMs": 51355,
+          "inputTokens": 46111,
+          "modelTurns": 6,
+          "outcome": "completed",
+          "outputTokens": 2905,
+          "subagentId": "sub_b739f21425b8618dec29bfabe9db8f0b",
+          "toolCalls": 9
+        },
+        {
+          "agentType": "plan",
+          "durationMs": 45413,
+          "inputTokens": 22083,
+          "modelTurns": 5,
+          "outcome": "completed",
+          "outputTokens": 2596,
+          "subagentId": "sub_fa4bed968e3b62c12e0d6de48416f979",
+          "toolCalls": 6
+        }
+      ],
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceReports": {
+    "evidenceRoot": ".acceptance-work/2026-08-27-multi-agent-cost-live/results-evidence/",
+    "manifest": "tests/fixtures/agent_quality/multi-agent-cost-manifest.json",
+    "northStarManifest": "tests/fixtures/agent_quality/north-star-manifest.json",
+    "runner": "scripts/run_multi_agent_cost_live.py"
+  },
+  "suiteId": "minicode-multi-agent-cost-v1"
+}

@@ -1,0 +1,1921 @@
+[
+  {
+    "text": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+    "proposal": [
+      "code",
+      "update"
+    ],
+    "actual": {
+      "raw_input": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "先聊聊这些开关对输出的影响",
+        "不用实际执行测试",
+        "test"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787192.465023,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "先聊聊这些开关对输出的影响",
+          "span": [
+            0,
+            13
+          ],
+          "entities": {},
+          "keywords": [
+            "先聊聊这些开关对输出的影响"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.update"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用实际执行测试",
+          "span": [
+            14,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": [
+            0,
+            13
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "先聊聊这些开关对输出的影响"
+    ]
+  },
+  {
+    "text": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+    "proposal": [
+      "code",
+      "create"
+    ],
+    "actual": {
+      "raw_input": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "intent_type": "code",
+      "action_type": "create",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "先聊聊这些开关对输出的影响",
+        "不用实际执行测试",
+        "test"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787192.466969,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "先聊聊这些开关对输出的影响",
+          "span": [
+            0,
+            13
+          ],
+          "entities": {},
+          "keywords": [
+            "先聊聊这些开关对输出的影响"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.create"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用实际执行测试",
+          "span": [
+            14,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.create",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": [
+            0,
+            13
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "先聊聊这些开关对输出的影响"
+    ]
+  },
+  {
+    "text": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+    "proposal": [
+      "test",
+      "execute"
+    ],
+    "actual": {
+      "raw_input": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "先聊聊这些开关对输出的影响",
+        "不用实际执行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.468676,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用实际执行测试",
+          "span": [
+            14,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "先聊聊这些开关对输出的影响"
+    ]
+  },
+  {
+    "text": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+    "proposal": [
+      "explain",
+      "read"
+    ],
+    "actual": {
+      "raw_input": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "先聊聊这些开关对输出的影响",
+        "不用实际执行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.470467,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "先聊聊这些开关对输出的影响",
+          "span": [
+            0,
+            13
+          ],
+          "entities": {},
+          "keywords": [
+            "先聊聊这些开关对输出的影响"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-explain.read"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用实际执行测试",
+          "span": [
+            14,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-explain.read",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": [
+            0,
+            13
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "先聊聊这些开关对输出的影响，不用实际执行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "先聊聊这些开关对输出的影响"
+    ]
+  },
+  {
+    "text": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+    "proposal": [
+      "code",
+      "update"
+    ],
+    "actual": {
+      "raw_input": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这俩选项是咋配合起来的啊",
+        "不必急着运行测试",
+        "test"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787192.472238,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "这俩选项是咋配合起来的啊",
+          "span": [
+            0,
+            12
+          ],
+          "entities": {},
+          "keywords": [
+            "这俩选项是咋配合起来的啊"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.update"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "不必急着运行测试。",
+          "span": [
+            13,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "不必急着运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": [
+            0,
+            12
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            13,
+            22
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "这俩选项是咋配合起来的啊"
+    ]
+  },
+  {
+    "text": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+    "proposal": [
+      "code",
+      "create"
+    ],
+    "actual": {
+      "raw_input": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "intent_type": "code",
+      "action_type": "create",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这俩选项是咋配合起来的啊",
+        "不必急着运行测试",
+        "test"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787192.474001,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "这俩选项是咋配合起来的啊",
+          "span": [
+            0,
+            12
+          ],
+          "entities": {},
+          "keywords": [
+            "这俩选项是咋配合起来的啊"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.create"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "不必急着运行测试。",
+          "span": [
+            13,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "不必急着运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.create",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": [
+            0,
+            12
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            13,
+            22
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "这俩选项是咋配合起来的啊"
+    ]
+  },
+  {
+    "text": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+    "proposal": [
+      "test",
+      "execute"
+    ],
+    "actual": {
+      "raw_input": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这俩选项是咋配合起来的啊",
+        "不必急着运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.475626,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "不必急着运行测试。",
+          "span": [
+            13,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "不必急着运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            13,
+            22
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "这俩选项是咋配合起来的啊"
+    ]
+  },
+  {
+    "text": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+    "proposal": [
+      "explain",
+      "read"
+    ],
+    "actual": {
+      "raw_input": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这俩选项是咋配合起来的啊",
+        "不必急着运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.477372,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "这俩选项是咋配合起来的啊",
+          "span": [
+            0,
+            12
+          ],
+          "entities": {},
+          "keywords": [
+            "这俩选项是咋配合起来的啊"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-explain.read"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "不必急着运行测试。",
+          "span": [
+            13,
+            22
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "不必急着运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-explain.read",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": [
+            0,
+            12
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            13,
+            22
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这俩选项是咋配合起来的啊，不必急着运行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "这俩选项是咋配合起来的啊"
+    ]
+  },
+  {
+    "text": "这段说明得怎么看呀？我暂时不打算运行测试。",
+    "proposal": [
+      "code",
+      "update"
+    ],
+    "actual": {
+      "raw_input": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这段说明得怎么看呀",
+        "我暂时不打算运行测试",
+        "test"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787192.480742,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "这段说明得怎么看呀",
+          "span": [
+            0,
+            9
+          ],
+          "entities": {},
+          "keywords": [
+            "这段说明得怎么看呀"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.update"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "我暂时不打算运行测试。",
+          "span": [
+            10,
+            21
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "我暂时不打算运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": [
+            0,
+            9
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            10,
+            21
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "这段说明得怎么看呀"
+    ]
+  },
+  {
+    "text": "这段说明得怎么看呀？我暂时不打算运行测试。",
+    "proposal": [
+      "code",
+      "create"
+    ],
+    "actual": {
+      "raw_input": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "intent_type": "code",
+      "action_type": "create",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这段说明得怎么看呀",
+        "我暂时不打算运行测试",
+        "test"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787192.4828959,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "这段说明得怎么看呀",
+          "span": [
+            0,
+            9
+          ],
+          "entities": {},
+          "keywords": [
+            "这段说明得怎么看呀"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.create"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "我暂时不打算运行测试。",
+          "span": [
+            10,
+            21
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "我暂时不打算运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.create",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": [
+            0,
+            9
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            10,
+            21
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "这段说明得怎么看呀"
+    ]
+  },
+  {
+    "text": "这段说明得怎么看呀？我暂时不打算运行测试。",
+    "proposal": [
+      "test",
+      "execute"
+    ],
+    "actual": {
+      "raw_input": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这段说明得怎么看呀",
+        "我暂时不打算运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.4846919,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "我暂时不打算运行测试。",
+          "span": [
+            10,
+            21
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "我暂时不打算运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            10,
+            21
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "这段说明得怎么看呀"
+    ]
+  },
+  {
+    "text": "这段说明得怎么看呀？我暂时不打算运行测试。",
+    "proposal": [
+      "explain",
+      "read"
+    ],
+    "actual": {
+      "raw_input": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "这段说明得怎么看呀",
+        "我暂时不打算运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.486649,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "这段说明得怎么看呀",
+          "span": [
+            0,
+            9
+          ],
+          "entities": {},
+          "keywords": [
+            "这段说明得怎么看呀"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-explain.read"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "我暂时不打算运行测试。",
+          "span": [
+            10,
+            21
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "我暂时不打算运行测试",
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-explain.read",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": [
+            0,
+            9
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            10,
+            21
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "这段说明得怎么看呀？我暂时不打算运行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "这段说明得怎么看呀"
+    ]
+  },
+  {
+    "text": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+    "proposal": [
+      "code",
+      "update"
+    ],
+    "actual": {
+      "raw_input": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "pytest",
+        "里的",
+        "-k",
+        "-m",
+        "分别有什么用",
+        "给我举例就行",
+        "不用真的运行测试",
+        "test"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787192.4891741,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行",
+          "span": [
+            0,
+            31
+          ],
+          "entities": {},
+          "keywords": [
+            "pytest",
+            "里的",
+            "-k",
+            "-m",
+            "分别有什么用",
+            "给我举例就行"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.update"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用真的运行测试",
+          "span": [
+            32,
+            40
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": [
+            0,
+            31
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "pytest 里的 -k 和 -m 分别有什么用？给我举例就行"
+    ]
+  },
+  {
+    "text": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+    "proposal": [
+      "code",
+      "create"
+    ],
+    "actual": {
+      "raw_input": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "intent_type": "code",
+      "action_type": "create",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "pytest",
+        "里的",
+        "-k",
+        "-m",
+        "分别有什么用",
+        "给我举例就行",
+        "不用真的运行测试",
+        "test"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787192.4916449,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行",
+          "span": [
+            0,
+            31
+          ],
+          "entities": {},
+          "keywords": [
+            "pytest",
+            "里的",
+            "-k",
+            "-m",
+            "分别有什么用",
+            "给我举例就行"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.create"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用真的运行测试",
+          "span": [
+            32,
+            40
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.create",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": [
+            0,
+            31
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "pytest 里的 -k 和 -m 分别有什么用？给我举例就行"
+    ]
+  },
+  {
+    "text": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+    "proposal": [
+      "test",
+      "execute"
+    ],
+    "actual": {
+      "raw_input": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "pytest",
+        "里的",
+        "-k",
+        "-m",
+        "分别有什么用",
+        "给我举例就行",
+        "不用真的运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.49396,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用真的运行测试",
+          "span": [
+            32,
+            40
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "pytest 里的 -k 和 -m 分别有什么用？给我举例就行"
+    ]
+  },
+  {
+    "text": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+    "proposal": [
+      "explain",
+      "read"
+    ],
+    "actual": {
+      "raw_input": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "pytest",
+        "里的",
+        "-k",
+        "-m",
+        "分别有什么用",
+        "给我举例就行",
+        "不用真的运行测试",
+        "test"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.496476,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行",
+          "span": [
+            0,
+            31
+          ],
+          "entities": {},
+          "keywords": [
+            "pytest",
+            "里的",
+            "-k",
+            "-m",
+            "分别有什么用",
+            "给我举例就行"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-explain.read"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.99,
+          "clause": "不用真的运行测试",
+          "span": [
+            32,
+            40
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "test"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute",
+            "rule:typed-test-constraint"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-explain.read",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": [
+            0,
+            31
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "pytest 里的 -k 和 -m 分别有什么用？给我举例就行，不用真的运行测试。",
+      "context_used": false
+    },
+    "requests": [
+      "pytest 里的 -k 和 -m 分别有什么用？给我举例就行"
+    ]
+  },
+  {
+    "text": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+    "proposal": [
+      "code",
+      "update"
+    ],
+    "actual": {
+      "raw_input": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "终端提示",
+        "这两步各自做什么",
+        "我还不准备执行"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787192.499488,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么",
+          "span": [
+            0,
+            47
+          ],
+          "entities": {},
+          "keywords": [
+            "终端提示",
+            "这两步各自做什么"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.update"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "我还不准备执行。",
+          "span": [
+            48,
+            56
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "我还不准备执行"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": [
+            0,
+            47
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            48,
+            56
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "context_used": false
+    },
+    "requests": [
+      "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么"
+    ]
+  },
+  {
+    "text": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+    "proposal": [
+      "code",
+      "create"
+    ],
+    "actual": {
+      "raw_input": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "intent_type": "code",
+      "action_type": "create",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "终端提示",
+        "这两步各自做什么",
+        "我还不准备执行"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787192.502332,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "create",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么",
+          "span": [
+            0,
+            47
+          ],
+          "entities": {},
+          "keywords": [
+            "终端提示",
+            "这两步各自做什么"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.create"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "我还不准备执行。",
+          "span": [
+            48,
+            56
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "我还不准备执行"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.create",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": [
+            0,
+            47
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            48,
+            56
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "context_used": false
+    },
+    "requests": [
+      "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么"
+    ]
+  },
+  {
+    "text": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+    "proposal": [
+      "test",
+      "execute"
+    ],
+    "actual": {
+      "raw_input": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "intent_type": "unknown",
+      "action_type": "unknown",
+      "confidence": 0.0,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "终端提示",
+        "这两步各自做什么",
+        "我还不准备执行"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787192.505047,
+      "operations": [
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "我还不准备执行。",
+          "span": [
+            48,
+            56
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "我还不准备执行"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": null,
+      "evidence": [
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            48,
+            56
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "explicit_negation_only",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "context_used": false
+    },
+    "requests": [
+      "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么"
+    ]
+  },
+  {
+    "text": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+    "proposal": [
+      "explain",
+      "read"
+    ],
+    "actual": {
+      "raw_input": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "intent_type": "explain",
+      "action_type": "read",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "终端提示",
+        "这两步各自做什么",
+        "我还不准备执行"
+      ],
+      "complexity_hint": "simple",
+      "timestamp": 1788787192.507968,
+      "operations": [
+        {
+          "intent_type": "explain",
+          "action_type": "read",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么",
+          "span": [
+            0,
+            47
+          ],
+          "entities": {},
+          "keywords": [
+            "终端提示",
+            "这两步各自做什么"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-explain.read"
+          ]
+        },
+        {
+          "intent_type": "test",
+          "action_type": "execute",
+          "polarity": "negated",
+          "confidence": 0.94,
+          "clause": "我还不准备执行。",
+          "span": [
+            48,
+            56
+          ],
+          "entities": {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          },
+          "keywords": [
+            "我还不准备执行"
+          ],
+          "evidence_codes": [
+            "explicit:negated-test.execute"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-explain.read",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": [
+            0,
+            47
+          ],
+          "turn_offset": 0
+        },
+        {
+          "code": "explicit:negated-test.execute",
+          "source": "explicit",
+          "reason": "current clause explicitly rules out this operation",
+          "strength": 0.94,
+          "span": [
+            48,
+            56
+          ],
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么？我还不准备执行。",
+      "context_used": false
+    },
+    "requests": [
+      "终端提示“请先运行 npm install，再执行 npm run dev”。这两步各自做什么"
+    ]
+  }
+]

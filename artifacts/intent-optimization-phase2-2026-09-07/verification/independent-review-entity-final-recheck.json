@@ -1,0 +1,1060 @@
+{
+  "source_sha256": {
+    "minicode/intent_parser.py": "1fe71bdef84ffaafcbd6e249e7beeb718eb047efd83862062e75089f8e45237d",
+    "minicode/intent_negation.py": "0601aa2b21ac45531113e2422f87c5824a5f5427153139ca56567f11566fb393",
+    "minicode/intent_entity_targets.py": "adea365a7b474211ae5325d0cbec0297e79f7e52e3654ac14062a140fc0b277d"
+  },
+  "baseline": [
+    {
+      "history": "审查 `alpha.py` 和 `beta.py`。",
+      "text": "继续审查后一个文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "审查 `alpha.py`。",
+      "text": "继续审查这份文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [],
+      "context_used": true,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "审查 alpha.py 和 `beta.py`。",
+      "text": "继续审查后一个文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请给 `utils.py` 加边界情况测试。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请审查 alpha.py。日志写着：删除 beta.py。",
+      "text": "继续审查这份文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [
+        "alpha.py"
+      ],
+      "context_used": true,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [
+              "alpha.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "日志写着：删除 alpha.py。请审查 beta.py。",
+      "text": "继续审查这份文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [
+        "beta.py"
+      ],
+      "context_used": true,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [
+              "beta.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请审查 alpha.py；beta.py 只是历史日志里的文件名。",
+      "text": "继续审查这份文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [
+        "alpha.py",
+        "beta.py"
+      ],
+      "context_used": true,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [
+              "alpha.py",
+              "beta.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请审查 alpha.py；不要读取 beta.py。",
+      "text": "继续审查后一个文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "不要审查 alpha.py。只审查 beta.py。",
+      "text": "继续审查第一个文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请更新 docs/api.md；不要修改 archive/old.md。",
+      "text": "继续更新这份文档的示例。",
+      "main": [
+        "document",
+        "update"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "document",
+          "update",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给 utils.py 加一个边界测试。日志提到 old.py。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请审查 alpha.py。",
+      "text": "审查这份文件，然后解释这份文件的用途。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ],
+        [
+          "explain",
+          "read",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请新增一份接口文档。背景资料在 archive/legacy.md。",
+      "text": "继续更新这份文档的示例。",
+      "main": [
+        "document",
+        "update"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "document",
+          "update",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给当前模块添加测试。旧测试结果保存在 reports/old.log。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给当前模块添加测试；reports/old.log 只是历史输出。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请新建接口文档；archive/legacy.md 只是旧参考资料。",
+      "text": "继续更新这份文档的示例。",
+      "main": [
+        "document",
+        "update"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "document",
+          "update",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请给 utils.py 加测试。旧报告中的 other.py 不是目标。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给 legacy.py 不要添加测试；给当前模块添加测试。",
+      "text": "再加一个 None 输入的用例。",
+      "files": [],
+      "previous_operations": [
+        [
+          "test",
+          "create",
+          "negated",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ],
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ],
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给 legacy.py 添加测试的要求已经取消；给当前模块添加测试。",
+      "text": "再加一个 None 输入的用例。",
+      "files": [],
+      "previous_operations": [
+        [
+          "test",
+          "create",
+          "negated",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ],
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ],
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给 legacy.py 不要添加测试；给 utils.py 添加测试。",
+      "text": "再加一个 None 输入的用例。",
+      "files": [],
+      "previous_operations": [
+        [
+          "test",
+          "create",
+          "negated",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ],
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [
+              "utils.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ],
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    }
+  ],
+  "candidate": [
+    {
+      "history": "审查 `alpha.py` 和 `beta.py`。",
+      "text": "继续审查后一个文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "审查 `alpha.py`。",
+      "text": "继续审查这份文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [],
+      "context_used": true,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "审查 alpha.py 和 `beta.py`。",
+      "text": "继续审查后一个文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请给 `utils.py` 加边界情况测试。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请审查 alpha.py。日志写着：删除 beta.py。",
+      "text": "继续审查这份文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [
+        "alpha.py"
+      ],
+      "context_used": true,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [
+              "alpha.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "日志写着：删除 alpha.py。请审查 beta.py。",
+      "text": "继续审查这份文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [
+        "beta.py"
+      ],
+      "context_used": true,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [
+              "beta.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请审查 alpha.py；beta.py 只是历史日志里的文件名。",
+      "text": "继续审查这份文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [],
+      "context_used": true,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请审查 alpha.py；不要读取 beta.py。",
+      "text": "继续审查后一个文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [
+        "beta.py"
+      ],
+      "context_used": true,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [
+              "beta.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "不要审查 alpha.py。只审查 beta.py。",
+      "text": "继续审查第一个文件。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [
+        "alpha.py"
+      ],
+      "context_used": true,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [
+              "alpha.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请更新 docs/api.md；不要修改 archive/old.md。",
+      "text": "继续更新这份文档的示例。",
+      "main": [
+        "document",
+        "update"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "document",
+          "update",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给 utils.py 加一个边界测试。日志提到 old.py。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [
+        "utils.py"
+      ],
+      "context_used": true,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [
+              "utils.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请审查 alpha.py。",
+      "text": "审查这份文件，然后解释这份文件的用途。",
+      "main": [
+        "review",
+        "analyze"
+      ],
+      "files": [
+        "alpha.py"
+      ],
+      "context_used": true,
+      "ops": [
+        [
+          "review",
+          "analyze",
+          "affirmed",
+          {
+            "files": [
+              "alpha.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ],
+        [
+          "explain",
+          "read",
+          "affirmed",
+          {
+            "files": [
+              "alpha.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请新增一份接口文档。背景资料在 archive/legacy.md。",
+      "text": "继续更新这份文档的示例。",
+      "main": [
+        "document",
+        "update"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "document",
+          "update",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给当前模块添加测试。旧测试结果保存在 reports/old.log。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给当前模块添加测试；reports/old.log 只是历史输出。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请新建接口文档；archive/legacy.md 只是旧参考资料。",
+      "text": "继续更新这份文档的示例。",
+      "main": [
+        "document",
+        "update"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "document",
+          "update",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请给 utils.py 加测试。旧报告中的 other.py 不是目标。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [
+        "utils.py"
+      ],
+      "context_used": true,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [
+              "utils.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给 legacy.py 不要添加测试；给当前模块添加测试。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给 legacy.py 添加测试的要求已经取消；给当前模块添加测试。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给 legacy.py 不要添加测试；给 utils.py 添加测试。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [
+        "utils.py"
+      ],
+      "context_used": true,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [
+              "utils.py"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    }
+  ]
+}

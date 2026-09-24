@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import shutil
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from minicode.tooling import SkillLoadBinding
 
 
 @dataclass(slots=True)
@@ -33,7 +38,12 @@ class SkillSummary:
     tools: list[str] = field(default_factory=list)
     keywords: list[str] = field(default_factory=list)
     examples: list[str] = field(default_factory=list)
+    purposes: list[str] = field(default_factory=list)
+    supported_operations: list[str] = field(default_factory=list)
+    required_operations: list[str] = field(default_factory=list)
+    activation_terms: list[str] = field(default_factory=list)
     content_digest: str = ""
+    routing_identity_digest: str = ""
 
 
 @dataclass(slots=True)
@@ -142,13 +152,34 @@ def _safe_skill_file(root: Path, path: Path) -> Path | None:
     and then verify resolved containment before reading anything.
     """
     try:
+        # The catalog root itself is untrusted too.  Anchoring only at
+        # ``root.resolve()`` would bless ``workspace/.mini-code -> /outside``
+        # (or a symlinked ``skills`` root) and make the containment check
+        # tautological.  The two components managed by MiniCode must be real
+        # directories below the caller's project/user anchor.
+        if root.name != "skills" or root.parent.name not in {
+            ".mini-code",
+            ".claude",
+        }:
+            return None
+        anchor = root.parent.parent
+        for managed in (root.parent, root):
+            if managed.is_symlink() or not managed.is_dir():
+                return None
+        resolved_anchor = anchor.resolve(strict=True)
+        resolved_root = root.resolve(strict=True)
+        expected_root = (
+            resolved_anchor / root.parent.name / root.name
+        )
+        if resolved_root != expected_root:
+            return None
+
         relative = path.relative_to(root)
         current = root
         for part in relative.parts:
             current = current / part
             if current.is_symlink():
                 return None
-        resolved_root = root.resolve(strict=True)
         resolved = path.resolve(strict=True)
         if not resolved.is_relative_to(resolved_root) or not resolved.is_file():
             return None
@@ -219,7 +250,7 @@ def _skill_from_file(
     scopes = _as_list(metadata.get("scopes")) or (directory_summary.scopes if directory_summary else [])
     keywords = _as_list(metadata.get("keywords")) or (directory_summary.keywords if directory_summary else [])
 
-    return LoadedSkill(
+    loaded = LoadedSkill(
         name=name,
         qualified_name=qualified_name,
         description=extract_description(content),
@@ -232,8 +263,106 @@ def _skill_from_file(
         tools=_as_list(metadata.get("tools")),
         keywords=list(keywords),
         examples=_as_list(metadata.get("examples")),
+        purposes=_as_list(metadata.get("purposes")),
+        supported_operations=_as_list(metadata.get("supported_operations")),
+        required_operations=_as_list(metadata.get("required_operations")),
+        activation_terms=_as_list(metadata.get("activation_terms")),
         content=content,
     )
+    loaded.content_digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    loaded.routing_identity_digest = _routing_identity_digest(
+        loaded,
+        directory_summary=directory_summary,
+    )
+    return loaded
+
+
+def _routing_identity_digest(
+    skill: SkillSummary | LoadedSkill | Mapping[str, Any],
+    *,
+    directory_summary: SkillDirectorySummary | Mapping[str, Any] | None = None,
+) -> str:
+    """Return the stable identity of all inputs that can affect routing.
+
+    ``content_digest`` remains the exact body binding used by ``load_skill``.
+    This second digest additionally covers the final effective metadata after
+    ``SKILL_DIR.md`` inheritance, so routing caches, version lineage, and
+    feedback do not survive a semantic catalog change.
+    """
+
+    def value(name: str, default: Any = "") -> Any:
+        if isinstance(skill, Mapping):
+            return skill.get(name, default)
+        return getattr(skill, name, default)
+
+    def directory_value(name: str, default: Any = "") -> Any:
+        if isinstance(directory_summary, Mapping):
+            return directory_summary.get(name, default)
+        return getattr(directory_summary, name, default)
+
+    content_digest = str(value("content_digest"))
+    if (
+        directory_summary is None
+        and re.fullmatch(r"[0-9a-f]{64}", content_digest) is not None
+    ):
+        # A direct Skill's frontmatter and body are already fully bound by its
+        # content digest. Preserve that legacy identity; only inherited
+        # directory metadata requires the composite projection below.
+        return content_digest
+
+    payload = {
+        "schemaVersion": 1,
+        "contentDigest": content_digest,
+        "name": str(value("name")),
+        "qualifiedName": str(value("qualified_name") or value("name")),
+        "description": str(value("description")),
+        "directory": str(value("directory")),
+        "directoryDescription": str(value("directory_description")),
+        "domains": [str(item) for item in (value("domains", []) or [])],
+        "scopes": [str(item) for item in (value("scopes", []) or [])],
+        "tools": [str(item) for item in (value("tools", []) or [])],
+        "keywords": [str(item) for item in (value("keywords", []) or [])],
+        "examples": [str(item) for item in (value("examples", []) or [])],
+        "purposes": [str(item) for item in (value("purposes", []) or [])],
+        "supportedOperations": [
+            str(item)
+            for item in (value("supported_operations", []) or [])
+        ],
+        "requiredOperations": [
+            str(item)
+            for item in (value("required_operations", []) or [])
+        ],
+        "activationTerms": [
+            str(item) for item in (value("activation_terms", []) or [])
+        ],
+        "directoryMetadata": (
+            {
+                "name": str(directory_value("name")),
+                "description": str(directory_value("description")),
+                "domains": [
+                    str(item)
+                    for item in (directory_value("domains", []) or [])
+                ],
+                "scopes": [
+                    str(item)
+                    for item in (directory_value("scopes", []) or [])
+                ],
+                "keywords": [
+                    str(item)
+                    for item in (directory_value("keywords", []) or [])
+                ],
+            }
+            if directory_summary is not None
+            else None
+        ),
+    }
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def _list_skill_dirs(root: Path, source: str) -> list[LoadedSkill]:
@@ -336,9 +465,12 @@ def discover_skills(cwd: str | Path) -> list[SkillSummary]:
             tools=list(skill.tools),
             keywords=list(skill.keywords),
             examples=list(skill.examples),
-            content_digest=hashlib.sha256(
-                skill.content.encode("utf-8")
-            ).hexdigest(),
+            purposes=list(skill.purposes),
+            supported_operations=list(skill.supported_operations),
+            required_operations=list(skill.required_operations),
+            activation_terms=list(skill.activation_terms),
+            content_digest=skill.content_digest,
+            routing_identity_digest=skill.routing_identity_digest,
         )
         for skill in ordered
     ]
@@ -382,30 +514,53 @@ def _summary_value(summary: SkillSummary | dict[str, Any], key: str) -> Any:
     return getattr(summary, key, None)
 
 
+def resolve_skill_catalog_binding(
+    name: str,
+    catalog: list[SkillSummary | dict[str, Any]],
+) -> SkillSummary | dict[str, Any] | None:
+    """Resolve one canonical or unambiguous bare catalog identity."""
+    normalized_name = name.strip().strip("/")
+    if not normalized_name or not _is_safe_skill_name(normalized_name):
+        return None
+    exact = [
+        item
+        for item in catalog
+        if str(_summary_value(item, "qualified_name") or "") == normalized_name
+    ]
+    if "/" in normalized_name:
+        matches = exact
+    else:
+        # Direct ``foo`` and nested ``bundle/foo`` share a public bare name.
+        # In that catalog, ``foo`` is ambiguous even though it is also the
+        # direct Skill's qualified name; callers must remove the collision or
+        # choose the nested binding explicitly as ``bundle/foo``.
+        matches = [
+            item
+            for item in catalog
+            if str(_summary_value(item, "name") or "") == normalized_name
+        ]
+    return matches[0] if len(matches) == 1 else None
+
+
 def load_skill_from_catalog(
     cwd: str | Path,
     name: str,
     catalog: list[SkillSummary | dict[str, Any]],
+    *,
+    expected_binding: SkillLoadBinding | None = None,
 ) -> LoadedSkill | None:
     """Load the exact file/version advertised by one discovery snapshot."""
-    normalized_name = name.strip().strip("/")
-    if not normalized_name or not _is_safe_skill_name(normalized_name):
+    binding = resolve_skill_catalog_binding(name, catalog)
+    if binding is None:
         return None
+    if expected_binding is not None:
+        from minicode.tooling import skill_load_binding_from_value
 
-    exact = [
-        item for item in catalog
-        if str(_summary_value(item, "qualified_name") or "") == normalized_name
-    ]
-    matches = exact or [
-        item for item in catalog
-        if str(_summary_value(item, "name") or "") == normalized_name
-    ]
-    # A bare public name that identifies multiple directory Skills is not a
-    # stable binding. Require the qualified name instead of choosing by scan
-    # order.
-    if len(matches) != 1:
-        return None
-    binding = matches[0]
+        # Compare the complete route-time identity before opening SKILL.md.
+        # A freshly assembled loader must not turn an old routing decision
+        # into authority over a replacement body with the same public name.
+        if skill_load_binding_from_value(binding) != expected_binding:
+            return None
     source = str(_summary_value(binding, "source") or "")
     roots = {root_source: root for root, root_source in _skill_roots(cwd)}
     root = roots.get(source)
@@ -420,9 +575,14 @@ def load_skill_from_catalog(
     except OSError:
         return None
     digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
-    if digest != str(_summary_value(binding, "content_digest") or ""):
+    expected_content_digest = (
+        expected_binding.content_digest
+        if expected_binding is not None
+        else str(_summary_value(binding, "content_digest") or "")
+    )
+    if digest != expected_content_digest:
         return None
-    return LoadedSkill(
+    loaded = LoadedSkill(
         name=str(_summary_value(binding, "name") or ""),
         qualified_name=str(_summary_value(binding, "qualified_name") or ""),
         description=str(_summary_value(binding, "description") or ""),
@@ -437,9 +597,25 @@ def load_skill_from_catalog(
         tools=list(_summary_value(binding, "tools") or []),
         keywords=list(_summary_value(binding, "keywords") or []),
         examples=list(_summary_value(binding, "examples") or []),
+        purposes=list(_summary_value(binding, "purposes") or []),
+        supported_operations=list(
+            _summary_value(binding, "supported_operations") or []
+        ),
+        required_operations=list(
+            _summary_value(binding, "required_operations") or []
+        ),
+        activation_terms=list(
+            _summary_value(binding, "activation_terms") or []
+        ),
         content_digest=digest,
+        routing_identity_digest=str(
+            _summary_value(binding, "routing_identity_digest") or ""
+        ),
         content=content,
     )
+    if not loaded.routing_identity_digest:
+        loaded.routing_identity_digest = _routing_identity_digest(loaded)
+    return loaded
 
 
 def load_skill(cwd: str | Path, name: str) -> LoadedSkill | None:
@@ -447,7 +623,71 @@ def load_skill(cwd: str | Path, name: str) -> LoadedSkill | None:
 
 
 def _managed_skill_root(scope: str, cwd: str | Path) -> Path:
-    return (Path(cwd) / ".mini-code" / "skills") if scope == "project" else (_home_dir() / ".mini-code" / "skills")
+    if scope not in {"project", "user"}:
+        raise RuntimeError("Invalid Skill scope: expected 'project' or 'user'.")
+    anchor = Path(cwd) if scope == "project" else _home_dir()
+    return anchor / ".mini-code" / "skills"
+
+
+def _ensure_managed_skill_root(scope: str, cwd: str | Path) -> Path:
+    root = _managed_skill_root(scope, cwd)
+    anchor = root.parent.parent
+    try:
+        if anchor.is_symlink() or not anchor.is_dir():
+            raise RuntimeError("Skill install anchor is not a safe directory.")
+        for directory in (root.parent, root):
+            if directory.is_symlink():
+                raise RuntimeError(
+                    "Skill install root cannot contain managed symlinks."
+                )
+            if directory.exists():
+                if not directory.is_dir():
+                    raise RuntimeError("Skill install root is not a directory.")
+            else:
+                directory.mkdir(mode=0o700)
+    except OSError as error:
+        raise RuntimeError("Skill install root is unavailable.") from error
+    return root
+
+
+def _ensure_skill_subdirectory(parent: Path, name: str) -> tuple[Path, bool]:
+    directory = parent / name
+    if directory.is_symlink():
+        raise RuntimeError("Skill install path cannot contain symlinks.")
+    if directory.exists():
+        if not directory.is_dir():
+            raise RuntimeError("Skill install path is not a directory.")
+        return directory, False
+    try:
+        directory.mkdir(mode=0o700)
+    except OSError as error:
+        raise RuntimeError("Skill install directory is unavailable.") from error
+    return directory, True
+
+
+def _default_skill_directory_marker(name: str) -> str:
+    return (
+        "---\n"
+        f"name: {name}\n"
+        f"description: Skills in the {name} directory.\n"
+        "---\n\n"
+        f"# {name}\n"
+    )
+
+
+def _validate_skill_directory_marker(
+    marker: Path,
+    *,
+    root: Path,
+    source: str,
+    expected_name: str,
+) -> None:
+    directory = _directory_from_file(marker, source, root=root)
+    if directory is None or directory.name != expected_name:
+        raise RuntimeError(
+            "Invalid SKILL_DIR.md: its discovered name must match the "
+            f"'{expected_name}' directory."
+        )
 
 
 def install_skill(cwd: str | Path, source_path: str, name: str | None = None, scope: str = "user") -> dict[str, str]:
@@ -472,10 +712,88 @@ def install_skill(cwd: str | Path, source_path: str, name: str | None = None, sc
             "letters, digits, '.', '_', '-' only."
         )
 
-    target_dir = _managed_skill_root(scope, cwd) / skill_name
-    target_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(skill_file, target_dir / "SKILL.md")
-    return {"name": skill_name, "targetPath": str(target_dir / "SKILL.md")}
+    root = _ensure_managed_skill_root(scope, cwd)
+    source_name = "project" if scope == "project" else "user"
+    segments = skill_name.split("/")
+    created_directories: list[Path] = []
+    parent = root
+    marker: Path | None = None
+    marker_created = False
+    target_file: Path | None = None
+    target_preexisted = False
+    target_touched = False
+    previous_content: bytes | None = None
+    try:
+        if len(segments) == 2:
+            parent, created = _ensure_skill_subdirectory(parent, segments[0])
+            if created:
+                created_directories.append(parent)
+            marker = parent / "SKILL_DIR.md"
+            if marker.is_symlink():
+                raise RuntimeError("SKILL_DIR.md cannot be a symlink.")
+            if marker.exists():
+                if not marker.is_file():
+                    raise RuntimeError("SKILL_DIR.md is not a regular file.")
+            else:
+                marker.write_text(
+                    _default_skill_directory_marker(segments[0]),
+                    encoding="utf-8",
+                )
+                marker_created = True
+            _validate_skill_directory_marker(
+                marker,
+                root=root,
+                source=source_name,
+                expected_name=segments[0],
+            )
+
+        target_dir, created = _ensure_skill_subdirectory(parent, segments[-1])
+        if created:
+            created_directories.append(target_dir)
+        target_file = target_dir / "SKILL.md"
+        if target_file.is_symlink():
+            raise RuntimeError("SKILL.md cannot be a symlink.")
+        if target_file.exists() and not target_file.is_file():
+            raise RuntimeError("SKILL.md is not a regular file.")
+        target_preexisted = target_file.exists()
+        previous_content = target_file.read_bytes() if target_preexisted else None
+        target_touched = True
+        shutil.copyfile(skill_file, target_file)
+
+        target_resolved = target_file.resolve(strict=True)
+        discovered = [
+            item
+            for item in discover_skills(cwd)
+            if item.source == source_name
+            and item.qualified_name == skill_name
+            and Path(item.path) == target_resolved
+        ]
+        if len(discovered) != 1:
+            raise RuntimeError(
+                "Installed Skill did not resolve to the requested catalog "
+                f"identity '{skill_name}'."
+            )
+    except Exception:
+        if target_touched and target_file is not None:
+            try:
+                if target_preexisted and previous_content is not None:
+                    target_file.write_bytes(previous_content)
+                else:
+                    target_file.unlink(missing_ok=True)
+            except OSError:
+                pass
+        if marker_created and marker is not None:
+            try:
+                marker.unlink(missing_ok=True)
+            except OSError:
+                pass
+        for directory in reversed(created_directories):
+            try:
+                directory.rmdir()
+            except OSError:
+                pass
+        raise
+    return {"name": skill_name, "targetPath": str(target_file)}
 
 
 def remove_managed_skill(cwd: str | Path, name: str, scope: str = "user") -> dict[str, object]:
@@ -485,8 +803,23 @@ def remove_managed_skill(cwd: str | Path, name: str, scope: str = "user") -> dic
             "Invalid skill name: expected 'name' or 'directory/name' using "
             "letters, digits, '.', '_', '-' only."
         )
-    target_path = _managed_skill_root(scope, cwd) / normalized_name
-    if not target_path.exists():
+    root = _managed_skill_root(scope, cwd)
+    target_path = root / normalized_name
+    if not root.exists():
         return {"removed": False, "targetPath": str(target_path)}
+
+    # Deletion must enforce the same managed-root boundary as installation.
+    # Otherwise ``workspace/.mini-code -> /outside`` would turn a project Skill
+    # removal into an out-of-workspace recursive delete.
+    root = _ensure_managed_skill_root(scope, cwd)
+    target_path = root
+    for segment in normalized_name.split("/"):
+        target_path = target_path / segment
+        if target_path.is_symlink():
+            raise RuntimeError("Skill removal path cannot contain symlinks.")
+        if not target_path.exists():
+            return {"removed": False, "targetPath": str(target_path)}
+        if not target_path.is_dir():
+            raise RuntimeError("Skill removal target is not a directory.")
     shutil.rmtree(target_path)
     return {"removed": True, "targetPath": str(target_path)}

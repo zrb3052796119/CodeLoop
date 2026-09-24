@@ -1,0 +1,233 @@
+{
+  "task_id": "T01",
+  "scale": "S1000",
+  "variant": "base",
+  "arm": "A",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-base",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": null,
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": false,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283397122420897242",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "http-client",
+          "payment-gateway"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "5c00adc021cf3a7da96ff795af598d9d6e4948688385ad0a241268a1e1331ece",
+      "output_chars": 3984,
+      "seen_qualified_names": [
+        "http-client/backpressure",
+        "http-client/batch-processing",
+        "http-client/caching-strategy",
+        "http-client/circuit-breaker",
+        "http-client/config-management",
+        "http-client/connection-pooling",
+        "http-client/dead-letter-handling",
+        "http-client/debugging-playbook",
+        "http-client/error-mapping",
+        "http-client/idempotency",
+        "http-client/latency-profiling",
+        "http-client/multipart-retry-generic",
+        "http-client/observability",
+        "http-client/pagination",
+        "http-client/performance-tuning",
+        "http-client/rate-limiting",
+        "http-client/retry-backoff",
+        "http-client/schema-migration",
+        "http-client/security-hardening",
+        "http-client/testing-strategy",
+        "http-client/timeout-tuning",
+        "http-client/upgrade-runbook",
+        "payment-gateway/backpressure",
+        "payment-gateway/batch-processing"
+      ],
+      "seen_directories": [
+        "http-client",
+        "payment-gateway"
+      ],
+      "elapsed_ms": 12.51049991697073
+    },
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283397122420897241",
+      "name": "search_skills",
+      "args": {
+        "query": "retry exponential backoff failed requests idempotent"
+      },
+      "ok": true,
+      "output_sha256": "c7eb21ad7e963fccad968f7cedae7844d3c18d4769b5af80c88867cfdcc15013",
+      "output_chars": 4109,
+      "seen_qualified_names": [
+        "ab-testing/retry-backoff",
+        "alert-manager/retry-backoff",
+        "analytics-pipeline/retry-backoff",
+        "api-gateway/retry-backoff",
+        "audit-log/retry-backoff",
+        "auth-service/retry-backoff",
+        "backup-restore/retry-backoff",
+        "billing-service/retry-backoff",
+        "cache-layer/retry-backoff",
+        "capacity-planning/retry-backoff",
+        "ci-pipeline/retry-backoff",
+        "config-service/retry-backoff",
+        "crm-connector/retry-backoff",
+        "data-warehouse/retry-backoff",
+        "database/retry-backoff",
+        "disaster-recovery/retry-backoff",
+        "document-parser/retry-backoff",
+        "email-templates/retry-backoff",
+        "etl-jobs/retry-backoff",
+        "feature-flags/retry-backoff",
+        "fraud-detection/retry-backoff"
+      ],
+      "seen_directories": [
+        "ab-testing",
+        "alert-manager",
+        "analytics-pipeline",
+        "api-gateway",
+        "audit-log",
+        "auth-service",
+        "backup-restore",
+        "billing-service",
+        "cache-layer",
+        "capacity-planning",
+        "ci-pipeline",
+        "config-service",
+        "crm-connector",
+        "data-warehouse",
+        "database",
+        "disaster-recovery",
+        "document-parser",
+        "email-templates",
+        "etl-jobs",
+        "feature-flags",
+        "fraud-detection"
+      ],
+      "elapsed_ms": 388.2460000459105
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283471098937603846",
+      "name": "load_skill",
+      "args": {
+        "name": "http-client/retry-backoff"
+      },
+      "ok": true,
+      "output_sha256": "0a6ff712dd531ffe269b18abafce2d46fc52463c425219b73cd1d426c1b09195",
+      "output_chars": 1701,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 4.085000022314489
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283471098937603846",
+      "requested_name": "http-client/retry-backoff",
+      "qualified_name": "http-client/retry-backoff",
+      "ok": true,
+      "body_chars": 1488,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "1d61aed9c1148788125678b32e7b2ccdf780525e45b6b5520e79495eb11c34eb",
+      "elapsed_ms": 17432.15983302798,
+      "type": "tool_calls",
+      "content_chars": 118,
+      "tool_call_names": [
+        "file_tree",
+        "browse_skill_directory",
+        "search_skills"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9301,
+        "outputTokens": 373,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "6e596f10780314f1b3ad43e02411cbbb7a6e5c42015ccb15a1b6bb068ef333e1",
+      "elapsed_ms": 31641.287584090605,
+      "type": "tool_calls",
+      "content_chars": 81,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 11022,
+        "outputTokens": 92,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "file_tree",
+      "input": {
+        "max_depth": 4,
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and answered with a synthetic error tool_result; the run continues so the model can finish skill discovery on a later step.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "A batch with zero skill-tool calls stops the run as no_skill_discovery (model abandoned discovery).",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "166ed07d8da65a3328a901babd5a6aa439f41cd3b9c031554b7e218895e9ef76",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "b2e672deb64ba35707fa844f7bb9024e356bcabccb6455ddffb6ad36c2a68d0c",
+  "system_prompt_chars": 17973,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 20323,
+  "output_tokens": 465,
+  "routing_events": [],
+  "elapsed_ms": 54402.05920895096
+}

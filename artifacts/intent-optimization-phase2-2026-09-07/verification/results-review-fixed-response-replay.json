@@ -1,0 +1,387 @@
+{
+  "baseline": [
+    {
+      "id": "C40",
+      "requests": [
+        {
+          "text": "网页按钮的文案是“执行数据库迁移”",
+          "context": {
+            "recent_turns": [],
+            "previous_intent": null,
+            "active_task": ""
+          },
+          "deterministic_operations": [
+            {
+              "intent_type": "question",
+              "action_type": "read",
+              "polarity": "affirmed",
+              "confidence": 0.92,
+              "clause": "请解释“迁移”在这里是什么意思。",
+              "span": [
+                18,
+                34
+              ],
+              "entities": {
+                "files": [],
+                "functions": [],
+                "classes": [],
+                "languages": []
+              },
+              "keywords": [
+                "请解释",
+                "在这里是什么意思"
+              ],
+              "evidence_codes": [
+                "rule:question.read"
+              ]
+            }
+          ]
+        }
+      ],
+      "primary": [
+        "code",
+        "update"
+      ],
+      "read_only": false,
+      "ops": [
+        [
+          "code",
+          "update",
+          "affirmed",
+          0.72,
+          "网页按钮的文案是“执行数据库迁移”"
+        ],
+        [
+          "question",
+          "read",
+          "affirmed",
+          0.92,
+          "请解释“迁移”在这里是什么意思。"
+        ]
+      ]
+    },
+    {
+      "id": "H03",
+      "requests": [
+        {
+          "text": "如果以后把导入器改成异步，哪些地方可能出现竞态？先分析可能性，我还没决定要",
+          "context": {
+            "recent_turns": [],
+            "previous_intent": null,
+            "active_task": ""
+          },
+          "deterministic_operations": [
+            {
+              "intent_type": "code",
+              "action_type": "update",
+              "polarity": "negated",
+              "confidence": 0.94,
+              "clause": "不要改。",
+              "span": [
+                37,
+                41
+              ],
+              "entities": {
+                "files": [],
+                "functions": [],
+                "classes": [],
+                "languages": []
+              },
+              "keywords": [
+                "不要改"
+              ],
+              "evidence_codes": [
+                "explicit:negated-code.update"
+              ]
+            }
+          ]
+        }
+      ],
+      "primary": [
+        "explain",
+        "analyze"
+      ],
+      "read_only": true,
+      "ops": [
+        [
+          "explain",
+          "analyze",
+          "affirmed",
+          0.72,
+          "如果以后把导入器改成异步，哪些地方可能出现竞态？先分析可能性，我还没决定要"
+        ],
+        [
+          "code",
+          "update",
+          "negated",
+          0.94,
+          "不要改。"
+        ]
+      ]
+    },
+    {
+      "id": "H09",
+      "requests": [
+        {
+          "text": "单元测试里有个字符串是“重命名账户并删除会话”。这段字符串为什么会触发转义错误",
+          "context": {
+            "recent_turns": [],
+            "previous_intent": null,
+            "active_task": ""
+          },
+          "deterministic_operations": [
+            {
+              "intent_type": "explain",
+              "action_type": "read",
+              "polarity": "affirmed",
+              "confidence": 0.7,
+              "clause": "解释一下即可。",
+              "span": [
+                40,
+                47
+              ],
+              "entities": {
+                "files": [],
+                "functions": [],
+                "classes": [],
+                "languages": []
+              },
+              "keywords": [
+                "解释一下即可"
+              ],
+              "evidence_codes": [
+                "rule:bare-read-only-explain.read"
+              ]
+            }
+          ]
+        }
+      ],
+      "primary": [
+        "debug",
+        "analyze"
+      ],
+      "read_only": true,
+      "ops": [
+        [
+          "debug",
+          "analyze",
+          "affirmed",
+          0.82,
+          "单元测试里有个字符串是“重命名账户并删除会话”。这段字符串为什么会触发转义错误"
+        ],
+        [
+          "explain",
+          "read",
+          "affirmed",
+          0.7,
+          "解释一下即可。"
+        ]
+      ]
+    }
+  ],
+  "candidate": [
+    {
+      "id": "C40",
+      "requests": [
+        {
+          "text": "网页按钮的文案是“执行数据库迁移”",
+          "context": {
+            "recent_turns": [],
+            "previous_intent": null,
+            "active_task": ""
+          },
+          "deterministic_operations": [
+            {
+              "intent_type": "question",
+              "action_type": "read",
+              "polarity": "affirmed",
+              "confidence": 0.92,
+              "clause": "请解释“迁移”在这里是什么意思。",
+              "span": [
+                18,
+                34
+              ],
+              "entities": {
+                "files": [],
+                "functions": [],
+                "classes": [],
+                "languages": []
+              },
+              "keywords": [
+                "请解释",
+                "在这里是什么意思"
+              ],
+              "evidence_codes": [
+                "rule:question.read"
+              ]
+            }
+          ]
+        }
+      ],
+      "primary": [
+        "code",
+        "update"
+      ],
+      "read_only": false,
+      "ops": [
+        [
+          "code",
+          "update",
+          "affirmed",
+          0.72,
+          "网页按钮的文案是“执行数据库迁移”"
+        ],
+        [
+          "question",
+          "read",
+          "affirmed",
+          0.92,
+          "请解释“迁移”在这里是什么意思。"
+        ]
+      ]
+    },
+    {
+      "id": "H03",
+      "requests": [
+        {
+          "text": "如果以后把导入器改成异步，哪些地方可能出现竞态？先分析可能性，我还没决定要",
+          "context": {
+            "recent_turns": [],
+            "previous_intent": null,
+            "active_task": ""
+          },
+          "deterministic_operations": [
+            {
+              "intent_type": "code",
+              "action_type": "update",
+              "polarity": "negated",
+              "confidence": 0.94,
+              "clause": "不要改。",
+              "span": [
+                37,
+                41
+              ],
+              "entities": {
+                "files": [],
+                "functions": [],
+                "classes": [],
+                "languages": []
+              },
+              "keywords": [
+                "不要改"
+              ],
+              "evidence_codes": [
+                "explicit:negated-code.update"
+              ]
+            }
+          ]
+        }
+      ],
+      "primary": [
+        "explain",
+        "analyze"
+      ],
+      "read_only": true,
+      "ops": [
+        [
+          "explain",
+          "analyze",
+          "affirmed",
+          0.72,
+          "如果以后把导入器改成异步，哪些地方可能出现竞态？先分析可能性，我还没决定要"
+        ],
+        [
+          "code",
+          "update",
+          "negated",
+          0.94,
+          "不要改。"
+        ]
+      ]
+    },
+    {
+      "id": "H09",
+      "requests": [
+        {
+          "text": "单元测试里有个字符串是“重命名账户并删除会话”。这段字符串为什么会触发转义错误",
+          "context": {
+            "recent_turns": [],
+            "previous_intent": null,
+            "active_task": ""
+          },
+          "deterministic_operations": [
+            {
+              "intent_type": "explain",
+              "action_type": "read",
+              "polarity": "affirmed",
+              "confidence": 0.7,
+              "clause": "解释一下即可。",
+              "span": [
+                40,
+                47
+              ],
+              "entities": {
+                "files": [],
+                "functions": [],
+                "classes": [],
+                "languages": []
+              },
+              "keywords": [
+                "解释一下即可"
+              ],
+              "evidence_codes": [
+                "rule:bare-read-only-explain.read"
+              ]
+            }
+          ]
+        }
+      ],
+      "primary": [
+        "debug",
+        "analyze"
+      ],
+      "read_only": true,
+      "ops": [
+        [
+          "debug",
+          "analyze",
+          "affirmed",
+          0.82,
+          "单元测试里有个字符串是“重命名账户并删除会话”。这段字符串为什么会触发转义错误"
+        ],
+        [
+          "explain",
+          "read",
+          "affirmed",
+          0.7,
+          "解释一下即可。"
+        ]
+      ]
+    }
+  ],
+  "equal": true,
+  "input_proposals": [
+    {
+      "id": "C40",
+      "text": "网页按钮的文案是“执行数据库迁移”。请解释“迁移”在这里是什么意思。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.72
+    },
+    {
+      "id": "H03",
+      "text": "如果以后把导入器改成异步，哪些地方可能出现竞态？先分析可能性，我还没决定要不要改。",
+      "intent_type": "explain",
+      "action_type": "analyze",
+      "confidence": 0.72
+    },
+    {
+      "id": "H09",
+      "text": "单元测试里有个字符串是“重命名账户并删除会话”。这段字符串为什么会触发转义错误？解释一下即可。",
+      "intent_type": "debug",
+      "action_type": "analyze",
+      "confidence": 0.82
+    }
+  ],
+  "method": "Offline parser replay of recorded accepted semantic intent/action/calibrated confidence; no model call, no raw provider content reconstructed."
+}

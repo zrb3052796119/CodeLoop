@@ -1,0 +1,156 @@
+{
+  "task_id": "T07",
+  "scale": "S100",
+  "variant": "stale-summary",
+  "arm": "A",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-stale-summary",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": null,
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": false,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283559059867824895",
+      "name": "search_skills",
+      "args": {
+        "query": "rate limit throttle concurrency quota scheduled tasks smooth execution"
+      },
+      "ok": true,
+      "output_sha256": "8efec952cb38c24be8717afc09b4651ab490db3e1ac9f40e3afa6f2f3be72082",
+      "output_chars": 2562,
+      "seen_qualified_names": [
+        "auth-service/rate-limiting",
+        "cache-layer/rate-limiting",
+        "ci-pipeline/rate-limiting",
+        "database/rate-limiting",
+        "graphql-api/rate-limiting",
+        "http-client/rate-limiting",
+        "job-scheduler/rate-limiting",
+        "message-queue/consumer-throttle",
+        "message-queue/rate-limiting",
+        "notification-service/rate-limiting",
+        "object-storage/rate-limiting",
+        "payment-gateway/rate-limiting",
+        "search-index/rate-limiting",
+        "job-scheduler/db-retry-tuning"
+      ],
+      "seen_directories": [
+        "auth-service",
+        "cache-layer",
+        "ci-pipeline",
+        "database",
+        "graphql-api",
+        "http-client",
+        "job-scheduler",
+        "message-queue",
+        "notification-service",
+        "object-storage",
+        "payment-gateway",
+        "search-index"
+      ],
+      "elapsed_ms": 86.18850004859269
+    },
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283559059867824894",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "job-scheduler"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "9384bb668a45615aa690aa348e4587626ee9546deebda4c5f1d20d45b47ec883",
+      "output_chars": 1687,
+      "seen_qualified_names": [
+        "job-scheduler/circuit-breaker",
+        "job-scheduler/config-management",
+        "job-scheduler/db-retry-tuning",
+        "job-scheduler/flaky-cron-playbook",
+        "job-scheduler/idempotency",
+        "job-scheduler/pagination",
+        "job-scheduler/rate-limiting",
+        "job-scheduler/retry-backoff",
+        "job-scheduler/timeout-tuning",
+        "job-scheduler/upgrade-runbook"
+      ],
+      "seen_directories": [
+        "job-scheduler"
+      ],
+      "elapsed_ms": 0.28504105284810066
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "c8a6cbcb957364cd97032b4d550cf95e96e368fbca62389b953cf371c275f075",
+      "elapsed_ms": 13006.492124986835,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "search_skills",
+        "browse_skill_directory",
+        "list_files"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7595,
+        "outputTokens": 340,
+        "cacheReadTokens": 7552,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 2
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "4467a9fb9ad5d6b210ff08ce45b9a8a1865033e7019c27a3e210d058259fac2a",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "58daba740346782a82cb2757ad6757de2f8475da2e65ee9387d1457670812d6a",
+  "system_prompt_chars": 10760,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 7595,
+  "output_tokens": 340,
+  "routing_events": [],
+  "elapsed_ms": 13629.89112501964
+}

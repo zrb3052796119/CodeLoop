@@ -1,0 +1,147 @@
+{
+  "task_id": "T10",
+  "scale": "S100",
+  "variant": "stale-summary",
+  "arm": "B",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-stale-summary",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283474397472482467",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "payment-gateway"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "b513af46804f0fc8d55a21dee15587fab577eac69372def1c7f1cce21c3aab53",
+      "output_chars": 1727,
+      "seen_qualified_names": [
+        "payment-gateway/circuit-breaker",
+        "payment-gateway/debugging-playbook",
+        "payment-gateway/idempotency",
+        "payment-gateway/pagination",
+        "payment-gateway/pci-hardening",
+        "payment-gateway/performance-tuning",
+        "payment-gateway/rate-limiting",
+        "payment-gateway/retry-backoff",
+        "payment-gateway/retry-helper-legacy",
+        "payment-gateway/timeout-tuning"
+      ],
+      "seen_directories": [
+        "payment-gateway"
+      ],
+      "elapsed_ms": 2.2668750025331974
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283528514060414751",
+      "name": "load_skill",
+      "args": {
+        "name": "payment-gateway/idempotency"
+      },
+      "ok": true,
+      "output_sha256": "693488a709f85a795f0e59fbc4242b96cfa9ef5ad5c8ce8b660c9d881c8f9c62",
+      "output_chars": 1688,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 1.6669579781591892
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283528514060414751",
+      "requested_name": "payment-gateway/idempotency",
+      "qualified_name": "payment-gateway/idempotency",
+      "ok": true,
+      "body_chars": 1467,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "4d90c891d879196dae9b1c90893d3fb243765dc03ce12acd8839241f61c0da19",
+      "elapsed_ms": 3168.7024999409914,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7610,
+        "outputTokens": 106,
+        "cacheReadTokens": 7552,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "811522d9b3118ef695bee3ccd70ecc986981a99575b521e4bae3f762dcacae99",
+      "elapsed_ms": 1740.266792010516,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7973,
+        "outputTokens": 41,
+        "cacheReadTokens": 7552,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "4467a9fb9ad5d6b210ff08ce45b9a8a1865033e7019c27a3e210d058259fac2a",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "da802a2acefe45bb46f8af4c033aa27c7c42259eaf92cc8d7caee4db3524e00a",
+  "system_prompt_chars": 10883,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 15583,
+  "output_tokens": 147,
+  "routing_events": [],
+  "elapsed_ms": 5463.690707925707
+}

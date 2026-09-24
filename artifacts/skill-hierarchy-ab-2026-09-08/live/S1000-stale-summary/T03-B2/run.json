@@ -1,0 +1,144 @@
+{
+  "task_id": "T03",
+  "scale": "S1000",
+  "variant": "stale-summary",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-stale-summary",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283509410045879036",
+      "name": "search_skills",
+      "args": {
+        "directory_names": [
+          "message-queue"
+        ],
+        "query": "idempotent consumer duplicate delivery dedup"
+      },
+      "ok": true,
+      "output_sha256": "4db9fbd97ebbb475656856009c2649329acbb1e073b029e5fe07cdccaf8e03e5",
+      "output_chars": 3980,
+      "seen_qualified_names": [
+        "message-queue/idempotency",
+        "message-queue/idempotent-consumer-template",
+        "message-queue/backpressure",
+        "message-queue/consumer-throttle",
+        "message-queue/dedup-exchange-filter",
+        "message-queue/index-feed-lag",
+        "ab-testing/idempotency",
+        "alert-manager/idempotency",
+        "analytics-pipeline/idempotency",
+        "api-gateway/idempotency",
+        "audit-log/idempotency",
+        "auth-service/idempotency",
+        "backup-restore/idempotency",
+        "billing-service/idempotency",
+        "cache-layer/idempotency",
+        "capacity-planning/idempotency",
+        "ci-pipeline/idempotency",
+        "config-service/idempotency",
+        "crm-connector/idempotency",
+        "data-warehouse/idempotency",
+        "database/idempotency",
+        "disaster-recovery/idempotency",
+        "document-parser/idempotency"
+      ],
+      "seen_directories": [
+        "ab-testing",
+        "alert-manager",
+        "analytics-pipeline",
+        "api-gateway",
+        "audit-log",
+        "auth-service",
+        "backup-restore",
+        "billing-service",
+        "cache-layer",
+        "capacity-planning",
+        "ci-pipeline",
+        "config-service",
+        "crm-connector",
+        "data-warehouse",
+        "database",
+        "disaster-recovery",
+        "document-parser",
+        "message-queue"
+      ],
+      "elapsed_ms": 203.53449997492135
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "14b4b66672435336333585b96c884afdbcbe646bab587a74e98cd96558345e27",
+      "elapsed_ms": 10797.949375002645,
+      "type": "tool_calls",
+      "content_chars": 36,
+      "tool_call_names": [
+        "list_files",
+        "search_skills"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9278,
+        "outputTokens": 427,
+        "cacheReadTokens": 9216,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "f7b53465d2f17f614a4699b20f3f44c717bed290d9c0e8d4697a01385e7c8405",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "1aee8141eae0bc4676f7507ab9d9eec62616e7e41634410d977f011471db6fe0",
+  "system_prompt_chars": 17936,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 9278,
+  "output_tokens": 427,
+  "routing_events": [],
+  "elapsed_ms": 15835.831791977398
+}

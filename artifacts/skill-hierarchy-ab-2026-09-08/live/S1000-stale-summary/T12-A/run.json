@@ -1,0 +1,157 @@
+{
+  "task_id": "T12",
+  "scale": "S1000",
+  "variant": "stale-summary",
+  "arm": "A",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-stale-summary",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": null,
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": false,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283485495667974365",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "notification-service"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "3b4390e15aa83eb67dad11cf7cea34a63c2ff0dfe021c7b9ebef70766658a18d",
+      "output_chars": 3631,
+      "seen_qualified_names": [
+        "notification-service/backpressure",
+        "notification-service/batch-processing",
+        "notification-service/caching-strategy",
+        "notification-service/circuit-breaker",
+        "notification-service/config-management",
+        "notification-service/connection-pooling",
+        "notification-service/dead-letter-handling",
+        "notification-service/debugging-playbook",
+        "notification-service/error-mapping",
+        "notification-service/idempotency",
+        "notification-service/observability",
+        "notification-service/pagination",
+        "notification-service/performance-tuning",
+        "notification-service/rate-limiting",
+        "notification-service/retry-backoff",
+        "notification-service/schema-migration",
+        "notification-service/security-hardening",
+        "notification-service/testing-strategy",
+        "notification-service/timeout-tuning",
+        "notification-service/upgrade-runbook"
+      ],
+      "seen_directories": [
+        "notification-service"
+      ],
+      "elapsed_ms": 5.424291943199933
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283530472565499857",
+      "name": "load_skill",
+      "args": {
+        "name": "notification-service/observability"
+      },
+      "ok": true,
+      "output_sha256": "a4c615c650b4bd3a299756578a6aa938ba67980584a204f1f9ccf908f0f9fa36",
+      "output_chars": 1753,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 2.155125024728477
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283530472565499857",
+      "requested_name": "notification-service/observability",
+      "qualified_name": "notification-service/observability",
+      "ok": true,
+      "body_chars": 1522,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "046931ae4cccd69c01809dd19bcac93e3c6fb09539826acdc7d150762f7fcb5b",
+      "elapsed_ms": 5539.908499922603,
+      "type": "tool_calls",
+      "content_chars": 79,
+      "tool_call_names": [
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9239,
+        "outputTokens": 83,
+        "cacheReadTokens": 9216,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "c2df2a4b76b7beebec6f1689ba15fc4b8ecf93fdc8a32248f3ec953da7f6d743",
+      "elapsed_ms": 1324.5744579471648,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9962,
+        "outputTokens": 16,
+        "cacheReadTokens": 9216,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "f7b53465d2f17f614a4699b20f3f44c717bed290d9c0e8d4697a01385e7c8405",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "e621acb83cd95eab3617bb5ef31e09a6aa4e9579eb33afa2cb83f2b59c1b9402",
+  "system_prompt_chars": 17813,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 19201,
+  "output_tokens": 99,
+  "routing_events": [],
+  "elapsed_ms": 11761.944458005019
+}

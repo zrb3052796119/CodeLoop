@@ -1,0 +1,9 @@
+{
+  "retrieval_strict": 8,
+  "selected_coverage": 10,
+  "candidate_coverage": 10,
+  "prompt_integrity": 20,
+  "model_load_strict": 11,
+  "body_handoff_strict": 2,
+  "end_to_end_strict": 2
+}

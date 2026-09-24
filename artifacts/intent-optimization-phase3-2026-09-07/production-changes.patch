@@ -1,0 +1,290 @@
+--- baseline/minicode/intent_negation.py
++++ candidate/minicode/intent_negation.py
+@@ -253,6 +253,34 @@
+     return resets[-1].end() if resets else 0
+ 
+ 
++def _completed_nonuse_status_ends_before(
++    text: str, negator: re.Match[str], action_start: int
++) -> bool:
++    """A finished non-use status is not a prohibition of a later command.
++
++    Keep action cancellations (``deleting it is no longer needed``) and
++    present prohibitions (``no longer use it``) effective. Only a declarative
++    subject, a completed state, and an explicit comma boundary close this scope.
++    """
++
++    prefix = re.split(r"[,，。！？!?;；\n]", text[: negator.start()])[-1]
++    if not prefix.strip() or ACTION_MARKER_RE.search(prefix):
++        return False
++    suffix = text[negator.end() : action_start]
++    if re.fullmatch(r"不用|不需要", negator.group(0)):
++        return re.match(r"\s*(?:了|啦)\s*[,，]", suffix) is not None
++    if re.fullmatch(r"no\s+longer", negator.group(0), re.IGNORECASE):
++        return bool(
++            re.search(r"\b(?:is|are|was|were)\s*$", prefix, re.IGNORECASE)
++            and re.match(
++                r"\s+(?:used|needed|required|in\s+use)\s*[,，]",
++                suffix,
++                re.IGNORECASE,
++            )
++        )
++    return False
++
++
+ def is_span_negated(text: str, span: tuple[int, int]) -> bool:
+     """Return whether an effective prohibition governs one operation span.
+ 
+@@ -291,7 +319,10 @@
+             )
+             if earlier_action is not None:
+                 return False
+-        if not _NEGATION_SCOPE_RESET_RE.search(governed_prefix):
++        if (
++            not _NEGATION_SCOPE_RESET_RE.search(governed_prefix)
++            and not _completed_nonuse_status_ends_before(text, latest, start)
++        ):
+             return True
+ 
+     # In passive forms the forbiddance follows the operation. Bound it to the
+--- baseline/minicode/intent_parser.py
++++ candidate/minicode/intent_parser.py
+@@ -35,6 +35,11 @@
+     is_clause_negated,
+     is_span_negated,
+     scope_start_for_span,
++)
++from minicode.intent_request_roles import (
++    attributed_literal_statement_spans,
++    is_bounded_explanation_request,
++    mask_attributed_literal_statements,
+ )
+ from minicode.logging_config import get_logger
+ 
+@@ -1094,7 +1099,8 @@
+ _SEARCH_PATTERNS = [
+     (
+         r"(?P<action_read_implementation>阅读)\s*"
+-        r"(?:现有|当前|已有|现行)?\s*(?:代码|实现|源码)",
++        r"(?:现有|当前|已有|现行)?\s*"
++        r"(?:[^,，。！？;；\n]{1,48}的)?(?:代码|实现|源码)",
+         IntentType.SEARCH,
+         ActionType.READ,
+     ),
+@@ -3168,6 +3174,7 @@
+     spans.extend(
+         match.span() for match in _INLINE_CODE_INTENT_EXAMPLE_RE.finditer(text)
+     )
++    spans.extend(attributed_literal_statement_spans(text, tuple(spans)))
+     spans.extend(_declared_non_command_literal_spans(text))
+     spans.extend(_reported_operation_literal_spans(text))
+     spans.extend(
+@@ -3443,6 +3450,10 @@
+     r"(?:直接)?(?:跑|修(?:复)?)|修改|更新|删除|重命名|"
+     r"(?:普通|简单|单纯)?(?:解释|说明)|审查|检查|核对|复核|"
+     r"列(?:出)?|罗列|比较|对比|测试|写|减少|消除|加入|新增|添加))|"
++    r"[,，]\s*(?=(?:(?:这次|本次|本轮|这一轮|当前|现在|暂时|先|也)\s*)?"
++    r"(?:不用|不必|无需|无须|不需要)\s*(?:再\s*)?"
++    r"(?:重构|优化|修改|更新|改|修复|运行|执行|跑|测试|删除|删|"
++    r"创建|生成|编写|写|审查|检查|解释|分析))|"
+     r"[,，]\s*(?=(?:先)?(?:千万|绝对|现在|当前)?\s*"
+     r"(?:别|不要|甭)\s*"
+     r"(?:(?:真|真的|实际|急着|直接|替我|帮我|代我|做|进行)\s*)*"
+@@ -4665,6 +4676,28 @@
+     r"^[^,，。！？;；\n]{0,48}的(?:代码|函数|方法|功能|实现|记录|信息)"
+     r"[^,，。！？;；\n]{0,24}(?:在哪|哪里|什么|哪些|怎么|如何|是否|有没有)",
+ )
++_READ_NOMINAL_GOVERNOR_RE = re.compile(
++    r"(?:找出|查找|搜索|查看|阅读|解释|说明|分析|检查|审查|审核|评审|评估|"
++    r"比较|对比|列出|展示)|"
++    r"\b(?:find|search|locate|read|inspect|review|explain|describe|analy[sz]e|"
++    r"compare|show)\b",
++    re.IGNORECASE,
++)
++_NOMINAL_OPERATION_HEAD_RE = re.compile(
++    r"^\s*(?:函数|方法|模块|脚本|逻辑|流程|机制|功能|接口|步骤|命令|语句|策略)|"
++    r"^[^,，。！？;；\n]{0,48}的(?:代码|函数|方法|模块|脚本|逻辑|流程|机制|"
++    r"功能|接口|步骤|命令|语句|策略)|"
++    r"^\s+(?:function|method|module|script|logic|workflow|mechanism|feature|"
++    r"interface|command|statement|strategy)\b",
++    re.IGNORECASE,
++)
++_NOMINAL_GOVERNOR_RESET_RE = re.compile(
++    r"[,，。！？!?;；\n]|(?:然后|接着|随后|之后|以后|再|并且|并|同时)|"
++    r"后\s*(?:(?:请|帮我|直接|立即|立刻|马上)\s*)*$|"
++    r"^完(?:毕)?[^,，。！？!?;；\n]{0,48}(?:直接|立即|立刻|马上)\s*$|"
++    r"\b(?:then|next|afterwards|and|now)\b",
++    re.IGNORECASE,
++)
+ _DOCUMENT_ACTION_TARGET_RE = re.compile(
+     r"^\s*(?:一?下)?\s*(?:readme(?:\.[a-z]+)?\b|docs?\b|"
+     r"documentation\b|文档|说明|指南|手册|注释|docstring\b)",
+@@ -4691,8 +4724,19 @@
+     start, end = trigger_span
+     trigger = clause[start:end]
+     before, after = clause[:start], clause[end:]
++    governor = tuple(_READ_NOMINAL_GOVERNOR_RE.finditer(before))
++    governed_noun = bool(
++        governor
++        and _NOMINAL_GOVERNOR_RESET_RE.search(before[governor[-1].end() :])
++        is None
++        and _NOMINAL_OPERATION_HEAD_RE.search(after)
++    )
+     return bool(
+-        (trigger in {"配置", "设置"} and _NOMINAL_SETTING_SUFFIX_RE.search(after))
++        # In ``找出编号的生成函数`` / ``查看删除文件的代码``, the read
++        # verb owns the noun phrase. Its embedded verb is not another task.
++        # An explicit sequence reset leaves the later command independent.
++        governed_noun
++        or (trigger in {"配置", "设置"} and _NOMINAL_SETTING_SUFFIX_RE.search(after))
+         or (
+             trigger in {"记住", "记下"}
+             and _NOMINAL_MEMORY_QUERY_SUFFIX_RE.search(after)
+@@ -8790,6 +8834,9 @@
+         """
+ 
+         active_text = _mask_superseded_intent_prefix(text)
++        active_text = mask_attributed_literal_statements(
++            active_text, _protected_intent_literal_spans(active_text)
++        )
+         clauses = self._split_clauses(active_text)
+         actionable_clauses = [
+             (clause, span)
+@@ -9746,6 +9793,9 @@
+         excluded_only_technical_context = bool(
+             excluded_technical and not affirmed_technical
+         )
++        explanation_only = is_bounded_explanation_request(
++            _mask_protected_intent_literals(text)
++        )
+         for proposal in tuple(proposals or ())[:4]:
+             if not isinstance(proposal, SemanticIntentProposal):
+                 continue
+@@ -9765,6 +9815,10 @@
+                 or polarity is not IntentPolarity.AFFIRMED
+                 or not 0.5 <= confidence <= 0.85
+             ):
++                continue
++            if explanation_only and action_type not in _READ_ONLY_CONTEXT_ACTIONS:
++                # A model may resolve the explanation label, but the local
++                # request frame cannot authorize mutation or execution.
+                 continue
+             if (
+                 excluded_only_technical_context
+--- baseline/minicode/intent_request_roles.py
++++ candidate/minicode/intent_request_roles.py
+@@ -0,0 +1,114 @@
++"""Small source-role boundaries shared by rule matching and model admission.
++
++These helpers recognize a complete grammatical frame, not the action words
++inside a quotation.  Unrecognized phrasing remains eligible for the existing
++semantic fallback.
++"""
++
++from __future__ import annotations
++
++import re
++from collections.abc import Sequence
++
++
++_CONTENT_NOUN_ZH = r"(?:文案|文本|文字|标签|标题|内容|消息|提示|字符串|占位符)"
++_CONTENT_NOUN_EN = r"(?:label|text|caption|title|message|content|string|placeholder|prompt)"
++_SOURCE_NOUN_ZH = (
++    r"(?:网页|页面|按钮|控件|输入框|屏幕|界面|菜单|字段|弹窗|警告|错误|日志)"
++)
++_SOURCE_NOUN_EN = (
++    r"(?:button|control|input|dialog|menu|field|page|warning|error|"
++    r"current|existing|original)"
++)
++_ATTRIBUTION_PREFIX_RE = re.compile(
++    r"\s*(?:(?:这个|那个|该|当前|现有|原来)?"
++    rf"(?:{_SOURCE_NOUN_ZH}(?:的|上的?|里的?|中的?)?){{0,4}}{_CONTENT_NOUN_ZH}"
++    r"\s*(?:是|为|写着|显示为|叫作|叫做)|"
++    rf"(?:(?:the|this|that|a|an|our|its)\s+)?(?:{_SOURCE_NOUN_EN}\s+){{0,4}}"
++    rf"{_CONTENT_NOUN_EN}\s+(?:is|reads|says|shows|displays))\s*[:：]?\s*",
++    re.IGNORECASE,
++)
++_SENTENCE_BOUNDARY_RE = re.compile(r"[。！？!?;；\n]|\.(?=\s|$)")
++_LITERAL_END_RE = re.compile(r"\s*(?:[,，。.!！?？;；\n]|$)")
++
++
++def attributed_literal_statement_spans(
++    text: str, literal_spans: Sequence[tuple[int, int]]
++) -> tuple[tuple[int, int], ...]:
++    """Extend quoted payloads to complete ``the label is '...'`` statements.
++
++    The attribution must start a sentence and end at the literal.  A relative
++    clause or parenthesized object in an actual request does not satisfy that
++    frame.  Only the statement through its closing quote is covered, leaving
++    even an unrecognized colloquial request in the next sentence visible.
++    """
++
++    spans: list[tuple[int, int]] = []
++    for literal_start, literal_end in sorted(literal_spans):
++        # The parser may pass its already merged protected spans back to the
++        # semantic admission path. Recover the payload start only when the
++        # span itself begins with this same complete attribution frame.
++        contained_prefix = _ATTRIBUTION_PREFIX_RE.match(text, literal_start, literal_end)
++        if contained_prefix is not None:
++            literal_start = contained_prefix.end()
++        if not _LITERAL_END_RE.match(text, literal_end):
++            continue
++        prefix_start = 0
++        for boundary in _SENTENCE_BOUNDARY_RE.finditer(text, 0, literal_start):
++            prefix_start = boundary.end()
++        prefix = text[prefix_start:literal_start]
++        if _ATTRIBUTION_PREFIX_RE.fullmatch(prefix):
++            spans.append((prefix_start, literal_end))
++    return tuple(spans)
++
++
++def mask_attributed_literal_statements(
++    text: str, protected_spans: Sequence[tuple[int, int]]
++) -> str:
++    """Hide only recognized attribution statements from provider requests.
++
++    Ordinary quoted objects remain in the request.  Offsets are retained so
++    an adjacent current request still receives its original production span.
++    """
++
++    characters = list(text)
++    for start, end in attributed_literal_statement_spans(text, protected_spans):
++        ending = _LITERAL_END_RE.match(text, end)
++        if ending is not None:
++            end = ending.end()
++        for index in range(start, end):
++            if characters[index] not in "\r\n":
++                characters[index] = " "
++    return "".join(characters)
++
++
++_EXPLANATION_FRAME_RE = re.compile(
++    r"\s*(?:(?:请|麻烦|帮我)\s*)?(?:我\s*)?(?:只|仅|只是)?\s*"
++    r"(?:解释|说明|讲讲|说说|想知道)(?:一?下)?[^,，。！？!?;；\n]{0,160}"
++    r"(?:含义|意思|意义|风险)(?:是什么|就好|即可|就行)?\s*[。.!！?？]?\s*|"
++    r"\s*(?:please\s+)?(?:only\s+|just\s+)?"
++    r"(?:explain|describe|tell\s+me(?:\s+about)?)\s+[^.!?;\n]{0,160}"
++    r"(?:meaning|means|phrase|term|label|caption|text|impact|risk)"
++    r"\s*[.!?]?\s*",
++    re.IGNORECASE,
++)
++_VISIBLE_COORDINATION_RE = re.compile(
++    r"[,，;；\n]|然后|再|并|另外|接着|随后|以及|还要|"
++    r"\b(?:and|then|also|next|afterwards|separately)\b",
++    re.IGNORECASE,
++)
++
++
++def is_bounded_explanation_request(masked_text: str) -> bool:
++    """Recognize one explicit request for meaning, without a second command.
++
++    This is a proposal restriction, not a classifier: the provider can still
++    supply a read/analysis intent.  Visible coordination deliberately declines
++    this narrow restriction because it may introduce another genuine request.
++    Quoted coordination was already removed by the caller's literal mask.
++    """
++
++    return bool(
++        _EXPLANATION_FRAME_RE.fullmatch(masked_text)
++        and _VISIBLE_COORDINATION_RE.search(masked_text) is None
++    )

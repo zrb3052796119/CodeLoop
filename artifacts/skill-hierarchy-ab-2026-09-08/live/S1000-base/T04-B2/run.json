@@ -1,0 +1,123 @@
+{
+  "task_id": "T04",
+  "scale": "S1000",
+  "variant": "base",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-base",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283518103059686654",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "graphql-api"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "3fab14a78ed2656bd6c84ab8a9dba980984f576f79896d3dd627d2a09748d798",
+      "output_chars": 3102,
+      "seen_qualified_names": [
+        "graphql-api/backpressure",
+        "graphql-api/batch-processing",
+        "graphql-api/caching-strategy",
+        "graphql-api/circuit-breaker",
+        "graphql-api/config-management",
+        "graphql-api/connection-pooling",
+        "graphql-api/dead-letter-handling",
+        "graphql-api/debugging-playbook",
+        "graphql-api/error-mapping",
+        "graphql-api/idempotency",
+        "graphql-api/observability",
+        "graphql-api/pagination",
+        "graphql-api/performance-tuning",
+        "graphql-api/rate-limiting",
+        "graphql-api/retry-backoff",
+        "graphql-api/schema-migration",
+        "graphql-api/security-hardening",
+        "graphql-api/testing-strategy",
+        "graphql-api/timeout-tuning",
+        "graphql-api/upgrade-runbook"
+      ],
+      "seen_directories": [
+        "graphql-api"
+      ],
+      "elapsed_ms": 7.363583077676594
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "b650a3f86bf704c53508521e841829d4f99d7162e9842c13d771c7cf66b44337",
+      "elapsed_ms": 19692.143958993256,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "list_files",
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9306,
+        "outputTokens": 169,
+        "cacheReadTokens": 9280,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "166ed07d8da65a3328a901babd5a6aa439f41cd3b9c031554b7e218895e9ef76",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "309cb1174216a2289eebf9eed0e04160718225181468486dd311ad3bec1f77cb",
+  "system_prompt_chars": 18096,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 9306,
+  "output_tokens": 169,
+  "routing_events": [],
+  "elapsed_ms": 24685.897915973328
+}

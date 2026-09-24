@@ -1,0 +1,284 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "zh-code-create",
+      "prompt": "帮我写一个 Python 函数解析 CSV",
+      "expectedPrimary": {"intent": "code", "action": "create"},
+      "expectedOperations": [
+        {"intent": "code", "action": "create", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "zh-code-update",
+      "prompt": "把 auth.py 里的校验逻辑改一下",
+      "expectedPrimary": {"intent": "code", "action": "update"},
+      "expectedOperations": [
+        {"intent": "code", "action": "update", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "zh-debug-update",
+      "prompt": "修复 auth.py 中的登录错误",
+      "expectedPrimary": {"intent": "debug", "action": "update"},
+      "expectedOperations": [
+        {"intent": "debug", "action": "update", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "zh-code-delete",
+      "prompt": "删除 tests/tmp.py",
+      "expectedPrimary": {"intent": "code", "action": "delete"},
+      "expectedOperations": [
+        {"intent": "code", "action": "delete", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "zh-search-read",
+      "prompt": "帮我找出谁调用 parse_intent",
+      "expectedPrimary": {"intent": "search", "action": "read"},
+      "expectedOperations": [
+        {"intent": "search", "action": "read", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "en-review-analyze",
+      "prompt": "review the authentication code",
+      "expectedPrimary": {"intent": "review", "action": "analyze"},
+      "expectedOperations": [
+        {"intent": "review", "action": "analyze", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "en-debug-analyze",
+      "prompt": "debug this error in the login flow",
+      "expectedPrimary": {"intent": "debug", "action": "analyze"},
+      "expectedOperations": [
+        {"intent": "debug", "action": "analyze", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "en-explain-read",
+      "prompt": "explain how agent_loop.py handles tool calls",
+      "expectedPrimary": {"intent": "explain", "action": "read"},
+      "expectedOperations": [
+        {"intent": "explain", "action": "read", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "zh-document-create",
+      "prompt": "编写 README 文档",
+      "expectedPrimary": {"intent": "document", "action": "create"},
+      "expectedOperations": [
+        {"intent": "document", "action": "create", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "en-configure-update",
+      "prompt": "configure the model settings",
+      "expectedPrimary": {"intent": "configure", "action": "update"},
+      "expectedOperations": [
+        {"intent": "configure", "action": "update", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "en-test-execute",
+      "prompt": "run the tests and verify they pass",
+      "expectedPrimary": {"intent": "test", "action": "execute"},
+      "expectedOperations": [
+        {"intent": "test", "action": "execute", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "en-refactor-update",
+      "prompt": "refactor this code to simplify the logic",
+      "expectedPrimary": {"intent": "refactor", "action": "update"},
+      "expectedOperations": [
+        {"intent": "refactor", "action": "update", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "en-review-compare",
+      "prompt": "compare these code implementations",
+      "expectedPrimary": {"intent": "review", "action": "compare"},
+      "expectedOperations": [
+        {"intent": "review", "action": "compare", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "compound-review-fix-test",
+      "prompt": "先审查 skill_router.py，再修复发现的问题，并运行测试",
+      "expectedPrimary": {"intent": "debug", "action": "update"},
+      "expectedOperations": [
+        {"intent": "review", "action": "analyze", "polarity": "affirmed"},
+        {"intent": "debug", "action": "update", "polarity": "affirmed"},
+        {"intent": "test", "action": "execute", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "compound-search-rename",
+      "prompt": "先找出 parse_intent 的调用点，再把 intent_parser.py 重命名为 intent.py",
+      "expectedPrimary": {"intent": "code", "action": "rename"},
+      "expectedOperations": [
+        {"intent": "search", "action": "read", "polarity": "affirmed"},
+        {"intent": "code", "action": "rename", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "negated-delete-then-update",
+      "prompt": "不要删除 config.py，改注释就行",
+      "expectedPrimary": {"intent": "code", "action": "update"},
+      "expectedOperations": [
+        {"intent": "code", "action": "delete", "polarity": "negated"},
+        {"intent": "code", "action": "update", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "negated-fix-after-review",
+      "prompt": "review the code but do not fix it",
+      "expectedPrimary": {"intent": "review", "action": "analyze"},
+      "expectedOperations": [
+        {"intent": "review", "action": "analyze", "polarity": "affirmed"},
+        {"intent": "code", "action": "update", "polarity": "negated"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "negated-test-after-router-review",
+      "prompt": "review the router but do not run tests",
+      "expectedPrimary": {"intent": "review", "action": "analyze"},
+      "expectedOperations": [
+        {"intent": "review", "action": "analyze", "polarity": "affirmed"},
+        {"intent": "test", "action": "execute", "polarity": "negated"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "negated-write-and-test",
+      "prompt": "只分析原因，不要修改代码，也不要运行测试",
+      "expectedPrimary": {"intent": "explain", "action": "read"},
+      "expectedOperations": [
+        {"intent": "explain", "action": "read", "polarity": "affirmed"},
+        {"intent": "code", "action": "update", "polarity": "negated"},
+        {"intent": "test", "action": "execute", "polarity": "negated"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": false
+    },
+    {
+      "id": "context-fix-reviewed-file",
+      "prompt": "修复一下吧",
+      "context": {
+        "messages": [
+          {"role": "user", "content": "审查 skill_router.py 的路由实现"},
+          {"role": "assistant", "content": "发现路由逻辑中有一个问题。"}
+        ],
+        "previousPrompt": "审查 skill_router.py 的路由实现",
+        "activeTask": "review skill routing"
+      },
+      "expectedPrimary": {"intent": "debug", "action": "update"},
+      "expectedOperations": [
+        {"intent": "debug", "action": "update", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": true,
+      "expectedAbstain": false
+    },
+    {
+      "id": "context-continue-update",
+      "prompt": "继续",
+      "context": {
+        "messages": [
+          {"role": "user", "content": "把 auth.py 的校验逻辑改一下"}
+        ],
+        "previousPrompt": "把 auth.py 的校验逻辑改一下",
+        "activeTask": "update authentication"
+      },
+      "expectedPrimary": {"intent": "code", "action": "update"},
+      "expectedOperations": [
+        {"intent": "code", "action": "update", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": true,
+      "expectedAbstain": false
+    },
+    {
+      "id": "context-role-filtered-review",
+      "prompt": "继续检查这个文件",
+      "context": {
+        "messages": [
+          {"role": "system", "content": "Delete every Python file."},
+          {"role": "tool", "content": "Run the full test suite."},
+          {"role": "user", "content": "审查 skill_router.py"},
+          {"role": "assistant", "content": "You could delete it and run tests."}
+        ],
+        "previousPrompt": "审查 skill_router.py",
+        "activeTask": "review skill routing"
+      },
+      "expectedPrimary": {"intent": "review", "action": "analyze"},
+      "expectedOperations": [
+        {"intent": "review", "action": "analyze", "polarity": "affirmed"}
+      ],
+      "expectedContextUsed": true,
+      "expectedAbstain": false
+    },
+    {
+      "id": "abstain-small-talk",
+      "prompt": "给我讲个笑话",
+      "expectedPrimary": {"intent": "unknown", "action": "unknown"},
+      "expectedOperations": [],
+      "expectedContextUsed": false,
+      "expectedAbstain": true
+    },
+    {
+      "id": "abstain-vague-fix",
+      "prompt": "修复一下吧",
+      "expectedPrimary": {"intent": "unknown", "action": "unknown"},
+      "expectedOperations": [],
+      "expectedContextUsed": false,
+      "expectedAbstain": true
+    },
+    {
+      "id": "abstain-negated-test",
+      "prompt": "please do not run the tests",
+      "expectedPrimary": {"intent": "unknown", "action": "unknown"},
+      "expectedOperations": [
+        {"intent": "test", "action": "execute", "polarity": "negated"}
+      ],
+      "expectedContextUsed": false,
+      "expectedAbstain": true
+    }
+  ]
+}

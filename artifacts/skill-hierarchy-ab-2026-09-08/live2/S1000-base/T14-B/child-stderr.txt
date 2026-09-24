@@ -1,0 +1,10 @@
+Skill version observation skipped: Skill catalog exceeds version limit
+Traceback (most recent call last):
+  File "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/snapshot/minicode/skill_versions.py", line 872, in observe_skill_catalog_safely
+    SkillVersionLedger(workspace).observe_catalog(skills)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/snapshot/minicode/skill_versions.py", line 603, in observe_catalog
+    identities = _normalize_catalog(skills)
+  File "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/snapshot/minicode/skill_versions.py", line 220, in _normalize_catalog
+    raise SkillVersionLedgerError("Skill catalog exceeds version limit")
+minicode.skill_versions.SkillVersionLedgerError: Skill catalog exceeds version limit

@@ -1,0 +1,1 @@
+{"task": "T04", "arm": "A", "prompt_mode": "hierarchical", "stop": "nonload_tool_requested", "steps": 1}

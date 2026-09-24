@@ -1,0 +1,142 @@
+{
+  "task_id": "T06",
+  "scale": "S100",
+  "variant": "wrong-placement",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-wrong-placement",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283571910409972939",
+      "name": "search_skills",
+      "args": {
+        "query": "cache stampede hot key expiry recomputation dogpile"
+      },
+      "ok": true,
+      "output_sha256": "c6856c8ec6b104728d89319820aa5d72c1fc03df373c083838147a398c2f99e2",
+      "output_chars": 2135,
+      "seen_qualified_names": [
+        "database/caching-strategy",
+        "database/query-result-cache",
+        "cache-layer/circuit-breaker",
+        "cache-layer/idempotency",
+        "cache-layer/pagination",
+        "cache-layer/performance-tuning",
+        "cache-layer/rate-limiting",
+        "cache-layer/retry-backoff",
+        "cache-layer/timeout-tuning",
+        "database/connection-leak-hunt",
+        "database/debugging-playbook",
+        "object-storage/retry-backoff"
+      ],
+      "seen_directories": [
+        "cache-layer",
+        "database",
+        "object-storage"
+      ],
+      "elapsed_ms": 75.57837502099574
+    },
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283571910409972938",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "cache-layer"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "c6b1706a5c219e87a04b165e7c110bd3b8add2f5d224ef09c9fcccd2448ccc07",
+      "output_chars": 1176,
+      "seen_qualified_names": [
+        "cache-layer/circuit-breaker",
+        "cache-layer/idempotency",
+        "cache-layer/pagination",
+        "cache-layer/performance-tuning",
+        "cache-layer/rate-limiting",
+        "cache-layer/retry-backoff",
+        "cache-layer/timeout-tuning"
+      ],
+      "seen_directories": [
+        "cache-layer"
+      ],
+      "elapsed_ms": 0.3327500307932496
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "efa62819ee3c51dbb4cd7253c08fb3f2483f9ef301425d8efdbf53e5be00c9c7",
+      "elapsed_ms": 21763.744791038334,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "list_files",
+        "search_skills",
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7908,
+        "outputTokens": 610,
+        "cacheReadTokens": 7616,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "f8d0ff2c5402c35727774d20d9d50c4ef18bfaa9e27f114ed2d4262c4564740b",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "0eefa9420a1a81783b927caa106a9da56e38df69692da6cb70ab365587d84dc3",
+  "system_prompt_chars": 12284,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 7908,
+  "output_tokens": 610,
+  "routing_events": [],
+  "elapsed_ms": 22384.66545799747
+}

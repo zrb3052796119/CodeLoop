@@ -1,0 +1,109 @@
+{
+  "task_id": "T09",
+  "scale": "S100",
+  "variant": "wrong-placement",
+  "arm": "B",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-wrong-placement",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283543872863466807",
+      "name": "load_skill",
+      "args": {
+        "name": "auth-service/security-hardening"
+      },
+      "ok": false,
+      "output_sha256": "7031d989e84de4e10d80a3b3a961dbd785162e31bccaaa42f11da9489c291423",
+      "output_chars": 69,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 0.9493749821558595
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283543872863466807",
+      "requested_name": "auth-service/security-hardening",
+      "qualified_name": null,
+      "ok": false,
+      "body_chars": 0,
+      "body_integrity_ok": false,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "8952a1f8442cfb8a529c65745510c3b0225fb5c52430ec6e3f62c253b5c6e265",
+      "elapsed_ms": 6604.5281670521945,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill",
+        "list_files"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7707,
+        "outputTokens": 144,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 1
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "f8d0ff2c5402c35727774d20d9d50c4ef18bfaa9e27f114ed2d4262c4564740b",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection-unresolved-not-enforced",
+  "system_prompt_sha256": "c3b17f31bfb625e422a334b71895440ec364c590b8ce74ebdd617e3486a34fd0",
+  "system_prompt_chars": 11314,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 7707,
+  "output_tokens": 144,
+  "routing_events": [],
+  "elapsed_ms": 7151.691542007029
+}

@@ -1,0 +1,15 @@
+{
+  "task_id": "T14",
+  "prompt": "先定位一下为什么订单服务的内存一直在涨；如果确认是缓存层无界增长导致的，再给我改造方案，对外接口一个都不许变。",
+  "scale": "S1000",
+  "variant": "wrong-placement",
+  "arm": "A",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-wrong-placement",
+  "run_dir": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/live/S1000-wrong-placement/T14-A",
+  "snapshot": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/snapshot",
+  "fake_scenario": null,
+  "fake_target": "",
+  "max_steps": 8,
+  "call_timeout_seconds": 60.0,
+  "run_timeout_seconds": 480.0
+}

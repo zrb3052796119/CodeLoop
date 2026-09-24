@@ -1,0 +1,158 @@
+{
+  "case_id": "S20",
+  "mode": "actual-model-pre-work-window",
+  "model": "glm-5.3-flash",
+  "provider": "custom",
+  "runtime_overrides": {
+    "modelTimeoutSeconds": 30.0,
+    "modelMaxRetries": 0,
+    "maxOutputTokens": 2048
+  },
+  "max_calls": 4,
+  "system_prompt_sha256": "c8c1f6f10841e1ac5b64ddaec9c9759bad886869405a9a33108e78387be6f079",
+  "tool_schemas_sha256": "84fe60abda296be22540e9673d2b60812eb6fd55c6a80e7896a9f59154bf956c",
+  "tool_names": [
+    "ask_user",
+    "list_files",
+    "grep_files",
+    "read_file",
+    "file_line_count",
+    "write_file",
+    "edit_file",
+    "patch_file",
+    "batch_copy",
+    "batch_move",
+    "batch_delete",
+    "run_command",
+    "web_fetch",
+    "web_search",
+    "todo_write",
+    "task",
+    "subagent_note_write",
+    "subagent_note_read",
+    "subagent_note_list",
+    "git",
+    "find_symbols",
+    "find_references",
+    "get_ast_info",
+    "code_review",
+    "file_tree",
+    "diff_viewer",
+    "test_runner",
+    "load_skill",
+    "propose_skill"
+  ],
+  "catalog_sha256": "30b06640cc20cb2ca683ae8f42ac6fa078f3d754efa6b6f72acdea8387d2dafd",
+  "policy": {
+    "version": 3,
+    "allowed_bindings": [],
+    "denied_qualified_names": [],
+    "reason_code": "model-catalog",
+    "allow_catalog_scope": true
+  },
+  "required_skill_names": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "operation_id": "modelop_c9aa288d5a5b484aa8684f442a5088ee",
+      "input_sha256": "c4ccbc9c3ef8360fc69ae2586d6c73979801b45a02ea6eb9ebdad3a79ec9017f",
+      "provider_message_projection_sha256": "c4ccbc9c3ef8360fc69ae2586d6c73979801b45a02ea6eb9ebdad3a79ec9017f",
+      "request_file": "call-01-request.json",
+      "completed": true,
+      "elapsed_ms": 22305.78770802822,
+      "response": {
+        "type": "assistant",
+        "content": "哈哈，辛苦啦！来一个一句话版：\n\n**小猫为什么总被老板骂？——因为它上班的时候一直在摸鱼。** 🐱🐟\n\n（摸鱼界唯一无辜的选手……才怪。）好好休息～",
+        "kind": "final",
+        "calls": [],
+        "contentKind": null,
+        "reasoningContent": "The user is asking for a one-liner cold joke about cats, in Chinese. This is a simple conversational request, no tools needed. Let me think of a good one-line cat joke in Chinese.\n\nSomething like:\n- 为什么猫 never plays poker in the jungle? Too many cheetahs. (English joke)\n- 小猫的冷笑话，一句话：\n\nChinese cat cold jokes:\n- \"猫为什么喜欢上网？因为它们有爪机（手机）。\"\n- \"小猫对小老虎说：'我们长得好像。'小老虎说：'虎不虎你试试。'\"\n- \"猫：我从来不吃鱼的刺，因为我怕卡（cat）。\"\n- \"为什么猫不会写作业？因为它们只会抓重点。\" — 抓 pun\n- \"小猫为什么考试总是满分？因为它都是抄（喵）的。\"\n\nA classic cold one-liner: \"猫为什么走路没有声音？因为它穿的是喵（猫）鞋。\" Hmm.\n\nBetter: \"小猫为什么不用吃糖？因为它已经很甜（cat）了。\" no.\n\nCold joke (冷笑话) style relies on puns:\n- \"为什么猫总在键盘上走来走去？因为它们想当键盘侠——喵出来的。\" meh.\n- \"猫对镜子里的自己说：'你谁啊？' 镜子说：'我不是你妈，我是你的镜像——喵像。'\" meh.\n\nSimple classic: \"老虎不发猫，你当我病危呀\" — that's a pun on 威严. Actually the classic is \"老虎不发威，你当我病猫\" — reversed cold joke: \"老虎不发猫，你当我病危呀。\" That's a known internet cold joke. It's one sentence and about cats (sort of).\n\nOr: \"小猫排队，一只猫说：'喵'，后面猫说：'喵喵'，最后一只说：'别催了，两分钟（喵喵）都在赶路。'\" no.\n\nAnother known one: \"猫为什么不能加薪？因为老板觉得它整天摸鱼。\" Cats touch fish (摸鱼 = slacking) — that's good! \"小猫上班总被老板骂，因为它天天摸鱼。\" One sentence, pun on 摸鱼.\n\nI think the best one-liner: \"为什么猫咪上班总被老板批评？因为它一整天都在摸鱼。\" Or shorter: \"小猫上班天天摸鱼，老板却不生气——因为鱼就是发的福利。\" Hmm, keep it simple.\n\nSimplest: \"小猫为什么总被老板骂？因为它上班的时候一直在摸鱼。\"\n\nThat's a decent one-liner cold joke. Keep response light and short, conversational. No tools needed. Plain text response is fine — this is a complete answer. The structured response protocol says plain assistant text without <progress> is treated as a completed assistant message. For a non-coding casual request, I can just answer directly. I'll use <final> since the task is complete... Actually the protocol is about work tasks; but to be safe, a simple direct answer is fine. I'll just answer plainly without tags? The instruction says \"Only when the task is actually complete and you are ready to hand control back, start your text with <final>.\" So I should start with <final> when done.",
+        "diagnostics": {
+          "stopReason": "stop",
+          "blockTypes": [
+            "text"
+          ],
+          "ignoredBlockTypes": []
+        },
+        "usage": {
+          "input_tokens": 7577,
+          "output_tokens": 744,
+          "cache_read_tokens": 7552,
+          "cache_creation_tokens": null,
+          "source": "provider"
+        }
+      },
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7577,
+        "outputTokens": 744,
+        "cacheReadTokens": 7552,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "load_calls": [],
+  "blocked_nonload_calls": [],
+  "unexecuted_calls": [],
+  "stop_reason": "assistant_response_without_tool_calls",
+  "probe_interventions": [],
+  "limitations": [
+    "At most four provider calls before the first non-load tool request or assistant-only response.",
+    "No task operation is executed; this does not establish full task completion or workflow adherence.",
+    "The AgentLoop required-Skill final nudge/gate is not run; initial spontaneous loading is measured separately.",
+    "No synthetic response is supplied for a non-load request; a load preceding it may remain unsent.",
+    "A completed observation journal means the probe finished, never that the synthetic task succeeded.",
+    "Body submission on a failed provider call is not counted as confirmed provider handoff."
+  ],
+  "run_id": "run_785e4dae5aef44ca98f6fc4dd206da1b",
+  "elapsed_ms": 22311.319625005126,
+  "loaded_skills": [],
+  "loaded_skills_truncated": false,
+  "events": [
+    {
+      "type": "run.queued",
+      "payload": {}
+    },
+    {
+      "type": "run.started",
+      "payload": {}
+    },
+    {
+      "type": "model.started",
+      "payload": {
+        "operationId": "modelop_c9aa288d5a5b484aa8684f442a5088ee"
+      }
+    },
+    {
+      "type": "model.completed",
+      "payload": {
+        "operationId": "modelop_c9aa288d5a5b484aa8684f442a5088ee",
+        "resultType": "assistant",
+        "contentPresent": true,
+        "toolCallCount": 0,
+        "usage": {
+          "source": "provider",
+          "inputTokens": 7577,
+          "outputTokens": 744,
+          "cacheReadTokens": 7552,
+          "cacheCreationTokens": null
+        },
+        "durationMs": 22305
+      }
+    },
+    {
+      "type": "run.completed",
+      "payload": {
+        "coordination": {
+          "parentInputTokens": 7577,
+          "parentOutputTokens": 744,
+          "subagentInputTokens": 0,
+          "subagentOutputTokens": 0
+        }
+      }
+    }
+  ],
+  "loaded_qualified_names": [],
+  "body_handoff_qualified_names": [],
+  "required_skills_missing_at_stop": []
+}

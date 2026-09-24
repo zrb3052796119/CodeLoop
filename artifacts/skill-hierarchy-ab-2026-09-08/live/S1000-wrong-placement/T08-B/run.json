@@ -1,0 +1,124 @@
+{
+  "task_id": "T08",
+  "scale": "S1000",
+  "variant": "wrong-placement",
+  "arm": "B",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-wrong-placement",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283495150754462410",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "search-index"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "881e4ff0989dea4ee51743a96d13d7c8383f1826ac8a170a6efe40793d70b39c",
+      "output_chars": 3403,
+      "seen_qualified_names": [
+        "search-index/backpressure",
+        "search-index/batch-processing",
+        "search-index/caching-strategy",
+        "search-index/circuit-breaker",
+        "search-index/config-management",
+        "search-index/connection-pooling",
+        "search-index/cursor-scan-helper",
+        "search-index/dead-letter-handling",
+        "search-index/debugging-playbook",
+        "search-index/error-mapping",
+        "search-index/idempotency",
+        "search-index/observability",
+        "search-index/pagination",
+        "search-index/performance-tuning",
+        "search-index/rate-limiting",
+        "search-index/retry-backoff",
+        "search-index/schema-migration",
+        "search-index/security-hardening",
+        "search-index/testing-strategy",
+        "search-index/timeout-tuning",
+        "search-index/upgrade-runbook"
+      ],
+      "seen_directories": [
+        "search-index"
+      ],
+      "elapsed_ms": 5.796624929644167
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "ac6dde735995f9ffba22763927707fa38de3b39994b13bd87b481fd73b1c7b7c",
+      "elapsed_ms": 6335.055999923497,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "list_files",
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9376,
+        "outputTokens": 109,
+        "cacheReadTokens": 9216,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "5636c19afc92166c307441be02168816aafe2febba244dfa1ebec367e46c149f",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "c80ab30e2441c2831d41554532ab215714c65696ed77186f37a6b2e5a9b310ad",
+  "system_prompt_chars": 18428,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 9376,
+  "output_tokens": 109,
+  "routing_events": [],
+  "elapsed_ms": 11313.53974994272
+}

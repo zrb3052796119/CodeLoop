@@ -1,0 +1,52 @@
+{
+  "total": 50,
+  "primary_correct": 44,
+  "all_labeled_checks_correct": 44,
+  "failed_ids": [
+    "C26",
+    "C30",
+    "C39",
+    "C40",
+    "C47",
+    "C50"
+  ],
+  "semantic_status": {
+    "skipped": 36,
+    "accepted": 12,
+    "abstained": 2
+  },
+  "event_counts": {
+    "model.started": 14,
+    "model.completed": 14,
+    "model.costed": 14
+  },
+  "called_ids": [
+    "C02",
+    "C05",
+    "C06",
+    "C09",
+    "C11",
+    "C14",
+    "C23",
+    "C25",
+    "C26",
+    "C27",
+    "C29",
+    "C30",
+    "C45",
+    "C49"
+  ],
+  "called_median_ms": 1282.6815205044113,
+  "latency_ms": {
+    "median": 4.46795899188146,
+    "p95": 1711.0537920380011,
+    "max": 1903.3793340204284
+  },
+  "wall_seconds": 20.084922207985073,
+  "source_unchanged": true,
+  "runner_unchanged": true,
+  "scorer_unchanged": true,
+  "module_sources_valid": true,
+  "calibration_unchanged": true,
+  "cases_unchanged": true
+}

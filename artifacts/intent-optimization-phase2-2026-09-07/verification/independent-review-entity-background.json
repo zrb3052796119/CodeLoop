@@ -1,0 +1,244 @@
+{
+  "baseline": [
+    {
+      "history": "请新增一份接口文档。背景资料在 archive/legacy.md。",
+      "text": "继续更新这份文档的示例。",
+      "main": [
+        "document",
+        "update"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "document",
+          "update",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给当前模块添加测试。旧测试结果保存在 reports/old.log。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给当前模块添加测试；reports/old.log 只是历史输出。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请新建接口文档；archive/legacy.md 只是旧参考资料。",
+      "text": "继续更新这份文档的示例。",
+      "main": [
+        "document",
+        "update"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "document",
+          "update",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请给 utils.py 加测试。旧报告中的 other.py 不是目标。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    }
+  ],
+  "candidate": [
+    {
+      "history": "请新增一份接口文档。背景资料在 archive/legacy.md。",
+      "text": "继续更新这份文档的示例。",
+      "main": [
+        "document",
+        "update"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "document",
+          "update",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给当前模块添加测试。旧测试结果保存在 reports/old.log。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [
+        "reports/old.log"
+      ],
+      "context_used": true,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [
+              "reports/old.log"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "给当前模块添加测试；reports/old.log 只是历史输出。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [
+        "reports/old.log"
+      ],
+      "context_used": true,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [
+              "reports/old.log"
+            ],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请新建接口文档；archive/legacy.md 只是旧参考资料。",
+      "text": "继续更新这份文档的示例。",
+      "main": [
+        "document",
+        "update"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "document",
+          "update",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    },
+    {
+      "history": "请给 utils.py 加测试。旧报告中的 other.py 不是目标。",
+      "text": "再加一个 None 输入的用例。",
+      "main": [
+        "test",
+        "create"
+      ],
+      "files": [],
+      "context_used": false,
+      "ops": [
+        [
+          "test",
+          "create",
+          "affirmed",
+          {
+            "files": [],
+            "functions": [],
+            "classes": [],
+            "languages": []
+          }
+        ]
+      ]
+    }
+  ]
+}

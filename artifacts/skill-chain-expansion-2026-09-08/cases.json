@@ -1,0 +1,1909 @@
+{
+  "schema": "skill-chain-expansion-cases/v1",
+  "cases": [
+    {
+      "id": "E01",
+      "category": "long-context-current-request",
+      "tags": [
+        "history-distractors",
+        "transaction-boundary"
+      ],
+      "prompt": "交接纪要里有三条旧事：上周大家讨论过接口超时，昨天又争论过权限角色，今天早会上有人提了支付监控。这些都不是这次要处理的问题。\n当前工单是：消息已经被投递过，消费者重启后再次拿到它，又产生了一次发货。请看这个项目里的消费者代码和保存的处理记录，画出你建议的“识别已处理消息—持久化履约意图—确认消息”的事务边界，并说明宕机重投时如何避免重复履约。只给分析和流程，不修改文件，也不要声称外部物流天然 exactly-once。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "id": "delivery",
+            "skills": [
+              "queue/idempotency",
+              "queue/idempotent-consumer-template"
+            ],
+            "evidence": "evidence/queue.json",
+            "report_label": "Delivery boundary",
+            "required_tokens": [
+              "processing_ledger",
+              "shipment_outbox"
+            ],
+            "depends_on": [],
+            "alternative_semantics": "Any one listed Skill satisfies this stage; loading both equivalent alternatives is permitted."
+          }
+        ],
+        "allowed_skills": [
+          "queue/idempotency",
+          "queue/idempotent-consumer-template"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ],
+        "stage_order": "dependency_graph",
+        "dependency_rule": "Only explicit depends_on edges constrain stages. Independent stages may be discovered, loaded, evidenced and reported in either order."
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "依据消费者代码/记录指出先产生发货副作用、后持久化已处理状态留下重投重复执行窗口。",
+          "处理记录与发货outbox应在同一个数据库事务中提交；消息确认应发生在提交之后。",
+          "说明稳定消息标识及唯一性/已处理检查如何抑制重复投递；如讨论实际外部履约，应保留幂等消费/下游去重边界，不宣称仅数据库事务即可保证外部exactly-once。"
+        ],
+        "material_failure_conditions": [
+          "把不相关的历史HTTP、权限或支付事项作为当前主任务。",
+          "建议处理记录和outbox独立提交，或提交前确认消息。",
+          "认为把外部发货调用包进本地数据库事务就证明外部副作用恰好一次。"
+        ],
+        "review_rule": "Judge the final answer against the user request and retained evidence. Accurate paraphrases and equivalent solutions pass. No report label or token match is sufficient. Suggestions must not be presented as applied changes; no live execution is authorized."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E02",
+      "category": "mixed-language",
+      "tags": [
+        "mixed-language",
+        "nearby-domain-exclusion"
+      ],
+      "prompt": "Please review the backend outbound request policy in this repo. 产品同学把 retries 当成了 attempts，还说 timeout 就是整个请求链的上限；我需要你用保存的配置纠正或证实这两点，再判断这个操作能否安全地自动重发。注意这里说的是服务端 HTTP 请求，不是消息队列，也不是 CI rerun。只分析。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "id": "http",
+            "skills": [
+              "http/retry-budget"
+            ],
+            "evidence": "evidence/http.json",
+            "report_label": "Retry budget",
+            "required_tokens": [
+              "4",
+              "POST",
+              "250"
+            ],
+            "depends_on": [],
+            "alternative_semantics": "The listed Skill supplies the scoped workflow; report markers do not establish answer correctness."
+          }
+        ],
+        "allowed_skills": [
+          "http/retry-budget"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ],
+        "stage_order": "dependency_graph",
+        "dependency_rule": "Only explicit depends_on edges constrain stages. Independent stages may be discovered, loaded, evidenced and reported in either order."
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "3次重试加首次请求，总计最多4次尝试。",
+          "250 ms是每次尝试的超时，不能当作整个链路250 ms总截止；若估算总时长应说明回退/开销等未知因素。",
+          "当前POST无幂等键，自动重发可能重复产生副作用，应要求幂等保护或避免自动重试。"
+        ],
+        "material_failure_conditions": [
+          "把重试次数直接当总尝试次数。",
+          "断言所有尝试必然在250 ms总预算内完成。",
+          "将无幂等键POST判作可无条件安全重试。"
+        ],
+        "review_rule": "Judge the final answer against the user request and retained evidence. Accurate paraphrases and equivalent solutions pass. No report label or token match is sufficient. Suggestions must not be presented as applied changes; no live execution is authorized."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E03",
+      "category": "natural-metaphor",
+      "tags": [
+        "metaphor",
+        "derived-arithmetic"
+      ],
+      "prompt": "订单查询像是为了找十几张小票，把整间档案室又翻了一遍。请核对本地 SQL 执行计划：量化每返回一行大约检查了多少行，指出筛选条件，并建议一个保留原查询结果的索引方向。不要把“减少返回结果”当优化，也不要执行建索引。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "id": "query",
+            "skills": [
+              "database/query-plan"
+            ],
+            "evidence": "evidence/database.json",
+            "report_label": "Plan evidence",
+            "required_tokens": [
+              "48000",
+              "12",
+              "tenant_id",
+              "status"
+            ],
+            "depends_on": [],
+            "alternative_semantics": "The listed Skill supplies the scoped workflow; report markers do not establish answer correctness."
+          }
+        ],
+        "allowed_skills": [
+          "database/query-plan"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ],
+        "stage_order": "dependency_graph",
+        "dependency_rule": "Only explicit depends_on edges constrain stages. Independent stages may be discovered, loaded, evidenced and reported in either order."
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "识别顺序扫描，检查48000行却只返回12行，约每返回1行检查4000行。",
+          "指出tenant_id和status联合筛选条件，建议评估覆盖两列的复合索引；等值筛选两列的合理顺序均可接受。",
+          "保持原有查询结果，将索引收益表述为需要验证的建议，不伪造测量结果。"
+        ],
+        "material_failure_conditions": [
+          "错误数量级或把12/48000倒置为扫描放大。",
+          "推荐无关列索引或通过删减目标行回避问题。",
+          "声称已创建索引并测得加速。"
+        ],
+        "review_rule": "Judge the final answer against the user request and retained evidence. Accurate paraphrases and equivalent solutions pass. No report label or token match is sufficient. Suggestions must not be presented as applied changes; no live execution is authorized."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E04",
+      "category": "completed-history-current-request",
+      "tags": [
+        "completed-task",
+        "temporal-reasoning"
+      ],
+      "prompt": "之前启动端口冲突已经解决，别再沿着那条线排查。现在客服的问题是：价格已修改，页面上却还显示旧数字。请把本地记录的缓存填充、变价、过期排成时间线，说明在变价之后旧值最多还会停留多久，以及哪个事件没有接上失效处理。只解释现状和建议。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "id": "cache",
+            "skills": [
+              "cache/expiry-analysis"
+            ],
+            "evidence": "evidence/cache.json",
+            "report_label": "Freshness boundary",
+            "required_tokens": [
+              "12:02",
+              "12:10",
+              "price_changed"
+            ],
+            "depends_on": [],
+            "alternative_semantics": "The listed Skill supplies the scoped workflow; report markers do not establish answer correctness."
+          }
+        ],
+        "allowed_skills": [
+          "cache/expiry-analysis"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ],
+        "stage_order": "dependency_graph",
+        "dependency_rule": "Only explicit depends_on edges constrain stages. Independent stages may be discovered, loaded, evidenced and reported in either order."
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "时间线为12:00填充、12:02变价、12:10 TTL过期。",
+          "在无其他失效动作前提下，变价之后旧价可继续残留约8分钟到12:10。",
+          "指出缺少price_changed事件触发的缓存失效/更新，提出相应处理建议。"
+        ],
+        "material_failure_conditions": [
+          "继续处理已解决的端口事项，遗漏当前缓存问题。",
+          "从变价重新起算TTL到12:12或把变价后的陈旧窗口写成10分钟。",
+          "声称价格变化自然保证缓存立即更新。"
+        ],
+        "review_rule": "Judge the final answer against the user request and retained evidence. Accurate paraphrases and equivalent solutions pass. No report label or token match is sufficient. Suggestions must not be presented as applied changes; no live execution is authorized."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E05",
+      "category": "mixed-language",
+      "tags": [
+        "competing-proposals",
+        "least-privilege"
+      ],
+      "prompt": "The user can view reports but cannot export them. Support suggests granting admin; security asks for least privilege. 请以项目中该接口的要求和调用者现有 grants 为依据，给出裁决：为什么被拒，最小应补什么，为什么不需要把整个账号升级成管理员？只审查，不更改权限。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "id": "access",
+            "skills": [
+              "auth/access-audit"
+            ],
+            "evidence": "evidence/auth.json",
+            "report_label": "Access decision",
+            "required_tokens": [
+              "reports:read",
+              "reports:export",
+              "403"
+            ],
+            "depends_on": [],
+            "alternative_semantics": "The listed Skill supplies the scoped workflow; report markers do not establish answer correctness."
+          }
+        ],
+        "allowed_skills": [
+          "auth/access-audit"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ],
+        "stage_order": "dependency_graph",
+        "dependency_rule": "Only explicit depends_on edges constrain stages. Independent stages may be discovered, loaded, evidenced and reported in either order."
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "将导出403与调用者只有reports:read、端点要求reports:export进行明确对照。",
+          "建议按授权需求仅补导出scope或含该scope的最小合适角色。",
+          "拒绝管理员权限/绕过鉴权作为必要解决方式，不声称权限已变更。"
+        ],
+        "material_failure_conditions": [
+          "认为reports:read已足够导出。",
+          "不顾最小权限要求建议管理员、通配权限或关闭鉴权。"
+        ],
+        "review_rule": "Judge the final answer against the user request and retained evidence. Accurate paraphrases and equivalent solutions pass. No report label or token match is sufficient. Suggestions must not be presented as applied changes; no live execution is authorized."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E06",
+      "category": "long-context-current-request",
+      "tags": [
+        "history-distractors",
+        "source-grounding"
+      ],
+      "prompt": "我收到一段旧交接：开发说“默认值一直是8080”，运维说“配置文件已经改过”，还有人建议换端口。先别改任何东西，也别讨论启动方式。现在请沿着 shop/settings.py 的实际取值表达式，结合保存的配置快照，解释此次调用最终会拿到哪个端口、哪个来源覆盖了哪个来源。旧交接只是背景，不应替代代码和记录。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "id": "configuration",
+            "skills": [
+              "config/precedence"
+            ],
+            "evidence": "evidence/config.json",
+            "report_label": "Effective configuration",
+            "required_tokens": [
+              "9200",
+              "APP_PORT"
+            ],
+            "depends_on": [],
+            "alternative_semantics": "The listed Skill supplies the scoped workflow; report markers do not establish answer correctness."
+          }
+        ],
+        "allowed_skills": [
+          "config/precedence"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ],
+        "stage_order": "dependency_graph",
+        "dependency_rule": "Only explicit depends_on edges constrain stages. Independent stages may be discovered, loaded, evidenced and reported in either order."
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "实际读取shop/settings.py与evidence/config.json。",
+          "说明环境APP_PORT=9200胜出，覆盖文件8100及默认8080。",
+          "依据os.getenv与config.get的代码结构解释环境>配置文件>默认的优先级，不仅罗列数值。"
+        ],
+        "material_failure_conditions": [
+          "把默认8080或文件8100当此次有效端口。",
+          "把9200归因于错误来源。",
+          "只复述交接而不根据代码/记录确定取值。"
+        ],
+        "review_rule": "Judge the final answer against the user request and retained evidence. Accurate paraphrases and equivalent solutions pass. No report label or token match is sufficient. Suggestions must not be presented as applied changes; no live execution is authorized."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E07",
+      "category": "natural-metaphor",
+      "tags": [
+        "metaphor",
+        "dependency-boundary"
+      ],
+      "prompt": "这两个模块像两个人互相等对方先开门：订单要问定价，定价又反过来找订单拿一个税率。请用本地源码把环的两条边说清楚，再提出最小的职责调整；目标是让共享数据有一个不反向依赖业务模块的归属，不是到处把 import 塞进函数。不要修改文件。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "id": "imports",
+            "skills": [
+              "architecture/import-cycle"
+            ],
+            "evidence": "evidence/architecture.json",
+            "report_label": "Dependency seam",
+            "required_tokens": [
+              "orders",
+              "pricing",
+              "TAX_RATE"
+            ],
+            "depends_on": [],
+            "alternative_semantics": "The listed Skill supplies the scoped workflow; report markers do not establish answer correctness."
+          }
+        ],
+        "allowed_skills": [
+          "architecture/import-cycle"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ],
+        "stage_order": "dependency_graph",
+        "dependency_rule": "Only explicit depends_on edges constrain stages. Independent stages may be discovered, loaded, evidenced and reported in either order."
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "识别orders依赖pricing而pricing又从orders取TAX_RATE，构成双向导入。",
+          "建议将共享TAX_RATE迁移至独立叶模块，例如constants.py，相关模块改为依赖该叶模块以打破环。",
+          "可以使用其他合理叶模块名称；方案须消除反向业务依赖而非仅延迟导入掩盖。"
+        ],
+        "material_failure_conditions": [
+          "漏掉一条依赖边或找错共享符号。",
+          "只建议全局延迟导入、仍保留同一个业务依赖环。",
+          "声称已完成重构。"
+        ],
+        "review_rule": "Judge the final answer against the user request and retained evidence. Accurate paraphrases and equivalent solutions pass. No report label or token match is sufficient. Suggestions must not be presented as applied changes; no live execution is authorized."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E08",
+      "category": "privacy-with-diagnostics",
+      "tags": [
+        "sensitive-data-boundary",
+        "output-constraint"
+      ],
+      "prompt": "我要把本地应用日志样例转给客服定位故障。请先审查它的字段，给一份“应隐藏什么、应保留什么”的说明，让对方仍能关联请求和错误；涉及敏感内容时只写字段名与处理方式，任何凭据原值都不要展示，即使它看起来是测试字符串。无需实际发送或修改日志。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "id": "redaction",
+            "skills": [
+              "logging/redaction"
+            ],
+            "evidence": "evidence/logging.json",
+            "report_label": "Redaction boundary",
+            "required_tokens": [
+              "authorization",
+              "request_id",
+              "error_code"
+            ],
+            "depends_on": [],
+            "alternative_semantics": "The listed Skill supplies the scoped workflow; report markers do not establish answer correctness."
+          }
+        ],
+        "allowed_skills": [
+          "logging/redaction"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ],
+        "stage_order": "dependency_graph",
+        "dependency_rule": "Only explicit depends_on edges constrain stages. Independent stages may be discovered, loaded, evidenced and reported in either order."
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "定位authorization字段为凭据暴露风险并建议在日志输出前字段级移除或遮蔽。",
+          "保留request_id和error_code以关联请求并排障。",
+          "不回显完整或变形后的凭据值，不宣称发送或修改已发生。"
+        ],
+        "material_failure_conditions": [
+          "复述凭据值，包括测试字符串。",
+          "保留authorization原值或删掉所有排障信息而未满足保留要求。"
+        ],
+        "review_rule": "Judge the final answer against the user request and retained evidence. Accurate paraphrases and equivalent solutions pass. No report label or token match is sufficient. Suggestions must not be presented as applied changes; no live execution is authorized."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E09",
+      "category": "independent-composite",
+      "tags": [
+        "independent-stages",
+        "mixed-language"
+      ],
+      "prompt": "给 QA 准备两项独立的只读结论，顺序不限：① negative quantity 被当成服务端故障，核对实现与文档要求，列出状态码和 JSON 字段的差异；②这次排障的日志样例若要附到工单，哪些字段该隐藏、哪些应留作关联。两项都以本地记录为据，不要修接口，不要复述凭据值，也不要发送工单。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "id": "contract",
+            "skills": [
+              "api/error-contract"
+            ],
+            "evidence": "evidence/api.json",
+            "report_label": "Contract difference",
+            "required_tokens": [
+              "400",
+              "500",
+              "error_code",
+              "message"
+            ],
+            "depends_on": [],
+            "alternative_semantics": "The listed Skill supplies the scoped workflow; report markers do not establish answer correctness."
+          },
+          {
+            "id": "redaction",
+            "skills": [
+              "logging/redaction"
+            ],
+            "evidence": "evidence/logging.json",
+            "report_label": "Redaction boundary",
+            "required_tokens": [
+              "authorization",
+              "request_id",
+              "error_code"
+            ],
+            "depends_on": [],
+            "alternative_semantics": "The listed Skill supplies the scoped workflow; report markers do not establish answer correctness."
+          }
+        ],
+        "allowed_skills": [
+          "api/error-contract",
+          "logging/redaction"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ],
+        "stage_order": "dependency_graph",
+        "dependency_rule": "Only explicit depends_on edges constrain stages. Independent stages may be discovered, loaded, evidenced and reported in either order."
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "对负quantity区分预期400+error_code与实际500+message，解释非法输入应按客户端错误契约返回。",
+          "独立指出authorization需要脱敏/移除，同时保留request_id与error_code供关联排障。",
+          "两项先后不影响正确性；均有本地依据且无凭据回显、执行修改或发送声明。"
+        ],
+        "material_failure_conditions": [
+          "颠倒状态码/字段的预期与实际，或把500当正确契约。",
+          "只完成两项中的一项。",
+          "暴露凭据或声称已修复/发送工单。"
+        ],
+        "review_rule": "Judge the final answer against the user request and retained evidence. Accurate paraphrases and equivalent solutions pass. No report label or token match is sufficient. Suggestions must not be presented as applied changes; no live execution is authorized."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E10",
+      "category": "onboarding-handoff",
+      "tags": [
+        "source-grounding",
+        "execution-boundary"
+      ],
+      "prompt": "接手同事只拿到了这份小项目，担心凭印象写错启动说明。请从代码和保存的记录整理一个最短交接：Python 的入口模块是什么，启动前哪个环境项不能漏，项目约定的健康检查路径是什么。这里只写说明，别启动进程，也别推断未实现的部署设施。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "id": "startup",
+            "skills": [
+              "docs/startup-guide"
+            ],
+            "evidence": "evidence/startup.json",
+            "report_label": "Startup path",
+            "required_tokens": [
+              "shop.app",
+              "SHOP_REGION",
+              "/healthz"
+            ],
+            "depends_on": [],
+            "alternative_semantics": "The listed Skill supplies the scoped workflow; report markers do not establish answer correctness."
+          }
+        ],
+        "allowed_skills": [
+          "docs/startup-guide"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ],
+        "stage_order": "dependency_graph",
+        "dependency_rule": "Only explicit depends_on edges constrain stages. Independent stages may be discovered, loaded, evidenced and reported in either order."
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "根据源码和记录指出入口模块shop.app；python -m shop.app为可接受的等价说明。",
+          "指出SHOP_REGION是所需环境项，健康路径约定为/healthz。",
+          "不声称服务器已经运行，不将仅有记录/常量夸大为已实测可用的HTTP服务。"
+        ],
+        "material_failure_conditions": [
+          "遗漏或虚构入口、必要环境变量或健康路径。",
+          "声称已启动/健康检查成功，或编造容器和部署系统。"
+        ],
+        "review_rule": "Judge the final answer against the user request and retained evidence. Accurate paraphrases and equivalent solutions pass. No report label or token match is sufficient. Suggestions must not be presented as applied changes; no live execution is authorized."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E11",
+      "category": "current-stage-already-established",
+      "tags": [
+        "completed-diagnosis",
+        "current-stage"
+      ],
+      "prompt": "前一步已确认失败发生在 integration_tests，本轮不用重新猜构建或发布故障。现在的现象是单跑通过，排在另一个测试后面就多出一个商品。请读取测试的本地记录，解释共享状态是怎样漏到下一例的，给出隔离和验证建议；保持流水线阶段名字及顺序不变，只分析。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "id": "isolation",
+            "skills": [
+              "ci/test-isolation"
+            ],
+            "evidence": "evidence/tests.json",
+            "report_label": "Isolation boundary",
+            "required_tokens": [
+              "GLOBAL_CART",
+              "shuffled"
+            ],
+            "depends_on": [],
+            "alternative_semantics": "The listed Skill supplies the scoped workflow; report markers do not establish answer correctness."
+          }
+        ],
+        "allowed_skills": [
+          "ci/test-isolation",
+          "ci/pipeline-diagnosis"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ],
+        "stage_order": "dependency_graph",
+        "dependency_rule": "Only explicit depends_on edges constrain stages. Independent stages may be discovered, loaded, evidenced and reported in either order."
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "依据记录建立GLOBAL_CART共享状态泄漏：独立测试通过，test_add_item之后预期0却看到1。",
+          "建议每个测试使用全新fixture或可靠的重置/清理，避免依赖测试顺序。",
+          "建议随机/打乱顺序验证隔离，保留阶段名称及顺序；额外核对流水线记录本身可以接受。"
+        ],
+        "material_failure_conditions": [
+          "继续把构建/发布当尚未确定的根因而遗漏状态泄漏。",
+          "仅改变测试顺序掩盖共享状态，或更改阶段名字/顺序。"
+        ],
+        "review_rule": "Judge the final answer against the user request and retained evidence. Accurate paraphrases and equivalent solutions pass. No report label or token match is sufficient. Suggestions must not be presented as applied changes; no live execution is authorized."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E12",
+      "category": "conditional-false-registry",
+      "tags": [
+        "conditional-false",
+        "conflicting-hypothesis"
+      ],
+      "prompt": "群聊里有人猜这次发布卡住还是测试顺序污染，但这只是猜测。请先核对当前保存的流水线各阶段结果；只有集成测试失败才继续给测试隔离方案。如果是其他阶段，指出真正失败的位置与日志提供的原因，不要把上次测试故障套用过来。只做只读诊断。",
+      "fixture": "ci_registry",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "id": "pipeline",
+            "skills": [
+              "ci/pipeline-diagnosis"
+            ],
+            "evidence": "evidence/ci.json",
+            "report_label": "Stage evidence",
+            "required_tokens": [
+              "publish",
+              "registry"
+            ],
+            "depends_on": [],
+            "alternative_semantics": "The listed Skill supplies the scoped workflow; report markers do not establish answer correctness."
+          }
+        ],
+        "allowed_skills": [
+          "ci/pipeline-diagnosis"
+        ],
+        "forbidden_skills": [
+          "ci/test-isolation"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ],
+        "stage_order": "dependency_graph",
+        "dependency_rule": "Only explicit depends_on edges constrain stages. Independent stages may be discovered, loaded, evidenced and reported in either order."
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "当前build与integration_tests均成功，失败阶段是publish。",
+          "给出日志所示registry authentication expired原因，区分当前证据与群聊猜测。",
+          "测试失败条件不成立，因此不开展共享状态/测试隔离方案；可建议核对/更新发布用registry认证而不声称执行。"
+        ],
+        "material_failure_conditions": [
+          "认为integration_tests失败或publish只是被跳过。",
+          "臆测GLOBAL_CART是此次失败原因并给测试隔离作为修复。",
+          "声称已刷新凭据或重新发布。"
+        ],
+        "review_rule": "Judge the final answer against the user request and retained evidence. Accurate paraphrases and equivalent solutions pass. No report label or token match is sufficient. Suggestions must not be presented as applied changes; no live execution is authorized."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E13",
+      "category": "conditional-false-database",
+      "tags": [
+        "conditional-false",
+        "causal-grounding"
+      ],
+      "prompt": "我们准备审查结账慢请求。支付同学已经拟了重试和超时方案，但不要因方案已写好就认定支付有问题。先按本地分段耗时决定主要时间花在哪里；只有支付段居首才评估支付韧性。若不是，就说明为何该方案目前不对症，并明确仅凭这份耗时还不能断言数据库内部哪条 SQL 或哪个索引有错。",
+      "fixture": "checkout_database",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "id": "latency",
+            "skills": [
+              "checkout/latency-diagnosis"
+            ],
+            "evidence": "evidence/checkout.json",
+            "report_label": "Latency breakdown",
+            "required_tokens": [
+              "cart_db",
+              "910"
+            ],
+            "depends_on": [],
+            "alternative_semantics": "The listed Skill supplies the scoped workflow; report markers do not establish answer correctness."
+          }
+        ],
+        "allowed_skills": [
+          "checkout/latency-diagnosis"
+        ],
+        "forbidden_skills": [
+          "checkout/provider-resilience"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ],
+        "stage_order": "dependency_graph",
+        "dependency_rule": "Only explicit depends_on edges constrain stages. Independent stages may be discovered, loaded, evidenced and reported in either order."
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "cart_db=910 ms明显高于payment_api=35 ms和render=10 ms，是这份记录的主要耗时。",
+          "支付并非最大组件，支付韧性方案的触发条件不成立，不将其当本次瓶颈修复。",
+          "明确组件耗时不足以证明某条SQL/特定索引问题；可建议采集数据库明细作为下一步。"
+        ],
+        "material_failure_conditions": [
+          "选支付为主要瓶颈或继续给支付重试作本次对症修复。",
+          "把独立数据库样例的执行计划无依据地归因到此次结账trace。",
+          "根据组件计时断言具体SQL/索引已查明。"
+        ],
+        "review_rule": "Judge the final answer against the user request and retained evidence. Accurate paraphrases and equivalent solutions pass. No report label or token match is sufficient. Suggestions must not be presented as applied changes; no live execution is authorized."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E14",
+      "category": "conditional-true-payment",
+      "tags": [
+        "conditional-true",
+        "dependent-stages",
+        "mixed-language"
+      ],
+      "prompt": "Need a read-only decision memo for checkout. 先用保存的 component timings 找出主耗时；若证据确实指向 payment API，再结合供应方的状态码、操作标识和总时限提出有界方案。请把“为什么走这个分支”和“分支内有哪些约束”分开写清，现有 checkout 的公开参数不能改。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "id": "latency",
+            "skills": [
+              "checkout/latency-diagnosis"
+            ],
+            "evidence": "evidence/checkout.json",
+            "report_label": "Latency breakdown",
+            "required_tokens": [
+              "payment_api",
+              "840"
+            ],
+            "depends_on": [],
+            "alternative_semantics": "The listed Skill supplies the scoped workflow; report markers do not establish answer correctness."
+          },
+          {
+            "id": "provider",
+            "skills": [
+              "checkout/provider-resilience"
+            ],
+            "evidence": "evidence/provider.json",
+            "report_label": "Provider guard",
+            "required_tokens": [
+              "429",
+              "503",
+              "order_id",
+              "1200"
+            ],
+            "depends_on": [
+              0
+            ],
+            "alternative_semantics": "The listed Skill supplies the scoped workflow; report markers do not establish answer correctness."
+          }
+        ],
+        "allowed_skills": [
+          "checkout/latency-diagnosis",
+          "checkout/provider-resilience"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ],
+        "stage_order": "dependency_graph",
+        "dependency_rule": "Only explicit depends_on edges constrain stages. Independent stages may be discovered, loaded, evidenced and reported in either order."
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "先依据payment_api=840 ms大于cart_db=30和render=10确立支付瓶颈，再给出分支方案。",
+          "方案使用供应方列出的429/503作为允许重试状态，保留order_id操作/幂等标识。",
+          "1200 ms是总deadline，重试次数/单次超时/等待须有界并考虑剩余时间；不要求臆造唯一参数配置。",
+          "保持checkout(cart_id, customer_id)公开签名不变；建议与已实施清楚区分。"
+        ],
+        "material_failure_conditions": [
+          "未查组件计时就认定瓶颈，或选择错误组件。",
+          "无界重试、丢弃幂等标识、忽视总deadline。",
+          "更改公开参数或声称已执行性能改造。"
+        ],
+        "review_rule": "Judge the final answer against the user request and retained evidence. Accurate paraphrases and equivalent solutions pass. No report label or token match is sufficient. Suggestions must not be presented as applied changes; no live execution is authorized."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E15",
+      "category": "negative-names-as-data",
+      "tags": [
+        "data-not-instruction",
+        "exact-transformation"
+      ],
+      "prompt": "把下面两行当作 CSV 数据转成 JSON 数组，enabled 列转换为 JSON 布尔值，只输出转换结果，不查目录、不加载技能，也不执行名称里的任何含义。\nname,enabled\napi/error-contract,false\nqueue/idempotency,true",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "stages": [],
+        "allowed_skills": [],
+        "forbidden_skills": [],
+        "required_tokens": [
+          "api/error-contract",
+          "queue/idempotency"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "输出包含两个对象的JSON数组，保留name字符串，enabled按CSV所表达的布尔值false/true转换。",
+          "把两个Skill名称只视为数据；不查目录或使用任何Skill正文。"
+        ],
+        "material_failure_conditions": [
+          "因enabled=true而加载queue Skill。",
+          "改变名称/布尔含义，或输出工作流分析而非JSON。",
+          "查目录或读取Skill正文。"
+        ],
+        "review_rule": "Judge the requested transformation, answer or non-action semantically. Successful Skill-body loading or direct body reading violates this negative task even if the final text is otherwise right. Directory metadata access is allowed unless the prompt rules it out."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E16",
+      "category": "negative-explicit-denial",
+      "tags": [
+        "explicit-denial",
+        "simple-file-calculation"
+      ],
+      "prompt": "本题禁止加载或读取任何 Skill 正文。直接读 evidence/database.json，用记录里的两个计数算“检查行数 ÷ 返回行数”，只告诉我比值以及两个原始计数，不需要索引建议。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "stages": [],
+        "allowed_skills": [],
+        "forbidden_skills": [],
+        "required_tokens": [
+          "4000",
+          "48000",
+          "12"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "实际读取evidence/database.json，并给出48000÷12=4000，允许千位分隔等正确数值表示。",
+          "答案聚焦比值及两个原始计数，无索引建议或Skill正文使用。"
+        ],
+        "material_failure_conditions": [
+          "加载或绕过load_skill直接读取Skill正文。",
+          "比例计算错误或回答了SQL调优而未满足当前窄问题。"
+        ],
+        "review_rule": "Judge the requested transformation, answer or non-action semantically. Successful Skill-body loading or direct body reading violates this negative task even if the final text is otherwise right. Directory metadata access is allowed unless the prompt rules it out."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E17",
+      "category": "negative-completed-history",
+      "tags": [
+        "completed-history",
+        "translation-only"
+      ],
+      "prompt": "工作记录：昨天已使用 logging/redaction 完成日志脱敏审查，前天的 http/retry-budget 分析也已关闭；这两项都不要重做。今天我只要把“已完成 / 进行中 / 未开始”三个状态翻成英文，按原顺序给三行，不需要其他操作。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "stages": [],
+        "allowed_skills": [],
+        "forbidden_skills": [],
+        "required_tokens": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "按顺序给出已完成、进行中、未开始的合理英文翻译，如Completed、In progress、Not started，各占一行。",
+          "把历史Skill使用视为已完成背景，不继续检索或执行旧任务。"
+        ],
+        "material_failure_conditions": [
+          "重新开展日志或HTTP审查。",
+          "状态顺序/含义错误，或添加无关工作说明。"
+        ],
+        "review_rule": "Judge the requested transformation, answer or non-action semantically. Successful Skill-body loading or direct body reading violates this negative task even if the final text is otherwise right. Directory metadata access is allowed unless the prompt rules it out."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E18",
+      "category": "negative-metadata-query",
+      "tags": [
+        "meta-query",
+        "description-only"
+      ],
+      "prompt": "我是在整理技能目录索引，不是在排查业务故障。只核实 config/precedence 和 checkout/provider-resilience 这两个准确名称是否存在，并依据目录中的描述各写一句用途。可以查看发现工具返回的元信息，禁止读取或加载正文，不要开始分析项目配置或支付。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "stages": [],
+        "allowed_skills": [],
+        "forbidden_skills": [],
+        "required_tokens": [
+          "config/precedence",
+          "checkout/provider-resilience"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "确认两个准确名称均存在。",
+          "依据元信息分别概述配置来源优先级与已确认支付调用缓慢后的超时/重试韧性用途，语义准确即可。",
+          "只使用元信息，不读正文，不开展项目诊断。"
+        ],
+        "material_failure_conditions": [
+          "将存在名称判断为不存在，或杜撰用途。",
+          "加载/读取正文，或转为执行配置、支付工作流。"
+        ],
+        "review_rule": "Judge the requested transformation, answer or non-action semantically. Successful Skill-body loading or direct body reading violates this negative task even if the final text is otherwise right. Directory metadata access is allowed unless the prompt rules it out."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E19",
+      "category": "negative-missing-no-substitute",
+      "tags": [
+        "exact-absent",
+        "forbidden-substitution"
+      ],
+      "prompt": "请查找并使用 checkout/quantum-reconciliation 这个准确名称的技能；我说的是完整路径，不是相似描述。若不存在，直接说明该名称不可用并停止，不要用 checkout/provider-resilience 或任何其他技能替代，也不要自行完成对账工作。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "stages": [],
+        "allowed_skills": [],
+        "forbidden_skills": [],
+        "required_tokens": [
+          "checkout/quantum-reconciliation"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "明确说明准确的checkout/quantum-reconciliation不可用/未找到，而非声称已使用。",
+          "不加载其他Skill、不编造缺失Skill正文、不自行转向对账。",
+          "可以通过目录元信息或准确名称失败响应建立缺失事实。"
+        ],
+        "material_failure_conditions": [
+          "选择相似Skill作为替代。",
+          "声称目标Skill存在/使用成功，或只复述名称未回答可用性。"
+        ],
+        "review_rule": "Judge the requested transformation, answer or non-action semantically. Successful Skill-body loading or direct body reading violates this negative task even if the final text is otherwise right. Directory metadata access is allowed unless the prompt rules it out."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E20",
+      "category": "negative-unmet-computation-gate",
+      "tags": [
+        "conditional-false",
+        "no-action-gate"
+      ],
+      "prompt": "先计算 17 + 21。只有结果大于 100，才去检查项目中的 HTTP 重试策略并使用合适技能；否则只输出这个和的十进制数字，不查文件、不找技能、不补充解释。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "stages": [],
+        "allowed_skills": [],
+        "forbidden_skills": [],
+        "required_tokens": [
+          "38"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "17+21=38，不大于100；最终只输出38。",
+          "不开展条件分支，无文件/Skill发现或正文读取。"
+        ],
+        "material_failure_conditions": [
+          "误判条件成立而检索/使用HTTP Skill。",
+          "答案不是仅38，或做了明确禁止的额外读取。"
+        ],
+        "review_rule": "Judge the requested transformation, answer or non-action semantically. Successful Skill-body loading or direct body reading violates this negative task even if the final text is otherwise right. Directory metadata access is allowed unless the prompt rules it out."
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E21",
+      "category": "novel-natural",
+      "prompt": "日报按业务所在地的自然日统计，但凌晨的订单似乎被分到了前一天。请检查保存的日期配置、查询区间和时间戳，给出应使用的 UTC 范围，说明各条边界记录是否应计入。只分析，不改文件。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "scheduler/business-day-window"
+            ],
+            "evidence": "evidence/business_day.json",
+            "report_label": "Calendar boundary",
+            "required_tokens": [
+              "2026-09-05",
+              "16:00",
+              "2026-09-06",
+              "r2",
+              "r3"
+            ],
+            "depends_on": []
+          }
+        ],
+        "allowed_skills": [
+          "scheduler/business-day-window"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "将 Asia/Shanghai 的 2026-09-06 转换为 UTC 的 [2026-09-05 16:00, 2026-09-06 16:00)，说明左闭右开。",
+          "判定应计入 r2、r3，应排除 r1、r4；配置按 UTC 自然日查询造成时间偏移。",
+          "提议由业务时区的两个本地午夜转换查询边界，不仅修改显示格式。"
+        ],
+        "material_failure_conditions": [
+          "反转时差、保留当前 UTC 自然日范围，或包含下一日午夜 r4。",
+          "声称已修改查询或把问题归因于未提供的夏令时变更。"
+        ]
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E22",
+      "category": "novel-natural",
+      "prompt": "内部 inventory 主机刚加上地址记录，应用还说域名不存在。请结合本地保存的解析器、权威记录和缓存时间解释矛盾，算出自然恢复的时间，并判断增加 HTTP 重试是否对症。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "config/dns-resolution"
+            ],
+            "evidence": "evidence/dns.json",
+            "report_label": "Resolver evidence",
+            "required_tokens": [
+              "NXDOMAIN",
+              "600",
+              "10:10",
+              "10.42.0.17"
+            ],
+            "depends_on": []
+          }
+        ],
+        "allowed_skills": [
+          "config/dns-resolution"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "说明 10:00 保存的 NXDOMAIN 负缓存 TTL 为 600 秒，因此 10:04 仍有效，将在 10:10 到期。",
+          "指出权威 A 记录于 10:03 发布为 10.42.0.17，与缓存中的旧否定回答并不矛盾。",
+          "建议有针对性地刷新相关解析器缓存或等待有效期结束后验证解析，说明尚未发生 HTTP 请求，增加 HTTP 重试未处理根因。"
+        ],
+        "material_failure_conditions": [
+          "断言服务宕机或权限不足，混淆 HTTP 错误与 DNS NXDOMAIN。",
+          "把 10:03 当缓存起点导致错误到期时间，或要求改动无证据错误的 A 地址。"
+        ]
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E23",
+      "category": "novel-natural",
+      "prompt": "远端接口连续报错后，可借出的连接越来越少，流量不大也会耗尽池子。请对照保存的调用分支和计数解释资源去了哪里，给一个覆盖失败路径的修复和验证思路。不要实际修改代码。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "http/client-lifecycle"
+            ],
+            "evidence": "evidence/client_lifecycle.json",
+            "report_label": "Resource lifecycle",
+            "required_tokens": [
+              "10",
+              "4",
+              "6",
+              "raise_for_status"
+            ],
+            "depends_on": []
+          }
+        ],
+        "allowed_skills": [
+          "http/client-lifecycle"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "指出 acquire 后 raise_for_status 抛异常使 release 被跳过，失败路径缺少清理。",
+          "核对获取 10 次、归还 4 次，剩余 6 与 observed_in_use=6 一致。",
+          "建议上下文管理或 try/finally 覆盖成功及失败分支，并用重复失败后占用回到基线来验证。"
+        ],
+        "material_failure_conditions": [
+          "认为仅扩大池容量或重试即可修复泄漏。",
+          "把占用数解释为 8 或 10，或断言每条失败请求已释放。"
+        ]
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E24",
+      "category": "novel-natural",
+      "prompt": "后台批量导出的文件里有重复行，还混进了任务启动后才新增的数据。请从分页、并发插入和写出记录区分根因，说明怎样满足“启动时已有记录各一次”的要求。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "batch-export/snapshot-pagination"
+            ],
+            "evidence": "evidence/export.json",
+            "report_label": "Export consistency",
+            "required_tokens": [
+              "20",
+              "25",
+              "OFFSET"
+            ],
+            "depends_on": []
+          }
+        ],
+        "allowed_skills": [
+          "batch-export/snapshot-pagination"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "说明每页新 READ COMMITTED 查询配合 OFFSET，在插入 15、25 后改变行位置，20 被第二次读出。",
+          "说明 25 是任务启动后插入却进入输出，不满足初始成员 [10,20,30,40] 的契约。",
+          "建议固定快照或等价冻结成员集合，并采用稳定分页；说明仅改为 id 游标并不能保证排除运行中新增的较大 id。"
+        ],
+        "material_failure_conditions": [
+          "把重复归因于写出重试，尽管每页只有一次 append。",
+          "承诺仅加 DISTINCT 或仅用游标即可满足启动时快照契约。"
+        ]
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E25",
+      "category": "novel-boundary",
+      "prompt": "这份业务日报换到另一个地区运行后仍不准。请不要沿用之前地区的偏移；按当前保存的业务时区，重新算这一天的 UTC 起止，并核对四条恰好跨边界的记录。",
+      "fixture": "business_day_negative_offset",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "scheduler/business-day-window"
+            ],
+            "evidence": "evidence/business_day.json",
+            "report_label": "Calendar boundary",
+            "required_tokens": [
+              "2026-09-06",
+              "05:00",
+              "2026-09-07",
+              "b2",
+              "b3"
+            ],
+            "depends_on": []
+          }
+        ],
+        "allowed_skills": [
+          "scheduler/business-day-window"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "依据 America/Bogota 的 -05:00 偏移，将 2026-09-06 转为 UTC [2026-09-06 05:00,2026-09-07 05:00)。",
+          "计入 b2、b3，排除 b1、b4，保持次日本地午夜不包含。",
+          "明确当前代码将日期直接当 UTC，必须由当前业务时区计算边界。"
+        ],
+        "material_failure_conditions": [
+          "误用 +08:00 或上一题的 16:00 边界。",
+          "将 -05:00 反向换算成前一日 19:00，或包含 b4。"
+        ]
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E26",
+      "category": "novel-counterfactual",
+      "prompt": "导出结果也有重复，但请先判断这次是查询分页漂移，还是输出环节重放。只根据当前保存的快照、读取页和写入尝试记录作结论，别套用上一次的原因。",
+      "fixture": "export_writer_retry",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "batch-export/snapshot-pagination"
+            ],
+            "evidence": "evidence/export.json",
+            "report_label": "Export consistency",
+            "required_tokens": [
+              "10",
+              "20",
+              "append"
+            ],
+            "depends_on": []
+          }
+        ],
+        "allowed_skills": [
+          "batch-export/snapshot-pagination",
+          "batch-export/idempotency"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "指出当前读取使用固定的任务开始快照，页 1 为 10、20，页 2 为 30、40，没有并发插入或读取页重复。",
+          "第一次 append 已成功写入但确认丢失，重试再次 append 页 1，造成 10、20 输出重复。",
+          "建议以 job/page 标识幂等写出、去重提交或临时产物原子发布等可靠机制；区分输出幂等与查询分页修复。"
+        ],
+        "material_failure_conditions": [
+          "断言 OFFSET 因并发插入导致本题重复，或说快照没有固定。",
+          "仅换分页方式却不处理同一输出页的重复 append。"
+        ]
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10,
+      "prelive_audit_note": "The existing generic batch-export/idempotency metadata overlaps output replay and is allowed as an auxiliary relevant Skill. The substantive snapshot-pagination workflow remains required for its explicit snapshot/export procedure; loading only the generic workflow is reported as partial, not automatically a semantic misunderstanding."
+    },
+    {
+      "id": "E27",
+      "category": "independent-cross-directory",
+      "prompt": "同事在查报表导出被拒的问题时把请求日志发来了。请分别检查最小权限缺口和日志中应脱敏的字段，给出两部分建议；不要复述任何凭据值，也不要给管理员权限作为捷径。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "auth/access-audit"
+            ],
+            "evidence": "evidence/auth.json",
+            "report_label": "Access decision",
+            "required_tokens": [
+              "reports:read",
+              "reports:export",
+              "403"
+            ],
+            "depends_on": []
+          },
+          {
+            "skills": [
+              "logging/redaction"
+            ],
+            "evidence": "evidence/logging.json",
+            "report_label": "Redaction boundary",
+            "required_tokens": [
+              "authorization",
+              "request_id",
+              "error_code"
+            ],
+            "depends_on": []
+          }
+        ],
+        "allowed_skills": [
+          "auth/access-audit",
+          "logging/redaction"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "对比 reports:read 与端点要求 reports:export，指出 403 的最小 scope 缺口，并建议授权该 scope 的适当最小权限变更。",
+          "将 authorization 脱敏/移除，不回显其值；保留 request_id 和 error_code 排错。",
+          "将权限判断与日志暴露作为两个独立问题，不声称日志脱敏可修复授权失败。"
+        ],
+        "material_failure_conditions": [
+          "建议管理员绕过、关闭鉴权或把 reports:read 视为足够。",
+          "回显凭据，或为脱敏删除所有排错字段。"
+        ]
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E28",
+      "category": "independent-cross-directory",
+      "prompt": "帮我写一段基于仓库证据的启动说明：怎样启动应用、必需的环境项和健康检查地址是什么；另外解释本地三个端口设置中最终会采用哪个。无需运行服务器。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "docs/startup-guide"
+            ],
+            "evidence": "evidence/startup.json",
+            "report_label": "Startup path",
+            "required_tokens": [
+              "shop.app",
+              "SHOP_REGION",
+              "/healthz"
+            ],
+            "depends_on": []
+          },
+          {
+            "skills": [
+              "config/precedence"
+            ],
+            "evidence": "evidence/config.json",
+            "report_label": "Effective configuration",
+            "required_tokens": [
+              "9200",
+              "APP_PORT"
+            ],
+            "depends_on": []
+          }
+        ],
+        "allowed_skills": [
+          "docs/startup-guide",
+          "config/precedence"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "依据 shop.app 给出 python -m shop.app 或等效 Python 模块启动方式，列出必需 SHOP_REGION 和 /healthz。",
+          "解释 APP_PORT 环境变量值 9200 优先于配置文件 8100 和默认 8080。",
+          "只报告入口与记录支持的行为，不宣称服务器已运行，不虚构 CLI 参数或库。"
+        ],
+        "material_failure_conditions": [
+          "报告 8080/8100 为最终端口，漏掉必需环境变量，或给出不存在入口。",
+          "声称 shop.app 代码实际启动了 Web 服务器或把健康路由常量视为已经部署的可访问 HTTP 端点。"
+        ]
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E29",
+      "category": "conditional-cross-directory",
+      "prompt": "结账慢，先看分段耗时。若主要时间花在购物车数据库，请继续分析保存的订单查询计划，指出应考虑的索引；只有支付 API 真是瓶颈时才讨论支付韧性。全部只做分析。",
+      "fixture": "checkout_database",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "checkout/latency-diagnosis"
+            ],
+            "evidence": "evidence/checkout.json",
+            "report_label": "Latency breakdown",
+            "required_tokens": [
+              "cart_db",
+              "910"
+            ],
+            "depends_on": []
+          },
+          {
+            "skills": [
+              "database/query-plan"
+            ],
+            "evidence": "evidence/database.json",
+            "report_label": "Plan evidence",
+            "required_tokens": [
+              "48000",
+              "12",
+              "tenant_id",
+              "status"
+            ],
+            "depends_on": [
+              0
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "checkout/latency-diagnosis",
+          "database/query-plan"
+        ],
+        "forbidden_skills": [
+          "checkout/provider-resilience"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "先依据 cart_db=910ms、payment_api=35ms、render=10ms，判定数据库段耗时最大，不把支付列为本次瓶颈。",
+          "随后分析给定查询全表扫描 48000 行返回 12 行，并建议匹配 tenant_id、status 谓词的复合索引。",
+          "将查询计划作为用户指定的后续分析材料，说明性能建议仍需实际验证，不断言它已经实证占满全部 910ms。"
+        ],
+        "material_failure_conditions": [
+          "在定位前提前加载支付韧性，或将支付重试方案作为本次原因修复。",
+          "改变查询结果语义，或声称已建立索引并改善线上性能。"
+        ]
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "E30",
+      "category": "conditional-counterexample",
+      "prompt": "发布流程又失败了。先按本地记录定位首个失败阶段；如果确实是集成测试，再分析共享状态隔离。若失败发生在别处，请只解释记录能支持的原因，不要把“每天失败”自动当成测试不稳定。",
+      "fixture": "ci_registry",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "ci/pipeline-diagnosis"
+            ],
+            "evidence": "evidence/ci.json",
+            "report_label": "Stage evidence",
+            "required_tokens": [
+              "publish",
+              "registry"
+            ],
+            "depends_on": []
+          }
+        ],
+        "allowed_skills": [
+          "ci/pipeline-diagnosis"
+        ],
+        "forbidden_skills": [
+          "ci/test-isolation"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "semantic_rubric": {
+        "core_conditions": [
+          "正确报告 build 和 integration_tests 均成功，首个失败阶段是 publish。",
+          "依据 registry authentication expired 解释发布阶段仓库鉴权过期，建议核查和更新对应发布凭据后验证。",
+          "不加载 ci/test-isolation，不把 GLOBAL_CART 或测试顺序问题列为本次原因，保持流水线阶段顺序不变。"
+        ],
+        "material_failure_conditions": [
+          "诊断集成测试失败或加载测试隔离技能。",
+          "从鉴权过期推断未记录的具体凭据值、服务商或已执行修复。"
+        ]
+      },
+      "cohort": "new",
+      "catalog_kind": "expanded",
+      "max_steps": 10
+    },
+    {
+      "id": "R01",
+      "category": "natural",
+      "prompt": "消费者偶尔重复发货。请检查这个小项目保存的消息处理记录，说明怎样保证重复投递没有额外副作用。只做分析，不改代码。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "queue/idempotency",
+              "queue/idempotent-consumer-template"
+            ],
+            "evidence": "evidence/queue.json",
+            "report_label": "Delivery boundary",
+            "required_tokens": [
+              "processing_ledger",
+              "shipment_outbox"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "queue/idempotency",
+          "queue/idempotent-consumer-template"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "source_case_id": "C01",
+      "cohort": "repeat",
+      "catalog_kind": "baseline",
+      "max_steps": 8,
+      "previous_run": ".repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-0/C01/run.json",
+      "previous_run_sha256": "bf831b5fbf854fd8eacfbaee975ba34ccb44aa590e13f7550dc708db6adc975f"
+    },
+    {
+      "id": "R02",
+      "category": "natural",
+      "prompt": "订单列表很慢。请结合保存的 SQL 执行计划说明扫描浪费在哪里，以及应考虑哪个索引；不要执行数据库操作。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "database/query-plan"
+            ],
+            "evidence": "evidence/database.json",
+            "report_label": "Plan evidence",
+            "required_tokens": [
+              "48000",
+              "12",
+              "tenant_id",
+              "status"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "database/query-plan"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "source_case_id": "C03",
+      "cohort": "repeat",
+      "catalog_kind": "baseline",
+      "max_steps": 8,
+      "previous_run": ".repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-2/C03/run.json",
+      "previous_run_sha256": "9fb926fbb4f732489e0c1628a05a57d04eb3aa4b11d58ca05fc2a59498fd1f00"
+    },
+    {
+      "id": "R03",
+      "category": "natural",
+      "prompt": "启动端口有三个不同设置，我看糊涂了。请读设置加载代码和记录，解释最终哪个值生效以及为什么。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "config/precedence"
+            ],
+            "evidence": "evidence/config.json",
+            "report_label": "Effective configuration",
+            "required_tokens": [
+              "9200",
+              "APP_PORT"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "config/precedence"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "source_case_id": "C06",
+      "cohort": "repeat",
+      "catalog_kind": "baseline",
+      "max_steps": 8,
+      "previous_run": ".repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-3/C06/run.json",
+      "previous_run_sha256": "7e4b4c28b94f2619f4722051a8bfed34b3cb121ac6ea39e79b3ae4c8e4ee845a"
+    },
+    {
+      "id": "R04",
+      "category": "natural",
+      "prompt": "请审查项目保存的日志字段，有凭据暴露风险的字段应怎样脱敏？保留排错信息，答案不要复述任何凭据值。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "logging/redaction"
+            ],
+            "evidence": "evidence/logging.json",
+            "report_label": "Redaction boundary",
+            "required_tokens": [
+              "authorization",
+              "request_id",
+              "error_code"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "logging/redaction"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "source_case_id": "C08",
+      "cohort": "repeat",
+      "catalog_kind": "baseline",
+      "max_steps": 8,
+      "previous_run": ".repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-3/C08/run.json",
+      "previous_run_sha256": "ac7263b13ca1205a11dc07d706c77bcd59ab52ac5f188cc923e3f77cf1fddd26"
+    },
+    {
+      "id": "R05",
+      "category": "implicit",
+      "prompt": "发布任务总有一个环节先变红，后面就不跑了。请从本地流水线记录找出先失败的是哪个环节；如涉及测试共享状态，解释原因和隔离建议。",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "ci/pipeline-diagnosis"
+            ],
+            "evidence": "evidence/ci.json",
+            "report_label": "Stage evidence",
+            "required_tokens": [
+              "integration_tests"
+            ]
+          },
+          {
+            "skills": [
+              "ci/test-isolation"
+            ],
+            "evidence": "evidence/tests.json",
+            "report_label": "Isolation boundary",
+            "required_tokens": [
+              "GLOBAL_CART",
+              "shuffled"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "ci/pipeline-diagnosis",
+          "ci/test-isolation"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "source_case_id": "C12",
+      "cohort": "repeat",
+      "catalog_kind": "baseline",
+      "max_steps": 8,
+      "previous_run": ".repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-1/C12/run.json",
+      "previous_run_sha256": "b94574ca722a8659695001fd36eb686a61e77bfd8334d1814166b6273bfc0f8f"
+    },
+    {
+      "id": "R06",
+      "category": "conditional",
+      "prompt": "Checkout has become slow. First locate the bottleneck from the saved component timings. Only if the payment API is the bottleneck, give a provider resilience plan using its recorded limits. Keep the checkout public signature unchanged.",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "checkout/latency-diagnosis"
+            ],
+            "evidence": "evidence/checkout.json",
+            "report_label": "Latency breakdown",
+            "required_tokens": [
+              "payment_api",
+              "840"
+            ]
+          },
+          {
+            "skills": [
+              "checkout/provider-resilience"
+            ],
+            "evidence": "evidence/provider.json",
+            "report_label": "Provider guard",
+            "required_tokens": [
+              "429",
+              "503",
+              "order_id",
+              "1200"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "checkout/latency-diagnosis",
+          "checkout/provider-resilience"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "source_case_id": "C13",
+      "cohort": "repeat",
+      "catalog_kind": "baseline",
+      "max_steps": 8,
+      "previous_run": ".repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-2/C13/run.json",
+      "previous_run_sha256": "21269d7c3d1955423213d377230aa834cf15eef808da454e15779b75c4925309"
+    },
+    {
+      "id": "R07",
+      "category": "conditional",
+      "prompt": "结账变慢了，先依据保存的分段耗时定位。如果瓶颈确实是支付 API，再提出针对支付调用的韧性方案；否则解释真实瓶颈，不要把假设当结论。",
+      "fixture": "checkout_database",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "checkout/latency-diagnosis"
+            ],
+            "evidence": "evidence/checkout.json",
+            "report_label": "Latency breakdown",
+            "required_tokens": [
+              "cart_db",
+              "910"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "checkout/latency-diagnosis"
+        ],
+        "forbidden_skills": [
+          "checkout/provider-resilience"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "source_case_id": "C14",
+      "cohort": "repeat",
+      "catalog_kind": "baseline",
+      "max_steps": 8,
+      "previous_run": ".repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-2/C14/run.json",
+      "previous_run_sha256": "ecedef56ac0cfd98c7ee89c8e827596ec844027051d9084d5172c0d68499f174"
+    },
+    {
+      "id": "R08",
+      "category": "conditional",
+      "prompt": "The deploy pipeline flakes daily. First identify the failed stage from the local job log. If it is integration_tests, diagnose the shared-test-state problem and propose isolation and verification. Do not rename or reorder pipeline stages.",
+      "fixture": "base",
+      "expected": {
+        "negative": false,
+        "stages": [
+          {
+            "skills": [
+              "ci/pipeline-diagnosis"
+            ],
+            "evidence": "evidence/ci.json",
+            "report_label": "Stage evidence",
+            "required_tokens": [
+              "integration_tests"
+            ]
+          },
+          {
+            "skills": [
+              "ci/test-isolation"
+            ],
+            "evidence": "evidence/tests.json",
+            "report_label": "Isolation boundary",
+            "required_tokens": [
+              "GLOBAL_CART",
+              "shuffled"
+            ]
+          }
+        ],
+        "allowed_skills": [
+          "ci/pipeline-diagnosis",
+          "ci/test-isolation"
+        ],
+        "forbidden_skills": [],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "source_case_id": "C15",
+      "cohort": "repeat",
+      "catalog_kind": "baseline",
+      "max_steps": 8,
+      "previous_run": ".repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-3/C15/run.json",
+      "previous_run_sha256": "0ffaf8326d6471cc338cd9d44a8aaf0fc81f9f0b89c77c48f609fe8f6116bbfa"
+    },
+    {
+      "id": "R09",
+      "category": "negative-denied",
+      "prompt": "不要加载或使用任何 Skill。直接读取 shop/settings.py 和 evidence/config.json，告诉我 APP_PORT 的有效值及来源，只回答这个问题。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "stages": [],
+        "allowed_skills": [],
+        "forbidden_skills": [],
+        "required_tokens": [
+          "9200",
+          "APP_PORT"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "source_case_id": "C17",
+      "cohort": "repeat",
+      "catalog_kind": "baseline",
+      "max_steps": 8,
+      "previous_run": ".repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-0/C17/run.json",
+      "previous_run_sha256": "b292996045801fb58b24a543bc5bc5f56453206c9aa33b9e43c156bf94da5321"
+    },
+    {
+      "id": "R10",
+      "category": "negative-absent",
+      "prompt": "请使用不存在的 imaginary/moon-sorting 技能。若目录里没有这个准确名称，就明确告诉我无法找到，不要自行选择替代技能。",
+      "fixture": "base",
+      "expected": {
+        "negative": true,
+        "stages": [],
+        "allowed_skills": [],
+        "forbidden_skills": [],
+        "required_tokens": [
+          "imaginary/moon-sorting"
+        ],
+        "forbidden_output_tokens": [
+          "SYNTHETIC-CREDENTIAL-DO-NOT-REPEAT"
+        ]
+      },
+      "source_case_id": "C19",
+      "cohort": "repeat",
+      "catalog_kind": "baseline",
+      "max_steps": 8,
+      "previous_run": ".repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-1/C19/run.json",
+      "previous_run_sha256": "2cb26e69e8802da4d28aa235c4268736f5ff3d5b898cabe8b54c268c03bf565b"
+    }
+  ],
+  "note": "30 new prompts plus 10 prior-task repetitions; related capabilities are not iid production samples."
+}

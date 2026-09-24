@@ -1,0 +1,143 @@
+{
+  "task_id": "T12",
+  "scale": "S1000",
+  "variant": "wrong-placement",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-wrong-placement",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283495941028440888",
+      "name": "search_skills",
+      "args": {
+        "query": "observability delivery metrics notification-service email push"
+      },
+      "ok": true,
+      "output_sha256": "66a268bb1024beefd16b9eeece240370b1d12be403f9ac192ebd1ab03aebe31f",
+      "output_chars": 3950,
+      "seen_qualified_names": [
+        "email-templates/observability",
+        "metrics-collector/delivery-dashboards",
+        "push-service/observability",
+        "ab-testing/observability",
+        "alert-manager/observability",
+        "analytics-pipeline/observability",
+        "api-gateway/observability",
+        "audit-log/observability",
+        "auth-service/observability",
+        "backup-restore/observability",
+        "billing-service/observability",
+        "cache-layer/observability",
+        "capacity-planning/observability",
+        "ci-pipeline/observability",
+        "config-service/observability",
+        "crm-connector/observability",
+        "data-warehouse/observability",
+        "database/observability",
+        "disaster-recovery/observability",
+        "document-parser/observability",
+        "email-templates/backpressure",
+        "email-templates/batch-processing",
+        "email-templates/caching-strategy"
+      ],
+      "seen_directories": [
+        "ab-testing",
+        "alert-manager",
+        "analytics-pipeline",
+        "api-gateway",
+        "audit-log",
+        "auth-service",
+        "backup-restore",
+        "billing-service",
+        "cache-layer",
+        "capacity-planning",
+        "ci-pipeline",
+        "config-service",
+        "crm-connector",
+        "data-warehouse",
+        "database",
+        "disaster-recovery",
+        "document-parser",
+        "email-templates",
+        "metrics-collector",
+        "push-service"
+      ],
+      "elapsed_ms": 230.46337498817593
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "d95462fa2968c33bf64c678df838f38a1db9e6ee207198282cac0e7cd18464cb",
+      "elapsed_ms": 4329.327707993798,
+      "type": "tool_calls",
+      "content_chars": 72,
+      "tool_call_names": [
+        "list_files",
+        "search_skills"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9299,
+        "outputTokens": 163,
+        "cacheReadTokens": 9280,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "5636c19afc92166c307441be02168816aafe2febba244dfa1ebec367e46c149f",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "59b5d650e3853d8b7ac659d8c0fc2b687108813b907b6aa46ee0ec695fefe6c0",
+  "system_prompt_chars": 18118,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 9299,
+  "output_tokens": 163,
+  "routing_events": [],
+  "elapsed_ms": 9439.14324999787
+}

@@ -1,0 +1,124 @@
+{
+  "task_id": "T05",
+  "scale": "S1000",
+  "variant": "base",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-base",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283518687175244937",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "ci-pipeline"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "c28c6a84971bfbdc9a6e6689ca919125e72aafd66a109a07ae54440a151f6ec9",
+      "output_chars": 3188,
+      "seen_qualified_names": [
+        "ci-pipeline/backpressure",
+        "ci-pipeline/batch-processing",
+        "ci-pipeline/caching-strategy",
+        "ci-pipeline/circuit-breaker",
+        "ci-pipeline/config-management",
+        "ci-pipeline/connection-pooling",
+        "ci-pipeline/dead-letter-handling",
+        "ci-pipeline/debugging-playbook",
+        "ci-pipeline/error-mapping",
+        "ci-pipeline/idempotency",
+        "ci-pipeline/migration-job-runner",
+        "ci-pipeline/observability",
+        "ci-pipeline/pagination",
+        "ci-pipeline/performance-tuning",
+        "ci-pipeline/rate-limiting",
+        "ci-pipeline/retry-backoff",
+        "ci-pipeline/schema-migration",
+        "ci-pipeline/security-hardening",
+        "ci-pipeline/testing-strategy",
+        "ci-pipeline/timeout-tuning",
+        "ci-pipeline/upgrade-runbook"
+      ],
+      "seen_directories": [
+        "ci-pipeline"
+      ],
+      "elapsed_ms": 6.802750052884221
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "ec9f70f819f843756e371e8e76c59015568271b1c4b5ee37138ee418cdecd89d",
+      "elapsed_ms": 15059.72858297173,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "browse_skill_directory",
+        "list_files"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 10024,
+        "outputTokens": 267,
+        "cacheReadTokens": 9344,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 1
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "166ed07d8da65a3328a901babd5a6aa439f41cd3b9c031554b7e218895e9ef76",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "7e4c094a91329be8a4f3fd4990177b57e24985713c4c851cd441560eb3adb0d8",
+  "system_prompt_chars": 21878,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 10024,
+  "output_tokens": 267,
+  "routing_events": [],
+  "elapsed_ms": 19998.958999989554
+}

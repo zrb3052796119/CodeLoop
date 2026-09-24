@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from scripts.agent_quality_evaluator import (
@@ -8,6 +9,8 @@ from scripts.agent_quality_evaluator import (
     _tool_pairs_intact,
     evaluate_compaction_fidelity,
     evaluate_gate,
+    evaluate_intent_recognition,
+    evaluate_multi_agent_cost,
     evaluate_north_star,
     evaluate_quality_suite,
     evaluate_skill_routing,
@@ -103,6 +106,93 @@ def test_skill_routing_evaluator_measures_positive_and_abstain_cases(tmp_path) -
     assert report["abstainAccuracy"] == 1.0
     assert report["requiredExactMatchRate"] == 1.0
     assert report["forbiddenSelectionRate"] == 0.0
+    assert report["failedCaseIds"] == []
+
+
+def test_intent_recognition_evaluator_measures_context_and_abstention(
+    tmp_path,
+) -> None:
+    dataset_path = tmp_path / "intent-routing.json"
+    dataset_path.write_text(
+        json.dumps(
+            {
+                "schemaVersion": 1,
+                "cases": [
+                    {
+                        "id": "direct-update",
+                        "prompt": "把 auth.py 的校验逻辑改一下",
+                        "expectedPrimary": {"intent": "code", "action": "update"},
+                        "expectedOperations": [
+                            {
+                                "intent": "code",
+                                "action": "update",
+                                "polarity": "affirmed",
+                            }
+                        ],
+                        "expectedContextUsed": False,
+                        "expectedAbstain": False,
+                    },
+                    {
+                        "id": "context-continue",
+                        "prompt": "继续",
+                        "context": {
+                            "messages": [
+                                {
+                                    "role": "user",
+                                    "content": "把 auth.py 的校验逻辑改一下",
+                                }
+                            ],
+                            "previousPrompt": "把 auth.py 的校验逻辑改一下",
+                            "activeTask": "update authentication",
+                        },
+                        "expectedPrimary": {"intent": "code", "action": "update"},
+                        "expectedOperations": [
+                            {
+                                "intent": "code",
+                                "action": "update",
+                                "polarity": "affirmed",
+                            }
+                        ],
+                        "expectedContextUsed": True,
+                        "expectedAbstain": False,
+                    },
+                    {
+                        "id": "abstain-chat",
+                        "prompt": "给我讲个笑话",
+                        "expectedPrimary": {
+                            "intent": "unknown",
+                            "action": "unknown",
+                        },
+                        "expectedOperations": [],
+                        "expectedContextUsed": False,
+                        "expectedAbstain": True,
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = evaluate_intent_recognition(dataset_path)
+
+    assert report["caseCount"] == 3
+    assert report["primaryExactRate"] == 1.0
+    assert report["operationExactRate"] == 1.0
+    assert report["contextResolutionRate"] == 1.0
+    assert report["abstainAccuracy"] == 1.0
+    assert report["failedCaseIds"] == []
+
+
+def test_checked_in_intent_recognition_fixture_is_green() -> None:
+    report = evaluate_intent_recognition(
+        "tests/fixtures/agent_quality/intent-routing.json"
+    )
+
+    assert report["caseCount"] == 25
+    assert report["primaryExactRate"] == 1.0
+    assert report["operationExactRate"] == 1.0
+    assert report["contextResolutionRate"] == 1.0
+    assert report["abstainAccuracy"] == 1.0
     assert report["failedCaseIds"] == []
 
 
@@ -320,15 +410,24 @@ def test_quality_suite_is_a_deterministic_content_addressed_report() -> None:
     assert first["mode"] == "offline-deterministic"
     assert first["remoteCallCount"] == 0
     assert first["skillRouting"]["caseCount"] == 60
+    assert first["skillRoutingJoined"]["caseCount"] == 96
     assert first["compactionFidelity"]["caseCount"] == 12
     assert first["northStar"]["caseCount"] == 50
+    assert first["multiAgentCost"]["caseCount"] == 12
+    assert first["multiAgentCost"]["recordedCaseCount"] == 12
+    assert first["multiAgentCost"]["pendingCaseCount"] == 0
     assert len(first["datasets"]["skillRoutingSha256"]) == 64
+    assert len(first["datasets"]["skillRoutingJoinedSha256"]) == 64
     assert len(first["datasets"]["compactionFidelitySha256"]) == 64
     assert len(first["datasets"]["northStarManifestSha256"]) == 64
     assert len(first["datasets"]["northStarResultsSha256"]) == 64
+    assert len(first["datasets"]["multiAgentCostManifestSha256"]) == 64
+    assert len(first["datasets"]["multiAgentCostResultsSha256"]) == 64
     assert "cases" not in first["skillRouting"]
+    assert "cases" not in first["skillRoutingJoined"]
     assert "cases" not in first["compactionFidelity"]
     assert "cases" not in first["northStar"]
+    assert "cases" not in first["multiAgentCost"]
 
 
 def test_checked_in_quality_baseline_matches_the_frozen_suite() -> None:
@@ -339,7 +438,13 @@ def test_checked_in_quality_baseline_matches_the_frozen_suite() -> None:
 
     assert baseline["datasets"] == report["datasets"]
     assert baseline["evaluationPayloadSha256"] == report["payloadSha256"]
-    for dimension in ("skillRouting", "compactionFidelity", "northStar"):
+    for dimension in (
+        "skillRouting",
+        "skillRoutingJoined",
+        "compactionFidelity",
+        "northStar",
+        "multiAgentCost",
+    ):
         for metric, expected in baseline[dimension].items():
             assert report[dimension][metric] == expected
 
@@ -383,11 +488,37 @@ def test_quality_cli_passes_current_and_a_profiles(capsys) -> None:
     assert quality_cli_main(["--profile", "current"]) == 0
     current_output = json.loads(capsys.readouterr().out)
     assert current_output["gate"]["passed"] is True
+    assert any(
+        check["id"].startswith("skillRoutingJoined.")
+        for check in current_output["gate"]["checks"]
+    )
 
+    # The three former single-general cases were rewritten as
+    # delegation-rejection contracts (2026-08-28 re-recording): production
+    # hard-codes central scheduling, so the sealed refusal of a direct
+    # `general` dispatch (error[central_scheduler_required], zero sub-agents,
+    # zero writes) is now the behavior under test. With the refusal measured
+    # instead of the impossible delegation, all 12 recorded cases pass and the
+    # a profile's 0.8 success-rate bar is met on real evidence, so both
+    # profiles pin green.
     assert quality_cli_main(["--profile", "a"]) == 0
     grade_a_output = json.loads(capsys.readouterr().out)
     assert grade_a_output["gate"]["passed"] is True
     assert grade_a_output["gate"]["failedChecks"] == []
+
+
+def test_current_gate_rejects_joined_routing_regression() -> None:
+    report = evaluate_quality_suite("tests/fixtures/agent_quality")
+    report["skillRoutingJoined"]["outcomeAccuracy"] = 0.99
+
+    gate = evaluate_gate(
+        report,
+        "artifacts/agent-quality-contract.json",
+        profile="current",
+    )
+
+    assert gate["passed"] is False
+    assert "skillRoutingJoined.outcomeAccuracy.min" in gate["failedChecks"]
 
 
 def test_a_profile_cli_accepts_fresh_north_star_evidence(tmp_path, capsys) -> None:
@@ -397,6 +528,9 @@ def test_a_profile_cli_accepts_fresh_north_star_evidence(tmp_path, capsys) -> No
     payload["recordedAt"] = "2026-08-20T00:00:00Z"
     fresh_results.write_text(json.dumps(payload), encoding="utf-8")
 
+    # Fresh north-star evidence is accepted (its result digest is not pinned
+    # in the a profile), and with the multi-agent cost domain green on the
+    # rejection-contract evidence the whole a profile passes.
     assert quality_cli_main(
         [
             "--profile",
@@ -411,5 +545,587 @@ def test_a_profile_cli_accepts_fresh_north_star_evidence(tmp_path, capsys) -> No
     assert output["gate"]["passed"] is True
     assert all(
         check["id"] != "datasets.northStarResultsSha256.equals"
+        for check in output["gate"]["checks"]
+    )
+
+
+def _multi_agent_cost_manifest() -> dict:
+    return {
+        "schemaVersion": 1,
+        "suiteId": "cost-test-v1",
+        "cases": [
+            {
+                "id": "fanout-recorded",
+                "category": "parallel-readonly-fanout",
+                "mutability": "read_only",
+                "evidenceStatus": "recorded",
+                "oracleIds": ["run-completed", "synthesis-facts"],
+                "topology": {
+                    "expectedSubagents": {"explore": 2},
+                    "maxSubagents": 4,
+                },
+            },
+            {
+                "id": "workflow-pending",
+                "category": "structured-workflow-chain",
+                "mutability": "write",
+                "evidenceStatus": "pending",
+                "oracleIds": ["run-completed", "role-chain-completed"],
+                "topology": {
+                    "expectedSubagents": {"workflow": 1},
+                    "maxSubagents": 1,
+                    "roleChain": ["analyst", "executor", "verify", "reviewer"],
+                },
+            },
+        ],
+    }
+
+
+def _multi_agent_cost_result(case_id: str, **overrides) -> dict:
+    result = {
+        "id": case_id,
+        "status": "passed",
+        "verificationPassed": True,
+        "unsafeActionCount": 0,
+        "userInterventionCount": 0,
+        "durationMs": 40000,
+        "modelCalls": 20,
+        "inputTokens": 100000,
+        "outputTokens": 20000,
+        "runId": "run_" + "c" * 32,
+        "passedOracleIds": ["run-completed"],
+        "subagents": [
+            {
+                "subagentId": "sub_" + "d" * 32,
+                "agentType": "explore",
+                "outcome": "completed",
+                "durationMs": 15000,
+                "modelTurns": 5,
+                "toolCalls": 8,
+            },
+            {
+                "subagentId": "sub_" + "e" * 32,
+                "agentType": "explore",
+                "outcome": "failed",
+                "durationMs": 22000,
+                "modelTurns": 12,
+                "toolCalls": 9,
+            },
+        ],
+    }
+    result.update(overrides)
+    return result
+
+
+def _write_multi_agent_cost_pair(
+    tmp_path, results: list[dict], *, manifest: dict | None = None
+) -> tuple[Path, Path]:
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    manifest_path = tmp_path / "multi-agent-cost-manifest.json"
+    results_path = tmp_path / "multi-agent-cost-results.json"
+    manifest_path.write_text(
+        json.dumps(manifest or _multi_agent_cost_manifest()), encoding="utf-8"
+    )
+    results_path.write_text(
+        json.dumps(
+            {"schemaVersion": 1, "suiteId": "cost-test-v1", "results": results}
+        ),
+        encoding="utf-8",
+    )
+    return manifest_path, results_path
+
+
+def test_multi_agent_cost_evaluator_measures_recorded_cases(tmp_path) -> None:
+    manifest_path, results_path = _write_multi_agent_cost_pair(
+        tmp_path,
+        [
+            _multi_agent_cost_result(
+                "fanout-recorded",
+                coordination={"parentInputTokens": 24000, "parentOutputTokens": 6000},
+            )
+        ],
+    )
+
+    report = evaluate_multi_agent_cost(manifest_path, results_path)
+
+    assert report["caseCount"] == 2
+    assert report["recordedCaseCount"] == 1
+    assert report["pendingCaseCount"] == 1
+    assert report["reportedResultCount"] == 1
+    assert report["recordedCaseCoverageRate"] == 1.0
+    assert report["taskSuccessRate"] == 1.0
+    assert report["oraclePassRate"] == 0.5
+    assert report["subagentCount"] == 2
+    assert report["subagentSuccessRate"] == 0.5
+    assert report["subagentTelemetryCoverageRate"] == 1.0
+    assert report["subagentTokenTelemetryCoverageRate"] == 0.0
+    assert report["coordinationTelemetryCoverageRate"] == 1.0
+    assert report["meanCoordinationOverheadRatio"] == 0.25
+    assert report["topologyViolationRate"] == 0.0
+    assert report["totalTokens"] == 120000
+    assert report["maxCaseTotalTokens"] == 120000
+    assert report["failedCaseIds"] == []
+    fanout_stats = report["categoryStats"]["parallel-readonly-fanout"]
+    assert fanout_stats["reportedCaseCount"] == 1
+    assert fanout_stats["meanTotalTokens"] == 120000
+    pending_stats = report["categoryStats"]["structured-workflow-chain"]
+    assert pending_stats["reportedCaseCount"] == 0
+    assert pending_stats["successRate"] is None
+
+
+def test_multi_agent_cost_pending_cases_accept_fresh_evidence(tmp_path) -> None:
+    manifest_path, results_path = _write_multi_agent_cost_pair(
+        tmp_path,
+        [
+            _multi_agent_cost_result("fanout-recorded"),
+            _multi_agent_cost_result(
+                "workflow-pending",
+                modelCalls=30,
+                subagents=[
+                    {
+                        "subagentId": "sub_" + "f" * 32,
+                        "agentType": "workflow",
+                        "outcome": "completed",
+                        "durationMs": 90000,
+                        "modelTurns": 20,
+                        "toolCalls": 25,
+                    }
+                ],
+            ),
+        ],
+    )
+
+    report = evaluate_multi_agent_cost(manifest_path, results_path)
+
+    assert report["reportedResultCount"] == 2
+    assert report["recordedCaseCoverageRate"] == 1.0
+    assert report["categoryStats"]["structured-workflow-chain"]["reportedCaseCount"] == 1
+    assert report["subagentCount"] == 3
+
+
+def test_multi_agent_cost_fails_closed_on_missing_recorded_case(tmp_path) -> None:
+    manifest_path, results_path = _write_multi_agent_cost_pair(tmp_path, [])
+
+    try:
+        evaluate_multi_agent_cost(manifest_path, results_path)
+    except ValueError as error:
+        assert "missing recorded cases" in str(error)
+    else:
+        raise AssertionError("missing recorded case must fail closed")
+
+
+def test_multi_agent_cost_fails_closed_on_unknown_or_duplicate_ids(tmp_path) -> None:
+    unknown_manifest, unknown_results = _write_multi_agent_cost_pair(
+        tmp_path / "unknown",
+        [_multi_agent_cost_result("not-in-manifest")],
+    )
+    duplicate_manifest, duplicate_results = _write_multi_agent_cost_pair(
+        tmp_path / "duplicate",
+        [
+            _multi_agent_cost_result("fanout-recorded"),
+            _multi_agent_cost_result("fanout-recorded", runId="run_" + "9" * 32),
+        ],
+    )
+
+    for manifest_path, results_path in (
+        (unknown_manifest, unknown_results),
+        (duplicate_manifest, duplicate_results),
+    ):
+        try:
+            evaluate_multi_agent_cost(manifest_path, results_path)
+        except ValueError as error:
+            assert "identity mismatch" in str(error)
+        else:
+            raise AssertionError("unknown or duplicate result ids must fail closed")
+
+
+def test_multi_agent_cost_fails_closed_on_invalid_counters(tmp_path) -> None:
+    bad_inputs = _multi_agent_cost_result("fanout-recorded", inputTokens=-1)
+    bad_bool = _multi_agent_cost_result("fanout-recorded", modelCalls=True)
+    bad_coordination = _multi_agent_cost_result(
+        "fanout-recorded",
+        coordination={"parentInputTokens": 200000, "parentOutputTokens": 0},
+    )
+    for index, bad in enumerate((bad_inputs, bad_bool, bad_coordination)):
+        manifest_path, results_path = _write_multi_agent_cost_pair(
+            tmp_path / f"bad-{index}", [bad]
+        )
+        try:
+            evaluate_multi_agent_cost(manifest_path, results_path)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"invalid counter case {index} must fail closed")
+
+
+def test_multi_agent_cost_fails_closed_on_invalid_subagent_entries(tmp_path) -> None:
+    cases = [
+        _multi_agent_cost_result("fanout-recorded", subagents=[]),
+        _multi_agent_cost_result(
+            "fanout-recorded",
+            subagents=[
+                {
+                    "subagentId": "sub_" + "1" * 32,
+                    "agentType": "explorer",
+                    "outcome": "completed",
+                }
+            ],
+        ),
+        _multi_agent_cost_result(
+            "fanout-recorded",
+            subagents=[
+                {
+                    "subagentId": "sub_" + "1" * 32,
+                    "agentType": "explore",
+                    "outcome": "success",
+                }
+            ],
+        ),
+        _multi_agent_cost_result(
+            "fanout-recorded",
+            subagents=[
+                {
+                    "subagentId": "sub_" + "1" * 32,
+                    "agentType": "explore",
+                    "outcome": "completed",
+                },
+                {
+                    "subagentId": "sub_" + "1" * 32,
+                    "agentType": "explore",
+                    "outcome": "failed",
+                },
+            ],
+        ),
+        _multi_agent_cost_result(
+            "fanout-recorded",
+            subagents=[
+                {
+                    "subagentId": "sub_" + "1" * 32,
+                    "agentType": "explore",
+                    "outcome": "completed",
+                    "durationMs": -5,
+                }
+            ],
+        ),
+    ]
+    for index, bad in enumerate(cases):
+        manifest_path, results_path = _write_multi_agent_cost_pair(
+            tmp_path / f"sub-{index}", [bad]
+        )
+        try:
+            evaluate_multi_agent_cost(manifest_path, results_path)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"invalid subagent case {index} must fail closed")
+
+
+def test_multi_agent_cost_allows_empty_subagents_on_failed_case(tmp_path) -> None:
+    # A failed case may legitimately record zero sub-agents: production can
+    # reject the delegation before any sub-agent starts (the 2026-08-27 live
+    # evidence hit exactly this for direct `general` dispatch). Only passed
+    # cases fail closed on an empty breakdown.
+    manifest_path, results_path = _write_multi_agent_cost_pair(
+        tmp_path,
+        [
+            _multi_agent_cost_result(
+                "fanout-recorded",
+                status="failed",
+                verificationPassed=False,
+                passedOracleIds=[],
+                subagents=[],
+            )
+        ],
+    )
+
+    report = evaluate_multi_agent_cost(manifest_path, results_path)
+
+    assert report["taskSuccessRate"] == 0.0
+    assert report["subagentCount"] == 0
+    assert report["failedCaseIds"] == ["fanout-recorded"]
+
+
+def _rejection_contract_manifest() -> dict:
+    manifest = _multi_agent_cost_manifest()
+    manifest["cases"].append(
+        {
+            "id": "rejection-recorded",
+            "category": "direct-general-rejection",
+            "mutability": "read_only",
+            "evidenceStatus": "recorded",
+            "oracleIds": ["run-completed", "delegation-rejected"],
+            "oracles": [
+                {"id": "run-completed", "kind": "all_runs_completed"},
+                {
+                    "id": "delegation-rejected",
+                    "kind": "delegation_rejected",
+                    "errorCode": "central_scheduler_required",
+                },
+            ],
+            "topology": {
+                "expectedSubagents": {"general": 1},
+                "maxSubagents": 2,
+            },
+        }
+    )
+    return manifest
+
+
+def test_multi_agent_cost_rejection_contract_passes_with_zero_subagents(
+    tmp_path,
+) -> None:
+    # A delegation-rejection contract case measures the sealed refusal itself:
+    # a passed case is expected to have an empty sub-agent breakdown.
+    manifest_path, results_path = _write_multi_agent_cost_pair(
+        tmp_path,
+        [
+            _multi_agent_cost_result("fanout-recorded"),
+            _multi_agent_cost_result(
+                "rejection-recorded",
+                passedOracleIds=["run-completed", "delegation-rejected"],
+                subagents=[],
+            ),
+        ],
+        manifest=_rejection_contract_manifest(),
+    )
+
+    report = evaluate_multi_agent_cost(manifest_path, results_path)
+
+    assert report["taskSuccessRate"] == 1.0
+    assert report["subagentCount"] == 2
+    assert report["failedCaseIds"] == []
+
+
+def test_multi_agent_cost_rejection_contract_fails_closed_on_subagent_rows(
+    tmp_path,
+) -> None:
+    # Any journaled sub-agent contradicts the rejection contract, even on a
+    # failed case: the evidence cannot represent the sealed refusal.
+    manifest_path, results_path = _write_multi_agent_cost_pair(
+        tmp_path,
+        [
+            _multi_agent_cost_result("fanout-recorded"),
+            _multi_agent_cost_result(
+                "rejection-recorded",
+                status="failed",
+                verificationPassed=False,
+                passedOracleIds=[],
+            )
+        ],
+        manifest=_rejection_contract_manifest(),
+    )
+
+    try:
+        evaluate_multi_agent_cost(manifest_path, results_path)
+    except ValueError as error:
+        assert "delegation-rejection contract" in str(error)
+    else:
+        raise AssertionError("sub-agent rows must contradict a rejection contract")
+
+
+def test_multi_agent_cost_counts_topology_violations(tmp_path) -> None:
+    manifest_path, results_path = _write_multi_agent_cost_pair(
+        tmp_path,
+        [
+            _multi_agent_cost_result(
+                "fanout-recorded",
+                subagents=[
+                    {
+                        "subagentId": f"sub_{str(index) * 32}",
+                        "agentType": "explore",
+                        "outcome": "completed",
+                    }
+                    for index in range(5)
+                ],
+            )
+        ],
+    )
+
+    report = evaluate_multi_agent_cost(manifest_path, results_path)
+
+    assert report["topologyViolationRate"] == 1.0
+    assert report["maxSubagentsPerCase"] == 5
+
+
+def test_multi_agent_cost_topology_counts_top_level_delegations_only(tmp_path) -> None:
+    # A workflow chain journals its scheduler-owned role workers (plan/general)
+    # alongside the workflow row; the frozen maxSubagents=1 bound applies to
+    # the parent agent's top-level delegation, not to chain-internal workers.
+    manifest_path, results_path = _write_multi_agent_cost_pair(
+        tmp_path,
+        [
+            _multi_agent_cost_result("fanout-recorded"),
+            _multi_agent_cost_result(
+                "workflow-pending",
+                modelCalls=40,
+                subagents=[
+                    {
+                        "subagentId": "sub_" + "f" * 32,
+                        "agentType": "workflow",
+                        "outcome": "completed",
+                        "durationMs": 90000,
+                        "modelTurns": 20,
+                        "toolCalls": 25,
+                    },
+                    {
+                        "subagentId": "sub_" + "e" * 32,
+                        "agentType": "plan",
+                        "outcome": "completed",
+                        "durationMs": 20000,
+                        "modelTurns": 6,
+                        "toolCalls": 4,
+                    },
+                    {
+                        "subagentId": "sub_" + "d" * 32,
+                        "agentType": "general",
+                        "outcome": "completed",
+                        "durationMs": 30000,
+                        "modelTurns": 8,
+                        "toolCalls": 9,
+                    },
+                ],
+            )
+        ],
+    )
+
+    report = evaluate_multi_agent_cost(manifest_path, results_path)
+
+    assert report["topologyViolationRate"] == 0.0
+    # Cost telemetry still counts every journaled sub-agent (2 fanout explore
+    # rows plus the workflow row and its two chain-internal role workers).
+    assert report["subagentCount"] == 5
+    case_entry = next(
+        entry for entry in report["cases"] if entry["id"] == "workflow-pending"
+    )
+    assert case_entry["subagentCount"] == 3
+    assert case_entry["topLevelSubagentCount"] == 1
+    assert case_entry["topologyConformant"] is True
+
+
+def test_multi_agent_cost_enforces_oracle_subset(tmp_path) -> None:
+    manifest_path, results_path = _write_multi_agent_cost_pair(
+        tmp_path,
+        [_multi_agent_cost_result("fanout-recorded", passedOracleIds=["unknown-oracle"])],
+    )
+
+    try:
+        evaluate_multi_agent_cost(manifest_path, results_path)
+    except ValueError as error:
+        assert "oracle evidence" in str(error)
+    else:
+        raise AssertionError("unrecognized oracle evidence must fail closed")
+
+
+def test_multi_agent_cost_rejects_invalid_manifest_topology(tmp_path) -> None:
+    manifest = _multi_agent_cost_manifest()
+    manifest["cases"][0]["topology"] = {
+        "expectedSubagents": {"explore": 2},
+        "maxSubagents": 1,
+    }
+    manifest_path, results_path = _write_multi_agent_cost_pair(
+        tmp_path, [], manifest=manifest
+    )
+
+    try:
+        evaluate_multi_agent_cost(manifest_path, results_path)
+    except ValueError as error:
+        assert "invalid topology" in str(error)
+    else:
+        raise AssertionError("inconsistent topology bounds must fail closed")
+
+
+def test_checked_in_multi_agent_cost_baseline_matches_real_records() -> None:
+    fixture_root = Path("tests/fixtures/agent_quality")
+    manifest = json.loads(
+        (fixture_root / "multi-agent-cost-manifest.json").read_text(encoding="utf-8")
+    )
+    baseline = json.loads(
+        (fixture_root / "multi-agent-cost-baseline-results.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    # The baseline is the sealed 2026-08-28 live evidence: it must cover every
+    # recorded manifest case exactly once, carry a real run identity, and ship
+    # the complete per-sub-agent and coordination telemetry that the 1.0
+    # coverage pins in the current profile rely on. The three
+    # direct-general-rejection cases are the exception to the sub-agent
+    # breakdown rule: their passed results must carry an EMPTY breakdown,
+    # because the sealed refusal means no sub-agent ever started.
+    rejection_case_ids = {
+        case["id"]
+        for case in manifest["cases"]
+        if any(
+            isinstance(oracle, dict) and oracle.get("kind") == "delegation_rejected"
+            for oracle in case.get("oracles") or []
+        )
+    }
+    assert len(rejection_case_ids) == 3
+    recorded_ids = {
+        case["id"] for case in manifest["cases"] if case["evidenceStatus"] == "recorded"
+    }
+    assert {result["id"] for result in baseline["results"]} == recorded_ids
+    assert len(recorded_ids) == 12
+    run_id_pattern = re.compile(r"run_[0-9a-f]{32}")
+    subagent_id_pattern = re.compile(r"sub_[0-9a-f]{32}")
+    for result in baseline["results"]:
+        assert run_id_pattern.fullmatch(result["runId"])
+        assert result["inputTokens"] is not None
+        assert result["outputTokens"] is not None
+        coordination = result["coordination"]
+        assert (
+            coordination["parentInputTokens"]
+            + coordination["subagentInputTokens"]
+            == result["inputTokens"]
+        )
+        assert (
+            coordination["parentOutputTokens"]
+            + coordination["subagentOutputTokens"]
+            == result["outputTokens"]
+        )
+        if result["id"] in rejection_case_ids:
+            assert result["subagents"] == [], (
+                "rejection contracts prove zero sub-agents started"
+            )
+        elif result["status"] == "passed":
+            assert result["subagents"], "passed cases need a sub-agent breakdown"
+        for subagent in result["subagents"]:
+            assert subagent_id_pattern.fullmatch(subagent["subagentId"])
+            assert subagent["inputTokens"] is not None
+            assert subagent["outputTokens"] is not None
+
+
+def test_multi_agent_cost_cli_accepts_fresh_evidence_in_a_profile(
+    tmp_path, capsys
+) -> None:
+    fixture_root = Path("tests/fixtures/agent_quality")
+    payload = json.loads(
+        (fixture_root / "multi-agent-cost-baseline-results.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    payload["recordedAt"] = "2026-08-27T00:00:00Z"
+    fresh_results = tmp_path / "multi-agent-cost-results.json"
+    fresh_results.write_text(json.dumps(payload), encoding="utf-8")
+
+    # Fresh multi-agent cost evidence is accepted without a pinned digest, and
+    # the locked baseline itself now passes the a bar: the three former
+    # single-general cases are delegation-rejection contracts whose recorded
+    # refusal evidence satisfies every success-rate check.
+    assert quality_cli_main(
+        [
+            "--profile",
+            "a",
+            "--multi-agent-cost-results",
+            str(fresh_results),
+        ]
+    ) == 0
+    output = json.loads(capsys.readouterr().out)
+
+    assert output["multiAgentCost"]["caseCount"] == 12
+    assert output["gate"]["passed"] is True
+    assert output["gate"]["failedChecks"] == []
+    assert all(
+        check["id"] != "datasets.multiAgentCostResultsSha256.equals"
         for check in output["gate"]["checks"]
     )

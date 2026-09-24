@@ -1,0 +1,1271 @@
+{
+  "scale": "S100",
+  "variant": "base",
+  "seed": 20260908,
+  "skills": [
+    {
+      "qualified_name": "auth-service/circuit-breaker",
+      "name": "circuit-breaker",
+      "directory": "auth-service",
+      "description": "Add a circuit breaker around calls from the authentication and token service; covers failure thresholds, half-open probing, and fallback behavior.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "auth-service/debugging-playbook",
+      "name": "debugging-playbook",
+      "directory": "auth-service",
+      "description": "Debug production issues in the authentication and token service; covers symptom-to-cause checklists and safe inspection commands.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "auth-service/idempotency",
+      "name": "idempotency",
+      "directory": "auth-service",
+      "description": "Make operations in the authentication and token service idempotent; covers idempotency keys, dedup windows, and safe replay.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "auth-service/pagination",
+      "name": "pagination",
+      "directory": "auth-service",
+      "description": "Implement pagination over list APIs of the authentication and token service; covers cursor versus offset trade-offs and stable ordering.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "auth-service/rate-limiting",
+      "name": "rate-limiting",
+      "directory": "auth-service",
+      "description": "Apply rate limiting and throttling to the authentication and token service; covers token buckets, quota tiers, and backoff signaling.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "auth-service/retry-backoff",
+      "name": "retry-backoff",
+      "directory": "auth-service",
+      "description": "Configure retry and exponential backoff for the authentication and token service; covers jitter, attempt budgets, and which errors are safe to retry.",
+      "kind": "core",
+      "task_ids": [
+        "T17"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "auth-service/security-hardening",
+      "name": "security-hardening",
+      "directory": "auth-service",
+      "description": "Harden the authentication and token service against abuse; covers secret handling, input validation, and least-privilege access.",
+      "kind": "core",
+      "task_ids": [
+        "T09"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "auth-service/timeout-tuning",
+      "name": "timeout-tuning",
+      "directory": "auth-service",
+      "description": "Set timeout budgets for the authentication and token service; covers connect/read splits, deadline propagation, and slow-call diagnostics.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "cache-layer/caching-strategy",
+      "name": "caching-strategy",
+      "directory": "cache-layer",
+      "description": "Design the caching policy for the application cache layer; covers TTL selection, invalidation, and stampede protection.",
+      "kind": "core",
+      "task_ids": [
+        "T06"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "cache-layer/circuit-breaker",
+      "name": "circuit-breaker",
+      "directory": "cache-layer",
+      "description": "Add a circuit breaker around calls from the application cache layer; covers failure thresholds, half-open probing, and fallback behavior.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "cache-layer/debugging-playbook",
+      "name": "debugging-playbook",
+      "directory": "cache-layer",
+      "description": "Debug production issues in the application cache layer; covers symptom-to-cause checklists and safe inspection commands.",
+      "kind": "core",
+      "task_ids": [
+        "T14"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "cache-layer/idempotency",
+      "name": "idempotency",
+      "directory": "cache-layer",
+      "description": "Make operations in the application cache layer idempotent; covers idempotency keys, dedup windows, and safe replay.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "cache-layer/pagination",
+      "name": "pagination",
+      "directory": "cache-layer",
+      "description": "Implement pagination over list APIs of the application cache layer; covers cursor versus offset trade-offs and stable ordering.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "cache-layer/performance-tuning",
+      "name": "performance-tuning",
+      "directory": "cache-layer",
+      "description": "Profile and tune the performance of the application cache layer; covers bottleneck isolation, benchmark harnesses, and regression guards.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "cache-layer/rate-limiting",
+      "name": "rate-limiting",
+      "directory": "cache-layer",
+      "description": "Apply rate limiting and throttling to the application cache layer; covers token buckets, quota tiers, and backoff signaling.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "cache-layer/retry-backoff",
+      "name": "retry-backoff",
+      "directory": "cache-layer",
+      "description": "Configure retry and exponential backoff for the application cache layer; covers jitter, attempt budgets, and which errors are safe to retry.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "cache-layer/timeout-tuning",
+      "name": "timeout-tuning",
+      "directory": "cache-layer",
+      "description": "Set timeout budgets for the application cache layer; covers connect/read splits, deadline propagation, and slow-call diagnostics.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "ci-pipeline/circuit-breaker",
+      "name": "circuit-breaker",
+      "directory": "ci-pipeline",
+      "description": "Add a circuit breaker around calls from the CI/CD pipeline; covers failure thresholds, half-open probing, and fallback behavior.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "ci-pipeline/connection-pooling",
+      "name": "connection-pooling",
+      "directory": "ci-pipeline",
+      "description": "Size and tune connection pools for the CI/CD pipeline; covers pool exhaustion, idle reaping, and leak detection.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "ci-pipeline/debugging-playbook",
+      "name": "debugging-playbook",
+      "directory": "ci-pipeline",
+      "description": "Debug production issues in the CI/CD pipeline; covers symptom-to-cause checklists and safe inspection commands.",
+      "kind": "core",
+      "task_ids": [
+        "T16"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "ci-pipeline/idempotency",
+      "name": "idempotency",
+      "directory": "ci-pipeline",
+      "description": "Make operations in the CI/CD pipeline idempotent; covers idempotency keys, dedup windows, and safe replay.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "ci-pipeline/migration-job-runner",
+      "name": "migration-job-runner",
+      "directory": "ci-pipeline",
+      "description": "Run schema migration jobs from CI with approvals; schedules migrations but does not define expand-contract or rollback procedure.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T11"
+    },
+    {
+      "qualified_name": "ci-pipeline/pagination",
+      "name": "pagination",
+      "directory": "ci-pipeline",
+      "description": "Implement pagination over list APIs of the CI/CD pipeline; covers cursor versus offset trade-offs and stable ordering.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "ci-pipeline/rate-limiting",
+      "name": "rate-limiting",
+      "directory": "ci-pipeline",
+      "description": "Apply rate limiting and throttling to the CI/CD pipeline; covers token buckets, quota tiers, and backoff signaling.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "ci-pipeline/retry-backoff",
+      "name": "retry-backoff",
+      "directory": "ci-pipeline",
+      "description": "Configure retry and exponential backoff for the CI/CD pipeline; covers jitter, attempt budgets, and which errors are safe to retry.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "ci-pipeline/timeout-tuning",
+      "name": "timeout-tuning",
+      "directory": "ci-pipeline",
+      "description": "Set timeout budgets for the CI/CD pipeline; covers connect/read splits, deadline propagation, and slow-call diagnostics.",
+      "kind": "core",
+      "task_ids": [
+        "T05"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "database/circuit-breaker",
+      "name": "circuit-breaker",
+      "directory": "database",
+      "description": "Add a circuit breaker around calls from the relational database access layer; covers failure thresholds, half-open probing, and fallback behavior.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "database/config-management",
+      "name": "config-management",
+      "directory": "database",
+      "description": "Manage configuration of the relational database access layer across environments; covers validation, defaults, and safe rollout of changes.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "database/connection-leak-hunt",
+      "name": "connection-leak-hunt",
+      "directory": "database",
+      "description": "Hunt memory growth from leaked database connections; covers pool leaks, not cache eviction policy.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T14"
+    },
+    {
+      "qualified_name": "database/dedup-constraint-helper",
+      "name": "dedup-constraint-helper",
+      "directory": "database",
+      "description": "Use database unique constraints to deduplicate inserted rows; covers insert-time conflicts only, not message redelivery.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T03"
+    },
+    {
+      "qualified_name": "database/idempotency",
+      "name": "idempotency",
+      "directory": "database",
+      "description": "Make operations in the relational database access layer idempotent; covers idempotency keys, dedup windows, and safe replay.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "database/pagination",
+      "name": "pagination",
+      "directory": "database",
+      "description": "Implement pagination over list APIs of the relational database access layer; covers cursor versus offset trade-offs and stable ordering.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "database/query-result-cache",
+      "name": "query-result-cache",
+      "directory": "database",
+      "description": "Cache expensive SQL result sets inside the database layer; covers query plans and materialized results, not application hot keys.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T06"
+    },
+    {
+      "qualified_name": "database/rate-limiting",
+      "name": "rate-limiting",
+      "directory": "database",
+      "description": "Apply rate limiting and throttling to the relational database access layer; covers token buckets, quota tiers, and backoff signaling.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "database/retry-backoff",
+      "name": "retry-backoff",
+      "directory": "database",
+      "description": "Configure retry and exponential backoff for the relational database access layer; covers jitter, attempt budgets, and which errors are safe to retry.",
+      "kind": "core",
+      "task_ids": [
+        "T02"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "database/schema-migration",
+      "name": "schema-migration",
+      "directory": "database",
+      "description": "Plan and execute schema or contract migrations for the relational database access layer; covers expand-contract, backfills, and rollback.",
+      "kind": "core",
+      "task_ids": [
+        "T11"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "database/timeout-tuning",
+      "name": "timeout-tuning",
+      "directory": "database",
+      "description": "Set timeout budgets for the relational database access layer; covers connect/read splits, deadline propagation, and slow-call diagnostics.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "graphql-api/circuit-breaker",
+      "name": "circuit-breaker",
+      "directory": "graphql-api",
+      "description": "Add a circuit breaker around calls from the GraphQL API server; covers failure thresholds, half-open probing, and fallback behavior.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "graphql-api/connection-pooling",
+      "name": "connection-pooling",
+      "directory": "graphql-api",
+      "description": "Size and tune connection pools for the GraphQL API server; covers pool exhaustion, idle reaping, and leak detection.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "graphql-api/idempotency",
+      "name": "idempotency",
+      "directory": "graphql-api",
+      "description": "Make operations in the GraphQL API server idempotent; covers idempotency keys, dedup windows, and safe replay.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "graphql-api/pagination",
+      "name": "pagination",
+      "directory": "graphql-api",
+      "description": "Implement pagination over list APIs of the GraphQL API server; covers cursor versus offset trade-offs and stable ordering.",
+      "kind": "core",
+      "task_ids": [
+        "T04"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "graphql-api/rate-limiting",
+      "name": "rate-limiting",
+      "directory": "graphql-api",
+      "description": "Apply rate limiting and throttling to the GraphQL API server; covers token buckets, quota tiers, and backoff signaling.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "graphql-api/retry-backoff",
+      "name": "retry-backoff",
+      "directory": "graphql-api",
+      "description": "Configure retry and exponential backoff for the GraphQL API server; covers jitter, attempt budgets, and which errors are safe to retry.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "graphql-api/timeout-tuning",
+      "name": "timeout-tuning",
+      "directory": "graphql-api",
+      "description": "Set timeout budgets for the GraphQL API server; covers connect/read splits, deadline propagation, and slow-call diagnostics.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "graphql-api/upgrade-runbook",
+      "name": "upgrade-runbook",
+      "directory": "graphql-api",
+      "description": "Upgrade the dependencies of the GraphQL API server safely; covers compatibility checks, staged rollout, and rollback.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "http-client/circuit-breaker",
+      "name": "circuit-breaker",
+      "directory": "http-client",
+      "description": "Add a circuit breaker around calls from the outbound HTTP client layer; covers failure thresholds, half-open probing, and fallback behavior.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "http-client/debugging-playbook",
+      "name": "debugging-playbook",
+      "directory": "http-client",
+      "description": "Debug production issues in the outbound HTTP client layer; covers symptom-to-cause checklists and safe inspection commands.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "http-client/idempotency",
+      "name": "idempotency",
+      "directory": "http-client",
+      "description": "Make operations in the outbound HTTP client layer idempotent; covers idempotency keys, dedup windows, and safe replay.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "http-client/latency-profiling",
+      "name": "latency-profiling",
+      "directory": "http-client",
+      "description": "Profile outbound HTTP latency with timing breakdowns; generic across services, with no payment-provider failure modes.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T13"
+    },
+    {
+      "qualified_name": "http-client/multipart-retry-generic",
+      "name": "multipart-retry-generic",
+      "directory": "http-client",
+      "description": "Generic retry policy for multipart HTTP form posts; does not cover resumable chunked uploads or part-level recovery.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T19"
+    },
+    {
+      "qualified_name": "http-client/pagination",
+      "name": "pagination",
+      "directory": "http-client",
+      "description": "Implement pagination over list APIs of the outbound HTTP client layer; covers cursor versus offset trade-offs and stable ordering.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "http-client/rate-limiting",
+      "name": "rate-limiting",
+      "directory": "http-client",
+      "description": "Apply rate limiting and throttling to the outbound HTTP client layer; covers token buckets, quota tiers, and backoff signaling.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "http-client/retry-backoff",
+      "name": "retry-backoff",
+      "directory": "http-client",
+      "description": "Configure retry and exponential backoff for the outbound HTTP client layer; covers jitter, attempt budgets, and which errors are safe to retry.",
+      "kind": "core",
+      "task_ids": [
+        "T01"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "http-client/testing-strategy",
+      "name": "testing-strategy",
+      "directory": "http-client",
+      "description": "Build the test strategy for the outbound HTTP client layer; covers contract tests, fakes versus live instances, and flake control.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "http-client/timeout-tuning",
+      "name": "timeout-tuning",
+      "directory": "http-client",
+      "description": "Set timeout budgets for the outbound HTTP client layer; covers connect/read splits, deadline propagation, and slow-call diagnostics.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "job-scheduler/circuit-breaker",
+      "name": "circuit-breaker",
+      "directory": "job-scheduler",
+      "description": "Add a circuit breaker around calls from the cron/background job scheduler; covers failure thresholds, half-open probing, and fallback behavior.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "job-scheduler/connection-pooling",
+      "name": "connection-pooling",
+      "directory": "job-scheduler",
+      "description": "Size and tune connection pools for the cron/background job scheduler; covers pool exhaustion, idle reaping, and leak detection.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "job-scheduler/db-retry-tuning",
+      "name": "db-retry-tuning",
+      "directory": "job-scheduler",
+      "description": "Tune retry counts and backoff for scheduled jobs that read from the database; covers job-level requeues, not the database client itself.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T02"
+    },
+    {
+      "qualified_name": "job-scheduler/flaky-cron-playbook",
+      "name": "flaky-cron-playbook",
+      "directory": "job-scheduler",
+      "description": "Debug flaky cron jobs that silently skip runs; covers scheduler triggers, not pipeline stages.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T16"
+    },
+    {
+      "qualified_name": "job-scheduler/idempotency",
+      "name": "idempotency",
+      "directory": "job-scheduler",
+      "description": "Make operations in the cron/background job scheduler idempotent; covers idempotency keys, dedup windows, and safe replay.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "job-scheduler/pagination",
+      "name": "pagination",
+      "directory": "job-scheduler",
+      "description": "Implement pagination over list APIs of the cron/background job scheduler; covers cursor versus offset trade-offs and stable ordering.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "job-scheduler/rate-limiting",
+      "name": "rate-limiting",
+      "directory": "job-scheduler",
+      "description": "Apply rate limiting and throttling to the cron/background job scheduler; covers token buckets, quota tiers, and backoff signaling.",
+      "kind": "core",
+      "task_ids": [
+        "T07"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "job-scheduler/retry-backoff",
+      "name": "retry-backoff",
+      "directory": "job-scheduler",
+      "description": "Configure retry and exponential backoff for the cron/background job scheduler; covers jitter, attempt budgets, and which errors are safe to retry.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "job-scheduler/timeout-tuning",
+      "name": "timeout-tuning",
+      "directory": "job-scheduler",
+      "description": "Set timeout budgets for the cron/background job scheduler; covers connect/read splits, deadline propagation, and slow-call diagnostics.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "job-scheduler/upgrade-runbook",
+      "name": "upgrade-runbook",
+      "directory": "job-scheduler",
+      "description": "Upgrade the dependencies of the cron/background job scheduler safely; covers compatibility checks, staged rollout, and rollback.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "message-queue/batch-processing",
+      "name": "batch-processing",
+      "directory": "message-queue",
+      "description": "Batch operations in the message queue brokers and consumers for throughput; covers batch sizing, partial-failure handling, and ordering guarantees.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "message-queue/bounce-back-queue",
+      "name": "bounce-back-queue",
+      "directory": "message-queue",
+      "description": "Route failed notification events to a bounce queue for later replay; assumes a queue-based pipeline, not direct provider calls.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T15"
+    },
+    {
+      "qualified_name": "message-queue/circuit-breaker",
+      "name": "circuit-breaker",
+      "directory": "message-queue",
+      "description": "Add a circuit breaker around calls from the message queue brokers and consumers; covers failure thresholds, half-open probing, and fallback behavior.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "message-queue/consumer-throttle",
+      "name": "consumer-throttle",
+      "directory": "message-queue",
+      "description": "Throttle message consumers with prefetch caps and rate limits; applies to queue consumers, not cron-style scheduled jobs.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T07"
+    },
+    {
+      "qualified_name": "message-queue/dedup-exchange-filter",
+      "name": "dedup-exchange-filter",
+      "directory": "message-queue",
+      "description": "Dedup filter at the message exchange using message IDs; works only when all notifications flow through the broker.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T18"
+    },
+    {
+      "qualified_name": "message-queue/error-mapping",
+      "name": "error-mapping",
+      "directory": "message-queue",
+      "description": "Map errors from the message queue brokers and consumers to application-level exceptions; covers error taxonomies and retryable-versus-fatal classification.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "message-queue/idempotency",
+      "name": "idempotency",
+      "directory": "message-queue",
+      "description": "Make operations in the message queue brokers and consumers idempotent; covers idempotency keys, dedup windows, and safe replay.",
+      "kind": "core",
+      "task_ids": [
+        "T03"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "message-queue/idempotent-consumer-template",
+      "name": "idempotent-consumer-template",
+      "directory": "message-queue",
+      "description": "Template for idempotent queue consumers using processed-message tables; does not cover payment charge semantics.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T10"
+    },
+    {
+      "qualified_name": "message-queue/index-feed-lag",
+      "name": "index-feed-lag",
+      "directory": "message-queue",
+      "description": "Handle consumer lag on the index-update feed; covers queue-side lag alarms, not cluster-aware indexing pressure.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T08"
+    },
+    {
+      "qualified_name": "message-queue/pagination",
+      "name": "pagination",
+      "directory": "message-queue",
+      "description": "Implement pagination over list APIs of the message queue brokers and consumers; covers cursor versus offset trade-offs and stable ordering.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "message-queue/rate-limiting",
+      "name": "rate-limiting",
+      "directory": "message-queue",
+      "description": "Apply rate limiting and throttling to the message queue brokers and consumers; covers token buckets, quota tiers, and backoff signaling.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "message-queue/retry-backoff",
+      "name": "retry-backoff",
+      "directory": "message-queue",
+      "description": "Configure retry and exponential backoff for the message queue brokers and consumers; covers jitter, attempt budgets, and which errors are safe to retry.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "message-queue/timeout-tuning",
+      "name": "timeout-tuning",
+      "directory": "message-queue",
+      "description": "Set timeout budgets for the message queue brokers and consumers; covers connect/read splits, deadline propagation, and slow-call diagnostics.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "notification-service/circuit-breaker",
+      "name": "circuit-breaker",
+      "directory": "notification-service",
+      "description": "Add a circuit breaker around calls from the email/SMS/push notification service; covers failure thresholds, half-open probing, and fallback behavior.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "notification-service/debugging-playbook",
+      "name": "debugging-playbook",
+      "directory": "notification-service",
+      "description": "Debug production issues in the email/SMS/push notification service; covers symptom-to-cause checklists and safe inspection commands.",
+      "kind": "core",
+      "task_ids": [
+        "T15"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "notification-service/idempotency",
+      "name": "idempotency",
+      "directory": "notification-service",
+      "description": "Make operations in the email/SMS/push notification service idempotent; covers idempotency keys, dedup windows, and safe replay.",
+      "kind": "core",
+      "task_ids": [
+        "T18"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "notification-service/observability",
+      "name": "observability",
+      "directory": "notification-service",
+      "description": "Instrument the email/SMS/push notification service with metrics, logs, and traces; covers RED metrics and alert thresholds.",
+      "kind": "core",
+      "task_ids": [
+        "T12"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "notification-service/pagination",
+      "name": "pagination",
+      "directory": "notification-service",
+      "description": "Implement pagination over list APIs of the email/SMS/push notification service; covers cursor versus offset trade-offs and stable ordering.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "notification-service/rate-limiting",
+      "name": "rate-limiting",
+      "directory": "notification-service",
+      "description": "Apply rate limiting and throttling to the email/SMS/push notification service; covers token buckets, quota tiers, and backoff signaling.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "notification-service/retry-backoff",
+      "name": "retry-backoff",
+      "directory": "notification-service",
+      "description": "Configure retry and exponential backoff for the email/SMS/push notification service; covers jitter, attempt budgets, and which errors are safe to retry.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "notification-service/timeout-tuning",
+      "name": "timeout-tuning",
+      "directory": "notification-service",
+      "description": "Set timeout budgets for the email/SMS/push notification service; covers connect/read splits, deadline propagation, and slow-call diagnostics.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "object-storage/backpressure",
+      "name": "backpressure",
+      "directory": "object-storage",
+      "description": "Apply backpressure in the object/blob storage service pipelines; covers bounded queues, load shedding, and consumer lag.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "object-storage/circuit-breaker",
+      "name": "circuit-breaker",
+      "directory": "object-storage",
+      "description": "Add a circuit breaker around calls from the object/blob storage service; covers failure thresholds, half-open probing, and fallback behavior.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "object-storage/dead-letter-handling",
+      "name": "dead-letter-handling",
+      "directory": "object-storage",
+      "description": "Handle poison or dead-lettered items in the object/blob storage service; covers quarantine, replay, and alerting.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "object-storage/idempotency",
+      "name": "idempotency",
+      "directory": "object-storage",
+      "description": "Make operations in the object/blob storage service idempotent; covers idempotency keys, dedup windows, and safe replay.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "object-storage/pagination",
+      "name": "pagination",
+      "directory": "object-storage",
+      "description": "Implement pagination over list APIs of the object/blob storage service; covers cursor versus offset trade-offs and stable ordering.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "object-storage/rate-limiting",
+      "name": "rate-limiting",
+      "directory": "object-storage",
+      "description": "Apply rate limiting and throttling to the object/blob storage service; covers token buckets, quota tiers, and backoff signaling.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "object-storage/retry-backoff",
+      "name": "retry-backoff",
+      "directory": "object-storage",
+      "description": "Configure retry and exponential backoff for the object/blob storage service; covers jitter, attempt budgets, and which errors are safe to retry.",
+      "kind": "core",
+      "task_ids": [
+        "T19"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "object-storage/timeout-tuning",
+      "name": "timeout-tuning",
+      "directory": "object-storage",
+      "description": "Set timeout budgets for the object/blob storage service; covers connect/read splits, deadline propagation, and slow-call diagnostics.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "object-storage/upload-timeout-profile",
+      "name": "upload-timeout-profile",
+      "directory": "object-storage",
+      "description": "Timeout profiles for direct browser-to-blob uploads; covers multipart upload sessions, not CI artifact steps.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T05"
+    },
+    {
+      "qualified_name": "payment-gateway/circuit-breaker",
+      "name": "circuit-breaker",
+      "directory": "payment-gateway",
+      "description": "Add a circuit breaker around calls from the payment provider integration; covers failure thresholds, half-open probing, and fallback behavior.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "payment-gateway/debugging-playbook",
+      "name": "debugging-playbook",
+      "directory": "payment-gateway",
+      "description": "Debug production issues in the payment provider integration; covers symptom-to-cause checklists and safe inspection commands.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "payment-gateway/idempotency",
+      "name": "idempotency",
+      "directory": "payment-gateway",
+      "description": "Make operations in the payment provider integration idempotent; covers idempotency keys, dedup windows, and safe replay.",
+      "kind": "core",
+      "task_ids": [
+        "T10"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "payment-gateway/pagination",
+      "name": "pagination",
+      "directory": "payment-gateway",
+      "description": "Implement pagination over list APIs of the payment provider integration; covers cursor versus offset trade-offs and stable ordering.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "payment-gateway/pci-hardening",
+      "name": "pci-hardening",
+      "directory": "payment-gateway",
+      "description": "PCI-oriented hardening checklist for card data flows; covers PAN handling, not token issuance.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T09"
+    },
+    {
+      "qualified_name": "payment-gateway/performance-tuning",
+      "name": "performance-tuning",
+      "directory": "payment-gateway",
+      "description": "Profile and tune the performance of the payment provider integration; covers bottleneck isolation, benchmark harnesses, and regression guards.",
+      "kind": "core",
+      "task_ids": [
+        "T13"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "payment-gateway/rate-limiting",
+      "name": "rate-limiting",
+      "directory": "payment-gateway",
+      "description": "Apply rate limiting and throttling to the payment provider integration; covers token buckets, quota tiers, and backoff signaling.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "payment-gateway/retry-backoff",
+      "name": "retry-backoff",
+      "directory": "payment-gateway",
+      "description": "Configure retry and exponential backoff for the payment provider integration; covers jitter, attempt budgets, and which errors are safe to retry.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "payment-gateway/retry-helper-legacy",
+      "name": "retry-helper-legacy",
+      "directory": "payment-gateway",
+      "description": "Legacy helper that retries failed payment charge submissions with a fixed delay; superseded by idempotent charge creation and kept for one old integration.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T01"
+    },
+    {
+      "qualified_name": "payment-gateway/timeout-tuning",
+      "name": "timeout-tuning",
+      "directory": "payment-gateway",
+      "description": "Set timeout budgets for the payment provider integration; covers connect/read splits, deadline propagation, and slow-call diagnostics.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "search-index/backpressure",
+      "name": "backpressure",
+      "directory": "search-index",
+      "description": "Apply backpressure in the full-text search cluster pipelines; covers bounded queues, load shedding, and consumer lag.",
+      "kind": "core",
+      "task_ids": [
+        "T08"
+      ],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "search-index/batch-processing",
+      "name": "batch-processing",
+      "directory": "search-index",
+      "description": "Batch operations in the full-text search cluster for throughput; covers batch sizing, partial-failure handling, and ordering guarantees.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "search-index/circuit-breaker",
+      "name": "circuit-breaker",
+      "directory": "search-index",
+      "description": "Add a circuit breaker around calls from the full-text search cluster; covers failure thresholds, half-open probing, and fallback behavior.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "search-index/cursor-scan-helper",
+      "name": "cursor-scan-helper",
+      "directory": "search-index",
+      "description": "Scroll/scan cursor pagination for exporting large search result sets; not applicable to GraphQL connection specs.",
+      "kind": "decoy",
+      "task_ids": [],
+      "decoy_for": "T04"
+    },
+    {
+      "qualified_name": "search-index/idempotency",
+      "name": "idempotency",
+      "directory": "search-index",
+      "description": "Make operations in the full-text search cluster idempotent; covers idempotency keys, dedup windows, and safe replay.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "search-index/pagination",
+      "name": "pagination",
+      "directory": "search-index",
+      "description": "Implement pagination over list APIs of the full-text search cluster; covers cursor versus offset trade-offs and stable ordering.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "search-index/rate-limiting",
+      "name": "rate-limiting",
+      "directory": "search-index",
+      "description": "Apply rate limiting and throttling to the full-text search cluster; covers token buckets, quota tiers, and backoff signaling.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "search-index/retry-backoff",
+      "name": "retry-backoff",
+      "directory": "search-index",
+      "description": "Configure retry and exponential backoff for the full-text search cluster; covers jitter, attempt budgets, and which errors are safe to retry.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "search-index/timeout-tuning",
+      "name": "timeout-tuning",
+      "directory": "search-index",
+      "description": "Set timeout budgets for the full-text search cluster; covers connect/read splits, deadline propagation, and slow-call diagnostics.",
+      "kind": "core",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "code-review-checklist",
+      "name": "code-review-checklist",
+      "directory": "",
+      "description": "Checklist for reviewing pull requests: correctness, tests, readability, and rollback safety passes.",
+      "kind": "root",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "commit-message-format",
+      "name": "commit-message-format",
+      "directory": "",
+      "description": "Format git commit messages with conventional-commit prefixes, scope rules, and body wrapping.",
+      "kind": "root",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "incident-postmortem",
+      "name": "incident-postmortem",
+      "directory": "",
+      "description": "Structure a blameless incident postmortem with timeline, root cause, and action items.",
+      "kind": "root",
+      "task_ids": [],
+      "decoy_for": null
+    },
+    {
+      "qualified_name": "readme-authoring",
+      "name": "readme-authoring",
+      "directory": "",
+      "description": "Write or refresh a project README with setup, usage, and architecture sections.",
+      "kind": "root",
+      "task_ids": [],
+      "decoy_for": null
+    }
+  ],
+  "directories": [
+    {
+      "name": "auth-service",
+      "description": "Skills for operating and troubleshooting the authentication and token service: circuit breaking, debugging, idempotency, and more.",
+      "skill_count": 8
+    },
+    {
+      "name": "cache-layer",
+      "description": "Skills for operating and troubleshooting the application cache layer: caching policy, circuit breaking, debugging, and more.",
+      "skill_count": 9
+    },
+    {
+      "name": "ci-pipeline",
+      "description": "Skills for operating and troubleshooting the CI/CD pipeline: circuit breaking, connection pooling, debugging, and more.",
+      "skill_count": 9
+    },
+    {
+      "name": "database",
+      "description": "Skills for operating and troubleshooting the relational database access layer: circuit breaking, configuration, idempotency, and more.",
+      "skill_count": 11
+    },
+    {
+      "name": "graphql-api",
+      "description": "Skills for operating and troubleshooting the GraphQL API server: circuit breaking, connection pooling, idempotency, and more.",
+      "skill_count": 8
+    },
+    {
+      "name": "http-client",
+      "description": "Skills for operating and troubleshooting the outbound HTTP client layer: circuit breaking, debugging, idempotency, and more.",
+      "skill_count": 10
+    },
+    {
+      "name": "job-scheduler",
+      "description": "Skills for operating and troubleshooting the cron/background job scheduler: circuit breaking, connection pooling, idempotency, and more.",
+      "skill_count": 10
+    },
+    {
+      "name": "message-queue",
+      "description": "Skills for operating and troubleshooting the message queue brokers and consumers: batching, circuit breaking, error mapping, and more.",
+      "skill_count": 13
+    },
+    {
+      "name": "notification-service",
+      "description": "Skills for operating and troubleshooting the email/SMS/push notification service: circuit breaking, debugging, idempotency, and more.",
+      "skill_count": 8
+    },
+    {
+      "name": "object-storage",
+      "description": "Skills for operating and troubleshooting the object/blob storage service: backpressure, circuit breaking, dead-letter handling, and more.",
+      "skill_count": 9
+    },
+    {
+      "name": "payment-gateway",
+      "description": "Skills for operating and troubleshooting the payment provider integration: circuit breaking, debugging, idempotency, and more.",
+      "skill_count": 10
+    },
+    {
+      "name": "search-index",
+      "description": "Skills for operating and troubleshooting the full-text search cluster: backpressure, batching, circuit breaking, and more.",
+      "skill_count": 9
+    }
+  ],
+  "task_targets": {
+    "T01": {
+      "qualified_name": "http-client/retry-backoff",
+      "directory": "http-client"
+    },
+    "T02": {
+      "qualified_name": "database/retry-backoff",
+      "directory": "database"
+    },
+    "T03": {
+      "qualified_name": "message-queue/idempotency",
+      "directory": "message-queue"
+    },
+    "T04": {
+      "qualified_name": "graphql-api/pagination",
+      "directory": "graphql-api"
+    },
+    "T05": {
+      "qualified_name": "ci-pipeline/timeout-tuning",
+      "directory": "ci-pipeline"
+    },
+    "T06": {
+      "qualified_name": "cache-layer/caching-strategy",
+      "directory": "cache-layer"
+    },
+    "T07": {
+      "qualified_name": "job-scheduler/rate-limiting",
+      "directory": "job-scheduler"
+    },
+    "T08": {
+      "qualified_name": "search-index/backpressure",
+      "directory": "search-index"
+    },
+    "T09": {
+      "qualified_name": "auth-service/security-hardening",
+      "directory": "auth-service"
+    },
+    "T10": {
+      "qualified_name": "payment-gateway/idempotency",
+      "directory": "payment-gateway"
+    },
+    "T11": {
+      "qualified_name": "database/schema-migration",
+      "directory": "database"
+    },
+    "T12": {
+      "qualified_name": "notification-service/observability",
+      "directory": "notification-service"
+    },
+    "T13": {
+      "qualified_name": "payment-gateway/performance-tuning",
+      "directory": "payment-gateway"
+    },
+    "T14": {
+      "qualified_name": "cache-layer/debugging-playbook",
+      "directory": "cache-layer"
+    },
+    "T15": {
+      "qualified_name": "notification-service/debugging-playbook",
+      "directory": "notification-service"
+    },
+    "T16": {
+      "qualified_name": "ci-pipeline/debugging-playbook",
+      "directory": "ci-pipeline"
+    },
+    "T17": {
+      "qualified_name": "auth-service/retry-backoff",
+      "directory": "auth-service"
+    },
+    "T18": {
+      "qualified_name": "notification-service/idempotency",
+      "directory": "notification-service"
+    },
+    "T19": {
+      "qualified_name": "object-storage/retry-backoff",
+      "directory": "object-storage"
+    },
+    "T20": null,
+    "T21": null,
+    "T22": null,
+    "T23": null,
+    "T24": null
+  },
+  "displaced": [],
+  "skipped_decoys": [
+    {
+      "task_id": "T12",
+      "qualified_name": "metrics-collector/delivery-dashboards",
+      "reason": "directory 'metrics-collector' not in S100"
+    },
+    {
+      "task_id": "T17",
+      "qualified_name": "session-store/duplicate-session-cleanup",
+      "reason": "directory 'session-store' not in S100"
+    }
+  ],
+  "stats": {
+    "total_skills": 118,
+    "directories": 12,
+    "root_skills": 4,
+    "decoys": 17
+  }
+}

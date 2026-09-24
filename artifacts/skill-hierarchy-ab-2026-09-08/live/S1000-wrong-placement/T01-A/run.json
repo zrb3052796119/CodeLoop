@@ -1,0 +1,128 @@
+{
+  "task_id": "T01",
+  "scale": "S1000",
+  "variant": "wrong-placement",
+  "arm": "A",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-wrong-placement",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": null,
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": false,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283530678723934320",
+      "name": "search_skills",
+      "args": {
+        "directory_names": [
+          "http-client",
+          "payment-gateway"
+        ],
+        "query": "retry failed requests exponential backoff HTTP client"
+      },
+      "ok": true,
+      "output_sha256": "f10bac45a792b6beb49c657917eee5ae328efc1f0ac46369d9892aa95b711699",
+      "output_chars": 4062,
+      "seen_qualified_names": [
+        "http-client/retry-backoff",
+        "http-client/multipart-retry-generic",
+        "payment-gateway/retry-backoff",
+        "http-client/rate-limiting",
+        "payment-gateway/retry-helper-legacy",
+        "http-client/backpressure",
+        "http-client/batch-processing",
+        "http-client/caching-strategy",
+        "http-client/circuit-breaker",
+        "http-client/config-management",
+        "http-client/connection-pooling",
+        "http-client/dead-letter-handling",
+        "http-client/debugging-playbook",
+        "http-client/error-mapping",
+        "http-client/idempotency",
+        "http-client/latency-profiling",
+        "http-client/observability",
+        "http-client/pagination",
+        "http-client/performance-tuning",
+        "http-client/schema-migration",
+        "http-client/security-hardening",
+        "http-client/testing-strategy"
+      ],
+      "seen_directories": [
+        "http-client",
+        "payment-gateway"
+      ],
+      "elapsed_ms": 401.39195800293237
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "d702cb40350ba5c7543cc17969ed0867599349b7e4afc2bdef82f8f66ef38666",
+      "elapsed_ms": 13680.472542066127,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "search_skills",
+        "list_files"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9305,
+        "outputTokens": 440,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 1
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "5636c19afc92166c307441be02168816aafe2febba244dfa1ebec367e46c149f",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "6fcabb0003ad4b460474944913bc9a9512ff533601cfb144968751f75013af3c",
+  "system_prompt_chars": 17995,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 9305,
+  "output_tokens": 440,
+  "routing_events": [],
+  "elapsed_ms": 18954.615957918577
+}

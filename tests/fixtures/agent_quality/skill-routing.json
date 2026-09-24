@@ -42,6 +42,7 @@
       "qualified_name": "database-tuning",
       "description": "Optimize database queries, SQL performance, indexes, transactions, and slow queries",
       "keywords": ["database", "sql", "index", "slow query"],
+      "supported_operations": ["review.analyze", "refactor.update", "debug.analyze"],
       "source": "project"
     },
     {

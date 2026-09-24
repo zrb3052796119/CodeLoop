@@ -1,0 +1,916 @@
+{
+  "C01": {
+    "status": "fail",
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_cases_author",
+    "rubric": "outcome-rubric.md v2 essential conditions plus explicit evidence-grounding audit",
+    "strict_semantic_success": false,
+    "core_task_success": false,
+    "core_task_assessment": "partial",
+    "severity": "major",
+    "reason": "原子提交 ledger/outbox 与 commit 后 ack 的主方案正确，但对外部发货的保证缺少必要条件；答案把普通 outbox 中继说成外部动作每行只执行一次，无法满足无额外副作用的完整保证。",
+    "correct_conclusions": [
+      "识别 msg-732 重复投递与 shipment_count=2。",
+      "建议 processing_ledger 的唯一键与 shipment_outbox 同事务持久化，提交后确认。"
+    ],
+    "unsupported_or_incorrect_assertions": [
+      {
+        "claim": "外部动作对每个 outbox 行只执行一次。",
+        "assessment": "incorrect_guarantee",
+        "severity": "major",
+        "reason": "中继可能在外部发送成功、写已发送标记之前崩溃，恢复后再次发送。只有 outbox 与本地已发送标记不能保证外部只执行一次；需要可稳定重用的下游幂等键、去重或明确外部协议。该反例直接影响题目要求的副作用保证。"
+      },
+      {
+        "claim": "db.ship 已将 shipment_outbox 落库，且重投时执行了一个查重检查。",
+        "assessment": "unsupported_implementation_claim",
+        "severity": "moderate",
+        "reason": "consumer.py 只有 ship、mark_processed、commit 三个调用，没有 db 实现或查重代码。queue.json 支持发货早于台账提交的边界问题，但没有说明 ship 的具体落表行为和重投去重实现。"
+      }
+    ],
+    "format_only_issues": [],
+    "load_and_process": {
+      "final_present": true,
+      "fixture_unchanged": true,
+      "loads": [
+        {
+          "name": "queue/idempotency",
+          "ok": true,
+          "model_index": 2,
+          "handoff_requests": [
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      ],
+      "assessment": "正确所需技能已加载且正文进入后续请求；执行流程通过，语义问题单独判断。",
+      "recovered_load_error": null
+    },
+    "evidence": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-0/C01/run.json:466",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-0/C01/run.json:396",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-0/C01/workspace/shop/consumer.py:1",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-0/C01/workspace/evidence/queue.json:1"
+    ],
+    "source_run_sha256": "bf831b5fbf854fd8eacfbaee975ba34ccb44aa590e13f7550dc708db6adc975f"
+  },
+  "C02": {
+    "status": "fail",
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_cases_author",
+    "rubric": "outcome-rubric.md v2 essential conditions plus explicit evidence-grounding audit",
+    "strict_semantic_success": false,
+    "core_task_success": true,
+    "core_task_assessment": "complete_with_material_unsupported_extension",
+    "severity": "moderate",
+    "reason": "核心要求已回答：3 次重试共 4 次尝试，250 ms 是单次超时，缺幂等键的 POST 自动重试存在副作用风险。但其支付调用几乎必然超时的具体因果结论没有关联证据。",
+    "correct_conclusions": [
+      "总尝试次数 1+3=4，与 maximum_attempts 一致。",
+      "当前记录没有幂等键，不能把有副作用的 POST 当成可无条件安全重试。"
+    ],
+    "unsupported_or_incorrect_assertions": [
+      {
+        "claim": "payment_api=840ms，而 HTTP timeout=250ms，所以支付调用几乎必然超时并重复发送。",
+        "assessment": "unsupported_cross_record_causality",
+        "severity": "moderate",
+        "reason": "http.json 没有 endpoint、call/span ID 或配置使用位置；checkout.json 只有独立组件耗时。shop/checkout.py 没有 HTTP 或支付调用实现。两条记录没有建立“同一次调用使用该超时”的关系，更不能从单条耗时断言几乎必然。应写成待验证条件或删除此佐证。"
+      },
+      {
+        "claim": "POST 是非幂等操作、没有 key 就完全没有服务端去重机制。",
+        "assessment": "overgeneralized",
+        "severity": "minor",
+        "reason": "HTTP 方法本身不证明业务实现没有其他幂等机制。这里缺 key 足以说明安全性未经保证，但不能证明所有 POST 必然非幂等或所有其他去重机制均不存在。"
+      }
+    ],
+    "format_only_issues": [],
+    "load_and_process": {
+      "final_present": true,
+      "fixture_unchanged": true,
+      "loads": [
+        {
+          "name": "http/retry-budget",
+          "ok": true,
+          "model_index": 2,
+          "handoff_requests": [
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      ],
+      "assessment": "正确所需技能已加载且正文进入后续请求；执行流程通过，语义问题单独判断。",
+      "recovered_load_error": null
+    },
+    "evidence": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-1/C02/run.json:460",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-1/C02/run.json:390",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-1/C02/workspace/evidence/http.json:1",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-1/C02/workspace/evidence/checkout.json:1",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-1/C02/workspace/shop/checkout.py:1"
+    ],
+    "source_run_sha256": "9e742846781276c1a7d09db9305f6d826411471aad9361cef3892e66aaff6080"
+  },
+  "C03": {
+    "status": "fail",
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_cases_author",
+    "rubric": "outcome-rubric.md v2 essential conditions plus explicit evidence-grounding audit",
+    "strict_semantic_success": false,
+    "core_task_success": true,
+    "core_task_assessment": "complete_with_material_unsupported_extension",
+    "severity": "moderate",
+    "reason": "扫描浪费和 tenant_id/status 复合索引候选正确；48,000 与 48000 完全等价。严格语义不通过的原因是从 Seq Scan 推断没有任何索引，并把未经验证的优化效果写得过于确定。",
+    "correct_conclusions": [
+      "正确比较 48000 扫描行与 12 返回行，差值 47988。",
+      "复合索引列 tenant_id/status 匹配过滤条件，未更改结果语义或声称执行数据库操作。"
+    ],
+    "unsupported_or_incorrect_assertions": [
+      {
+        "claim": "两列条件没有任何索引支撑，只能全表扫描。",
+        "assessment": "unsupported_cause",
+        "severity": "moderate",
+        "reason": "保存的计划只显示此次选择 Seq Scan，没有现有索引清单、统计信息或优化器成本；Seq Scan 不能证明没有任何可用索引。"
+      },
+      {
+        "claim": "复合索引让扫描行数从48000降到约12。",
+        "assessment": "unverified_performance_prediction",
+        "severity": "moderate",
+        "reason": "索引是合理候选，但实际访问行、heap访问、选择的计划及性能需要 EXPLAIN/验证。答案没有声称已运行优化，却把这一数值变化表达成确定结果，而非待验证预测。"
+      }
+    ],
+    "format_only_issues": [
+      "原始字符串评分找不到48000，因为答案用了48,000。这不是语义错误，也不是检索失败。"
+    ],
+    "load_and_process": {
+      "final_present": true,
+      "fixture_unchanged": true,
+      "loads": [
+        {
+          "name": "database: Explain a slow SQL query using its execution plan and index columns.",
+          "ok": false,
+          "model_index": 1,
+          "handoff_requests": []
+        },
+        {
+          "name": "database: Explain a slow SQL query using its execution plan and index columns.",
+          "ok": false,
+          "model_index": 2,
+          "handoff_requests": []
+        },
+        {
+          "name": "database/query-plan",
+          "ok": true,
+          "model_index": 4,
+          "handoff_requests": [
+            5,
+            6,
+            7
+          ]
+        }
+      ],
+      "assessment": "正确所需技能已加载且正文进入后续请求；执行流程通过，语义问题单独判断。",
+      "recovered_load_error": "前两次把目录名加描述当成技能名；两次均失败未暴露正文，后续正确加载并完成。"
+    },
+    "evidence": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-2/C03/run.json:417",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-2/C03/run.json:327",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-2/C03/workspace/evidence/database.json:1"
+    ],
+    "source_run_sha256": "9fb926fbb4f732489e0c1628a05a57d04eb3aa4b11d58ca05fc2a59498fd1f00"
+  },
+  "C06": {
+    "status": "pass",
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_cases_author",
+    "rubric": "outcome-rubric.md v2 essential conditions plus explicit evidence-grounding audit",
+    "strict_semantic_success": true,
+    "core_task_success": true,
+    "core_task_assessment": "complete",
+    "severity": "minor",
+    "reason": "根据实际设置函数和记录正确给出环境变量 APP_PORT=9200 覆盖8100和8080；还正确区分默认参数求值与最终采用。中文标题不影响任务结论。",
+    "correct_conclusions": [
+      "代码 os.getenv 优先使用环境变量，与保存的 env_APP_PORT=9200 一致。",
+      "读到了指定设置代码和配置记录，未执行修改。"
+    ],
+    "unsupported_or_incorrect_assertions": [
+      {
+        "claim": "port(config) 是留给部署/入口侧调用的函数。",
+        "assessment": "unsupported_intended_purpose",
+        "severity": "minor",
+        "reason": "未被 shop 代码调用有 grep 支持，但设计意图留给部署入口没有文档证据；应表述为可能用途。此附带推测不改变用户要求的值与优先级判断。"
+      }
+    ],
+    "format_only_issues": [
+      "把 Effective configuration 译成“有效配置”；违反技能要求的英文标签格式，但不构成任务语义错误。"
+    ],
+    "load_and_process": {
+      "final_present": true,
+      "fixture_unchanged": true,
+      "loads": [
+        {
+          "name": "config/precedence",
+          "ok": true,
+          "model_index": 2,
+          "handoff_requests": [
+            3,
+            4,
+            5,
+            6
+          ]
+        }
+      ],
+      "assessment": "正确所需技能已加载且正文进入后续请求；执行流程通过，语义问题单独判断。",
+      "recovered_load_error": null
+    },
+    "evidence": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-3/C06/run.json:528",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-3/C06/run.json:460",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-3/C06/workspace/shop/settings.py:1",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-3/C06/workspace/shop/app.py:1",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-3/C06/workspace/evidence/config.json:1"
+    ],
+    "source_run_sha256": "7e4b4c28b94f2619f4722051a8bfed34b3cb121ac6ea39e79b3ae4c8e4ee845a"
+  },
+  "C09": {
+    "status": "pass",
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_cases_author",
+    "rubric": "outcome-rubric.md v2 essential conditions plus explicit evidence-grounding audit",
+    "strict_semantic_success": true,
+    "core_task_success": true,
+    "core_task_assessment": "complete",
+    "severity": "none",
+    "reason": "准确对比负数量的400+error_code契约与500+message实现，区分无效客户端输入与实现侧错误分类，未声称修复。",
+    "correct_conclusions": [
+      "同时使用 evidence/api.json 与 shop/api.py 支持状态和JSON字段差异。",
+      "指出无效输入不应被错误报告为服务端故障。"
+    ],
+    "unsupported_or_incorrect_assertions": [],
+    "format_only_issues": [
+      "把 Contract difference 译成“合同差异”；属于英文标签格式偏差，不是语义错误。"
+    ],
+    "load_and_process": {
+      "final_present": true,
+      "fixture_unchanged": true,
+      "loads": [
+        {
+          "name": "api/error-contract",
+          "ok": true,
+          "model_index": 2,
+          "handoff_requests": [
+            3,
+            4,
+            5,
+            6
+          ]
+        }
+      ],
+      "assessment": "正确所需技能已加载且正文进入后续请求；执行流程通过，语义问题单独判断。",
+      "recovered_load_error": null
+    },
+    "evidence": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-0/C09/run.json:484",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-0/C09/run.json:416",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-0/C09/workspace/evidence/api.json:1",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-0/C09/workspace/shop/api.py:1"
+    ],
+    "source_run_sha256": "68cf5a4158b71aa7bc0be4e3b5265e5c5e06b28e908b4831cef8acfabe1c90c8"
+  },
+  "C12": {
+    "status": "pass",
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_cases_author",
+    "rubric": "outcome-rubric.md v2 essential conditions plus explicit evidence-grounding audit",
+    "strict_semantic_success": true,
+    "core_task_success": true,
+    "core_task_assessment": "complete",
+    "severity": "none",
+    "reason": "正确定位 integration_tests 为首个失败阶段，结合 GLOBAL_CART 单跑通过/顺序失败证据解释共享状态泄漏，并建议每测试新夹具和乱序验证。",
+    "correct_conclusions": [
+      "先读取ci日志，再加载测试隔离技能并读取tests证据。",
+      "不改变 build→integration_tests→publish 的阶段顺序，未声称实施修复。"
+    ],
+    "unsupported_or_incorrect_assertions": [],
+    "format_only_issues": [],
+    "load_and_process": {
+      "final_present": true,
+      "fixture_unchanged": true,
+      "loads": [
+        {
+          "name": "ci/pipeline-diagnosis",
+          "ok": true,
+          "model_index": 2,
+          "handoff_requests": [
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        },
+        {
+          "name": "ci/test-isolation",
+          "ok": true,
+          "model_index": 4,
+          "handoff_requests": [
+            5,
+            6,
+            7
+          ]
+        }
+      ],
+      "assessment": "正确所需技能已加载且正文进入后续请求；执行流程通过，语义问题单独判断。",
+      "recovered_load_error": null
+    },
+    "evidence": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-1/C12/run.json:445",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-1/C12/run.json:355",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-1/C12/workspace/evidence/ci.json:1",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-1/C12/workspace/evidence/tests.json:1"
+    ],
+    "source_run_sha256": "b94574ca722a8659695001fd36eb686a61e77bfd8334d1814166b6273bfc0f8f"
+  },
+  "C13": {
+    "status": "fail",
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_cases_author",
+    "rubric": "outcome-rubric.md v2 essential conditions plus explicit evidence-grounding audit",
+    "strict_semantic_success": false,
+    "core_task_success": false,
+    "core_task_assessment": "partial",
+    "severity": "major",
+    "reason": "瓶颈诊断和条件阶段执行正确，记录限制也被引用，但具体韧性方案未经充分论证：把单次840ms观测当作既定超时故障，再设600/500ms尝试上限，且扩大重试条件和断言指数退避必然超预算。完整方案仍需修订。",
+    "correct_conclusions": [
+      "840/(30+840+10)约95.5%，payment_api是保存记录中的最大项。",
+      "先读checkout证据，再加载provider技能，随后读provider记录。",
+      "使用 order_id、429/503、1200ms并保留 checkout(cart_id, customer_id) 签名。"
+    ],
+    "unsupported_or_incorrect_assertions": [
+      {
+        "claim": "首次600ms、重试500ms；观察840ms就是当前失败模式。",
+        "assessment": "unsupported_timeout_plan",
+        "severity": "major",
+        "reason": "记录没有请求失败/超时分布，也没有声明840ms是不正常值。两次上限都低于当前唯一观测耗时；可能主动放弃本可完成的请求。低超时可以是明确的延迟优先取舍，但答案既未说明该取舍，也没有支持这些数值。"
+      },
+      {
+        "claim": "429/503和attempt timeout均可重试。",
+        "assessment": "unsupported_expansion_of_retry_contract",
+        "severity": "moderate",
+        "reason": "provider.json仅列retryable_status=[429,503]和operation_key，没有超时后的幂等/查询确认协议。可以提出验证后的超时重试方案，不能直接作为已知安全规则。"
+      },
+      {
+        "claim": "指数退避会突破1200ms，只能固定短延迟。",
+        "assessment": "incorrect_unconditional_claim",
+        "severity": "moderate",
+        "reason": "有界、截断的指数退避也可服从总deadline；是否超限取决于尝试数、延迟和总预算。"
+      },
+      {
+        "claim": "1200ms是整个checkout硬期限，840ms是当前故障模式。",
+        "assessment": "unsupported_scope_and_cause",
+        "severity": "moderate",
+        "reason": "provider.json的deadline_ms没有声明覆盖checkout全部组件；checkout记录只给耗时，未记录失败或unbounded timeout。将其作为全链路期限是保守设计假设，应明确标注为假设。"
+      }
+    ],
+    "format_only_issues": [],
+    "load_and_process": {
+      "final_present": true,
+      "fixture_unchanged": true,
+      "loads": [
+        {
+          "name": "checkout/latency-diagnosis",
+          "ok": true,
+          "model_index": 2,
+          "handoff_requests": [
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        },
+        {
+          "name": "checkout/provider-resilience",
+          "ok": true,
+          "model_index": 5,
+          "handoff_requests": [
+            6,
+            7
+          ]
+        }
+      ],
+      "assessment": "正确所需技能已加载且正文进入后续请求；执行流程通过，语义问题单独判断。",
+      "recovered_load_error": null
+    },
+    "evidence": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-2/C13/run.json:473",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-2/C13/run.json:385",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-2/C13/workspace/evidence/checkout.json:1",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-2/C13/workspace/evidence/provider.json:1",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-2/C13/workspace/shop/checkout.py:1"
+    ],
+    "source_run_sha256": "21269d7c3d1955423213d377230aa834cf15eef808da454e15779b75c4925309"
+  },
+  "C16": {
+    "status": "pass",
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_cases_author",
+    "rubric": "outcome-rubric.md v2 essential conditions plus explicit evidence-grounding audit",
+    "strict_semantic_success": true,
+    "core_task_success": true,
+    "core_task_assessment": "complete",
+    "severity": "none",
+    "reason": "把示例完整保留在代码块中，只做排版；没有加载或读取Skill正文。",
+    "correct_conclusions": [
+      "引号内的“使用 api/error-contract 技能检查接口”文本完整保留。",
+      "执行记录没有工具调用或技能正文暴露。"
+    ],
+    "unsupported_or_incorrect_assertions": [],
+    "format_only_issues": [],
+    "load_and_process": {
+      "final_present": true,
+      "fixture_unchanged": true,
+      "loads": [],
+      "assessment": "没有Skill加载或正文读取；遵守负例约束。",
+      "recovered_load_error": null
+    },
+    "evidence": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-3/C16/run.json:78",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-3/C16/run.json:33"
+    ],
+    "source_run_sha256": "077f103d2fa7eea7b9eb17606783e0694fd61cda133e08fe64e08424ebef59a5"
+  },
+  "C17": {
+    "status": "pass",
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_cases_author",
+    "rubric": "outcome-rubric.md v2 essential conditions plus explicit evidence-grounding audit",
+    "strict_semantic_success": true,
+    "core_task_success": true,
+    "core_task_assessment": "complete",
+    "severity": "none",
+    "reason": "按要求直接读取两份文件，准确回答APP_PORT=9200来自环境变量；没有使用Skill。",
+    "correct_conclusions": [
+      "实际read_file包含shop/settings.py及evidence/config.json。",
+      "无load，无Skill正文读取，仅回答配置值和来源。"
+    ],
+    "unsupported_or_incorrect_assertions": [],
+    "format_only_issues": [],
+    "load_and_process": {
+      "final_present": true,
+      "fixture_unchanged": true,
+      "loads": [],
+      "assessment": "没有Skill加载或正文读取；遵守负例约束。",
+      "recovered_load_error": null
+    },
+    "evidence": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-0/C17/run.json:140",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-0/C17/run.json:95",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-0/C17/workspace/shop/settings.py:1",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-0/C17/workspace/evidence/config.json:1"
+    ],
+    "source_run_sha256": "b292996045801fb58b24a543bc5bc5f56453206c9aa33b9e43c156bf94da5321"
+  },
+  "C20": {
+    "status": "pass",
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_cases_author",
+    "rubric": "outcome-rubric.md v2 essential conditions plus explicit evidence-grounding audit",
+    "strict_semantic_success": true,
+    "core_task_success": true,
+    "core_task_assessment": "complete",
+    "severity": "none",
+    "reason": "元信息确认api/error-contract存在，回答简短；没有加载正文或开展API检查。",
+    "correct_conclusions": [
+      "仅目录浏览结果支持存在性判断。",
+      "没有Skill加载或普通工具读取正文。"
+    ],
+    "unsupported_or_incorrect_assertions": [],
+    "format_only_issues": [],
+    "load_and_process": {
+      "final_present": true,
+      "fixture_unchanged": true,
+      "loads": [],
+      "assessment": "没有Skill加载或正文读取；遵守负例约束。",
+      "recovered_load_error": null
+    },
+    "evidence": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-1/C20/run.json:123",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-dev-large-01/chunk-1/C20/run.json:78"
+    ],
+    "source_run_sha256": "2e01d4b809beb6e37e0ed9a1db6e772160e93aaa533f6221849d24772c7fdd29"
+  },
+  "C04": {
+    "status": "pass",
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_cases_author",
+    "rubric": "outcome-rubric.md v2",
+    "rubric_sha256": "3c5435917dea37db88a0a76e8dd8d40fc28781924660f7a89a1eb6701750dc71",
+    "core_task_success": true,
+    "core_task_assessment": "complete",
+    "strict_semantic_success": true,
+    "severity": "none",
+    "reason": "准确使用12:00填充、12:02改价、12:10过期的记录，指出缺少price_changed invalidation，并算出改价后旧值最多残留8分钟。建议补充失效或更新，未声称实施。",
+    "correct_conclusions": [
+      "将记录的600秒TTL与改价后480秒残留区分清楚。",
+      "依据missing_event识别价格变更到缓存失效之间的缺口。"
+    ],
+    "unsupported_or_incorrect_assertions": [],
+    "format_only_issues": [],
+    "load_and_process": {
+      "final_present": true,
+      "fixture_unchanged": true,
+      "loads": [
+        {
+          "name": "cache/expiry-analysis",
+          "ok": true,
+          "model_index": 2,
+          "handoff_requests": [
+            3,
+            4,
+            5
+          ]
+        }
+      ],
+      "assessment": "所需技能加载和正文handoff成功；规定证据在handoff后读取。",
+      "original_strict_load": true,
+      "original_strict_end_to_end": true,
+      "evidence_read_after_handoff": [
+        true
+      ]
+    },
+    "evidence": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-0/C04/run.json:335",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-0/C04/run.json:173",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-0/C04/run.json:269",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-0/C04/workspace/evidence/cache.json:1"
+    ],
+    "source_run_sha256": "b9cbeeb5444a36b0cffab88835e642189bfd676e38b78b93674f23b38581b13b"
+  },
+  "C05": {
+    "status": "pass",
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_cases_author",
+    "rubric": "outcome-rubric.md v2",
+    "rubric_sha256": "3c5435917dea37db88a0a76e8dd8d40fc28781924660f7a89a1eb6701750dc71",
+    "core_task_success": true,
+    "core_task_assessment": "complete",
+    "strict_semantic_success": true,
+    "severity": "minor",
+    "reason": "正确比较reports:read与required_scope=reports:export，将403归因于缺少导出授权，并建议只追加导出scope，未建议管理员绕过或降低接口权限要求。",
+    "correct_conclusions": [
+      "依据evidence/auth.json比较调用方现有scope和接口要求。",
+      "最小能力变化是追加reports:export，保持reports:read与原接口要求。"
+    ],
+    "unsupported_or_incorrect_assertions": [
+      {
+        "claim": "给调用方所属角色追加一个scope。",
+        "assessment": "implementation_detail_not_established",
+        "severity": "minor",
+        "reason": "记录只有caller_scopes，没有角色绑定或共享角色成员信息。这里可作为授权实施建议，但并未证实该调用方确实通过某个角色获得权限；落地时应选择该调用方的最小授权范围，避免默认修改广泛共享角色。核心缺少scope的判断与最小能力建议不受影响。"
+      }
+    ],
+    "format_only_issues": [],
+    "load_and_process": {
+      "final_present": true,
+      "fixture_unchanged": true,
+      "loads": [
+        {
+          "name": "auth/access-audit",
+          "ok": true,
+          "model_index": 2,
+          "handoff_requests": [
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      ],
+      "assessment": "所需技能加载和正文handoff成功；规定证据在handoff后读取。曾使用多余workspace/前缀导致两次read和一次list失败，随后恢复为正确路径并成功读取证据。",
+      "original_strict_load": true,
+      "original_strict_end_to_end": true,
+      "evidence_read_after_handoff": [
+        true
+      ]
+    },
+    "evidence": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-1/C05/run.json:473",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-1/C05/run.json:245",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-1/C05/run.json:403",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-1/C05/workspace/evidence/auth.json:1"
+    ],
+    "source_run_sha256": "ffc76f02cd427b048cb1f649e478f116a475c8c63f483108f03be40e3079c9e7"
+  },
+  "C07": {
+    "status": "pass",
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_cases_author",
+    "rubric": "outcome-rubric.md v2",
+    "rubric_sha256": "3c5435917dea37db88a0a76e8dd8d40fc28781924660f7a89a1eb6701750dc71",
+    "core_task_success": true,
+    "core_task_assessment": "complete",
+    "strict_semantic_success": true,
+    "severity": "minor",
+    "reason": "从orders/pricing代码准确解释双向导入与部分初始化失败，将TAX_RATE移到零依赖constants模块并改pricing引用能打破环，且保持只读建议。旁支文件数量错误不影响该依赖分析。",
+    "correct_conclusions": [
+      "两条导入边分别是orders→pricing与pricing→orders。",
+      "从任一入口导入都会先遇到对方尚未定义的符号，解释与给定行顺序一致。",
+      "建议orders→pricing→constants单向链，未提出靠大量延迟import掩盖循环。"
+    ],
+    "unsupported_or_incorrect_assertions": [
+      {
+        "claim": "代码中只有4个Python文件。",
+        "assessment": "incorrect_peripheral_count",
+        "severity": "minor",
+        "reason": "保留夹具shop目录有7个Python文件：api、app、checkout、consumer、orders、pricing、settings。答案把读取/导入关注的4个文件当成全目录计数。与两条关键导入边无关。"
+      },
+      {
+        "claim": "两处import行调整，无API/行为变化。",
+        "assessment": "overbroad_change_description",
+        "severity": "minor",
+        "reason": "列出的方案实际上只修改pricing的现有import，orders保留原import并移除TAX_RATE定义。对已展示的total/price计算接口可以保持不变；若外部代码导入orders.TAX_RATE，移除该导出仍会改变兼容性，不能据本片段保证所有外部用法不变。用户未要求该外部兼容契约，也没有记录此类调用，所以不因此否定最小职责拆分。"
+      }
+    ],
+    "format_only_issues": [],
+    "load_and_process": {
+      "final_present": true,
+      "fixture_unchanged": true,
+      "loads": [
+        {
+          "name": "architecture/import-cycle",
+          "ok": true,
+          "model_index": 4,
+          "handoff_requests": [
+            5,
+            6
+          ]
+        }
+      ],
+      "assessment": "所需技能加载和正文handoff成功；规定证据在handoff后读取。",
+      "original_strict_load": true,
+      "original_strict_end_to_end": true,
+      "evidence_read_after_handoff": [
+        true
+      ]
+    },
+    "evidence": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-2/C07/run.json:433",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-2/C07/run.json:212",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-2/C07/run.json:369",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-2/C07/workspace/shop/orders.py:1",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-2/C07/workspace/shop/pricing.py:1",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-2/C07/workspace/evidence/architecture.json:1",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-2/C07/fixture-manifest.json:1"
+    ],
+    "source_run_sha256": "1a6339276de01d8500eb891b589de8a5c49037c21e3a96c3179a31be82415774"
+  },
+  "C08": {
+    "status": "fail",
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_cases_author",
+    "rubric": "outcome-rubric.md v2",
+    "rubric_sha256": "3c5435917dea37db88a0a76e8dd8d40fc28781924660f7a89a1eb6701750dc71",
+    "core_task_success": true,
+    "core_task_assessment": "complete_with_material_unsupported_extension",
+    "strict_semantic_success": false,
+    "severity": "moderate",
+    "reason": "核心日志脱敏要求已满足：指出authorization风险、保留request_id/error_code、没有复述凭据。但答案的安全保证和事后处置超出证据：截断SHA-256不能对任意凭据保证不可推断，且明确合成样本不能直接当成需撤销的真实凭据。",
+    "correct_conclusions": [
+      "正确识别authorization为应删除或遮蔽的字段，保留记录标注为安全的request_id和error_code。",
+      "给出存在性标志和日志写出前统一脱敏等合理选项。",
+      "最终答案没有复述保留记录中的合成凭据值，未声称修改日志。"
+    ],
+    "unsupported_or_incorrect_assertions": [
+      {
+        "claim": "对原始值做加盐HMAC或SHA-256截断形成稳定指纹，无法还原凭据。",
+        "assessment": "unqualified_security_guarantee",
+        "severity": "moderate",
+        "reason": "带受保护密钥的HMAC与普通截断SHA-256不是同一个安全保证。普通摘要可能支持离线猜测低熵或候选集合中的凭据；截断还引入碰撞，不能无条件称不可还原或稳定识别同一客户端。仅保留存在性或删除字段已能满足题目；若额外保留关联指纹，需说明威胁模型、密钥保护和泄露限制。"
+      },
+      {
+        "claim": "authorization_present足以区分401/403问题。",
+        "assessment": "overgeneralized_diagnostic_claim",
+        "severity": "minor",
+        "reason": "请求带凭据不等于凭据有效，过期或无效凭据仍可能得到401；存在性字段有诊断价值但不足以单独决定这两类状态。"
+      },
+      {
+        "claim": "evidence/logging.json中的凭据应视为已泄露并revoke+重发。",
+        "assessment": "unsupported_real_incident_inference",
+        "severity": "moderate",
+        "reason": "此记录是评测夹具中的明确合成值，答案自身也承认合成。没有真实可撤销凭据或已发生生产泄露的证据。可以提出真实秘密落盘时应轮换的条件建议，不能将这个样本当作真实事件处置。"
+      }
+    ],
+    "format_only_issues": [],
+    "load_and_process": {
+      "final_present": true,
+      "fixture_unchanged": true,
+      "loads": [
+        {
+          "name": "logging/redaction",
+          "ok": true,
+          "model_index": 4,
+          "handoff_requests": [
+            5,
+            6
+          ]
+        }
+      ],
+      "assessment": "logging证据step2已读取；Skill在step4加载，正文进入step5/6模型请求，但未在加载后重读logging证据。原协议据此不通过；这不是未加载或未收到正文，也不自动判语义错误。",
+      "original_strict_load": true,
+      "original_strict_end_to_end": false,
+      "evidence_read_after_handoff": [
+        false
+      ]
+    },
+    "evidence": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-3/C08/run.json:395",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-3/C08/run.json:199",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-3/C08/run.json:331",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-3/C08/workspace/evidence/logging.json:1"
+    ],
+    "source_run_sha256": "ac7263b13ca1205a11dc07d706c77bcd59ab52ac5f188cc923e3f77cf1fddd26"
+  },
+  "C10": {
+    "status": "pass",
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_cases_author",
+    "rubric": "outcome-rubric.md v2",
+    "rubric_sha256": "3c5435917dea37db88a0a76e8dd8d40fc28781924660f7a89a1eb6701750dc71",
+    "core_task_success": true,
+    "core_task_assessment": "complete",
+    "strict_semantic_success": true,
+    "severity": "minor",
+    "reason": "根据startup记录准确给出模块shop.app、必需环境变量SHOP_REGION和健康路径/healthz，并明确未启动服务器。满足冻结rubric对保存元信息解释的要求。",
+    "correct_conclusions": [
+      "三个用户要求的字段均对应evidence/startup.json。",
+      "只通过目录结构核对app.py存在，没有虚构具体启动命令或服务器执行结果。"
+    ],
+    "unsupported_or_incorrect_assertions": [
+      {
+        "claim": "shop exposes its health check at /healthz。",
+        "assessment": "unverified_runtime_wording",
+        "severity": "minor",
+        "reason": "运行只读取了startup元信息、README及目录列表，没有读取app.py正文或启动服务。保留app.py也只存储HEALTH_ROUTE常量并在main返回值，没有真实HTTP路由实现。因此此处只能理解为记录声明的健康路径，不能据其措辞声称端点已实际可访问。任务要求解释记录而非运行验证，故不增加后者为通过门槛。"
+      }
+    ],
+    "format_only_issues": [],
+    "load_and_process": {
+      "final_present": true,
+      "fixture_unchanged": true,
+      "loads": [
+        {
+          "name": "docs/startup-guide",
+          "ok": true,
+          "model_index": 1,
+          "handoff_requests": [
+            2,
+            3,
+            4
+          ]
+        }
+      ],
+      "assessment": "所需技能加载和正文handoff成功；规定证据在handoff后读取。",
+      "original_strict_load": true,
+      "original_strict_end_to_end": true,
+      "evidence_read_after_handoff": [
+        true
+      ]
+    },
+    "evidence": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-0/C10/run.json:269",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-0/C10/run.json:137",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-0/C10/run.json:203",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-0/C10/workspace/evidence/startup.json:1",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.repair-work/skill-chain-completion-2026-09-08/eval/live-holdout-large-01/chunk-0/C10/workspace/shop/app.py:1"
+    ],
+    "source_run_sha256": "0aaf902aba71ecb8c53e8f4f0ed96f46761c531c4769f7547ea3144ff3eb1d28"
+  },
+  "C11": {
+    "status": "fail",
+    "core_task_success": true,
+    "confidence": "medium",
+    "reason": "核心分析正确：识别先发货后记账的窗口，建议processing_ledger与shipment_outbox原子提交、唯一键抑制重复、提交后ack。严格结论未通过：正文宣称这就实现恰好一次发货副作用；末尾虽补充下游ledger幂等落库，但未建立外部履约效果与其去重记录的原子边界或外部幂等键条件，仍不能据此保证端到端不重复发货。该条件歧义单列给汇总者裁决，不因加载命中而提高判断。",
+    "unsupported_assertions": [
+      {
+        "claim": "这样在“至少一次投递”的底层语义上实现恰好一次的发货副作用。",
+        "materiality": "material",
+        "assessment": "Ledger与outbox只保证持久化处理/待发事件的原子性；实际外部发货的重试边界仍需端点幂等或可证明原子处理。最终下游ledger caveat承认另有层，但仍不足以支持保证性措辞。"
+      }
+    ],
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_model_probe",
+    "core_task_status": "pass",
+    "evidence": [
+      "eval/live-holdout-large-01/chunk-1/C11/run.json#/final",
+      "eval/live-holdout-large-01/chunk-1/C11/run.json#/executions/3",
+      "eval/live-holdout-large-01/chunk-1/C11/run.json#/executions/6"
+    ],
+    "run_path": "eval/live-holdout-large-01/chunk-1/C11/run.json",
+    "original_run_sha256": "957417bdccb3768e55244870fc1f7e0d8e7d2883187daa7f46c3618de0e516eb",
+    "rubric_sha256": "3c5435917dea37db88a0a76e8dd8d40fc28781924660f7a89a1eb6701750dc71",
+    "review_is_gold": false
+  },
+  "C14": {
+    "status": "pass",
+    "core_task_success": true,
+    "confidence": "high",
+    "reason": "正确读取修改后的分段耗时，定位cart_db=910 ms为瓶颈，指出payment_api=35 ms不满足支付瓶颈条件，未给支付韧性治因方案。95%的占比近似正确，执行计划/索引/N+1仅列为待排查方向，没有宣布实际数据库原因或声称已修改。中文标题不影响语义评审。",
+    "unsupported_assertions": [
+      {
+        "claim": "910 ms几乎全部消耗在数据库读取上。",
+        "materiality": "minor",
+        "assessment": "记录只将910 ms归于cart_db组件，没有进一步分解读取、锁等待或连接等待；这一收窄措辞不影响正确瓶颈与条件分支，建议汇总中作为轻微限定不足保留。"
+      }
+    ],
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_model_probe",
+    "core_task_status": "pass",
+    "evidence": [
+      "eval/live-holdout-large-01/chunk-2/C14/run.json#/final",
+      "eval/live-holdout-large-01/chunk-2/C14/run.json#/executions/2"
+    ],
+    "run_path": "eval/live-holdout-large-01/chunk-2/C14/run.json",
+    "original_run_sha256": "ecedef56ac0cfd98c7ee89c8e827596ec844027051d9084d5172c0d68499f174",
+    "rubric_sha256": "3c5435917dea37db88a0a76e8dd8d40fc28781924660f7a89a1eb6701750dc71",
+    "review_is_gold": false
+  },
+  "C15": {
+    "status": "fail",
+    "core_task_success": true,
+    "confidence": "high",
+    "reason": "核心任务正确：first failed stage为integration_tests，共享GLOBAL_CART与残留条目导致顺序依赖，建议每测试新fixture、乱序验证并保留build→integration_tests→publish。严格评审未通过实质证据外推：isolated_result=pass不能证明测试自身都正确且只有交互有错；verification=shuffled order没有给出执行结果，不能宣称乱序验证已经建立了证据。",
+    "unsupported_assertions": [
+      {
+        "claim": "each test passes when run in isolation, confirming the tests themselves are correct and only their interaction is broken.",
+        "materiality": "material",
+        "assessment": "隔离通过不能证明测试逻辑完整正确，也不能排除其他缺陷；当前fixture只支持共享状态/顺序依赖诊断。"
+      },
+      {
+        "claim": "the evidence that the leak is order-dependent was established by shuffling test order.",
+        "materiality": "material",
+        "assessment": "verification字段只有shuffled order，没有实验执行与结果；将验证方法当作已完成验证属于未受支持的实证扩展。"
+      }
+    ],
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_model_probe",
+    "core_task_status": "pass",
+    "evidence": [
+      "eval/live-holdout-large-01/chunk-3/C15/run.json#/final",
+      "eval/live-holdout-large-01/chunk-3/C15/run.json#/executions/2",
+      "eval/live-holdout-large-01/chunk-3/C15/run.json#/executions/3",
+      "eval/live-holdout-large-01/chunk-3/C15/run.json#/executions/4"
+    ],
+    "run_path": "eval/live-holdout-large-01/chunk-3/C15/run.json",
+    "original_run_sha256": "0ffaf8326d6471cc338cd9d44a8aaf0fc81f9f0b89c77c48f609fe8f6116bbfa",
+    "rubric_sha256": "3c5435917dea37db88a0a76e8dd8d40fc28781924660f7a89a1eb6701750dc71",
+    "review_is_gold": false
+  },
+  "C18": {
+    "status": "pass",
+    "core_task_success": true,
+    "confidence": "high",
+    "reason": "最终输出为一句中文道别，回应结束交流，没有启动新任务、调用工具或使用Skill正文。",
+    "unsupported_assertions": [],
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_model_probe",
+    "core_task_status": "pass",
+    "evidence": [
+      "eval/live-holdout-large-01/chunk-0/C18/run.json#/final"
+    ],
+    "run_path": "eval/live-holdout-large-01/chunk-0/C18/run.json",
+    "original_run_sha256": "6e1ffd667fe07f3846b50be812747aab5d27a312824ab896c95f4c925c6d5afb",
+    "rubric_sha256": "3c5435917dea37db88a0a76e8dd8d40fc28781924660f7a89a1eb6701750dc71",
+    "review_is_gold": false
+  },
+  "C19": {
+    "status": "pass",
+    "core_task_success": true,
+    "confidence": "high",
+    "reason": "明确说明准确名称imaginary/moon-sorting不存在。browse_skill_directory返回未知imaginary目录，imaginary与moon-sorting两次全局search均无匹配；未加载替代Skill或执行其他任务。附加目录数量说错属于非实质误差，未改变缺失判断与用户要求。",
+    "unsupported_assertions": [
+      {
+        "claim": "全部有效目录……80余个",
+        "materiality": "minor",
+        "assessment": "错误响应实际列出62个有效目录，而非80余；不存在imaginary的主要判断仍得到该列表和两次无匹配检索支持。"
+      }
+    ],
+    "reviewer_type": "agent",
+    "reviewer": "/root/skill_model_probe",
+    "core_task_status": "pass",
+    "evidence": [
+      "eval/live-holdout-large-01/chunk-1/C19/run.json#/final",
+      "eval/live-holdout-large-01/chunk-1/C19/run.json#/executions/0",
+      "eval/live-holdout-large-01/chunk-1/C19/run.json#/executions/1",
+      "eval/live-holdout-large-01/chunk-1/C19/run.json#/executions/2"
+    ],
+    "run_path": "eval/live-holdout-large-01/chunk-1/C19/run.json",
+    "original_run_sha256": "2cb26e69e8802da4d28aa235c4268736f5ff3d5b898cabe8b54c268c03bf565b",
+    "rubric_sha256": "3c5435917dea37db88a0a76e8dd8d40fc28781924660f7a89a1eb6701750dc71",
+    "review_is_gold": false
+  }
+}

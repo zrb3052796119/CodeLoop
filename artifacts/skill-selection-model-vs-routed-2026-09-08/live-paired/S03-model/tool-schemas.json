@@ -1,0 +1,1091 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "ask_user",
+      "description": "Pause an interactive turn to request new information or a decision that is required before work can continue. Never use this tool to deliver an answer, result, status update, or confirmation of work already completed; return those in the assistant final response.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "list_files",
+      "description": "List files and directories relative to the workspace root.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "grep_files",
+      "description": "Search UTF-8 text files under a directory using a regex pattern. Supports glob-based include/exclude filtering and context lines. Results are formatted as path:line:content with optional surrounding context.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "Regular expression pattern to search for"
+          },
+          "path": {
+            "type": "string",
+            "description": "Directory to search in (default: current directory)"
+          },
+          "include": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "description": "Glob pattern(s) to include (e.g. '*.py', ['*.ts', '*.tsx']). Only matching files are searched."
+          },
+          "exclude": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "description": "Glob pattern(s) to exclude (e.g. '*.test.ts', ['*.min.js', '*.generated.*'])"
+          },
+          "context_lines": {
+            "type": "integer",
+            "description": "Number of context lines before and after each match (0-5, default: 0)",
+            "minimum": 0,
+            "maximum": 5
+          },
+          "case_sensitive": {
+            "type": "boolean",
+            "description": "Case-sensitive search (default: false)"
+          }
+        },
+        "required": [
+          "pattern"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "read_file",
+      "description": "Read a UTF-8 text file relative to the workspace root.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "offset": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "file_line_count",
+      "description": "Count total, non-empty, and empty lines in a UTF-8 text file relative to the workspace root.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File path relative to the workspace root"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "write_file",
+      "description": "Write a UTF-8 text file relative to the workspace root.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "content"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "edit_file",
+      "description": "Replace a substring in a file. The search string must match exactly (including whitespace and indentation). If the search string appears multiple times, you must provide more surrounding context to make it unique, or set replace_all=true. On mismatch, a diagnostic is shown with the closest match and line numbers.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File path to edit"
+          },
+          "old": {
+            "type": "string",
+            "description": "Text to find (exact match required)"
+          },
+          "new": {
+            "type": "string",
+            "description": "Replacement text"
+          },
+          "replace_all": {
+            "type": "boolean",
+            "description": "Replace all occurrences (default: false)"
+          },
+          "fuzzy": {
+            "type": "boolean",
+            "description": "Enable whitespace-fuzzy matching (default: false)"
+          }
+        },
+        "required": [
+          "path",
+          "old",
+          "new"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "patch_file",
+      "description": "Apply multiple exact-text replacements to one file in a single operation.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "replacements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "search": {
+                  "type": "string"
+                },
+                "replace": {
+                  "type": "string"
+                },
+                "replaceAll": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "search",
+                "replace"
+              ]
+            }
+          }
+        },
+        "required": [
+          "path",
+          "replacements"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "batch_copy",
+      "description": "Copy files or directories. Supports both files and directories.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "Source path (relative to workspace)"
+          },
+          "destination": {
+            "type": "string",
+            "description": "Destination path (relative to workspace)"
+          }
+        },
+        "required": [
+          "source",
+          "destination"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "batch_move",
+      "description": "Move files or directories to a new location.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "Source path (relative to workspace)"
+          },
+          "destination": {
+            "type": "string",
+            "description": "Destination path (relative to workspace)"
+          }
+        },
+        "required": [
+          "source",
+          "destination"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "batch_delete",
+      "description": "Delete files or directories. Directories require recursive=true.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path to delete (relative to workspace)"
+          },
+          "recursive": {
+            "type": "boolean",
+            "description": "Required to delete directories"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "run_command",
+      "description": "Run a common development command from an allowlist. Supports optional timeout parameter (1-600 seconds).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Command to run"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Arguments"
+          },
+          "cwd": {
+            "type": "string",
+            "description": "Working directory"
+          },
+          "timeout": {
+            "type": "integer",
+            "description": "Timeout in seconds (1-600, default 300)"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "web_fetch",
+      "description": "Fetch content from a URL. Supports HTML (extracted to text), JSON, and plain text. Useful for reading documentation, APIs, or web content.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The URL to fetch content from"
+          },
+          "max_chars": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 50000,
+            "description": "Maximum characters to return (default: 10000)"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "web_search",
+      "description": "Search the public web through a bounded built-in provider chain. Returns titles, safe result URLs, and snippets without API keys.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "The web search query."
+          },
+          "num_results": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "description": "Maximum results to return (default: 5)."
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "todo_write",
+      "description": "Create or update a list of tasks. Use this to track progress on multi-step tasks. Each task has content (required) and status (pending/in_progress/completed). Pass the complete list each time to update.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "todos": {
+            "type": "array",
+            "description": "Complete list of tasks to track. Each task must have 'content' (string) and optionally 'status' (pending/in_progress/completed).",
+            "items": {
+              "type": "object",
+              "properties": {
+                "content": {
+                  "type": "string",
+                  "description": "Task description"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "in_progress",
+                    "completed"
+                  ],
+                  "description": "Task status"
+                }
+              },
+              "required": [
+                "content"
+              ]
+            }
+          }
+        },
+        "required": [
+          "todos"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "task",
+      "description": "Run or manage a sub-agent for a complex task. Choose agent_type by the work, not by habit: a task that creates or modifies files -> 'workflow' (pass write_paths and verification_commands and the scheduler constructs WorkflowRequest.v1 for you, or provide an explicit workflow_request); broad codebase search or understanding -> 'explore' (read-only; several issued in one step run in parallel); deep analysis or design before acting -> 'plan' (read-only). The default action 'run' waits for the final result. Use 'spawn' with read-only 'explore'/'plan', then 'poll' or 'cancel' with the returned ID, when the parent should continue working concurrently. The sub-agent runs in its own isolated context with a turn limit. 'workflow' runs a centrally scheduled, typed Analyst -> Executor -> Verifier -> Reviewer flow. 'general' is a legacy-embedder compatibility type and the production Agent Loop rejects it. 'general' and 'workflow' always run one at a time. All sub-agents share the current turn's model-call/token/cost budget. The sub-agent's final result is returned to you.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "run",
+              "spawn",
+              "poll",
+              "cancel"
+            ],
+            "description": "Lifecycle operation. Defaults to synchronous 'run'. Only explore/plan support asynchronous 'spawn'."
+          },
+          "subagent_id": {
+            "type": "string",
+            "description": "Opaque ID returned by spawn; required by poll/cancel."
+          },
+          "wait_seconds": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 30,
+            "description": "For poll only: wait this many seconds for a terminal result before returning. Defaults to 10 to avoid busy polling with model calls."
+          },
+          "description": {
+            "type": "string",
+            "description": "Short 3-5 word description of the task"
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Full, self-contained task description for the sub-agent. The sub-agent runs in a fresh context and cannot see this conversation, so include every file path, constraint, and piece of background it needs."
+          },
+          "agent_type": {
+            "type": "string",
+            "enum": [
+              "explore",
+              "plan",
+              "general",
+              "workflow"
+            ],
+            "description": "Type of sub-agent: 'workflow' (the required production path for delegated state-changing work — creating or modifying files — with typed role boundaries and scheduler-owned gates), 'explore' (fast, read-only codebase search), 'plan' (thorough, read-only analysis and design), or deprecated legacy-only 'general'."
+          },
+          "write_paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "agent_type=workflow convenience field: relative paths the Executor may modify. Optional — omit it when you cannot name the files yet and the workflow runs fail-closed with an empty declared write set. When set, verification_commands is required so the change has executable proof."
+          },
+          "verification_commands": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            "description": "agent_type=workflow convenience field: verification commands as argv vectors, e.g. [[\"python3\", \"-m\", \"pytest\", \"-q\"]] (plain command strings are accepted and split). Commands must come from the closed verifier grammar (pytest/unittest/ruff check/mypy/pyright/compileall, or npm/cargo/go/make/dotnet/cmake test/build/lint/typecheck forms)."
+          },
+          "parallel_explore": {
+            "type": "boolean",
+            "description": "Deprecated legacy workflow only: run three read-only explore agents in parallel (architecture, tests, risks) and write their findings to the shared mailbox before planning."
+          },
+          "workflow_request": {
+            "type": "object",
+            "description": "Explicit WorkflowRequest.v1 for the production central scheduler: it fixes routing facts, path scope, acceptance criteria, and direct-argv checks. Valid only for agent_type=workflow. Optional: when omitted, the scheduler constructs the request from write_paths and verification_commands, or runs the fail-closed legacy route when no write paths are declared.",
+            "additionalProperties": false,
+            "required": [
+              "requestVersion",
+              "profile",
+              "scope",
+              "criteria",
+              "verificationChecks"
+            ],
+            "properties": {
+              "requestVersion": {
+                "type": "integer",
+                "const": 1
+              },
+              "profile": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "taskId",
+                  "kind",
+                  "risk",
+                  "complex",
+                  "parentHasSufficientContext"
+                ],
+                "properties": {
+                  "taskId": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "read_only",
+                      "change"
+                    ]
+                  },
+                  "risk": {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high",
+                      "critical"
+                    ]
+                  },
+                  "complex": {
+                    "type": "boolean"
+                  },
+                  "parentHasSufficientContext": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "scope": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "readRoots",
+                  "writePaths",
+                  "forbiddenPaths"
+                ],
+                "properties": {
+                  "readRoots": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "writePaths": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "forbiddenPaths": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "criteria": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "kind",
+                    "text"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "fact",
+                        "behavior",
+                        "quality",
+                        "safety"
+                      ]
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "verificationChecks": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "checkId",
+                    "kind",
+                    "argv",
+                    "criterionIds"
+                  ],
+                  "properties": {
+                    "checkId": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "tests",
+                        "build",
+                        "lint",
+                        "typecheck"
+                      ]
+                    },
+                    "argv": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "criterionIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "description",
+              "prompt"
+            ],
+            "properties": {
+              "action": {
+                "enum": [
+                  "run"
+                ]
+              }
+            }
+          },
+          {
+            "required": [
+              "action",
+              "description",
+              "prompt",
+              "agent_type"
+            ],
+            "properties": {
+              "action": {
+                "enum": [
+                  "spawn"
+                ]
+              }
+            }
+          },
+          {
+            "required": [
+              "action",
+              "subagent_id"
+            ],
+            "properties": {
+              "action": {
+                "enum": [
+                  "poll",
+                  "cancel"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "subagent_note_write",
+      "description": "Write a bounded note to the current turn's shared sub-agent mailbox. Use this to hand a plan, finding, or result to another isolated sub-agent without putting raw context in a prompt.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Stable note key, e.g. workflow_plan or workflow_result"
+          },
+          "content": {
+            "type": "string",
+            "description": "Note content, at most 20000 characters"
+          }
+        },
+        "required": [
+          "key",
+          "content"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "subagent_note_read",
+      "description": "Read one note from the current turn's shared sub-agent mailbox.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Note key to read"
+          }
+        },
+        "required": [
+          "key"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "subagent_note_list",
+      "description": "List keys in the current turn's shared sub-agent mailbox.",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "git",
+      "description": "Git workflow tool. Actions: status (show working tree status), diff (show unstaged changes), log (show recent commits), commit (create a git commit with message), review (review recent changes and working tree).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "status",
+              "diff",
+              "log",
+              "commit",
+              "review"
+            ],
+            "description": "Git action to perform"
+          },
+          "message": {
+            "type": "string",
+            "description": "Commit message (required for commit action)"
+          },
+          "max_lines": {
+            "type": "number",
+            "description": "Maximum output lines (default: 50)"
+          }
+        },
+        "required": [
+          "action"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "find_symbols",
+      "description": "Find all Python symbols (classes, functions, variables) in files or directories. Use this to understand code structure before making changes.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File or directory path to search (default: current directory)"
+          },
+          "symbol_type": {
+            "type": "string",
+            "enum": [
+              "all",
+              "class",
+              "function",
+              "variable"
+            ],
+            "description": "Filter by symbol type (default: all)"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "find_references",
+      "description": "Find all references to a Python symbol (class, function, variable) across files. Use this before renaming to see impact.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "symbol_name": {
+            "type": "string",
+            "description": "Name of the symbol to find references for"
+          },
+          "path": {
+            "type": "string",
+            "description": "File or directory path to search (default: current directory)"
+          }
+        },
+        "required": [
+          "symbol_name"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "get_ast_info",
+      "description": "Get AST information for a Python file including structure, imports, and statistics. Use this to understand file organization.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to Python file"
+          }
+        },
+        "required": [
+          "file_path"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "code_review",
+      "description": "Review Python code quality by checking for unused imports, hardcoded values, missing docstrings, and long functions. Use this after making changes to ensure code quality.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File or directory path to review (default: current directory)"
+          },
+          "checks": {
+            "type": "string",
+            "enum": [
+              "all",
+              "imports",
+              "style",
+              "complexity"
+            ],
+            "description": "Types of checks to run (default: all)"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "file_tree",
+      "description": "Display a visual file tree with file sizes, modification times, and type icons. Supports filtering by pattern and controlling depth.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Directory or file path to display (default: current directory)"
+          },
+          "max_depth": {
+            "type": "number",
+            "description": "Maximum depth to display (default: 3, max: 10)"
+          },
+          "show_hidden": {
+            "type": "boolean",
+            "description": "Show hidden files (starting with .) (default: false)"
+          },
+          "pattern": {
+            "type": "string",
+            "description": "Filter files by glob pattern (e.g., '*.py', 'test_*')"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "diff_viewer",
+      "description": "View differences between file versions with unified diff, inline diff, or stats. Supports comparing files, showing before/after, or comparing against current file on disk.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "files": {
+            "type": "array",
+            "description": "List of files to compare. Each entry: {path, before?, after?}. Use '__file__' to load from disk.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "File path (for display)"
+                },
+                "before": {
+                  "type": "string",
+                  "description": "Original content (or '__file__' to load from disk)"
+                },
+                "after": {
+                  "type": "string",
+                  "description": "New content (or '__file__' to load from disk)"
+                }
+              },
+              "required": [
+                "path"
+              ]
+            }
+          },
+          "context_lines": {
+            "type": "number",
+            "description": "Number of context lines around changes (default: 3)"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "unified",
+              "inline",
+              "stat"
+            ],
+            "description": "Diff format (default: unified)"
+          }
+        },
+        "required": [
+          "files"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "test_runner",
+      "description": "Discover and run Python tests automatically. Supports pytest and unittest frameworks. Provides structured results with pass/fail counts, failure details, and optional coverage reporting.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Directory or file path to test (default: current directory)"
+          },
+          "framework": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "pytest",
+              "unittest"
+            ],
+            "description": "Test framework to use (default: auto)"
+          },
+          "verbose": {
+            "type": "boolean",
+            "description": "Show detailed output (default: false)"
+          },
+          "coverage": {
+            "type": "boolean",
+            "description": "Enable coverage reporting (default: false, requires pytest-cov)"
+          },
+          "pattern": {
+            "type": "string",
+            "description": "Filter tests by name pattern"
+          },
+          "timeout": {
+            "type": "number",
+            "description": "Timeout in seconds (default: 60, max: 300)"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "load_skill",
+      "description": "Load a local SKILL.md by name or qualified directory/name.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "propose_skill",
+      "description": "Use before creating a new Skill or SKILL.md. Recommend where the Skill should live, generate frontmatter, check duplicate risks, and validate declared tools without writing files.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "examples": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "content_outline": {
+            "type": "string"
+          },
+          "top_k": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ]
+      }
+    }
+  }
+]

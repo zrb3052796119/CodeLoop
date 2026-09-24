@@ -1,0 +1,1 @@
+{"task": "T22", "arm": "B", "prompt_mode": "hierarchical", "stop": "assistant_response", "steps": 1}

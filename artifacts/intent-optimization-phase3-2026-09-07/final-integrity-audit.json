@@ -1,0 +1,13 @@
+{
+  "production_file_count": 258,
+  "all_eight_candidates_use_frozen_source": true,
+  "current_source_still_frozen": true,
+  "actual_baseline_unchanged": true,
+  "production_patch_exact": true,
+  "archived_candidate_results_match": true,
+  "changed_production_files": [
+    "minicode/intent_negation.py",
+    "minicode/intent_parser.py",
+    "minicode/intent_request_roles.py"
+  ]
+}

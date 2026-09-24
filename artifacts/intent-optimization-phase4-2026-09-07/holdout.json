@@ -1,0 +1,1344 @@
+[
+  {
+    "id": "U01",
+    "text": "Python 函数把列表写成默认参数以后，为啥第二次调用还能看到上次塞进去的东西？拿一个小例子讲明白就行。",
+    "expected": [
+      "explain",
+      "question"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "explain",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        },
+        {
+          "intent": "question",
+          "actions": [
+            "analyze"
+          ]
+        }
+      ]
+    ],
+    "rationale": "询问语言机制并请求解释，没有仓库修改或执行要求。"
+  },
+  {
+    "id": "U02",
+    "text": "页面上的“导出明细”按钮到底接的是哪个后端地址？请沿着点击事件找到发请求的那一处，把文件位置告诉我。",
+    "expected": [
+      "search"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "search",
+          "actions": [
+            "read",
+            "analyze"
+          ]
+        }
+      ]
+    ],
+    "rationale": "目标是定位调用链与源码位置。"
+  },
+  {
+    "id": "U03",
+    "text": "它只在名字里带空格时失败，普通名字都能过。你先判断最可能是哪一步丢了引号，暂时别修。",
+    "expected": [
+      "debug"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "debug",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "根据故障补充条件诊断原因，明确暂不修复。",
+    "context": {
+      "active_task": "定位打包脚本处理目录名失败的原因",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "打包脚本碰到某些工作目录就报找不到文件。"
+        },
+        {
+          "role": "assistant",
+          "content": "可以先对照成功和失败的目录名，看看差别。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "U04",
+    "text": "帮我过一遍分页查询的实现，重点看最后一页和空结果有没有边界问题；发现的点列在回复里。",
+    "expected": [
+      "review"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "review",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "审查现有实现并反馈风险，没有要求修补。"
+  },
+  {
+    "id": "U05",
+    "text": "关于拆分那个大 service，我想先比较“按业务对象拆”和“按读写拆”各自会增加什么维护成本，代码先保持原样。",
+    "expected": [
+      "refactor",
+      "explain"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "refactor",
+          "actions": [
+            "compare",
+            "analyze"
+          ]
+        },
+        {
+          "intent": "explain",
+          "actions": [
+            "compare",
+            "analyze"
+          ]
+        }
+      ]
+    ],
+    "rationale": "讨论两种重构方案的取舍，不实施重构。"
+  },
+  {
+    "id": "U06",
+    "text": "我说的“跑一次全量测试”是文档里的原话。现在只想知道这条命令会收集哪些目录，别启动它。",
+    "expected": [
+      "explain"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "explain",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "引号中是引用；实际请求解释命令的测试收集范围。",
+    "context": {
+      "active_task": "理解仓库的测试命令说明",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "贡献指南写着 python -m pytest tests integration。"
+        },
+        {
+          "role": "assistant",
+          "content": "这条说明把两个目录都作为收集入口。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "U07",
+    "text": "同一个类同时定义 __repr__ 和 __str__ 时，交互窗口显示对象会用哪一个？我一直没分清这俩的分工。",
+    "expected": [
+      "question",
+      "explain"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "question",
+          "actions": [
+            "analyze"
+          ]
+        },
+        {
+          "intent": "explain",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "普通编程概念问答。"
+  },
+  {
+    "id": "U08",
+    "text": "仓库里还有地方直接读 OLD_API_ENDPOINT 吗？请把引用它的文件和用途找出来，我想评估以后删配置的影响。",
+    "expected": [
+      "search"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "search",
+          "actions": [
+            "read",
+            "analyze"
+          ]
+        }
+      ]
+    ],
+    "rationale": "当前要求搜集引用，删除配置仅是未来评估背景。"
+  },
+  {
+    "id": "U09",
+    "text": "所以这里的 shallow copy 只复制外面那层，对吧？接着用那个嵌套列表说明一下改子列表为什么会串到原对象。",
+    "expected": [
+      "explain",
+      "question"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "explain",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        },
+        {
+          "intent": "question",
+          "actions": [
+            "analyze"
+          ]
+        }
+      ]
+    ],
+    "rationale": "上下文明确承接浅拷贝概念解释。",
+    "context": {
+      "active_task": "理解 Python 容器的复制行为",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "我有 a = [[1], [2]]，然后 b = a.copy()。"
+        },
+        {
+          "role": "assistant",
+          "content": "a 和 b 是两个外层列表，但其中的元素仍指向原来的子列表。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "U10",
+    "text": "同一次支付回调偶尔会生成两张收据，日志里两条请求时间差不到一毫秒。先帮我分析是不是幂等检查有竞态，不要碰实现。",
+    "expected": [
+      "debug"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "debug",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "依据并发故障症状进行诊断，没有修复授权。"
+  },
+  {
+    "id": "U11",
+    "text": "看下这个提交前后的缓存读取流程，解释一下为什么作者把 TTL 检查挪到了反序列化前面。",
+    "expected": [
+      "explain"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "explain",
+          "actions": [
+            "analyze",
+            "compare",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "需要解释已有变更的设计理由。"
+  },
+  {
+    "id": "U12",
+    "text": "我倾向第二个补法。你再审一下它会不会把合法的空字符串也吞掉，先给结论，不要落代码。",
+    "expected": [
+      "review",
+      "debug"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "review",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        },
+        {
+          "intent": "debug",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "审查故障修补方案对有效输入的影响，属于只读分析。",
+    "context": {
+      "active_task": "讨论配置读取时将缺失值与空字符串混淆的修复方案",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "配置没填和填空串现在走了同一条逻辑。"
+        },
+        {
+          "role": "assistant",
+          "content": "方案一先判断键是否存在；方案二在读取后用 value or default 统一兜底。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "U13",
+    "text": "README 里对离线模式写得够不够清楚？请指出一个刚接手的人最容易误解的地方，先不用改文案。",
+    "expected": [
+      "review",
+      "document"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "review",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        },
+        {
+          "intent": "document",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "评估现有文档的可理解性，明确不编辑。"
+  },
+  {
+    "id": "U14",
+    "text": "给日期解析器设计测试时，哪些跨年和闰日情况值得覆盖？我现在只要测试思路，不要创建文件或运行用例。",
+    "expected": [
+      "test"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "test",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "制定测试覆盖思路，不编写或执行测试。"
+  },
+  {
+    "id": "U15",
+    "text": "先别管前端，去后端找第二处校验在哪里发生，给我那个函数名和所在路径。",
+    "expected": [
+      "search"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "search",
+          "actions": [
+            "read",
+            "analyze"
+          ]
+        }
+      ]
+    ],
+    "rationale": "根据前文所列校验位置继续定位后端源码。",
+    "context": {
+      "active_task": "定位上传文件大小的校验位置",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "大文件上传被拒绝，我想知道都在哪些地方检查大小。"
+        },
+        {
+          "role": "assistant",
+          "content": "目前线索有两处：浏览器选择文件时的校验，以及后端接收上传后的校验。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "U16",
+    "text": "如果开发环境要把日志级别调到 debug，应该改环境变量还是配置文件？请说明当前项目的优先级规则，我先了解一下。",
+    "expected": [
+      "configure",
+      "explain"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "configure",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        },
+        {
+          "intent": "explain",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "询问配置方法与优先级，没有提出实际配置变更。"
+  },
+  {
+    "id": "U17",
+    "text": "评审意见里写着“把这个模块重构掉”，但我还没决定采纳。请解释目前模块之间是怎样互相依赖的，别做重构。",
+    "expected": [
+      "explain"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "explain",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "评审意见是引用，当前肯定请求仅为解释依赖结构。"
+  },
+  {
+    "id": "U18",
+    "text": "把第二条再展开一点：读请求高峰时，它为什么可能拖慢写入？只讨论这个取舍。",
+    "expected": [
+      "explain"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "explain",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "依赖上下文解释单库架构的读写竞争。",
+    "context": {
+      "active_task": "比较报表数据查询架构",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "报表直接查业务库和另外同步一份数据，各有什么代价？"
+        },
+        {
+          "role": "assistant",
+          "content": "第一条是同步一份数据，会增加延迟和维护工作；第二条是直接查业务库，结构简单但读写共享资源。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "U19",
+    "text": "检查一下现有 Dockerfile 有没有明显浪费构建缓存的步骤，把你认为应该调整的顺序说明白即可。",
+    "expected": [
+      "review"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "review",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "审查构建文件并提出顺序建议，没有构建或编辑要求。"
+  },
+  {
+    "id": "U20",
+    "text": "帮我找出 sync_client 和 async_client 各自公开了哪些方法，再对照一下有没有一边有、另一边没有的接口。",
+    "expected": [
+      "search"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "search",
+          "actions": [
+            "read",
+            "analyze"
+          ]
+        }
+      ],
+      [
+        {
+          "intent": "search",
+          "actions": [
+            "compare"
+          ]
+        },
+        {
+          "intent": "review",
+          "actions": [
+            "compare",
+            "analyze"
+          ]
+        }
+      ]
+    ],
+    "rationale": "先查找公开接口，再进行对照；两步都属于只读。"
+  },
+  {
+    "id": "U21",
+    "text": "那为什么只有这条断言失败，前面的创建都成功了？顺着返回值帮我找原因，测试先不要重跑。",
+    "expected": [
+      "debug"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "debug",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "依据已给出的测试结果分析失败原因，不再执行测试。",
+    "context": {
+      "active_task": "诊断新建用户后读取显示名的测试失败",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "创建接口返回 201，但 assert fetched.display_name == \"Sam\" 得到的是 None。"
+        },
+        {
+          "role": "assistant",
+          "content": "可以检查创建响应和随后读取响应中显示名字段的来源。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "U22",
+    "text": "在 async def 里直接调用耗时的普通函数，会自动去线程池吗？如果不会，事件循环这时在干什么？",
+    "expected": [
+      "question",
+      "explain"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "question",
+          "actions": [
+            "analyze"
+          ]
+        },
+        {
+          "intent": "explain",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "询问异步函数的运行语义。"
+  },
+  {
+    "id": "U23",
+    "text": "请定位项目里负责把数据库记录转成 API 响应的转换函数，并解释它是怎么处理日期字段的。",
+    "expected": [
+      "search"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "search",
+          "actions": [
+            "read",
+            "analyze"
+          ]
+        }
+      ],
+      [
+        {
+          "intent": "explain",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "主目标为定位代码，同时明确要求解释已定位函数的一部分行为。"
+  },
+  {
+    "id": "U24",
+    "text": "只看兼容性这一项吧，告诉我旧调用方最可能在哪种输入上出问题，不要顺手修。",
+    "expected": [
+      "review"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "review",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "对已有接口改动进行兼容性审查，明确不修补。",
+    "context": {
+      "active_task": "审查查询接口由单个 ID 改为 ID 列表的变更",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "这个改动需要看可读性、性能和兼容性。"
+        },
+        {
+          "role": "assistant",
+          "content": "接口现在接收 ids 列表；旧版本接收一个 id 字符串。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "U25",
+    "text": "在 utils/paths.py 里新增一个 ensure_parent_dir(path) 工具函数：父目录不存在就创建，已经存在就直接返回。",
+    "expected": [
+      "code"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "code",
+          "actions": [
+            "create"
+          ]
+        }
+      ]
+    ],
+    "rationale": "明确要求向指定源码文件新增功能。"
+  },
+  {
+    "id": "U26",
+    "text": "把订单列表默认每页 20 条调成 50 条，直接修改后端的默认值，调用方显式传 page_size 时仍按它传的数处理。",
+    "expected": [
+      "code"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "code",
+          "actions": [
+            "update"
+          ]
+        }
+      ]
+    ],
+    "rationale": "请求修改现有业务行为，并保留显式参数的语义。"
+  },
+  {
+    "id": "U27",
+    "text": "原因清楚了，就把这个边界修掉：恰好等于上限也应该被接受，改完保留其他校验。",
+    "expected": [
+      "debug"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "debug",
+          "actions": [
+            "update"
+          ]
+        }
+      ]
+    ],
+    "rationale": "承接已诊断出的比较符错误，明确要求实施修复。",
+    "context": {
+      "active_task": "修复附件大小上限的边界判断",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "大小刚好为 MAX_BYTES 的附件也被拒绝了。"
+        },
+        {
+          "role": "assistant",
+          "content": "拒绝条件使用了 size >= MAX_BYTES，而需求只拒绝超过上限的附件。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "U28",
+    "text": "把 legacy_loader.py 重命名为 data_loader.py，并把仓库里引用旧模块名的 import 一起更新到新名字。",
+    "expected": [
+      "refactor"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "refactor",
+          "actions": [
+            "rename"
+          ]
+        }
+      ],
+      [
+        {
+          "intent": "refactor",
+          "actions": [
+            "update"
+          ]
+        },
+        {
+          "intent": "code",
+          "actions": [
+            "update"
+          ]
+        }
+      ]
+    ],
+    "rationale": "实施模块重命名并同步修改导入，属于保行为结构调整。"
+  },
+  {
+    "id": "U29",
+    "text": "请把开发环境配置里的 LOG_LEVEL 设成 DEBUG，改开发环境那份配置文件即可。",
+    "expected": [
+      "configure"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "configure",
+          "actions": [
+            "update"
+          ]
+        }
+      ]
+    ],
+    "rationale": "要求直接更改指定环境的配置值。"
+  },
+  {
+    "id": "U30",
+    "text": "那就用你刚才确认的这条命令跑一次，把结果给我。",
+    "expected": [
+      "test"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "test",
+          "actions": [
+            "execute"
+          ]
+        }
+      ]
+    ],
+    "rationale": "上下文中的唯一待执行命令是指定测试命令，本轮予以执行授权。",
+    "context": {
+      "active_task": "执行购物车单元测试",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "购物车这块的单元测试怎么单独跑？"
+        },
+        {
+          "role": "assistant",
+          "content": "确认命令是 python -m pytest tests/unit/test_cart.py。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "U31",
+    "text": "README 的安装步骤还漏了虚拟环境激活，请直接补上 macOS/Linux 和 Windows 两种写法，放在安装依赖之前。",
+    "expected": [
+      "document"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "document",
+          "actions": [
+            "update"
+          ]
+        }
+      ]
+    ],
+    "rationale": "编辑已有说明文档中的安装步骤。"
+  },
+  {
+    "id": "U32",
+    "text": "旧版 /v1/ping 已经停用了，把注册这个路由的代码删掉；/health 还在用，别动它。",
+    "expected": [
+      "code"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "code",
+          "actions": [
+            "delete"
+          ]
+        }
+      ]
+    ],
+    "rationale": "明确删除废弃路由代码，限定保留另一条路由。"
+  },
+  {
+    "id": "U33",
+    "text": "按这个位置迁过去吧，顺便把指向原路径的导入改好，让现有调用继续工作。",
+    "expected": [
+      "refactor"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "refactor",
+          "actions": [
+            "move"
+          ]
+        }
+      ],
+      [
+        {
+          "intent": "refactor",
+          "actions": [
+            "update"
+          ]
+        },
+        {
+          "intent": "code",
+          "actions": [
+            "update"
+          ]
+        }
+      ]
+    ],
+    "rationale": "上下文确定模块迁移路径，本轮要求移动并更新导入。",
+    "context": {
+      "active_task": "迁移可复用的金额格式化模块",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "ui/money.py 现在也被导出任务使用，放 UI 目录里不合适。"
+        },
+        {
+          "role": "assistant",
+          "content": "可以将整个文件移动到 common/money.py，函数接口保持不变。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "U34",
+    "text": "给 normalize_email 补上单元测试，至少覆盖首尾空白和域名大写两种输入，把用例写进现有测试文件。",
+    "expected": [
+      "test"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "test",
+          "actions": [
+            "create",
+            "update"
+          ]
+        }
+      ]
+    ],
+    "rationale": "要求实际编写测试用例，允许在已有文件中新增用例的创建或更新表述。"
+  },
+  {
+    "id": "U35",
+    "text": "请把 pyproject.toml 中声明的 Python 最低版本提升到 3.11，直接更新项目的版本约束。",
+    "expected": [
+      "configure"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "configure",
+          "actions": [
+            "update"
+          ]
+        }
+      ]
+    ],
+    "rationale": "明确修改项目配置中的运行时版本约束。"
+  },
+  {
+    "id": "U36",
+    "text": "照你说的把计数位置改好，然后跑一下重试相关的测试，确认第三次失败后会停止。",
+    "expected": [
+      "debug"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "debug",
+          "actions": [
+            "update"
+          ]
+        }
+      ],
+      [
+        {
+          "intent": "test",
+          "actions": [
+            "execute"
+          ]
+        }
+      ]
+    ],
+    "rationale": "修复已定位的重试计数问题，并明确要求执行相关测试。",
+    "context": {
+      "active_task": "修复最多重试三次却一直重试的问题",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "设置最多重试三次，服务异常时却停不下来。"
+        },
+        {
+          "role": "assistant",
+          "content": "计数器在循环体开头被重置了，应该在进入循环前初始化，再在每次失败后累加。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "U37",
+    "text": "新建 docs/migration-v2.md，整理 v1 到 v2 的字段改名表，并写一个旧请求和对应新请求的例子。",
+    "expected": [
+      "document"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "document",
+          "actions": [
+            "create"
+          ]
+        }
+      ]
+    ],
+    "rationale": "要求创建迁移文档文件并填充内容。"
+  },
+  {
+    "id": "U38",
+    "text": "把 reports.py 拆成数据汇总和文本渲染两个模块，现有对外入口继续保留在 reports.py，调用结果保持一致。",
+    "expected": [
+      "refactor"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "refactor",
+          "actions": [
+            "split"
+          ]
+        }
+      ]
+    ],
+    "rationale": "明确实施模块拆分并保留既有公共入口。"
+  },
+  {
+    "id": "U39",
+    "text": "就用这个文案，替换表单上的提示；另外把用户指南里对应的说明也改成相同表述。",
+    "expected": [
+      "code"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "code",
+          "actions": [
+            "update"
+          ]
+        }
+      ],
+      [
+        {
+          "intent": "document",
+          "actions": [
+            "update"
+          ]
+        }
+      ]
+    ],
+    "rationale": "上下文提供已选定文案，本轮要求同时更新界面和文档。",
+    "context": {
+      "active_task": "调整注册表单的密码长度提示",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "现在“密码不合规”的提示太含糊了。"
+        },
+        {
+          "role": "assistant",
+          "content": "可以改成“密码至少需要 12 个字符”。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "U40",
+    "text": "从 .env.example 里移除已经废弃的 CACHE_HOST 配置项，我们现在只使用 CACHE_URL。",
+    "expected": [
+      "configure"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "configure",
+          "actions": [
+            "delete"
+          ]
+        }
+      ]
+    ],
+    "rationale": "实际删除示例环境配置中的废弃项。"
+  },
+  {
+    "id": "U41",
+    "text": "Why does a generator stop yielding values when I loop over it a second time? A short explanation with an example would help.",
+    "expected": [
+      "explain",
+      "question"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "explain",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        },
+        {
+          "intent": "question",
+          "actions": [
+            "analyze"
+          ]
+        }
+      ]
+    ],
+    "rationale": "A conceptual programming question; no repository changes or execution are requested."
+  },
+  {
+    "id": "U42",
+    "text": "Track down where the upload handler decides a file is too large, and point me to the function that makes that decision.",
+    "expected": [
+      "search"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "search",
+          "actions": [
+            "read",
+            "analyze"
+          ]
+        }
+      ]
+    ],
+    "rationale": "The requested result is the location of an existing decision in code."
+  },
+  {
+    "id": "U43",
+    "text": "Could that explain the stale value after logout? Trace the lifetime of that object and tell me where the old value survives; leave the implementation alone for now.",
+    "expected": [
+      "debug"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "debug",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "The turn asks for a diagnosis of stale state using prior context, expressly withholding implementation changes.",
+    "context": {
+      "active_task": "Diagnosing a user name that persists after logout",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "The header still shows the previous user after I log out and sign in as someone else."
+        },
+        {
+          "role": "assistant",
+          "content": "The header appears to read from a service instance created when the app starts."
+        }
+      ]
+    }
+  },
+  {
+    "id": "U44",
+    "text": "Review the timeout handling in this client, especially whether callers can distinguish a timeout from a malformed response. Please report your findings without editing it.",
+    "expected": [
+      "review"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "review",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "Review existing error handling and report findings, without edits."
+  },
+  {
+    "id": "U45",
+    "text": "The issue says \"delete the fallback\". I am only asking what that fallback currently does and which callers still depend on it; do not remove anything.",
+    "expected": [
+      "explain"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "explain",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ],
+      [
+        {
+          "intent": "search",
+          "actions": [
+            "read",
+            "analyze"
+          ]
+        }
+      ]
+    ],
+    "rationale": "The quoted deletion is background; the affirmative request is to explain the behavior and identify dependent callers."
+  },
+  {
+    "id": "U46",
+    "text": "Focus on the second scenario. Which assertions would prove that behavior, without writing or running the tests yet?",
+    "expected": [
+      "test"
+    ],
+    "expected_read_only": true,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "test",
+          "actions": [
+            "analyze",
+            "read"
+          ]
+        }
+      ]
+    ],
+    "rationale": "The user wants test design for a scenario identified in context, not test creation or execution.",
+    "context": {
+      "active_task": "Planning tests for a reconnecting message consumer",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "We should cover a clean connection and a connection dropped halfway through a batch."
+        },
+        {
+          "role": "assistant",
+          "content": "In the first scenario all messages are acknowledged normally. In the second, unacknowledged messages must be retried after reconnecting."
+        }
+      ]
+    }
+  },
+  {
+    "id": "U47",
+    "text": "Add a clamp(value, lower, upper) helper to math_utils.py and export it from the package so callers can use it directly.",
+    "expected": [
+      "code"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "code",
+          "actions": [
+            "create"
+          ]
+        }
+      ],
+      [
+        {
+          "intent": "code",
+          "actions": [
+            "update"
+          ]
+        }
+      ]
+    ],
+    "rationale": "Implement a new source helper and update the package exports."
+  },
+  {
+    "id": "U48",
+    "text": "Run the full unit test suite now and tell me which tests fail. You do not need to change any files for this step.",
+    "expected": [
+      "test"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "test",
+          "actions": [
+            "execute"
+          ]
+        }
+      ]
+    ],
+    "rationale": "Executing a test suite is an action even though source edits are not requested."
+  },
+  {
+    "id": "U49",
+    "text": "Go ahead with that extraction and replace both copies with calls to the shared helper. Keep the current validation messages.",
+    "expected": [
+      "refactor"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "refactor",
+          "actions": [
+            "update"
+          ]
+        }
+      ]
+    ],
+    "rationale": "The prior proposal is now authorized for implementation as a behavior-preserving extraction.",
+    "context": {
+      "active_task": "Removing duplicated address validation",
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "The billing and shipping handlers contain the same address checks."
+        },
+        {
+          "role": "assistant",
+          "content": "We can extract those checks into validate_address and call it from both handlers."
+        }
+      ]
+    }
+  },
+  {
+    "id": "U50",
+    "text": "Update docs/cli.md to use --output-dir wherever it currently documents the old --destination flag, including the command examples.",
+    "expected": [
+      "document"
+    ],
+    "expected_read_only": false,
+    "required_operation_groups": [
+      [
+        {
+          "intent": "document",
+          "actions": [
+            "update"
+          ]
+        }
+      ]
+    ],
+    "rationale": "Directly edit existing CLI documentation and examples for the renamed flag."
+  }
+]

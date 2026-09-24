@@ -1,0 +1,145 @@
+{
+  "schema_version": "1.0",
+  "description": "Adversarial test-denial matrix for parser constraint fidelity and production Skill required-operation enforcement.",
+  "skill": "testing/regression-from-bug-report",
+  "prompt_template": "Use {skill} Skill to fix auth.py; {tail}",
+  "base_required_operations": [
+    {"intent": "debug", "action": "update", "polarity": "affirmed"}
+  ],
+  "groups": [
+    {
+      "name": "global_execute",
+      "expected_veto": true,
+      "required_operations": [
+        {"intent": "test", "action": "execute", "polarity": "negated"}
+      ],
+      "forbidden_operations": [
+        {"intent": "test", "action": "execute", "polarity": "affirmed"}
+      ],
+      "cases": [
+        {"id": "required-op-001", "tail": "no pytest runs"},
+        {"id": "required-op-002", "tail": "never run any tests"},
+        {"id": "required-op-003", "tail": "do not execute any tests"},
+        {"id": "required-op-004", "tail": "tests must not be run"},
+        {"id": "required-op-005", "tail": "tests should never be executed"},
+        {"id": "required-op-006", "tail": "without running any tests"},
+        {"id": "required-op-007", "tail": "skip every test"},
+        {"id": "required-op-008", "tail": "tests are completely off limits"},
+        {"id": "required-op-009", "tail": "不要跑任何测试"},
+        {"id": "required-op-010", "tail": "测试一律不执行"},
+        {"id": "required-op-011", "tail": "全部测试都跳过"},
+        {"id": "required-op-012", "tail": "复测不需要做"}
+      ]
+    },
+    {
+      "name": "global_create",
+      "expected_veto": true,
+      "required_operations": [
+        {"intent": "test", "action": "create", "polarity": "negated"}
+      ],
+      "forbidden_operations": [
+        {"intent": "test", "action": "create", "polarity": "affirmed"}
+      ],
+      "cases": [
+        {"id": "required-op-013", "tail": "测试用例别补"},
+        {"id": "required-op-014", "tail": "no new tests"},
+        {"id": "required-op-015", "tail": "do not create any tests"},
+        {"id": "required-op-016", "tail": "never write tests"},
+        {"id": "required-op-017", "tail": "without adding any tests"},
+        {"id": "required-op-018", "tail": "skip writing tests"},
+        {"id": "required-op-019", "tail": "no test edits"},
+        {"id": "required-op-020", "tail": "leave tests unchanged"},
+        {"id": "required-op-021", "tail": "不要新建任何测试"},
+        {"id": "required-op-022", "tail": "一条测试也别添"},
+        {"id": "required-op-023", "tail": "测试文件不许改"},
+        {"id": "required-op-024", "tail": "不需要测试用例"}
+      ]
+    },
+    {
+      "name": "global_both",
+      "expected_veto": true,
+      "required_operations": [
+        {"intent": "test", "action": "create", "polarity": "negated"},
+        {"intent": "test", "action": "execute", "polarity": "negated"}
+      ],
+      "forbidden_operations": [
+        {"intent": "test", "action": "create", "polarity": "affirmed"},
+        {"intent": "test", "action": "execute", "polarity": "affirmed"}
+      ],
+      "cases": [
+        {"id": "required-op-025", "tail": "neither add nor run pytest cases"},
+        {"id": "required-op-026", "tail": "tests: neither write nor run"},
+        {"id": "required-op-027", "tail": "skip adding tests and skip running them"},
+        {"id": "required-op-028", "tail": "no test creation and no test execution"},
+        {"id": "required-op-029", "tail": "do not create or execute tests"},
+        {"id": "required-op-030", "tail": "without writing tests or running them"},
+        {"id": "required-op-031", "tail": "don't add tests and don't run them"},
+        {"id": "required-op-032", "tail": "tests must neither be created nor executed"},
+        {"id": "required-op-033", "tail": "测试既不新增也不执行"},
+        {"id": "required-op-034", "tail": "不要加测试也不要跑测试"},
+        {"id": "required-op-035", "tail": "测试别写、别跑"},
+        {"id": "required-op-036", "tail": "单测不补并且全程不跑"}
+      ]
+    },
+    {
+      "name": "matching_regression_subtype",
+      "expected_veto": true,
+      "forbidden_operations": [],
+      "cases": [
+        {"id": "required-op-037", "tail": "do not add regression tests", "required_operations": [{"intent": "test", "action": "create", "polarity": "negated"}]},
+        {"id": "required-op-038", "tail": "skip running regression tests", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-039", "tail": "regression tests are off limits", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-040", "tail": "回归测试不要加", "required_operations": [{"intent": "test", "action": "create", "polarity": "negated"}]},
+        {"id": "required-op-041", "tail": "回归测试别跑", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-042", "tail": "跳过回归测试", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]}
+      ]
+    },
+    {
+      "name": "unrelated_scoped_subtype",
+      "expected_veto": false,
+      "forbidden_operations": [],
+      "cases": [
+        {"id": "required-op-043", "tail": "do not add unit tests", "required_operations": [{"intent": "test", "action": "create", "polarity": "negated"}]},
+        {"id": "required-op-044", "tail": "skip browser tests", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-045", "tail": "performance tests are off limits", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-046", "tail": "avoid integration tests", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-047", "tail": "without running e2e tests", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-048", "tail": "never run smoke tests", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-049", "tail": "unit tests must not be run", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-050", "tail": "do not execute contract tests", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-051", "tail": "浏览器测试别跑", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-052", "tail": "性能测试都跳过", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-053", "tail": "集成测试不要加", "required_operations": [{"intent": "test", "action": "create", "polarity": "negated"}]},
+        {"id": "required-op-054", "tail": "单元测试不许执行", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-055", "tail": "端到端用例先别跑", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-056", "tail": "冒烟测试别写", "required_operations": [{"intent": "test", "action": "create", "polarity": "negated"}]},
+        {"id": "required-op-057", "tail": "只跳过慢速测试", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-058", "tail": "验收测试 off limits", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-059", "tail": "安全测试不要运行", "required_operations": [{"intent": "test", "action": "execute", "polarity": "negated"}]},
+        {"id": "required-op-060", "tail": "负载测试不要创建", "required_operations": [{"intent": "test", "action": "create", "polarity": "negated"}]}
+      ]
+    },
+    {
+      "name": "positive_and_metalinguistic_controls",
+      "expected_veto": false,
+      "forbidden_operations": [
+        {"intent": "test", "action": "create", "polarity": "negated"},
+        {"intent": "test", "action": "execute", "polarity": "negated"}
+      ],
+      "cases": [
+        {"id": "required-op-061", "tail": "run every test", "required_operations": [{"intent": "test", "action": "execute", "polarity": "affirmed"}]},
+        {"id": "required-op-062", "tail": "create and run regression tests", "required_operations": [{"intent": "test", "action": "create", "polarity": "affirmed"}, {"intent": "test", "action": "execute", "polarity": "affirmed"}]},
+        {"id": "required-op-063", "tail": "tests are not off limits; run them", "required_operations": [{"intent": "test", "action": "execute", "polarity": "affirmed"}]},
+        {"id": "required-op-064", "tail": "do not skip tests; run them", "required_operations": [{"intent": "test", "action": "execute", "polarity": "affirmed"}]},
+        {"id": "required-op-065", "tail": "don't avoid tests; execute pytest", "required_operations": [{"intent": "test", "action": "execute", "polarity": "affirmed"}]},
+        {"id": "required-op-066", "tail": "neither test passed; run pytest", "required_operations": [{"intent": "test", "action": "execute", "polarity": "affirmed"}]},
+        {"id": "required-op-067", "tail": "add and run pytest cases", "required_operations": [{"intent": "test", "action": "create", "polarity": "affirmed"}, {"intent": "test", "action": "execute", "polarity": "affirmed"}]},
+        {"id": "required-op-068", "tail": "explain \"neither add nor run pytest cases\"", "required_operations": [{"intent": "explain", "action": "read", "polarity": "affirmed"}]},
+        {"id": "required-op-069", "tail": "the phrase \"tests are off limits\" means what?", "required_operations": []},
+        {"id": "required-op-070", "tail": "do not change README; run tests", "required_operations": [{"intent": "test", "action": "execute", "polarity": "affirmed"}]},
+        {"id": "required-op-071", "tail": "skip test report generation; run pytest", "required_operations": [{"intent": "test", "action": "execute", "polarity": "affirmed"}]},
+        {"id": "required-op-072", "tail": "不要跳过测试，全部执行", "required_operations": [{"intent": "test", "action": "execute", "polarity": "affirmed"}]}
+      ]
+    }
+  ]
+}

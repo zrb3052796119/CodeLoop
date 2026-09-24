@@ -1,0 +1,46 @@
+{
+  "index": 1,
+  "operation_id": "modelop_3379cdfeb9934daa8470ceb099fa2ae0",
+  "input_sha256": "751ff03fcc823936fb60a60a97a011f94916230b2990c11052fcf501eb89067d",
+  "provider_message_projection_sha256": "751ff03fcc823936fb60a60a97a011f94916230b2990c11052fcf501eb89067d",
+  "request_file": "call-01-request.json",
+  "completed": true,
+  "elapsed_ms": 2168.202667031437,
+  "response": {
+    "type": "tool_calls",
+    "content": "",
+    "kind": null,
+    "calls": [
+      {
+        "id": "call_-7283791434778409371",
+        "toolName": "load_skill",
+        "input": {
+          "name": "code-skills/minicode-study"
+        }
+      }
+    ],
+    "contentKind": null,
+    "reasoningContent": "The user wants me to use the code-skills/minicode-study skill to guide them through MiniCode's memory system. They want:\n1. First explain which layers writing and retrieving information pass through\n2. Then use a conversation to demonstrate how these layers work together\n\nLet me load the skill first.",
+    "diagnostics": {
+      "stopReason": "tool_calls",
+      "blockTypes": [
+        "tool_calls"
+      ],
+      "ignoredBlockTypes": []
+    },
+    "usage": {
+      "input_tokens": 7595,
+      "output_tokens": 80,
+      "cache_read_tokens": 7552,
+      "cache_creation_tokens": null,
+      "source": "provider"
+    }
+  },
+  "usage": {
+    "source": "provider",
+    "inputTokens": 7595,
+    "outputTokens": 80,
+    "cacheReadTokens": 7552,
+    "cacheCreationTokens": null
+  }
+}

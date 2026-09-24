@@ -1,0 +1,2116 @@
+{
+  "status": "complete_evaluated_snapshot_audited_delivery_fix_separately_verified",
+  "disabled": {
+    "old50": {
+      "before": {
+        "count": 50,
+        "primary_correct": 35,
+        "strict_correct": 34,
+        "readonly_cases": 22,
+        "effectful_on_readonly_ids": [],
+        "unknown_ids": [
+          "C02",
+          "C06",
+          "C09",
+          "C11",
+          "C14",
+          "C23",
+          "C25",
+          "C26",
+          "C27",
+          "C29",
+          "C30",
+          "C49",
+          "C50"
+        ],
+        "result_sha256": "2c390d72a235298c9bac51f3528c4a8ff69f14531ed1fad8c5bc50e766a99163",
+        "summary_sha256": "78f43eacf97de9c19f57444800ca160bd485064523907480339fb6259be8306b",
+        "freeze_sha256": "954af66fb5d80e97b766b785775a34b3aef574819e8d828e2c90ce4cad54d723",
+        "all_scores_recomputed_and_match": true,
+        "source_data_hashes_valid": true
+      },
+      "after": {
+        "count": 50,
+        "primary_correct": 35,
+        "strict_correct": 34,
+        "readonly_cases": 22,
+        "effectful_on_readonly_ids": [],
+        "unknown_ids": [
+          "C02",
+          "C06",
+          "C09",
+          "C11",
+          "C14",
+          "C23",
+          "C25",
+          "C26",
+          "C27",
+          "C29",
+          "C30",
+          "C49",
+          "C50"
+        ],
+        "result_sha256": "e36056ce41a868bc76161f14656dd3d268c571524a385e8596122d8b45449a30",
+        "summary_sha256": "a91d502bd8e9f5c24793c9c603a6dc0eabe4d76198dbb91324b8e23ed9366d51",
+        "freeze_sha256": "15ce76322963fbdbc8ea2cbb13d05dc4025d8baba5ac8d05df2a7c72168554a1",
+        "all_scores_recomputed_and_match": true,
+        "source_data_hashes_valid": true
+      },
+      "improved_ids": [],
+      "regressed_ids": []
+    },
+    "prior40": {
+      "before": {
+        "count": 40,
+        "primary_correct": 30,
+        "strict_correct": 22,
+        "readonly_cases": 19,
+        "effectful_on_readonly_ids": [],
+        "unknown_ids": [
+          "N04",
+          "N05",
+          "N06",
+          "N07",
+          "N18",
+          "N22",
+          "N28",
+          "N30",
+          "N31",
+          "N37",
+          "N40"
+        ],
+        "result_sha256": "35cd6a562058756cb8004eff8908b49285887bfc5b52e8965d185bfe7b42ef60",
+        "summary_sha256": "d39a01466acf7da1f1f8d067a25fb9b605eff29450bde0d1ee77ca517aad1001",
+        "freeze_sha256": "68e45b0ae132fe657b4229c5fdc38d57673758d1e3d283d87be3469a0c164ce2",
+        "all_scores_recomputed_and_match": true,
+        "source_data_hashes_valid": true
+      },
+      "after": {
+        "count": 40,
+        "primary_correct": 30,
+        "strict_correct": 22,
+        "readonly_cases": 19,
+        "effectful_on_readonly_ids": [],
+        "unknown_ids": [
+          "N04",
+          "N05",
+          "N06",
+          "N07",
+          "N18",
+          "N22",
+          "N28",
+          "N30",
+          "N31",
+          "N37",
+          "N40"
+        ],
+        "result_sha256": "a1387a8779c0961b2bbd2f6e25c01833ed5b961dea0299481208f81859620f5c",
+        "summary_sha256": "1940f8f1cb8bf083a1889b446af06032c673cf16aaec6c44d12d2e18045220df",
+        "freeze_sha256": "68c0435a6673be77183f87a5fef72f4d3fa173400f734b868bb98df0dd21cc7f",
+        "all_scores_recomputed_and_match": true,
+        "source_data_hashes_valid": true
+      },
+      "improved_ids": [],
+      "regressed_ids": []
+    },
+    "priorfresh40": {
+      "before": {
+        "count": 40,
+        "primary_correct": 17,
+        "strict_correct": 14,
+        "readonly_cases": 23,
+        "effectful_on_readonly_ids": [],
+        "unknown_ids": [
+          "H01",
+          "H02",
+          "H03",
+          "H04",
+          "H06",
+          "H07",
+          "H08",
+          "H10",
+          "H11",
+          "H12",
+          "H19",
+          "H24",
+          "H26",
+          "H27",
+          "H28",
+          "H29",
+          "H30",
+          "H31",
+          "H37"
+        ],
+        "result_sha256": "99bb4f31f6a064ee78e846408d02ec535ef6d1ad68baafcd5db59425762d2a1d",
+        "summary_sha256": "2d9fc712a434a2ada8c5c14d6419fc9469a4c181350ccf4cb1f8364b99915b06",
+        "freeze_sha256": "5b69e69c25ee0ff0dc8b548e5e252cf17585220aeaf6f027f0e35f44b4c64dca",
+        "all_scores_recomputed_and_match": true,
+        "source_data_hashes_valid": true
+      },
+      "after": {
+        "count": 40,
+        "primary_correct": 17,
+        "strict_correct": 14,
+        "readonly_cases": 23,
+        "effectful_on_readonly_ids": [],
+        "unknown_ids": [
+          "H01",
+          "H02",
+          "H03",
+          "H04",
+          "H06",
+          "H07",
+          "H08",
+          "H10",
+          "H11",
+          "H12",
+          "H19",
+          "H24",
+          "H26",
+          "H27",
+          "H28",
+          "H29",
+          "H30",
+          "H31",
+          "H37"
+        ],
+        "result_sha256": "2579acdd0b81335d30595e5334ea1a1b614b50ce74011449d60aeca818e56107",
+        "summary_sha256": "aeb29f80e43e3b59925a99154f7e1ed3932d9516f5f65fd2fa8223f7f0b35357",
+        "freeze_sha256": "61118cc171cc5fcd6457e7914653fca5070f122187e30e8752b4b67850e687f2",
+        "all_scores_recomputed_and_match": true,
+        "source_data_hashes_valid": true
+      },
+      "improved_ids": [],
+      "regressed_ids": []
+    },
+    "priorfresh50": {
+      "before": {
+        "count": 50,
+        "primary_correct": 22,
+        "strict_correct": 21,
+        "readonly_cases": 30,
+        "effectful_on_readonly_ids": [
+          "T05",
+          "T11"
+        ],
+        "unknown_ids": [
+          "T01",
+          "T06",
+          "T07",
+          "T08",
+          "T09",
+          "T13",
+          "T16",
+          "T17",
+          "T18",
+          "T19",
+          "T21",
+          "T23",
+          "T24",
+          "T27",
+          "T38",
+          "T41",
+          "T42",
+          "T43",
+          "T44",
+          "T45",
+          "T46",
+          "T49",
+          "T50"
+        ],
+        "result_sha256": "a27947727900c553d44fa25474cd93473f0ae746920f7310fce5daf1662767af",
+        "summary_sha256": "5f84a4f4542567b2b7f25bd710554ccb40bd0cd432bfcb141d356a4c112833f0",
+        "freeze_sha256": "6228f02a25be3fbc1a9fa7ef81ab8fac649ce0c74866c8158328221707957242",
+        "all_scores_recomputed_and_match": true,
+        "source_data_hashes_valid": true
+      },
+      "after": {
+        "count": 50,
+        "primary_correct": 28,
+        "strict_correct": 28,
+        "readonly_cases": 30,
+        "effectful_on_readonly_ids": [],
+        "unknown_ids": [
+          "T01",
+          "T06",
+          "T08",
+          "T13",
+          "T17",
+          "T18",
+          "T21",
+          "T23",
+          "T24",
+          "T27",
+          "T38",
+          "T41",
+          "T42",
+          "T44",
+          "T45",
+          "T46",
+          "T49",
+          "T50"
+        ],
+        "result_sha256": "40f13e53582f25cf3df6dd99f8c4c41212548966ceb757db424c21961a64cf1f",
+        "summary_sha256": "fdcea58171986d8821a2d3a907fee76a5c940896b055e40952826e37c5585e46",
+        "freeze_sha256": "ba87b7af007443fbf1dde3f3340e228b46a209491abbac6770ce863dced133f3",
+        "all_scores_recomputed_and_match": true,
+        "source_data_hashes_valid": true
+      },
+      "improved_ids": [
+        "T05",
+        "T07",
+        "T09",
+        "T11",
+        "T16",
+        "T19",
+        "T43"
+      ],
+      "regressed_ids": []
+    },
+    "fresh50": {
+      "before": {
+        "count": 50,
+        "primary_correct": 12,
+        "strict_correct": 9,
+        "readonly_cases": 30,
+        "effectful_on_readonly_ids": [
+          "U01",
+          "U13",
+          "U16"
+        ],
+        "unknown_ids": [
+          "U03",
+          "U04",
+          "U06",
+          "U07",
+          "U09",
+          "U10",
+          "U12",
+          "U14",
+          "U18",
+          "U19",
+          "U22",
+          "U24",
+          "U26",
+          "U27",
+          "U30",
+          "U33",
+          "U35",
+          "U38",
+          "U39",
+          "U41",
+          "U42",
+          "U43",
+          "U45",
+          "U46",
+          "U47",
+          "U49"
+        ],
+        "result_sha256": "35ba639e3694ea9d77dec32f226c6e0d426e366d0926b1746bf3d7519516c806",
+        "summary_sha256": "0c73e9e1b63b13951621aa1109e82afeae4dfd29b6d5797d0c8916e97e6b58c3",
+        "freeze_sha256": "0e9048f8d891b95a7b7adc90ea1d2a7ac55ebedd94af97b2a01208e891357133",
+        "all_scores_recomputed_and_match": true,
+        "source_data_hashes_valid": true
+      },
+      "after": {
+        "count": 50,
+        "primary_correct": 12,
+        "strict_correct": 9,
+        "readonly_cases": 30,
+        "effectful_on_readonly_ids": [
+          "U01",
+          "U13",
+          "U16"
+        ],
+        "unknown_ids": [
+          "U03",
+          "U04",
+          "U06",
+          "U07",
+          "U09",
+          "U10",
+          "U12",
+          "U14",
+          "U18",
+          "U19",
+          "U22",
+          "U24",
+          "U26",
+          "U27",
+          "U30",
+          "U33",
+          "U35",
+          "U38",
+          "U39",
+          "U41",
+          "U42",
+          "U45",
+          "U46",
+          "U47",
+          "U49"
+        ],
+        "result_sha256": "8a97b3202c1e9491eeed69e667f993eb29436c7cbebdedc0839d9a2642394a41",
+        "summary_sha256": "35a34393a472aa0b8077004571e261d27aee6f89592f004649c62ae05420a5dc",
+        "freeze_sha256": "7de184e2d3ceec1f6e5693ee913b029238e759edb34a92ac9c04e584fa28897b",
+        "all_scores_recomputed_and_match": true,
+        "source_data_hashes_valid": true
+      },
+      "improved_ids": [],
+      "regressed_ids": []
+    }
+  },
+  "fresh_disabled_exclusive_failure_categories": {
+    "real_effectful_action_on_readonly": [
+      "U01",
+      "U13",
+      "U16"
+    ],
+    "no_affirmed_request_recognized": [
+      "U03",
+      "U04",
+      "U06",
+      "U07",
+      "U09",
+      "U10",
+      "U12",
+      "U14",
+      "U18",
+      "U19",
+      "U22",
+      "U24",
+      "U26",
+      "U27",
+      "U30",
+      "U33",
+      "U35",
+      "U38",
+      "U39",
+      "U41",
+      "U42",
+      "U45",
+      "U46",
+      "U47",
+      "U49"
+    ],
+    "reasonable_taxonomy_dispute": [
+      "U05",
+      "U28",
+      "U40"
+    ],
+    "domain_primary_or_action_precision": [
+      "U08",
+      "U11",
+      "U17",
+      "U29",
+      "U31",
+      "U36",
+      "U37",
+      "U43"
+    ],
+    "missing_compound_operation": [
+      "U20",
+      "U23"
+    ]
+  },
+  "labels_and_production_unchanged": true,
+  "note": "All saved disabled primary flags and ordered issue lists recomputed against frozen scoring contracts; no alternative scores substituted.",
+  "fresh_fixed_proposal_audit": {
+    "case_count": 50,
+    "proposal_modes": 3,
+    "comparisons": 150,
+    "all_proposal_sets_equal_between_versions": true,
+    "all_source_hashes_verified": true,
+    "changed_pairs": [
+      {
+        "id": "U10",
+        "mode": "empty",
+        "actual_changed": true,
+        "requests_changed": true,
+        "before_intent": "unknown",
+        "after_intent": "unknown",
+        "before_requests": 1,
+        "after_requests": 0
+      },
+      {
+        "id": "U10",
+        "mode": "baseline_accepted",
+        "actual_changed": true,
+        "requests_changed": true,
+        "before_intent": "debug",
+        "after_intent": "unknown",
+        "before_requests": 1,
+        "after_requests": 0
+      },
+      {
+        "id": "U10",
+        "mode": "final_accepted",
+        "actual_changed": true,
+        "requests_changed": true,
+        "before_intent": "unknown",
+        "after_intent": "unknown",
+        "before_requests": 1,
+        "after_requests": 0
+      },
+      {
+        "id": "U43",
+        "mode": "empty",
+        "actual_changed": true,
+        "requests_changed": false,
+        "before_intent": "unknown",
+        "after_intent": "explain",
+        "before_requests": 0,
+        "after_requests": 0
+      },
+      {
+        "id": "U43",
+        "mode": "baseline_accepted",
+        "actual_changed": true,
+        "requests_changed": false,
+        "before_intent": "unknown",
+        "after_intent": "explain",
+        "before_requests": 0,
+        "after_requests": 0
+      },
+      {
+        "id": "U43",
+        "mode": "final_accepted",
+        "actual_changed": true,
+        "requests_changed": false,
+        "before_intent": "unknown",
+        "after_intent": "explain",
+        "before_requests": 0,
+        "after_requests": 0
+      }
+    ],
+    "u10_independent_public_entrypoint_reproduction": {
+      "baseline": {
+        "clauses": [
+          [
+            "同一次支付回调偶尔会生成两张收据，日志里两条请求时间差不到一毫秒。先帮我分析是不是幂等检查有竞态",
+            [
+              0,
+              48
+            ]
+          ],
+          [
+            "不要碰实现。",
+            [
+              49,
+              55
+            ]
+          ]
+        ],
+        "requests": [
+          "同一次支付回调偶尔会生成两张收据，日志里两条请求时间差不到一毫秒。先帮我分析是不是幂等检查有竞态"
+        ],
+        "intent_type": "debug",
+        "action_type": "analyze",
+        "semantic_status": "used",
+        "affirmed": [
+          [
+            "debug",
+            "analyze"
+          ]
+        ]
+      },
+      "final": {
+        "clauses": [
+          [
+            "同一次支付回调偶尔会生成两张收据，日志里两条请求时间差不到一毫秒",
+            [
+              0,
+              32
+            ]
+          ],
+          [
+            "先帮我分析是不是幂等检查有竞态",
+            [
+              33,
+              48
+            ]
+          ],
+          [
+            "不要碰实现。",
+            [
+              49,
+              55
+            ]
+          ]
+        ],
+        "requests": [],
+        "intent_type": "unknown",
+        "action_type": "unknown",
+        "semantic_status": "skipped",
+        "affirmed": []
+      }
+    },
+    "conclusion": "U10 is a causal regression introduced by this round: newly separated background and analysis both remain unresolved, and the single-unresolved-clause gate skips the model. U07/U27/U47 differences are not reproduced with identical proposals."
+  },
+  "live": {
+    "old50": {
+      "before": {
+        "count": 50,
+        "primary_correct": 43,
+        "strict_correct": 43,
+        "readonly_cases": 22,
+        "effectful_on_readonly_ids": [],
+        "semantic_status": {
+          "skipped": 36,
+          "accepted": 10,
+          "timeout": 1,
+          "low_confidence": 2,
+          "abstained": 1
+        },
+        "event_counts": {
+          "model.started": 14,
+          "model.completed": 13,
+          "model.costed": 13,
+          "model.failed": 1
+        },
+        "usage_sources": {
+          "provider": 13
+        },
+        "called_ids": [
+          "C02",
+          "C05",
+          "C06",
+          "C09",
+          "C11",
+          "C14",
+          "C23",
+          "C25",
+          "C26",
+          "C27",
+          "C29",
+          "C30",
+          "C45",
+          "C49"
+        ],
+        "all_scores_recomputed_and_match": true,
+        "source_data_scorer_hashes_valid": true,
+        "result_sha256": "fbc211ea21d61e8c1233ac3a61670ac59ea4a20dd2f915eb886ff293c178b1e0",
+        "summary_sha256": "198cc584aa0f6cfeee6a7017127599d09a7dd69636931245801180cc97b69c1f",
+        "freeze_sha256": "3f98481467a38939e33962ffe598f89828e0422d4797ad8c3184ec5d08f44d56"
+      },
+      "after": {
+        "count": 50,
+        "primary_correct": 44,
+        "strict_correct": 44,
+        "readonly_cases": 22,
+        "effectful_on_readonly_ids": [],
+        "semantic_status": {
+          "skipped": 36,
+          "accepted": 12,
+          "abstained": 2
+        },
+        "event_counts": {
+          "model.started": 14,
+          "model.completed": 14,
+          "model.costed": 14
+        },
+        "usage_sources": {
+          "provider": 14
+        },
+        "called_ids": [
+          "C02",
+          "C05",
+          "C06",
+          "C09",
+          "C11",
+          "C14",
+          "C23",
+          "C25",
+          "C26",
+          "C27",
+          "C29",
+          "C30",
+          "C45",
+          "C49"
+        ],
+        "all_scores_recomputed_and_match": true,
+        "source_data_scorer_hashes_valid": true,
+        "result_sha256": "cbe20bf5d37f0ca2470b35f37da01831d5ac5bfecbe05e600557f3c9016e188e",
+        "summary_sha256": "2bbd569392bdbf5bb13f033b7887d81a185e7aba51a5cbf26ba6d473389be6a9",
+        "freeze_sha256": "4f49d56961ea21d0c1095e3d747742144e913ce8096311cc1653ef1240455d1b"
+      },
+      "improved_ids": [
+        "C23"
+      ],
+      "regressed_ids": []
+    },
+    "prior40": {
+      "before": {
+        "count": 40,
+        "primary_correct": 35,
+        "strict_correct": 29,
+        "readonly_cases": 19,
+        "effectful_on_readonly_ids": [],
+        "semantic_status": {
+          "skipped": 26,
+          "abstained": 2,
+          "accepted": 9,
+          "low_confidence": 1,
+          "timeout": 2
+        },
+        "event_counts": {
+          "model.started": 14,
+          "model.completed": 12,
+          "model.costed": 12,
+          "model.failed": 2
+        },
+        "usage_sources": {
+          "provider": 12
+        },
+        "called_ids": [
+          "N04",
+          "N07",
+          "N08",
+          "N13",
+          "N15",
+          "N18",
+          "N22",
+          "N24",
+          "N28",
+          "N30",
+          "N31",
+          "N36",
+          "N39",
+          "N40"
+        ],
+        "all_scores_recomputed_and_match": true,
+        "source_data_scorer_hashes_valid": true,
+        "result_sha256": "0f0587e53eef4dd6fa6e3c844f2a0a96867678d65adb707c5612198ca714d407",
+        "summary_sha256": "bed099abd59f29419c50d2d46e1f69f26144cfc8c203dceca0040e71b6719c2d",
+        "freeze_sha256": "a6a34247fb2b9d54ff591957bb277f7fa706f74f0be6daceb7e5120a105a4e70"
+      },
+      "after": {
+        "count": 40,
+        "primary_correct": 34,
+        "strict_correct": 28,
+        "readonly_cases": 19,
+        "effectful_on_readonly_ids": [],
+        "semantic_status": {
+          "skipped": 26,
+          "abstained": 2,
+          "accepted": 9,
+          "low_confidence": 2,
+          "timeout": 1
+        },
+        "event_counts": {
+          "model.started": 14,
+          "model.completed": 13,
+          "model.costed": 13,
+          "model.failed": 1
+        },
+        "usage_sources": {
+          "provider": 13
+        },
+        "called_ids": [
+          "N04",
+          "N07",
+          "N08",
+          "N13",
+          "N15",
+          "N18",
+          "N22",
+          "N24",
+          "N28",
+          "N30",
+          "N31",
+          "N36",
+          "N39",
+          "N40"
+        ],
+        "all_scores_recomputed_and_match": true,
+        "source_data_scorer_hashes_valid": true,
+        "result_sha256": "eaa358e926a6c8eddc7924b28f70c6197f7a3d9ff5f23e0f7e13eef4c8e5ed11",
+        "summary_sha256": "d81899c2c88cb9f034c4cd77af8c4d1ce5b6577d4fb0f6c578548407ca488343",
+        "freeze_sha256": "7c097db2c8c894f18dae561ec7bd5b2f2c0659c74d5de81a8b36b9730b845a10"
+      },
+      "improved_ids": [],
+      "regressed_ids": [
+        "N30"
+      ]
+    },
+    "priorfresh40": {
+      "before": {
+        "count": 40,
+        "primary_correct": 29,
+        "strict_correct": 28,
+        "readonly_cases": 23,
+        "effectful_on_readonly_ids": [],
+        "semantic_status": {
+          "accepted": 15,
+          "low_confidence": 1,
+          "skipped": 19,
+          "timeout": 4,
+          "abstained": 1
+        },
+        "event_counts": {
+          "model.started": 21,
+          "model.completed": 17,
+          "model.costed": 17,
+          "model.failed": 4
+        },
+        "usage_sources": {
+          "provider": 17
+        },
+        "called_ids": [
+          "H01",
+          "H02",
+          "H03",
+          "H04",
+          "H07",
+          "H08",
+          "H09",
+          "H11",
+          "H12",
+          "H19",
+          "H20",
+          "H24",
+          "H25",
+          "H26",
+          "H27",
+          "H28",
+          "H29",
+          "H30",
+          "H31",
+          "H35",
+          "H39"
+        ],
+        "all_scores_recomputed_and_match": true,
+        "source_data_scorer_hashes_valid": true,
+        "result_sha256": "080ad60766e45d9d5a078db4003f1707676422e64c0fa0220094bb7346ecc737",
+        "summary_sha256": "e830ade5bf7928d6bd8407c1de8e0d70cee575e33e44a31b1cbd1d91324b0447",
+        "freeze_sha256": "3a19a106b7e345472f321a876643c323085ee6de93e3fb73293aee29428524b5"
+      },
+      "after": {
+        "count": 40,
+        "primary_correct": 32,
+        "strict_correct": 31,
+        "readonly_cases": 23,
+        "effectful_on_readonly_ids": [],
+        "semantic_status": {
+          "accepted": 19,
+          "skipped": 20,
+          "low_confidence": 1
+        },
+        "event_counts": {
+          "model.started": 20,
+          "model.completed": 20,
+          "model.costed": 20
+        },
+        "usage_sources": {
+          "provider": 20
+        },
+        "called_ids": [
+          "H01",
+          "H02",
+          "H04",
+          "H07",
+          "H08",
+          "H09",
+          "H11",
+          "H12",
+          "H19",
+          "H20",
+          "H24",
+          "H25",
+          "H26",
+          "H27",
+          "H28",
+          "H29",
+          "H30",
+          "H31",
+          "H35",
+          "H39"
+        ],
+        "all_scores_recomputed_and_match": true,
+        "source_data_scorer_hashes_valid": true,
+        "result_sha256": "1ef04ab81234883433773bdb82b5e441636c0299bcd9f158e62712ed12a3c218",
+        "summary_sha256": "ba62297f86f295ac6ec37d9c2f9d9460fc04ac8780678c64a29525ba1051e551",
+        "freeze_sha256": "94a9a17d24d85670488f28faddfbd7c0584ae200342962309ea5939aff8b1204"
+      },
+      "improved_ids": [
+        "H07",
+        "H24",
+        "H26"
+      ],
+      "regressed_ids": []
+    },
+    "priorfresh50": {
+      "before": {
+        "count": 50,
+        "primary_correct": 34,
+        "strict_correct": 33,
+        "readonly_cases": 30,
+        "effectful_on_readonly_ids": [
+          "T05",
+          "T11"
+        ],
+        "semantic_status": {
+          "timeout": 5,
+          "skipped": 29,
+          "abstained": 1,
+          "accepted": 14,
+          "invalid_response": 1
+        },
+        "event_counts": {
+          "model.started": 21,
+          "model.failed": 5,
+          "model.completed": 16,
+          "model.costed": 16
+        },
+        "usage_sources": {
+          "provider": 16
+        },
+        "called_ids": [
+          "T01",
+          "T04",
+          "T06",
+          "T08",
+          "T13",
+          "T17",
+          "T18",
+          "T19",
+          "T21",
+          "T23",
+          "T24",
+          "T36",
+          "T38",
+          "T41",
+          "T42",
+          "T43",
+          "T44",
+          "T45",
+          "T46",
+          "T49",
+          "T50"
+        ],
+        "all_scores_recomputed_and_match": true,
+        "source_data_scorer_hashes_valid": true,
+        "result_sha256": "9ae35235b3e21bd23f0820fb3209b2531ff9fc6b080976dcb8619135d1e54663",
+        "summary_sha256": "c43c31724ee8c6f42f819e65dd08aaf4dd41db9a9661494819167a894bc99452",
+        "freeze_sha256": "9c0aae666930a43d1b9049343c99171f1adb9addecaf8307a5216ad987d139d2"
+      },
+      "after": {
+        "count": 50,
+        "primary_correct": 44,
+        "strict_correct": 44,
+        "readonly_cases": 30,
+        "effectful_on_readonly_ids": [],
+        "semantic_status": {
+          "accepted": 18,
+          "skipped": 32
+        },
+        "event_counts": {
+          "model.started": 18,
+          "model.completed": 18,
+          "model.costed": 18
+        },
+        "usage_sources": {
+          "provider": 18
+        },
+        "called_ids": [
+          "T01",
+          "T06",
+          "T08",
+          "T13",
+          "T17",
+          "T18",
+          "T21",
+          "T23",
+          "T24",
+          "T36",
+          "T38",
+          "T41",
+          "T42",
+          "T44",
+          "T45",
+          "T46",
+          "T49",
+          "T50"
+        ],
+        "all_scores_recomputed_and_match": true,
+        "source_data_scorer_hashes_valid": true,
+        "result_sha256": "90abae3ce62ddf1a6ae9f44310e32e2843e668f895bf3d8fff9d0fd4d316e7e8",
+        "summary_sha256": "7e850652f2a3dbb4ddeab75e8ff5c87d320720024222361cc6a4cdf2b748ab79",
+        "freeze_sha256": "57441fd06afff35880b4614b6158e3b48cf8e35fbdde77bd7de80b5706320df4"
+      },
+      "improved_ids": [
+        "T01",
+        "T05",
+        "T07",
+        "T08",
+        "T09",
+        "T11",
+        "T13",
+        "T16",
+        "T17",
+        "T21",
+        "T38"
+      ],
+      "regressed_ids": []
+    },
+    "fresh50": {
+      "before": {
+        "count": 50,
+        "primary_correct": 33,
+        "strict_correct": 25,
+        "readonly_cases": 30,
+        "effectful_on_readonly_ids": [
+          "U01",
+          "U13",
+          "U16"
+        ],
+        "semantic_status": {
+          "skipped": 27,
+          "accepted": 21,
+          "low_confidence": 2
+        },
+        "event_counts": {
+          "model.started": 23,
+          "model.completed": 23,
+          "model.costed": 23
+        },
+        "usage_sources": {
+          "provider": 23
+        },
+        "called_ids": [
+          "U04",
+          "U07",
+          "U09",
+          "U10",
+          "U14",
+          "U17",
+          "U18",
+          "U19",
+          "U26",
+          "U27",
+          "U29",
+          "U30",
+          "U32",
+          "U33",
+          "U35",
+          "U36",
+          "U38",
+          "U39",
+          "U42",
+          "U45",
+          "U46",
+          "U47",
+          "U49"
+        ],
+        "all_scores_recomputed_and_match": true,
+        "source_data_scorer_hashes_valid": true,
+        "result_sha256": "0eee5360c3a40d665eed5c9710dd0c59b436b511a7bee6f48cfa0bce5ab00510",
+        "summary_sha256": "66ad5050d5f651394ac483abed1e9749ff879a3f75b17a094d9d37f57edf4d99",
+        "freeze_sha256": "9859978533019f4b38eed3965120cbc70f3aa07b31b1325ed88d49906ce705d6"
+      },
+      "after": {
+        "count": 50,
+        "primary_correct": 30,
+        "strict_correct": 23,
+        "readonly_cases": 30,
+        "effectful_on_readonly_ids": [
+          "U01",
+          "U13",
+          "U16"
+        ],
+        "semantic_status": {
+          "skipped": 28,
+          "accepted": 20,
+          "low_confidence": 2
+        },
+        "event_counts": {
+          "model.started": 22,
+          "model.completed": 22,
+          "model.costed": 22
+        },
+        "usage_sources": {
+          "provider": 22
+        },
+        "called_ids": [
+          "U04",
+          "U07",
+          "U09",
+          "U14",
+          "U17",
+          "U18",
+          "U19",
+          "U26",
+          "U27",
+          "U29",
+          "U30",
+          "U32",
+          "U33",
+          "U35",
+          "U36",
+          "U38",
+          "U39",
+          "U42",
+          "U45",
+          "U46",
+          "U47",
+          "U49"
+        ],
+        "all_scores_recomputed_and_match": true,
+        "source_data_scorer_hashes_valid": true,
+        "result_sha256": "8c7c9a3799e97541f9a494736dfe535c3221f1286e49b13376bb76ea9aa3a06b",
+        "summary_sha256": "a872e1d5ef0c972748daeb29421d0ba0bd7e83120fb043d4097f6d6560553f24",
+        "freeze_sha256": "466879bd7cf4e3a732e82c875cba0b775f13f4655b86523d547ac354805676df"
+      },
+      "improved_ids": [
+        "U07"
+      ],
+      "regressed_ids": [
+        "U10",
+        "U27",
+        "U47"
+      ]
+    }
+  },
+  "new_six_live_runs_event_counts": {
+    "model.started": 111,
+    "model.completed": 110,
+    "model.costed": 110,
+    "model.failed": 1
+  },
+  "new_six_live_runs_usage_sources": {
+    "provider": 110
+  },
+  "all_ten_paired_live_runtimes_identical": true,
+  "runtime": {
+    "model": "glm-5.3-flash",
+    "provider": "custom",
+    "intentSemanticClassifier": {
+      "enabled": true,
+      "timeoutSeconds": 5.0,
+      "minConfidence": 0.72,
+      "maxInputChars": 4000,
+      "maxOutputBytes": 4096,
+      "maxOutputTokens": 512,
+      "jsonMode": true,
+      "reasoningEffort": "low",
+      "reserveModelCalls": 1,
+      "allowUnreviewedCalibration": false
+    },
+    "supports_json_object": true,
+    "supported_reasoning_efforts": [
+      "low",
+      "high",
+      "max"
+    ],
+    "calibration_artifact": {
+      "configured": false,
+      "path_sha256": null,
+      "content_sha256": null
+    }
+  },
+  "evaluated_candidate_source_freeze_sha256": "603eee1bc53fedc4bfb240cb72d72718718502e27ea05a087136f8381666c602",
+  "evaluated_candidate_snapshot": "evaluated-candidate",
+  "offline_all": {
+    "case_count": 230,
+    "modes": 3,
+    "comparison_count": 690,
+    "all_proposals_identical_between_sources": true,
+    "source_hashes_verified_against_immutable_snapshots": true,
+    "changed_pairs": [
+      {
+        "dataset": "priorfresh40",
+        "id": "H03",
+        "mode": "empty",
+        "before_strict": false,
+        "after_strict": false,
+        "before_primary": false,
+        "after_primary": false,
+        "before_requests": 1,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": true
+      },
+      {
+        "dataset": "priorfresh40",
+        "id": "H03",
+        "mode": "baseline_accepted",
+        "before_strict": false,
+        "after_strict": false,
+        "before_primary": false,
+        "after_primary": false,
+        "before_requests": 1,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": true
+      },
+      {
+        "dataset": "priorfresh40",
+        "id": "H03",
+        "mode": "final_accepted",
+        "before_strict": false,
+        "after_strict": false,
+        "before_primary": false,
+        "after_primary": false,
+        "before_requests": 1,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": true
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T04",
+        "mode": "empty",
+        "before_strict": true,
+        "after_strict": true,
+        "before_primary": true,
+        "after_primary": true,
+        "before_requests": 1,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": true
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T04",
+        "mode": "baseline_accepted",
+        "before_strict": true,
+        "after_strict": true,
+        "before_primary": true,
+        "after_primary": true,
+        "before_requests": 1,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": true
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T04",
+        "mode": "final_accepted",
+        "before_strict": true,
+        "after_strict": true,
+        "before_primary": true,
+        "after_primary": true,
+        "before_requests": 1,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": true
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T05",
+        "mode": "empty",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": true,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T05",
+        "mode": "baseline_accepted",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": true,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T05",
+        "mode": "final_accepted",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": true,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T07",
+        "mode": "empty",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T07",
+        "mode": "baseline_accepted",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T07",
+        "mode": "final_accepted",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T09",
+        "mode": "empty",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T09",
+        "mode": "baseline_accepted",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T09",
+        "mode": "final_accepted",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T11",
+        "mode": "empty",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T11",
+        "mode": "baseline_accepted",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T11",
+        "mode": "final_accepted",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T14",
+        "mode": "empty",
+        "before_strict": true,
+        "after_strict": true,
+        "before_primary": true,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T14",
+        "mode": "baseline_accepted",
+        "before_strict": true,
+        "after_strict": true,
+        "before_primary": true,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T14",
+        "mode": "final_accepted",
+        "before_strict": true,
+        "after_strict": true,
+        "before_primary": true,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T16",
+        "mode": "empty",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T16",
+        "mode": "baseline_accepted",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T16",
+        "mode": "final_accepted",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T19",
+        "mode": "empty",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 1,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": true
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T19",
+        "mode": "baseline_accepted",
+        "before_strict": true,
+        "after_strict": true,
+        "before_primary": true,
+        "after_primary": true,
+        "before_requests": 1,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": true
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T19",
+        "mode": "final_accepted",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 1,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": true
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T43",
+        "mode": "empty",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 1,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": true
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T43",
+        "mode": "baseline_accepted",
+        "before_strict": true,
+        "after_strict": true,
+        "before_primary": true,
+        "after_primary": true,
+        "before_requests": 1,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": true
+      },
+      {
+        "dataset": "priorfresh50",
+        "id": "T43",
+        "mode": "final_accepted",
+        "before_strict": false,
+        "after_strict": true,
+        "before_primary": false,
+        "after_primary": true,
+        "before_requests": 1,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": true
+      },
+      {
+        "dataset": "fresh50",
+        "id": "U10",
+        "mode": "empty",
+        "before_strict": false,
+        "after_strict": false,
+        "before_primary": false,
+        "after_primary": false,
+        "before_requests": 1,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": true
+      },
+      {
+        "dataset": "fresh50",
+        "id": "U10",
+        "mode": "baseline_accepted",
+        "before_strict": true,
+        "after_strict": false,
+        "before_primary": true,
+        "after_primary": false,
+        "before_requests": 1,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": true
+      },
+      {
+        "dataset": "fresh50",
+        "id": "U10",
+        "mode": "final_accepted",
+        "before_strict": false,
+        "after_strict": false,
+        "before_primary": false,
+        "after_primary": false,
+        "before_requests": 1,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": true
+      },
+      {
+        "dataset": "fresh50",
+        "id": "U43",
+        "mode": "empty",
+        "before_strict": false,
+        "after_strict": false,
+        "before_primary": false,
+        "after_primary": false,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "fresh50",
+        "id": "U43",
+        "mode": "baseline_accepted",
+        "before_strict": false,
+        "after_strict": false,
+        "before_primary": false,
+        "after_primary": false,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      },
+      {
+        "dataset": "fresh50",
+        "id": "U43",
+        "mode": "final_accepted",
+        "before_strict": false,
+        "after_strict": false,
+        "before_primary": false,
+        "after_primary": false,
+        "before_requests": 0,
+        "after_requests": 0,
+        "actual_changed": true,
+        "requests_changed": false
+      }
+    ],
+    "baseline_sha256": "12ae85a38190ccd7363974dfb52d79f47a4c7bfb1a4d0daa9cb12809fb2fd361",
+    "final_sha256": "3690ad6c97318339d9bf1042ab95edbafa5bf0051567d50f4518c2e3c3586f3f"
+  },
+  "version_note": "Every numerical result here belongs to phase3 baseline versus evaluated-candidate, not any subsequent post-evaluation regression fix. Do not claim shipped-code online scores until separately measured.",
+  "new_six_live_runs_timeout_ids": [
+    "N30"
+  ],
+  "post_evaluation_delivery_fix": {
+    "status": "verified_offline_only",
+    "changed_production_files_from_evaluated_snapshot": [
+      "minicode/intent_parser.py"
+    ],
+    "production_hashes": {
+      "minicode/vector_memory.py": "23b7eb49d8dd9d4200d2586e691de64b95d25112dccc82694abbfcde805b243d",
+      "minicode/workspace_digest_cache.py": "a8b286dfdadc533ffe4f605d8b085f277f5534458007f4a9df1e2d22d3e2144f",
+      "minicode/working_memory.py": "a3a44415ec418116c14300746cbb4cae3a14a181bc634c87a2600753ecc256e5",
+      "minicode/headless.py": "134b492b31397a995cbeb062ed9fd255baa0c146b550e88befa0f78de36950a6",
+      "minicode/pipeline_engine.py": "a723e5e4416ac396aa3ce1d087452a2374d049d3c85c9a01d7f64a8eeaaf0c26",
+      "minicode/memory_path_identity.py": "6922c933334bd1c5842a54f043dae495f9e22877fbeb81e38ad9c9123a1bc732",
+      "minicode/agent_budget.py": "656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05",
+      "minicode/subagent_worker.py": "d75bfe1dbec8476431fe0349bcf5dddd96e5bf5fe6b4fab852c51e65f09065b0",
+      "minicode/reflection_evidence.py": "20a218d11fe8422ff91040a740eeb54a8d8438c8980275bd4605d259d5d60ddf",
+      "minicode/agent_protocol.py": "7a1990caec7e3202348b3b0096f07c2591997faf4039921cdfee4aeb4b63121a",
+      "minicode/cli_commands.py": "8ecbd57de6c3dc95494b4765855936b60c17171863a4da82fb2d335e87a949b4",
+      "minicode/conversation_turn_store.py": "baa88c3e198059da7a74dc7045e7309b4668c00aa178e9e00025e06234696bca",
+      "minicode/memory_candidate_consolidation.py": "4780f873dcf59add9da7838cc583dcd23e0ac753e047e22e95859b1c36e70260",
+      "minicode/central_scheduler.py": "ee2484f59aca382c66b59797eea13a07821b67820b25843b316e334cf71e0d40",
+      "minicode/smart_router.py": "851c26e57f1ddc0b610bc1d9277545d1f85fcd83be87156196ad7cd90b42b109",
+      "minicode/concurrent_tool_terminal.py": "100836593f8a777606631c4761e947f29bb25923ef0aae9ef9b5496978361114",
+      "minicode/reflection_shadow_metrics.py": "658c5b965e775a99bef60e567dff5905618d8ee3b48d734510a681f1778a3fef",
+      "minicode/hooks.py": "297bfa16396e2ee8bb183137c13e65ee1d8df019714efa0f8b9be1a1454290f4",
+      "minicode/gateway.py": "afe88bb63cfff6b3caa91c9e9bfe52127f62b43c73506c7aaec7f55028286314",
+      "minicode/task_ledger.py": "8ce185ce3a2d71edd6d0eba51c7132da4fb503daf963cda8bbec5187b58b3ce7",
+      "minicode/intent_negation.py": "b0a859b43af212f3c8562b49c9b7d24e9dc8d675ea403189f1dd29c8e061c7bc",
+      "minicode/layered_context.py": "676d61a4ca97edc36611ce444f58911daed97885ac222697366dd7e4a18ded42",
+      "minicode/evaluation_one_shot.py": "2ac08139c4d5724bdcd01bb724a67a3039bbf4e4fb68da48e26831170ed018fd",
+      "minicode/context_manager.py": "9abca65d2994ba4dcf63edde5f67686827b324fa7a7d3bdf236f81aef382c02a",
+      "minicode/task_outcome.py": "05cfaba56e85f8ce4c4ceb791a40d3750f1e31c2bc1f7ac55f572121f6c1887e",
+      "minicode/run_journal.py": "ff4f21c8817b6f53c4f43e7834ecc1c9cd2da0406ffbd80f67257e31d56a056a",
+      "minicode/cybernetic_ablation.py": "61331053da310a517b545407f651057da592ef28af64884e9df85a039805731f",
+      "minicode/subagent_types.py": "c5c2145671b5acd59a7eb9ee5642551ad57c025ffc7b83b70f86217420407d03",
+      "minicode/cost_tracker.py": "e612aac0d2a9163297791276ce40a2e9cf1af7d8260a776630c8709e588c7da9",
+      "minicode/scheduler_permissions.py": "6de89d58c55fd139321d395694f9a1b36116e6edc3c5053c0628a4e0a04e570b",
+      "minicode/storage_health.py": "21b9e50dc0211491f89ca907a744e0db08ced379ad65b3ba093c42c79a4d0ea6",
+      "minicode/config.py": "216acbe01c589429de4bce23095b041acbc861158c252804cd8b084a7c1f6711",
+      "minicode/self_healing_engine.py": "b22645309bc32b17c1b0200a9943b7d9a029c4a4faa4c86180dbb0f173849601",
+      "minicode/logging_config.py": "2d9b9079f25cfaa643f254aeb36bc6fff3f7340b16122423474cf02eff1f4a85",
+      "minicode/reflection_llm.py": "e9db58b555e23eb654967917ff5def22f54a0926bba71d16c04e8481c017aa2b",
+      "minicode/background_tasks.py": "52338e28b382cfc86a7d0a182ec44194478dfd82e8ab9d8242d7da3534aeca58",
+      "minicode/intent_semantic_classifier.py": "f65eee58da3dec0141d300f5b9dbbbb0ddd57f77b3470b2f07128b2fec560b4a",
+      "minicode/recovery_control.py": "ac3741a12ef4687ee06616f22ea0cb87009a2b06c7ebfafb30ebb83ab91c5e71",
+      "minicode/skills.py": "a555bd14e408a6ad0110ecc39b2767bb3794157c4c530b0f9929032b33b11378",
+      "minicode/advisory_lock.py": "61918bab1c9519709ebddfe52db270c0fa13015f0b2fb729c3f400c2b75e7202",
+      "minicode/memory.py": "2d09cc03b46e7c3dd01c20625220ed6f53c62d758b18dcadd89f28214f5cfb4d",
+      "minicode/agent_runtime.py": "be0ef725379ed0f54481017004687604a51300fc298959838ed5766996d7c952",
+      "minicode/verification_observation.py": "ab932fd32d030b451832e594dbffb59951b7756dc4cbfd3acf19d7653ba92c6e",
+      "minicode/intent_request_roles.py": "2a51cd945a61d30b21c0facd3c11e5f02a33bbda7e636093a10d6f99d6459d59",
+      "minicode/skill_semantics.py": "f008b3f5397245481055baade50bb445be59b9c4748baaec542b23d5edce7ad5",
+      "minicode/subagent_supervisor.py": "962552f2903481e138a59d6e77a5007a6d16ef7d028e455933cf15130c62e53a",
+      "minicode/cybernetic_supervisor.py": "859aa477f08c7c2c229487eefc884a8083751eeb00a3c410bbe5466b8ae5adab",
+      "minicode/memory_authority_io.py": "6ae3e1ac663edfcd1f367d6b61a60ab36146fb16604308eca7a17887c8fd435f",
+      "minicode/feedback_controller.py": "9767c2b623b821593653dd1fc288577dc97b550f3e62fc9d0e2f426efeb1f412",
+      "minicode/task_object.py": "1fc4428a16020601ec760dab731b45efea90e89784710fd37ec11d0da0baff02",
+      "minicode/conversation.py": "2dacb251752fa5803ac0121d981f73e816888bfdf2ccc4e259fbae05175ec2bd",
+      "minicode/local_tool_shortcuts.py": "99ad940ae83f9fcdf0cb750e6fff1ead5957c4a46a5b701de67c84dc7a56bde1",
+      "minicode/context_compactor.py": "7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7",
+      "minicode/safe_execution.py": "1032d1ba280a62b3bf6e0b9c2197cca12445a6ba562ca9c42db767e4b28cc1d0",
+      "minicode/skill_versions.py": "4f365b703c28c09ba92835e9d67acf436941a2223df64c4418bf6d13a112a29b",
+      "minicode/capability_registry.py": "338f8a9c6bb5812b6c8f78d83e743981c0fb8da3980cbc3a4b6ec7170e7adcbd",
+      "minicode/timeline_memory.py": "adc0bdb0483e82d608e0db8f0d7bfd2df3281885028cb52bb45f55a8d5f4c3b5",
+      "minicode/subagent_observation.py": "8debe3f6a5a76142a060554bac39d2437122c8334a1f80da7ceeb51163b95255",
+      "minicode/protocol.py": "8cfd4e6412b26e4781fcdfb6fbfab771a7ff806746169d91d195145f2c6346b8",
+      "minicode/agent_reflection.py": "3154869b7e819334d6d3b04ddab7923f56a101ab3386a7691c70eb9d521b7ccc",
+      "minicode/conflict_port_runner.py": "7980d498e6416eb2b3efe04f2ad187a257e3866392f4539579e357fe98f9ee55",
+      "minicode/agent_metrics.py": "3c7ef9662abef5373445bfdc86b0b0cfea0c051cc1901d1cd8d8758285223a21",
+      "minicode/progress_controller.py": "48474475e21e8188f0ebfd8f8afa8f4a094dca0cd31d419d67110736e2cb9e66",
+      "minicode/conversation_presentation.py": "54be4609427fb704545c910a06a30af8d8814b312253fc822050f8a8d6e40838",
+      "minicode/agent_loop.py": "0be9b2c318efd4ed6be7ee16f3b4d65b76f219e4fe5caac8132be87d731fc2da",
+      "minicode/task_outcome_event.py": "830df18c6d31fa261d46635c8edfcbbdb3a0040f86f55a278faa56e5ce7f0f62",
+      "minicode/intent_semantic_production_eval.py": "a63fe213184aa2a064973d07d1d484d38eb666010a667b87632294a05c511663",
+      "minicode/user_evidence.py": "e73ba4632d1ba8bd70e4fe68ca061988625aea023b9045cce5716030a934c8e5",
+      "minicode/context_isolation.py": "b8b22298132c7ce649552f5f61e91c9b725e28475aa6a4f1c4fec7d61708d4b0",
+      "minicode/manage_cli.py": "44036b1dd8b29133830c02147e1239ae3c561da3618635dfd560eab5e104a4f9",
+      "minicode/subagent_lifecycle.py": "c4df24c91ba675ab2b832d499f2f5440fb37b48eaf728c27153aeceb195be9f0",
+      "minicode/session.py": "b469a47c544b468700dcc9007dc55abc0515cc2892c06d0e2672c3d9b618a0b7",
+      "minicode/turn_cancellation.py": "1423a75023c835b211a0f2dd0e85c1e98d5fcec6910c2435c2f48b2d74daf37f",
+      "minicode/mcp_observation.py": "d822098ee1f4f61a127f740806cdaa6f8d1a7cbeeb6e3f8cbe227948142fd0b8",
+      "minicode/memory_write_contract.py": "1486c98c733d9df4d9c43bcfa2fb92ce4d95620d9b3453f30f76f6862c9e4405",
+      "minicode/capability_contracts.py": "284c985e2a6a10716a5bd1df27ed1bac54b7783185e85ca0d0a681a931801e76",
+      "minicode/cron_runner.py": "5b9e7449da2fac5ec8aab1f83da99a0ec4774d0066a0b23316e8927ad6157774",
+      "minicode/memory_approval.py": "69a2a88baebaf2ea585909bc3d387cfea4023502e23485f9734daf829bb4102c",
+      "minicode/memory_store.py": "0c56546e95b176864b2fcabdb4b38619c3068ac68c7b12c4ef38e0ae38b46783",
+      "minicode/__init__.py": "5f110bdb3db1b429904396469f93d679eefd4414b2db16767276a90917e34be3",
+      "minicode/skill_routing_turn.py": "227257f10e31a90c2b7a643f0589ce5d31928ba3fe90172ea31163de4ccf57bc",
+      "minicode/memory_persistence_event.py": "9e6d242253a5863bb3670a053de4d7aafc29127aac697b1c727c1e12fa6364bc",
+      "minicode/subagent_model_routing.py": "081a4a17df8bdb430480a32b2744c70f157d6071ec615845b2f0d69f190a470f",
+      "minicode/permission_event_contract.py": "bbf89c726f1e83f874f4d8164f1f9273ebd295d822adbe39b2fc20e88617b684",
+      "minicode/subagent_journal.py": "44452be4c0efa0e5a166cee4ba1a383032aeae4ed7fe24bc7e34516684611270",
+      "minicode/agent_intelligence.py": "f0c10a7e6e0ef3c979bbe10d0d369c3241b8556ab562b0ca0e8a852bfd4795de",
+      "minicode/memory_provenance.py": "6ed5bf0856b0c343c99d91daf88c2a8e5ca1c7df2d592ed0e4ecde589ae8aaf4",
+      "minicode/skill_evidence.py": "377f6652eee62f1b8f97def281fcb49d4ffe874ca298c15d2cf69b7538a3703f",
+      "minicode/types.py": "4afd4da75922437aa9a04a7c1cf1a0f11dd72190eed00a0eca1de82236726eeb",
+      "minicode/reflection_synthesis.py": "18d4754e2670c08c777f85507c77c852757338c04788797914959bc47e17dcce",
+      "minicode/memory_pipeline.py": "0df1c284c5055ad52e943d7229150fb8916449723fe2592663f08be0df8c2d28",
+      "minicode/memory_hybrid.py": "e317fd67ae7186bd581eb1c8defdc326079cd61ba3d53e0af832406bbfc38fde",
+      "minicode/intent_parser.py": "8c823ea09bfc7812f1c2e899fe7979fb62184857e903afc33ba0b3acc179465b",
+      "minicode/auto_mode.py": "0cd91e38895c20a3a7284581a40c162bb7af90f5cf804ee59f6e6842ae4fdfdc",
+      "minicode/model_call_control.py": "70a55003f88e3e67831a2f178982414ef09b4fa6c7d84233681ecbaa783c29dc",
+      "minicode/curator_outbox.py": "ff72bb4f1312aecdae798d713005dd73cdbd7f2c7727bf6bc5b3919175c0c30e",
+      "minicode/task_graph.py": "a4f7c5b9237ba783f52b21f8fa1a89b5c01ef89930ffad2324e1bf3a41cbc5b2",
+      "minicode/memory_curator_agent.py": "7daee651c2ebe9a9fdb7fc6bf1db1d278b4cdaabbc53710829e53467c350a03f",
+      "minicode/verification_controller.py": "08087a3d6ba96956830391f19d0c892036412829137832bbe6d8369c7d206938",
+      "minicode/task_deadline.py": "d53de69580b412640042a2f84e460ce8f2b6fa1a8a12d9b3f32f857fa3d00ac2",
+      "minicode/intent_entity_targets.py": "adea365a7b474211ae5325d0cbec0297e79f7e52e3654ac14062a140fc0b277d",
+      "minicode/context_cybernetics.py": "6d761f9a7f9dd138630d720889f87ea4d1541c0a30b180c61f261aaa359368cb",
+      "minicode/run_lifecycle.py": "a5f3c1f390a4fc8bb29b5f8cc198829ec0d2a85ea1413bc06ee2e458bc15da0a",
+      "minicode/adaptive_pid_tuner.py": "97f0d164a5c49ced28a50ef1709a73b14269b57a9817cbeda4c75bb5617d4fb7",
+      "minicode/tls.py": "36585e6557859af0c1d228163d1656af240fcf968035df9e826c54034532554d",
+      "minicode/memory_audit_contract.py": "654857642c349b03f4365bca9e3736023b990ea570e0dd1fa724aff33d168e09",
+      "minicode/agent_router.py": "4a4d0d77034076f18452dc89a3703e7d7d7ed7895a93a5da5f6b707dbf8b6127",
+      "minicode/memory_hybrid_runtime.py": "206d1ff2e13e40e582113914e66f1c4b54c72399e7697158e5e22e7b1183f83b",
+      "minicode/subagent_result.py": "ce334447c922e25c94c84af8977996ad93f417851da75534a70991de7f5f2e9d",
+      "minicode/skill_router.py": "c8875f6453e62a227e01cdf06e87395dcbc48b5a8eccccd8dd7e99517cdc631d",
+      "minicode/workflow_scope_registry.py": "3481e9f7b07873e7989697db8680fb6623313b64d5cb64a49c9c221b4542fea4",
+      "minicode/cybernetic_orchestrator.py": "904c18b3bef739c98e2f31ac879027b697428f8515563721308b145cb0193ce8",
+      "minicode/project_memory_deletion.py": "475e84310f56a27cdf83410c9d285868f5f805f10db88838f3bc80e57efd0b6a",
+      "minicode/embeddings.py": "5824f2680ca7f683c36f397a49835512b87164d4dba80622a95732301ac2905a",
+      "minicode/skill_candidate_reranker.py": "feb92999d5b920f4b8ffcfabebc4c0ed6fd60fb10773e58b4610801d22739fa8",
+      "minicode/memory_blob_store.py": "7e6f72a6294bd377bf9d7f01a57b30c7d128cdf30907aada68232d9d67089e86",
+      "minicode/mcp.py": "32a1ed3e589104a7afefe5f8718c9521715c4791fae6b36d462021cd7f0be9ec",
+      "minicode/feedforward_controller.py": "e4c59325b66cb4ccf46e1ae68f499980aaacaf8ed845a44c0bb46e76fef61805",
+      "minicode/config_migration.py": "750ec66eff00e774addef27fd4f5d858b4b3a0c29f9108a77a9398b613678da7",
+      "minicode/state_observer.py": "bcd0556645748f2a548e777bfb593630afa7acdba139c85c7d93988d36d18315",
+      "minicode/curator_schedule.py": "4cfd49e6de518e9b361fbff4ebbf9201af5c3a58aeb49998564a8d4bd02cac89",
+      "minicode/memory_injector.py": "ec1717ce7988d357993b51ca6c94e8813771260ac387fdeb45a4614f2ea6b534",
+      "minicode/decoupling_controller.py": "07630a2ec7fd5c4fcc7d6b454c88a5ef294284a8af4352ce884f92de203cdcd0",
+      "minicode/decision_audit.py": "5c7847771673750a3d458bd922c25ce78e00bf88c74aa4ad71f4e77ca75a0e87",
+      "minicode/workflow_workspace.py": "6fa14db65205ca1cc13999b90eac63ddd4f79a3a5a0cbf6c040cab153d000117",
+      "minicode/verifier_sandbox.py": "879979aada74f3da87d5c90238e31a40dd86a3ab9e4c66bf76868c167b6e568c",
+      "minicode/memory_approval_interpretation.py": "683eb7c51560480d7d3ae70ff6a285817a150b0026cb25876e6adbec5335a8c4",
+      "minicode/memory_hybrid_freeze.py": "627a6d8ad8eaca80629b3a8fa0cbe64597fcda60abc7e04f7b298cfb2df752a5",
+      "minicode/pricing.py": "ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0",
+      "minicode/conversation_deletion.py": "6ce8f1abdb4464f7749d87e3d25b089270207d74c78a265168fa6652a6a3ec6f",
+      "minicode/tooling.py": "f05490381ddf143773d14c662df36662682d443b3090a7e4989e46c833ae76ae",
+      "minicode/multi_agent_contracts.py": "53ce5fecfd396f9b637164b157a502a121f2e666a5715c41314e89f93de19089",
+      "minicode/run_events.py": "d97dcb909e176183ce1461f342e35e13524a34290937fa95b6b10c11fc314f67",
+      "minicode/permissions.py": "b447453f68999ea2698a377fefa4788354762d95531f89fbb025e790118299eb",
+      "minicode/file_review.py": "6f65cf8250c4bb02a32b258aa215b5c6d34184ebb0f1a3c4b764f88566b6c324",
+      "minicode/workflow_runner.py": "fe92ee0f79f05103afedc32bd96fbaea03f29744a251f0c8b9f7022580e9acd5",
+      "minicode/deletion_store.py": "09bc0c9d4ec5ac942b966058e27338b696d39f98c718365e40336e8e36e5612e",
+      "minicode/intent_constraints.py": "8d5ebe0a663935ef8950c0ad59f1254759a4ab90831f2634b4806d58d98b16f3",
+      "minicode/memory_hybrid_promotion_contract.py": "9f6080871fb4ca07438cd33fb7b1fb04c6fb5aaa44c25c3c7a9055db05c966a0",
+      "minicode/verification_policy.py": "684c8de3e96333b5dcf70cca578fd02727ad1eba577809d9722bd325106eb8d0",
+      "minicode/install.py": "0b355ff13b0825cda13e696b8386d4de90a466cf0c97089e2c71c89af1f201b9",
+      "minicode/skill_feedback.py": "d2a2ba7141530f1a71d19ca3bcbed0bddf00ae902aaaab0c2b560e01171f675e",
+      "minicode/prompt.py": "cbdbccd5bc4e2375623e94bc9e9581b6bdaee6e8642b70c7adb55fa41bca3ef1",
+      "minicode/workspace.py": "f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4",
+      "minicode/mcp_current_state.py": "063fed4b7e4a8ed117be46482fa1aeb876cb3fcffc24fb69073ce3a96553cbcc",
+      "minicode/cost_control.py": "9812eed4f2aeeac25284a00cbdae8fb143c860c6e8f2ab516fb1bd8103f05523",
+      "minicode/openai_adapter.py": "a828d8415aac1093ec1c7004aa9dd44b8c7edaf02fa9dda258a91f5222b890be",
+      "minicode/memory_hybrid_release.py": "eaad5f66c431a39ba79894062321c84a65258abd09562aefa34b134d7818fdb3",
+      "minicode/deterministic_verifier.py": "3905e34cdc367499b1d62c3b4652198ef235c6811a9b4b1d5fef690bbec67041",
+      "minicode/scheduler_audit.py": "d9c75c0ca9f24e8f25bab6b8321c4184ef319e2ed50f28e5975623a72c5d1f65",
+      "minicode/session_store.py": "1ff9e56bff4df32838b119c006cbba3ca38d5026d63581703d83887a2ab94856",
+      "minicode/intent_semantic_calibration.py": "9581457ded9fc03c3ad2d6ce50d1637babd447ae9aaa76137a452ae7196e63ab",
+      "minicode/main.py": "d81d27ec69ec907e3dbb3a66ad208e131eeae106243fc7c989901bfb10483514",
+      "minicode/project_facts.py": "0c4ea763c5759e71538f8ef91e17fbf6d6db3a6f9209fcbdfba25ac2c1fadf99",
+      "minicode/memory_retrieval.py": "8aa6dd59f0536d27e96b817fe184cd354510d84015d7c22ec8198bd9570d9b03",
+      "minicode/model_switcher.py": "adc125436103367f3ac0cafd18c96a5451ee0aad6b99fe4e36c55ee8066c6954",
+      "minicode/domain_classifier.py": "be5aba8aa475c3152457667466ec9514199d97553dc2c3e05f5d572c0a50bfd4",
+      "minicode/memory_reranker.py": "dd868e80170e3cd0fb96afe383f8a0db69cddaa770e7125c3f05b2b7884e20b2",
+      "minicode/model_registry.py": "faebdcefe62429ae4712b643ee570b2aa8b51d1b715812e88c6ae33daa6478a1",
+      "minicode/reflection_claim_selection.py": "2bf8e0b98f4a9304b4a4ba5332895a4fd258d201491607dd40339f6d9b27cd95",
+      "minicode/memory_authority_publisher.py": "3ae33616aa46b60cccbef75662be7e4f1210a7d2d02abe4f46610619da25b77a",
+      "minicode/predictive_controller.py": "14bf6ed12ead42adf2ece50b3ba23da158395e6a5e2687dc1ebdd98bb5c34d41",
+      "minicode/env_file.py": "2d0893a152243c20f0494610bade547b690b02b956ee8c7cf412d967ba21306a",
+      "minicode/scheduler_trace.py": "413bd9d2cd985223a3287790bba627ac4363bf674eb2a0454e33bf5ea37e56f6",
+      "minicode/prompt_pipeline.py": "afb22e1a40a4b7014dd0182df2950ab886cc697d9f4fc49b144e57b7ad83ab05",
+      "minicode/mcp_event_contract.py": "583dc481a8e2d1ff30b9b3d6cf091a7c06bed91e14d7580f4399967745a25daa",
+      "minicode/reflection_replay.py": "a3894681706bf4a4aec59ad0bf6f9812dde1acb0f202c816f647b721464d1927",
+      "minicode/conflict_resolution.py": "00b18249dbd790d1b403ff92a1299ae393ab456043b7da03c69289aeed472e47",
+      "minicode/scheduler_artifacts.py": "9c4f7653fd586d0df5f9a36904952b98a3d64730265b3560c8b819f73e188469",
+      "minicode/skill_authoring.py": "bdb9658896917d356ab3e9fbf06a1cc3061219df47b400c11063fed2f4c4a33c",
+      "minicode/stability_monitor.py": "9059beb4801fe1d5c53998cb3bd9a24b35d896a86fd27e637dadf83a602f02bc",
+      "minicode/scheduler_path_policy.py": "d935b785090381f1de8a71c42a064207c9b86e8b5b560e7b095a341a6bcb27f8",
+      "minicode/workflow_finalization.py": "5d23b0e966806b648c36170e55eb449bef433739bd24c4bb66e07ed62d71c911",
+      "minicode/state.py": "9bc1305696b1e3b6d6046125863dd118a5d945a8fe9b15f592828fa121433d4e",
+      "minicode/anthropic_adapter.py": "c1db1f08401e2c1ac3b52d7695299e88bb480da5070c3095958590b003eb0884",
+      "minicode/intent_semantic_calibration_cli.py": "75d9bc4fffb94bfadc28b7d73985d35adcd9e4ad2a8cfcd93ca2a18d49751b5b",
+      "minicode/mock_model.py": "8c851c22b03111621d0b12a1948fb328488f2ceeddcebdc04aed464ffa7b885f",
+      "minicode/api_retry.py": "a7565959f44ce3d2185a8211f86226e85fcfdcaa53e337fbbf891695272cd9a4",
+      "minicode/memory_lexical_policy.py": "513af65d7981987bd48e62f03f05198a6eee84096fef2967fe4b110a6c2d99e1",
+      "minicode/user_profile.py": "8e21a26ee2c9f63a48f3c42452f5a4250c09b78d54d2f11d41ed6ff037017298",
+      "minicode/task_tracker.py": "4647507a4bfbc0b9125d92c47197135a252f0497f158e4a3d44664f690cf39ff",
+      "minicode/subagent_mailbox.py": "f3131c01229463164062218c24d5dc196d5517ce8100957d92dba91d1b5e8e1d",
+      "minicode/history.py": "5dbcc66dc8715053f58ff2b0ab91be8dd9a92fa19cb0c6ca14a6d25e9fb4809f",
+      "minicode/tty_app.py": "33071d058f0f7f8fc7f6573e7301c12b3f4498a3ccaaf926ffcc6a961b02728b",
+      "minicode/permission_approval.py": "a8666024b8c342d713697dd346cd0b2b916f08b3c6654e0a6214cf8469594141",
+      "minicode/tools/bounded_resolver.py": "55275c0acb527036f6691646bd689d9be54e1877774c371daf28d59ee89f5523",
+      "minicode/tools/task.py": "3efb1522dddc690fe3361888b84f6a46b46176a45f21ff78f72e7025712e35cd",
+      "minicode/tools/git.py": "172bea83c3022eac3d8d7ca9b277bd9604078d79420b775b0a7041124c6007d1",
+      "minicode/tools/archive_utils.py": "686aaf84f236539e78681d21351e26989735e8c72369aacb69d5c823972bdf48",
+      "minicode/tools/run_command.py": "1468b1979be8df4556ac63231f122f5ca0075d92fb563a6669b5f6ae74245b91",
+      "minicode/tools/batch_ops.py": "3e2d0885fdb616049ed6f198859402542013bc6161402d4c3e39b6a940d38d5c",
+      "minicode/tools/grep_files.py": "79bf6f3bc6adb4bb6616607458db876a5255188ad7609c07348ec62b8094848e",
+      "minicode/tools/subagent_notes.py": "dc10ef17035665d9b88f8f2a152c6da381a51b64aeffc15db68d441a9be7b9dd",
+      "minicode/tools/text_utils.py": "e396bad46fdaf86116c22695431969dd572d0c0ea7b4d498d90b93edae2d8dd7",
+      "minicode/tools/search_providers.py": "a5e03a850ea3dd54d130f07816b4368ce177c640596b18f32bbd822c27402df8",
+      "minicode/tools/file_tree.py": "ce8c0ffeb14dc032137e6f04acfe49cf848f14aa9809d0134be42a0675248895",
+      "minicode/tools/code_review.py": "d1cbaefc9463f845ec89263073388e44cea1b802453d1daa5ae497beb81b0f65",
+      "minicode/tools/web_fetch.py": "7ee2c130b96dbc6b9fe3f874204c9be6035ec3c9d97ea815b3e7614dc3f11ef0",
+      "minicode/tools/edit_file.py": "47714a6265f61455c1631fc7f2935dfed293892c317e6d8b6cfa928ab610afc7",
+      "minicode/tools/encoding_utils.py": "80c5319abaf5560760283ee8be73fb50bdc569e00afd98f29694e270e6c22598",
+      "minicode/tools/csv_utils.py": "c86c0c3c5464e1769b084e587a2c19bbaf2e04f7c71989cea05a85e10f168488",
+      "minicode/tools/file_line_count.py": "d553019b3ff62fd8fc62faf1e8c27b470682657cd48353a7d65bf83ac023bbcf",
+      "minicode/tools/network_safety.py": "63592d4bd565b2de17f71b1d42c5342a10555a10c60fc392172644db91e7a079",
+      "minicode/tools/__init__.py": "f15edace81b45c736cf8bdeae99129c797e2844f7665f974ca3c598b2f36ef90",
+      "minicode/tools/ask_user.py": "a5480a576ad05e7aee1b3fb94c3fa08553b9a6e4ea9826fedd2f3c20cd2cda56",
+      "minicode/tools/load_skill.py": "e35050e3a527b5bb354c9008fea56bcb31e714fe2aa36d915f1a3b38c96bd69f",
+      "minicode/tools/propose_skill.py": "297ad93638a4ed968f49f85da044f72188812845ee7c14f362f8a6413df084d0",
+      "minicode/tools/patch_file.py": "1207ab305f3e3ebd711b2280dd8db70b810cdf14e92c655ca1c62ef824155490",
+      "minicode/tools/http_utils.py": "121d3a5cd30b1c2fec92563a54a9fb0ad676bcc9baa281f1722f38526ccfb206",
+      "minicode/tools/test_runner.py": "2a709671ff4398574709794b6b104ef5524ec149f6b0a8248d31b891f6ee80e0",
+      "minicode/tools/diff_viewer.py": "615052874fa12370546a3b7719ad294241798854166c10d7d32e096658004450",
+      "minicode/tools/regex_utils.py": "20d94dca3631c3844c1e9c7c44d3a8662cab37399581966250d7f2cd89168e10",
+      "minicode/tools/todo_write.py": "42f6f9210fd2b5c131cf03bab615aa053d13e7f1219fdc78fc8a003475453328",
+      "minicode/tools/crypto_utils.py": "0722b53482aa49801b06d3c317b5dd870208ad3777f4d3f007159ec351f26206",
+      "minicode/tools/read_file.py": "adf037b53cfa023948661bc95a89c47a00360c79835dcac42591081cdc95565d",
+      "minicode/tools/list_files.py": "7b991cbf1cf8aa44ccce733dbbe2d8d7bf9f62b9c4e83cf9a60b49853558b953",
+      "minicode/tools/web_search.py": "6cf95bf1d2c5b685ea5df83d1a6ebbf226dc7aab28ba131dabdece86c4951e0e",
+      "minicode/tools/json_utils.py": "34ddd350c9927c8b54dadfe1d0d93dc44303f0ce3064fbd9c95b87f76f22540d",
+      "minicode/tools/write_file.py": "f4f810fa21f39377a209327cc40b5396a08b183f2aae6492a35fc0168638adbf",
+      "minicode/tools/code_nav.py": "ed45ffc4caefc9c2be4b8d070c820f0962daa7ca0a04c2af7ee50c6ad3deccd9",
+      "minicode/tools/modify_file.py": "07041564f8dab0900a6d2293c965ea6da643cc8f3694815808b57d545f4dc778",
+      "minicode/tui/screen.py": "4c4c96732c4cc409e4674bf853a6b0074f8eade0044aea7c191d6ee828190faf",
+      "minicode/tui/tool_helpers.py": "3000ff2bba19be53a2495b4d4b11a0aef928f42b3f681b60734d4dc714ac6dfd",
+      "minicode/tui/tool_lifecycle.py": "ad4aef325c1e3d8fb24a105fe83e2953b5e657c19a35b6743dd32d9c3664a262",
+      "minicode/tui/theme.py": "6d16eaf79f28a29c68007133627eb5802b1b0fbd49438318f43c9b336247ed7a",
+      "minicode/tui/transcript.py": "605dd7fe472262fcdf140140651ff55fffeebab52b994fd6725cd10207267973",
+      "minicode/tui/ui_hints.py": "c739ead18b6aa9a5750dc79ebcc004b4fef729d4e02ab7a5e8106475731848ac",
+      "minicode/tui/renderer.py": "3b671ccd1dc6e88b2de02dd5e83bb5c6d59227a8673f8dce1b8f0123ac53100d",
+      "minicode/tui/event_flow.py": "1e1d474e8d46520d5e0a86be249ba3006c3f61bff7cc4ea0c6eeadee3a228021",
+      "minicode/tui/__init__.py": "de0a644af7b5940114b4ba672632e9d08adef2e50ac9f29e5369638d64f4a45f",
+      "minicode/tui/types.py": "73a3360ed8e6a57e455e9afce4f3d40d686c509df3aaf22ab738dd3207c8d076",
+      "minicode/tui/input_parser.py": "11b179b95f966817ae78a337d05e650e4dc7119f69f1cd62d39bf5dfd1ede03a",
+      "minicode/tui/runtime_control.py": "0b7eb7e7c1b3f21fd55a4877036939a61caf5dac8590b3ea4e9433ca55f02e51",
+      "minicode/tui/markdown.py": "61ca07981760768fae46aafd70179e223ce5031ee7d225f0779562b46b65fbff",
+      "minicode/tui/input.py": "f8e286c31f7d2ded3a5623f411acde48cac31125b4cbd22ba8a653a3573c49eb",
+      "minicode/tui/input_handler.py": "8e9d3386fb64b75a55dba164292e5e81b974c473c4dbb067006239a71e48bbe4",
+      "minicode/tui/navigation.py": "f211a7666524101ea34cd4d2b119a388f2a19fb44a87bf65dae7272634a11f1a",
+      "minicode/tui/chrome.py": "55fa68fbbd39db9317da0548a1edee272d0bd47a1f4d71347ca64f83bc35ca1c",
+      "minicode/tui/session_flow.py": "7d9dbde22c026f65978cbff2ff4c381657484fdb4c872b1024e97c3ac7616f80",
+      "minicode/tui/state.py": "60a20657a3a46375a8dcf55e0b349d27e94426c5c258ee3a43c9f1a28f87530f",
+      "minicode/web/change_feed.py": "cc26b60c2812ec8bbd2619ae4dc58e4d6493dafb3ff1610955b92455e0468e49",
+      "minicode/web/request_guard.py": "faa6c392c6bb3bd2b43822ae9dcb4d501fad6c2e76ebe65877235bcd9181c15b",
+      "minicode/web/permission_http.py": "bfa2f062135a77652b7911d80db547f39db6e7237c840906e2f1dc30533944dc",
+      "minicode/web/chat_http.py": "4d1b7623d6f05ba2e3caa113846dbe63b3ee525a79fab56613f1dac827ddfcd2",
+      "minicode/web/chat_stream.py": "b067232d3de9169f64b8ab3801c75d1bbe4f1c80580a366001a9b2b94c60fa57",
+      "minicode/web/context_aggregation.py": "e75b2203a021b76326dbf5a43813a5b14902de3cc54c1efc51871bdbeeb76d00",
+      "minicode/web/__init__.py": "03b2b00e5ab44d3c8c54cd09d3e4ee94bd180eca564e2de770aa5dd2811603e8",
+      "minicode/web/mcp_current_projection.py": "d61ecdb5f6a1cde8347923787f19ac4857a44c350df14c77be120ffb302319c1",
+      "minicode/web/mcp_runtime_aggregation.py": "9876b0cdf40d00bc22e6b85ec93a13d5a96a13c27b1e8f70f3fd2cef1e4ef1c6",
+      "minicode/web/storage_health_http.py": "14ec6f907ed16c41fb2f550a2c99557135079e2ec99d7bf139ca7fdc2773a8ff",
+      "minicode/web/event_stream.py": "f6d70d13e04b0746811301d11bfacd681613e199518fa34b9b8763dacb30d728",
+      "minicode/web/http.py": "4b000f6d77a517fca7ade094cda54a1a7efdbc2aeb1c8b04b98f54dab1c0519a",
+      "minicode/web/memory_approval_http.py": "f3e8a047d6dff7fce4142eba5226bf698693b1f3f6bd301137c5978bf9f30ded",
+      "minicode/web/data_management_http.py": "6a2d478157fa02fe0c9f7548d8bb795f90fbe7bfc218e976a0fb56e3f55757d4",
+      "minicode/web/cost_aggregation.py": "5673896113e42e304cc67c85b4a4a277e7125dfe6e0468cd5091d7c3f3382673",
+      "minicode/web/tool_aggregation.py": "4094cc6b666e75ab314d3f9479ad28532ba9ac834114724fe0bcb3eb84dbcc2c",
+      "minicode/web/read_model.py": "67b5e472a1dbec3a87808d150e1fa7252bb86e00b86f370968be960914d8f8a5",
+      "minicode/web/dashboard_prototype/server.py": "2077ad3aded630535269156c86cb7320d708360ab654b025434d547c83ed6a6a"
+    },
+    "original_evaluation_files_hash_checks": 60,
+    "all_original_results_summaries_and_freezes_unchanged": true,
+    "evaluated_source_snapshot_unchanged": true,
+    "identical_proposal_comparisons": 690,
+    "only_changed_case": "U10",
+    "changed_pairs": [
+      {
+        "id": "U10",
+        "mode": "empty",
+        "before_intent": "unknown",
+        "after_intent": "unknown",
+        "before_requests": 0,
+        "after_requests": 1
+      },
+      {
+        "id": "U10",
+        "mode": "baseline_accepted",
+        "before_intent": "unknown",
+        "after_intent": "debug",
+        "before_requests": 0,
+        "after_requests": 1
+      },
+      {
+        "id": "U10",
+        "mode": "final_accepted",
+        "before_intent": "unknown",
+        "after_intent": "unknown",
+        "before_requests": 0,
+        "after_requests": 1
+      }
+    ],
+    "independent_u10_three_source_reproduction": {
+      "phase3_baseline": [
+        {
+          "proposal": [
+            "debug",
+            "analyze"
+          ],
+          "requests": [
+            "同一次支付回调偶尔会生成两张收据，日志里两条请求时间差不到一毫秒。先帮我分析是不是幂等检查有竞态"
+          ],
+          "affirmed": [
+            [
+              "debug",
+              "analyze"
+            ]
+          ],
+          "negated": [
+            [
+              "code",
+              "update"
+            ]
+          ],
+          "read_only": true
+        },
+        {
+          "proposal": [
+            "code",
+            "update"
+          ],
+          "requests": [
+            "同一次支付回调偶尔会生成两张收据，日志里两条请求时间差不到一毫秒。先帮我分析是不是幂等检查有竞态"
+          ],
+          "affirmed": [
+            [
+              "code",
+              "update"
+            ]
+          ],
+          "negated": [
+            [
+              "code",
+              "update"
+            ]
+          ],
+          "read_only": false
+        },
+        {
+          "proposal": [
+            "code",
+            "create"
+          ],
+          "requests": [
+            "同一次支付回调偶尔会生成两张收据，日志里两条请求时间差不到一毫秒。先帮我分析是不是幂等检查有竞态"
+          ],
+          "affirmed": [
+            [
+              "code",
+              "create"
+            ]
+          ],
+          "negated": [
+            [
+              "code",
+              "update"
+            ]
+          ],
+          "read_only": false
+        }
+      ],
+      "evaluated_candidate": [
+        {
+          "proposal": [
+            "debug",
+            "analyze"
+          ],
+          "requests": [],
+          "affirmed": [],
+          "negated": [
+            [
+              "code",
+              "update"
+            ]
+          ],
+          "read_only": true
+        },
+        {
+          "proposal": [
+            "code",
+            "update"
+          ],
+          "requests": [],
+          "affirmed": [],
+          "negated": [
+            [
+              "code",
+              "update"
+            ]
+          ],
+          "read_only": true
+        },
+        {
+          "proposal": [
+            "code",
+            "create"
+          ],
+          "requests": [],
+          "affirmed": [],
+          "negated": [
+            [
+              "code",
+              "update"
+            ]
+          ],
+          "read_only": true
+        }
+      ],
+      "delivery": [
+        {
+          "proposal": [
+            "debug",
+            "analyze"
+          ],
+          "requests": [
+            "同一次支付回调偶尔会生成两张收据，日志里两条请求时间差不到一毫秒。先帮我分析是不是幂等检查有竞态"
+          ],
+          "affirmed": [
+            [
+              "debug",
+              "analyze"
+            ]
+          ],
+          "negated": [
+            [
+              "code",
+              "update"
+            ]
+          ],
+          "read_only": true
+        },
+        {
+          "proposal": [
+            "code",
+            "update"
+          ],
+          "requests": [
+            "同一次支付回调偶尔会生成两张收据，日志里两条请求时间差不到一毫秒。先帮我分析是不是幂等检查有竞态"
+          ],
+          "affirmed": [
+            [
+              "code",
+              "update"
+            ]
+          ],
+          "negated": [
+            [
+              "code",
+              "update"
+            ]
+          ],
+          "read_only": false
+        },
+        {
+          "proposal": [
+            "code",
+            "create"
+          ],
+          "requests": [
+            "同一次支付回调偶尔会生成两张收据，日志里两条请求时间差不到一毫秒。先帮我分析是不是幂等检查有竞态"
+          ],
+          "affirmed": [
+            [
+              "code",
+              "create"
+            ]
+          ],
+          "negated": [
+            [
+              "code",
+              "update"
+            ]
+          ],
+          "read_only": false
+        }
+      ]
+    },
+    "u10_delivery_matches_phase3_baseline_under_all_three_proposals": true,
+    "known_limit": "The original model admission still accepts a forced wrong CODE/UPDATE or CODE/CREATE proposal on U10. Restoring its pre-round entrypoint does not establish safe rejection of every model misclassification.",
+    "same_byte_test_proof": {
+      "status": "PROVEN",
+      "fixed_passed": 12,
+      "evaluated_candidate_failed": 3,
+      "evaluated_candidate_passed": 9,
+      "test_sha256": "f24e7baf4aa80888324011ae001b58c50c33d3ee1359b9bdff6ec695fac324de",
+      "proof_sha256": "020cd7c8100b56e4570d07ddf6ce334375133c20143b9ec44619530311c90241"
+    },
+    "new_live_run_performed": false,
+    "no_new_blind_score_claimed": true,
+    "original_fixed_proposal_results_unchanged": true,
+    "delivery_source_freeze_sha256": "e4d5fa5965c81a00d01dd3b37c311f83f4462cbb549df4962278f0e3e3a3f2cd",
+    "delivery_source_verified": true,
+    "delivery_regression_passed": 2697,
+    "delivery_regression_seconds": 59.6,
+    "delivery_regression_log_sha256": "082da538a57310a93bd82eeb1193dc4786e853b911b4eba63df1d42df1811d2e",
+    "three_regression_proofs": [
+      {
+        "file": "roles-proof.json",
+        "sha256": "8f8ef06838c18c96b99c925a0eab3f67dc8d3477a331f2c1f7e18498f8e4042c",
+        "status": "PROVEN",
+        "test_hashes_still_match": true
+      },
+      {
+        "file": "recall-proof.json",
+        "sha256": "0a6ccb1b0dab3890247764ee9b07bb5678a7e9d7214db83000eba1bf588ebbf0",
+        "status": "PROVEN",
+        "test_hashes_still_match": true
+      },
+      {
+        "file": "analysis-boundary-proof.json",
+        "sha256": "020cd7c8100b56e4570d07ddf6ce334375133c20143b9ec44619530311c90241",
+        "status": "PROVEN",
+        "test_hashes_still_match": true
+      }
+    ],
+    "offline_delivery_sha256": "2fa5b59eca83c8634ee42404cbb9548ba260100d5c8a96f661e3bd05ac2a8390"
+  }
+}

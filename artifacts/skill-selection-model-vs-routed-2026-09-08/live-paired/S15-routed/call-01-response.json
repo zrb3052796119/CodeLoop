@@ -1,0 +1,46 @@
+{
+  "index": 1,
+  "operation_id": "modelop_dbdd771f3c774b409b44c056f128631e",
+  "input_sha256": "335c6f13a281cdb1536f6c29db5eaaaed8fc159b48f94c9cdd9f62d1a1fb8254",
+  "provider_message_projection_sha256": "335c6f13a281cdb1536f6c29db5eaaaed8fc159b48f94c9cdd9f62d1a1fb8254",
+  "request_file": "call-01-request.json",
+  "completed": true,
+  "elapsed_ms": 5454.250084003434,
+  "response": {
+    "type": "tool_calls",
+    "content": "",
+    "kind": null,
+    "calls": [
+      {
+        "id": "call_-7283801502181745205",
+        "toolName": "load_skill",
+        "input": {
+          "name": "git/commit-hygiene"
+        }
+      }
+    ],
+    "contentKind": null,
+    "reasoningContent": "The user wants me to use the git/commit-hygiene skill to handle their changes: verify actual diffs, stage only files related to the current fix, check no local secrets are committed, then create a clear commit.\n\nFirst, I should load the routed skill git/commit-hygiene as instructed.",
+    "diagnostics": {
+      "stopReason": "tool_calls",
+      "blockTypes": [
+        "tool_calls"
+      ],
+      "ignoredBlockTypes": []
+    },
+    "usage": {
+      "input_tokens": 7214,
+      "output_tokens": 79,
+      "cache_read_tokens": 6976,
+      "cache_creation_tokens": null,
+      "source": "provider"
+    }
+  },
+  "usage": {
+    "source": "provider",
+    "inputTokens": 7214,
+    "outputTokens": 79,
+    "cacheReadTokens": 6976,
+    "cacheCreationTokens": null
+  }
+}

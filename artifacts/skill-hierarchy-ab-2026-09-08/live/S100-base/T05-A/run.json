@@ -1,0 +1,196 @@
+{
+  "task_id": "T05",
+  "scale": "S100",
+  "variant": "base",
+  "arm": "A",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-base",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": null,
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": false,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283562564561141065",
+      "name": "search_skills",
+      "args": {
+        "query": "artifact upload timeout budget pipeline step"
+      },
+      "ok": true,
+      "output_sha256": "16f838abef5b55c9b6475d2b1fc25a91899018e91056f791aa8bdd41ceff3903",
+      "output_chars": 3993,
+      "seen_qualified_names": [
+        "ci-pipeline/timeout-tuning",
+        "object-storage/upload-timeout-profile",
+        "ci-pipeline/circuit-breaker",
+        "ci-pipeline/connection-pooling",
+        "ci-pipeline/debugging-playbook",
+        "ci-pipeline/idempotency",
+        "ci-pipeline/migration-job-runner",
+        "ci-pipeline/pagination",
+        "ci-pipeline/rate-limiting",
+        "ci-pipeline/retry-backoff",
+        "job-scheduler/flaky-cron-playbook",
+        "message-queue/bounce-back-queue",
+        "auth-service/timeout-tuning",
+        "cache-layer/timeout-tuning",
+        "code-review-checklist",
+        "database/config-management",
+        "database/schema-migration",
+        "database/timeout-tuning",
+        "graphql-api/timeout-tuning",
+        "graphql-api/upgrade-runbook",
+        "http-client/timeout-tuning",
+        "job-scheduler/timeout-tuning",
+        "job-scheduler/upgrade-runbook"
+      ],
+      "seen_directories": [
+        "",
+        "auth-service",
+        "cache-layer",
+        "ci-pipeline",
+        "database",
+        "graphql-api",
+        "http-client",
+        "job-scheduler",
+        "message-queue",
+        "object-storage"
+      ],
+      "elapsed_ms": 77.02066702768207
+    },
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283562564561141064",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "ci-pipeline"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "aaa4c183e73c1c5357cc5cc7e16f7c2220ba8139daf40d2a99a3e7bedd4f21d8",
+      "output_chars": 1405,
+      "seen_qualified_names": [
+        "ci-pipeline/circuit-breaker",
+        "ci-pipeline/connection-pooling",
+        "ci-pipeline/debugging-playbook",
+        "ci-pipeline/idempotency",
+        "ci-pipeline/migration-job-runner",
+        "ci-pipeline/pagination",
+        "ci-pipeline/rate-limiting",
+        "ci-pipeline/retry-backoff",
+        "ci-pipeline/timeout-tuning"
+      ],
+      "seen_directories": [
+        "ci-pipeline"
+      ],
+      "elapsed_ms": 0.3031250089406967
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283542017437597052",
+      "name": "load_skill",
+      "args": {
+        "name": "ci-pipeline/timeout-tuning"
+      },
+      "ok": true,
+      "output_sha256": "4fceb1b84b27c4540bf6979d20e7e02f35ec79794171062e06207e0f48947b04",
+      "output_chars": 1622,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 1.7570829950273037
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283542017437597052",
+      "requested_name": "ci-pipeline/timeout-tuning",
+      "qualified_name": "ci-pipeline/timeout-tuning",
+      "ok": true,
+      "body_chars": 1408,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "24cfc4e517b044dc3c0d6ab841ab88edb0fa3fa60d032bc4b5d84d5533f2301a",
+      "elapsed_ms": 6745.747584034689,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "search_skills",
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7628,
+        "outputTokens": 95,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "7725c74fcfcb4b912fa86f03e006799884b78e6a041e2118cd1a86e537c91314",
+      "elapsed_ms": 4326.305916998535,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 8802,
+        "outputTokens": 18,
+        "cacheReadTokens": 7616,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "8a32b6ca33c8204fed0e777be4e9388b61ea558800df5e0206ab1ae72fad9afd",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "eb0944ed7c97bcc09f81e478c472c4b1364484e2d8c716e700c04f9264607488",
+  "system_prompt_chars": 10893,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 16430,
+  "output_tokens": 113,
+  "routing_events": [],
+  "elapsed_ms": 11702.26874994114
+}

@@ -1,0 +1,185 @@
+{
+  "task_id": "T06",
+  "scale": "S1000",
+  "variant": "stale-summary",
+  "arm": "B",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-stale-summary",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283496937460857396",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "cache-layer"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "6f29e26d3bdc6b2c390f4633bde237d41b30a11d4ac718ddcc30bfb8da6da518",
+      "output_chars": 3202,
+      "seen_qualified_names": [
+        "cache-layer/backpressure",
+        "cache-layer/batch-processing",
+        "cache-layer/caching-strategy",
+        "cache-layer/circuit-breaker",
+        "cache-layer/config-management",
+        "cache-layer/connection-pooling",
+        "cache-layer/dead-letter-handling",
+        "cache-layer/debugging-playbook",
+        "cache-layer/error-mapping",
+        "cache-layer/idempotency",
+        "cache-layer/observability",
+        "cache-layer/pagination",
+        "cache-layer/performance-tuning",
+        "cache-layer/rate-limiting",
+        "cache-layer/retry-backoff",
+        "cache-layer/schema-migration",
+        "cache-layer/security-hardening",
+        "cache-layer/testing-strategy",
+        "cache-layer/timeout-tuning",
+        "cache-layer/upgrade-runbook"
+      ],
+      "seen_directories": [
+        "cache-layer"
+      ],
+      "elapsed_ms": 5.902040982618928
+    },
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283496937460857395",
+      "name": "search_skills",
+      "args": {
+        "query": "cache stampede hot key expiry single-flight locking recompute"
+      },
+      "ok": true,
+      "output_sha256": "543888dda897b6ce5aa4498ef5cdc339bdb0afe7f6b1b41eaaa418d5b39bec5f",
+      "output_chars": 4073,
+      "seen_qualified_names": [
+        "ab-testing/caching-strategy",
+        "alert-manager/caching-strategy",
+        "analytics-pipeline/caching-strategy",
+        "api-gateway/caching-strategy",
+        "audit-log/caching-strategy",
+        "auth-service/caching-strategy",
+        "backup-restore/caching-strategy",
+        "billing-service/caching-strategy",
+        "cache-layer/caching-strategy",
+        "capacity-planning/caching-strategy",
+        "ci-pipeline/caching-strategy",
+        "config-service/caching-strategy",
+        "crm-connector/caching-strategy",
+        "data-warehouse/caching-strategy",
+        "database/caching-strategy",
+        "database/query-result-cache",
+        "disaster-recovery/caching-strategy",
+        "document-parser/caching-strategy",
+        "email-templates/caching-strategy",
+        "etl-jobs/caching-strategy",
+        "feature-flags/caching-strategy",
+        "fraud-detection/caching-strategy",
+        "graphql-api/caching-strategy"
+      ],
+      "seen_directories": [
+        "ab-testing",
+        "alert-manager",
+        "analytics-pipeline",
+        "api-gateway",
+        "audit-log",
+        "auth-service",
+        "backup-restore",
+        "billing-service",
+        "cache-layer",
+        "capacity-planning",
+        "ci-pipeline",
+        "config-service",
+        "crm-connector",
+        "data-warehouse",
+        "database",
+        "disaster-recovery",
+        "document-parser",
+        "email-templates",
+        "etl-jobs",
+        "feature-flags",
+        "fraud-detection",
+        "graphql-api"
+      ],
+      "elapsed_ms": 415.1505409972742
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "9f980512c85d6292c20e6583f60abf17362def35176a36e99c13bb56fe10d554",
+      "elapsed_ms": 9815.876916982234,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "browse_skill_directory",
+        "search_skills",
+        "list_files"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9282,
+        "outputTokens": 380,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 2
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "f7b53465d2f17f614a4699b20f3f44c717bed290d9c0e8d4697a01385e7c8405",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "5b38d9e640ee843f79ae8b7105694730cc7e9f324eb265befbea41cc411605f6",
+  "system_prompt_chars": 17980,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 9282,
+  "output_tokens": 380,
+  "routing_events": [],
+  "elapsed_ms": 15135.502040968277
+}

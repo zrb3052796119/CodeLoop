@@ -22,8 +22,8 @@ DEFAULT_CONTRACT = PROJECT_ROOT / "artifacts" / "agent-quality-contract.json"
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Evaluate deterministic Skill-routing and context-compaction "
-            "quality without remote model calls."
+            "Evaluate deterministic Intent-to-Skill routing, legacy Skill "
+            "routing, and context-compaction quality without remote model calls."
         )
     )
     parser.add_argument(
@@ -61,6 +61,24 @@ def _parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--multi-agent-cost-manifest",
+        type=Path,
+        default=None,
+        help=(
+            "evaluate an alternate frozen multi-agent cost manifest; defaults "
+            "to the manifest in the fixture root"
+        ),
+    )
+    parser.add_argument(
+        "--multi-agent-cost-results",
+        type=Path,
+        default=None,
+        help=(
+            "evaluate a fresh multi-agent cost evidence file; defaults to the "
+            "recorded baseline results in the fixture root"
+        ),
+    )
+    parser.add_argument(
         "--include-cases",
         action="store_true",
         help="include per-case diagnostics in the JSON report",
@@ -76,6 +94,8 @@ def main(argv: list[str] | None = None) -> int:
             include_cases=args.include_cases,
             north_star_manifest_path=args.north_star_manifest,
             north_star_results_path=args.north_star_results,
+            multi_agent_cost_manifest_path=args.multi_agent_cost_manifest,
+            multi_agent_cost_results_path=args.multi_agent_cost_results,
         )
         gate = evaluate_gate(report, args.contract, profile=args.profile)
     except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:

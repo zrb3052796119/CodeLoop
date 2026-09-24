@@ -1,0 +1,71 @@
+{
+  "total": 50,
+  "primary_correct": 37,
+  "all_labeled_checks_correct": 36,
+  "failed_ids": [
+    "T05",
+    "T07",
+    "T09",
+    "T11",
+    "T13",
+    "T16",
+    "T19",
+    "T22",
+    "T25",
+    "T27",
+    "T39",
+    "T42",
+    "T44",
+    "T47"
+  ],
+  "semantic_status": {
+    "accepted": 16,
+    "skipped": 29,
+    "abstained": 1,
+    "invalid_response": 1,
+    "timeout": 2,
+    "provider_error": 1
+  },
+  "event_counts": {
+    "model.started": 21,
+    "model.completed": 18,
+    "model.costed": 18,
+    "model.failed": 3
+  },
+  "called_ids": [
+    "T01",
+    "T04",
+    "T06",
+    "T08",
+    "T13",
+    "T17",
+    "T18",
+    "T19",
+    "T21",
+    "T23",
+    "T24",
+    "T36",
+    "T38",
+    "T41",
+    "T42",
+    "T43",
+    "T44",
+    "T45",
+    "T46",
+    "T49",
+    "T50"
+  ],
+  "called_median_ms": 2236.3859589677304,
+  "latency_ms": {
+    "median": 6.897687970194966,
+    "p95": 3773.3318329555914,
+    "max": 5010.3484590072185
+  },
+  "wall_seconds": 54.28157391597051,
+  "source_unchanged": true,
+  "runner_unchanged": true,
+  "scorer_unchanged": true,
+  "module_sources_valid": true,
+  "calibration_unchanged": true,
+  "cases_unchanged": true
+}

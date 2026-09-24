@@ -1,0 +1,1 @@
+{"task": "T20", "arm": "A", "prompt_mode": "hierarchical", "stop": "model_error", "steps": 1}

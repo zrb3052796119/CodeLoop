@@ -1,0 +1,27 @@
+{
+  "checks_passed": true,
+  "totals": {
+    "explicit_nonexecution_notices": 11,
+    "additional_provider_calls": 11,
+    "completed_provider_calls": 11,
+    "confirmed_body_outputs": 11,
+    "provider_input_tokens": 86210,
+    "provider_output_tokens": 656,
+    "tool_dispatches": 0
+  },
+  "errors": [],
+  "separate_from_original_spontaneous_metrics": true,
+  "case_ids": [
+    "S01",
+    "S02",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S10",
+    "S11",
+    "S12",
+    "S13",
+    "S17"
+  ]
+}

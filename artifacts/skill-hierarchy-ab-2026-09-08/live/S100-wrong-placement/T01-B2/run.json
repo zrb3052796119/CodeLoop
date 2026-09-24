@@ -1,0 +1,192 @@
+{
+  "task_id": "T01",
+  "scale": "S100",
+  "variant": "wrong-placement",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-wrong-placement",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283564660505175518",
+      "name": "search_skills",
+      "args": {
+        "query": "retry exponential backoff HTTP client payments"
+      },
+      "ok": true,
+      "output_sha256": "5ca3a1928cec35b14d1beb22ee4b855cf48eaf9823280c632dac950045b29ea3",
+      "output_chars": 3992,
+      "seen_qualified_names": [
+        "http-client/retry-backoff",
+        "message-queue/retry-backoff",
+        "auth-service/retry-backoff",
+        "cache-layer/retry-backoff",
+        "ci-pipeline/retry-backoff",
+        "database/retry-backoff",
+        "graphql-api/retry-backoff",
+        "http-client/multipart-retry-generic",
+        "job-scheduler/db-retry-tuning",
+        "job-scheduler/retry-backoff",
+        "notification-service/retry-backoff",
+        "object-storage/retry-backoff",
+        "payment-gateway/retry-backoff",
+        "search-index/retry-backoff",
+        "http-client/rate-limiting",
+        "ci-pipeline/timeout-tuning",
+        "http-client/circuit-breaker",
+        "http-client/idempotency",
+        "http-client/latency-profiling",
+        "http-client/pagination",
+        "http-client/performance-tuning"
+      ],
+      "seen_directories": [
+        "auth-service",
+        "cache-layer",
+        "ci-pipeline",
+        "database",
+        "graphql-api",
+        "http-client",
+        "job-scheduler",
+        "message-queue",
+        "notification-service",
+        "object-storage",
+        "payment-gateway",
+        "search-index"
+      ],
+      "elapsed_ms": 74.61058394983411
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283336649281370478",
+      "name": "load_skill",
+      "args": {
+        "name": "message-queue/retry-backoff"
+      },
+      "ok": true,
+      "output_sha256": "2cdf1663cd00f4fa5d5305acdfeb004da7380987a19eebf2330942f32b87e2d6",
+      "output_chars": 1725,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 1.2265410041436553
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283336649281370477",
+      "name": "load_skill",
+      "args": {
+        "name": "payment-gateway/retry-backoff"
+      },
+      "ok": true,
+      "output_sha256": "ed4ea403b4b905fbe084ee893d59e972197faad286a48e31b035088431d2db16",
+      "output_chars": 1747,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 0.8050829637795687
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283336649281370478",
+      "requested_name": "message-queue/retry-backoff",
+      "qualified_name": "message-queue/retry-backoff",
+      "ok": true,
+      "body_chars": 1500,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283336649281370477",
+      "requested_name": "payment-gateway/retry-backoff",
+      "qualified_name": "payment-gateway/retry-backoff",
+      "ok": true,
+      "body_chars": 1520,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "20ae9f7229e1157651b29fad1055359bd493d18eae897f83051a1ae6f8ea4c9f",
+      "elapsed_ms": 5091.879207990132,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "search_skills"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 8032,
+        "outputTokens": 142,
+        "cacheReadTokens": 5312,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "449acca49e131f6d0284fab69824f3cbac2eb2ad76f83623c196070ca324361a",
+      "elapsed_ms": 32592.10945898667,
+      "type": "tool_calls",
+      "content_chars": 387,
+      "tool_call_names": [
+        "load_skill",
+        "load_skill"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 8866,
+        "outputTokens": 1098,
+        "cacheReadTokens": 7680,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "f8d0ff2c5402c35727774d20d9d50c4ef18bfaa9e27f114ed2d4262c4564740b",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "ed1ada60d8509b88f58ccb01c7dcbbb3f6177dc604a75269d9d33f71bb268d32",
+  "system_prompt_chars": 12783,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 16898,
+  "output_tokens": 1240,
+  "routing_events": [],
+  "elapsed_ms": 38328.97300005425
+}

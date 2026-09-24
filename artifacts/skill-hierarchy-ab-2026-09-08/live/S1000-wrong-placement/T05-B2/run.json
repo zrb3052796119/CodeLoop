@@ -1,0 +1,205 @@
+{
+  "task_id": "T05",
+  "scale": "S1000",
+  "variant": "wrong-placement",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-wrong-placement",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283506283309688603",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "ci-pipeline"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "bc8ac6c624787c94b32fc167cf2938344088f497d8231187590e28a1f1097a72",
+      "output_chars": 3233,
+      "seen_qualified_names": [
+        "ci-pipeline/backpressure",
+        "ci-pipeline/batch-processing",
+        "ci-pipeline/caching-strategy",
+        "ci-pipeline/circuit-breaker",
+        "ci-pipeline/config-management",
+        "ci-pipeline/connection-pooling",
+        "ci-pipeline/dead-letter-handling",
+        "ci-pipeline/debugging-playbook",
+        "ci-pipeline/error-mapping",
+        "ci-pipeline/idempotency",
+        "ci-pipeline/migration-job-runner",
+        "ci-pipeline/observability",
+        "ci-pipeline/pagination",
+        "ci-pipeline/performance-tuning",
+        "ci-pipeline/rate-limiting",
+        "ci-pipeline/retry-backoff",
+        "ci-pipeline/schema-migration",
+        "ci-pipeline/security-hardening",
+        "ci-pipeline/testing-strategy",
+        "ci-pipeline/timeout-tuning",
+        "ci-pipeline/upgrade-runbook"
+      ],
+      "seen_directories": [
+        "ci-pipeline"
+      ],
+      "elapsed_ms": 5.877332994714379
+    },
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283506283309688602",
+      "name": "search_skills",
+      "args": {
+        "query": "timeout budget artifact upload pipeline steps"
+      },
+      "ok": true,
+      "output_sha256": "bba88ad053a8e94cec671b615ec5a605202f1f94fd3a0acf48da23fc79692038",
+      "output_chars": 3963,
+      "seen_qualified_names": [
+        "analytics-pipeline/timeout-tuning",
+        "audit-log/timeout-tuning",
+        "ci-pipeline/timeout-tuning",
+        "fraud-detection/timeout-tuning",
+        "http-client/timeout-tuning",
+        "image-pipeline/timeout-tuning",
+        "logging-pipeline/timeout-tuning",
+        "object-storage/upload-timeout-profile",
+        "order-processing/timeout-tuning",
+        "analytics-pipeline/backpressure",
+        "analytics-pipeline/batch-processing",
+        "analytics-pipeline/caching-strategy",
+        "analytics-pipeline/circuit-breaker",
+        "analytics-pipeline/config-management",
+        "analytics-pipeline/connection-pooling",
+        "analytics-pipeline/dead-letter-handling",
+        "analytics-pipeline/debugging-playbook",
+        "analytics-pipeline/error-mapping",
+        "analytics-pipeline/idempotency",
+        "analytics-pipeline/observability",
+        "analytics-pipeline/pagination"
+      ],
+      "seen_directories": [
+        "analytics-pipeline",
+        "audit-log",
+        "ci-pipeline",
+        "fraud-detection",
+        "http-client",
+        "image-pipeline",
+        "logging-pipeline",
+        "object-storage",
+        "order-processing"
+      ],
+      "elapsed_ms": 379.14454203564674
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283494051242828162",
+      "name": "load_skill",
+      "args": {
+        "name": "ci-pipeline/timeout-tuning"
+      },
+      "ok": true,
+      "output_sha256": "6f8625b8968428b9a929f1df0d2f8e70f12d001a59495b8eec8a8043fb5e6bd3",
+      "output_chars": 1682,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 3.367125056684017
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283494051242828162",
+      "requested_name": "ci-pipeline/timeout-tuning",
+      "qualified_name": "ci-pipeline/timeout-tuning",
+      "ok": true,
+      "body_chars": 1456,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "5dfc38db0b6e2a434dfad30bfc549c9f6ec9f9c1621fa991059c2928715ef5a9",
+      "elapsed_ms": 5986.098834080622,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "browse_skill_directory",
+        "search_skills"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 10028,
+        "outputTokens": 194,
+        "cacheReadTokens": 9344,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "14821340aa39086d9cf99467fccb4937606019e487df1a9ad40df5993c9600ba",
+      "elapsed_ms": 1588.6858339654282,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 11519,
+        "outputTokens": 36,
+        "cacheReadTokens": 9984,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "5636c19afc92166c307441be02168816aafe2febba244dfa1ebec367e46c149f",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "2f3754e3372c16593c854c3b8a736ecfbbe733b216942b76c24e5b433d39a8b2",
+  "system_prompt_chars": 21900,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 21547,
+  "output_tokens": 230,
+  "routing_events": [],
+  "elapsed_ms": 12794.743582955562
+}

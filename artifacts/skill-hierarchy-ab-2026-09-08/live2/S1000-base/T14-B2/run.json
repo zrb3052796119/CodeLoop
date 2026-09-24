@@ -1,0 +1,104 @@
+{
+  "task_id": "T14",
+  "scale": "S1000",
+  "variant": "base",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-base",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "675dc5383d8faac953278c0005cc0c4bcbfb7edcf797a8589dfd34b2809212f3",
+      "elapsed_ms": 6257.930291001685,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "list_files",
+        "todo_write"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 10001,
+        "outputTokens": 265,
+        "cacheReadTokens": 9216,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    },
+    {
+      "toolName": "todo_write",
+      "input": {
+        "todos": [
+          {
+            "content": "Inspect repository structure and locate order service code",
+            "status": "in_progress"
+          },
+          {
+            "content": "Diagnose root cause of memory growth (confirm/deny unbounded cache)",
+            "status": "pending"
+          },
+          {
+            "content": "If confirmed, produce refactoring plan with zero external-interface changes",
+            "status": "pending"
+          }
+        ]
+      },
+      "batch_index": 1
+    }
+  ],
+  "stop_reason": "no_skill_discovery",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and answered with a synthetic error tool_result; the run continues so the model can finish skill discovery on a later step.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "A batch with zero skill-tool calls stops the run as no_skill_discovery (model abandoned discovery).",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "166ed07d8da65a3328a901babd5a6aa439f41cd3b9c031554b7e218895e9ef76",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "6241a6885068ea9d29bc853b707d71a736fd483396933e1a33ac515f4787a9fd",
+  "system_prompt_chars": 21326,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 10001,
+  "output_tokens": 265,
+  "routing_events": [],
+  "elapsed_ms": 11018.000208074227
+}

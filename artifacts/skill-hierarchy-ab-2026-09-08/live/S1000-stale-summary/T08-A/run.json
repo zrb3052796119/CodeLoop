@@ -1,0 +1,126 @@
+{
+  "task_id": "T08",
+  "scale": "S1000",
+  "variant": "stale-summary",
+  "arm": "A",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-stale-summary",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": null,
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": false,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283508104375823653",
+      "name": "search_skills",
+      "args": {
+        "query": "backpressure reindex search cluster busy slow down indexing latency"
+      },
+      "ok": true,
+      "output_sha256": "48aa2ba550b2bfab4d02ed6b4c2ae19e4d96bf9ae570e51c3f383e01ddd6cd6b",
+      "output_chars": 4120,
+      "seen_qualified_names": [
+        "search-index/backpressure",
+        "search-index/performance-tuning",
+        "search-index/batch-processing",
+        "search-index/timeout-tuning",
+        "search-index/caching-strategy",
+        "search-index/circuit-breaker",
+        "search-index/config-management",
+        "search-index/connection-pooling",
+        "search-index/dead-letter-handling",
+        "search-index/debugging-playbook",
+        "search-index/error-mapping",
+        "search-index/idempotency",
+        "search-index/observability",
+        "search-index/pagination",
+        "search-index/rate-limiting",
+        "search-index/retry-backoff",
+        "search-index/schema-migration",
+        "search-index/security-hardening",
+        "search-index/testing-strategy",
+        "search-index/upgrade-runbook",
+        "http-client/latency-profiling",
+        "search-index/cursor-scan-helper",
+        "ab-testing/backpressure"
+      ],
+      "seen_directories": [
+        "ab-testing",
+        "http-client",
+        "search-index"
+      ],
+      "elapsed_ms": 459.4169589690864
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "ded74852f80657405919d9b1a93a732c3b73843040b3b08845327a65f7a4f685",
+      "elapsed_ms": 8980.307999998331,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "list_files",
+        "search_skills"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9251,
+        "outputTokens": 314,
+        "cacheReadTokens": 9216,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "f7b53465d2f17f614a4699b20f3f44c717bed290d9c0e8d4697a01385e7c8405",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "e621acb83cd95eab3617bb5ef31e09a6aa4e9579eb33afa2cb83f2b59c1b9402",
+  "system_prompt_chars": 17813,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 9251,
+  "output_tokens": 314,
+  "routing_events": [],
+  "elapsed_ms": 14326.974750030786
+}

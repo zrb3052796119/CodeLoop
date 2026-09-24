@@ -1,0 +1,30 @@
+{
+  "modified_python": [
+    "minicode/agent_loop.py",
+    "minicode/agent_runtime.py",
+    "minicode/config.py",
+    "minicode/main.py",
+    "minicode/prompt.py",
+    "minicode/skill_routing_turn.py",
+    "minicode/tooling.py",
+    "minicode/tools/__init__.py",
+    "minicode/tools/browse_skills.py",
+    "minicode/tui/input_handler.py",
+    "tests/test_browse_skills.py",
+    "tests/test_config.py",
+    "tests/test_prompt.py",
+    "tests/test_skill_catalog_contracts.py",
+    "tests/test_skill_frontmatter_example_acceptance.py",
+    "tests/test_skill_load_batch_barrier.py",
+    "tests/test_skill_routing_turn.py"
+  ],
+  "added_python": [
+    "minicode/skill_catalog_context.py",
+    "minicode/skill_description_page.py",
+    "tests/test_runtime_skill_context.py",
+    "tests/test_skill_catalog_refresh.py",
+    "tests/test_skill_chain_evaluator.py",
+    "tests/test_skill_chain_score_v2.py",
+    "tests/test_skill_prefetch_page_budget.py"
+  ]
+}

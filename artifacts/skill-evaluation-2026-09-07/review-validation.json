@@ -1,0 +1,709 @@
+{
+  "case_count": 20,
+  "positive_count": 17,
+  "negative_count": 3,
+  "frozen_inputs_verified": 290,
+  "frozen_inputs_changed": [],
+  "live_results_sha256": "508e712dc86620d6d2e01385cab36991e5229d4e107a7636a03afeb8d7e9a562",
+  "whole_set_totals": {
+    "retrieval_strict": 8,
+    "model_observation_available": 18,
+    "model_load_strict": 11,
+    "body_handoff_strict": 2,
+    "end_to_end_strict": 2
+  },
+  "positive_totals": {
+    "candidate_coverage": 7,
+    "selected_coverage": 7,
+    "retrieval_strict": 6,
+    "model_observation_available": 17,
+    "model_load_strict": 10,
+    "body_handoff_strict": 1,
+    "end_to_end_strict": 1
+  },
+  "negative_totals": {
+    "retrieval_strict": 2,
+    "model_observation_available": 1,
+    "model_load_strict": 1,
+    "body_handoff_strict": 1,
+    "end_to_end_strict": 1
+  },
+  "successful_actual_load_calls": 12,
+  "confirmed_body_handoffs": 1,
+  "stop_reasons": {
+    "nonload_tool_requested": 17,
+    "model_error": 2,
+    "assistant_response_without_tool_calls": 1
+  },
+  "cases": [
+    {
+      "id": "S01",
+      "positive": true,
+      "category": "natural",
+      "retrieval_strict": true,
+      "selected_coverage": true,
+      "candidate_coverage": true,
+      "model_observation_available": true,
+      "model_load_strict": true,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [
+        "code-understanding/codebase-explanation"
+      ],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": true,
+      "loaded": [
+        "code-understanding/codebase-explanation"
+      ],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [
+        {
+          "requested_name": "code-understanding/codebase-explanation",
+          "qualified_name": "code-understanding/codebase-explanation",
+          "origin_verified": true,
+          "ok": true,
+          "body_hash_verified": true,
+          "confirmed_payload_calls": []
+        }
+      ],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": [
+        "list_files"
+      ]
+    },
+    {
+      "id": "S02",
+      "positive": true,
+      "category": "natural",
+      "retrieval_strict": true,
+      "selected_coverage": true,
+      "candidate_coverage": true,
+      "model_observation_available": true,
+      "model_load_strict": true,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [
+        "code-understanding/design-review"
+      ],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": true,
+      "loaded": [
+        "code-understanding/design-review"
+      ],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [
+        {
+          "requested_name": "code-understanding/design-review",
+          "qualified_name": "code-understanding/design-review",
+          "origin_verified": true,
+          "ok": true,
+          "body_hash_verified": true,
+          "confirmed_payload_calls": []
+        }
+      ],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": [
+        "file_tree"
+      ]
+    },
+    {
+      "id": "S03",
+      "positive": true,
+      "category": "natural",
+      "retrieval_strict": false,
+      "selected_coverage": false,
+      "candidate_coverage": false,
+      "model_observation_available": true,
+      "model_load_strict": false,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": false,
+      "loaded": [],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": [
+        "file_tree",
+        "grep_files"
+      ]
+    },
+    {
+      "id": "S04",
+      "positive": true,
+      "category": "natural",
+      "retrieval_strict": false,
+      "selected_coverage": true,
+      "candidate_coverage": true,
+      "model_observation_available": true,
+      "model_load_strict": false,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [
+        "documentation/readme-authoring",
+        "testing/test-driven-development"
+      ],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": false,
+      "loaded": [],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": [
+        "list_files",
+        "file_tree"
+      ]
+    },
+    {
+      "id": "S05",
+      "positive": true,
+      "category": "natural",
+      "retrieval_strict": false,
+      "selected_coverage": false,
+      "candidate_coverage": false,
+      "model_observation_available": true,
+      "model_load_strict": false,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [
+        "dependencies/dependency-hygiene"
+      ],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": false,
+      "loaded": [],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": [
+        "file_tree",
+        "grep_files"
+      ]
+    },
+    {
+      "id": "S06",
+      "positive": true,
+      "category": "natural",
+      "retrieval_strict": false,
+      "selected_coverage": false,
+      "candidate_coverage": false,
+      "model_observation_available": true,
+      "model_load_strict": true,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": false,
+      "loaded": [
+        "security/secret-and-injection-review"
+      ],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [
+        {
+          "requested_name": "security/secret-and-injection-review",
+          "qualified_name": "security/secret-and-injection-review",
+          "origin_verified": true,
+          "ok": true,
+          "body_hash_verified": true,
+          "confirmed_payload_calls": []
+        }
+      ],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": [
+        "file_tree"
+      ]
+    },
+    {
+      "id": "S07",
+      "positive": true,
+      "category": "natural",
+      "retrieval_strict": false,
+      "selected_coverage": false,
+      "candidate_coverage": false,
+      "model_observation_available": true,
+      "model_load_strict": false,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [
+        "testing/test-driven-development"
+      ],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": false,
+      "loaded": [
+        "testing/test-driven-development"
+      ],
+      "handed": [],
+      "partial_positive_coverage": true,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [
+        {
+          "requested_name": "testing/test-driven-development",
+          "qualified_name": "testing/test-driven-development",
+          "origin_verified": true,
+          "ok": true,
+          "body_hash_verified": true,
+          "confirmed_payload_calls": []
+        }
+      ],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": [
+        "grep_files"
+      ]
+    },
+    {
+      "id": "S08",
+      "positive": true,
+      "category": "natural",
+      "retrieval_strict": false,
+      "selected_coverage": false,
+      "candidate_coverage": false,
+      "model_observation_available": true,
+      "model_load_strict": true,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": false,
+      "loaded": [
+        "debugging/concurrency-debugging"
+      ],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [
+        {
+          "requested_name": "debugging/concurrency-debugging",
+          "qualified_name": "debugging/concurrency-debugging",
+          "origin_verified": true,
+          "ok": true,
+          "body_hash_verified": true,
+          "confirmed_payload_calls": []
+        }
+      ],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": [
+        "grep_files"
+      ]
+    },
+    {
+      "id": "S09",
+      "positive": true,
+      "category": "natural",
+      "retrieval_strict": true,
+      "selected_coverage": true,
+      "candidate_coverage": true,
+      "model_observation_available": true,
+      "model_load_strict": true,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [
+        "dependencies/dependency-hygiene"
+      ],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": true,
+      "loaded": [
+        "dependencies/dependency-hygiene"
+      ],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [
+        {
+          "requested_name": "dependencies/dependency-hygiene",
+          "qualified_name": "dependencies/dependency-hygiene",
+          "origin_verified": true,
+          "ok": true,
+          "body_hash_verified": true,
+          "confirmed_payload_calls": []
+        }
+      ],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": [
+        "file_tree"
+      ]
+    },
+    {
+      "id": "S10",
+      "positive": true,
+      "category": "natural",
+      "retrieval_strict": false,
+      "selected_coverage": false,
+      "candidate_coverage": false,
+      "model_observation_available": true,
+      "model_load_strict": true,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": false,
+      "loaded": [
+        "testing/regression-from-bug-report"
+      ],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [
+        {
+          "requested_name": "testing/regression-from-bug-report",
+          "qualified_name": "testing/regression-from-bug-report",
+          "origin_verified": true,
+          "ok": true,
+          "body_hash_verified": true,
+          "confirmed_payload_calls": []
+        }
+      ],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": [
+        "list_files"
+      ]
+    },
+    {
+      "id": "S11",
+      "positive": true,
+      "category": "natural",
+      "retrieval_strict": true,
+      "selected_coverage": true,
+      "candidate_coverage": true,
+      "model_observation_available": true,
+      "model_load_strict": true,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [
+        "testing/test-driven-development"
+      ],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": true,
+      "loaded": [
+        "testing/test-driven-development"
+      ],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [
+        {
+          "requested_name": "testing/test-driven-development",
+          "qualified_name": "testing/test-driven-development",
+          "origin_verified": true,
+          "ok": true,
+          "body_hash_verified": true,
+          "confirmed_payload_calls": []
+        }
+      ],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": [
+        "file_tree"
+      ]
+    },
+    {
+      "id": "S12",
+      "positive": true,
+      "category": "natural",
+      "retrieval_strict": false,
+      "selected_coverage": false,
+      "candidate_coverage": false,
+      "model_observation_available": true,
+      "model_load_strict": true,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": false,
+      "loaded": [
+        "refactoring/safe-refactor"
+      ],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [
+        {
+          "requested_name": "refactoring/safe-refactor",
+          "qualified_name": "refactoring/safe-refactor",
+          "origin_verified": true,
+          "ok": true,
+          "body_hash_verified": true,
+          "confirmed_payload_calls": []
+        }
+      ],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": [
+        "list_files"
+      ]
+    },
+    {
+      "id": "S13",
+      "positive": true,
+      "category": "natural",
+      "retrieval_strict": true,
+      "selected_coverage": true,
+      "candidate_coverage": true,
+      "model_observation_available": true,
+      "model_load_strict": true,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [
+        "refactoring/structural-rename"
+      ],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": true,
+      "loaded": [
+        "refactoring/structural-rename"
+      ],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [
+        {
+          "requested_name": "refactoring/structural-rename",
+          "qualified_name": "refactoring/structural-rename",
+          "origin_verified": true,
+          "ok": true,
+          "body_hash_verified": true,
+          "confirmed_payload_calls": []
+        }
+      ],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": [
+        "file_tree"
+      ]
+    },
+    {
+      "id": "S14",
+      "positive": true,
+      "category": "explicit_qualified",
+      "retrieval_strict": false,
+      "selected_coverage": false,
+      "candidate_coverage": false,
+      "model_observation_available": true,
+      "model_load_strict": false,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": false,
+      "loaded": [],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [
+        {
+          "requested_name": "code-skills/minicode-study",
+          "qualified_name": "code-skills/minicode-study",
+          "origin_verified": true,
+          "ok": false,
+          "body_hash_verified": false,
+          "confirmed_payload_calls": []
+        }
+      ],
+      "model_call_count": 2,
+      "model_completed_count": 2,
+      "nonload_tools": [
+        "ask_user"
+      ]
+    },
+    {
+      "id": "S15",
+      "positive": true,
+      "category": "explicit_qualified",
+      "retrieval_strict": true,
+      "selected_coverage": true,
+      "candidate_coverage": true,
+      "model_observation_available": true,
+      "model_load_strict": true,
+      "body_handoff_strict": true,
+      "end_to_end_strict": true,
+      "selected": [
+        "git/commit-hygiene"
+      ],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": true,
+      "loaded": [
+        "git/commit-hygiene"
+      ],
+      "handed": [
+        "git/commit-hygiene"
+      ],
+      "partial_positive_coverage": false,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [
+        {
+          "requested_name": "git/commit-hygiene",
+          "qualified_name": "git/commit-hygiene",
+          "origin_verified": true,
+          "ok": true,
+          "body_hash_verified": true,
+          "confirmed_payload_calls": [
+            2
+          ]
+        }
+      ],
+      "model_call_count": 2,
+      "model_completed_count": 2,
+      "nonload_tools": [
+        "git",
+        "git"
+      ]
+    },
+    {
+      "id": "S16",
+      "positive": true,
+      "category": "multi_step",
+      "retrieval_strict": false,
+      "selected_coverage": false,
+      "candidate_coverage": false,
+      "model_observation_available": true,
+      "model_load_strict": false,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": false,
+      "loaded": [],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": [
+        "list_files",
+        "grep_files"
+      ]
+    },
+    {
+      "id": "S17",
+      "positive": true,
+      "category": "multi_step",
+      "retrieval_strict": false,
+      "selected_coverage": false,
+      "candidate_coverage": false,
+      "model_observation_available": true,
+      "model_load_strict": false,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [
+        "code-understanding/design-review",
+        "documentation/readme-authoring"
+      ],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": false,
+      "loaded": [
+        "code-understanding/design-review"
+      ],
+      "handed": [],
+      "partial_positive_coverage": true,
+      "stop_reason": "nonload_tool_requested",
+      "loads": [
+        {
+          "requested_name": "code-understanding/design-review",
+          "qualified_name": "code-understanding/design-review",
+          "origin_verified": true,
+          "ok": true,
+          "body_hash_verified": true,
+          "confirmed_payload_calls": []
+        }
+      ],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": [
+        "list_files"
+      ]
+    },
+    {
+      "id": "S18",
+      "positive": false,
+      "category": "negative_quoted_names",
+      "retrieval_strict": false,
+      "selected_coverage": true,
+      "candidate_coverage": true,
+      "model_observation_available": false,
+      "model_load_strict": false,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [
+        "refactoring/safe-refactor",
+        "testing/test-driven-development"
+      ],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": false,
+      "loaded": [],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "model_error",
+      "loads": [],
+      "model_call_count": 1,
+      "model_completed_count": 0,
+      "nonload_tools": []
+    },
+    {
+      "id": "S19",
+      "positive": false,
+      "category": "negative_explicit_opt_out",
+      "retrieval_strict": true,
+      "selected_coverage": true,
+      "candidate_coverage": true,
+      "model_observation_available": true,
+      "model_load_strict": true,
+      "body_handoff_strict": true,
+      "end_to_end_strict": true,
+      "selected": [],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": true,
+      "loaded": [],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "assistant_response_without_tool_calls",
+      "loads": [],
+      "model_call_count": 1,
+      "model_completed_count": 1,
+      "nonload_tools": []
+    },
+    {
+      "id": "S20",
+      "positive": false,
+      "category": "negative_unrelated_chat",
+      "retrieval_strict": true,
+      "selected_coverage": true,
+      "candidate_coverage": true,
+      "model_observation_available": false,
+      "model_load_strict": false,
+      "body_handoff_strict": false,
+      "end_to_end_strict": false,
+      "selected": [],
+      "selected_changed_from_offline": false,
+      "offline_retrieval_strict": true,
+      "loaded": [],
+      "handed": [],
+      "partial_positive_coverage": false,
+      "stop_reason": "model_error",
+      "loads": [],
+      "model_call_count": 1,
+      "model_completed_count": 0,
+      "nonload_tools": []
+    }
+  ]
+}

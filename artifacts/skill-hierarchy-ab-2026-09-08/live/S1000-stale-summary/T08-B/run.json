@@ -1,0 +1,124 @@
+{
+  "task_id": "T08",
+  "scale": "S1000",
+  "variant": "stale-summary",
+  "arm": "B",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-stale-summary",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283512639861285420",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "search-index"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "c0229660ecdf476196f693d7ff35acd09d3623ab6977d7ca1ab927f8d32eb0a7",
+      "output_chars": 3392,
+      "seen_qualified_names": [
+        "search-index/backpressure",
+        "search-index/batch-processing",
+        "search-index/caching-strategy",
+        "search-index/circuit-breaker",
+        "search-index/config-management",
+        "search-index/connection-pooling",
+        "search-index/cursor-scan-helper",
+        "search-index/dead-letter-handling",
+        "search-index/debugging-playbook",
+        "search-index/error-mapping",
+        "search-index/idempotency",
+        "search-index/observability",
+        "search-index/pagination",
+        "search-index/performance-tuning",
+        "search-index/rate-limiting",
+        "search-index/retry-backoff",
+        "search-index/schema-migration",
+        "search-index/security-hardening",
+        "search-index/testing-strategy",
+        "search-index/timeout-tuning",
+        "search-index/upgrade-runbook"
+      ],
+      "seen_directories": [
+        "search-index"
+      ],
+      "elapsed_ms": 11.138875037431717
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "1eda68da5a5fd6c817dc1e66d9ab7b98da141284bd7b7a0689378df437264093",
+      "elapsed_ms": 3146.0041659884155,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "list_files",
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9340,
+        "outputTokens": 88,
+        "cacheReadTokens": 9216,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "f7b53465d2f17f614a4699b20f3f44c717bed290d9c0e8d4697a01385e7c8405",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "b12bba41334ed42ef1e8af22765d0425c4383ecd41ddf8ba28128c9f017d6686",
+  "system_prompt_chars": 18246,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 9340,
+  "output_tokens": 88,
+  "routing_events": [],
+  "elapsed_ms": 8048.63033303991
+}

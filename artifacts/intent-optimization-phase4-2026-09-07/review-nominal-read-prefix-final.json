@@ -1,0 +1,299 @@
+[
+  {
+    "text": "说明文字换成英文。",
+    "actual": {
+      "raw_input": "说明文字换成英文。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "说明文字换成英文"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787662.4668999,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "说明文字换成英文。",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "说明文字换成英文"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "说明文字换成英文。",
+      "context_used": false
+    },
+    "requests": [
+      "说明文字换成英文。"
+    ]
+  },
+  {
+    "text": "说明文档给它换个更自然的说法。",
+    "actual": {
+      "raw_input": "说明文档给它换个更自然的说法。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "说明文档给它换个更自然的说法",
+        "documentation"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787662.468352,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "说明文档给它换个更自然的说法。",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "说明文档给它换个更自然的说法",
+            "documentation"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "说明文档给它换个更自然的说法。",
+      "context_used": false
+    },
+    "requests": [
+      "说明文档给它换个更自然的说法。"
+    ]
+  },
+  {
+    "text": "解释文字帮我润色一下。",
+    "actual": {
+      "raw_input": "解释文字帮我润色一下。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "解释文字帮我润色一下"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787662.469578,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "解释文字帮我润色一下。",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "解释文字帮我润色一下"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "解释文字帮我润色一下。",
+      "context_used": false
+    },
+    "requests": [
+      "解释文字帮我润色一下。"
+    ]
+  },
+  {
+    "text": "分析报告换成中文。",
+    "actual": {
+      "raw_input": "分析报告换成中文。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "分析报告换成中文"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787662.47071,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "分析报告换成中文。",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "分析报告换成中文"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "分析报告换成中文。",
+      "context_used": false
+    },
+    "requests": [
+      "分析报告换成中文。"
+    ]
+  },
+  {
+    "text": "说明按钮换一个颜色。",
+    "actual": {
+      "raw_input": "说明按钮换一个颜色。",
+      "intent_type": "code",
+      "action_type": "update",
+      "confidence": 0.85,
+      "entities": {
+        "files": [],
+        "functions": [],
+        "classes": [],
+        "languages": []
+      },
+      "keywords": [
+        "说明按钮换一个颜色"
+      ],
+      "complexity_hint": "moderate",
+      "timestamp": 1788787662.4719,
+      "operations": [
+        {
+          "intent_type": "code",
+          "action_type": "update",
+          "polarity": "affirmed",
+          "confidence": 0.85,
+          "clause": "说明按钮换一个颜色。",
+          "span": null,
+          "entities": {},
+          "keywords": [
+            "说明按钮换一个颜色"
+          ],
+          "evidence_codes": [
+            "semantic:proposal-code.update"
+          ]
+        }
+      ],
+      "primary_operation_index": 0,
+      "evidence": [
+        {
+          "code": "semantic:proposal-code.update",
+          "source": "semantic",
+          "reason": "semantic fallback supports this operation",
+          "strength": 0.85,
+          "span": null,
+          "turn_offset": 0
+        }
+      ],
+      "decision_reason": "semantic_fallback",
+      "diagnostics": {
+        "semantic_status": "used",
+        "context_turns_used": 0,
+        "warnings": []
+      },
+      "semantic_query": "说明按钮换一个颜色。",
+      "context_used": false
+    },
+    "requests": [
+      "说明按钮换一个颜色。"
+    ]
+  }
+]

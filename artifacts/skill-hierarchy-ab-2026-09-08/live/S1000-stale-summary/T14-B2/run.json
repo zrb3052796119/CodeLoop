@@ -1,0 +1,136 @@
+{
+  "task_id": "T14",
+  "scale": "S1000",
+  "variant": "stale-summary",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-stale-summary",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283488828562603795",
+      "name": "search_skills",
+      "args": {
+        "query": "memory leak unbounded cache growth order service"
+      },
+      "ok": true,
+      "output_sha256": "97b54d11bf9a301811eaca05856b078fe63512d81181b43a139ed68f1f720149",
+      "output_chars": 4054,
+      "seen_qualified_names": [
+        "database/connection-leak-hunt",
+        "auth-service/caching-strategy",
+        "billing-service/caching-strategy",
+        "cache-layer/connection-pooling",
+        "config-service/caching-strategy",
+        "document-parser/caching-strategy",
+        "inventory-service/caching-strategy",
+        "notification-service/caching-strategy",
+        "object-storage/caching-strategy",
+        "order-processing/caching-strategy",
+        "push-service/caching-strategy",
+        "service-mesh/caching-strategy",
+        "tenant-manager/caching-strategy",
+        "user-directory/caching-strategy",
+        "auth-service/connection-pooling",
+        "billing-service/connection-pooling",
+        "config-service/connection-pooling",
+        "document-parser/connection-pooling",
+        "inventory-service/connection-pooling",
+        "notification-service/connection-pooling",
+        "object-storage/connection-pooling",
+        "order-processing/connection-pooling"
+      ],
+      "seen_directories": [
+        "auth-service",
+        "billing-service",
+        "cache-layer",
+        "config-service",
+        "database",
+        "document-parser",
+        "inventory-service",
+        "notification-service",
+        "object-storage",
+        "order-processing",
+        "push-service",
+        "service-mesh",
+        "tenant-manager",
+        "user-directory"
+      ],
+      "elapsed_ms": 389.49333305936307
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "6761085fbe730fc79c7540165d8ecbb87dee8fbaac56e99e195ece8fa2277132",
+      "elapsed_ms": 14432.975416071713,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "list_files",
+        "search_skills"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9969,
+        "outputTokens": 393,
+        "cacheReadTokens": 9280,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "f7b53465d2f17f614a4699b20f3f44c717bed290d9c0e8d4697a01385e7c8405",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "53a578071f06ac979bf023e9eebc3bf86a4ffa2d355f6b09ba2e260821600a7e",
+  "system_prompt_chars": 21166,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 9969,
+  "output_tokens": 393,
+  "routing_events": [],
+  "elapsed_ms": 19546.685167006217
+}

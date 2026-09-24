@@ -1,0 +1,369 @@
+{
+  "checks_passed": true,
+  "totals": {
+    "model_calls": 22,
+    "model_completed": 20,
+    "provider_input_tokens": 144542,
+    "provider_output_tokens": 4555,
+    "model_requested_load_calls": 13,
+    "loader_dispatches": 13,
+    "loader_successes": 12,
+    "loader_denials_or_errors": 1,
+    "successful_loads_without_confirmed_handoff": 11,
+    "positive_cases": 17,
+    "observable_cases": 18,
+    "cases_load_requested_but_not_dispatched": 0,
+    "cases_model_requested_any_load": 13,
+    "cases_model_requested_any_load_in_first_response": 13,
+    "cases_loader_succeeded": 12,
+    "cases_body_handoff_confirmed": 1,
+    "positive_request_strict": 11,
+    "positive_load_strict": 10,
+    "positive_handoff_strict": 1,
+    "loader_outputs_confirmed_handed": 1,
+    "model_failed": 2,
+    "negative_cases": 3,
+    "inconclusive_cases": 2,
+    "negative_request_strict": 1,
+    "negative_load_strict": 1,
+    "negative_handoff_strict": 1
+  },
+  "cases": [
+    {
+      "id": "S01",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [
+        "code-understanding/codebase-explanation"
+      ],
+      "loaded": [
+        "code-understanding/codebase-explanation"
+      ],
+      "handed": [],
+      "request_strict": true,
+      "load_strict": true,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S02",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [
+        "code-understanding/design-review"
+      ],
+      "loaded": [
+        "code-understanding/design-review"
+      ],
+      "handed": [],
+      "request_strict": true,
+      "load_strict": true,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S03",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [],
+      "loaded": [],
+      "handed": [],
+      "request_strict": false,
+      "load_strict": false,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S04",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [],
+      "loaded": [],
+      "handed": [],
+      "request_strict": false,
+      "load_strict": false,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S05",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [],
+      "loaded": [],
+      "handed": [],
+      "request_strict": false,
+      "load_strict": false,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S06",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [
+        "security/secret-and-injection-review"
+      ],
+      "loaded": [
+        "security/secret-and-injection-review"
+      ],
+      "handed": [],
+      "request_strict": true,
+      "load_strict": true,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S07",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [
+        "testing/test-driven-development"
+      ],
+      "loaded": [
+        "testing/test-driven-development"
+      ],
+      "handed": [],
+      "request_strict": false,
+      "load_strict": false,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S08",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [
+        "debugging/concurrency-debugging"
+      ],
+      "loaded": [
+        "debugging/concurrency-debugging"
+      ],
+      "handed": [],
+      "request_strict": true,
+      "load_strict": true,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S09",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [
+        "dependencies/dependency-hygiene"
+      ],
+      "loaded": [
+        "dependencies/dependency-hygiene"
+      ],
+      "handed": [],
+      "request_strict": true,
+      "load_strict": true,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S10",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [
+        "testing/regression-from-bug-report"
+      ],
+      "loaded": [
+        "testing/regression-from-bug-report"
+      ],
+      "handed": [],
+      "request_strict": true,
+      "load_strict": true,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S11",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [
+        "testing/test-driven-development"
+      ],
+      "loaded": [
+        "testing/test-driven-development"
+      ],
+      "handed": [],
+      "request_strict": true,
+      "load_strict": true,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S12",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [
+        "refactoring/safe-refactor"
+      ],
+      "loaded": [
+        "refactoring/safe-refactor"
+      ],
+      "handed": [],
+      "request_strict": true,
+      "load_strict": true,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S13",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [
+        "refactoring/structural-rename"
+      ],
+      "loaded": [
+        "refactoring/structural-rename"
+      ],
+      "handed": [],
+      "request_strict": true,
+      "load_strict": true,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S14",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [
+        "code-skills/minicode-study"
+      ],
+      "loaded": [],
+      "handed": [],
+      "request_strict": true,
+      "load_strict": false,
+      "handoff_strict": false,
+      "provider_calls": 2,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S15",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [
+        "git/commit-hygiene"
+      ],
+      "loaded": [
+        "git/commit-hygiene"
+      ],
+      "handed": [
+        "git/commit-hygiene"
+      ],
+      "request_strict": true,
+      "load_strict": true,
+      "handoff_strict": true,
+      "provider_calls": 2,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S16",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [],
+      "loaded": [],
+      "handed": [],
+      "request_strict": false,
+      "load_strict": false,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S17",
+      "positive": true,
+      "observable": true,
+      "model_errors": [],
+      "requested": [
+        "code-understanding/design-review"
+      ],
+      "loaded": [
+        "code-understanding/design-review"
+      ],
+      "handed": [],
+      "request_strict": false,
+      "load_strict": false,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "nonload_tool_requested"
+    },
+    {
+      "id": "S18",
+      "positive": false,
+      "observable": false,
+      "model_errors": [
+        "ModelCallDeadlineExceeded"
+      ],
+      "requested": [],
+      "loaded": [],
+      "handed": [],
+      "request_strict": false,
+      "load_strict": false,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "model_error"
+    },
+    {
+      "id": "S19",
+      "positive": false,
+      "observable": true,
+      "model_errors": [],
+      "requested": [],
+      "loaded": [],
+      "handed": [],
+      "request_strict": true,
+      "load_strict": true,
+      "handoff_strict": true,
+      "provider_calls": 1,
+      "stop": "assistant_response_without_tool_calls"
+    },
+    {
+      "id": "S20",
+      "positive": false,
+      "observable": false,
+      "model_errors": [
+        "ModelCallDeadlineExceeded"
+      ],
+      "requested": [],
+      "loaded": [],
+      "handed": [],
+      "request_strict": false,
+      "load_strict": false,
+      "handoff_strict": false,
+      "provider_calls": 1,
+      "stop": "model_error"
+    }
+  ]
+}

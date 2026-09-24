@@ -1,0 +1,710 @@
+[
+  {
+    "id": "S01",
+    "text": "我刚接手这个终端助手。请从用户敲下回车开始，说明消息经过哪些组件，什么时候交给模型，模型要求读文件时又怎样回到下一轮。用实际源码位置串起来，我现在只想读懂它。",
+    "category": "natural",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "code-understanding/codebase-explanation",
+        "code-skills/minicode-study"
+      ]
+    ],
+    "allowed_skills": [
+      "code-understanding/codebase-explanation",
+      "code-skills/minicode-study"
+    ],
+    "forbidden_skills": [
+      "code-understanding/design-review",
+      "code-understanding/minicode-learning-coach-demo",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "security/secret-and-injection-review",
+      "debugging/pytest-debugging",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "目标是从输入到模型和工具结果的源码链路讲解；通用代码解释与 MiniCode 系统学习均能合理承担。没有修改、排错或授课测验要求。"
+  },
+  {
+    "id": "S02",
+    "text": "两个入口现在各自维护一份参数转换逻辑，我担心以后只改到其中一处。请审查这部分实现，列出重复职责、前后约定不一致和没有被用到的分支，按影响排序，暂时不要改文件。",
+    "category": "natural",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "code-understanding/design-review"
+      ]
+    ],
+    "allowed_skills": [
+      "code-understanding/design-review",
+      "code-understanding/codebase-explanation"
+    ],
+    "forbidden_skills": [
+      "code-understanding/minicode-learning-coach-demo",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "security/secret-and-injection-review",
+      "debugging/pytest-debugging",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "这是对已有实现的只读设计审查，重点是重复职责和一致性；代码解释可辅助定位，自动修复或重构不属于本题。"
+  },
+  {
+    "id": "S03",
+    "text": "I have an interview about MiniCode next week. Work through its tool execution mechanism with me in short sections. After each section, ask one recall question, wait for my answer, and correct what I got wrong before moving on.",
+    "category": "natural",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "code-understanding/minicode-learning-coach-demo"
+      ]
+    ],
+    "allowed_skills": [
+      "code-understanding/minicode-learning-coach-demo",
+      "code-skills/minicode-study",
+      "code-understanding/codebase-explanation"
+    ],
+    "forbidden_skills": [
+      "code-understanding/design-review",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "security/secret-and-injection-review",
+      "debugging/pytest-debugging",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "逐段学习、回忆提问、等待作答与纠错明确需要学习教练流程；系统学习和代码解释是允许的辅助，但不能单独满足教学交互。"
+  },
+  {
+    "id": "S04",
+    "text": "新同事拿到仓库后不知道第一次怎么跑起来。请核对项目里真实的安装方式和启动入口，把首页说明补成一份能照着做的入门指南，包含一个最小使用例子。",
+    "category": "natural",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "documentation/readme-authoring"
+      ]
+    ],
+    "allowed_skills": [
+      "documentation/readme-authoring",
+      "code-understanding/codebase-explanation"
+    ],
+    "forbidden_skills": [
+      "code-understanding/design-review",
+      "code-understanding/minicode-learning-coach-demo",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "security/secret-and-injection-review",
+      "debugging/pytest-debugging",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "交付物是依据实际项目补写的首页入门文档，属于 README/指南写作；读取源码可以辅助核实命令。"
+  },
+  {
+    "id": "S05",
+    "text": "CI 的质量检查提示 adapters.py 里有 F401 和 E722。请先运行仓库已经配置好的检查命令，再处理它实际报出的这些问题，保持现有执行结果不变。",
+    "category": "natural",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "quality/lint-and-static-cleanup"
+      ]
+    ],
+    "allowed_skills": [
+      "quality/lint-and-static-cleanup"
+    ],
+    "forbidden_skills": [
+      "code-understanding/codebase-explanation",
+      "code-understanding/design-review",
+      "code-understanding/minicode-learning-coach-demo",
+      "documentation/readme-authoring",
+      "code-skills/minicode-study",
+      "security/secret-and-injection-review",
+      "debugging/pytest-debugging",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "依据静态检查结果清理未使用导入和语法风格问题，不是已有运行失败、设计重构或新功能开发。"
+  },
+  {
+    "id": "S06",
+    "text": "下载接口直接把用户传来的文件名拼到存储目录后面，另一个接口把表单内容拼进数据库语句。请检查这些路径是否能被恶意输入利用，也找一下仓库里有没有写死的口令，给出位置和依据。",
+    "category": "natural",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "security/secret-and-injection-review"
+      ]
+    ],
+    "allowed_skills": [
+      "security/secret-and-injection-review",
+      "code-understanding/design-review"
+    ],
+    "forbidden_skills": [
+      "code-understanding/codebase-explanation",
+      "code-understanding/minicode-learning-coach-demo",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "debugging/pytest-debugging",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "请求审计路径越界、数据库注入及硬编码凭据，安全审查是必要技能，通用审查可以辅助。"
+  },
+  {
+    "id": "S07",
+    "text": "After my last change, pytest reports `test_empty_batch: AssertionError: assert None == []`. Please follow the failure from the test to the implementation, explain the cause, and rerun just the affected tests after the smallest fix.",
+    "category": "natural",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "debugging/pytest-debugging"
+      ]
+    ],
+    "allowed_skills": [
+      "debugging/pytest-debugging",
+      "code-understanding/codebase-explanation"
+    ],
+    "forbidden_skills": [
+      "code-understanding/design-review",
+      "code-understanding/minicode-learning-coach-demo",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "security/secret-and-injection-review",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "已有 pytest 断言失败、从输出追踪根因并定向重跑，直接属于 pytest 调试；没有要求新建回归测试。"
+  },
+  {
+    "id": "S08",
+    "text": "单独跑都没事，但一起处理时偶尔就一直停在那里。请把资源取得和释放的先后关系理清楚，构造一种稳定出现卡住的执行顺序，再指出问题在哪。",
+    "category": "natural",
+    "context": {
+      "recent_turns": [
+        {
+          "role": "user",
+          "content": "我这里有两个后台 worker，一个先拿队列锁再拿缓存锁，另一个会先更新缓存然后回到队列。"
+        },
+        {
+          "role": "assistant",
+          "content": "需要看两个 worker 是否可能以相反顺序持有这两把锁。"
+        }
+      ],
+      "active_task": "调查两个后台 worker 一起工作时偶发无法结束的问题"
+    },
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "debugging/concurrency-debugging"
+      ]
+    ],
+    "allowed_skills": [
+      "debugging/concurrency-debugging",
+      "code-understanding/codebase-explanation"
+    ],
+    "forbidden_skills": [
+      "code-understanding/design-review",
+      "code-understanding/minicode-learning-coach-demo",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "security/secret-and-injection-review",
+      "debugging/pytest-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "当前轮承接上下文中的两个 worker 与共享锁；仅并行时偶发永久等待要求并发及死锁诊断，而不是一般耗时优化。"
+  },
+  {
+    "id": "S09",
+    "text": "项目已不再使用旧的日期解析包，但它还留在依赖清单里。请确认没有剩余调用，把它从声明和锁定文件中移除，并验证安装与已有功能仍然正常。",
+    "category": "natural",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "dependencies/dependency-hygiene"
+      ]
+    ],
+    "allowed_skills": [
+      "dependencies/dependency-hygiene",
+      "debugging/pytest-debugging",
+      "testing/test-driven-development"
+    ],
+    "forbidden_skills": [
+      "code-understanding/codebase-explanation",
+      "code-understanding/design-review",
+      "code-understanding/minicode-learning-coach-demo",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "security/secret-and-injection-review",
+      "debugging/concurrency-debugging",
+      "testing/regression-from-bug-report",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "核心动作是移除第三方依赖并验证兼容性；测试技能可辅助验证，不能替代依赖管理。"
+  },
+  {
+    "id": "S10",
+    "text": "用户反馈：列表按名称排序以后，点第三行的删除按钮，消失的却是排序前第三个条目。请先把这个操作写成会失败的自动检查，再修好删除逻辑，并用同一个检查证明问题解决了。",
+    "category": "natural",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "testing/regression-from-bug-report"
+      ]
+    ],
+    "allowed_skills": [
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "debugging/pytest-debugging"
+    ],
+    "forbidden_skills": [
+      "code-understanding/codebase-explanation",
+      "code-understanding/design-review",
+      "code-understanding/minicode-learning-coach-demo",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "security/secret-and-injection-review",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "从用户缺陷反馈生成失败用例，再修复并证明同一用例通过，完整对应缺陷回归工作流；TDD/pytest 可辅助。"
+  },
+  {
+    "id": "S11",
+    "text": "给配置解析器加一个新能力：数值可以带 ms 或 s 后缀，最后统一返回毫秒。先把 250ms、2s 和非法后缀的预期写成测试，看到它们失败后再开始实现，最后跑相关测试。",
+    "category": "natural",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "testing/test-driven-development"
+      ]
+    ],
+    "allowed_skills": [
+      "testing/test-driven-development",
+      "debugging/pytest-debugging"
+    ],
+    "forbidden_skills": [
+      "code-understanding/codebase-explanation",
+      "code-understanding/design-review",
+      "code-understanding/minicode-learning-coach-demo",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "security/secret-and-injection-review",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "这是新能力的测试先行实现，且明确要求先失败后实现；没有既有用户缺陷，因此不把缺陷回归技能视作合理候选。"
+  },
+  {
+    "id": "S12",
+    "text": "这个处理函数有六层条件分支，已经很难继续维护。请把它拆成职责清楚的小函数，每拆一步就核对原有结果，参数、返回值和异常约定都要保持一致。",
+    "category": "natural",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "refactoring/safe-refactor"
+      ]
+    ],
+    "allowed_skills": [
+      "refactoring/safe-refactor",
+      "code-understanding/design-review",
+      "testing/test-driven-development",
+      "debugging/pytest-debugging"
+    ],
+    "forbidden_skills": [
+      "code-understanding/codebase-explanation",
+      "code-understanding/minicode-learning-coach-demo",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "security/secret-and-injection-review",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "要求小步调整结构且保持外部行为，核心为安全重构；设计审查和测试可辅助，但不是仅做建议或修复已有失败。"
+  },
+  {
+    "id": "S13",
+    "text": "Move the `reporting` package under `app.analytics.reporting`. Update imports, tests, and the examples in the docs so the old package path is no longer used. Keep the public behavior the same.",
+    "category": "natural",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "refactoring/structural-rename"
+      ]
+    ],
+    "allowed_skills": [
+      "refactoring/structural-rename",
+      "refactoring/safe-refactor",
+      "documentation/readme-authoring",
+      "debugging/pytest-debugging"
+    ],
+    "forbidden_skills": [
+      "code-understanding/codebase-explanation",
+      "code-understanding/design-review",
+      "code-understanding/minicode-learning-coach-demo",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "security/secret-and-injection-review",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "这是包位置变化引起的全仓库引用迁移；结构化重命名/移动是必要技能，行为保持、文档同步和测试技能可辅助。"
+  },
+  {
+    "id": "S14",
+    "text": "请使用 code-skills/minicode-study，带我看 MiniCode 的记忆系统：先说明写入和取回信息各经过哪些层，再用一次对话演示这些层如何配合。",
+    "category": "explicit_qualified",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "code-skills/minicode-study"
+      ]
+    ],
+    "allowed_skills": [
+      "code-skills/minicode-study",
+      "code-understanding/codebase-explanation",
+      "code-understanding/minicode-learning-coach-demo"
+    ],
+    "forbidden_skills": [
+      "code-understanding/design-review",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "security/secret-and-injection-review",
+      "debugging/pytest-debugging",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "用户明确调用完整限定名，且任务与该技能的 MiniCode 核心模块学习范围相符。"
+  },
+  {
+    "id": "S15",
+    "text": "请用 git/commit-hygiene 处理我这次改动：核实实际差异，只暂存与当前修复有关的文件，检查没有把本地口令带进去，然后创建一个说明清楚的提交。",
+    "category": "explicit_qualified",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "git/commit-hygiene"
+      ]
+    ],
+    "allowed_skills": [
+      "git/commit-hygiene",
+      "security/secret-and-injection-review",
+      "code-understanding/design-review"
+    ],
+    "forbidden_skills": [
+      "code-understanding/codebase-explanation",
+      "code-understanding/minicode-learning-coach-demo",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "debugging/pytest-debugging",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "minicode"
+    ],
+    "rationale": "完整限定名明确授权调用提交整理流程；差异和凭据审查可以使用辅助技能，创建提交必须匹配提交技能。"
+  },
+  {
+    "id": "S16",
+    "text": "导入两万条清单要等将近一分钟。先测量各阶段花了多少时间，找出主要开销；如果其中的逐条转换确实最贵，就把那一段重复分支合成一个公共处理函数，并验证输入输出和异常仍与原来一致。",
+    "category": "multi_step",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "performance/hotpath-profiling"
+      ],
+      [
+        "refactoring/safe-refactor"
+      ]
+    ],
+    "allowed_skills": [
+      "performance/hotpath-profiling",
+      "refactoring/safe-refactor",
+      "code-understanding/design-review",
+      "debugging/pytest-debugging",
+      "testing/test-driven-development"
+    ],
+    "forbidden_skills": [
+      "code-understanding/codebase-explanation",
+      "code-understanding/minicode-learning-coach-demo",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "security/secret-and-injection-review",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "refactoring/structural-rename",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "前半段要求性能测量定位开销，后半段规定依据结果进行行为保持的结构整理；两个步骤需要各自技能，允许测试和审查辅助。"
+  },
+  {
+    "id": "S17",
+    "text": "准备把这个项目交给外部团队。请先检查上传与查询入口有没有能绕出指定目录或把输入当成指令执行的地方；再依据查到的真实校验规则，给 README 补一节输入限制和安全使用示例。",
+    "category": "multi_step",
+    "expected_outcomes": [
+      "route"
+    ],
+    "required_skill_groups": [
+      [
+        "security/secret-and-injection-review"
+      ],
+      [
+        "documentation/readme-authoring"
+      ]
+    ],
+    "allowed_skills": [
+      "security/secret-and-injection-review",
+      "documentation/readme-authoring",
+      "code-understanding/design-review",
+      "code-understanding/codebase-explanation"
+    ],
+    "forbidden_skills": [
+      "code-understanding/minicode-learning-coach-demo",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "debugging/pytest-debugging",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "交付物同时包括安全审计与以审计发现为依据的 README 修订；两种技能均必要，源码解释和设计审查可辅助。"
+  },
+  {
+    "id": "S18",
+    "text": "海报上准备放三个英文标签：safe-refactor、pytest-debugging、git/commit-hygiene。请仅把这些标签改写成便于非程序员理解的中文短语，每个不超过八个字；这些名称只是文案素材，不是在调用它们。",
+    "category": "negative_quoted_names",
+    "expected_outcomes": [
+      "no_skill",
+      "abstain"
+    ],
+    "required_skill_groups": [],
+    "allowed_skills": [],
+    "forbidden_skills": [
+      "code-understanding/codebase-explanation",
+      "code-understanding/design-review",
+      "code-understanding/minicode-learning-coach-demo",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "security/secret-and-injection-review",
+      "debugging/pytest-debugging",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "技能名被引用为翻译/改写素材，且明确不调用；没有隐含代码修改、测试调试或提交任务。"
+  },
+  {
+    "id": "S19",
+    "text": "这一次不要加载或使用任何 Skill。直接给我一个 Python 表达式，把 [3, 1, 3, 2] 去重并按从小到大排列，不需要操作仓库。",
+    "category": "negative_explicit_opt_out",
+    "expected_outcomes": [
+      "no_skill",
+      "abstain"
+    ],
+    "required_skill_groups": [],
+    "allowed_skills": [],
+    "forbidden_skills": [
+      "code-understanding/codebase-explanation",
+      "code-understanding/design-review",
+      "code-understanding/minicode-learning-coach-demo",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "security/secret-and-injection-review",
+      "debugging/pytest-debugging",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "用户显式禁止所有 Skill；即便任务包含简单代码表达式，也必须尊重本轮禁用指令。"
+  },
+  {
+    "id": "S20",
+    "text": "今天总算忙完了，我想听一个关于小猫的冷笑话，最好一句话就讲完。",
+    "category": "negative_unrelated_chat",
+    "expected_outcomes": [
+      "no_skill",
+      "abstain"
+    ],
+    "required_skill_groups": [],
+    "allowed_skills": [],
+    "forbidden_skills": [
+      "code-understanding/codebase-explanation",
+      "code-understanding/design-review",
+      "code-understanding/minicode-learning-coach-demo",
+      "documentation/readme-authoring",
+      "quality/lint-and-static-cleanup",
+      "code-skills/minicode-study",
+      "security/secret-and-injection-review",
+      "debugging/pytest-debugging",
+      "debugging/concurrency-debugging",
+      "dependencies/dependency-hygiene",
+      "testing/regression-from-bug-report",
+      "testing/test-driven-development",
+      "refactoring/safe-refactor",
+      "refactoring/structural-rename",
+      "performance/hotpath-profiling",
+      "git/commit-hygiene",
+      "minicode"
+    ],
+    "rationale": "普通闲聊创作与目录中的项目编码工作流无关，不应加载任何 Skill。"
+  }
+]

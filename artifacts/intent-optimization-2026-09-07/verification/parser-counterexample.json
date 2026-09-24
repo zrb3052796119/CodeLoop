@@ -1,0 +1,43 @@
+{
+  "baseline": {
+    "command": [
+      "/Users/zhourunbo/miniconda3/bin/python",
+      "-m",
+      "pytest",
+      "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-xb34m_rf/baseline/tests/test_intent_discourse_phase1.py",
+      "-q",
+      "--tb=line",
+      "--no-summary"
+    ],
+    "duration_seconds": 0.843,
+    "returncode": 1,
+    "stderr": "",
+    "stdout": "FF.F.FFFFFFFFFFFFFFFFFFFF........F..FFFFFFFFFFFFFF.F......FF..FFFF       [100%]\n45 failed, 21 passed in 0.39s\n",
+    "timed_out": false
+  },
+  "baseline_kind": "directory",
+  "fixed": {
+    "command": [
+      "/Users/zhourunbo/miniconda3/bin/python",
+      "-m",
+      "pytest",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/tests/test_intent_discourse_phase1.py",
+      "-q",
+      "--tb=line",
+      "--no-summary"
+    ],
+    "duration_seconds": 1.234,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "..................................................................       [100%]\n66 passed in 0.38s\n",
+    "timed_out": false
+  },
+  "fixed_root": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main",
+  "status": "PROVEN",
+  "test_files": [
+    {
+      "path": "tests/test_intent_discourse_phase1.py",
+      "sha256": "b7aff9553258e493fda520b436e08737ee1c397515baf7e903fa2a27c7012d7d"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "roles-proof.json": {
+    "status": "PROVEN",
+    "baseline": "directory",
+    "test_files": [
+      {
+        "path": "tests/test_intent_request_roles_phase4.py",
+        "sha256": "70d6a33b3f6f640d27dafc43cefb35bfa7258b40ee02814f979fc1528ece8d0a"
+      }
+    ]
+  },
+  "recall-proof.json": {
+    "status": "PROVEN",
+    "baseline": "directory",
+    "test_files": [
+      {
+        "path": "tests/test_intent_positive_recall_phase4.py",
+        "sha256": "515d7bb57ee6dc728569c8557f2fffd47743b14b97737f47fb4e994f7a19a47d"
+      }
+    ]
+  },
+  "analysis-boundary-proof.json": {
+    "status": "PROVEN",
+    "baseline": "directory",
+    "test_files": [
+      {
+        "path": "tests/test_intent_analysis_boundary_regression_phase4.py",
+        "sha256": "f24e7baf4aa80888324011ae001b58c50c33d3ee1359b9bdff6ec695fac324de"
+      }
+    ]
+  }
+}

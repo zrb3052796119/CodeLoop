@@ -1,0 +1,2 @@
+{"task_id": "T01", "scale": "S100", "variant": "base", "arm": "B", "stop_reason": "skill_loaded", "timeout": false, "steps": 2, "loaded": ["http-client/retry-backoff", "http-client/idempotency"], "input_tokens": 16197, "output_tokens": 287, "elapsed_ms": 49496.14616599865}
+{"task_id": "T01", "scale": "S100", "variant": "base", "arm": "B2", "stop_reason": "nonload_tool_requested", "timeout": false, "steps": 1, "loaded": [], "input_tokens": 8016, "output_tokens": 398, "elapsed_ms": 15575.327792088501}

@@ -1,0 +1,859 @@
+{
+  "metrics": {
+    "old50_baseline_disabled": {
+      "total": 50,
+      "primary_correct": 26,
+      "strict_correct": 23,
+      "strict_failed_ids": [
+        "C02",
+        "C06",
+        "C09",
+        "C11",
+        "C14",
+        "C15",
+        "C17",
+        "C21",
+        "C23",
+        "C25",
+        "C26",
+        "C27",
+        "C28",
+        "C29",
+        "C30",
+        "C32",
+        "C33",
+        "C34",
+        "C35",
+        "C38",
+        "C39",
+        "C40",
+        "C45",
+        "C46",
+        "C47",
+        "C48",
+        "C50"
+      ],
+      "expected_read_only_count": 22,
+      "read_only_check_failed_ids": [
+        "C11",
+        "C14",
+        "C15",
+        "C17",
+        "C25",
+        "C26",
+        "C29",
+        "C32",
+        "C35",
+        "C38"
+      ],
+      "read_only_effectful_misparse_ids": [
+        "C15",
+        "C17",
+        "C32",
+        "C35",
+        "C38"
+      ],
+      "calls": 0,
+      "call_median_ms": null,
+      "status": {
+        "disabled": 50
+      },
+      "event_counts": {},
+      "stop_reasons": {},
+      "completion_usage_sources": {},
+      "provider_completion_tokens": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheReadTokens": 0
+      },
+      "groups": {
+        "代码编写": {
+          "total": 4,
+          "strict_correct": 3
+        },
+        "故障排查": {
+          "total": 3,
+          "strict_correct": 2
+        },
+        "重构": {
+          "total": 2,
+          "strict_correct": 1
+        },
+        "解释": {
+          "total": 3,
+          "strict_correct": 2
+        },
+        "查找": {
+          "total": 3,
+          "strict_correct": 1
+        },
+        "代码审查": {
+          "total": 2,
+          "strict_correct": 1
+        },
+        "测试": {
+          "total": 3,
+          "strict_correct": 3
+        },
+        "文档": {
+          "total": 2,
+          "strict_correct": 1
+        },
+        "配置": {
+          "total": 2,
+          "strict_correct": 1
+        },
+        "普通问答": {
+          "total": 2,
+          "strict_correct": 0
+        },
+        "闲聊": {
+          "total": 1,
+          "strict_correct": 0
+        },
+        "记忆": {
+          "total": 2,
+          "strict_correct": 0
+        },
+        "系统操作": {
+          "total": 1,
+          "strict_correct": 0
+        },
+        "否定/撤回": {
+          "total": 5,
+          "strict_correct": 1
+        },
+        "引用/假设": {
+          "total": 5,
+          "strict_correct": 2
+        },
+        "多意图": {
+          "total": 5,
+          "strict_correct": 4
+        },
+        "上下文/模糊": {
+          "total": 5,
+          "strict_correct": 1
+        }
+      }
+    },
+    "old50_baseline_live_10s": {
+      "total": 50,
+      "primary_correct": 33,
+      "strict_correct": 31,
+      "strict_failed_ids": [
+        "C11",
+        "C15",
+        "C17",
+        "C21",
+        "C23",
+        "C25",
+        "C26",
+        "C30",
+        "C32",
+        "C33",
+        "C34",
+        "C35",
+        "C38",
+        "C39",
+        "C40",
+        "C46",
+        "C47",
+        "C48",
+        "C50"
+      ],
+      "expected_read_only_count": 22,
+      "read_only_check_failed_ids": [
+        "C11",
+        "C15",
+        "C17",
+        "C25",
+        "C32",
+        "C35",
+        "C38"
+      ],
+      "read_only_effectful_misparse_ids": [
+        "C15",
+        "C17",
+        "C32",
+        "C35",
+        "C38"
+      ],
+      "calls": 18,
+      "call_median_ms": 5586.921250011073,
+      "status": {
+        "skipped": 32,
+        "accepted": 10,
+        "invalid_response": 7,
+        "timeout": 1
+      },
+      "event_counts": {
+        "model.started": 18,
+        "model.completed": 17,
+        "model.costed": 17,
+        "model.failed": 1
+      },
+      "stop_reasons": {
+        "not_recorded": 17
+      },
+      "completion_usage_sources": {
+        "provider": 17
+      },
+      "provider_completion_tokens": {
+        "inputTokens": 9919,
+        "outputTokens": 3306,
+        "cacheReadTokens": 8512
+      },
+      "groups": {
+        "代码编写": {
+          "total": 4,
+          "strict_correct": 4
+        },
+        "故障排查": {
+          "total": 3,
+          "strict_correct": 3
+        },
+        "重构": {
+          "total": 2,
+          "strict_correct": 2
+        },
+        "解释": {
+          "total": 3,
+          "strict_correct": 2
+        },
+        "查找": {
+          "total": 3,
+          "strict_correct": 2
+        },
+        "代码审查": {
+          "total": 2,
+          "strict_correct": 1
+        },
+        "测试": {
+          "total": 3,
+          "strict_correct": 3
+        },
+        "文档": {
+          "total": 2,
+          "strict_correct": 1
+        },
+        "配置": {
+          "total": 2,
+          "strict_correct": 1
+        },
+        "普通问答": {
+          "total": 2,
+          "strict_correct": 0
+        },
+        "闲聊": {
+          "total": 1,
+          "strict_correct": 1
+        },
+        "记忆": {
+          "total": 2,
+          "strict_correct": 2
+        },
+        "系统操作": {
+          "total": 1,
+          "strict_correct": 0
+        },
+        "否定/撤回": {
+          "total": 5,
+          "strict_correct": 1
+        },
+        "引用/假设": {
+          "total": 5,
+          "strict_correct": 2
+        },
+        "多意图": {
+          "total": 5,
+          "strict_correct": 5
+        },
+        "上下文/模糊": {
+          "total": 5,
+          "strict_correct": 1
+        }
+      }
+    },
+    "old50_candidate_disabled": {
+      "total": 50,
+      "primary_correct": 34,
+      "strict_correct": 31,
+      "strict_failed_ids": [
+        "C02",
+        "C06",
+        "C09",
+        "C11",
+        "C14",
+        "C23",
+        "C25",
+        "C26",
+        "C27",
+        "C29",
+        "C30",
+        "C33",
+        "C39",
+        "C40",
+        "C45",
+        "C46",
+        "C47",
+        "C48",
+        "C50"
+      ],
+      "expected_read_only_count": 22,
+      "read_only_check_failed_ids": [
+        "C11",
+        "C14",
+        "C25",
+        "C26",
+        "C29"
+      ],
+      "read_only_effectful_misparse_ids": [],
+      "calls": 0,
+      "call_median_ms": null,
+      "status": {
+        "disabled": 50
+      },
+      "event_counts": {},
+      "stop_reasons": {},
+      "completion_usage_sources": {},
+      "provider_completion_tokens": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheReadTokens": 0
+      },
+      "groups": {
+        "代码编写": {
+          "total": 4,
+          "strict_correct": 3
+        },
+        "故障排查": {
+          "total": 3,
+          "strict_correct": 2
+        },
+        "重构": {
+          "total": 2,
+          "strict_correct": 1
+        },
+        "解释": {
+          "total": 3,
+          "strict_correct": 2
+        },
+        "查找": {
+          "total": 3,
+          "strict_correct": 2
+        },
+        "代码审查": {
+          "total": 2,
+          "strict_correct": 2
+        },
+        "测试": {
+          "total": 3,
+          "strict_correct": 3
+        },
+        "文档": {
+          "total": 2,
+          "strict_correct": 2
+        },
+        "配置": {
+          "total": 2,
+          "strict_correct": 1
+        },
+        "普通问答": {
+          "total": 2,
+          "strict_correct": 0
+        },
+        "闲聊": {
+          "total": 1,
+          "strict_correct": 0
+        },
+        "记忆": {
+          "total": 2,
+          "strict_correct": 1
+        },
+        "系统操作": {
+          "total": 1,
+          "strict_correct": 0
+        },
+        "否定/撤回": {
+          "total": 5,
+          "strict_correct": 4
+        },
+        "引用/假设": {
+          "total": 5,
+          "strict_correct": 3
+        },
+        "多意图": {
+          "total": 5,
+          "strict_correct": 4
+        },
+        "上下文/模糊": {
+          "total": 5,
+          "strict_correct": 1
+        }
+      }
+    },
+    "old50_candidate_live": {
+      "total": 50,
+      "primary_correct": 42,
+      "strict_correct": 40,
+      "strict_failed_ids": [
+        "C02",
+        "C26",
+        "C30",
+        "C33",
+        "C39",
+        "C40",
+        "C46",
+        "C47",
+        "C48",
+        "C50"
+      ],
+      "expected_read_only_count": 22,
+      "read_only_check_failed_ids": [
+        "C26"
+      ],
+      "read_only_effectful_misparse_ids": [],
+      "calls": 16,
+      "call_median_ms": 1531.379978521727,
+      "status": {
+        "skipped": 34,
+        "timeout": 1,
+        "accepted": 10,
+        "low_confidence": 4,
+        "abstained": 1
+      },
+      "event_counts": {
+        "model.started": 16,
+        "model.failed": 1,
+        "model.completed": 15,
+        "model.costed": 15
+      },
+      "stop_reasons": {
+        "stop": 15
+      },
+      "completion_usage_sources": {
+        "provider": 15
+      },
+      "provider_completion_tokens": {
+        "inputTokens": 9538,
+        "outputTokens": 499,
+        "cacheReadTokens": 7552
+      },
+      "groups": {
+        "代码编写": {
+          "total": 4,
+          "strict_correct": 3
+        },
+        "故障排查": {
+          "total": 3,
+          "strict_correct": 3
+        },
+        "重构": {
+          "total": 2,
+          "strict_correct": 2
+        },
+        "解释": {
+          "total": 3,
+          "strict_correct": 3
+        },
+        "查找": {
+          "total": 3,
+          "strict_correct": 3
+        },
+        "代码审查": {
+          "total": 2,
+          "strict_correct": 2
+        },
+        "测试": {
+          "total": 3,
+          "strict_correct": 3
+        },
+        "文档": {
+          "total": 2,
+          "strict_correct": 2
+        },
+        "配置": {
+          "total": 2,
+          "strict_correct": 2
+        },
+        "普通问答": {
+          "total": 2,
+          "strict_correct": 1
+        },
+        "闲聊": {
+          "total": 1,
+          "strict_correct": 1
+        },
+        "记忆": {
+          "total": 2,
+          "strict_correct": 2
+        },
+        "系统操作": {
+          "total": 1,
+          "strict_correct": 0
+        },
+        "否定/撤回": {
+          "total": 5,
+          "strict_correct": 4
+        },
+        "引用/假设": {
+          "total": 5,
+          "strict_correct": 3
+        },
+        "多意图": {
+          "total": 5,
+          "strict_correct": 5
+        },
+        "上下文/模糊": {
+          "total": 5,
+          "strict_correct": 1
+        }
+      }
+    },
+    "new40_baseline_disabled": {
+      "total": 40,
+      "primary_correct": 24,
+      "strict_correct": 16,
+      "strict_failed_ids": [
+        "N01",
+        "N03",
+        "N04",
+        "N05",
+        "N06",
+        "N07",
+        "N08",
+        "N09",
+        "N10",
+        "N14",
+        "N18",
+        "N19",
+        "N20",
+        "N21",
+        "N22",
+        "N28",
+        "N30",
+        "N31",
+        "N32",
+        "N33",
+        "N36",
+        "N37",
+        "N38",
+        "N39"
+      ],
+      "expected_read_only_count": 19,
+      "read_only_check_failed_ids": [
+        "N10",
+        "N21",
+        "N22",
+        "N28",
+        "N30"
+      ],
+      "read_only_effectful_misparse_ids": [
+        "N10",
+        "N21"
+      ],
+      "calls": 0,
+      "call_median_ms": null,
+      "status": {
+        "disabled": 40
+      },
+      "event_counts": {},
+      "stop_reasons": {},
+      "completion_usage_sources": {},
+      "provider_completion_tokens": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheReadTokens": 0
+      },
+      "groups": {
+        "quoted_hypothetical_withdrawn_readonly": {
+          "total": 10,
+          "strict_correct": 1
+        },
+        "explicit_affirmative_changes": {
+          "total": 10,
+          "strict_correct": 6
+        },
+        "ordinary_development_questions_search_docs_tests": {
+          "total": 10,
+          "strict_correct": 6
+        },
+        "multiple_intents_and_contextual_reference": {
+          "total": 10,
+          "strict_correct": 3
+        }
+      }
+    },
+    "new40_baseline_live_10s": {
+      "total": 40,
+      "primary_correct": 27,
+      "strict_correct": 21,
+      "strict_failed_ids": [
+        "N01",
+        "N03",
+        "N04",
+        "N05",
+        "N06",
+        "N08",
+        "N09",
+        "N10",
+        "N14",
+        "N18",
+        "N19",
+        "N20",
+        "N21",
+        "N28",
+        "N31",
+        "N32",
+        "N33",
+        "N37",
+        "N39"
+      ],
+      "expected_read_only_count": 19,
+      "read_only_check_failed_ids": [
+        "N10",
+        "N21",
+        "N28"
+      ],
+      "read_only_effectful_misparse_ids": [
+        "N10",
+        "N21"
+      ],
+      "calls": 16,
+      "call_median_ms": 5959.030875033932,
+      "status": {
+        "skipped": 24,
+        "invalid_response": 9,
+        "accepted": 7
+      },
+      "event_counts": {
+        "model.started": 16,
+        "model.completed": 16,
+        "model.costed": 16
+      },
+      "stop_reasons": {
+        "not_recorded": 16
+      },
+      "completion_usage_sources": {
+        "provider": 16
+      },
+      "provider_completion_tokens": {
+        "inputTokens": 9569,
+        "outputTokens": 3475,
+        "cacheReadTokens": 6272
+      },
+      "groups": {
+        "quoted_hypothetical_withdrawn_readonly": {
+          "total": 10,
+          "strict_correct": 2
+        },
+        "explicit_affirmative_changes": {
+          "total": 10,
+          "strict_correct": 6
+        },
+        "ordinary_development_questions_search_docs_tests": {
+          "total": 10,
+          "strict_correct": 8
+        },
+        "multiple_intents_and_contextual_reference": {
+          "total": 10,
+          "strict_correct": 5
+        }
+      }
+    },
+    "new40_candidate_disabled": {
+      "total": 40,
+      "primary_correct": 27,
+      "strict_correct": 18,
+      "strict_failed_ids": [
+        "N01",
+        "N03",
+        "N04",
+        "N05",
+        "N06",
+        "N07",
+        "N08",
+        "N09",
+        "N10",
+        "N14",
+        "N18",
+        "N20",
+        "N21",
+        "N22",
+        "N28",
+        "N30",
+        "N31",
+        "N32",
+        "N33",
+        "N36",
+        "N37",
+        "N39"
+      ],
+      "expected_read_only_count": 19,
+      "read_only_check_failed_ids": [
+        "N10",
+        "N21",
+        "N22",
+        "N28",
+        "N30"
+      ],
+      "read_only_effectful_misparse_ids": [
+        "N10",
+        "N21"
+      ],
+      "calls": 0,
+      "call_median_ms": null,
+      "status": {
+        "disabled": 40
+      },
+      "event_counts": {},
+      "stop_reasons": {},
+      "completion_usage_sources": {},
+      "provider_completion_tokens": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheReadTokens": 0
+      },
+      "groups": {
+        "quoted_hypothetical_withdrawn_readonly": {
+          "total": 10,
+          "strict_correct": 1
+        },
+        "explicit_affirmative_changes": {
+          "total": 10,
+          "strict_correct": 7
+        },
+        "ordinary_development_questions_search_docs_tests": {
+          "total": 10,
+          "strict_correct": 6
+        },
+        "multiple_intents_and_contextual_reference": {
+          "total": 10,
+          "strict_correct": 4
+        }
+      }
+    },
+    "new40_candidate_live": {
+      "total": 40,
+      "primary_correct": 32,
+      "strict_correct": 24,
+      "strict_failed_ids": [
+        "N01",
+        "N03",
+        "N04",
+        "N05",
+        "N06",
+        "N08",
+        "N09",
+        "N10",
+        "N14",
+        "N18",
+        "N20",
+        "N21",
+        "N32",
+        "N33",
+        "N37",
+        "N39"
+      ],
+      "expected_read_only_count": 19,
+      "read_only_check_failed_ids": [
+        "N10",
+        "N21"
+      ],
+      "read_only_effectful_misparse_ids": [
+        "N10",
+        "N21"
+      ],
+      "calls": 15,
+      "call_median_ms": 1987.5239169923589,
+      "status": {
+        "skipped": 25,
+        "abstained": 2,
+        "accepted": 9,
+        "low_confidence": 4
+      },
+      "event_counts": {
+        "model.started": 15,
+        "model.completed": 15,
+        "model.costed": 15
+      },
+      "stop_reasons": {
+        "stop": 15
+      },
+      "completion_usage_sources": {
+        "provider": 15
+      },
+      "provider_completion_tokens": {
+        "inputTokens": 9748,
+        "outputTokens": 605,
+        "cacheReadTokens": 6656
+      },
+      "groups": {
+        "quoted_hypothetical_withdrawn_readonly": {
+          "total": 10,
+          "strict_correct": 2
+        },
+        "explicit_affirmative_changes": {
+          "total": 10,
+          "strict_correct": 7
+        },
+        "ordinary_development_questions_search_docs_tests": {
+          "total": 10,
+          "strict_correct": 9
+        },
+        "multiple_intents_and_contextual_reference": {
+          "total": 10,
+          "strict_correct": 6
+        }
+      }
+    }
+  },
+  "paired_changes": {
+    "old50_disabled": {
+      "improved_ids": [
+        "C15",
+        "C17",
+        "C21",
+        "C28",
+        "C32",
+        "C34",
+        "C35",
+        "C38"
+      ],
+      "regressed_ids": []
+    },
+    "old50_live": {
+      "improved_ids": [
+        "C11",
+        "C15",
+        "C17",
+        "C21",
+        "C23",
+        "C25",
+        "C32",
+        "C34",
+        "C35",
+        "C38"
+      ],
+      "regressed_ids": [
+        "C02"
+      ]
+    },
+    "new40_disabled": {
+      "improved_ids": [
+        "N19",
+        "N38"
+      ],
+      "regressed_ids": []
+    },
+    "new40_live": {
+      "improved_ids": [
+        "N19",
+        "N28",
+        "N31"
+      ],
+      "regressed_ids": []
+    }
+  }
+}

@@ -1,0 +1,3883 @@
+{
+  "schema": "skill-chain-expansion-summary/v1",
+  "groups": {
+    "new": {
+      "finished_records": 30,
+      "planned": 30,
+      "positive_records": 24,
+      "negative_records": 6,
+      "valid_live": 30,
+      "completed": 29,
+      "termination_categories": {
+        "completed": 29,
+        "step_budget_exhausted": 1
+      },
+      "timeouts": 0,
+      "infrastructure_errors": 0,
+      "strict_load": 22,
+      "all_required_handoffs": 21,
+      "retrieval_and_handoff": 21,
+      "strict_chain": 21,
+      "strict_protocol": 16,
+      "negative_false_trigger": 0,
+      "negative_clean": 6,
+      "body_bypasses": 0,
+      "semantic_reviewed": 30,
+      "strict_semantic_pass": 18,
+      "core_task_pass": 25,
+      "model_calls": 150,
+      "median_seconds": 73.41,
+      "retrieval_wilson95_descriptive": [
+        0.69,
+        0.9566
+      ],
+      "error_categories": {}
+    },
+    "repeat": {
+      "finished_records": 10,
+      "planned": 10,
+      "positive_records": 8,
+      "negative_records": 2,
+      "valid_live": 10,
+      "completed": 10,
+      "termination_categories": {
+        "completed": 10
+      },
+      "timeouts": 0,
+      "infrastructure_errors": 0,
+      "strict_load": 7,
+      "all_required_handoffs": 7,
+      "retrieval_and_handoff": 7,
+      "strict_chain": 6,
+      "strict_protocol": 6,
+      "negative_false_trigger": 0,
+      "negative_clean": 2,
+      "body_bypasses": 0,
+      "semantic_reviewed": 10,
+      "strict_semantic_pass": 5,
+      "core_task_pass": 9,
+      "model_calls": 55,
+      "median_seconds": 75.82,
+      "retrieval_wilson95_descriptive": [
+        0.5291,
+        0.9776
+      ],
+      "error_categories": {}
+    }
+  },
+  "rows": [
+    {
+      "id": "E01",
+      "cohort": "new",
+      "category": "long-context-current-request",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E01/run.json",
+      "run_sha256": "876983263d24a3d1dd202280e5a412b8fe268136fbbe3cf7b62d7dd85b66f488",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "queue/idempotency",
+          "queue/idempotent-consumer-template"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "queue/idempotency"
+              },
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "queue/idempotent-consumer-template"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "queue/idempotency"
+          }
+        ],
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "fail",
+          "core_task_success": false,
+          "reason": "正确给出了ledger与outbox同事务、提交后ack的总原则，但最终答复在消费者代码字符串中途结束，没有交付要求的事务流程、稳定消息标识/唯一性去重与宕机重投说明。即使Agent Loop将其标为completed，用户任务仍未完整交付。",
+          "issues": [
+            {
+              "severity": "material",
+              "kind": "incomplete_answer",
+              "detail": "最终内容以db.mark_processed(message[开头的未闭合片段结束，缺少主要流程及重投行为解释。"
+            },
+            {
+              "severity": "diagnostic",
+              "kind": "per_call_output_limit",
+              "detail": "第6次assistant内容为空，第7次为不完整答复，两次provider output_tokens均为1600且requested_output_limit=1600。没有留存finish_reason，不能据此断言唯一原因，但应与检索成功分开归因。"
+            }
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit (Codex sub-agent; not human gold)",
+          "run_sha256": "876983263d24a3d1dd202280e5a412b8fe268136fbbe3cf7b62d7dd85b66f488",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E01/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E01/responses/06.json",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E01/responses/07.json",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E01/workspace/shop/consumer.py",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E01/workspace/evidence/queue.json"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 7,
+      "elapsed_seconds": 145.281,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 1,
+        "load_skill": 2,
+        "read_file": 6,
+        "file_tree": 1,
+        "grep_files": 1
+      },
+      "load_attempts": 2,
+      "tokens": {
+        "input_tokens": 53304,
+        "output_tokens": 4417,
+        "cache_read_tokens": 44160
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": false,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E02",
+      "cohort": "new",
+      "category": "mixed-language",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E02/run.json",
+      "run_sha256": "1422cdd2d116d51c488f700c1119e9157abae061916d4e416852155aecf435e1",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "http/retry-budget"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "http/retry-budget"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "http/retry-budget"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "pass",
+          "core_task_success": true,
+          "reason": "正确区分3次重试与4次总尝试，指出250ms不构成整个重试链的总截止，估算中保留退避额外时长；根据POST无幂等键指出重发副作用风险。仅读取文件，未执行修改。",
+          "issues": [
+            {
+              "severity": "minor",
+              "kind": "idempotency_caveat",
+              "detail": "末段“附加幂等键之后自动重发才安全”宜补充服务端必须实现并遵守幂等键语义；本回答的核心裁决仍是当前配置不能无条件安全重发。"
+            }
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit (Codex sub-agent; not human gold)",
+          "run_sha256": "1422cdd2d116d51c488f700c1119e9157abae061916d4e416852155aecf435e1",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E02/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E02/workspace/evidence/http.json",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E02/run.json#executions"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 6,
+      "elapsed_seconds": 84.327,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 2,
+        "load_skill": 1,
+        "read_file": 5,
+        "file_tree": 1,
+        "grep_files": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 41827,
+        "output_tokens": 2311,
+        "cache_read_tokens": 33728
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E03",
+      "cohort": "new",
+      "category": "natural-metaphor",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E03/run.json",
+      "run_sha256": "7a258d82c2df1953b73d07decff707ada8007917552e50f10534b524dbdc0278",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "database/query-plan"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "database/query-plan"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "database/query-plan"
+          }
+        ],
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "fail",
+          "core_task_success": true,
+          "reason": "核心计算48000/12=4000、两个等值谓词及复合索引方向正确，且未修改结果语义。但答复把Seq Scan断言成不存在匹配索引，并无依据地认定tenant_id选择性高及改善后约每返回行只检查1–2行；这些是记录不支持的实质性性能诊断。",
+          "issues": [
+            {
+              "severity": "material",
+              "kind": "unsupported_index_absence",
+              "detail": "保存记录只有Seq Scan、扫描/返回计数和候选index_columns，不能证明表上没有匹配索引或优化器只能顺序扫描。"
+            },
+            {
+              "severity": "material",
+              "kind": "unmeasured_performance_claim",
+              "detail": "未提供单列选择性或新计划/基准，却给出tenant_id选择性高与约4000降到1–2行/行的确定性预测，未将收益保留为待验证。"
+            }
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit (Codex sub-agent; not human gold)",
+          "run_sha256": "7a258d82c2df1953b73d07decff707ada8007917552e50f10534b524dbdc0278",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E03/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E03/workspace/evidence/database.json",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E03/workspace/shop/orders.py",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E03/run.json#executions"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 5,
+      "elapsed_seconds": 65.613,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 1,
+        "load_skill": 1,
+        "read_file": 3,
+        "file_tree": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 34492,
+        "output_tokens": 1769,
+        "cache_read_tokens": 26240
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E04",
+      "cohort": "new",
+      "category": "completed-history-current-request",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E04/run.json",
+      "run_sha256": "9475b4ab8a6b9185b43eb372604382436dfebc81ca766f8f59d7e59cd13829ba",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "cache/expiry-analysis"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "cache/expiry-analysis"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "cache/expiry-analysis"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "pass",
+          "core_task_success": true,
+          "reason": "正确排列12:00填充、12:02变价、12:10过期，算出该记录的陈旧窗口8分钟/480秒，并区别于一般最坏TTL600秒；识别缺失price_changed失效事件并给出只读建议。",
+          "issues": [],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit (Codex sub-agent; not human gold)",
+          "run_sha256": "9475b4ab8a6b9185b43eb372604382436dfebc81ca766f8f59d7e59cd13829ba",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E04/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E04/workspace/evidence/cache.json",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E04/run.json#executions"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 5,
+      "elapsed_seconds": 68.898,
+      "tool_counts": {
+        "list_files": 1,
+        "browse_skill_directory": 1,
+        "load_skill": 1,
+        "read_file": 1,
+        "file_tree": 1,
+        "grep_files": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 33803,
+        "output_tokens": 1739,
+        "cache_read_tokens": 25728
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E05",
+      "cohort": "new",
+      "category": "mixed-language",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E05/run.json",
+      "run_sha256": "c25e14ff69d5a1b8e4bf3bd180ccb5ab2a48cb6ff071401918cb0546564a71b4",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": false,
+        "successful_loader_names": [
+          "auth/access-audit"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 5,
+                "skill": "auth/access-audit"
+              }
+            ],
+            "report_markers_present": false
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 5,
+            "skill": "auth/access-audit"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "pass",
+          "core_task_success": true,
+          "reason": "准确对比reports:read与导出所需reports:export及403，建议只补最小scope并保留原权限，拒绝管理员升级；明确源码无鉴权实现，结论依据保存的观察而非虚构运行结果。",
+          "issues": [
+            {
+              "severity": "minor",
+              "kind": "overstated_audit_effect",
+              "detail": "关于admin会使未来审计无法区分导出与管理操作的绝对表述没有本地日志机制证据，属于次要论据过度延伸；不影响本题最小权限裁决。"
+            }
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit (Codex sub-agent; not human gold)",
+          "run_sha256": "c25e14ff69d5a1b8e4bf3bd180ccb5ab2a48cb6ff071401918cb0546564a71b4",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E05/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E05/workspace/evidence/auth.json",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E05/run.json#executions"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 7,
+      "elapsed_seconds": 105.527,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "file_tree": 1,
+        "load_skill": 1,
+        "read_file": 7,
+        "list_files": 1,
+        "grep_files": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 55088,
+        "output_tokens": 2298,
+        "cache_read_tokens": 36928
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E06",
+      "cohort": "new",
+      "category": "long-context-current-request",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E06/run.json",
+      "run_sha256": "edeb095f5ba3355cc6b6c1a20f4fe8d80d69f6d029f59cf1eb29dd07cb83c2dd",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": false,
+        "all_required_loads": false,
+        "strict_load": false,
+        "all_required_handoffs": false,
+        "strict_chain": false,
+        "strict_protocol": false,
+        "successful_loader_names": [],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": false,
+            "handoff": false,
+            "fresh_evidence": false,
+            "depends_on": [],
+            "candidates": [],
+            "report_markers_present": false
+          }
+        ],
+        "valid_chain": null,
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "fail",
+          "core_task_success": true,
+          "reason": "实际读取了要求的源码和配置快照，最终9200、APP_PORT来源与环境>文件>默认优先级均正确。但错误声称环境变量存在时config.get(...)根本不会执行，忽略Python函数参数先求值；还把8100快照推断为历史上已从8080改过。严格解释有实质错误，不能因核心值正确判整段无误。未加载Skill另由检索评分处理。",
+          "issues": [
+            {
+              "severity": "material",
+              "kind": "python_evaluation_semantics",
+              "detail": "os.getenv的default参数表达式config.get(\"port\",8080)在调用os.getenv前就会求值；选择返回哪一来源不等于惰性执行参数表达式。"
+            },
+            {
+              "severity": "material",
+              "kind": "unsupported_history",
+              "detail": "当前文件值8100不能证明历史值曾为8080或已经执行过该修改。"
+            },
+            {
+              "severity": "diagnostic",
+              "kind": "discovery_skipped",
+              "detail": "hierarchical system prompt的config目录卡可见，catalog=1000、model-first、无对应veto；没有browse/search/load执行，模型选择直接读取源码，不是候选被不可见或policy排除。"
+            }
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit (Codex sub-agent; not human gold)",
+          "run_sha256": "edeb095f5ba3355cc6b6c1a20f4fe8d80d69f6d029f59cf1eb29dd07cb83c2dd",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E06/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E06/run.json#routing",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E06/run.json#executions",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E06/system-prompt.txt",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E06/workspace/shop/settings.py",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E06/workspace/evidence/config.json"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 5,
+      "elapsed_seconds": 72.704,
+      "tool_counts": {
+        "list_files": 1,
+        "grep_files": 2,
+        "read_file": 5,
+        "file_tree": 1
+      },
+      "load_attempts": 0,
+      "tokens": {
+        "input_tokens": 34370,
+        "output_tokens": 1875,
+        "cache_read_tokens": 21440
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E07",
+      "cohort": "new",
+      "category": "natural-metaphor",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E07/run.json",
+      "run_sha256": "a90efa54c37a92bcd5f400c593de06eee8aec701924c322b9d553e2a4394c1f5",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "architecture/import-cycle"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "architecture/import-cycle"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "architecture/import-cycle"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "pass",
+          "core_task_success": true,
+          "reason": "以源码确认orders→pricing与pricing→orders的两条依赖边及TAX_RATE共享符号，给出移至constants叶模块的完整提案，使依赖为orders→pricing→constants；明确未实施，不以延迟import隐藏环。",
+          "issues": [
+            {
+              "severity": "minor",
+              "kind": "wording_inconsistency",
+              "detail": "提案代码注释称orders完全不变，但紧随正文正确说明删除TAX_RATE定义；代码方案与主要说明一致，该注释不影响修复含义。"
+            }
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit (Codex sub-agent; not human gold)",
+          "run_sha256": "a90efa54c37a92bcd5f400c593de06eee8aec701924c322b9d553e2a4394c1f5",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E07/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E07/workspace/shop/orders.py",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E07/workspace/shop/pricing.py",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E07/workspace/evidence/architecture.json"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 6,
+      "elapsed_seconds": 74.933,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 1,
+        "load_skill": 1,
+        "read_file": 5,
+        "file_tree": 1,
+        "grep_files": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 40742,
+        "output_tokens": 1704,
+        "cache_read_tokens": 33856
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E08",
+      "cohort": "new",
+      "category": "privacy-with-diagnostics",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E08/run.json",
+      "run_sha256": "b98f0d8adf3bb052cc06af46dc3c0658f6d9a3ef8cf6811801f634a329ec5617",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": false,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": false,
+        "strict_chain": false,
+        "strict_protocol": false,
+        "successful_loader_names": [
+          "logging/redaction"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": false,
+            "fresh_evidence": false,
+            "depends_on": [],
+            "candidates": [],
+            "report_markers_present": false
+          }
+        ],
+        "valid_chain": null,
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "fail",
+          "core_task_success": false,
+          "reason": "10次模型调用后触及工具步数上限，未向用户提供隐藏/保留字段说明；final只是系统终止文本。前8轮大量读取，直到第9轮展开logging、第10轮才正确load，随后没有模型请求消费正文，因此证据已经读取或最终找对Skill都不能代替任务交付。",
+          "issues": [
+            {
+              "severity": "material",
+              "kind": "no_answer_at_step_limit",
+              "detail": "completed=false且final为Reached the maximum tool step limit for this turn，缺少用户请求的报告。"
+            },
+            {
+              "severity": "diagnostic",
+              "kind": "late_discovery",
+              "detail": "候选目录存在且第9轮browse返回正确redaction，延迟发现消耗了有限模型调用预算；第10轮load成功但没有后续handoff。"
+            }
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit (Codex sub-agent; not human gold)",
+          "run_sha256": "b98f0d8adf3bb052cc06af46dc3c0658f6d9a3ef8cf6811801f634a329ec5617",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E08/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E08/run.json#completed",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E08/run.json#model_calls",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E08/run.json#loads",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E08/responses/09.json",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E08/responses/10.json",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E08/workspace/evidence/logging.json"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 10,
+      "elapsed_seconds": 97.458,
+      "tool_counts": {
+        "list_files": 2,
+        "file_tree": 1,
+        "read_file": 29,
+        "grep_files": 4,
+        "browse_skill_directory": 1,
+        "load_skill": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 86078,
+        "output_tokens": 2268,
+        "cache_read_tokens": 74944
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": false,
+      "error_categories": [],
+      "termination_category": "step_budget_exhausted"
+    },
+    {
+      "id": "E09",
+      "cohort": "new",
+      "category": "independent-composite",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E09/run.json",
+      "run_sha256": "9a894118b5c93f6f5d7e3a77bc2e2f3c2c7fa25b99bef5a34b5ad1bf8297f977",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "api/error-contract",
+          "logging/redaction"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "api/error-contract"
+              }
+            ],
+            "report_markers_present": true
+          },
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "logging/redaction"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "api/error-contract"
+          },
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "logging/redaction"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "pass",
+          "core_task_success": true,
+          "reason": "独立完成两部分：准确对比非法quantity的预期400/error_code与实际500/message，解释实现契约缺陷；指出authorization必须隐藏，保留request_id和error_code。没有回显凭据，也没有执行修改或发送工单。",
+          "issues": [],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit (Codex sub-agent; not human gold)",
+          "run_sha256": "9a894118b5c93f6f5d7e3a77bc2e2f3c2c7fa25b99bef5a34b5ad1bf8297f977",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E09/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E09/workspace/shop/api.py",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E09/workspace/evidence/api.json",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E09/workspace/evidence/logging.json",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E09/run.json#executions"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 6,
+      "elapsed_seconds": 91.208,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 3,
+        "load_skill": 2,
+        "read_file": 4,
+        "grep_files": 1
+      },
+      "load_attempts": 2,
+      "tokens": {
+        "input_tokens": 44238,
+        "output_tokens": 2400,
+        "cache_read_tokens": 36544
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E10",
+      "cohort": "new",
+      "category": "onboarding-handoff",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E10/run.json",
+      "run_sha256": "4044330241ed2a60673cdd8446a5291d544c812b9ccd500d2fa92cb2a8ba460e",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": false,
+        "all_required_loads": false,
+        "strict_load": false,
+        "all_required_handoffs": false,
+        "strict_chain": false,
+        "strict_protocol": false,
+        "successful_loader_names": [],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": false,
+            "handoff": false,
+            "fresh_evidence": false,
+            "depends_on": [],
+            "candidates": [],
+            "report_markers_present": false
+          }
+        ],
+        "valid_chain": null,
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "pass",
+          "core_task_success": true,
+          "reason": "根据实际shop.app的main guard及保存记录，给出shop.app入口、必需SHOP_REGION和约定/healthz，说明未运行服务器且不虚构部署设施。未加载Skill不影响这三项核心事实的语义正确性，属于单独的发现遗漏。",
+          "issues": [
+            {
+              "severity": "minor",
+              "kind": "fallback_wording",
+              "detail": "附带说明APP_PORT缺失“只是走默认值”简化了配置文件可能胜出的中间分支；同段已列完整优先级，且不是用户要求的核心三项。"
+            },
+            {
+              "severity": "diagnostic",
+              "kind": "discovery_skipped",
+              "detail": "hierarchical catalog包含docs目录卡，模型没有browse/search/load，直接读源码与记录完成答复。"
+            }
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit (Codex sub-agent; not human gold)",
+          "run_sha256": "4044330241ed2a60673cdd8446a5291d544c812b9ccd500d2fa92cb2a8ba460e",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E10/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E10/run.json#routing",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E10/run.json#executions",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E10/system-prompt.txt",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E10/workspace/shop/app.py",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/E10/workspace/evidence/startup.json"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 4,
+      "elapsed_seconds": 55.132,
+      "tool_counts": {
+        "list_files": 1,
+        "file_tree": 1,
+        "read_file": 9,
+        "grep_files": 1
+      },
+      "load_attempts": 0,
+      "tokens": {
+        "input_tokens": 28603,
+        "output_tokens": 1443,
+        "cache_read_tokens": 21376
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E11",
+      "cohort": "new",
+      "category": "current-stage-already-established",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E11/run.json",
+      "run_sha256": "71a6a070c12671920510be078b4f44caa46488a08723139e5ef141f6ef44dfa2",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "ci/test-isolation"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 7,
+                "read_index": 8,
+                "skill": "ci/test-isolation"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 7,
+            "read_index": 8,
+            "skill": "ci/test-isolation"
+          }
+        ],
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "id": "E11",
+          "status": "fail",
+          "reviewer_type": "agent",
+          "reviewer": "expand_novel_skills (independent of E11–E20 authorship)",
+          "reason": "核心判断与建议正确：依据 GLOBAL_CART、单跑通过及后置多出 1 项解释共享状态泄漏，建议每例新 fixture 和打乱顺序验证，阶段顺序保持不变。但最终将记录未给出的具体 Python 实现断言为事实，完整答案的证据约束未满足。",
+          "evidence": [
+            "live-01/E11/run.json#/final",
+            "live-01/E11/run.json#/model_calls/2/content",
+            "live-01/E11/run.json#/model_calls/3/content",
+            "live-01/E11/run.json#/executions/5/output",
+            "live-01/E11/run.json#/executions/6/output",
+            "live-01/E11/run.json#/executions/7/output",
+            "live-01/E11/run.json#/executions/18/output"
+          ],
+          "core_task_success": true,
+          "issues": [
+            "实质性无依据实现细节：最终称 GLOBAL_CART 是模块级/会话级的同一个 list 对象，并称 test_add_item 执行 append；evidence/tests.json 只给共享夹具名称及观测结果，没有夹具作用域、类型或操作源码。搜索实际未找到测试代码，不能把合理假设升级为已确认实现。",
+            "效率问题：读取 export、client_lifecycle、queue、checkout、cache 等无关证据后才发现并加载 ci/test-isolation；这本身不构成用户禁止动作，但多耗费模型轮次。"
+          ],
+          "run_sha256": "71a6a070c12671920510be078b4f44caa46488a08723139e5ef141f6ef44dfa2"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 9,
+      "elapsed_seconds": 134.353,
+      "tool_counts": {
+        "list_files": 2,
+        "file_tree": 1,
+        "read_file": 11,
+        "grep_files": 3,
+        "browse_skill_directory": 1,
+        "load_skill": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 78848,
+        "output_tokens": 3598,
+        "cache_read_tokens": 61248
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E12",
+      "cohort": "new",
+      "category": "conditional-false-registry",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E12/run.json",
+      "run_sha256": "869fad7e565fbcb5ca5494936a2b8c8e7c11762f385de00394a15e329317ffac",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "ci/pipeline-diagnosis"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "ci/pipeline-diagnosis"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "ci/pipeline-diagnosis"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "id": "E12",
+          "status": "pass",
+          "reviewer_type": "agent",
+          "reviewer": "expand_novel_skills (independent of E11–E20 authorship)",
+          "reason": "正确定位 publish 为唯一失败阶段，build 和 integration_tests 均 ok，原因是 registry authentication expired；未加载测试隔离或把历史共享状态当此次原因，所有变更仅作为建议。",
+          "evidence": [
+            "live-01/E12/run.json#/final",
+            "live-01/E12/run.json#/executions/2/output",
+            "live-01/E12/run.json#/executions/3/output",
+            "live-01/E12/run.json#/loads"
+          ],
+          "core_task_success": true,
+          "issues": [
+            "轻微过度确定：末尾“更新凭据后重跑 publish 即可、无需重跑测试”未核实 CI 的重跑机制；应表述为待验证的处理方向，不影响本题阶段和原因判断。"
+          ],
+          "run_sha256": "869fad7e565fbcb5ca5494936a2b8c8e7c11762f385de00394a15e329317ffac"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 5,
+      "elapsed_seconds": 54.379,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 1,
+        "load_skill": 1,
+        "read_file": 1,
+        "file_tree": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 33512,
+        "output_tokens": 1463,
+        "cache_read_tokens": 26880
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E13",
+      "cohort": "new",
+      "category": "conditional-false-database",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E13/run.json",
+      "run_sha256": "e20bf034b89e4d7e3871db0e9e0dea1cc18b4a11d69abf2d5b76e4616fb3a253",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": false,
+        "successful_loader_names": [
+          "checkout/latency-diagnosis"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "checkout/latency-diagnosis"
+              }
+            ],
+            "report_markers_present": false
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "checkout/latency-diagnosis"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "id": "E13",
+          "status": "pass",
+          "reviewer_type": "agent",
+          "reviewer": "expand_novel_skills (independent of E11–E20 authorship)",
+          "reason": "正确比较 910/35/10 ms，定位 cart_db 为主要耗时；支付分支不成立，未加载支付韧性。明确组件耗时不足以确定某条 SQL 或特定索引，不把独立数据库材料冒充该 trace 的证据。",
+          "evidence": [
+            "live-01/E13/run.json#/final",
+            "live-01/E13/run.json#/executions/3/output",
+            "live-01/E13/run.json#/loads"
+          ],
+          "core_task_success": true,
+          "issues": [
+            "轻微措辞过强：“对支付段调超时/加重试既不会缩短结账耗时”宜表述为无法解决主要瓶颈；已给出主要耗时占比和证据范围，核心结论正确。"
+          ],
+          "run_sha256": "e20bf034b89e4d7e3871db0e9e0dea1cc18b4a11d69abf2d5b76e4616fb3a253"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 5,
+      "elapsed_seconds": 69.786,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 2,
+        "load_skill": 1,
+        "read_file": 2
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 33723,
+        "output_tokens": 1840,
+        "cache_read_tokens": 27072
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E14",
+      "cohort": "new",
+      "category": "conditional-true-payment",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E14/run.json",
+      "run_sha256": "e3996b1999c5a4b6c1953162784b79f92e4297520773bec778ed6246cee8aeea",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "checkout/latency-diagnosis",
+          "checkout/provider-resilience"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "checkout/latency-diagnosis"
+              }
+            ],
+            "report_markers_present": true
+          },
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [
+              0
+            ],
+            "candidates": [
+              {
+                "load_index": 4,
+                "read_index": 5,
+                "skill": "checkout/provider-resilience"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "checkout/latency-diagnosis"
+          },
+          {
+            "load_index": 4,
+            "read_index": 5,
+            "skill": "checkout/provider-resilience"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "id": "E14",
+          "status": "pass",
+          "reviewer_type": "agent",
+          "reviewer": "expand_novel_skills (independent of E11–E20 authorship)",
+          "reason": "先读取 840/30/10 ms 计时确认支付最大，再加载供应方 Skill 并读取限制。备忘录清楚区分分支依据与分支约束，保留 429/503、同一 order_id、1200 ms 总截止和公开签名，给出的两次尝试与剩余预算硬停方案有界且标为提案。",
+          "evidence": [
+            "live-01/E14/run.json#/final",
+            "live-01/E14/run.json#/executions/3/output",
+            "live-01/E14/run.json#/executions/5/input",
+            "live-01/E14/run.json#/executions/6/output",
+            "live-01/E14/run.json#/executions/7/output"
+          ],
+          "core_task_success": true,
+          "issues": [],
+          "run_sha256": "e3996b1999c5a4b6c1953162784b79f92e4297520773bec778ed6246cee8aeea"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 7,
+      "elapsed_seconds": 110.749,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 2,
+        "load_skill": 2,
+        "read_file": 2,
+        "grep_files": 1
+      },
+      "load_attempts": 2,
+      "tokens": {
+        "input_tokens": 50744,
+        "output_tokens": 3467,
+        "cache_read_tokens": 42496
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E15",
+      "cohort": "new",
+      "category": "negative-names-as-data",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E15/run.json",
+      "run_sha256": "1c5673c63cdd0f19afe697238042403a821829175f61f2796efd42c8b7e78e8a",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": true,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": false,
+        "all_required_loads": false,
+        "strict_load": false,
+        "all_required_handoffs": false,
+        "strict_chain": false,
+        "strict_protocol": true,
+        "successful_loader_names": [],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": false,
+        "negative_protocol_clean": true,
+        "stages": [],
+        "valid_chain": null,
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "id": "E15",
+          "status": "pass",
+          "reviewer_type": "agent",
+          "reviewer": "expand_novel_skills (independent of E11–E20 authorship)",
+          "reason": "输出两个对象的 JSON 数组，名称和 false/true 布尔值均正确；仅用 JSON 代码围栏呈现转换结果，没有额外解释，也没有任何工具调用。",
+          "evidence": [
+            "live-01/E15/run.json#/final",
+            "live-01/E15/run.json#/executions",
+            "live-01/E15/run.json#/loads"
+          ],
+          "core_task_success": true,
+          "issues": [],
+          "run_sha256": "1c5673c63cdd0f19afe697238042403a821829175f61f2796efd42c8b7e78e8a"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 1,
+      "elapsed_seconds": 9.592,
+      "tool_counts": {},
+      "load_attempts": 0,
+      "tokens": {
+        "input_tokens": 5886,
+        "output_tokens": 137,
+        "cache_read_tokens": 1152
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E16",
+      "cohort": "new",
+      "category": "negative-explicit-denial",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E16/run.json",
+      "run_sha256": "134fb5de6c4ca87231c117a9aa301b8c94a6d083d18021d9832c34039b405597",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": true,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": false,
+        "all_required_loads": false,
+        "strict_load": false,
+        "all_required_handoffs": false,
+        "strict_chain": false,
+        "strict_protocol": true,
+        "successful_loader_names": [],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": false,
+        "negative_protocol_clean": true,
+        "stages": [],
+        "valid_chain": null,
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "id": "E16",
+          "status": "pass",
+          "reviewer_type": "agent",
+          "reviewer": "expand_novel_skills (independent of E11–E20 authorship)",
+          "reason": "实际读取 evidence/database.json，正确给出 48000 ÷ 12 = 4000 及两个原始计数，没有加载/读取 Skill 正文或提供索引建议。来源与未加载说明略显冗余，但未改变问题范围。",
+          "evidence": [
+            "live-01/E16/run.json#/final",
+            "live-01/E16/run.json#/executions/0/output",
+            "live-01/E16/run.json#/loads"
+          ],
+          "core_task_success": true,
+          "issues": [],
+          "run_sha256": "134fb5de6c4ca87231c117a9aa301b8c94a6d083d18021d9832c34039b405597"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 2,
+      "elapsed_seconds": 15.469,
+      "tool_counts": {
+        "read_file": 1
+      },
+      "load_attempts": 0,
+      "tokens": {
+        "input_tokens": 11904,
+        "output_tokens": 243,
+        "cache_read_tokens": 6976
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E17",
+      "cohort": "new",
+      "category": "negative-completed-history",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E17/run.json",
+      "run_sha256": "a930537724f5f731a4a588b45dd856f637bf944090e8ac04559e91221bcb3d06",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": true,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": false,
+        "all_required_loads": false,
+        "strict_load": false,
+        "all_required_handoffs": false,
+        "strict_chain": false,
+        "strict_protocol": true,
+        "successful_loader_names": [],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": false,
+        "negative_protocol_clean": true,
+        "stages": [],
+        "valid_chain": null,
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "id": "E17",
+          "status": "fail",
+          "reviewer_type": "agent",
+          "reviewer": "expand_novel_skills (independent of E11–E20 authorship)",
+          "reason": "三个英文状态的含义和顺序正确，也未检索或重做历史工作；但最终并非用户要求的三行英文，额外加入前言、中文对照和历史任务说明，命中冻结 rubric 的“添加无关工作说明”失败条件。",
+          "evidence": [
+            "live-01/E17/run.json#/final",
+            "live-01/E17/run.json#/executions",
+            "live-01/E17/run.json#/loads"
+          ],
+          "core_task_success": false,
+          "issues": [
+            "输出约束失败：共 5 个非空行，含“已完成以下翻译”前言，以及 logging/redaction、http/retry-budget 已关闭的整段附言。",
+            "翻译语义本身正确；失败来自当前任务要求的限定输出格式，不应归类为 Skill 误触发。"
+          ],
+          "run_sha256": "a930537724f5f731a4a588b45dd856f637bf944090e8ac04559e91221bcb3d06"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 1,
+      "elapsed_seconds": 14.676,
+      "tool_counts": {},
+      "load_attempts": 0,
+      "tokens": {
+        "input_tokens": 5935,
+        "output_tokens": 210,
+        "cache_read_tokens": 1152
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": false,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E18",
+      "cohort": "new",
+      "category": "negative-metadata-query",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E18/run.json",
+      "run_sha256": "7973e6ea0150b99dbcb8a82e72de3e17a06650845a789034f356f31ef56e0638",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": true,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": false,
+        "all_required_loads": false,
+        "strict_load": false,
+        "all_required_handoffs": false,
+        "strict_chain": false,
+        "strict_protocol": true,
+        "successful_loader_names": [],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": false,
+        "negative_protocol_clean": true,
+        "stages": [],
+        "valid_chain": null,
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "id": "E18",
+          "status": "pass",
+          "reviewer_type": "agent",
+          "reviewer": "expand_novel_skills (independent of E11–E20 authorship)",
+          "reason": "仅浏览 config 与 checkout 的发现元信息，准确确认两个名称存在，并分别概括配置优先级与已确认支付慢调用后的超时重试用途；没有读取正文或开始业务诊断。",
+          "evidence": [
+            "live-01/E18/run.json#/final",
+            "live-01/E18/run.json#/executions/0/output",
+            "live-01/E18/run.json#/loads"
+          ],
+          "core_task_success": true,
+          "issues": [],
+          "run_sha256": "7973e6ea0150b99dbcb8a82e72de3e17a06650845a789034f356f31ef56e0638"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 2,
+      "elapsed_seconds": 23.188,
+      "tool_counts": {
+        "browse_skill_directory": 1
+      },
+      "load_attempts": 0,
+      "tokens": {
+        "input_tokens": 12185,
+        "output_tokens": 369,
+        "cache_read_tokens": 7040
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E19",
+      "cohort": "new",
+      "category": "negative-missing-no-substitute",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E19/run.json",
+      "run_sha256": "8592fef958856fdaefc73f2cc4e55dc1e120e2c9c4791819b697e75de25191bc",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": true,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": false,
+        "all_required_loads": false,
+        "strict_load": false,
+        "all_required_handoffs": false,
+        "strict_chain": false,
+        "strict_protocol": true,
+        "successful_loader_names": [],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": false,
+        "negative_protocol_clean": true,
+        "stages": [],
+        "valid_chain": null,
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "id": "E19",
+          "status": "pass",
+          "reviewer_type": "agent",
+          "reviewer": "expand_novel_skills (independent of E11–E20 authorship)",
+          "reason": "浏览目标目录并搜索 quantum-reconciliation 后，明确说明准确名称不可用，没有加载相似 Skill 或自行对账。所述目录仅 2 个候选与本次工具实际返回一致，不能用未过滤全量 catalog 的数量反向判错。",
+          "evidence": [
+            "live-01/E19/run.json#/final",
+            "live-01/E19/run.json#/executions/0/output",
+            "live-01/E19/run.json#/executions/1/output",
+            "live-01/E19/run.json#/loads"
+          ],
+          "core_task_success": true,
+          "issues": [
+            "回复比“直接说明并停止”所需更长，末尾还提出后续输入建议；未继续操作或替代技能，不构成冻结 rubric 的实质失败。"
+          ],
+          "run_sha256": "8592fef958856fdaefc73f2cc4e55dc1e120e2c9c4791819b697e75de25191bc"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 2,
+      "elapsed_seconds": 22.334,
+      "tool_counts": {
+        "search_skills": 1,
+        "browse_skill_directory": 1
+      },
+      "load_attempts": 0,
+      "tokens": {
+        "input_tokens": 12085,
+        "output_tokens": 550,
+        "cache_read_tokens": 7040
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E20",
+      "cohort": "new",
+      "category": "negative-unmet-computation-gate",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E20/run.json",
+      "run_sha256": "957f60df304df28e7310a5d7cc2f5000cb03d6a3c9b70f27d41bc8d9899e9ef6",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": true,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": false,
+        "all_required_loads": false,
+        "strict_load": false,
+        "all_required_handoffs": false,
+        "strict_chain": false,
+        "strict_protocol": true,
+        "successful_loader_names": [],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": false,
+        "negative_protocol_clean": true,
+        "stages": [],
+        "valid_chain": null,
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "id": "E20",
+          "status": "pass",
+          "reviewer_type": "agent",
+          "reviewer": "expand_novel_skills (independent of E11–E20 authorship)",
+          "reason": "17 + 21 = 38，条件未成立；最终恰为十进制数字 38，零工具调用，无文件或 Skill 发现和加载。",
+          "evidence": [
+            "live-01/E20/run.json#/final",
+            "live-01/E20/run.json#/executions",
+            "live-01/E20/run.json#/loads"
+          ],
+          "core_task_success": true,
+          "issues": [],
+          "run_sha256": "957f60df304df28e7310a5d7cc2f5000cb03d6a3c9b70f27d41bc8d9899e9ef6"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 1,
+      "elapsed_seconds": 7.188,
+      "tool_counts": {},
+      "load_attempts": 0,
+      "tokens": {
+        "input_tokens": 5866,
+        "output_tokens": 36,
+        "cache_read_tokens": 1152
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E21",
+      "cohort": "new",
+      "category": "novel-natural",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E21/run.json",
+      "run_sha256": "a9d3a9ccc21bde030e046fde997c76bf7438e0d3a52ceb788636870d8710613b",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": false,
+        "successful_loader_names": [
+          "scheduler/business-day-window"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "scheduler/business-day-window"
+              }
+            ],
+            "report_markers_present": false
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "scheduler/business-day-window"
+          }
+        ],
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "fail",
+          "reviewer_type": "agent",
+          "reviewer": "expand_cases-independent-reviewer",
+          "reason": "正确给出了上海业务日的UTC半开区间并定位日期直接标记UTC的代码问题，但最终回答在句中结束，未完成用户明确要求的r1/r2/r3/r4逐条计入判断。",
+          "evidence": [
+            "live-01/E21/run.json#/final",
+            "live-01/E21/run.json#/model_calls/5",
+            "live-01/E21/run.json#/executions/3",
+            "live-01/E21/run.json#/executions/6",
+            "live-01/E21/run.json#/loads/0"
+          ],
+          "core_task_success": false,
+          "issues": [
+            {
+              "kind": "incomplete_final",
+              "severity": "material",
+              "detail": "最终文本止于“也不能把次日”；r1至r4均没有出现在最终答案。最后一次请求output_tokens=1600等于requested_output_limit=1600，说明输出限制与不完整结果相关，但记录未保留provider finish_reason，不能断言唯一原因。"
+            }
+          ],
+          "run_sha256": "a9d3a9ccc21bde030e046fde997c76bf7438e0d3a52ceb788636870d8710613b"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 6,
+      "elapsed_seconds": 91.948,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 1,
+        "load_skill": 1,
+        "read_file": 4,
+        "file_tree": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 44962,
+        "output_tokens": 3647,
+        "cache_read_tokens": 37376
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": false,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E22",
+      "cohort": "new",
+      "category": "novel-natural",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E22/run.json",
+      "run_sha256": "436bab198f6ca0f9c9b1af8acad68ddf4cc312a81dacbf7408508f44a85ed7bf",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "config/dns-resolution"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "config/dns-resolution"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "config/dns-resolution"
+          }
+        ],
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "fail",
+          "reviewer_type": "agent",
+          "reviewer": "expand_cases-independent-reviewer",
+          "reason": "负缓存、权威记录和10:10到期/剩余6分钟等核心分析正确，也建议刷新目标缓存；但把缓存过期推成应用必然恢复，并从尚无HTTP尝试推断任何HTTP客户端重试均不会触发，超出了提供的解析器和常量记录。",
+          "evidence": [
+            "live-01/E22/run.json#/final",
+            "live-01/E22/run.json#/executions/3",
+            "live-01/E22/run.json#/executions/5",
+            "live-01/E22/run.json#/loads/0"
+          ],
+          "core_task_success": true,
+          "issues": [
+            {
+              "kind": "unsupported_guarantee",
+              "severity": "material",
+              "detail": "“下一次解析必然回源到权威服务器…应用随之自动恢复”“最迟…自愈”把缓存到期与后续DNS/服务可达性混为确定结果；证据仅给观察时刻的缓存和权威状态。"
+            },
+            {
+              "kind": "unsupported_implementation_claim",
+              "severity": "material",
+              "detail": "“重试逻辑一次都不会触发”需要客户端异常/重试实现，当前只读了DNS设置和证据；增加HTTP重试不修复负缓存根因是成立的，但不能据此断言所有客户端重试完全不会执行。"
+            },
+            {
+              "kind": "causal_overreach",
+              "severity": "material",
+              "detail": "“权威记录已存在(不是服务端故障)”并不能排除远端服务本身另有故障；本次NXDOMAIN发生在HTTP之前，只能限定当前观测原因。"
+            }
+          ],
+          "run_sha256": "436bab198f6ca0f9c9b1af8acad68ddf4cc312a81dacbf7408508f44a85ed7bf"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 5,
+      "elapsed_seconds": 88.093,
+      "tool_counts": {
+        "list_files": 1,
+        "browse_skill_directory": 1,
+        "load_skill": 1,
+        "read_file": 3,
+        "file_tree": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 35355,
+        "output_tokens": 2626,
+        "cache_read_tokens": 27648
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E23",
+      "cohort": "new",
+      "category": "novel-natural",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E23/run.json",
+      "run_sha256": "70c1171cc1cad2d0e3a15e50538d50a4ed8638b6424ff9ffe97c653843fdfa92",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "http/client-lifecycle"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "http/client-lifecycle"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "http/client-lifecycle"
+          }
+        ],
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "fail",
+          "reviewer_type": "agent",
+          "reviewer": "expand_cases-independent-reviewer",
+          "reason": "连接计数10-4=6、raise_for_status异常越过release、try/finally修复及失败回归均回答正确。严格证据复核发现其将未提供的pool/HTTP实现细节当作事实，尤其垃圾回收后的永久槽位占用和所有非2xx均抛HTTPError；核心方案可用，但完整解释存在过度断言。",
+          "evidence": [
+            "live-01/E23/run.json#/final",
+            "live-01/E23/run.json#/executions/3",
+            "live-01/E23/run.json#/executions/6",
+            "live-01/E23/run.json#/executions/7",
+            "live-01/E23/run.json#/loads/0"
+          ],
+          "core_task_success": true,
+          "issues": [
+            {
+              "kind": "unsupported_implementation_claim",
+              "severity": "material",
+              "detail": "“客户端对象虽然会被垃圾回收，但池的记账槽位永远不会被标记归还”没有pool实现、终结器或回收策略证据，保存计数仅证明当前有6个未归还。"
+            },
+            {
+              "kind": "unsupported_status_semantics",
+              "severity": "material",
+              "detail": "将raise_for_status注释为“非2xx抛HTTPError（…必然走到）”；fixture仅记录一次HTTPError失败分支，未定义此client对全部非2xx状态的行为。不得将未见实现当成已验证语义。"
+            }
+          ],
+          "run_sha256": "70c1171cc1cad2d0e3a15e50538d50a4ed8638b6424ff9ffe97c653843fdfa92"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 6,
+      "elapsed_seconds": 98.736,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 1,
+        "load_skill": 1,
+        "read_file": 4,
+        "file_tree": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 43122,
+        "output_tokens": 2558,
+        "cache_read_tokens": 35200
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E24",
+      "cohort": "new",
+      "category": "novel-natural",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E24/run.json",
+      "run_sha256": "ccc0d2400bc5e40ebb140ff1f6ce16b1d4dfb34ee4113a8c2f3620d22568177b",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": false,
+        "successful_loader_names": [
+          "batch-export/snapshot-pagination"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "batch-export/snapshot-pagination"
+              }
+            ],
+            "report_markers_present": false
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "batch-export/snapshot-pagination"
+          }
+        ],
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "fail",
+          "reviewer_type": "agent",
+          "reviewer": "expand_cases-independent-reviewer",
+          "reason": "已加载完整snapshot-pagination正文且读取导出证据，但最终只输出“证据充分”，没有区分OFFSET读取漂移与写出、没有解释20重复和25混入，也未给满足初始快照契约的方案。",
+          "evidence": [
+            "live-01/E24/run.json#/final",
+            "live-01/E24/run.json#/model_calls/3",
+            "live-01/E24/run.json#/executions/4",
+            "live-01/E24/run.json#/loads/0"
+          ],
+          "core_task_success": false,
+          "issues": [
+            {
+              "kind": "missing_answer",
+              "severity": "material",
+              "detail": "最终答案仅4字，未交付用户要求的任何根因/方案。最后model输出计费1600达到单次上限；不能用“assistant_completed”代替任务语义完成。"
+            }
+          ],
+          "run_sha256": "ccc0d2400bc5e40ebb140ff1f6ce16b1d4dfb34ee4113a8c2f3620d22568177b"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 4,
+      "elapsed_seconds": 76.076,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 1,
+        "load_skill": 1,
+        "read_file": 2
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 27747,
+        "output_tokens": 2127,
+        "cache_read_tokens": 20928
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": false,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E25",
+      "cohort": "new",
+      "category": "novel-boundary",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E25/run.json",
+      "run_sha256": "0161b5018a4f6c019475e4883c6018541ef95b0df5adca9db7aac60c68ad8ab9",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "scheduler/business-day-window"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "scheduler/business-day-window"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "scheduler/business-day-window"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "pass",
+          "reviewer_type": "agent",
+          "reviewer": "expand_cases-independent-reviewer",
+          "reason": "使用当前Bogota -05:00正确计算UTC左闭右开区间[09-06 05:00,09-07 05:00)，逐条正确计入b2/b3、排除b1/b4，并定位代码把本地日期直接当UTC。最终尾句未完，但用户要求的计算与四条核对已完成。",
+          "evidence": [
+            "live-01/E25/run.json#/final",
+            "live-01/E25/run.json#/model_calls/5",
+            "live-01/E25/run.json#/executions/4",
+            "live-01/E25/run.json#/executions/7",
+            "live-01/E25/run.json#/loads/0"
+          ],
+          "core_task_success": true,
+          "issues": [
+            {
+              "kind": "unsupported_history",
+              "severity": "minor",
+              "detail": "将UTC直接标记说成“沿用了上一地区(UTC+00:00)”并无历史地区证据；可确认的是当前代码使用UTC而没有当前业务时区。这一历史表述不影响当前计算/成员结论。"
+            },
+            {
+              "kind": "trailing_truncation",
+              "severity": "minor",
+              "detail": "最后解释句在“正确区间的含”处结束，单次输出1600达到上限；但核心边界表和所需分类已完整出现。"
+            }
+          ],
+          "run_sha256": "0161b5018a4f6c019475e4883c6018541ef95b0df5adca9db7aac60c68ad8ab9"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 6,
+      "elapsed_seconds": 96.222,
+      "tool_counts": {
+        "list_files": 2,
+        "browse_skill_directory": 1,
+        "load_skill": 1,
+        "read_file": 3,
+        "grep_files": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 45238,
+        "output_tokens": 3323,
+        "cache_read_tokens": 37248
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E26",
+      "cohort": "new",
+      "category": "novel-counterfactual",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E26/run.json",
+      "run_sha256": "01709c17e0f11bd0472c5e21e356ea8d5e4b2123eca81913e7e00542be59ed19",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "batch-export/snapshot-pagination"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "batch-export/snapshot-pagination"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "batch-export/snapshot-pagination"
+          }
+        ],
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "fail",
+          "reviewer_type": "agent",
+          "reviewer": "expand_cases-independent-reviewer",
+          "reason": "正确区分固定快照下读取无重复与页1写入成功后ACK丢失导致重复append，核心诊断完成。追加的修复建议却写成每次append携带唯一attempt/job token，没有保证同一逻辑页跨重试复用稳定键，且提供非原子的先查重再追加，不能保证其声称的重试空操作。",
+          "evidence": [
+            "live-01/E26/run.json#/final",
+            "live-01/E26/run.json#/executions/3",
+            "live-01/E26/run.json#/loads/0"
+          ],
+          "core_task_success": true,
+          "issues": [
+            {
+              "kind": "unsafe_idempotency_design",
+              "severity": "material",
+              "detail": "“为每次append携带唯一attempt/job token”混淆尝试、任务和页的身份：若每次尝试新token不会去重，若全job一键则可能吞掉不同页；应明确稳定(job_id,page_id)或等价逻辑输出标识及原子幂等提交。"
+            },
+            {
+              "kind": "non_atomic_deduplication",
+              "severity": "material",
+              "detail": "“或先查重再追加”未说明与写出原子结合或可靠提交状态，ACK丢失/并发重放下无法据此保证exactly-once输出。该可靠性方案为答案自己增加的主修复建议，故严格评为失败，诊断核心仍成功。"
+            }
+          ],
+          "run_sha256": "01709c17e0f11bd0472c5e21e356ea8d5e4b2123eca81913e7e00542be59ed19"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 4,
+      "elapsed_seconds": 57.216,
+      "tool_counts": {
+        "list_files": 1,
+        "browse_skill_directory": 1,
+        "load_skill": 1,
+        "read_file": 1,
+        "file_tree": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 28084,
+        "output_tokens": 1778,
+        "cache_read_tokens": 20736
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E27",
+      "cohort": "new",
+      "category": "independent-cross-directory",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E27/run.json",
+      "run_sha256": "d3e78c3c68a58004ecc951ba7667e5645c7b050764498f6f96e84915cb7e39bb",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "auth/access-audit",
+          "logging/redaction"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 4,
+                "read_index": 5,
+                "skill": "auth/access-audit"
+              }
+            ],
+            "report_markers_present": true
+          },
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 4,
+                "read_index": 5,
+                "skill": "logging/redaction"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 4,
+            "read_index": 5,
+            "skill": "auth/access-audit"
+          },
+          {
+            "load_index": 4,
+            "read_index": 5,
+            "skill": "logging/redaction"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "pass",
+          "reviewer_type": "agent",
+          "reviewer": "expand_cases-independent-reviewer",
+          "reason": "分别回答reports:export最小scope缺口与authorization脱敏，保留request_id/error_code，没有复述凭据、没有管理员绕过或把脱敏当授权修复；两个独立工作流及证据读取顺序合理。",
+          "evidence": [
+            "live-01/E27/run.json#/final",
+            "live-01/E27/run.json#/executions/7",
+            "live-01/E27/run.json#/executions/8",
+            "live-01/E27/run.json#/executions/9",
+            "live-01/E27/run.json#/executions/10",
+            "live-01/E27/run.json#/loads/0",
+            "live-01/E27/run.json#/loads/1"
+          ],
+          "core_task_success": true,
+          "issues": [
+            {
+              "kind": "optional_redaction_precision",
+              "severity": "minor",
+              "detail": "附加提议可记录长度/前缀元信息仍应具体限制不泄露凭据片段；本次答案未回显原值且主建议为整字段移除或固定占位符，不构成本题核心失败。"
+            }
+          ],
+          "run_sha256": "d3e78c3c68a58004ecc951ba7667e5645c7b050764498f6f96e84915cb7e39bb"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 6,
+      "elapsed_seconds": 74.122,
+      "tool_counts": {
+        "list_files": 1,
+        "file_tree": 1,
+        "read_file": 6,
+        "browse_skill_directory": 1,
+        "load_skill": 2,
+        "grep_files": 1
+      },
+      "load_attempts": 2,
+      "tokens": {
+        "input_tokens": 45999,
+        "output_tokens": 1856,
+        "cache_read_tokens": 37888
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E28",
+      "cohort": "new",
+      "category": "independent-cross-directory",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E28/run.json",
+      "run_sha256": "dc94dce8e32a5c3383dbfeee9feaedb90017aff31041c397911655511a42341e",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": false,
+        "successful_loader_names": [
+          "config/precedence",
+          "docs/startup-guide"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "docs/startup-guide"
+              }
+            ],
+            "report_markers_present": false
+          },
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "config/precedence"
+              }
+            ],
+            "report_markers_present": false
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "docs/startup-guide"
+          },
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "config/precedence"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "pass",
+          "reviewer_type": "agent",
+          "reviewer": "expand_cases-independent-reviewer",
+          "reason": "根据实际源码正确给出python -m shop.app、SHOP_REGION、/healthz常量及APP_PORT=9200环境优先级。健康路径被说明为常量并由main返回，没有将其声称成已启动或部署可达HTTP服务。",
+          "evidence": [
+            "live-01/E28/run.json#/final",
+            "live-01/E28/run.json#/executions/5",
+            "live-01/E28/run.json#/executions/6",
+            "live-01/E28/run.json#/executions/9",
+            "live-01/E28/run.json#/executions/10",
+            "live-01/E28/run.json#/loads/0",
+            "live-01/E28/run.json#/loads/1"
+          ],
+          "core_task_success": true,
+          "issues": [
+            {
+              "kind": "protocol_marker_only",
+              "severity": "informational",
+              "detail": "使用中文“启动路径/有效配置”而非Skill要求的英文报告标签；这可由协议评分单独失败，但不是用户语义答案错误。"
+            }
+          ],
+          "run_sha256": "dc94dce8e32a5c3383dbfeee9feaedb90017aff31041c397911655511a42341e"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 6,
+      "elapsed_seconds": 88.0,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 1,
+        "load_skill": 2,
+        "read_file": 5,
+        "grep_files": 2,
+        "file_tree": 1
+      },
+      "load_attempts": 2,
+      "tokens": {
+        "input_tokens": 43263,
+        "output_tokens": 2845,
+        "cache_read_tokens": 35456
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E29",
+      "cohort": "new",
+      "category": "conditional-cross-directory",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E29/run.json",
+      "run_sha256": "dafafd4619108b7f553f417eac4c5fea58328a008d664f52388562c9c622e209",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "checkout/latency-diagnosis",
+          "database/query-plan"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "checkout/latency-diagnosis"
+              }
+            ],
+            "report_markers_present": true
+          },
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [
+              0
+            ],
+            "candidates": [
+              {
+                "load_index": 4,
+                "read_index": 5,
+                "skill": "database/query-plan"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "checkout/latency-diagnosis"
+          },
+          {
+            "load_index": 4,
+            "read_index": 5,
+            "skill": "database/query-plan"
+          }
+        ],
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "fail",
+          "reviewer_type": "agent",
+          "reviewer": "expand_cases-independent-reviewer",
+          "reason": "正确先读结账计时并确定cart_db=910 ms，再加载SQL工作流读取计划，给出tenant_id/status复合索引且不走支付分支。完整解释却把独立订单计划的扫描浪费与全部cart_db耗时直接联系，预期大幅缩短该段且说索引将只读约12行，未保留归因/执行计划与收益待验证的边界。",
+          "evidence": [
+            "live-01/E29/run.json#/final",
+            "live-01/E29/run.json#/executions/2",
+            "live-01/E29/run.json#/executions/4",
+            "live-01/E29/run.json#/executions/5",
+            "live-01/E29/run.json#/executions/6",
+            "live-01/E29/run.json#/executions/8",
+            "live-01/E29/run.json#/loads/0",
+            "live-01/E29/run.json#/loads/1"
+          ],
+          "core_task_success": true,
+          "issues": [
+            {
+              "kind": "unverified_performance_attribution",
+              "severity": "material",
+              "detail": "最终将扫描浪费写成“与cart_db 910 ms的耗时吻合”，并预期索引“大幅缩短cart_db耗时”；记录仅给独立订单计划和组件计时，没有该查询调用链/耗时证明。该查询是用户指定的后续分析对象，不代表已证明它承担此组件时间。"
+            },
+            {
+              "kind": "unverified_plan_guarantee",
+              "severity": "material",
+              "detail": "“可将Seq Scan转为索引查找，只读取匹配的~12行”未要求用实际EXPLAIN/测量核实规划器选择与收益；只读建议和未执行声明并不能替代这一技术验证限定。"
+            }
+          ],
+          "run_sha256": "dafafd4619108b7f553f417eac4c5fea58328a008d664f52388562c9c622e209"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 7,
+      "elapsed_seconds": 64.773,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 2,
+        "load_skill": 2,
+        "read_file": 3,
+        "grep_files": 1
+      },
+      "load_attempts": 2,
+      "tokens": {
+        "input_tokens": 48022,
+        "output_tokens": 1421,
+        "cache_read_tokens": 41216
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "E30",
+      "cohort": "new",
+      "category": "conditional-counterexample",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/E30/run.json",
+      "run_sha256": "4a764bd65cf8a1a48ecbf6b18ae97137637b9cb955180b545347809bd192c193",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "ci/pipeline-diagnosis"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "ci/pipeline-diagnosis"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "ci/pipeline-diagnosis"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "pass",
+          "reviewer_type": "agent",
+          "reviewer": "expand_cases-independent-reviewer",
+          "reason": "准确定位build和integration_tests成功、publish首个失败，原因限定为registry authentication expired；不加载测试隔离，不推断GLOBAL_CART或未提供凭据值，建议刷新/注入对应发布凭据并验证且未声称执行。",
+          "evidence": [
+            "live-01/E30/run.json#/final",
+            "live-01/E30/run.json#/executions/3",
+            "live-01/E30/run.json#/loads/0"
+          ],
+          "core_task_success": true,
+          "issues": [],
+          "run_sha256": "4a764bd65cf8a1a48ecbf6b18ae97137637b9cb955180b545347809bd192c193"
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 4,
+      "elapsed_seconds": 48.198,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 1,
+        "load_skill": 1,
+        "read_file": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 25345,
+        "output_tokens": 1016,
+        "cache_read_tokens": 19648
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed"
+    },
+    {
+      "id": "R01",
+      "cohort": "repeat",
+      "category": "natural",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/R01/run.json",
+      "run_sha256": "b6c661db44efae0cb74648c9f605f6324761249b9e0d3bd55fa4d18286456dd3",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "queue/idempotency"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "queue/idempotency"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "queue/idempotency"
+          }
+        ],
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "source_case_id": "C01",
+          "status": "fail",
+          "core_task_success": false,
+          "reason": "最终答复在“processed-message”第二项建议处中断，未完整交付事务边界、确认时机与重投处理。记录指向重复副作用但部分正确诊断不能代替用户要求的完整方案。",
+          "issues": [
+            {
+              "severity": "material",
+              "kind": "incomplete_answer",
+              "detail": "run.final以未完条目结束；事务与ack流程没有完成。"
+            },
+            {
+              "severity": "diagnostic",
+              "kind": "per_call_output_limit",
+              "detail": "最终答复不完整，输出额度是否影响交付由单列预算诊断检查；本次原结果保持失败。"
+            }
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "root Codex agent; not human gold",
+          "run_sha256": "b6c661db44efae0cb74648c9f605f6324761249b9e0d3bd55fa4d18286456dd3",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R01/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R01/run.json#executions",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R01/workspace/evidence"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 7,
+      "elapsed_seconds": 119.348,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 1,
+        "load_skill": 1,
+        "read_file": 6,
+        "file_tree": 1,
+        "grep_files": 2
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 50155,
+        "output_tokens": 2830,
+        "cache_read_tokens": 42752
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": false,
+      "error_categories": [],
+      "termination_category": "completed",
+      "previous": {
+        "source_case_id": "C01",
+        "fixture_identical": true,
+        "strict_load": true,
+        "handoff": true,
+        "chain": true,
+        "negative_clean": null,
+        "model_calls": 7
+      }
+    },
+    {
+      "id": "R02",
+      "cohort": "repeat",
+      "category": "natural",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/R02/run.json",
+      "run_sha256": "6e75ad4df8e26cf617a9648e5187dfe2b88870933786526e0bd8edc958360a92",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "database/query-plan"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "database/query-plan"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "database/query-plan"
+          }
+        ],
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "source_case_id": "C03",
+          "status": "fail",
+          "core_task_success": true,
+          "reason": "核心4000:1和(tenant_id,status)索引方向正确。但记录没有时间、成本或I/O分解，不能支持“慢的直接原因、成本几乎全部”的确定归因，也不能把这次12行外推为未来表增长后结果始终只有十几行。没有执行索引验证本身不构成失败，因为用户仅允许只读分析。",
+          "issues": [
+            {
+              "severity": "material",
+              "kind": "unsupported_cost_attribution",
+              "detail": "把扫描/返回行数比例等同于几乎全部耗时来源，超出保存的执行计划字段。"
+            },
+            {
+              "severity": "material",
+              "kind": "unsupported_future_cardinality",
+              "detail": "只有一次rows_returned=12，不能推断未来表增大时结果数始终不变。"
+            }
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit independent adjudication, transcribed by root; not human gold",
+          "run_sha256": "6e75ad4df8e26cf617a9648e5187dfe2b88870933786526e0bd8edc958360a92",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R02/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R02/workspace/evidence/database.json"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 5,
+      "elapsed_seconds": 72.503,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 1,
+        "load_skill": 1,
+        "read_file": 2,
+        "grep_files": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 31701,
+        "output_tokens": 1484,
+        "cache_read_tokens": 19136
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed",
+      "previous": {
+        "source_case_id": "C03",
+        "fixture_identical": true,
+        "strict_load": true,
+        "handoff": true,
+        "chain": true,
+        "negative_clean": null,
+        "model_calls": 7
+      }
+    },
+    {
+      "id": "R03",
+      "cohort": "repeat",
+      "category": "natural",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/R03/run.json",
+      "run_sha256": "188ed96f010fe060df43d300f0a3966e7fcf00ee3f788fc314319c34bb942ec3",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": false,
+        "all_required_loads": false,
+        "strict_load": false,
+        "all_required_handoffs": false,
+        "strict_chain": false,
+        "strict_protocol": false,
+        "successful_loader_names": [],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": false,
+            "handoff": false,
+            "fresh_evidence": false,
+            "depends_on": [],
+            "candidates": [],
+            "report_markers_present": false
+          }
+        ],
+        "valid_chain": null,
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "source_case_id": "C06",
+          "status": "fail",
+          "core_task_success": true,
+          "reason": "9200、环境变量来源及环境>文件>默认的选择优先级正确；但把返回来源优先级解释成Python参数惰性求值，属于实质代码语义错误。未加载技能另计检索失败。",
+          "issues": [
+            {
+              "severity": "material",
+              "kind": "python_evaluation_semantics",
+              "detail": "os.getenv调用前必须先求值config.get(...)这个参数；环境变量存在不会阻止该表达式执行。"
+            }
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "root Codex agent; not human gold",
+          "run_sha256": "188ed96f010fe060df43d300f0a3966e7fcf00ee3f788fc314319c34bb942ec3",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R03/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R03/run.json#executions",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R03/workspace/evidence"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 6,
+      "elapsed_seconds": 79.634,
+      "tool_counts": {
+        "list_files": 3,
+        "grep_files": 2,
+        "read_file": 5
+      },
+      "load_attempts": 0,
+      "tokens": {
+        "input_tokens": 39282,
+        "output_tokens": 1609,
+        "cache_read_tokens": 32640
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed",
+      "previous": {
+        "source_case_id": "C06",
+        "fixture_identical": true,
+        "strict_load": true,
+        "handoff": true,
+        "chain": true,
+        "negative_clean": null,
+        "model_calls": 6
+      }
+    },
+    {
+      "id": "R04",
+      "cohort": "repeat",
+      "category": "natural",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/R04/run.json",
+      "run_sha256": "127fd2337c6a19aa814117bf3d3274c9ba9f3389787d8d5f502f1f6d030d2caf",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "logging/redaction"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "logging/redaction"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "logging/redaction"
+          }
+        ],
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "source_case_id": "C08",
+          "status": "fail",
+          "core_task_success": true,
+          "reason": "正确要求隐藏authorization、保留request_id与error_code，未回显凭据；但额外把SHA-256前8位当作安全且不可逆推的凭据指纹，缺少低熵凭据枚举和截断碰撞边界，不能视为严格正确的脱敏建议。",
+          "issues": [
+            {
+              "severity": "material",
+              "kind": "unsafe_hash_assurance",
+              "detail": "Basic密码等低熵输入可被字典验证，32位截断指纹也不能可靠保证同一凭据判断；“不可逆推”的无条件安全保证不成立。"
+            }
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "root Codex agent; not human gold",
+          "run_sha256": "127fd2337c6a19aa814117bf3d3274c9ba9f3389787d8d5f502f1f6d030d2caf",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R04/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R04/run.json#executions",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R04/workspace/evidence"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 6,
+      "elapsed_seconds": 84.702,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 1,
+        "load_skill": 1,
+        "read_file": 3,
+        "file_tree": 1,
+        "grep_files": 1
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 39794,
+        "output_tokens": 1882,
+        "cache_read_tokens": 33280
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed",
+      "previous": {
+        "source_case_id": "C08",
+        "fixture_identical": true,
+        "strict_load": true,
+        "handoff": true,
+        "chain": false,
+        "negative_clean": null,
+        "model_calls": 6
+      }
+    },
+    {
+      "id": "R05",
+      "cohort": "repeat",
+      "category": "implicit",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/R05/run.json",
+      "run_sha256": "32a558391ebb2a5b59471ba199848af3d669bcbcbe388d53a62fe7614489b022",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": false,
+        "strict_protocol": false,
+        "successful_loader_names": [
+          "ci/pipeline-diagnosis",
+          "ci/test-isolation"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 4,
+                "read_index": 5,
+                "skill": "ci/pipeline-diagnosis"
+              }
+            ],
+            "report_markers_present": false
+          },
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [
+              0
+            ],
+            "candidates": [
+              {
+                "load_index": 4,
+                "read_index": 5,
+                "skill": "ci/test-isolation"
+              }
+            ],
+            "report_markers_present": false
+          }
+        ],
+        "valid_chain": null,
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "source_case_id": "C12",
+          "status": "fail",
+          "core_task_success": true,
+          "reason": "integration_tests首个失败、GLOBAL_CART共享状态泄漏、每例新fixture及打乱顺序验证均正确；但把isolated_result=pass推成测试逻辑无错，并把verification标签说成已经打乱顺序复现，超出保存记录。",
+          "issues": [
+            {
+              "severity": "material",
+              "kind": "unsupported_verified_result",
+              "detail": "tests.json的verification只有shuffled order，未给本次实际执行结果；单独通过也不能证明测试逻辑本身正确。"
+            },
+            {
+              "severity": "material",
+              "kind": "unsupported_fixture_implementation",
+              "detail": "未读到夹具源码却断言生命周期跨整个测试会话，记录仅给共享fixture名称与现象。"
+            }
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "root Codex agent; not human gold",
+          "run_sha256": "32a558391ebb2a5b59471ba199848af3d669bcbcbe388d53a62fe7614489b022",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R05/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R05/run.json#executions",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R05/workspace/evidence"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 6,
+      "elapsed_seconds": 83.081,
+      "tool_counts": {
+        "list_files": 1,
+        "file_tree": 1,
+        "read_file": 12,
+        "browse_skill_directory": 1,
+        "load_skill": 2
+      },
+      "load_attempts": 2,
+      "tokens": {
+        "input_tokens": 44947,
+        "output_tokens": 2487,
+        "cache_read_tokens": 36416
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed",
+      "previous": {
+        "source_case_id": "C12",
+        "fixture_identical": true,
+        "strict_load": true,
+        "handoff": true,
+        "chain": true,
+        "negative_clean": null,
+        "model_calls": 7
+      }
+    },
+    {
+      "id": "R06",
+      "cohort": "repeat",
+      "category": "conditional",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/R06/run.json",
+      "run_sha256": "4882a0b46b9eb451e3299015dcd4bcd4cd75a0d71f40623cc10ffb0915448d0c",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "checkout/latency-diagnosis",
+          "checkout/provider-resilience"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "checkout/latency-diagnosis"
+              }
+            ],
+            "report_markers_present": true
+          },
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [
+              0
+            ],
+            "candidates": [
+              {
+                "load_index": 4,
+                "read_index": 5,
+                "skill": "checkout/provider-resilience"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "checkout/latency-diagnosis"
+          },
+          {
+            "load_index": 4,
+            "read_index": 5,
+            "skill": "checkout/provider-resilience"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "source_case_id": "C13",
+          "status": "pass",
+          "core_task_success": true,
+          "reason": "依据840ms支付、30ms数据库和10ms渲染先确定支付瓶颈，再提出只对429/503、最多一次重试、保留order_id、整体1200ms截止的有界方案；实际核对公开签名且未声称实施。所有原任务必要结论均已交付。",
+          "issues": [
+            {
+              "severity": "minor",
+              "kind": "timing_plan_caveat",
+              "detail": "将单份840ms观测称为typical，及500ms两次加100–200ms等待的例子，仍需真实延迟分布和开销验证；答复另设整体截止并将参数称为建议，因此不构成无界方案或实测改善宣称。"
+            }
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit (Codex sub-agent; not human gold)",
+          "run_sha256": "4882a0b46b9eb451e3299015dcd4bcd4cd75a0d71f40623cc10ffb0915448d0c",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R06/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R06/run.json#executions",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R06/workspace/evidence/checkout.json",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R06/workspace/evidence/provider.json",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R06/workspace/shop/checkout.py",
+            ".repair-work/skill-chain-completion-2026-09-08/outcome-rubric.md#C13"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 6,
+      "elapsed_seconds": 73.02,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 1,
+        "load_skill": 2,
+        "read_file": 3,
+        "grep_files": 1
+      },
+      "load_attempts": 2,
+      "tokens": {
+        "input_tokens": 39890,
+        "output_tokens": 2108,
+        "cache_read_tokens": 33408
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed",
+      "previous": {
+        "source_case_id": "C13",
+        "fixture_identical": true,
+        "strict_load": true,
+        "handoff": true,
+        "chain": true,
+        "negative_clean": null,
+        "model_calls": 7
+      }
+    },
+    {
+      "id": "R07",
+      "cohort": "repeat",
+      "category": "conditional",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/R07/run.json",
+      "run_sha256": "166ab49e40cae3839e4a24250d43427d69686e2a9a5e31c1139bf73469d08b75",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "checkout/latency-diagnosis"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "checkout/latency-diagnosis"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "checkout/latency-diagnosis"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "source_case_id": "C14",
+          "status": "pass",
+          "core_task_success": true,
+          "reason": "正确指出cart_db=910ms占955ms约95.3%，支付35ms并非瓶颈；未进入支付韧性分支，并明确当前组件计时不足以断定具体SQL、索引或锁等待原因，后续仅建议补证据。",
+          "issues": [],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit (Codex sub-agent; not human gold)",
+          "run_sha256": "166ab49e40cae3839e4a24250d43427d69686e2a9a5e31c1139bf73469d08b75",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R07/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R07/run.json#executions",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R07/workspace/evidence/checkout.json",
+            ".repair-work/skill-chain-completion-2026-09-08/outcome-rubric.md#C14"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 4,
+      "elapsed_seconds": 64.194,
+      "tool_counts": {
+        "list_files": 2,
+        "browse_skill_directory": 1,
+        "load_skill": 1,
+        "read_file": 2
+      },
+      "load_attempts": 1,
+      "tokens": {
+        "input_tokens": 25688,
+        "output_tokens": 1795,
+        "cache_read_tokens": 19584
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed",
+      "previous": {
+        "source_case_id": "C14",
+        "fixture_identical": true,
+        "strict_load": true,
+        "handoff": true,
+        "chain": true,
+        "negative_clean": null,
+        "model_calls": 4
+      }
+    },
+    {
+      "id": "R08",
+      "cohort": "repeat",
+      "category": "conditional",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/R08/run.json",
+      "run_sha256": "b7e2ae97dd164d733bfbd8a18aa598c3a9fe62335f2ef9f9c3032daab66deab7",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "ci/pipeline-diagnosis",
+          "ci/test-isolation"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "ci/pipeline-diagnosis"
+              }
+            ],
+            "report_markers_present": true
+          },
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [
+              0
+            ],
+            "candidates": [
+              {
+                "load_index": 4,
+                "read_index": 5,
+                "skill": "ci/test-isolation"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "ci/pipeline-diagnosis"
+          },
+          {
+            "load_index": 4,
+            "read_index": 5,
+            "skill": "ci/test-isolation"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "source_case_id": "C15",
+          "status": "pass",
+          "core_task_success": true,
+          "reason": "先以流水线记录定位integration_tests首个失败、build成功及publish跳过，再以GLOBAL_CART、独立通过与前序add_item后残留1解释共享状态泄漏，提出每例全新fixture和打乱顺序验证，保留阶段名字及次序；没有虚构已修改。",
+          "issues": [],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit (Codex sub-agent; not human gold)",
+          "run_sha256": "b7e2ae97dd164d733bfbd8a18aa598c3a9fe62335f2ef9f9c3032daab66deab7",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R08/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R08/run.json#executions",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R08/workspace/evidence/ci.json",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R08/workspace/evidence/tests.json",
+            ".repair-work/skill-chain-completion-2026-09-08/outcome-rubric.md#C15"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 7,
+      "elapsed_seconds": 78.612,
+      "tool_counts": {
+        "browse_skill_directory": 1,
+        "list_files": 2,
+        "load_skill": 2,
+        "read_file": 2,
+        "grep_files": 1
+      },
+      "load_attempts": 2,
+      "tokens": {
+        "input_tokens": 46597,
+        "output_tokens": 1894,
+        "cache_read_tokens": 40000
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed",
+      "previous": {
+        "source_case_id": "C15",
+        "fixture_identical": true,
+        "strict_load": true,
+        "handoff": true,
+        "chain": false,
+        "negative_clean": null,
+        "model_calls": 7
+      }
+    },
+    {
+      "id": "R09",
+      "cohort": "repeat",
+      "category": "negative-denied",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/R09/run.json",
+      "run_sha256": "c561a8bca18787c80825e106d636756ea3a4035a85409d0a0dcb50be79f58679",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": true,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": false,
+        "all_required_loads": false,
+        "strict_load": false,
+        "all_required_handoffs": false,
+        "strict_chain": false,
+        "strict_protocol": true,
+        "successful_loader_names": [],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": false,
+        "negative_protocol_clean": true,
+        "stages": [],
+        "valid_chain": null,
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "source_case_id": "C17",
+          "status": "pass",
+          "core_task_success": true,
+          "reason": "实际读取指定shop/settings.py和evidence/config.json，直接回答APP_PORT=9200来自环境并说明覆盖8100和8080。没有使用Skill正文或展开无关任务；未重复E06中关于Python参数惰性求值的错误。",
+          "issues": [],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit (Codex sub-agent; not human gold)",
+          "run_sha256": "c561a8bca18787c80825e106d636756ea3a4035a85409d0a0dcb50be79f58679",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R09/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R09/run.json#executions",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R09/run.json#loads",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R09/workspace/shop/settings.py",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R09/workspace/evidence/config.json",
+            ".repair-work/skill-chain-completion-2026-09-08/outcome-rubric.md#C17"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 3,
+      "elapsed_seconds": 31.546,
+      "tool_counts": {
+        "list_files": 1,
+        "read_file": 2
+      },
+      "load_attempts": 0,
+      "tokens": {
+        "input_tokens": 9920,
+        "output_tokens": 627,
+        "cache_read_tokens": 7552
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed",
+      "previous": {
+        "source_case_id": "C17",
+        "fixture_identical": true,
+        "strict_load": false,
+        "handoff": false,
+        "chain": false,
+        "negative_clean": true,
+        "model_calls": 2
+      }
+    },
+    {
+      "id": "R10",
+      "cohort": "repeat",
+      "category": "negative-absent",
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/live-01/R10/run.json",
+      "run_sha256": "96eaed7f2cd496c29a2868b44625a72b6abf3d7e4b0374bab2d4482298423ca1",
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": true,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": false,
+        "all_required_loads": false,
+        "strict_load": false,
+        "all_required_handoffs": false,
+        "strict_chain": false,
+        "strict_protocol": true,
+        "successful_loader_names": [],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": false,
+        "negative_protocol_clean": true,
+        "stages": [],
+        "valid_chain": null,
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "source_case_id": "C19",
+          "status": "pass",
+          "core_task_success": true,
+          "reason": "通过精确名称加载拒绝、无匹配搜索及不存在目录的响应确认imaginary/moon-sorting不可用，明确没有选择替代技能；未读取任何Skill正文或声称使用成功。失败尝试不等于正文暴露。",
+          "issues": [
+            {
+              "severity": "diagnostic",
+              "kind": "misleading_tool_error_annotation",
+              "detail": "第一次不存在名称load被model-catalog拒绝后附上unexpected error请重试，模型因此重复一次无用load；Unknown directory又附资源限额注释。这些是已记录工具错误文案，不是本次provider/网络基础设施故障，最终未妨碍正确答复。"
+            }
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "expand_eval_audit (Codex sub-agent; not human gold)",
+          "run_sha256": "96eaed7f2cd496c29a2868b44625a72b6abf3d7e4b0374bab2d4482298423ca1",
+          "evidence": [
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R10/run.json#final",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R10/run.json#executions",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R10/run.json#loads",
+            ".repair-work/skill-chain-expansion-2026-09-08/live-01/R10/requests/05.json",
+            ".repair-work/skill-chain-completion-2026-09-08/outcome-rubric.md#C19"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "model_calls": 5,
+      "elapsed_seconds": 50.726,
+      "tool_counts": {
+        "load_skill": 2,
+        "search_skills": 1,
+        "browse_skill_directory": 1
+      },
+      "load_attempts": 2,
+      "tokens": {
+        "input_tokens": 32188,
+        "output_tokens": 1426,
+        "cache_read_tokens": 26240
+      },
+      "usage_missing_calls": 0,
+      "core_task_success": true,
+      "error_categories": [],
+      "termination_category": "completed",
+      "previous": {
+        "source_case_id": "C19",
+        "fixture_identical": true,
+        "strict_load": false,
+        "handoff": false,
+        "chain": false,
+        "negative_clean": true,
+        "model_calls": 2
+      }
+    }
+  ],
+  "note": "Phases are scored from observed execution even if a later answer fails. Finished-record counts must reach planned counts before final reporting. Wilson intervals are descriptive only: related, authored prompts are not iid production samples. Missing usage is unknown, not zero; the token sums include observed provider usage only."
+}

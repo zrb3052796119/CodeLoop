@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any, Protocol, Sequence, runtime_checkable
 from urllib.parse import urlparse
 
-from minicode.agent_budget import record_budgeted_model_call
+from minicode.agent_budget import AgentBudgetExceeded, record_budgeted_model_call
 from minicode.model_call_control import (
     ModelCallDeadlineExceeded,
     bounded_request_timeout,
@@ -172,6 +172,17 @@ class OpenAICompatibleEmbeddingClient:
         cancellation_token = context.get("cancellation_token")
         deadline_monotonic = context.get("deadline_monotonic")
         purpose = str(context.get("purpose") or "embedding")[:80]
+        raw_preserve_model_calls = context.get(
+            "preserve_model_calls",
+            1 if agent_budget is not None else 0,
+        )
+        preserve_model_calls = (
+            raw_preserve_model_calls
+            if isinstance(raw_preserve_model_calls, int)
+            and not isinstance(raw_preserve_model_calls, bool)
+            and 0 <= raw_preserve_model_calls <= 10
+            else 0
+        )
         operation_id = new_model_operation_id()
         started_at = time.monotonic()
         reservation = None
@@ -203,7 +214,13 @@ class OpenAICompatibleEmbeddingClient:
         )
         try:
             if agent_budget is not None:
-                reservation = agent_budget.reserve_model_call(estimated_tokens)
+                if preserve_model_calls:
+                    reservation = agent_budget.reserve_model_call(
+                        estimated_tokens,
+                        preserve_model_calls=preserve_model_calls,
+                    )
+                else:
+                    reservation = agent_budget.reserve_model_call(estimated_tokens)
             timeout = bounded_request_timeout(
                 self._timeout,
                 cancellation_token=cancellation_token,
@@ -211,9 +228,7 @@ class OpenAICompatibleEmbeddingClient:
             )
             request_started = True
             if self._ssl_context is None:
-                response_context = urllib.request.urlopen(
-                    request, timeout=timeout
-                )
+                response_context = urllib.request.urlopen(request, timeout=timeout)
             else:
                 response_context = urllib.request.urlopen(
                     request,
@@ -226,6 +241,18 @@ class OpenAICompatibleEmbeddingClient:
                 cancellation_token=cancellation_token,
                 deadline_monotonic=deadline_monotonic,
             )
+        except AgentBudgetExceeded as error:
+            self._settle_failed_embedding(
+                agent_budget,
+                reservation,
+                event_sink,
+                operation_id,
+                purpose,
+                started_at,
+                "budget_exhausted",
+                charge_estimate=False,
+            )
+            raise EmbeddingUnavailable("embedding budget is unavailable") from error
         except (TurnCancellationRequested, ModelCallDeadlineExceeded) as error:
             self._settle_failed_embedding(
                 agent_budget,
@@ -373,8 +400,13 @@ class OpenAICompatibleEmbeddingClient:
             payload["durationMs"] = duration
         emit_event_safely(event_sink, "model.failed", payload=payload)
 
-    def embed_one(self, text: str) -> list[float]:
-        return self.embed([text])[0]
+    def embed_one(
+        self,
+        text: str,
+        *,
+        call_context: dict[str, Any] | None = None,
+    ) -> list[float]:
+        return self.embed([text], call_context=call_context)[0]
 
 
 def create_openai_compatible_embedding_client(
@@ -410,9 +442,7 @@ class EmbeddingEncoder(Protocol):
     @property
     def identity(self) -> dict[str, Any]: ...
 
-    def encode_queries(
-        self, texts: Sequence[str]
-    ) -> tuple[tuple[float, ...], ...]: ...
+    def encode_queries(self, texts: Sequence[str]) -> tuple[tuple[float, ...], ...]: ...
 
     def encode_documents(
         self, texts: Sequence[str]

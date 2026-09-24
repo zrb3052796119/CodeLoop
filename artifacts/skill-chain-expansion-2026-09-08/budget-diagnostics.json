@@ -1,0 +1,575 @@
+{
+  "selection": {
+    "selected_before_diagnostic_live": [
+      "E01",
+      "E08",
+      "E21",
+      "E24"
+    ],
+    "reason": "E01/E21/E24 have incomplete final deliverables at the 1600 output-token cap; E08 reached the 10-step limit just after load with no body handoff. Selection is diagnostic after main-trial observations, not a new blind evaluation.",
+    "changes": {
+      "E01": {
+        "max_steps": 10,
+        "per_call_output": 4096,
+        "total_output": 12000
+      },
+      "E08": {
+        "max_steps": 16,
+        "per_call_output": 1600,
+        "total_output": 8000
+      },
+      "E21": {
+        "max_steps": 10,
+        "per_call_output": 4096,
+        "total_output": 12000
+      },
+      "E24": {
+        "max_steps": 10,
+        "per_call_output": 4096,
+        "total_output": 12000
+      }
+    },
+    "fixed": "same original prompt, expanded catalog, model, hints=false, per-call deadline60; original results kept; no retry-to-success"
+  },
+  "attempted": 4,
+  "completed": 2,
+  "strict_semantic_pass": 1,
+  "core_task_pass": 2,
+  "call_deadlines": 2,
+  "rows": [
+    {
+      "id": "E01",
+      "condition": {
+        "max_steps": 10,
+        "per_call_output": 4096,
+        "total_output": 12000
+      },
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/budget/live-01/E01/run.json",
+      "run_sha256": "ca1641157cf31f53bd6b700bfb48bb2801839789f3a30ca9b96a010a51cd50b3",
+      "fixture_identical_to_main": true,
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": false,
+        "negative": false,
+        "infrastructure_error": true,
+        "timeout": true,
+        "completed": false,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": false,
+        "successful_loader_names": [
+          "queue/idempotency",
+          "queue/idempotent-consumer-template"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 4,
+                "skill": "queue/idempotency"
+              },
+              {
+                "load_index": 3,
+                "read_index": 4,
+                "skill": "queue/idempotent-consumer-template"
+              }
+            ],
+            "report_markers_present": false
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 4,
+            "skill": "queue/idempotency"
+          }
+        ],
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "fail",
+          "core_task_success": false,
+          "reason": "没有最终答复，未完成用户要求的事务边界与宕机重投分析。实际找到了允许的两种 queue 工作流并读了消费者代码和处理记录，但第 8 次模型请求达到 60 秒调用截止，运行以 AgentTurnDeadlineExceeded 结束。正确发现和阅读不能替代交付。",
+          "issues": [
+            "交付失败：completed=false，stop_reason=exception，最终答案缺失。",
+            "基础设施/调用截止：第 8 次调用记录 ModelCallDeadlineExceeded；不能据此断言模型选择了错误事务方案，也不能将缺失答案判为正确。"
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "expand_novel_skills; no prior review of these four main-run results",
+          "not_human_gold": true,
+          "run_sha256": "ca1641157cf31f53bd6b700bfb48bb2801839789f3a30ca9b96a010a51cd50b3",
+          "evidence": [
+            "budget/live-01/E01/run.json#/stop_reason",
+            "budget/live-01/E01/run.json#/error_type",
+            "budget/live-01/E01/run.json#/completed",
+            "budget/live-01/E01/run.json#/model_calls/7",
+            "budget/live-01/E01/run.json#/executions/2/output",
+            "budget/live-01/E01/run.json#/executions/3/output",
+            "budget/live-01/E01/run.json#/executions/4/output",
+            "budget/live-01/E01/run.json#/executions/7/output",
+            "budget/live-01/E01/budget-condition.json"
+          ],
+          "budget_condition": {
+            "max_steps": 10,
+            "per_call_output": 4096,
+            "total_output": 12000
+          },
+          "interpretation_notes": [
+            "这是独立的一次扩大输出预算诊断，不替代主结果。单次 4096 / 总 12000 并未让本次运行完整交付；本次实际终止由调用截止触发，不能证明增加 token 预算普遍无效。"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "review": {
+        "status": "fail",
+        "core_task_success": false,
+        "reason": "没有最终答复，未完成用户要求的事务边界与宕机重投分析。实际找到了允许的两种 queue 工作流并读了消费者代码和处理记录，但第 8 次模型请求达到 60 秒调用截止，运行以 AgentTurnDeadlineExceeded 结束。正确发现和阅读不能替代交付。",
+        "issues": [
+          "交付失败：completed=false，stop_reason=exception，最终答案缺失。",
+          "基础设施/调用截止：第 8 次调用记录 ModelCallDeadlineExceeded；不能据此断言模型选择了错误事务方案，也不能将缺失答案判为正确。"
+        ],
+        "reviewer_type": "agent",
+        "reviewer": "expand_novel_skills; no prior review of these four main-run results",
+        "not_human_gold": true,
+        "run_sha256": "ca1641157cf31f53bd6b700bfb48bb2801839789f3a30ca9b96a010a51cd50b3",
+        "evidence": [
+          "budget/live-01/E01/run.json#/stop_reason",
+          "budget/live-01/E01/run.json#/error_type",
+          "budget/live-01/E01/run.json#/completed",
+          "budget/live-01/E01/run.json#/model_calls/7",
+          "budget/live-01/E01/run.json#/executions/2/output",
+          "budget/live-01/E01/run.json#/executions/3/output",
+          "budget/live-01/E01/run.json#/executions/4/output",
+          "budget/live-01/E01/run.json#/executions/7/output",
+          "budget/live-01/E01/budget-condition.json"
+        ],
+        "budget_condition": {
+          "max_steps": 10,
+          "per_call_output": 4096,
+          "total_output": 12000
+        },
+        "interpretation_notes": [
+          "这是独立的一次扩大输出预算诊断，不替代主结果。单次 4096 / 总 12000 并未让本次运行完整交付；本次实际终止由调用截止触发，不能证明增加 token 预算普遍无效。"
+        ]
+      },
+      "model_calls": 8,
+      "observed_output_tokens": 1205,
+      "usage_missing_calls": 1,
+      "per_call_requested_limits": [
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        4096
+      ],
+      "call_error_categories": [
+        "call_deadline"
+      ]
+    },
+    {
+      "id": "E08",
+      "condition": {
+        "max_steps": 16,
+        "per_call_output": 1600,
+        "total_output": 8000
+      },
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/budget/live-01/E08/run.json",
+      "run_sha256": "85432ec518066a23a7c96388eba70af9363215f229c35e8eba0fe3c8c821ff97",
+      "fixture_identical_to_main": true,
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "logging/redaction"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "logging/redaction"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "logging/redaction"
+          }
+        ],
+        "semantic_correct": true,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "pass",
+          "core_task_success": true,
+          "reason": "完整给出了应隐藏 authorization、应保留 request_id 与 error_code 的说明，建议整字段移除/遮蔽，保留请求和错误关联能力。实际在加载 Skill 后读取日志证据；最终和之前的模型文字都没有回显凭据原值，也没有声称已发送或修改日志。",
+          "issues": [],
+          "reviewer_type": "agent",
+          "reviewer": "expand_novel_skills; no prior review of these four main-run results",
+          "not_human_gold": true,
+          "run_sha256": "85432ec518066a23a7c96388eba70af9363215f229c35e8eba0fe3c8c821ff97",
+          "evidence": [
+            "budget/live-01/E08/run.json#/final",
+            "budget/live-01/E08/run.json#/executions/2/output",
+            "budget/live-01/E08/run.json#/executions/3/output",
+            "budget/live-01/E08/run.json#/model_calls",
+            "budget/live-01/E08/run.json#/fixture_unchanged",
+            "budget/live-01/E08/budget-condition.json"
+          ],
+          "budget_condition": {
+            "max_steps": 16,
+            "per_call_output": 1600,
+            "total_output": 8000
+          },
+          "interpretation_notes": [
+            "本次只使用 4 次模型请求，低于原来的 10 步上限。因此这次成功不能归因于把步数上限提高至 16；可能包含采样/轨迹波动，需要更强对照才能建立因果。",
+            "仅把样例字段审查判为完成，不将“无需逐行扫描”推广为任意实际日志均无其他敏感字段的保证。"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "review": {
+        "status": "pass",
+        "core_task_success": true,
+        "reason": "完整给出了应隐藏 authorization、应保留 request_id 与 error_code 的说明，建议整字段移除/遮蔽，保留请求和错误关联能力。实际在加载 Skill 后读取日志证据；最终和之前的模型文字都没有回显凭据原值，也没有声称已发送或修改日志。",
+        "issues": [],
+        "reviewer_type": "agent",
+        "reviewer": "expand_novel_skills; no prior review of these four main-run results",
+        "not_human_gold": true,
+        "run_sha256": "85432ec518066a23a7c96388eba70af9363215f229c35e8eba0fe3c8c821ff97",
+        "evidence": [
+          "budget/live-01/E08/run.json#/final",
+          "budget/live-01/E08/run.json#/executions/2/output",
+          "budget/live-01/E08/run.json#/executions/3/output",
+          "budget/live-01/E08/run.json#/model_calls",
+          "budget/live-01/E08/run.json#/fixture_unchanged",
+          "budget/live-01/E08/budget-condition.json"
+        ],
+        "budget_condition": {
+          "max_steps": 16,
+          "per_call_output": 1600,
+          "total_output": 8000
+        },
+        "interpretation_notes": [
+          "本次只使用 4 次模型请求，低于原来的 10 步上限。因此这次成功不能归因于把步数上限提高至 16；可能包含采样/轨迹波动，需要更强对照才能建立因果。",
+          "仅把样例字段审查判为完成，不将“无需逐行扫描”推广为任意实际日志均无其他敏感字段的保证。"
+        ]
+      },
+      "model_calls": 4,
+      "observed_output_tokens": 1573,
+      "usage_missing_calls": 0,
+      "per_call_requested_limits": [
+        1600,
+        1600,
+        1600,
+        1600
+      ],
+      "call_error_categories": []
+    },
+    {
+      "id": "E21",
+      "condition": {
+        "max_steps": 10,
+        "per_call_output": 4096,
+        "total_output": 12000
+      },
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/budget/live-01/E21/run.json",
+      "run_sha256": "22edd5b43eaf4c1f4ee282a737216777e1ce55029c1f0523d27621b061bc9050",
+      "fixture_identical_to_main": true,
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": true,
+        "negative": false,
+        "infrastructure_error": false,
+        "timeout": false,
+        "completed": true,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": true,
+        "successful_loader_names": [
+          "scheduler/business-day-window"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 5,
+                "skill": "scheduler/business-day-window"
+              }
+            ],
+            "report_markers_present": true
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 5,
+            "skill": "scheduler/business-day-window"
+          }
+        ],
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "fail",
+          "core_task_success": true,
+          "reason": "已完整交付，关键 UTC 区间 [2026-09-05 16:00,2026-09-06 16:00) 和 r2/r3 纳入、r1/r4 排除均正确，代码原因与修改方向也有证据。但是附带的偏移小时数和错误窗口覆盖说明有事实错误，整体严格正确未通过。",
+          "issues": [
+            "实质性计算错误：答案称现有 UTC 区间整体“偏后了 16 小时”；2026-09-06 00:00Z 相对 2026-09-05 16:00Z 实际偏后 8 小时，两端均如此。",
+            "实质性归属错误：答案称现有窗口把当地 09-06 晚上 20:00 之后订单划给 09-07；现有错误区间实际覆盖当地 09-06 08:00 至 09-07 08:00，09-06 20:00 仍在本日错误窗口内，误纳入的是次日凌晨 00:00–07:59。",
+            "两次错误 workspace/ 前缀读取已在轨迹中纠正并实际读到正确证据，不作为最终失败原因。"
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "expand_novel_skills; no prior review of these four main-run results",
+          "not_human_gold": true,
+          "run_sha256": "22edd5b43eaf4c1f4ee282a737216777e1ce55029c1f0523d27621b061bc9050",
+          "evidence": [
+            "budget/live-01/E21/run.json#/final",
+            "budget/live-01/E21/run.json#/executions/6/output",
+            "budget/live-01/E21/run.json#/executions/8/output",
+            "budget/live-01/E21/run.json#/model_calls/6",
+            "budget/live-01/E21/budget-condition.json"
+          ],
+          "budget_condition": {
+            "max_steps": 10,
+            "per_call_output": 4096,
+            "total_output": 12000
+          },
+          "interpretation_notes": [
+            "核心窗口答案和边界记录判定正确，所以 core_task_success=true；扩展解释中的错误使 strict status=fail。",
+            "E21 题目与夹具由本评审代理起草；本次未查看该题主结果，不称为独立于题目作者或人工金标。"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "review": {
+        "status": "fail",
+        "core_task_success": true,
+        "reason": "已完整交付，关键 UTC 区间 [2026-09-05 16:00,2026-09-06 16:00) 和 r2/r3 纳入、r1/r4 排除均正确，代码原因与修改方向也有证据。但是附带的偏移小时数和错误窗口覆盖说明有事实错误，整体严格正确未通过。",
+        "issues": [
+          "实质性计算错误：答案称现有 UTC 区间整体“偏后了 16 小时”；2026-09-06 00:00Z 相对 2026-09-05 16:00Z 实际偏后 8 小时，两端均如此。",
+          "实质性归属错误：答案称现有窗口把当地 09-06 晚上 20:00 之后订单划给 09-07；现有错误区间实际覆盖当地 09-06 08:00 至 09-07 08:00，09-06 20:00 仍在本日错误窗口内，误纳入的是次日凌晨 00:00–07:59。",
+          "两次错误 workspace/ 前缀读取已在轨迹中纠正并实际读到正确证据，不作为最终失败原因。"
+        ],
+        "reviewer_type": "agent",
+        "reviewer": "expand_novel_skills; no prior review of these four main-run results",
+        "not_human_gold": true,
+        "run_sha256": "22edd5b43eaf4c1f4ee282a737216777e1ce55029c1f0523d27621b061bc9050",
+        "evidence": [
+          "budget/live-01/E21/run.json#/final",
+          "budget/live-01/E21/run.json#/executions/6/output",
+          "budget/live-01/E21/run.json#/executions/8/output",
+          "budget/live-01/E21/run.json#/model_calls/6",
+          "budget/live-01/E21/budget-condition.json"
+        ],
+        "budget_condition": {
+          "max_steps": 10,
+          "per_call_output": 4096,
+          "total_output": 12000
+        },
+        "interpretation_notes": [
+          "核心窗口答案和边界记录判定正确，所以 core_task_success=true；扩展解释中的错误使 strict status=fail。",
+          "E21 题目与夹具由本评审代理起草；本次未查看该题主结果，不称为独立于题目作者或人工金标。"
+        ]
+      },
+      "model_calls": 7,
+      "observed_output_tokens": 2967,
+      "usage_missing_calls": 0,
+      "per_call_requested_limits": [
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        4096
+      ],
+      "call_error_categories": []
+    },
+    {
+      "id": "E24",
+      "condition": {
+        "max_steps": 10,
+        "per_call_output": 4096,
+        "total_output": 12000
+      },
+      "run_file": ".repair-work/skill-chain-expansion-2026-09-08/budget/live-01/E24/run.json",
+      "run_sha256": "dee6cffdeddbef6fb27eaf9de2ad5be1d18151f0ac5d778c70f47203ebefe972",
+      "fixture_identical_to_main": true,
+      "score": {
+        "schema": "skill-chain-expansion-score/v1",
+        "valid_live": false,
+        "negative": false,
+        "infrastructure_error": true,
+        "timeout": true,
+        "completed": false,
+        "budget_exhausted": null,
+        "any_hit": true,
+        "all_required_loads": true,
+        "strict_load": true,
+        "all_required_handoffs": true,
+        "strict_chain": true,
+        "strict_protocol": false,
+        "successful_loader_names": [
+          "batch-export/snapshot-pagination"
+        ],
+        "wrong_extra_loads": [],
+        "ordinary_body_exposures": [],
+        "negative_false_trigger": null,
+        "negative_protocol_clean": null,
+        "stages": [
+          {
+            "load_hit": true,
+            "handoff": true,
+            "fresh_evidence": true,
+            "depends_on": [],
+            "candidates": [
+              {
+                "load_index": 2,
+                "read_index": 3,
+                "skill": "batch-export/snapshot-pagination"
+              }
+            ],
+            "report_markers_present": false
+          }
+        ],
+        "valid_chain": [
+          {
+            "load_index": 2,
+            "read_index": 3,
+            "skill": "batch-export/snapshot-pagination"
+          }
+        ],
+        "semantic_correct": false,
+        "semantic_review_is_gold": false,
+        "attributed_semantic_review": {
+          "status": "fail",
+          "core_task_success": false,
+          "reason": "未完整交付导出一致性分析。实际成功发现并加载 snapshot-pagination，读到并发插入、分页和写出记录；第 4 次模型请求 60 秒后 ModelCallDeadlineExceeded，外层 AgentTurnDeadlineExceeded，没有最终答复可证明其根因区分和修复建议正确。",
+          "issues": [
+            "交付失败：completed=false，stop_reason=exception，没有最终答案。",
+            "调用截止不同于错误路由；不能因为已正确加载 Skill、读取证据就计为任务通过，也无法评价未出现的最终方案是否有事实错误。"
+          ],
+          "reviewer_type": "agent",
+          "reviewer": "expand_novel_skills; no prior review of these four main-run results",
+          "not_human_gold": true,
+          "run_sha256": "dee6cffdeddbef6fb27eaf9de2ad5be1d18151f0ac5d778c70f47203ebefe972",
+          "evidence": [
+            "budget/live-01/E24/run.json#/stop_reason",
+            "budget/live-01/E24/run.json#/error_type",
+            "budget/live-01/E24/run.json#/completed",
+            "budget/live-01/E24/run.json#/model_calls/3",
+            "budget/live-01/E24/run.json#/executions/2/output",
+            "budget/live-01/E24/run.json#/executions/3/output",
+            "budget/live-01/E24/budget-condition.json"
+          ],
+          "budget_condition": {
+            "max_steps": 10,
+            "per_call_output": 4096,
+            "total_output": 12000
+          },
+          "interpretation_notes": [
+            "这是扩大单次/总输出额度后的单次诊断，不能替换主结果或作为多次重试择优。",
+            "E24 题目与夹具由本评审代理起草；本次未查看该题主结果，不称为独立于题目作者或人工金标。"
+          ]
+        },
+        "fixture_unchanged": true
+      },
+      "review": {
+        "status": "fail",
+        "core_task_success": false,
+        "reason": "未完整交付导出一致性分析。实际成功发现并加载 snapshot-pagination，读到并发插入、分页和写出记录；第 4 次模型请求 60 秒后 ModelCallDeadlineExceeded，外层 AgentTurnDeadlineExceeded，没有最终答复可证明其根因区分和修复建议正确。",
+        "issues": [
+          "交付失败：completed=false，stop_reason=exception，没有最终答案。",
+          "调用截止不同于错误路由；不能因为已正确加载 Skill、读取证据就计为任务通过，也无法评价未出现的最终方案是否有事实错误。"
+        ],
+        "reviewer_type": "agent",
+        "reviewer": "expand_novel_skills; no prior review of these four main-run results",
+        "not_human_gold": true,
+        "run_sha256": "dee6cffdeddbef6fb27eaf9de2ad5be1d18151f0ac5d778c70f47203ebefe972",
+        "evidence": [
+          "budget/live-01/E24/run.json#/stop_reason",
+          "budget/live-01/E24/run.json#/error_type",
+          "budget/live-01/E24/run.json#/completed",
+          "budget/live-01/E24/run.json#/model_calls/3",
+          "budget/live-01/E24/run.json#/executions/2/output",
+          "budget/live-01/E24/run.json#/executions/3/output",
+          "budget/live-01/E24/budget-condition.json"
+        ],
+        "budget_condition": {
+          "max_steps": 10,
+          "per_call_output": 4096,
+          "total_output": 12000
+        },
+        "interpretation_notes": [
+          "这是扩大单次/总输出额度后的单次诊断，不能替换主结果或作为多次重试择优。",
+          "E24 题目与夹具由本评审代理起草；本次未查看该题主结果，不称为独立于题目作者或人工金标。"
+        ]
+      },
+      "model_calls": 4,
+      "observed_output_tokens": 396,
+      "usage_missing_calls": 1,
+      "per_call_requested_limits": [
+        4096,
+        4096,
+        4096,
+        4096
+      ],
+      "call_error_categories": [
+        "call_deadline"
+      ]
+    }
+  ],
+  "note": "Post-selection diagnostics, one rerun per case; no replacement of primary results, no causal or production accuracy estimate. Failed requests may have unobserved provider usage."
+}

@@ -1,0 +1,157 @@
+{
+  "task_id": "T07",
+  "scale": "S100",
+  "variant": "base",
+  "arm": "A",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-base",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": null,
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": false,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283476081099667975",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "job-scheduler"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "e18892bdfd6a0b29b7c0ffec5b292864b401e378702e3c1078da5176b82f9f9c",
+      "output_chars": 1679,
+      "seen_qualified_names": [
+        "job-scheduler/circuit-breaker",
+        "job-scheduler/connection-pooling",
+        "job-scheduler/db-retry-tuning",
+        "job-scheduler/flaky-cron-playbook",
+        "job-scheduler/idempotency",
+        "job-scheduler/pagination",
+        "job-scheduler/rate-limiting",
+        "job-scheduler/retry-backoff",
+        "job-scheduler/timeout-tuning",
+        "job-scheduler/upgrade-runbook"
+      ],
+      "seen_directories": [
+        "job-scheduler"
+      ],
+      "elapsed_ms": 1.1594999814406037
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283464123910710305",
+      "name": "load_skill",
+      "args": {
+        "name": "job-scheduler/rate-limiting"
+      },
+      "ok": true,
+      "output_sha256": "c0f4622bc7e2f4c79b8faef0fab4f2f1d0177b746057f20b9cb6afdfe4682c0e",
+      "output_chars": 1690,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 1.0488330153748393
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283464123910710305",
+      "requested_name": "job-scheduler/rate-limiting",
+      "qualified_name": "job-scheduler/rate-limiting",
+      "ok": true,
+      "body_chars": 1476,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "3afd2fe4d1430e807ed143770681e704638f3e70d6a8e3e228dc96938453224b",
+      "elapsed_ms": 11934.572458965704,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "browse_skill_directory",
+        "list_files"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7629,
+        "outputTokens": 298,
+        "cacheReadTokens": 0,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "2547422027eba68959c906e72487501162537cb8936e3493c348eae0ce13274c",
+      "elapsed_ms": 1215.1482909685,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 8037,
+        "outputTokens": 18,
+        "cacheReadTokens": 7616,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 1
+    }
+  ],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and answered with a synthetic error tool_result; the run continues so the model can finish skill discovery on a later step.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "A batch with zero skill-tool calls stops the run as no_skill_discovery (model abandoned discovery).",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "8a32b6ca33c8204fed0e777be4e9388b61ea558800df5e0206ab1ae72fad9afd",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "eb0944ed7c97bcc09f81e478c472c4b1364484e2d8c716e700c04f9264607488",
+  "system_prompt_chars": 10893,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 15666,
+  "output_tokens": 316,
+  "routing_events": [],
+  "elapsed_ms": 13697.871041949838
+}

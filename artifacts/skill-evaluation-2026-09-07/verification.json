@@ -1,0 +1,17 @@
+{
+  "frozen_files": 290,
+  "changed": [],
+  "original_cases_attempted": 20,
+  "original_provider_calls": 22,
+  "original_provider_completed": 20,
+  "original_provider_timeouts": [
+    "S18",
+    "S20"
+  ],
+  "embedding_calls_completed": 14,
+  "controlled_handoff_calls": 11,
+  "controlled_handoff_completed": 11,
+  "controlled_tool_dispatches": 0,
+  "contract_tests": "24 passed (no production changes since test)",
+  "controlled_script_sha256": "5e0016c774b68c9dc3395140e701fc1821347cc66ebcba49c74c71ad8b77fca1"
+}

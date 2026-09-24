@@ -1,0 +1,179 @@
+{
+  "task_id": "T09",
+  "scale": "S100",
+  "variant": "wrong-placement",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-wrong-placement",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283475668782808725",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "auth-service"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "4d2bf9c9231a06a5aaa4209d3b71d8a5761b70f3d6a6c79b113bcdc6cf196123",
+      "output_chars": 1202,
+      "seen_qualified_names": [
+        "auth-service/backpressure",
+        "auth-service/circuit-breaker",
+        "auth-service/idempotency",
+        "auth-service/pagination",
+        "auth-service/rate-limiting",
+        "auth-service/retry-backoff",
+        "auth-service/timeout-tuning"
+      ],
+      "seen_directories": [
+        "auth-service"
+      ],
+      "elapsed_ms": 1.1287080124020576
+    },
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283475668782808724",
+      "name": "search_skills",
+      "args": {
+        "query": "security hardening token issuance endpoint review"
+      },
+      "ok": true,
+      "output_sha256": "1490797234799684d007eb922648fe0a05d7f7df5fd61c3ea25ec70d32619aaf",
+      "output_chars": 4121,
+      "seen_qualified_names": [
+        "payment-gateway/security-hardening",
+        "graphql-api/security-hardening",
+        "http-client/security-hardening",
+        "message-queue/security-hardening",
+        "object-storage/security-hardening",
+        "payment-gateway/pci-hardening",
+        "code-review-checklist",
+        "auth-service/backpressure",
+        "auth-service/circuit-breaker",
+        "auth-service/idempotency",
+        "auth-service/pagination",
+        "auth-service/rate-limiting",
+        "auth-service/timeout-tuning",
+        "cache-layer/rate-limiting",
+        "ci-pipeline/rate-limiting",
+        "database/rate-limiting",
+        "graphql-api/rate-limiting",
+        "graphql-api/retry-backoff",
+        "http-client/rate-limiting",
+        "job-scheduler/rate-limiting",
+        "message-queue/rate-limiting",
+        "notification-service/rate-limiting",
+        "object-storage/rate-limiting"
+      ],
+      "seen_directories": [
+        "",
+        "auth-service",
+        "cache-layer",
+        "ci-pipeline",
+        "database",
+        "graphql-api",
+        "http-client",
+        "job-scheduler",
+        "message-queue",
+        "notification-service",
+        "object-storage",
+        "payment-gateway"
+      ],
+      "elapsed_ms": 75.21166605874896
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "831323d74e77cafb95fbea9d9d6cd10b6cd7b6bf40795a9260acf0769a18f1df",
+      "elapsed_ms": 15775.044917012565,
+      "type": "tool_calls",
+      "content_chars": 197,
+      "tool_call_names": [
+        "browse_skill_directory",
+        "search_skills"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7945,
+        "outputTokens": 277,
+        "cacheReadTokens": 7680,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "33fab39e964bfd07894db5e3c9e55dc16f364fc246be4433ceed451a960e6422",
+      "elapsed_ms": 9241.433209041134,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "list_files"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9057,
+        "outputTokens": 192,
+        "cacheReadTokens": 7936,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "f8d0ff2c5402c35727774d20d9d50c4ef18bfaa9e27f114ed2d4262c4564740b",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection-unresolved-not-enforced",
+  "system_prompt_sha256": "5dceb547cbaee0e72190e86b8f09b811046c2e71ba92360dcac06d4568557722",
+  "system_prompt_chars": 12541,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 17002,
+  "output_tokens": 469,
+  "routing_events": [],
+  "elapsed_ms": 25648.50808295887
+}

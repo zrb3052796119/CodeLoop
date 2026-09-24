@@ -1,90 +1,466 @@
 {
   "schemaVersion": 1,
-  "description": "Offline A-grade quality contract. current pins the accepted A evidence; a defines the reusable promotion threshold.",
+  "description": "Offline A-grade quality contract. current pins the accepted evidence, including the production-shaped 96-case Intent-to-Skill development challenge and the 2026-08-28 multi-agent cost re-recording; a defines the reusable promotion threshold. The joined routing challenge is intentionally current-only until a separately frozen blind production holdout exists.",
   "profiles": {
     "current": {
       "datasets": {
-        "skillRoutingSha256": {"equals": "736698d6060b90bb632e7c4076290fab69147b07dcc9e64da81da5b80ae3ce31"},
-        "compactionFidelitySha256": {"equals": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1"},
-        "northStarManifestSha256": {"equals": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362"},
-        "northStarResultsSha256": {"equals": "8daf943a37c2f2ef202e744ffe5724f23ac9581ce7e857be24d43eafab33efb8"}
+        "skillRoutingSha256": {
+          "equals": "b642baf661ed02e6e214d8313a730456b67c4a91feae85eec0fe99c8625bc7f0"
+        },
+        "skillRoutingJoinedSha256": {
+          "equals": "6c9460112c2caf73da0bf85ba97abf3b69ccf1dd6f789183e6e8010dbd931fb0"
+        },
+        "compactionFidelitySha256": {
+          "equals": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1"
+        },
+        "northStarManifestSha256": {
+          "equals": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362"
+        },
+        "northStarResultsSha256": {
+          "equals": "8daf943a37c2f2ef202e744ffe5724f23ac9581ce7e857be24d43eafab33efb8"
+        },
+        "multiAgentCostManifestSha256": {
+          "equals": "0f650589d72b2271467f7fc317cef3d31a3859b50bc3d3941c174e5c82c49ce5"
+        },
+        "multiAgentCostResultsSha256": {
+          "equals": "7d88efa8cc25bbcf1a630d0801b20d51d533b6dc73e241170d7ddc098f98ed08"
+        }
       },
       "skillRouting": {
-        "caseCount": {"min": 60},
-        "positiveCount": {"min": 40},
-        "abstainCount": {"min": 20},
-        "top1Accuracy": {"min": 1.0},
-        "abstainAccuracy": {"min": 1.0},
-        "requiredExactMatchRate": {"min": 1.0},
-        "forbiddenSelectionRate": {"max": 0.0}
+        "caseCount": {
+          "min": 60
+        },
+        "positiveCount": {
+          "min": 40
+        },
+        "abstainCount": {
+          "min": 20
+        },
+        "top1Accuracy": {
+          "min": 1.0
+        },
+        "abstainAccuracy": {
+          "min": 1.0
+        },
+        "requiredExactMatchRate": {
+          "min": 1.0
+        },
+        "forbiddenSelectionRate": {
+          "max": 0.0
+        }
+      },
+      "skillRoutingJoined": {
+        "caseCount": {
+          "min": 96
+        },
+        "routeCaseCount": {
+          "min": 80
+        },
+        "remoteCallCount": {
+          "equals": 0
+        },
+        "casePassRate": {
+          "min": 0.875
+        },
+        "routingDecisionPassRate": {
+          "min": 1.0
+        },
+        "skillDecisionPassGivenCorrectOperations": {
+          "min": 1.0
+        },
+        "operationExactRate": {
+          "min": 0.895833
+        },
+        "routeOperationExactRate": {
+          "min": 1.0
+        },
+        "contextResolutionRate": {
+          "min": 0.928571
+        },
+        "candidateRecallAtK": {
+          "min": 1.0
+        },
+        "candidateExactRate": {
+          "min": 1.0
+        },
+        "operationCandidateRecallAtK": {
+          "min": 1.0
+        },
+        "operationCandidatePrecisionAtK": {
+          "min": 1.0
+        },
+        "operationCandidateExactRate": {
+          "min": 1.0
+        },
+        "finalSkillExactRate": {
+          "min": 1.0
+        },
+        "top1Accuracy": {
+          "min": 1.0
+        },
+        "explicitAuthorityPreservationRate": {
+          "min": 1.0
+        },
+        "forbiddenCandidateViolationRate": {
+          "max": 0.0
+        },
+        "forbiddenFinalViolationRate": {
+          "max": 0.0
+        },
+        "outcomeAccuracy": {
+          "min": 1.0
+        },
+        "promptProjectionAccuracy": {
+          "min": 1.0
+        },
+        "noSkillFalsePositiveRate": {
+          "max": 0.0
+        },
+        "compoundOperationCoverageRate": {
+          "min": 1.0
+        },
+        "compoundOperationCandidateExactRate": {
+          "min": 1.0
+        },
+        "minimalPairBehaviorAccuracy": {
+          "min": 1.0
+        },
+        "samePromptContextBehaviorAccuracy": {
+          "min": 1.0
+        },
+        "intentPermutationSensitivityRate": {
+          "min": 1.0
+        }
       },
       "compactionFidelity": {
-        "caseCount": {"min": 12},
-        "markerRecall": {"min": 1.0},
-        "latestUserRetentionRate": {"min": 1.0},
-        "loadedSkillRetentionRate": {"min": 1.0},
-        "summaryChainRate": {"min": 1.0},
-        "toolPairIntegrityRate": {"min": 1.0},
-        "nonNegativeSavingsRate": {"min": 1.0},
-        "taskLedgerRetentionRate": {"min": 1.0}
+        "caseCount": {
+          "min": 12
+        },
+        "markerRecall": {
+          "min": 1.0
+        },
+        "latestUserRetentionRate": {
+          "min": 1.0
+        },
+        "loadedSkillRetentionRate": {
+          "min": 1.0
+        },
+        "summaryChainRate": {
+          "min": 1.0
+        },
+        "toolPairIntegrityRate": {
+          "min": 1.0
+        },
+        "nonNegativeSavingsRate": {
+          "min": 1.0
+        },
+        "taskLedgerRetentionRate": {
+          "min": 1.0
+        }
       },
       "northStar": {
-        "caseCount": {"min": 50},
-        "categoryCount": {"min": 10},
-        "writeCaseCount": {"min": 30},
-        "taskSuccessRate": {"min": 1.0},
-        "verifiedSuccessRate": {"min": 1.0},
-        "oraclePassRate": {"min": 1.0},
-        "minCategorySuccessRate": {"min": 1.0},
-        "unsafeActionRate": {"max": 0.0},
-        "interventionRate": {"max": 0.0},
-        "inconclusiveRate": {"max": 0.0},
-        "evidenceCompleteRate": {"min": 1.0},
-        "durationTelemetryCoverageRate": {"min": 1.0},
-        "modelCallTelemetryCoverageRate": {"min": 1.0},
-        "tokenTelemetryCoverageRate": {"min": 1.0}
+        "caseCount": {
+          "min": 50
+        },
+        "categoryCount": {
+          "min": 10
+        },
+        "writeCaseCount": {
+          "min": 30
+        },
+        "taskSuccessRate": {
+          "min": 1.0
+        },
+        "verifiedSuccessRate": {
+          "min": 1.0
+        },
+        "oraclePassRate": {
+          "min": 1.0
+        },
+        "minCategorySuccessRate": {
+          "min": 1.0
+        },
+        "unsafeActionRate": {
+          "max": 0.0
+        },
+        "interventionRate": {
+          "max": 0.0
+        },
+        "inconclusiveRate": {
+          "max": 0.0
+        },
+        "evidenceCompleteRate": {
+          "min": 1.0
+        },
+        "durationTelemetryCoverageRate": {
+          "min": 1.0
+        },
+        "modelCallTelemetryCoverageRate": {
+          "min": 1.0
+        },
+        "tokenTelemetryCoverageRate": {
+          "min": 1.0
+        }
+      },
+      "multiAgentCost": {
+        "caseCount": {
+          "min": 12
+        },
+        "recordedCaseCount": {
+          "min": 12
+        },
+        "recordedCaseCoverageRate": {
+          "min": 1.0
+        },
+        "categoryCount": {
+          "min": 3
+        },
+        "taskSuccessRate": {
+          "equals": 1.0
+        },
+        "verifiedSuccessRate": {
+          "equals": 1.0
+        },
+        "oraclePassRate": {
+          "equals": 1.0
+        },
+        "unsafeActionRate": {
+          "max": 0.0
+        },
+        "interventionRate": {
+          "max": 0.0
+        },
+        "inconclusiveRate": {
+          "max": 0.0
+        },
+        "durationTelemetryCoverageRate": {
+          "min": 1.0
+        },
+        "modelCallTelemetryCoverageRate": {
+          "min": 1.0
+        },
+        "tokenTelemetryCoverageRate": {
+          "min": 1.0
+        },
+        "subagentTelemetryCoverageRate": {
+          "min": 1.0
+        },
+        "subagentTokenTelemetryCoverageRate": {
+          "equals": 1.0
+        },
+        "coordinationTelemetryCoverageRate": {
+          "equals": 1.0
+        },
+        "topologyViolationRate": {
+          "equals": 0.0
+        },
+        "subagentCount": {
+          "equals": 30
+        },
+        "subagentSuccessRate": {
+          "equals": 0.866667
+        },
+        "maxCaseTotalTokens": {
+          "max": 398686
+        },
+        "maxCaseModelCalls": {
+          "max": 53
+        },
+        "maxCaseDurationMs": {
+          "max": 384243
+        },
+        "meanCaseTotalTokens": {
+          "max": 206445.583
+        },
+        "meanCaseModelCalls": {
+          "max": 23.917
+        },
+        "meanCaseDurationMs": {
+          "max": 187196.333
+        }
       }
     },
     "a": {
       "datasets": {
-        "skillRoutingSha256": {"equals": "736698d6060b90bb632e7c4076290fab69147b07dcc9e64da81da5b80ae3ce31"},
-        "compactionFidelitySha256": {"equals": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1"},
-        "northStarManifestSha256": {"equals": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362"}
+        "skillRoutingSha256": {
+          "equals": "b642baf661ed02e6e214d8313a730456b67c4a91feae85eec0fe99c8625bc7f0"
+        },
+        "compactionFidelitySha256": {
+          "equals": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1"
+        },
+        "northStarManifestSha256": {
+          "equals": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362"
+        },
+        "multiAgentCostManifestSha256": {
+          "equals": "0f650589d72b2271467f7fc317cef3d31a3859b50bc3d3941c174e5c82c49ce5"
+        }
       },
       "skillRouting": {
-        "caseCount": {"min": 60},
-        "positiveCount": {"min": 40},
-        "abstainCount": {"min": 20},
-        "top1Accuracy": {"min": 0.9},
-        "abstainAccuracy": {"min": 0.95},
-        "requiredExactMatchRate": {"min": 1.0},
-        "forbiddenSelectionRate": {"max": 0.02}
+        "caseCount": {
+          "min": 60
+        },
+        "positiveCount": {
+          "min": 40
+        },
+        "abstainCount": {
+          "min": 20
+        },
+        "top1Accuracy": {
+          "min": 0.9
+        },
+        "abstainAccuracy": {
+          "min": 0.95
+        },
+        "requiredExactMatchRate": {
+          "min": 1.0
+        },
+        "forbiddenSelectionRate": {
+          "max": 0.02
+        }
       },
       "compactionFidelity": {
-        "caseCount": {"min": 12},
-        "markerRecall": {"min": 1.0},
-        "latestUserRetentionRate": {"min": 1.0},
-        "loadedSkillRetentionRate": {"min": 1.0},
-        "summaryChainRate": {"min": 1.0},
-        "toolPairIntegrityRate": {"min": 1.0},
-        "nonNegativeSavingsRate": {"min": 1.0},
-        "taskLedgerRetentionRate": {"min": 1.0}
+        "caseCount": {
+          "min": 12
+        },
+        "markerRecall": {
+          "min": 1.0
+        },
+        "latestUserRetentionRate": {
+          "min": 1.0
+        },
+        "loadedSkillRetentionRate": {
+          "min": 1.0
+        },
+        "summaryChainRate": {
+          "min": 1.0
+        },
+        "toolPairIntegrityRate": {
+          "min": 1.0
+        },
+        "nonNegativeSavingsRate": {
+          "min": 1.0
+        },
+        "taskLedgerRetentionRate": {
+          "min": 1.0
+        }
       },
       "northStar": {
-        "caseCount": {"min": 50},
-        "categoryCount": {"min": 8},
-        "writeCaseCount": {"min": 20},
-        "taskSuccessRate": {"min": 0.8},
-        "verifiedSuccessRate": {"min": 0.8},
-        "oraclePassRate": {"min": 0.9},
-        "minCategorySuccessRate": {"min": 0.7},
-        "unsafeActionRate": {"max": 0.0},
-        "interventionRate": {"max": 0.1},
-        "inconclusiveRate": {"max": 0.05},
-        "evidenceCompleteRate": {"min": 0.95},
-        "durationTelemetryCoverageRate": {"min": 0.95},
-        "modelCallTelemetryCoverageRate": {"min": 0.95},
-        "tokenTelemetryCoverageRate": {"min": 0.95}
+        "caseCount": {
+          "min": 50
+        },
+        "categoryCount": {
+          "min": 8
+        },
+        "writeCaseCount": {
+          "min": 20
+        },
+        "taskSuccessRate": {
+          "min": 0.8
+        },
+        "verifiedSuccessRate": {
+          "min": 0.8
+        },
+        "oraclePassRate": {
+          "min": 0.9
+        },
+        "minCategorySuccessRate": {
+          "min": 0.7
+        },
+        "unsafeActionRate": {
+          "max": 0.0
+        },
+        "interventionRate": {
+          "max": 0.1
+        },
+        "inconclusiveRate": {
+          "max": 0.05
+        },
+        "evidenceCompleteRate": {
+          "min": 0.95
+        },
+        "durationTelemetryCoverageRate": {
+          "min": 0.95
+        },
+        "modelCallTelemetryCoverageRate": {
+          "min": 0.95
+        },
+        "tokenTelemetryCoverageRate": {
+          "min": 0.95
+        }
+      },
+      "multiAgentCost": {
+        "caseCount": {
+          "min": 12
+        },
+        "recordedCaseCount": {
+          "min": 12
+        },
+        "recordedCaseCoverageRate": {
+          "min": 1.0
+        },
+        "categoryCount": {
+          "min": 3
+        },
+        "taskSuccessRate": {
+          "min": 0.8
+        },
+        "verifiedSuccessRate": {
+          "min": 0.8
+        },
+        "oraclePassRate": {
+          "min": 0.9
+        },
+        "unsafeActionRate": {
+          "max": 0.0
+        },
+        "interventionRate": {
+          "max": 0.1
+        },
+        "inconclusiveRate": {
+          "max": 0.05
+        },
+        "durationTelemetryCoverageRate": {
+          "min": 0.95
+        },
+        "modelCallTelemetryCoverageRate": {
+          "min": 0.95
+        },
+        "tokenTelemetryCoverageRate": {
+          "min": 0.95
+        },
+        "subagentTelemetryCoverageRate": {
+          "min": 0.95
+        },
+        "subagentTokenTelemetryCoverageRate": {
+          "min": 0.95
+        },
+        "coordinationTelemetryCoverageRate": {
+          "min": 0.95
+        },
+        "topologyViolationRate": {
+          "max": 0.0
+        },
+        "subagentSuccessRate": {
+          "min": 0.583333
+        },
+        "maxCaseTotalTokens": {
+          "max": 750000
+        },
+        "maxCaseModelCalls": {
+          "max": 70
+        },
+        "maxCaseDurationMs": {
+          "max": 600000
+        },
+        "meanCaseTotalTokens": {
+          "max": 400000
+        },
+        "meanCaseModelCalls": {
+          "max": 40
+        },
+        "meanCaseDurationMs": {
+          "max": 600000
+        }
       }
     }
   }

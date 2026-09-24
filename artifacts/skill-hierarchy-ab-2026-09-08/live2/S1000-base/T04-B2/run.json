@@ -1,0 +1,190 @@
+{
+  "task_id": "T04",
+  "scale": "S1000",
+  "variant": "base",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-base",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283426499997196343",
+      "name": "search_skills",
+      "args": {
+        "query": "GraphQL cursor pagination connections relay"
+      },
+      "ok": true,
+      "output_sha256": "257eafd2d45653c9fd82caa768467467d4332949b19bb608bee32f4f5f337323",
+      "output_chars": 4091,
+      "seen_qualified_names": [
+        "graphql-api/pagination",
+        "search-index/cursor-scan-helper",
+        "ab-testing/pagination",
+        "alert-manager/pagination",
+        "analytics-pipeline/pagination",
+        "api-gateway/pagination",
+        "audit-log/pagination",
+        "auth-service/pagination",
+        "backup-restore/pagination",
+        "billing-service/pagination",
+        "cache-layer/pagination",
+        "capacity-planning/pagination",
+        "ci-pipeline/pagination",
+        "config-service/pagination",
+        "crm-connector/pagination",
+        "data-warehouse/pagination",
+        "database/pagination",
+        "disaster-recovery/pagination",
+        "document-parser/pagination",
+        "email-templates/pagination",
+        "etl-jobs/pagination",
+        "feature-flags/pagination",
+        "fraud-detection/pagination"
+      ],
+      "seen_directories": [
+        "ab-testing",
+        "alert-manager",
+        "analytics-pipeline",
+        "api-gateway",
+        "audit-log",
+        "auth-service",
+        "backup-restore",
+        "billing-service",
+        "cache-layer",
+        "capacity-planning",
+        "ci-pipeline",
+        "config-service",
+        "crm-connector",
+        "data-warehouse",
+        "database",
+        "disaster-recovery",
+        "document-parser",
+        "email-templates",
+        "etl-jobs",
+        "feature-flags",
+        "fraud-detection",
+        "graphql-api",
+        "search-index"
+      ],
+      "elapsed_ms": 207.16158393770456
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283456667847490349",
+      "name": "load_skill",
+      "args": {
+        "name": "graphql-api/pagination"
+      },
+      "ok": true,
+      "output_sha256": "c00d2455f4c79fe43f8c6f4234c1e68d1aab531ff4ba28337cb59a180550fef4",
+      "output_chars": 1607,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 3.359458060003817
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283456667847490349",
+      "requested_name": "graphql-api/pagination",
+      "qualified_name": "graphql-api/pagination",
+      "ok": true,
+      "body_chars": 1400,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "b650a3f86bf704c53508521e841829d4f99d7162e9842c13d771c7cf66b44337",
+      "elapsed_ms": 5206.79199998267,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "list_files",
+        "search_skills"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9306,
+        "outputTokens": 149,
+        "cacheReadTokens": 9216,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "6dd65873cc751ef7d410223353d7a964d39ef05fb2b799a383287c14879456f6",
+      "elapsed_ms": 2748.0724999913946,
+      "type": "tool_calls",
+      "content_chars": 68,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 10120,
+        "outputTokens": 46,
+        "cacheReadTokens": 9280,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and answered with a synthetic error tool_result; the run continues so the model can finish skill discovery on a later step.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "A batch with zero skill-tool calls stops the run as no_skill_discovery (model abandoned discovery).",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "166ed07d8da65a3328a901babd5a6aa439f41cd3b9c031554b7e218895e9ef76",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "309cb1174216a2289eebf9eed0e04160718225181468486dd311ad3bec1f77cb",
+  "system_prompt_chars": 18096,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 19426,
+  "output_tokens": 195,
+  "routing_events": [],
+  "elapsed_ms": 13188.54108301457
+}

@@ -1,0 +1,46 @@
+{
+  "total": 40,
+  "primary_correct": 24,
+  "all_labeled_checks_correct": 16,
+  "failed_ids": [
+    "N01",
+    "N03",
+    "N04",
+    "N05",
+    "N06",
+    "N07",
+    "N08",
+    "N09",
+    "N10",
+    "N14",
+    "N18",
+    "N19",
+    "N20",
+    "N21",
+    "N22",
+    "N28",
+    "N30",
+    "N31",
+    "N32",
+    "N33",
+    "N36",
+    "N37",
+    "N38",
+    "N39"
+  ],
+  "semantic_status": {
+    "disabled": 40
+  },
+  "event_counts": {},
+  "called_ids": [],
+  "called_median_ms": null,
+  "latency_ms": {
+    "median": 1.7018744838424027,
+    "p95": 2.717499970458448,
+    "max": 44.07566599547863
+  },
+  "wall_seconds": 0.1531576249981299,
+  "source_unchanged": true,
+  "cases_unchanged": true,
+  "scoring_revision": "pre-candidate author clarification; outputs unchanged"
+}

@@ -1,0 +1,130 @@
+{
+  "task_id": "T05",
+  "scale": "S100",
+  "variant": "base",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-base",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283468281439059248",
+      "name": "load_skill",
+      "args": {
+        "name": "ci-pipeline/timeout-tuning"
+      },
+      "ok": true,
+      "output_sha256": "4fceb1b84b27c4540bf6979d20e7e02f35ec79794171062e06207e0f48947b04",
+      "output_chars": 1622,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 2.0967910531908274
+    },
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283468281439059247",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "ci-pipeline"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "aaa4c183e73c1c5357cc5cc7e16f7c2220ba8139daf40d2a99a3e7bedd4f21d8",
+      "output_chars": 1405,
+      "seen_qualified_names": [
+        "ci-pipeline/circuit-breaker",
+        "ci-pipeline/connection-pooling",
+        "ci-pipeline/debugging-playbook",
+        "ci-pipeline/idempotency",
+        "ci-pipeline/migration-job-runner",
+        "ci-pipeline/pagination",
+        "ci-pipeline/rate-limiting",
+        "ci-pipeline/retry-backoff",
+        "ci-pipeline/timeout-tuning"
+      ],
+      "seen_directories": [
+        "ci-pipeline"
+      ],
+      "elapsed_ms": 0.7419580360874534
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283468281439059248",
+      "requested_name": "ci-pipeline/timeout-tuning",
+      "qualified_name": "ci-pipeline/timeout-tuning",
+      "ok": true,
+      "body_chars": 1408,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "1d8a8011bd822ee0f5ce1abbf6ff31b2cfee9bc596a3bb0d9b44f55fd324570b",
+      "elapsed_ms": 9506.690750014968,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill",
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 8033,
+        "outputTokens": 185,
+        "cacheReadTokens": 7680,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and answered with a synthetic error tool_result; the run continues so the model can finish skill discovery on a later step.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "A batch with zero skill-tool calls stops the run as no_skill_discovery (model abandoned discovery).",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "8a32b6ca33c8204fed0e777be4e9388b61ea558800df5e0206ab1ae72fad9afd",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "543880a83fa5a65a904ed694cd00715f01fb87a8ff4ca3c3ceeb23ebafef6b8e",
+  "system_prompt_chars": 12764,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 8033,
+  "output_tokens": 185,
+  "routing_events": [],
+  "elapsed_ms": 10080.179958953522
+}

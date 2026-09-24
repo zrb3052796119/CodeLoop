@@ -1,0 +1,2361 @@
+[
+  {
+    "id": "S01",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "code-understanding/codebase-explanation"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 1,
+    "visible_count": 1,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "code-understanding/codebase-explanation",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 13.036971500026993,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "code-understanding/codebase-explanation"
+      ],
+      "body_handoff_qualified_names": [
+        "code-understanding/codebase-explanation"
+      ]
+    },
+    "model_calls": 2,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 12344.736334052868,
+    "input_tokens": 14931,
+    "output_tokens": 154,
+    "attempted_loads": [
+      {
+        "name": "code-understanding/codebase-explanation",
+        "ok": true,
+        "qualified_name": "code-understanding/codebase-explanation",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "list_files",
+      "file_tree"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S01",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "code-understanding/codebase-explanation",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 11.54769308399409,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "code-understanding/codebase-explanation"
+      ],
+      "body_handoff_qualified_names": [
+        "code-understanding/codebase-explanation"
+      ]
+    },
+    "model_calls": 2,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 11412.124500027858,
+    "input_tokens": 15773,
+    "output_tokens": 203,
+    "attempted_loads": [
+      {
+        "name": "code-understanding/codebase-explanation",
+        "ok": true,
+        "qualified_name": "code-understanding/codebase-explanation",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "file_tree"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S02",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "code-understanding/design-review"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 1,
+    "visible_count": 1,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "code-understanding/design-review",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 10.067519083968364,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "code-understanding/design-review"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 9396.981416968629,
+    "input_tokens": 7208,
+    "output_tokens": 274,
+    "attempted_loads": [
+      {
+        "name": "code-understanding/design-review",
+        "ok": true,
+        "qualified_name": "code-understanding/design-review",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "list_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S02",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "code-understanding/design-review",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 18.731899959035218,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "code-understanding/design-review"
+      ],
+      "body_handoff_qualified_names": [
+        "code-understanding/design-review"
+      ]
+    },
+    "model_calls": 2,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 18597.842624993064,
+    "input_tokens": 16014,
+    "output_tokens": 581,
+    "attempted_loads": [
+      {
+        "name": "code-understanding/design-review",
+        "ok": true,
+        "qualified_name": "code-understanding/design-review",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "file_tree",
+      "grep_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S03",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "code-understanding/minicode-learning-coach-demo"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 1,
+    "visible_count": 1,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "code-understanding/minicode-learning-coach-demo",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 9.419695292017423,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "code-understanding/minicode-learning-coach-demo"
+      ],
+      "body_handoff_qualified_names": [
+        "code-understanding/minicode-learning-coach-demo"
+      ]
+    },
+    "model_calls": 2,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 8750.357958953828,
+    "input_tokens": 15107,
+    "output_tokens": 261,
+    "attempted_loads": [
+      {
+        "name": "code-understanding/minicode-learning-coach-demo",
+        "ok": true,
+        "qualified_name": "code-understanding/minicode-learning-coach-demo",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "file_tree",
+      "grep_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S03",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "code-understanding/minicode-learning-coach-demo",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 10.657423999975435,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "code-understanding/minicode-learning-coach-demo"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 10515.33245795872,
+    "input_tokens": 7602,
+    "output_tokens": 489,
+    "attempted_loads": [
+      {
+        "name": "code-understanding/minicode-learning-coach-demo",
+        "ok": true,
+        "qualified_name": "code-understanding/minicode-learning-coach-demo",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "list_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S04",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "documentation/readme-authoring"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 1,
+    "visible_count": 1,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "documentation/readme-authoring",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 7.474929582909681,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "documentation/readme-authoring"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 6829.719666973688,
+    "input_tokens": 7189,
+    "output_tokens": 135,
+    "attempted_loads": [
+      {
+        "name": "documentation/readme-authoring",
+        "ok": true,
+        "qualified_name": "documentation/readme-authoring",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "file_tree"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S04",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "documentation/readme-authoring",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 6.756490374915302,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "documentation/readme-authoring"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 6629.619666957296,
+    "input_tokens": 7596,
+    "output_tokens": 279,
+    "attempted_loads": [
+      {
+        "name": "documentation/readme-authoring",
+        "ok": true,
+        "qualified_name": "documentation/readme-authoring",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "list_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S05",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "quality/lint-and-static-cleanup"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 1,
+    "visible_count": 1,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "quality/lint-and-static-cleanup",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 6.757959041977301,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "quality/lint-and-static-cleanup"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 6164.407124975696,
+    "input_tokens": 7205,
+    "output_tokens": 120,
+    "attempted_loads": [
+      {
+        "name": "quality/lint-and-static-cleanup",
+        "ok": true,
+        "qualified_name": "quality/lint-and-static-cleanup",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "list_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S05",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "quality/lint-and-static-cleanup",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 7.156534041976556,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 7029.6465420397,
+    "input_tokens": 7597,
+    "output_tokens": 189,
+    "attempted_loads": [],
+    "blocked_nonload_calls": [
+      "list_files",
+      "grep_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": false,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S06",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "security/secret-and-injection-review"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 1,
+    "visible_count": 1,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "security/secret-and-injection-review",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 6.661658958997577,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "security/secret-and-injection-review"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 6112.695583025925,
+    "input_tokens": 7216,
+    "output_tokens": 134,
+    "attempted_loads": [
+      {
+        "name": "security/secret-and-injection-review",
+        "ok": true,
+        "qualified_name": "security/secret-and-injection-review",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "list_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S06",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "security/secret-and-injection-review",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 11.045324417063966,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "security/secret-and-injection-review"
+      ],
+      "body_handoff_qualified_names": [
+        "security/secret-and-injection-review"
+      ]
+    },
+    "model_calls": 2,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 10913.56308304239,
+    "input_tokens": 15681,
+    "output_tokens": 358,
+    "attempted_loads": [
+      {
+        "name": "security/secret-and-injection-review",
+        "ok": true,
+        "qualified_name": "security/secret-and-injection-review",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "list_files",
+      "grep_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S07",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "debugging/pytest-debugging"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 1,
+    "visible_count": 1,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "debugging/pytest-debugging",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 13.60523737501353,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "debugging/pytest-debugging"
+      ],
+      "body_handoff_qualified_names": [
+        "debugging/pytest-debugging"
+      ]
+    },
+    "model_calls": 2,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 12937.921334058046,
+    "input_tokens": 14814,
+    "output_tokens": 260,
+    "attempted_loads": [
+      {
+        "name": "debugging/pytest-debugging",
+        "ok": true,
+        "qualified_name": "debugging/pytest-debugging",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "grep_files",
+      "list_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S07",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "debugging/pytest-debugging",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 3.0118983330903575,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "debugging/pytest-debugging"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 2854.407583945431,
+    "input_tokens": 7602,
+    "output_tokens": 127,
+    "attempted_loads": [
+      {
+        "name": "debugging/pytest-debugging",
+        "ok": true,
+        "qualified_name": "debugging/pytest-debugging",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "grep_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S08",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "debugging/concurrency-debugging"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 1,
+    "visible_count": 1,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "debugging/concurrency-debugging",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 12.68636220798362,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "debugging/concurrency-debugging"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 12102.980833034962,
+    "input_tokens": 7246,
+    "output_tokens": 609,
+    "attempted_loads": [
+      {
+        "name": "debugging/concurrency-debugging",
+        "ok": true,
+        "qualified_name": "debugging/concurrency-debugging",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "grep_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S08",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "debugging/concurrency-debugging",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 10.11086404195521,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "debugging/concurrency-debugging"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 9976.70595801901,
+    "input_tokens": 7639,
+    "output_tokens": 444,
+    "attempted_loads": [
+      {
+        "name": "debugging/concurrency-debugging",
+        "ok": true,
+        "qualified_name": "debugging/concurrency-debugging",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "list_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S09",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "dependencies/dependency-hygiene"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 1,
+    "visible_count": 1,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "dependencies/dependency-hygiene",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 8.448344458010979,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "dependencies/dependency-hygiene"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 7822.132874978706,
+    "input_tokens": 7208,
+    "output_tokens": 202,
+    "attempted_loads": [
+      {
+        "name": "dependencies/dependency-hygiene",
+        "ok": true,
+        "qualified_name": "dependencies/dependency-hygiene",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "list_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S09",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "dependencies/dependency-hygiene",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 4.786646082997322,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "dependencies/dependency-hygiene"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 4658.0853330669925,
+    "input_tokens": 7597,
+    "output_tokens": 167,
+    "attempted_loads": [
+      {
+        "name": "dependencies/dependency-hygiene",
+        "ok": true,
+        "qualified_name": "dependencies/dependency-hygiene",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "file_tree"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S10",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "testing/regression-from-bug-report"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 1,
+    "visible_count": 1,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "testing/regression-from-bug-report",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 7.876758166938089,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "testing/regression-from-bug-report"
+      ],
+      "body_handoff_qualified_names": [
+        "testing/regression-from-bug-report"
+      ]
+    },
+    "model_calls": 2,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 7204.747166950256,
+    "input_tokens": 15015,
+    "output_tokens": 294,
+    "attempted_loads": [
+      {
+        "name": "testing/regression-from-bug-report",
+        "ok": true,
+        "qualified_name": "testing/regression-from-bug-report",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "file_tree",
+      "grep_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S10",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "testing/regression-from-bug-report",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 5.32885387504939,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "testing/regression-from-bug-report"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 5194.178749923594,
+    "input_tokens": 7603,
+    "output_tokens": 229,
+    "attempted_loads": [
+      {
+        "name": "testing/regression-from-bug-report",
+        "ok": true,
+        "qualified_name": "testing/regression-from-bug-report",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "list_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S11",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "testing/test-driven-development"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 1,
+    "visible_count": 1,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "testing/test-driven-development",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 3.8894380829297006,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "testing/test-driven-development"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 3226.520875003189,
+    "input_tokens": 7208,
+    "output_tokens": 133,
+    "attempted_loads": [
+      {
+        "name": "testing/test-driven-development",
+        "ok": true,
+        "qualified_name": "testing/test-driven-development",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "file_tree"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S11",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "testing/test-driven-development",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 6.659049417008646,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "testing/test-driven-development"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 6530.154958018102,
+    "input_tokens": 7608,
+    "output_tokens": 172,
+    "attempted_loads": [
+      {
+        "name": "testing/test-driven-development",
+        "ok": true,
+        "qualified_name": "testing/test-driven-development",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "grep_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S12",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "refactoring/safe-refactor"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 1,
+    "visible_count": 1,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "refactoring/safe-refactor",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 10.137723707943223,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "refactoring/safe-refactor"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 9578.861749963835,
+    "input_tokens": 7196,
+    "output_tokens": 287,
+    "attempted_loads": [
+      {
+        "name": "refactoring/safe-refactor",
+        "ok": true,
+        "qualified_name": "refactoring/safe-refactor",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "list_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S12",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "refactoring/safe-refactor",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 4.8563004590105265,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 4731.386875035241,
+    "input_tokens": 7598,
+    "output_tokens": 214,
+    "attempted_loads": [],
+    "blocked_nonload_calls": [
+      "list_files",
+      "file_tree"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": false,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S13",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "refactoring/structural-rename"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 1,
+    "visible_count": 1,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "refactoring/structural-rename",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 4.15160945802927,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "refactoring/structural-rename"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 3438.665666966699,
+    "input_tokens": 7211,
+    "output_tokens": 131,
+    "attempted_loads": [
+      {
+        "name": "refactoring/structural-rename",
+        "ok": true,
+        "qualified_name": "refactoring/structural-rename",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "list_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S13",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "refactoring/structural-rename",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 5.112300000037067,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 4978.029040968977,
+    "input_tokens": 7597,
+    "output_tokens": 90,
+    "attempted_loads": [],
+    "blocked_nonload_calls": [
+      "list_files",
+      "grep_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": false,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S14",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "code-skills/minicode-study",
+      "code-understanding/minicode-learning-coach-demo"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 2,
+    "visible_count": 2,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "code-skills/minicode-study",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 10.782611208967865,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "code-skills/minicode-study"
+      ],
+      "body_handoff_qualified_names": [
+        "code-skills/minicode-study"
+      ]
+    },
+    "model_calls": 2,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 10176.245042006485,
+    "input_tokens": 15856,
+    "output_tokens": 315,
+    "attempted_loads": [
+      {
+        "name": "code-skills/minicode-study",
+        "ok": true,
+        "qualified_name": "code-skills/minicode-study",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "file_tree",
+      "file_tree"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S14",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "code-skills/minicode-study",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 6.8430102079873905,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "code-skills/minicode-study"
+      ],
+      "body_handoff_qualified_names": [
+        "code-skills/minicode-study"
+      ]
+    },
+    "model_calls": 2,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 6704.310292028822,
+    "input_tokens": 16470,
+    "output_tokens": 301,
+    "attempted_loads": [
+      {
+        "name": "code-skills/minicode-study",
+        "ok": true,
+        "qualified_name": "code-skills/minicode-study",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "file_tree",
+      "find_symbols"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S15",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "git/commit-hygiene"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 1,
+    "visible_count": 1,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "git/commit-hygiene",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 8.973165874951519,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "git/commit-hygiene"
+      ],
+      "body_handoff_qualified_names": [
+        "git/commit-hygiene"
+      ]
+    },
+    "model_calls": 2,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 8316.3133750204,
+    "input_tokens": 14881,
+    "output_tokens": 205,
+    "attempted_loads": [
+      {
+        "name": "git/commit-hygiene",
+        "ok": true,
+        "qualified_name": "git/commit-hygiene",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "git",
+      "git"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S15",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "git/commit-hygiene",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 7.395580083015375,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "git/commit-hygiene"
+      ],
+      "body_handoff_qualified_names": [
+        "git/commit-hygiene"
+      ]
+    },
+    "model_calls": 2,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 7258.396166958846,
+    "input_tokens": 15646,
+    "output_tokens": 117,
+    "attempted_loads": [
+      {
+        "name": "git/commit-hygiene",
+        "ok": true,
+        "qualified_name": "git/commit-hygiene",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "git"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S16",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "performance/hotpath-profiling",
+      "refactoring/safe-refactor"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 2,
+    "visible_count": 2,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "performance/hotpath-profiling",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      },
+      {
+        "name": "refactoring/safe-refactor",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 8.403138082940131,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "performance/hotpath-profiling"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 7818.507249932736,
+    "input_tokens": 7248,
+    "output_tokens": 250,
+    "attempted_loads": [
+      {
+        "name": "performance/hotpath-profiling",
+        "ok": true,
+        "qualified_name": "performance/hotpath-profiling",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "todo_write"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": false,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S16",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "performance/hotpath-profiling",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      },
+      {
+        "name": "refactoring/safe-refactor",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 4.569256042013876,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "performance/hotpath-profiling"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 4437.314291950315,
+    "input_tokens": 7609,
+    "output_tokens": 176,
+    "attempted_loads": [
+      {
+        "name": "performance/hotpath-profiling",
+        "ok": true,
+        "qualified_name": "performance/hotpath-profiling",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "list_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": false,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S17",
+    "mode": "routed",
+    "outcome": "route",
+    "reason": "skills-selected",
+    "prompt_mode": "routed",
+    "selected": [
+      "security/secret-and-injection-review",
+      "documentation/readme-authoring"
+    ],
+    "policy_reason": "routed-selection",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 2,
+    "visible_count": 2,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "security/secret-and-injection-review",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      },
+      {
+        "name": "documentation/readme-authoring",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "selected_name_description_present": true,
+      "routed_header_present": true,
+      "directory_projection_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 3.851744999992661,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "security/secret-and-injection-review"
+      ],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 3304.4340000487864,
+    "input_tokens": 7241,
+    "output_tokens": 149,
+    "attempted_loads": [
+      {
+        "name": "security/secret-and-injection-review",
+        "ok": true,
+        "qualified_name": "security/secret-and-injection-review",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "list_files"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": false,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S17",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [
+      {
+        "name": "security/secret-and-injection-review",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      },
+      {
+        "name": "documentation/readme-authoring",
+        "ok": true,
+        "body_integrity": true,
+        "denial_without_body": false
+      }
+    ],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 8.244870249996893,
+    "model_probe": {
+      "stop_reason": "nonload_tool_requested",
+      "loaded_qualified_names": [
+        "security/secret-and-injection-review"
+      ],
+      "body_handoff_qualified_names": [
+        "security/secret-and-injection-review"
+      ]
+    },
+    "model_calls": 2,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 8135.5065000243485,
+    "input_tokens": 15690,
+    "output_tokens": 401,
+    "attempted_loads": [
+      {
+        "name": "security/secret-and-injection-review",
+        "ok": true,
+        "qualified_name": "security/secret-and-injection-review",
+        "body_integrity_ok": true
+      }
+    ],
+    "blocked_nonload_calls": [
+      "todo_write",
+      "file_tree"
+    ],
+    "model_observation_available": true,
+    "model_load_strict": false,
+    "body_handoff_strict": false,
+    "false_trigger": false,
+    "correct_abstain": false
+  },
+  {
+    "id": "S18",
+    "mode": "routed",
+    "outcome": "no_skill",
+    "reason": "no-catalog-match",
+    "prompt_mode": "inventory_names",
+    "selected": [],
+    "policy_reason": "inventory-fallback",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "inventory_header_present": true,
+      "inventory_names_present": true,
+      "no_description_projection": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 19.148855208070017,
+    "model_probe": {
+      "stop_reason": "assistant_response_without_tool_calls",
+      "loaded_qualified_names": [],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 18657.603750005364,
+    "input_tokens": 7264,
+    "output_tokens": 796,
+    "attempted_loads": [],
+    "blocked_nonload_calls": [],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": true
+  },
+  {
+    "id": "S18",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 17.201296582934447,
+    "model_probe": {
+      "stop_reason": "assistant_response_without_tool_calls",
+      "loaded_qualified_names": [],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 17086.086999974214,
+    "input_tokens": 7608,
+    "output_tokens": 705,
+    "attempted_loads": [],
+    "blocked_nonload_calls": [],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": true
+  },
+  {
+    "id": "S19",
+    "mode": "routed",
+    "outcome": "no_skill",
+    "reason": "user-denied-all-skills",
+    "prompt_mode": "suppressed",
+    "selected": [],
+    "policy_reason": "user-denied-all-skills",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 0,
+    "visible_count": 0,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "suppression_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 5.428622292005457,
+    "model_probe": {
+      "stop_reason": "assistant_response_without_tool_calls",
+      "loaded_qualified_names": [],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 5313.838874921203,
+    "input_tokens": 7085,
+    "output_tokens": 161,
+    "attempted_loads": [],
+    "blocked_nonload_calls": [],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": true
+  },
+  {
+    "id": "S19",
+    "mode": "model",
+    "outcome": "no_skill",
+    "reason": "user-denied-all-skills",
+    "prompt_mode": "suppressed",
+    "selected": [],
+    "policy_reason": "user-denied-all-skills",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 0,
+    "visible_count": 0,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "suppression_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 3.920842375024222,
+    "model_probe": {
+      "stop_reason": "assistant_response_without_tool_calls",
+      "loaded_qualified_names": [],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 3806.8147499579936,
+    "input_tokens": 7085,
+    "output_tokens": 177,
+    "attempted_loads": [],
+    "blocked_nonload_calls": [],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": true
+  },
+  {
+    "id": "S20",
+    "mode": "routed",
+    "outcome": "no_skill",
+    "reason": "no-catalog-match",
+    "prompt_mode": "inventory_names",
+    "selected": [],
+    "policy_reason": "inventory-fallback",
+    "policy_catalog_scope": false,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [],
+    "retrieval_strict": true,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "inventory_header_present": true,
+      "inventory_names_present": true,
+      "no_description_projection": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 11.408124750014395,
+    "model_probe": {
+      "stop_reason": "assistant_response_without_tool_calls",
+      "loaded_qualified_names": [],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 11297.893040929921,
+    "input_tokens": 7233,
+    "output_tokens": 358,
+    "attempted_loads": [],
+    "blocked_nonload_calls": [],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": true
+  },
+  {
+    "id": "S20",
+    "mode": "model",
+    "outcome": "route",
+    "reason": "model-catalog-selection",
+    "prompt_mode": "model",
+    "selected": [],
+    "policy_reason": "model-catalog",
+    "policy_catalog_scope": true,
+    "policy_denied_names": [],
+    "policy_allowed_count": 17,
+    "visible_count": 17,
+    "required_skill_admission": true,
+    "local_loader_contract_checks": [],
+    "retrieval_strict": null,
+    "prompt_checks": {
+      "body_not_automatically_injected": true,
+      "model_catalog_header_present": true,
+      "model_catalog_names_descriptions_present": true,
+      "model_usage_guide_present": true
+    },
+    "prompt_integrity": true,
+    "routing_seconds": 22.420444249990396,
+    "model_probe": {
+      "stop_reason": "assistant_response_without_tool_calls",
+      "loaded_qualified_names": [],
+      "body_handoff_qualified_names": []
+    },
+    "model_calls": 1,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "model_elapsed_ms": 22311.319625005126,
+    "input_tokens": 7577,
+    "output_tokens": 744,
+    "attempted_loads": [],
+    "blocked_nonload_calls": [],
+    "model_observation_available": true,
+    "model_load_strict": true,
+    "body_handoff_strict": true,
+    "false_trigger": false,
+    "correct_abstain": true
+  }
+]

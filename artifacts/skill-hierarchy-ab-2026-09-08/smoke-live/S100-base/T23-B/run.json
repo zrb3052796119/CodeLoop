@@ -1,0 +1,157 @@
+{
+  "task_id": "T23",
+  "scale": "S100",
+  "variant": "base",
+  "arm": "B",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-base",
+  "fake": true,
+  "fake_scenario": "oracle",
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "fake-1",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          ""
+        ]
+      },
+      "ok": true,
+      "output_sha256": "1c39ac44ba13b0844be8bd9ce0db9d95396eead305c0bb9bd2fd9f561d9e1995",
+      "output_chars": 499,
+      "seen_qualified_names": [
+        "code-review-checklist",
+        "commit-message-format",
+        "incident-postmortem",
+        "readme-authoring"
+      ],
+      "seen_directories": [
+        ""
+      ],
+      "elapsed_ms": 0.37216697819530964
+    },
+    {
+      "step": 2,
+      "tool_call_id": "fake-2",
+      "name": "load_skill",
+      "args": {
+        "name": ""
+      },
+      "ok": false,
+      "output_sha256": "2f3211831140a6f1c047bde84098f0007b8940dcae3d8b1fdeda6026086e34ac",
+      "output_chars": 54,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 0.008417060598731041
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "fake-2",
+      "requested_name": "",
+      "qualified_name": null,
+      "ok": false,
+      "body_chars": 0,
+      "body_integrity_ok": false,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "83d886aabfc45928a67620cb13909dcb73b71910293da81d4f8e31d39aa482b8",
+      "elapsed_ms": 0.11929194442927837,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "estimated",
+        "inputTokens": 2745,
+        "outputTokens": 8,
+        "cacheReadTokens": null,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "ac24c0513257fa55d05fa2498a51dcafd561390bcc602b34e33c266613ee71b4",
+      "elapsed_ms": 0.07445807568728924,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "estimated",
+        "inputTokens": 2870,
+        "outputTokens": 8,
+        "cacheReadTokens": null,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 3,
+      "completed": true,
+      "input_messages_sha256": "b11eaba3ff71569b6203228e92739bd9c577e7a60c7cdbd51b8d8ba2c1e46b05",
+      "elapsed_ms": 0.04299997817724943,
+      "type": "assistant",
+      "content_chars": 12,
+      "tool_call_names": [],
+      "usage": {
+        "source": "estimated",
+        "inputTokens": 2883,
+        "outputTokens": 8,
+        "cacheReadTokens": null,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [],
+  "stop_reason": "assistant_response",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; any other tool request stops the run and is recorded as blocked.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "8a32b6ca33c8204fed0e777be4e9388b61ea558800df5e0206ab1ae72fad9afd",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "eb0944ed7c97bcc09f81e478c472c4b1364484e2d8c716e700c04f9264607488",
+  "system_prompt_chars": 10893,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "ScriptedSkillModel",
+  "steps": 3,
+  "model_call_count": 3,
+  "input_tokens": 8498,
+  "output_tokens": 24,
+  "routing_events": [],
+  "elapsed_ms": 622.8416250087321
+}

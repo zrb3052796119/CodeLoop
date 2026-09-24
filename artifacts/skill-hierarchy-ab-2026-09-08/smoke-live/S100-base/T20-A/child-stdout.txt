@@ -1,0 +1,1 @@
+{"task": "T20", "arm": "A", "prompt_mode": "hierarchical", "stop": "skill_loaded", "steps": 2}

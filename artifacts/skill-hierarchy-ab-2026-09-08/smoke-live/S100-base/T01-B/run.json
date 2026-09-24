@@ -1,0 +1,147 @@
+{
+  "task_id": "T01",
+  "scale": "S100",
+  "variant": "base",
+  "arm": "B",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-base",
+  "fake": true,
+  "fake_scenario": "oracle",
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": null,
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": false
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "fake-1",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "http-client"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "77e93b636b36f721c70a264ba82a64b299847533470e3f5c41cf6c560c77af01",
+      "output_chars": 1648,
+      "seen_qualified_names": [
+        "http-client/circuit-breaker",
+        "http-client/debugging-playbook",
+        "http-client/idempotency",
+        "http-client/latency-profiling",
+        "http-client/multipart-retry-generic",
+        "http-client/pagination",
+        "http-client/rate-limiting",
+        "http-client/retry-backoff",
+        "http-client/testing-strategy",
+        "http-client/timeout-tuning"
+      ],
+      "seen_directories": [
+        "http-client"
+      ],
+      "elapsed_ms": 0.39791595190763474
+    },
+    {
+      "step": 2,
+      "tool_call_id": "fake-2",
+      "name": "load_skill",
+      "args": {
+        "name": "http-client/retry-backoff"
+      },
+      "ok": true,
+      "output_sha256": "ceb8e8394c7d5322a048f8d2e3c09aa2b0cdc781de4b34b0560a74581902f163",
+      "output_chars": 1700,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 0.3274580230936408
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 2,
+      "tool_call_id": "fake-2",
+      "requested_name": "http-client/retry-backoff",
+      "qualified_name": "http-client/retry-backoff",
+      "ok": true,
+      "body_chars": 1488,
+      "body_integrity_ok": true,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "35042356eca25516832d3d6225d71708217871b689fe9712c818fe50c546f870",
+      "elapsed_ms": 0.11554209049791098,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "estimated",
+        "inputTokens": 2781,
+        "outputTokens": 8,
+        "cacheReadTokens": null,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "4dd04e7a8db6fb2f51fa775f997a90de4721ac7848ea34fc6714d1a2cddc3422",
+      "elapsed_ms": 0.08462497498840094,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "estimated",
+        "inputTokens": 3193,
+        "outputTokens": 8,
+        "cacheReadTokens": null,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [],
+  "stop_reason": "skill_loaded",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; any other tool request stops the run and is recorded as blocked.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "8a32b6ca33c8204fed0e777be4e9388b61ea558800df5e0206ab1ae72fad9afd",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "eb0944ed7c97bcc09f81e478c472c4b1364484e2d8c716e700c04f9264607488",
+  "system_prompt_chars": 10893,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "ScriptedSkillModel",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 5974,
+  "output_tokens": 16,
+  "routing_events": [],
+  "elapsed_ms": 637.8512090304866
+}

@@ -1,0 +1,158 @@
+{
+  "task_id": "T11",
+  "scale": "S100",
+  "variant": "wrong-placement",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S100-wrong-placement",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283572254007361318",
+      "name": "load_skill",
+      "args": {
+        "name": "database/schema-migration"
+      },
+      "ok": false,
+      "output_sha256": "7031d989e84de4e10d80a3b3a961dbd785162e31bccaaa42f11da9489c291423",
+      "output_chars": 69,
+      "seen_qualified_names": [],
+      "seen_directories": [],
+      "elapsed_ms": 0.6163750076666474
+    },
+    {
+      "step": 2,
+      "tool_call_id": "call_-7283552875114920930",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "database"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "7f8317a9fb35514efb4a9d6ccdd489c044b1132c19fcc4e17376cfdb9b913b5d",
+      "output_chars": 1937,
+      "seen_qualified_names": [
+        "database/caching-strategy",
+        "database/circuit-breaker",
+        "database/connection-leak-hunt",
+        "database/debugging-playbook",
+        "database/dedup-constraint-helper",
+        "database/idempotency",
+        "database/pagination",
+        "database/query-result-cache",
+        "database/rate-limiting",
+        "database/retry-backoff",
+        "database/testing-strategy",
+        "database/timeout-tuning"
+      ],
+      "seen_directories": [
+        "database"
+      ],
+      "elapsed_ms": 1.9271670607849956
+    }
+  ],
+  "load_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283572254007361318",
+      "requested_name": "database/schema-migration",
+      "qualified_name": null,
+      "ok": false,
+      "body_chars": 0,
+      "body_integrity_ok": false,
+      "confirmed_handoff": false
+    }
+  ],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "028edfe355bff3c9e89ed964fb328140b9190d80388f3f74c92db98b0feeb115",
+      "elapsed_ms": 7730.8011669665575,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "load_skill"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 7990,
+        "outputTokens": 153,
+        "cacheReadTokens": 7616,
+        "cacheCreationTokens": null
+      }
+    },
+    {
+      "index": 2,
+      "completed": true,
+      "input_messages_sha256": "e449e96a1f46ad0a03014b5430dc212ed265fba9c67fdec48b95f6725d45c3c9",
+      "elapsed_ms": 5081.639709067531,
+      "type": "tool_calls",
+      "content_chars": 51,
+      "tool_call_names": [
+        "browse_skill_directory",
+        "list_files"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 8023,
+        "outputTokens": 123,
+        "cacheReadTokens": 7936,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 1
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 118,
+  "catalog_sha256": "f8d0ff2c5402c35727774d20d9d50c4ef18bfaa9e27f114ed2d4262c4564740b",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "45d41f7f5554e95fb44e91907fffee9e6da996428e2286a10adb1e4d5373b83c",
+  "system_prompt_chars": 12549,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 2,
+  "model_call_count": 2,
+  "input_tokens": 16013,
+  "output_tokens": 276,
+  "routing_events": [],
+  "elapsed_ms": 13372.51712498255
+}

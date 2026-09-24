@@ -1,0 +1,40 @@
+{
+  "routed": {
+    "tasks": 20,
+    "retrieval_strict": 20,
+    "required_skill_admission": 17,
+    "local_required_load_ok": 17,
+    "model_observation_available": 20,
+    "model_load_strict_positives": 15,
+    "body_handoff_strict_positives": 6,
+    "negative_false_trigger": 0,
+    "negative_correct_abstain": 3,
+    "model_calls": 26,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "input_tokens": 191562,
+    "output_tokens": 5228,
+    "elapsed_ms": 170795.56391877122,
+    "prompt_integrity": 20
+  },
+  "model": {
+    "tasks": 20,
+    "retrieval_strict": 0,
+    "required_skill_admission": 17,
+    "local_required_load_ok": 17,
+    "model_observation_available": 20,
+    "model_load_strict_positives": 12,
+    "body_handoff_strict_positives": 5,
+    "negative_false_trigger": 0,
+    "negative_correct_abstain": 3,
+    "model_calls": 26,
+    "model_timeouts": 0,
+    "model_errors": 0,
+    "input_tokens": 201192,
+    "output_tokens": 6163,
+    "elapsed_ms": 173760.82599989604,
+    "prompt_integrity": 20
+  },
+  "positives_per_arm": 17,
+  "negatives_per_arm": 3
+}

@@ -1,0 +1,129 @@
+{
+  "task_id": "T19",
+  "scale": "S1000",
+  "variant": "stale-summary",
+  "arm": "B2",
+  "workspace": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/skill-hierarchy-ab-2026-09-08/catalogs/S1000-stale-summary",
+  "fake": false,
+  "fake_scenario": null,
+  "env": {
+    "MINI_CODE_SKILL_FLAT_CATALOG_CHARS": "1000",
+    "MINI_CODE_SKILL_INTENT_HINTS": "1",
+    "MINI_CODE_SKILL_INTENT_PREFETCH": "1",
+    "MINI_CODE_SKILL_SELECTION_MODE": "model"
+  },
+  "model": "glm-5.3-flash",
+  "skill_selection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 1000,
+    "skillPageCharBudget": 4000,
+    "intentHints": true,
+    "intentPrefetch": true
+  },
+  "max_steps": 8,
+  "timeout": false,
+  "tool_calls": [
+    {
+      "step": 1,
+      "tool_call_id": "call_-7283509100808239632",
+      "name": "browse_skill_directory",
+      "args": {
+        "directory_names": [
+          "object-storage",
+          "http-client"
+        ]
+      },
+      "ok": true,
+      "output_sha256": "fb5bb55ccb53ffd1186c1ac869c3c1466e4599cdd3e5224c9afa30761fb2c39c",
+      "output_chars": 4049,
+      "seen_qualified_names": [
+        "object-storage/backpressure",
+        "object-storage/batch-processing",
+        "object-storage/caching-strategy",
+        "object-storage/circuit-breaker",
+        "object-storage/config-management",
+        "object-storage/connection-pooling",
+        "object-storage/dead-letter-handling",
+        "object-storage/debugging-playbook",
+        "object-storage/error-mapping",
+        "object-storage/idempotency",
+        "object-storage/observability",
+        "object-storage/pagination",
+        "object-storage/performance-tuning",
+        "object-storage/rate-limiting",
+        "object-storage/retry-backoff",
+        "object-storage/schema-migration",
+        "object-storage/security-hardening",
+        "object-storage/testing-strategy",
+        "object-storage/timeout-tuning",
+        "object-storage/upgrade-runbook",
+        "object-storage/upload-timeout-profile",
+        "http-client/backpressure",
+        "http-client/batch-processing",
+        "http-client/caching-strategy"
+      ],
+      "seen_directories": [
+        "http-client",
+        "object-storage"
+      ],
+      "elapsed_ms": 5.939750000834465
+    }
+  ],
+  "load_calls": [],
+  "model_calls": [
+    {
+      "index": 1,
+      "completed": true,
+      "input_messages_sha256": "a77c2a3ba77b2a7e8952d51334c2838ddab4f99916a648ad19b9eff187c6bf8c",
+      "elapsed_ms": 14222.869166056626,
+      "type": "tool_calls",
+      "content_chars": 0,
+      "tool_call_names": [
+        "list_files",
+        "browse_skill_directory"
+      ],
+      "usage": {
+        "source": "provider",
+        "inputTokens": 9286,
+        "outputTokens": 291,
+        "cacheReadTokens": 9280,
+        "cacheCreationTokens": null
+      }
+    }
+  ],
+  "blocked_nonload_calls": [
+    {
+      "toolName": "list_files",
+      "input": {
+        "path": "."
+      },
+      "batch_index": 0
+    }
+  ],
+  "stop_reason": "nonload_tool_requested",
+  "limitations": [
+    "Only browse_skill_directory/search_skills/load_skill are dispatched; non-skill tool requests are recorded as blocked (never executed) and end the run after the current batch's skill calls complete.",
+    "The loop stops after the first batch containing a successful load; second-stage loads of multi-stage tasks are out of window.",
+    "Negative-task false-trigger means any successful load in-window.",
+    "Timeout runs are flagged and must be excluded from correctness rates."
+  ],
+  "catalog_size": 1029,
+  "catalog_sha256": "f7b53465d2f17f614a4699b20f3f44c717bed290d9c0e8d4697a01385e7c8405",
+  "prompt_mode": "hierarchical",
+  "routing_outcome": "route",
+  "routing_outcome_reason": "model-catalog-selection",
+  "system_prompt_sha256": "1aee8141eae0bc4676f7507ab9d9eec62616e7e41634410d977f011471db6fe0",
+  "system_prompt_chars": 17936,
+  "policy": {
+    "reason_code": "model-catalog",
+    "catalog_scope": true,
+    "denied": []
+  },
+  "adapter": "OpenAIModelAdapter",
+  "steps": 1,
+  "model_call_count": 1,
+  "input_tokens": 9286,
+  "output_tokens": 291,
+  "routing_events": [],
+  "elapsed_ms": 19181.08654092066
+}

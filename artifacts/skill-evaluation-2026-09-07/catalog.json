@@ -1,0 +1,956 @@
+[
+  {
+    "name": "codebase-explanation",
+    "description": "Explain codebase architecture, agent loop flow, tool calling, and prompt construction.",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/code-understanding/codebase-explanation/SKILL.md",
+    "source": "project",
+    "qualified_name": "code-understanding/codebase-explanation",
+    "directory": "code-understanding",
+    "directory_description": "Skills for reading, tracing, and explaining code architecture.",
+    "domains": [
+      "code",
+      "file",
+      "search",
+      "analysis"
+    ],
+    "scopes": [
+      "readonly"
+    ],
+    "tools": [
+      "read_file",
+      "grep_files",
+      "load_skill"
+    ],
+    "keywords": [
+      "agent_loop",
+      "architecture",
+      "tool calling",
+      "prompt",
+      "explain",
+      "config",
+      "configuration",
+      "import",
+      "imports",
+      "caller",
+      "callers",
+      "reference",
+      "data flow"
+    ],
+    "examples": [
+      "Explain how agent_loop.py handles tool calls",
+      "Trace how a user prompt reaches the model",
+      "Find every caller of route_skill_turn in this codebase"
+    ],
+    "purposes": [
+      "codebase explanation",
+      "runtime trace"
+    ],
+    "supported_operations": [
+      "explain.read",
+      "search.read"
+    ],
+    "required_operations": [],
+    "activation_terms": [
+      "code",
+      "codebase",
+      "module",
+      "file",
+      "function",
+      "class",
+      "architecture",
+      "auth",
+      "query",
+      "config",
+      "configuration",
+      "script",
+      "docs",
+      "agent_loop",
+      "tool call",
+      "call flow",
+      "prompt",
+      "route_skill_turn",
+      "cli",
+      "import",
+      "imports",
+      "reference",
+      "references",
+      "caller",
+      "callers",
+      "代码",
+      "代码库",
+      "模块",
+      "文件",
+      "函数",
+      "类",
+      "架构",
+      "配置",
+      "调用",
+      "调用方",
+      "调用链",
+      "流程",
+      "引用",
+      "拼出"
+    ],
+    "content_digest": "e8a180242ce259904e469a00c4f745229dc549ea6c079d8adbaa69e2007692b2",
+    "routing_identity_digest": "e5035fb53693ddde5a613898aedc588c99e29f19516b60c9ace463ece320d86a"
+  },
+  {
+    "name": "design-review",
+    "description": "Review existing code for design issues, inconsistencies, dead code, and missing test coverage without changing it.",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/code-understanding/design-review/SKILL.md",
+    "source": "project",
+    "qualified_name": "code-understanding/design-review",
+    "directory": "code-understanding",
+    "directory_description": "Skills for reading, tracing, and explaining code architecture.",
+    "domains": [
+      "code",
+      "analysis"
+    ],
+    "scopes": [
+      "readonly"
+    ],
+    "tools": [
+      "read_file",
+      "grep_files",
+      "find_symbols"
+    ],
+    "keywords": [
+      "design review",
+      "code smell",
+      "inconsistency",
+      "unused",
+      "dead code",
+      "technical debt",
+      "coverage gap",
+      "skill routing"
+    ],
+    "examples": [
+      "Look at this module and tell me if the design has problems",
+      "Is there anything inconsistent or unused in this code?",
+      "Compare the two Skill routing implementations for design tradeoffs"
+    ],
+    "purposes": [
+      "design review",
+      "code audit"
+    ],
+    "supported_operations": [
+      "review.analyze",
+      "review.compare"
+    ],
+    "required_operations": [],
+    "activation_terms": [],
+    "content_digest": "572353bd6438b5d865f4cbe39c75633bae00fe0ecfa6d39de365fdc1e490e711",
+    "routing_identity_digest": "5474e2c40f8cd27630aedd67aa1fe241dd6d066ce19d6d9598ac6f7ec49df830"
+  },
+  {
+    "name": "minicode-learning-coach-demo",
+    "description": "Guide a user through learning MiniCode modules with staged code reading, recall questions, answer correction, and interview preparation.",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/code-understanding/minicode-learning-coach-demo/SKILL.md",
+    "source": "project",
+    "qualified_name": "code-understanding/minicode-learning-coach-demo",
+    "directory": "code-understanding",
+    "directory_description": "Skills for reading, tracing, and explaining code architecture.",
+    "domains": [
+      "code",
+      "file",
+      "search",
+      "analysis",
+      "communication"
+    ],
+    "scopes": [
+      "readonly"
+    ],
+    "tools": [
+      "read_file",
+      "grep_files",
+      "load_skill"
+    ],
+    "keywords": [
+      "MiniCode",
+      "learning",
+      "teaching",
+      "quiz",
+      "question",
+      "recall",
+      "code explanation",
+      "architecture",
+      "agent loop",
+      "skill routing",
+      "memory",
+      "context compaction",
+      "interview"
+    ],
+    "examples": [
+      "Teach me how MiniCode agent_loop.py works",
+      "Ask me interview questions about MiniCode Skill routing"
+    ],
+    "purposes": [
+      "guided codebase explanation",
+      "architecture walkthrough"
+    ],
+    "supported_operations": [
+      "explain.read",
+      "question.create"
+    ],
+    "required_operations": [],
+    "activation_terms": [
+      "teach",
+      "teaching",
+      "learn",
+      "learning",
+      "study",
+      "coach",
+      "quiz",
+      "interview",
+      "教我",
+      "教学",
+      "学习",
+      "带我学",
+      "带我走一遍",
+      "提问我",
+      "面试"
+    ],
+    "content_digest": "9f8b473f7db0a0e955faa5901fbcfe4799e0d63568fc3d8a97939a41c5782176",
+    "routing_identity_digest": "1e5ea39f536bc30529a039abeb4a40a48bc5083dfd6d2996b075241d0ecdcf96"
+  },
+  {
+    "name": "readme-authoring",
+    "description": "Write concise README or guide content grounded in the actual project.",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/documentation/readme-authoring/SKILL.md",
+    "source": "project",
+    "qualified_name": "documentation/readme-authoring",
+    "directory": "documentation",
+    "directory_description": "Skills for writing and updating project documentation.",
+    "domains": [
+      "code",
+      "file",
+      "analysis"
+    ],
+    "scopes": [
+      "readonly",
+      "write"
+    ],
+    "tools": [
+      "read_file",
+      "grep_files",
+      "edit_file"
+    ],
+    "keywords": [
+      "readme",
+      "documentation",
+      "guide",
+      "usage"
+    ],
+    "examples": [
+      "Update the README for this feature",
+      "Write a README usage guide for this project"
+    ],
+    "purposes": [
+      "README authoring",
+      "README revision"
+    ],
+    "supported_operations": [
+      "document.create",
+      "document.update"
+    ],
+    "required_operations": [],
+    "activation_terms": [],
+    "content_digest": "6990db45ca8ef1abb0eb12dca4daf9f128e604f12575292f976649ec6524c706",
+    "routing_identity_digest": "65bd3534d197fac472b9f083a0921bdbe38cfbf1fa5cd588b18d4b9559583bb8"
+  },
+  {
+    "name": "lint-and-static-cleanup",
+    "description": "Run a linter or static analysis command, then fix the reported warnings without changing behavior.",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/quality/lint-and-static-cleanup/SKILL.md",
+    "source": "project",
+    "qualified_name": "quality/lint-and-static-cleanup",
+    "directory": "quality",
+    "directory_description": "Skills for linting, static analysis, and other automated code-quality checks.",
+    "domains": [
+      "code",
+      "file",
+      "execution"
+    ],
+    "scopes": [
+      "readonly",
+      "write",
+      "destructive"
+    ],
+    "tools": [
+      "read_file",
+      "edit_file",
+      "run_command"
+    ],
+    "keywords": [
+      "ruff",
+      "lint",
+      "static analysis",
+      "warning",
+      "unused import",
+      "style",
+      "flake8",
+      "mypy"
+    ],
+    "examples": [
+      "Run ruff check and fix what it finds",
+      "Clean up the lint warnings in this file"
+    ],
+    "purposes": [
+      "lint warning repair",
+      "static analysis cleanup"
+    ],
+    "supported_operations": [
+      "code.update"
+    ],
+    "required_operations": [],
+    "activation_terms": [],
+    "content_digest": "05fb64c5a85d739a2b065d36568ac847e40c1465faf865437528be31f1ff45d6",
+    "routing_identity_digest": "36de4a56339c71a3cd31a3d78e6995b1a87a105431825ecff4c7a180cd22c127"
+  },
+  {
+    "name": "minicode-study",
+    "description": "系统化学习 MiniCode Coding Agent 项目的 Skill。覆盖架构总览、Agent Loop、记忆系统、控制论控制器、工具系统等核心模块。",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/code-skills/minicode-study/SKILL.md",
+    "source": "project",
+    "qualified_name": "code-skills/minicode-study",
+    "directory": "code-skills",
+    "directory_description": "Skills for code understanding and learning",
+    "domains": [
+      "code",
+      "analysis"
+    ],
+    "scopes": [
+      "readonly",
+      "external"
+    ],
+    "tools": [
+      "read_file",
+      "grep_files",
+      "file_tree",
+      "find_symbols",
+      "get_ast_info",
+      "find_references",
+      "task",
+      "code_review",
+      "web_search"
+    ],
+    "keywords": [
+      "minicode",
+      "study",
+      "learning",
+      "codebase-walkthrough",
+      "agent-loop",
+      "architecture"
+    ],
+    "examples": [
+      "加载 Skill 后，问：请带我走一遍 main.py 到 agent_loop.py 的启动流程",
+      "解释 memory.py 的三层记忆检索管线是如何工作的"
+    ],
+    "purposes": [
+      "codebase explanation",
+      "architecture walkthrough"
+    ],
+    "supported_operations": [
+      "explain.read"
+    ],
+    "required_operations": [],
+    "activation_terms": [
+      "minicode",
+      "memory.py",
+      "agent_loop.py",
+      "main.py",
+      "cybernetic",
+      "记忆系统",
+      "控制论"
+    ],
+    "content_digest": "3759d5f3f8faed34a100c6638da7ffc20a479c1b0d5d8801c9f2518c44c0fe7b",
+    "routing_identity_digest": "5f86794285fdb3e51c489bef37cebd1c6efcdb9a17aa1d618abcf1763dbaca87"
+  },
+  {
+    "name": "secret-and-injection-review",
+    "description": "Audit code for hardcoded credentials, injection risks, unsafe deserialization, and path traversal.",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/security/secret-and-injection-review/SKILL.md",
+    "source": "project",
+    "qualified_name": "security/secret-and-injection-review",
+    "directory": "security",
+    "directory_description": "Skills for finding unsafe code patterns, leaked secrets, and injection risks.",
+    "domains": [
+      "code",
+      "file",
+      "search",
+      "analysis"
+    ],
+    "scopes": [
+      "readonly"
+    ],
+    "tools": [
+      "read_file",
+      "grep_files",
+      "find_references",
+      "code_review"
+    ],
+    "keywords": [
+      "security",
+      "secret",
+      "credential",
+      "injection",
+      "sql",
+      "traversal",
+      "unsafe",
+      "sanitize",
+      "vulnerability"
+    ],
+    "examples": [
+      "Check this module for security problems",
+      "Are there any hardcoded secrets or injection risks here?"
+    ],
+    "purposes": [
+      "security audit",
+      "secret and injection review"
+    ],
+    "supported_operations": [
+      "review.analyze"
+    ],
+    "required_operations": [],
+    "activation_terms": [],
+    "content_digest": "706a8e5e732bcdf8cd54f095fb9a09026a07f9ba605f533e06b7f67904d1e0db",
+    "routing_identity_digest": "93ade5049a8cc8f674495e77c35cedb656d25195b08c6128c2af92e80aea14a6"
+  },
+  {
+    "name": "pytest-debugging",
+    "description": "Debug pytest failures by reading error output, locating failing code, and rerunning focused tests.",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/debugging/pytest-debugging/SKILL.md",
+    "source": "project",
+    "qualified_name": "debugging/pytest-debugging",
+    "directory": "debugging",
+    "directory_description": "Skills for debugging runtime errors, failing tests, and tool failures.",
+    "domains": [
+      "code",
+      "file",
+      "search",
+      "execution"
+    ],
+    "scopes": [
+      "readonly",
+      "destructive"
+    ],
+    "tools": [
+      "read_file",
+      "grep_files",
+      "run_command"
+    ],
+    "keywords": [
+      "pytest",
+      "failure",
+      "assertion",
+      "traceback",
+      "test"
+    ],
+    "examples": [
+      "Debug this pytest failure",
+      "Why is tests/test_agent_loop.py failing?",
+      "Repair this broken pytest test",
+      "Run pytest on the failing assertion"
+    ],
+    "purposes": [
+      "pytest failure diagnosis",
+      "pytest failure repair"
+    ],
+    "supported_operations": [
+      "debug.analyze",
+      "debug.update",
+      "test.execute"
+    ],
+    "required_operations": [],
+    "activation_terms": [],
+    "content_digest": "a0d2254a350cf3e84255d7b2a069d4a07081d8a40608d654b976c5261603ab4d",
+    "routing_identity_digest": "f8c756241ceb5f31ce94288c0d7e911761e608f6c0ea6e4430180bc06716911b"
+  },
+  {
+    "name": "concurrency-debugging",
+    "description": "Diagnose race conditions, deadlocks, and thread-safety bugs that appear intermittently.",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/debugging/concurrency-debugging/SKILL.md",
+    "source": "project",
+    "qualified_name": "debugging/concurrency-debugging",
+    "directory": "debugging",
+    "directory_description": "Skills for debugging runtime errors, failing tests, and tool failures.",
+    "domains": [
+      "code",
+      "file",
+      "search",
+      "execution"
+    ],
+    "scopes": [
+      "readonly",
+      "destructive"
+    ],
+    "tools": [
+      "read_file",
+      "grep_files",
+      "find_references",
+      "run_command"
+    ],
+    "keywords": [
+      "race",
+      "deadlock",
+      "thread",
+      "concurrency",
+      "lock",
+      "intermittent",
+      "flaky",
+      "async",
+      "parallel"
+    ],
+    "examples": [
+      "This test fails intermittently, I think it's a race",
+      "Find the deadlock in the worker pool"
+    ],
+    "purposes": [
+      "concurrency diagnosis",
+      "race and deadlock analysis"
+    ],
+    "supported_operations": [
+      "debug.analyze"
+    ],
+    "required_operations": [],
+    "activation_terms": [],
+    "content_digest": "a497b728ff77f9ccf8d6a7ae118a27019c3966d9d401be7e1c817531e3a520e0",
+    "routing_identity_digest": "ad4a3c47f7079ae99e08f3d9eadf8dff92ffa889a0734984fdff8d3ea9f2f412"
+  },
+  {
+    "name": "dependency-hygiene",
+    "description": "Add, upgrade, or remove a third-party dependency and verify nothing broke.",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/dependencies/dependency-hygiene/SKILL.md",
+    "source": "project",
+    "qualified_name": "dependencies/dependency-hygiene",
+    "directory": "dependencies",
+    "directory_description": "Skills for adding, upgrading, and auditing third-party dependencies.",
+    "domains": [
+      "code",
+      "file",
+      "execution"
+    ],
+    "scopes": [
+      "readonly",
+      "write",
+      "destructive",
+      "external"
+    ],
+    "tools": [
+      "read_file",
+      "grep_files",
+      "edit_file",
+      "run_command",
+      "test_runner",
+      "web_fetch"
+    ],
+    "keywords": [
+      "dependency",
+      "package",
+      "upgrade",
+      "requirements",
+      "pyproject",
+      "version",
+      "dependency pin",
+      "package pin",
+      "version pin",
+      "pinned version",
+      "requirements pin",
+      "install",
+      "library"
+    ],
+    "examples": [
+      "Add a YAML parser to this project",
+      "Upgrade the pinned pytest version and make sure tests still pass",
+      "Review the dependency config for stale version pins"
+    ],
+    "purposes": [
+      "dependency addition",
+      "dependency upgrade or removal"
+    ],
+    "supported_operations": [
+      "configure.update",
+      "review.analyze",
+      "test.execute"
+    ],
+    "required_operations": [],
+    "activation_terms": [],
+    "content_digest": "134bc00fb694afd8cea65dc6b9d6e35c83cfe868dbe67475a07d35502ef0f15b",
+    "routing_identity_digest": "bd8fece2a9ba2ed5f5c601ba8164b14964eb259dfbe54232d4d94a51bfc54e60"
+  },
+  {
+    "name": "regression-from-bug-report",
+    "description": "Turn a reported bug into a failing test first, then fix it and prove the test now passes.",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/testing/regression-from-bug-report/SKILL.md",
+    "source": "project",
+    "qualified_name": "testing/regression-from-bug-report",
+    "directory": "testing",
+    "directory_description": "Skills for adding, updating, and validating tests.",
+    "domains": [
+      "code",
+      "file",
+      "execution"
+    ],
+    "scopes": [
+      "readonly",
+      "write",
+      "destructive"
+    ],
+    "tools": [
+      "read_file",
+      "grep_files",
+      "write_file",
+      "edit_file",
+      "test_runner",
+      "run_command"
+    ],
+    "keywords": [
+      "bug",
+      "reproduce",
+      "regression",
+      "failing test",
+      "fix",
+      "report",
+      "repro"
+    ],
+    "examples": [
+      "Users report deleting the second item removes the wrong one — fix it",
+      "Write a regression test for this bug then fix it",
+      "Investigate this user-reported bug",
+      "Run the regression test for the reported deletion bug"
+    ],
+    "purposes": [
+      "bug reproduction",
+      "regression test and repair"
+    ],
+    "supported_operations": [
+      "debug.analyze",
+      "debug.update",
+      "test.create",
+      "test.execute"
+    ],
+    "required_operations": [
+      "test.create",
+      "test.execute"
+    ],
+    "activation_terms": [
+      "bug",
+      "report",
+      "reported",
+      "reproduce",
+      "repro",
+      "regression",
+      "failing test",
+      "用户反馈",
+      "用户报告",
+      "回归测试",
+      "复现"
+    ],
+    "content_digest": "d889a82bd8f291c8a65d8446c405afbc3e5f4ca965e4040fee8c13c4c6603b48",
+    "routing_identity_digest": "82f1511f9f03c574b1398010d7fcc32f88ec3b1fcfe36a9371541cd66e052de8"
+  },
+  {
+    "name": "test-driven-development",
+    "description": "Add or update tests before implementation and verify behavior with focused commands.",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/testing/test-driven-development/SKILL.md",
+    "source": "project",
+    "qualified_name": "testing/test-driven-development",
+    "directory": "testing",
+    "directory_description": "Skills for adding, updating, and validating tests.",
+    "domains": [
+      "code",
+      "file",
+      "execution"
+    ],
+    "scopes": [
+      "readonly",
+      "write",
+      "destructive"
+    ],
+    "tools": [
+      "read_file",
+      "write_file",
+      "edit_file",
+      "run_command"
+    ],
+    "keywords": [
+      "test",
+      "pytest",
+      "tdd",
+      "coverage",
+      "verify"
+    ],
+    "examples": [
+      "Add tests for this new behavior",
+      "Implement this with test coverage",
+      "Run the focused tests for the new behavior",
+      "Implement a new parser feature test-first",
+      "Update the implementation after a test-first failure"
+    ],
+    "purposes": [
+      "test-first implementation",
+      "test-first code change"
+    ],
+    "supported_operations": [
+      "test.create",
+      "test.execute",
+      "code.create",
+      "code.update"
+    ],
+    "required_operations": [],
+    "activation_terms": [],
+    "content_digest": "2d1c2718f65883db647c780eddb4cb372f4cf8af4ddf6e7a8002359c0565b81c",
+    "routing_identity_digest": "8ca004778ae0fb3a0561f1f8bc07f1ccff0cef1eea66146d916173f332a843a7"
+  },
+  {
+    "name": "safe-refactor",
+    "description": "Refactor code in small behavior-preserving steps with tests and diff review.",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/refactoring/safe-refactor/SKILL.md",
+    "source": "project",
+    "qualified_name": "refactoring/safe-refactor",
+    "directory": "refactoring",
+    "directory_description": "Skills for safe, behavior-preserving code restructuring.",
+    "domains": [
+      "code",
+      "file",
+      "search"
+    ],
+    "scopes": [
+      "readonly",
+      "write"
+    ],
+    "tools": [
+      "read_file",
+      "grep_files",
+      "edit_file"
+    ],
+    "keywords": [
+      "refactor",
+      "simplify",
+      "migrate",
+      "behavior preserving",
+      "行为保持"
+    ],
+    "examples": [
+      "Refactor this module without changing behavior"
+    ],
+    "purposes": [
+      "behavior-preserving refactor"
+    ],
+    "supported_operations": [
+      "refactor.update"
+    ],
+    "required_operations": [],
+    "activation_terms": [],
+    "content_digest": "f7f778a3110a42383e46ca78bf7fe511317398195dc6799f179a8204d6e0a0db",
+    "routing_identity_digest": "3cfb7d257548ee8c9bd121f153f3861a05819de2be8729a0841029587d7a24bd"
+  },
+  {
+    "name": "structural-rename",
+    "description": "Rename or move a module, package, or symbol consistently across its directory, imports, tests, and docs.",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/refactoring/structural-rename/SKILL.md",
+    "source": "project",
+    "qualified_name": "refactoring/structural-rename",
+    "directory": "refactoring",
+    "directory_description": "Skills for safe, behavior-preserving code restructuring.",
+    "domains": [
+      "code",
+      "file",
+      "search"
+    ],
+    "scopes": [
+      "readonly",
+      "write",
+      "destructive"
+    ],
+    "tools": [
+      "read_file",
+      "grep_files",
+      "edit_file",
+      "write_file",
+      "run_command"
+    ],
+    "keywords": [
+      "rename",
+      "move",
+      "migrate",
+      "package rename",
+      "module rename",
+      "reference",
+      "references",
+      "import"
+    ],
+    "examples": [
+      "Rename the taskkit package to todokit everywhere",
+      "Move this module and update every import"
+    ],
+    "purposes": [
+      "structural rename",
+      "module move"
+    ],
+    "supported_operations": [
+      "code.rename",
+      "code.update"
+    ],
+    "required_operations": [],
+    "activation_terms": [],
+    "content_digest": "cc7bef8055026ee29f6066f17ebfea9a9e67c542be7758c4beeb0989b7c0c203",
+    "routing_identity_digest": "ee338a2f5fa51a4d796bf23f386781cf466d55c30b39ec85fa921981d43f304a"
+  },
+  {
+    "name": "hotpath-profiling",
+    "description": "Find why something is slow by measuring it, before changing any code.",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/performance/hotpath-profiling/SKILL.md",
+    "source": "project",
+    "qualified_name": "performance/hotpath-profiling",
+    "directory": "performance",
+    "directory_description": "Skills for measuring and improving runtime performance with evidence.",
+    "domains": [
+      "code",
+      "execution",
+      "analysis"
+    ],
+    "scopes": [
+      "readonly",
+      "destructive"
+    ],
+    "tools": [
+      "read_file",
+      "grep_files",
+      "run_command",
+      "test_runner"
+    ],
+    "keywords": [
+      "slow",
+      "performance",
+      "profiling",
+      "benchmark",
+      "optimize",
+      "latency",
+      "bottleneck",
+      "timing"
+    ],
+    "examples": [
+      "This command takes 30 seconds, find out why",
+      "Profile the startup path and tell me the bottleneck",
+      "Optimize this module after profiling the startup bottleneck",
+      "Run a benchmark to find which parser stage is slow",
+      "Benchmark parser latency and throughput"
+    ],
+    "purposes": [
+      "performance diagnosis",
+      "measured optimization"
+    ],
+    "supported_operations": [
+      "debug.analyze",
+      "review.analyze",
+      "refactor.update",
+      "test.execute"
+    ],
+    "required_operations": [],
+    "activation_terms": [
+      "slow",
+      "performance",
+      "profile",
+      "profiling",
+      "latency",
+      "throughput",
+      "bottleneck",
+      "timing",
+      "seconds",
+      "milliseconds",
+      "慢",
+      "性能",
+      "剖析",
+      "延迟",
+      "吞吐",
+      "瓶颈",
+      "耗时",
+      "秒",
+      "毫秒",
+      "热点"
+    ],
+    "content_digest": "71d1b9c5d03055d792ede40e928bdcd0b249daa60ee3fff52593cec730c83f4d",
+    "routing_identity_digest": "2eea1539b0f252ceab7bdb9f005fd72ca5811a4cc11a286f964c6b2b66791842"
+  },
+  {
+    "name": "commit-hygiene",
+    "description": "Stage, review, and commit changes safely — inspect the real diff before committing and never record secrets.",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.mini-code/skills/git/commit-hygiene/SKILL.md",
+    "source": "project",
+    "qualified_name": "git/commit-hygiene",
+    "directory": "git",
+    "directory_description": "Skills for version control hygiene — staging, reviewing, and committing changes.",
+    "domains": [
+      "code",
+      "file",
+      "execution"
+    ],
+    "scopes": [
+      "readonly",
+      "write",
+      "destructive"
+    ],
+    "tools": [
+      "git",
+      "read_file",
+      "grep_files",
+      "run_command"
+    ],
+    "keywords": [
+      "commit",
+      "staging",
+      "diff",
+      "git",
+      "message",
+      "branch",
+      "push"
+    ],
+    "examples": [
+      "Commit these changes",
+      "Review what I'm about to commit and write a message"
+    ],
+    "purposes": [
+      "change review before commit",
+      "record code changes"
+    ],
+    "supported_operations": [
+      "review.analyze",
+      "code.update",
+      "document.create"
+    ],
+    "required_operations": [],
+    "activation_terms": [
+      "commit",
+      "git",
+      "staging",
+      "diff",
+      "branch",
+      "提交",
+      "暂存",
+      "分支"
+    ],
+    "content_digest": "2fc407284133dcb47bdc473b266ee7085e28f49143c9b6a183f2a0ec84a5e483",
+    "routing_identity_digest": "119444341c2252c379caa043e5182ccbf49cbc8a4330ec3d63a65eb7a3bbd0ce"
+  },
+  {
+    "name": "minicode",
+    "description": "Terminal-first AI coding assistant with closed-loop self-regulation via",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.claude/skills/minicode/SKILL.md",
+    "source": "compat_project",
+    "qualified_name": "minicode",
+    "directory": "",
+    "directory_description": "",
+    "domains": [],
+    "scopes": [],
+    "tools": [],
+    "keywords": [],
+    "examples": [],
+    "purposes": [],
+    "supported_operations": [],
+    "required_operations": [],
+    "activation_terms": [],
+    "content_digest": "21d8ab5727f1cb4442cb12f502e7bf517e51728d9bc08839b69bebff2d8a081f",
+    "routing_identity_digest": "21d8ab5727f1cb4442cb12f502e7bf517e51728d9bc08839b69bebff2d8a081f"
+  }
+]
