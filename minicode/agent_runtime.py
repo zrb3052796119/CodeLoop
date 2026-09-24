@@ -442,6 +442,9 @@ def create_agent_turn_runtime(
 
     agent_budget = AgentTurnBudget.from_runtime(runtime)
     tools = None
+    from minicode.tools.task import build_task_tool_for_project
+
+    task_tool_definition = build_task_tool_for_project(str(resolved))
     try:
         if mcp_current_state_registry is None:
             tools = create_default_tool_registry(
@@ -449,6 +452,7 @@ def create_agent_turn_runtime(
                 runtime=runtime,
                 include_mcp=include_mcp,
                 include_user_interaction=allow_user_interaction,
+                task_tool_definition=task_tool_definition,
             )
         else:
             tools = create_default_tool_registry(
@@ -457,6 +461,7 @@ def create_agent_turn_runtime(
                 mcp_current_state_registry=mcp_current_state_registry,
                 include_mcp=include_mcp,
                 include_user_interaction=allow_user_interaction,
+                task_tool_definition=task_tool_definition,
             )
         permissions = PermissionManager(str(resolved), prompt=None)
         memory_manager = MemoryManager(project_root=resolved)

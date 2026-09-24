@@ -261,6 +261,7 @@ def create_default_tool_registry(
     mcp_current_state_registry: McpCurrentStateRegistry | None = None,
     include_mcp: bool = True,
     include_user_interaction: bool = True,
+    task_tool_definition: ToolDefinition | None = None,
 ) -> ToolRegistry:
     skills = [asdict(skill) for skill in discover_skills(cwd)]
     observe_skill_catalog_safely(cwd, skills)
@@ -286,7 +287,12 @@ def create_default_tool_registry(
         }
     profile = _resolve_tool_profile(runtime)
     tools = [
-        tool
+        # A per-turn task definition carries the project's agent-type menu
+        # (built-ins plus .mini-code/agents/*.md profiles); without one the
+        # module-level singleton is used unchanged.
+        task_tool_definition
+        if task_tool_definition is not None and tool.name == "task"
+        else tool
         for tool in _CORE_TOOLS
         if include_user_interaction or tool.name != "ask_user"
     ]

@@ -2988,6 +2988,41 @@ def _run(input_data: dict, context) -> ToolResult:
 _SYNC_RUN = _run
 
 
+def build_task_tool_for_project(cwd: str) -> ToolDefinition:
+    """Per-turn task tool carrying the project's agent-type menu.
+
+    Built-in types stay code-defined; project profiles add read-only types
+    from ``.mini-code/agents/*.md``. The module-level ``task_tool`` singleton
+    is never mutated — each turn composes its own definition so registry
+    snapshots stay immutable and parallel turns cannot cross-contaminate.
+    """
+    profiles, errors = load_agent_profiles(cwd)
+    if not profiles:
+        return task_tool
+    agent_types = resolve_agent_types(cwd)
+    names = sorted(agent_types)
+    lines = [
+        "Project-defined read-only agent types (from .mini-code/agents/*.md):"
+    ]
+    lines.extend(
+        f"- {name}: {agent_types[name]['description']}"
+        for name in names
+        if name not in AGENT_TYPES
+    )
+    if errors:
+        lines.append(
+            "Rejected profile files (fix before they become available): "
+            + " | ".join(errors)
+        )
+    schema = json.loads(json.dumps(task_tool.input_schema))
+    schema["properties"]["agent_type"]["enum"] = names
+    return replace(
+        task_tool,
+        description=task_tool.description + "\n" + "\n".join(lines),
+        input_schema=schema,
+    )
+
+
 def _dispatch(input_data: dict, context) -> ToolResult:
     """Dispatch synchronous and asynchronous task lifecycle operations."""
     action = input_data.get("action", "run")

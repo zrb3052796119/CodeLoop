@@ -337,3 +337,35 @@ def test_custom_type_is_concurrency_safe_and_read_only():
         {"description": "x", "prompt": "y", "agent_type": "test-locator"}
     )
     assert profile.effects.read_only is True
+
+
+# ---------------------------------------------------------------------------
+# Task 4: per-turn dynamic task-tool description and schema enum
+# ---------------------------------------------------------------------------
+
+
+def test_task_tool_description_lists_custom_type(tmp_path):
+    _dispatch_imports()
+    _write(tmp_path, "test-locator.md", _VALID_FRONTMATTER)
+    dynamic = task_module.build_task_tool_for_project(str(tmp_path))
+    assert "test-locator" in dynamic.description
+    assert "Locate failing tests and their fixtures." in dynamic.description
+    enum = dynamic.input_schema["properties"]["agent_type"]["enum"]
+    assert "test-locator" in enum and "workflow" in enum
+    baseline = task_module.build_task_tool_for_project("/tmp")
+    assert "test-locator" not in baseline.description
+    baseline_enum = baseline.input_schema["properties"]["agent_type"]["enum"]
+    assert baseline_enum == ["explore", "plan", "general", "workflow"]
+
+
+def test_registry_uses_dynamic_task_tool(tmp_path):
+    _dispatch_imports()
+    from minicode.tools import create_default_tool_registry
+
+    _write(tmp_path, "test-locator.md", _VALID_FRONTMATTER)
+    registry = create_default_tool_registry(
+        str(tmp_path),
+        include_mcp=False,
+        task_tool_definition=task_module.build_task_tool_for_project(str(tmp_path)),
+    )
+    assert "test-locator" in registry.find("task").description
