@@ -95,6 +95,11 @@ _V3_FIELDS = frozenset(
 # instead of v3's step-limit invariant. v1-v3 payloads keep their exact
 # shapes so stored journals written by older versions still normalize.
 _V4_FIELDS = frozenset(_V3_FIELDS | {"resultPartial"})
+# v5 = v4 + ``continuedFromSubagentId``: this run resumed a finished
+# read-only sub-agent's stored conversation. The marker is content-free —
+# an opaque id only — so adoption stays measurable without ever carrying
+# prompts or findings into the observation stream.
+_V5_FIELDS = frozenset(_V4_FIELDS | {"continuedFromSubagentId"})
 
 
 def normalize_subagent_payload(
@@ -118,6 +123,8 @@ def normalize_subagent_payload(
         return _normalize_v3(payload)
     if payload.get("subagentVersion") == 4:
         return _normalize_v4(payload)
+    if payload.get("subagentVersion") == 5:
+        return _normalize_v5(payload)
     return None
 
 
@@ -380,6 +387,91 @@ def _normalize_v4(payload: Mapping[str, object]) -> dict[str, object] | None:
     }
 
 
+def _normalize_v5(payload: Mapping[str, object]) -> dict[str, object] | None:
+    subagent_id = payload.get("subagentId")
+    agent_type = payload.get("agentType")
+    outcome = payload.get("outcome")
+    model_turns = payload.get("modelTurns")
+    tool_calls = payload.get("toolCalls")
+    duration_ms = payload.get("durationMs")
+    model_turn_limit = payload.get("modelTurnLimit")
+    phase_count = payload.get("phaseCount")
+    max_phases = payload.get("maxPhases")
+    result_truncated = payload.get("resultTruncated")
+    result_contract_status = payload.get("resultContractStatus")
+    result_partial = payload.get("resultPartial")
+    continued_from = payload.get("continuedFromSubagentId")
+    required_counts = (
+        model_turns,
+        tool_calls,
+        duration_ms,
+        phase_count,
+        max_phases,
+    )
+    if (
+        not isinstance(subagent_id, str)
+        or _SUBAGENT_ID_RE.fullmatch(subagent_id) is None
+        or not _is_known_agent_type(agent_type)
+        or outcome not in _OUTCOMES
+        or any(
+            isinstance(value, bool)
+            or not isinstance(value, int)
+            or value < 0
+            for value in required_counts
+        )
+        or isinstance(model_turn_limit, bool)
+        or (
+            model_turn_limit is not None
+            and (
+                not isinstance(model_turn_limit, int)
+                or model_turn_limit < 0
+                or model_turn_limit > _MAX_COUNT
+            )
+        )
+        or any(
+            value > _MAX_COUNT
+            for value in (model_turns, tool_calls, phase_count, max_phases)
+        )
+        or duration_ms > _MAX_DURATION_MS
+        or max_phases < 1
+        or phase_count > max_phases
+        or not isinstance(result_truncated, bool)
+        or result_contract_status not in _RESULT_CONTRACT_STATUSES
+        or not isinstance(result_partial, bool)
+        or (
+            outcome == "completed"
+            and result_contract_status == "unavailable"
+        )
+        # The continuation marker is the reason v5 exists. Unlike v4's
+        # resultPartial, a continuation run may complete normally, so the
+        # boolean stays free; the id itself must be canonical or absent.
+        or not (
+            continued_from is None
+            or (
+                isinstance(continued_from, str)
+                and _SUBAGENT_ID_RE.fullmatch(continued_from) is not None
+            )
+        )
+    ):
+        return None
+    return {
+        "subagentVersion": 5,
+        "subagentId": subagent_id,
+        "agentType": agent_type,
+        "outcome": outcome,
+        "modelTurns": model_turns,
+        "toolCalls": tool_calls,
+        "durationMs": duration_ms,
+        "modelTurnLimit": model_turn_limit,
+        "phaseCount": phase_count,
+        "maxPhases": max_phases,
+        "resultTruncated": result_truncated,
+        "resultContractStatus": result_contract_status,
+        "resultPartial": result_partial,
+        "continuedFromSubagentId": continued_from,
+    }
+
+
 def project_subagent_event(
     *,
     agent_type: str,
@@ -395,6 +487,7 @@ def project_subagent_event(
     subagent_id: str | None = None,
     result_contract_status: str | None = None,
     result_partial: bool = False,
+    continued_from_subagent_id: str | None = None,
 ) -> dict[str, object] | None:
     """Build a strict payload, preserving v1/v2 reader compatibility.
 
@@ -436,6 +529,18 @@ def project_subagent_event(
             "resultTruncated": result_truncated,
             "resultContractStatus": result_contract_status,
         }
+        if continued_from_subagent_id is not None and not is_workflow:
+            # A continuation resumes a finished read-only run; it can
+            # complete normally or soft-land, so resultPartial stays a
+            # free boolean and the marker upgrades the payload to v5.
+            return normalize_subagent_payload(
+                {
+                    **v3_payload,
+                    "subagentVersion": 5,
+                    "resultPartial": result_partial,
+                    "continuedFromSubagentId": continued_from_subagent_id,
+                }
+            )
         if result_partial:
             # A workflow's phases soft-land individually; the workflow-level
             # event has no single closing turn to account for.

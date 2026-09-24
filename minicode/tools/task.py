@@ -2258,6 +2258,7 @@ def _run(input_data: dict, context) -> ToolResult:
                 agent_type=agent_type,
                 max_turns=agent_def["max_turns"],
                 budget=agent_budget.snapshot(),
+                continued_from=continue_id,
             )
         except Exception:  # noqa: BLE001 - journal start is optional
             subagent_journal = None
@@ -2951,6 +2952,7 @@ def _run(input_data: dict, context) -> ToolResult:
         max_turns=max_turns,
         result_truncated=truncated,
         result_partial=final_partial,
+        continued_from_subagent_id=continue_id,
     )
 
     detail_section = ""

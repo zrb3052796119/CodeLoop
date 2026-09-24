@@ -395,40 +395,52 @@ class SubagentRunJournal:
     def start(
         self,
         *,
-        parent_run_id: str | None = None,
         subagent_id: str,
         agent_type: str,
         max_turns: int,
         budget: AgentBudgetSnapshot | None,
+        continued_from: str | None = None,
     ) -> None:
-        parent_run_id = parent_run_id or self.parent_run_id
+        from minicode.subagent_profiles import AGENT_NAME_RE
+
+        parent_run_id = self.parent_run_id
         if not isinstance(parent_run_id, str) or not re.fullmatch(
             r"run_[0-9a-f]{32}", parent_run_id
         ):
             raise SubagentJournalError("parent run id is invalid")
-        if agent_type not in {"explore", "plan", "general", "workflow"}:
+        if not (
+            agent_type in {"explore", "plan", "general", "workflow"}
+            or AGENT_NAME_RE.fullmatch(agent_type) is not None
+        ):
             raise SubagentJournalError("agent type is invalid")
         if isinstance(max_turns, bool) or not isinstance(max_turns, int) or max_turns <= 0:
             raise SubagentJournalError("max turns is invalid")
+        if continued_from is not None and not re.fullmatch(
+            r"sub_[0-9a-f]{32}", continued_from
+        ):
+            raise SubagentJournalError("continued-from sub-agent id is invalid")
         path = self._path(subagent_id)
         if path.exists():
             raise SubagentJournalError("sub-agent journal already exists")
-        self._append_line(
-            subagent_id,
-            {
-                "recordType": "start",
-                "journalVersion": JOURNAL_VERSION,
-                "subagentId": subagent_id,
-                "parentRunId": parent_run_id,
-                "agentType": agent_type,
-                "maxTurns": max_turns,
-                "limitKind": (
-                    "phases" if agent_type == "workflow" else "model_turns"
-                ),
-                "startedAt": self._clock(),
-                "budgetAtStart": budget.to_dict() if budget else {},
-            },
-        )
+        start_record: dict[str, object] = {
+            "recordType": "start",
+            "journalVersion": JOURNAL_VERSION,
+            "subagentId": subagent_id,
+            "parentRunId": parent_run_id,
+            "agentType": agent_type,
+            "maxTurns": max_turns,
+            "limitKind": (
+                "phases" if agent_type == "workflow" else "model_turns"
+            ),
+            "startedAt": self._clock(),
+            "budgetAtStart": budget.to_dict() if budget else {},
+        }
+        if continued_from is not None:
+            # Content-free continuation marker: an opaque id only. It lets
+            # adoption be measured from journals without ever recording
+            # prompts, paths, or findings.
+            start_record["continuedFromSubagentId"] = continued_from
+        self._append_line(subagent_id, start_record)
 
     def append_event(
         self,
