@@ -244,7 +244,7 @@ def test_http_delete_exposes_remote_destructive_potential(invocation_registry) -
         ),
         (
             "task",
-            {"agent_type": "reviewer", "description": "x", "prompt": "y"},
+            {"agent_type": "Reviewer", "description": "x", "prompt": "y"},
         ),
         ("http_request", {"url": "https://example.com", "method": "GET", "body": "x"}),
         ("http_request", {"url": "https://example.com", "method": "TRACE"}),

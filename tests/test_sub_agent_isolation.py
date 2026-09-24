@@ -885,7 +885,7 @@ def test_undecidable_task_call_input_falls_back_to_serial() -> None:
     ("mutation", "reason"),
     [
         ({"outcome": "whatever"}, "unknown outcome"),
-        ({"agentType": "rogue"}, "unknown agent type"),
+        ({"agentType": "rogue!"}, "unknown agent type"),
         ({"findings": "secret content"}, "extra field"),
         ({"modelTurns": -1}, "negative count"),
         ({"resultTruncated": "yes"}, "wrong type"),
