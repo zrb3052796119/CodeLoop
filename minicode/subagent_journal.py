@@ -33,6 +33,16 @@ from minicode.concurrent_tool_terminal import (
 
 JOURNAL_VERSION = 1
 _SUBAGENT_ID_RE = re.compile(r"^sub_[0-9a-f]{32}$")
+
+
+def _is_journal_agent_type(agent_type: object) -> bool:
+    """Built-in agent types plus valid project-profile type names."""
+    from minicode.subagent_profiles import AGENT_NAME_RE
+
+    return isinstance(agent_type, str) and (
+        agent_type in {"explore", "plan", "general", "workflow"}
+        or AGENT_NAME_RE.fullmatch(agent_type) is not None
+    )
 _MAX_SUBAGENTS_PER_RUN = 100
 _MAX_STANDARD_FILE_BYTES = 1024 * 1024
 _MAX_TERMINAL_RECORD_BYTES = 512
@@ -186,6 +196,9 @@ class SubagentRunSummary:
     # its result is a partial summary produced by one tool-free closing turn.
     # Absent on journals written before the marker existed (reads as False).
     partial: bool = False
+    # The resumed conversation's owner when this run was a continuation;
+    # None for fresh runs and pre-marker journals.
+    continued_from: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         summary = {
@@ -688,12 +701,20 @@ class SubagentRunJournal:
             not isinstance(subagent_id, str)
             or not _SUBAGENT_ID_RE.fullmatch(subagent_id)
             or not isinstance(parent_run_id, str)
-            or agent_type not in {"explore", "plan", "general", "workflow"}
+            or not _is_journal_agent_type(agent_type)
             or isinstance(max_turns, bool)
             or not isinstance(max_turns, int)
             or max_turns <= 0
             or limit_kind
             != ("phases" if agent_type == "workflow" else "model_turns")
+        ):
+            return None
+        # Optional content-free continuation marker, absent on pre-marker
+        # journals; anything but a canonical id fails the read.
+        continued_from = start.get("continuedFromSubagentId")
+        if continued_from is not None and (
+            not isinstance(continued_from, str)
+            or not _SUBAGENT_ID_RE.fullmatch(continued_from)
         ):
             return None
         outcome = finish.get("outcome")
@@ -752,6 +773,7 @@ class SubagentRunJournal:
             input_tokens=token_counts["inputTokens"],
             output_tokens=token_counts["outputTokens"],
             partial=partial,
+            continued_from=continued_from,
         )
 
 

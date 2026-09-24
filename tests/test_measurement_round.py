@@ -162,3 +162,51 @@ def test_continuation_benchmark_marks_continuation_run(tmp_path):
     versions = [p.get("subagentVersion") for p in completed]
     assert 5 in versions  # the continuation run carries the v5 marker
     assert report["continuation"]["is_continuation"] is True
+
+
+# ---------------------------------------------------------------------------
+# Task 3: adoption analyzer over run journals
+# ---------------------------------------------------------------------------
+
+
+def test_adoption_analyzer_over_sample_journal(tmp_path):
+    import importlib
+
+    analyzer = importlib.import_module("scripts.analyze_continuation_adoption")
+    from minicode.subagent_journal import SubagentRunJournal
+
+    run_dir = tmp_path / ("run_" + "a" * 32)
+    run_dir.mkdir()
+    journal = SubagentRunJournal(run_dir)
+
+    def add(sub: str, turns: int, continued_from: str | None) -> None:
+        journal.start(
+            subagent_id=sub,
+            agent_type="explore",
+            max_turns=12,
+            budget=None,
+            continued_from=continued_from,
+        )
+        journal.finish(
+            sub,
+            outcome="completed",
+            model_turns=turns,
+            tool_calls=max(0, turns - 1),
+            duration_ms=1000,
+            max_turns=12,
+            result_truncated=False,
+            budget=None,
+            partial=False,
+        )
+
+    add("sub_" + "1" * 32, 6, None)
+    add("sub_" + "2" * 32, 7, None)
+    add("sub_" + "3" * 32, 8, None)
+    add("sub_" + "4" * 32, 2, "sub_" + "1" * 32)
+
+    report = analyzer.analyze(run_dir)
+    assert report["totalRuns"] == 4
+    assert report["continuationRuns"] == 1
+    assert report["adoptionRate"] == 0.25
+    assert report["meanModelTurns"]["continuation"] == 2.0
+    assert report["meanModelTurns"]["nonContinuation"] == 7.0
