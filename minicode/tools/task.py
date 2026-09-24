@@ -89,6 +89,7 @@ from minicode.subagent_result import (
     project_subagent_result,
     render_subagent_result,
 )
+from minicode.subagent_sessions import SubagentSession
 from minicode.subagent_supervisor import run_subagent_process
 from minicode.subagent_types import AGENT_TYPES, MAX_AGENT_DEPTH, resolve_max_turns
 from minicode.task_deadline import (
@@ -480,6 +481,29 @@ def _validate(input_data: dict) -> dict:
             "agents; use action=run for general or workflow"
         )
 
+    # Continuation resumes a finished read-only sub-agent from this same
+    # turn; the shape is checked here and the store lookup happens in _run.
+    continue_id = input_data.get("continue_subagent_id")
+    if continue_id is not None:
+        if (
+            not isinstance(continue_id, str)
+            or not re.fullmatch(r"sub_[0-9a-f]{32}", continue_id)
+        ):
+            raise ValueError(
+                "continue_subagent_id must be a sub_ id returned by a "
+                "completed sub-agent this turn"
+            )
+        if action != "run":
+            raise ValueError(
+                "continue_subagent_id requires action='run'; asynchronous "
+                "spawn does not support continuation"
+            )
+        if agent_type not in ("explore", "plan"):
+            raise ValueError(
+                "continue_subagent_id is only valid for read-only "
+                "'explore'/'plan' sub-agents"
+            )
+
     # `description` is specified as 3-5 words for display. Silently using it
     # as the sub-agent's entire task brief produces near-useless runs, so a
     # real prompt is required rather than defaulted.
@@ -593,6 +617,8 @@ def _validate(input_data: dict) -> dict:
         "prompt": prompt,
         "parallel_explore": parallel_explore,
     }
+    if continue_id is not None:
+        validated["continue_subagent_id"] = continue_id
     if normalized_workflow_request is not None:
         validated["workflow_request"] = normalized_workflow_request
     if write_paths is not None:
@@ -1982,6 +2008,53 @@ def _run(input_data: dict, context) -> ToolResult:
         # Host-overridable ceiling (MINI_CODE_SUBAGENT_<TYPE>_MAX_TURNS);
         # invalid values fail closed to the calibrated default.
         agent_def["max_turns"] = resolve_max_turns(agent_type)
+
+    # Continuation resolves the stored session before any expensive child
+    # setup so every failure mode is a cheap, explicit error — never a
+    # silent fallback into a fresh sub-agent run.
+    continue_id = input_data.get("continue_subagent_id")
+    session_store = getattr(context, "_subagent_sessions", None)
+    prior_messages: list[dict] | None = None
+    if continue_id is not None:
+        if scheduler_role is not None:
+            return ToolResult(
+                ok=False,
+                output=(
+                    "error[subagent_continuation_unavailable]: scheduler-"
+                    "assigned workers cannot be continued by the parent "
+                    "model"
+                ),
+            )
+        if session_store is None:
+            return ToolResult(
+                ok=False,
+                output=(
+                    "error[subagent_continuation_unavailable]: "
+                    "continuation sessions are unavailable in this "
+                    "runtime; run a fresh explore/plan task instead"
+                ),
+            )
+        prior = session_store.get(continue_id)
+        if prior is None:
+            retained = ", ".join(session_store.retained_ids()) or "none"
+            return ToolResult(
+                ok=False,
+                output=(
+                    f"error[unknown_continue_subagent_id]: no stored "
+                    f"session for {continue_id}. Retained sessions this "
+                    f"turn: {retained}"
+                ),
+            )
+        if prior.agent_type != agent_type:
+            return ToolResult(
+                ok=False,
+                output=(
+                    f"error[subagent_type_mismatch]: session "
+                    f"{continue_id} ran as '{prior.agent_type}' but this "
+                    f"call declares '{agent_type}'"
+                ),
+            )
+        prior_messages = prior.messages
     task_prompt = input_data["prompt"]
     reserved_subagent_id = input_data.get("_subagent_id")
     subagent_id = (
@@ -2401,16 +2474,28 @@ def _run(input_data: dict, context) -> ToolResult:
                 and 0 < len(custom_result_instruction.strip()) <= 12_000
                 else _subagent_result_instruction(result_key)
             )
+        fresh_user_prompt = task_prompt
+        if prior_messages is not None:
+            fresh_user_prompt = (
+                f"[continuation of sub-agent {continue_id}; its earlier "
+                f"conversation is preserved above — answer the follow-up "
+                f"without re-exploring what it already found]\n\n{task_prompt}"
+            )
         sub_messages = [
             {
                 "role": "system",
                 "content": sub_system_prompt + result_instruction,
             },
-            {
-                "role": "user",
-                "content": task_prompt,
-            },
         ]
+        if prior_messages is not None:
+            # Skip the stored system message when present: this run has a
+            # new subagent_id and therefore a new result-key instruction.
+            prior_body = prior_messages
+            if prior_body and prior_body[0].get("role") == "system":
+                prior_body = prior_body[1:]
+            for msg in prior_body:
+                sub_messages.append(dict(msg))
+        sub_messages.append({"role": "user", "content": fresh_user_prompt})
 
         # Give the sub-agent its own context window governor. Without this the
         # sub-agent runs with no compaction at all, so a long exploration just
@@ -2614,6 +2699,22 @@ def _run(input_data: dict, context) -> ToolResult:
                 fallback_summary=final_message,
                 partial=final_partial,
             )
+            # Persist the finished read-only conversation for same-turn
+            # follow-ups. Scheduler workers are excluded: their transcripts
+            # belong to frozen Assignments, not to the parent model.
+            if (
+                session_store is not None
+                and scheduler_role is None
+                and agent_type in ("explore", "plan")
+            ):
+                session_store.save(
+                    SubagentSession(
+                        subagent_id=subagent_id,
+                        agent_type=agent_type,
+                        messages=list(result_messages),
+                        partial=final_partial,
+                    )
+                )
         except TurnCancellationRequested:
             # Cooperative cancellation is the parent Turn's decision, not a
             # sub-agent failure — let it propagate so the parent unwinds.
@@ -2762,6 +2863,11 @@ def _run(input_data: dict, context) -> ToolResult:
         header += (
             "  Result: PARTIAL — the model-turn limit was reached; the "
             "summary below reflects incomplete exploration.\n"
+        )
+    if agent_type in ("explore", "plan") and scheduler_role is None:
+        header += (
+            f"  Continue: pass continue_subagent_id='{subagent_id}' in a "
+            f"new task call to ask follow-ups without re-exploring.\n"
         )
 
     # Truncate very long results
@@ -3057,7 +3163,9 @@ task_tool = ToolDefinition(
         "rejects it. 'general' and 'workflow' always run one at "
         "a time. All sub-agents share the current turn's "
         "model-call/token/cost budget. The sub-agent's final result is "
-        "returned to you."
+        "returned to you. Completed read-only ('explore'/'plan') runs "
+        "also expose their subagent_id: pass it back via "
+        "continue_subagent_id to ask follow-ups without re-exploring."
     ),
     metadata=ToolMetadata(
         name="task",
@@ -3102,6 +3210,17 @@ task_tool = ToolDefinition(
                     "The sub-agent runs in a fresh context and cannot see this "
                     "conversation, so include every file path, constraint, and "
                     "piece of background it needs."
+                ),
+            },
+            "continue_subagent_id": {
+                "type": "string",
+                "pattern": "^sub_[0-9a-f]{32}$",
+                "description": (
+                    "Continue a completed read-only ('explore'/'plan') "
+                    "sub-agent from this same turn: pass the subagent_id "
+                    "from its result and put only the follow-up question "
+                    "in prompt. The stored conversation resumes — no "
+                    "fresh exploration. Requires action='run'."
                 ),
             },
             "agent_type": {
