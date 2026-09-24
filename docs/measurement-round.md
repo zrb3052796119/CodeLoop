@@ -79,3 +79,36 @@ should be run once the route's model access is restored.**
   `partialRate` at 8 is ~0 across the frozen set and `meanModelTurns`
   meaningfully drops. Do not compare a `fallbackRate` between scripted and
   live runs — scripted explorers never write the typed note contract.
+
+## 4. Live 8v12 results (2026-09-25, eligibility restored)
+
+`python scripts/run_explore_turn_ab.py --turns 8,12 --live --repeats 1`
+(report: `artifacts/explore-turn-ab-live-2026-09-25/report.json`; 10 frozen
+cases × 2 caps on the Aliyun sub-agent route):
+
+| cap | success | partial | meanModelTurns | meanToolCalls |
+| --- | --- | --- | --- | --- |
+| 8 | 1.0 | 0.2 | 5.4 | 6.6 |
+| 12 | 1.0 | 0.1 | 5.9 | 7.3 |
+
+**Decision per the pre-registered criterion: keep 12 as the default.** At
+cap 8, two cases (`concurrency-usage`, `schema-drift`) needed 9 turns and
+soft-landed partial; the criterion required ~0 partial at 8. Most cases
+finish well under either cap (means 5.4–5.9), so the 12 ceiling rarely
+binds — the cost of keeping it is small, the cost of trimming mid-survey
+surprises is not.
+
+Honest caveats: single run per cell, live step counts vary run-to-run
+(`map-module` took 4 turns under cap 8 and 7 under cap 12 on the same
+prompt), and `modelTurns` counts admitted provider calls, so in-step
+retries can push a case past its step cap (a soft-landed row showing 9
+turns against a cap of 8 is expected accounting, not a bug).
+
+**Follow-up finding (independent of turn count):** every live run returned
+`contractStatus: fallback` — the real sub-agent model never wrote the
+typed `subagent_note_write` hand-back before finishing, so the structured
+result is synthesized from free text each time. The contract machinery is
+verified by tests; live-model compliance on this route is the gap. That is
+a prompt-compliance question (worth a follow-up round: strengthen the
+result instruction or penalize missing notes in the closing turn), not a
+turn-budget question.

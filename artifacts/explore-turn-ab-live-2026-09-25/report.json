@@ -1,0 +1,237 @@
+{
+  "caseFile": "tests/fixtures/explore_turn_ab_cases.json",
+  "configs": {
+    "12": {
+      "cases": [
+        {
+          "caseId": "map-module",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 7,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 6
+        },
+        {
+          "caseId": "trace-call-flow",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 4,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 5
+        },
+        {
+          "caseId": "find-config-owners",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 8,
+          "ok": true,
+          "partial": true,
+          "repeat": 0,
+          "tool_calls": 7
+        },
+        {
+          "caseId": "enumerate-error-handling",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 4,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 6
+        },
+        {
+          "caseId": "test-inventory",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 6,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 7
+        },
+        {
+          "caseId": "dependency-surface",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 11,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 17
+        },
+        {
+          "caseId": "entrypoints-and-cli",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 6,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 10
+        },
+        {
+          "caseId": "concurrency-usage",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 4,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 6
+        },
+        {
+          "caseId": "schema-drift",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 4,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 3
+        },
+        {
+          "caseId": "dead-code-candidates",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 5,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 6
+        }
+      ],
+      "summary": {
+        "caseCount": 10,
+        "fallbackRate": 1.0,
+        "meanModelTurns": 5.9,
+        "meanToolCalls": 7.3,
+        "partialRate": 0.1,
+        "successRate": 1.0
+      }
+    },
+    "8": {
+      "cases": [
+        {
+          "caseId": "map-module",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 4,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 7
+        },
+        {
+          "caseId": "trace-call-flow",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 4,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 6
+        },
+        {
+          "caseId": "find-config-owners",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 4,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 6
+        },
+        {
+          "caseId": "enumerate-error-handling",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 3,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 4
+        },
+        {
+          "caseId": "test-inventory",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 3,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 5
+        },
+        {
+          "caseId": "dependency-surface",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 6,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 5
+        },
+        {
+          "caseId": "entrypoints-and-cli",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 4,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 6
+        },
+        {
+          "caseId": "concurrency-usage",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 9,
+          "ok": true,
+          "partial": true,
+          "repeat": 0,
+          "tool_calls": 9
+        },
+        {
+          "caseId": "schema-drift",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 9,
+          "ok": true,
+          "partial": true,
+          "repeat": 0,
+          "tool_calls": 11
+        },
+        {
+          "caseId": "dead-code-candidates",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 8,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 7
+        }
+      ],
+      "summary": {
+        "caseCount": 10,
+        "fallbackRate": 1.0,
+        "meanModelTurns": 5.4,
+        "meanToolCalls": 6.6,
+        "partialRate": 0.2,
+        "successRate": 1.0
+      }
+    }
+  },
+  "mode": "live",
+  "notes": "successRate counts task-tool ok; partialRate counts soft-landed results; fallbackRate counts contractStatus=fallback. live mode spends API quota.",
+  "repeats": 1,
+  "schemaVersion": 1,
+  "turnsCompared": [
+    8,
+    12
+  ]
+}
