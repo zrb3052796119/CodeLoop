@@ -444,6 +444,9 @@ class ProviderConfig:
     api_key: str = field(repr=False)
     extra_headers: dict[str, str] = field(default_factory=dict)
     extra_params: dict[str, Any] = field(default_factory=dict)
+    supports_native_json_schema: bool = False
+    supports_json_object: bool = False
+    supported_reasoning_efforts: tuple[str, ...] = ()
 
     @property
     def is_openai_compatible(self) -> bool:
@@ -471,6 +474,40 @@ def _validated_provider_base_url(value: str, provider: Provider) -> str:
     }:
         return normalized
     raise RuntimeError(f"{provider.value}_base_url_unsafe")
+
+
+def _is_official_openai_base_url(value: str) -> bool:
+    parsed = urlparse(value.rstrip("/"))
+    return (
+        parsed.scheme == "https"
+        and parsed.hostname == "api.openai.com"
+        and parsed.port in {None, 443}
+        and parsed.path in {"", "/v1"}
+    )
+
+
+def _is_official_glm53_flash_route(model: str, base_url: str) -> bool:
+    """Recognize only the audited BigModel model and completion routes.
+
+    The GLM-5.3-Flash model card documents low/high/max reasoning effort;
+    BigModel documents JSON object output separately from strict JSON Schema.
+    Do not extend these capabilities to compatible proxies or other GLM IDs.
+    """
+    parsed = urlparse(base_url.rstrip("/"))
+    return (
+        model == "glm-5.3-flash"
+        and parsed.scheme == "https"
+        and parsed.hostname == "open.bigmodel.cn"
+        and parsed.port in {None, 443}
+        and not parsed.username
+        and not parsed.password
+        and not parsed.query
+        and not parsed.fragment
+        and parsed.path in {
+            "/api/paas/v4/chat/completions",
+            "/api/coding/paas/v4/chat/completions",
+        }
+    )
 
 
 def build_provider_config(model: str, runtime: dict | None = None) -> ProviderConfig:
@@ -511,11 +548,20 @@ def build_provider_config(model: str, runtime: dict | None = None) -> ProviderCo
             Provider.OPENAI,
         )
         api_key = str(runtime.get("openaiApiKey") or "")
+        supports_glm_controls = _is_official_glm53_flash_route(model, base_url)
         return ProviderConfig(
             provider=Provider.OPENAI,
             model=model,
             base_url=base_url,
             api_key=api_key,
+            # Only the official endpoint is asserted here.  A third-party
+            # endpoint using OpenAI-compatible wire syntax must not inherit
+            # this capability by accident.
+            supports_native_json_schema=_is_official_openai_base_url(base_url),
+            supports_json_object=supports_glm_controls,
+            supported_reasoning_efforts=(
+                ("low", "high", "max") if supports_glm_controls else ()
+            ),
         )
 
     if provider == Provider.CUSTOM:
@@ -524,6 +570,7 @@ def build_provider_config(model: str, runtime: dict | None = None) -> ProviderCo
             Provider.CUSTOM,
         )
         api_key = str(runtime.get("customApiKey") or "")
+        supports_glm_controls = _is_official_glm53_flash_route(model, base_url)
         return ProviderConfig(
             provider=Provider.CUSTOM,
             model=model,
@@ -531,6 +578,10 @@ def build_provider_config(model: str, runtime: dict | None = None) -> ProviderCo
             api_key=api_key,
             extra_headers=_parse_extra_headers(
                 str(runtime.get("customApiExtraHeaders") or "")
+            ),
+            supports_json_object=supports_glm_controls,
+            supported_reasoning_efforts=(
+                ("low", "high", "max") if supports_glm_controls else ()
             ),
         )
 
@@ -590,7 +641,11 @@ def create_model_adapter(
     """
     if force_mock or os.environ.get("MINI_CODE_MODEL_MODE") == "mock":
         from minicode.mock_model import MockModelAdapter
-        return MockModelAdapter()
+        adapter = MockModelAdapter()
+        adapter.supports_native_json_schema = False
+        adapter.supports_json_object = False
+        adapter.supported_reasoning_efforts = ()
+        return adapter
 
     provider_config = build_provider_config(model, runtime)
 
@@ -601,6 +656,14 @@ def create_model_adapter(
         enriched_runtime = dict(runtime or {})
         enriched_runtime["model"] = provider_config.model
         enriched_runtime["_isolatedOpenAIConfig"] = True
+        enriched_runtime["_resolvedOpenAIProvider"] = provider_config.provider.value
+        enriched_runtime["_supportsNativeJsonSchema"] = (
+            provider_config.supports_native_json_schema
+        )
+        enriched_runtime["_supportsJsonObject"] = provider_config.supports_json_object
+        enriched_runtime["_supportedReasoningEfforts"] = (
+            provider_config.supported_reasoning_efforts
+        )
         if provider_config.provider == Provider.OPENROUTER:
             enriched_runtime["openaiBaseUrl"] = provider_config.base_url
             enriched_runtime["openaiApiKey"] = provider_config.api_key
@@ -628,7 +691,13 @@ def create_model_adapter(
     # Disable extended thinking for non-standard Anthropic endpoints (DeepSeek etc.)
     if "api.anthropic.com" not in enriched.get("baseUrl", ""):
         enriched["disableThinking"] = True
-    return AnthropicModelAdapter(enriched, tools)
+    adapter = AnthropicModelAdapter(enriched, tools)
+    # The current Anthropic adapter has no audited native-schema wire
+    # contract.  Keep the capability explicit and closed until it does.
+    adapter.supports_native_json_schema = False
+    adapter.supports_json_object = False
+    adapter.supported_reasoning_efforts = ()
+    return adapter
 
 
 def build_dedicated_model_runtime(
@@ -655,6 +724,7 @@ def build_dedicated_model_runtime(
             "maxOutputTokens",
             "modelTimeoutSeconds",
             "modelMaxRetries",
+            "enableThinking",
         )
         if key in source
     }
@@ -668,6 +738,38 @@ def build_dedicated_model_runtime(
                     source.get("deepseekBaseUrl") or "https://api.deepseek.com"
                 ).strip(),
                 "customApiKey": str(source.get("deepseekApiKey") or "").strip(),
+            }
+        )
+        return isolated
+
+    subagent_models = source.get("subagentModels")
+    configured_subagent_models = (
+        {
+            str(value).strip().lower()
+            for value in subagent_models.values()
+            if str(value).strip()
+        }
+        if isinstance(subagent_models, dict)
+        else set()
+    )
+    subagent_provider = str(source.get("subagentProvider") or "").strip().lower()
+    if (
+        bool(source.get("subagentRoutingEnabled"))
+        and normalized in configured_subagent_models
+        and subagent_provider
+        in {Provider.CUSTOM.value, Provider.OPENAI.value, "openai-compatible"}
+    ):
+        base_url = str(source.get("subagentBaseUrl") or "").strip()
+        api_key = str(source.get("subagentApiKey") or "").strip()
+        if not base_url:
+            raise RuntimeError("dedicated_model_route_unavailable")
+        # The subagent route is an explicit, exact-model auxiliary transport.
+        # Copy neither the main-agent endpoint nor its credential.
+        isolated.update(
+            {
+                "provider": Provider.CUSTOM.value,
+                "customBaseUrl": base_url,
+                "customApiKey": api_key,
             }
         )
         return isolated

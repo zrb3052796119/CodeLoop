@@ -73,9 +73,10 @@ First, the contract surface for the four tracks and their support layer:
 
 | System evidence | Result | What it does—and does not—show |
 | --- | ---: | --- |
-| [Repository regression suite](./.github/workflows/ci.yml) | **4,474 passed, 2 skipped** | Local Python 3.12 release run on 2026-08-24 against [runtime/test commit `4f7b53d`](https://github.com/zrb3052796119/CodeLoop/commit/4f7b53d); protects implemented behavior, not general agent intelligence. CI reruns the suite on a 3-OS × 2-Python matrix after push. |
-| [Skill-routing gate](./docs/agent-quality-gates.md) | **60/60** | 40 positive/explicit plus 20 abstention/adversarial cases; top-1, abstention, and required-exact rates are 1.0. Offline with `remoteCallCount=0`, not live Qwen or an external benchmark. |
-| [Repeated-compaction gate](./docs/agent-quality-gates.md) | **12/12** | Forced one-to-five-round cases cover summary chains, rejected approaches, the task ledger, latest instruction, loaded Skill, and tool turns. Proves the frozen contract, not zero drift in every long conversation. |
+| [Repository regression suite](./.github/workflows/ci.yml) | **4,482 passed, 2 skipped** | Local Python 3.12 release run on 2026-08-25; protects implemented behavior, not general agent intelligence. CI reruns the suite on a 3-OS × 2-Python matrix after push. |
+| [Skill-routing gate](./docs/agent-quality-gates.md) | **60/60 legacy; 96/96 joined routing decisions** | The joined production-shaped development set also records 84/96 full cases; its 12 residuals are intent/context labels, not Skill decisions. Both are offline with `remoteCallCount=0`, not live Qwen, a blind production holdout, or an external benchmark. |
+| [Repeated-compaction gate](./docs/agent-quality-gates.md) | **12/12 gate + 60/60 stress** | Forced one-to-five-round cases cover summary chains, rejected approaches, the task ledger, latest instruction, loaded Skill, and tool turns across four history scales and three marker layouts. Proves the frozen contract, not zero drift in every long conversation. |
+| [Paired context-compaction study](./docs/context-compaction-experiment-study.md) | **12/12 pairs complete; 24 cases** | Canonical/control provider input tokens were 4,288,270 vs 6,011,480 (**-28.7% aggregate; 22.7% median paired**, exact `p=0.00537`). Strict success was 9/12 vs 10/12 because five cases hit remote `IncompleteRead`; all executable tests and protected markers still passed. This supports token efficiency, not a quality-neutrality claim. |
 | [Recorded-task gate](./docs/agent-quality-gates.md) | **50/50** | Real model/runtime recordings from isolated synthetic repositories: 10 categories and 30 writing tasks. The command re-evaluates sealed evidence offline; profile `a` accepts fresh results for the same manifest but does not automatically rerun the provider. Not an external certification. |
 | [Live parent/child model route](./docs/model-routing-live-acceptance-2026-08-23.md) | **4/4 actors × 2 rounds** | Parent, Explore, Plan, and General each made one HTTP request per round; outbound and provider-reported model IDs agreed. This is a sanitized curated projection, not a provider-signed receipt. |
 
@@ -107,7 +108,7 @@ CodeLoop should not claim those as original components.
 
 | Area | CodeLoop work after the imported baseline | Verification surface |
 | --- | --- | --- |
-| Multi-layer Skill routing | On top of the inherited deterministic directory/Skill scorer: real abstention, bilingual intent and aliases, optional Qwen/OpenAI-compatible embeddings, strict explicit-invocation grammar, candidate-margin gates, digest-bound loading, and bounded cross-Run reranking that only affects independently admitted candidates. | Frozen 60-case bilingual/explicit/abstention/adversarial gate plus router, semantic cache/degradation, explicit grammar, digest-loader, and evidence tests. |
+| Multi-layer Skill routing | On top of the inherited deterministic directory/Skill scorer: context-aware compound operations, operation-by-topic lanes, real abstention/clarification, bilingual intent and aliases, optional Qwen/OpenAI-compatible embeddings, strict explicit-invocation grammar, candidate-margin gates, digest-bound loading, and bounded cross-Run reranking that only affects independently admitted candidates. | Frozen 60-case router gate plus a 96-case joined parse-to-prompt development challenge, semantic cache/degradation, authority, digest-loader, and evidence tests. |
 | Context fidelity | Added summary-of-summary chaining, a compression-immune ledger for goal/constraints/typed facts/failure codes, atomic provider tool turns, provider-usage calibration, and unchanged-state retry identity; connected forced paths to the inherited breaker. | Repeated-compaction gate and large-file replay. |
 | Multi-agent runtime | Asynchronous `spawn` / `poll` / `cancel` for read-only `explore/plan`, structured results, `subagentId` journal joins, shared turn budgets, deadlines, and per-role OpenAI-compatible model routing. | Lifecycle, cancellation, result-schema, routing, journal, and budget tests. |
 | Persistent Memory | On top of inherited storage, generic recovery synthesis, sanitization, approval, lexical retrieval/reranking, content hashes, and rendered-entry feedback: corroborated/idempotent feedback, quarantine/projection hygiene, broader operational recovery, canonical evidence-gated hybrid retrieval, and stricter acceptance attribution. | Paired warm/cold studies, V1–V5 deterministic contracts (V5 live/provider run pending), and the Memory regression matrix. |
@@ -191,7 +192,20 @@ abstention/adversarial cases and currently records 60/60 with
 not a live Qwen call. Transport mocks, cache/degradation tests, and a separate
 smoke path cover the remote adapter boundary.
 
-See [Skill routing feedback](./docs/skill-routing-feedback.md) and the
+A second 96-case joined challenge exercises the actual parse, bounded context,
+operation-by-topic candidate lanes, explicit authority, final decision, and
+prompt projection together. It currently records 96/96 correct routing
+decisions and 84/96 full cases; the 12 full-case residuals are ten conservative
+off-domain intent-taxonomy labels and two context-use labels. Because the set
+was used during implementation, it is a regression development set rather
+than a blind production estimate.
+
+An optional context-aware intent fallback can make one budgeted, tool-free
+model call only after deterministic parsing abstains. It is disabled by
+default, preserves negation and explicit-authority boundaries, and accepts only
+strict calibrated advisory operations. See the
+[semantic intent operating contract](./docs/intent-semantic-classifier.md),
+[Skill routing feedback](./docs/skill-routing-feedback.md), and the
 [full contribution map](./docs/CONTRIBUTION_AUDIT.md).
 
 ### 2. Context compaction that preserves task state
@@ -217,14 +231,31 @@ and [quality-gate contract](./docs/agent-quality-gates.md).
 
 ### 3. Bounded multi-agent collaboration
 
-Four task roles are available:
+Production supports three task entry points and retains one legacy entry:
 
 | Role | Typical work | Lifecycle |
 | --- | --- | --- |
 | `explore` | Read-only repository discovery | May run asynchronously with `spawn` / `poll` / `cancel`. |
 | `plan` | Read-only analysis and implementation planning | May run asynchronously with the same lifecycle. |
-| `general` | Focused delegated implementation or analysis | Synchronous; may receive write-capable tools. |
-| `workflow` | Versioned review/decision workflow | Synchronous and fail-closed on malformed verdicts. |
+| `workflow` | Schedules Analyst, Executor, Reviewer, and Adjudicator as needed | Synchronous orchestration and verification; the parent continues remaining work after promotion. |
+| `general` | Legacy embedder compatibility and the Executor's underlying model route | Direct delegation is rejected by the production Agent Loop. |
+
+The host binds role permissions and access to frozen evidence. A successful
+workflow returns control to the parent to finish remaining tasks and synthesize
+asynchronous results. Cancellation, deadlines, or model failure during that
+continuation preserve committed receipts and report incomplete remaining work.
+Promotion rechecks the complete parent snapshot under a cross-process lock;
+candidates with changed dependencies must rerun. Synchronous `run` and
+asynchronous `spawn` share a read-only delegation circuit breaker that stops
+further delegation after two consecutive failures in a turn.
+
+Structured change workflows allow one implementation repair by default; host
+policy can set a limit of zero to two. Only completed failing checks or eligible
+Reviewer change requests return to the Executor. A revised patch must pass fresh
+verification and any required review. Each revision retains its own evidence
+and revokes the previous patch's promotion capability. Permission gates, human
+confirmation, infrastructure failures, and insufficient evidence still stop
+the workflow. Repairs share the original budget and deadline.
 
 Every child shares the parent turn budget. General results use a structured
 `summary / files / risks / verification` envelope and completion events carry
@@ -431,9 +462,13 @@ Useful entry points:
 
 ## Honest Limitations
 
-- The 60-case Skill gate is a frozen offline routing contract. It makes no
-  remote embedding calls and is not a set of 60 real-project tasks; the
-  optional Qwen embedding route is not a live benchmark on that basis.
+- The 60-case Skill gate and 96-case joined challenge are frozen offline
+  contracts. Neither makes remote embedding calls or constitutes a blind set
+  of real-project tasks; the optional Qwen embedding route is not a live
+  benchmark on that basis.
+- The semantic intent fallback has no checked-in corpus of real production
+  corrections. Its built-in confidence mapping is conservative bootstrap
+  policy, explicitly not a production-fit calibration.
 - The strongest efficiency results come from synthetic repositories. They
   demonstrate mechanisms under controlled conditions, not universal coding
   productivity gains.

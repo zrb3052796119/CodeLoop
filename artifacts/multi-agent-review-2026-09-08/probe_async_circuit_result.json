@@ -1,0 +1,7 @@
+{
+  "two_sync_failures_open_circuit": true,
+  "third_sync_rejected": true,
+  "spawn_admitted_despite_open_circuit": true,
+  "spawn_terminal_status": "failed",
+  "failure_count_after_failed_spawn": 2
+}

@@ -39,6 +39,7 @@ class VerifierSandboxBackend(Protocol):
         argv: tuple[str, ...],
         cwd: str,
         verifier_home: str,
+        extra_read_roots: tuple[str, ...] = (),
     ) -> tuple[str, ...]: ...
 
 
@@ -156,6 +157,7 @@ class DeterministicVerifier:
         sandbox_backend: VerifierSandboxBackend | None = None,
         trusted_executables: Mapping[str, str] | None = None,
         untrusted_executable_roots: tuple[str, ...] = (),
+        explicit_trusted_executables: Mapping[str, str] | None = None,
     ) -> None:
         if not callable(command_runner) or not callable(clock):
             raise TypeError("verifier ports must be callable")
@@ -175,6 +177,28 @@ class DeterministicVerifier:
             ):
                 raise TypeError("trusted_executables contains an invalid capability")
             projected_trusted[name.casefold()] = executable
+        explicit_trusted_paths: set[str] = set()
+        for name, executable in (explicit_trusted_executables or {}).items():
+            if (
+                not isinstance(name, str)
+                or not name
+                or "/" in name
+                or "\\" in name
+                or not isinstance(executable, str)
+                or not Path(executable).is_absolute()
+            ):
+                raise TypeError(
+                    "explicit_trusted_executables contains an invalid capability"
+                )
+            projected_trusted[name.casefold()] = executable
+            try:
+                explicit_trusted_paths.add(
+                    str(Path(executable).resolve(strict=True))
+                )
+            except OSError:
+                # Keep the mapping resolvable later; only the untrusted-root
+                # exemption is lost for an entry that cannot resolve now.
+                continue
         projected_untrusted_roots: list[Path] = []
         for root in untrusted_executable_roots:
             if not isinstance(root, str) or not Path(root).is_absolute():
@@ -187,6 +211,7 @@ class DeterministicVerifier:
         self._clock = clock
         self._sandbox_backend = sandbox_backend
         self._trusted_executables = projected_trusted
+        self._explicit_trusted_paths = frozenset(explicit_trusted_paths)
         self._untrusted_executable_roots = tuple(projected_untrusted_roots)
         self._managed_subprocess = command_runner is subprocess.run
 
@@ -215,6 +240,9 @@ class DeterministicVerifier:
             raise ValueError("verification check ids must be unique")
         if not isinstance(cwd, str) or not cwd.strip():
             raise ValueError("verification cwd must be non-empty")
+        # Seatbelt profiles match canonical paths only: a symlinked cwd
+        # (macOS /var -> /private/var) would be denied mid-check.
+        cwd = os.path.realpath(cwd)
         if permissions is not None and (
             not callable(getattr(permissions, "ensure_command", None))
             or not isinstance(permission_cwd, str)
@@ -243,6 +271,8 @@ class DeterministicVerifier:
         with tempfile.TemporaryDirectory(
             prefix="minicode-verifier-home-"
         ) as verifier_home:
+            # Keep HOME on the same canonical path the sandbox profile allows.
+            verifier_home = str(Path(verifier_home).resolve())
             environment = self._environment(verifier_home)
             for check in checks:
                 started = self._clock()
@@ -473,11 +503,21 @@ class DeterministicVerifier:
         if backend is None:
             return prepared, resolved, "host_sandbox_unavailable"
         try:
-            wrapped = backend.wrap_command(
-                argv=prepared,
-                cwd=cwd,
-                verifier_home=verifier_home,
-            )
+            try:
+                wrapped = backend.wrap_command(
+                    argv=prepared,
+                    cwd=cwd,
+                    verifier_home=verifier_home,
+                    extra_read_roots=self._read_roots_for(resolved),
+                )
+            except TypeError:
+                # Host-injected backends predating the read-root extension
+                # keep working with their original signature.
+                wrapped = backend.wrap_command(
+                    argv=prepared,
+                    cwd=cwd,
+                    verifier_home=verifier_home,
+                )
         except Exception:  # noqa: BLE001 - an invalid capability fails closed
             return prepared, resolved, "host_sandbox_unavailable"
         if (
@@ -499,6 +539,30 @@ class DeterministicVerifier:
             return prepared, resolved, launcher_error or "host_sandbox_unavailable"
         return (launcher, *wrapped[1:]), resolved, None
 
+    def _read_roots_for(self, resolved_executable: str) -> tuple[str, ...]:
+        """Sandbox read roots one explicitly trusted toolchain needs.
+
+        A host-user-registered interpreter (conda/venv) cannot even start
+        unless its prefix — the parent of the ``bin`` directory holding the
+        executable — stays readable: the shebang interpreter, libpython and
+        site-packages all live there.  System-root toolchains resolve to no
+        extra root because ``/usr`` is already readable.
+        """
+
+        roots: list[str] = []
+        candidate = Path(resolved_executable).resolve(strict=False)
+        for _ in range(3):
+            parent = candidate.parent
+            if parent.name == "bin":
+                prefix = parent.parent.resolve(strict=False)
+                if str(prefix) not in {"/", "/usr", "/System", "/Library"}:
+                    roots.append(str(prefix))
+                break
+            if parent.parent == parent:
+                break
+            candidate = parent
+        return tuple(dict.fromkeys(roots))
+
     def _resolve_trusted_executable(
         self,
         executable: str,
@@ -513,12 +577,18 @@ class DeterministicVerifier:
         if (
             not Path(executable).is_absolute()
             or resolved.is_relative_to(workspace)
-            or any(
-                resolved.is_relative_to(root)
-                for root in self._untrusted_executable_roots
-            )
             or not resolved.is_file()
             or not os.access(resolved, os.X_OK)
+        ):
+            return None, "trusted_executable_unavailable"
+        # A host-user-registered executable (MINI_CODE_VERIFIER_TRUSTED_
+        # EXECUTABLES) is exempt from the untrusted-root rejection — that
+        # default exists to keep auto-discovery off user-writable paths, not
+        # to override an explicit user decision.  Workspace binaries stay
+        # rejected either way: verification must never execute repo bytes.
+        if str(resolved) not in self._explicit_trusted_paths and any(
+            resolved.is_relative_to(root)
+            for root in self._untrusted_executable_roots
         ):
             return None, "trusted_executable_unavailable"
         return str(resolved), None

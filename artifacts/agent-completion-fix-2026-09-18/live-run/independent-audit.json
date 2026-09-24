@@ -1,0 +1,101 @@
+{
+  "auditVersion": 1,
+  "runId": "run_ad516d64824a4663807c9c29f374c5fc",
+  "result": "PASS_WITH_OBSERVABILITY_GAP",
+  "scope": "One real-model production-runtime run validates budget-triggered partial hand-back, not target bug-fix completion.",
+  "metrics": {
+    "modelCalls": 8,
+    "inputTokens": 158738,
+    "outputTokens": 2985,
+    "totalTokens": 161723,
+    "durationSeconds": 109.57,
+    "toolCalls": 10,
+    "subagents": 0
+  },
+  "checks": {
+    "effective_budget_matches_authorized_limits": true,
+    "eight_started_and_completed_model_calls": true,
+    "all_model_usage_is_provider_reported": true,
+    "usage_matches_summary": true,
+    "observed_tokens_within_budget": true,
+    "ten_read_only_tool_calls": true,
+    "closing_reports_zero_tool_calls": true,
+    "no_tool_execution_after_closing_started": true,
+    "final_is_marked_partial": true,
+    "outcome_does_not_claim_goal_achieved": true,
+    "no_verification_was_reported": true,
+    "no_subagents": true,
+    "final_matches_no_changes_and_no_checks": true,
+    "target_production_and_tests_unchanged": true,
+    "only_untracked_runtime_lock": true,
+    "original_target_bug_remains": true
+  },
+  "toolCounts": {
+    "list_files": 1,
+    "file_tree": 1,
+    "grep_files": 3,
+    "read_file": 5
+  },
+  "closingEvidence": {
+    "startedSequence": 46,
+    "completedSequence": 47,
+    "step": 8,
+    "resultType": "assistant",
+    "toolCallCount": 0,
+    "providerUsage": {
+      "source": "provider",
+      "inputTokens": 27960,
+      "outputTokens": 2155,
+      "cacheReadTokens": 26432,
+      "cacheCreationTokens": null
+    }
+  },
+  "taskOutcome": {
+    "outcomeVersion": 2,
+    "outcomeStatus": "unknown",
+    "completionSucceeded": false,
+    "verificationStatus": "unverified",
+    "verificationPassedCount": 0,
+    "verificationFailedCount": 0,
+    "goalAchieved": false,
+    "learningSuccess": null,
+    "hadToolErrors": false,
+    "errorsRecovered": false,
+    "toolErrorCount": 0
+  },
+  "targetFiles": [
+    {
+      "path": "minicode/tools/test_runner.py",
+      "sha256": "2a709671ff4398574709794b6b104ef5524ec149f6b0a8248d31b891f6ee80e0",
+      "matches_head": true
+    },
+    {
+      "path": "tests/test_tools.py",
+      "sha256": "a6b8941dd648dda6de44a7592f662d3e3578e65c36d55762e49b6f13fe9494d1",
+      "matches_head": true
+    }
+  ],
+  "workspaceStatus": [
+    "?? .minicode-memory-authority.lock"
+  ],
+  "observabilityGap": {
+    "event": "execution.completion_limited",
+    "missingFromSavedJournal": true,
+    "interpretation": "The expected completion-limited event is absent. This is a telemetry gap; the saved closing prompt, eighth provider response, final partial marker, task outcome, and absence of subsequent tools independently demonstrate the bounded hand-back. Root is checking the event allowlist."
+  },
+  "finalResponseAssessment": "Final response accurately says no code was changed, no pytest/ruff checks ran, root cause is not reproduced in this run, and the repair is unfinished. Additional repair suggestions are plans rather than executed work.",
+  "limitations": [
+    "Does not prove the target bug was fixed or a PR was created.",
+    "Does not exercise the step-35 extension or step-50 ceiling; the eight-call shared budget triggered first.",
+    "No subagent was invoked, so this run does not validate subagent routing or Aliyun calls.",
+    "One run does not establish repeated-run reliability.",
+    "No raw tool output or reasoningContent is included in this audit."
+  ],
+  "evidenceFiles": [
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/live-run/summary.json",
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/live-run/configuration.json",
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/live-run/response.md",
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/live-run/messages.json",
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/live-run/journal/dashboard/workspaces/ws_cdc6e560439c1c65/runs/run_ad516d64824a4663807c9c29f374c5fc/events.ndjson"
+  ]
+}

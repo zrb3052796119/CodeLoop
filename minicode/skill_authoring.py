@@ -5,9 +5,8 @@ import re
 from pathlib import Path
 from typing import Any
 
-from minicode.capability_registry import CapabilityRegistry, get_registry
+from minicode.capability_registry import CapabilityRegistry
 from minicode.skills import discover_skill_directories, discover_skills
-
 
 _STRONG_DIRECTORY_SCORE = 1.5
 _STOP_WORDS = {
@@ -19,9 +18,11 @@ _STOP_WORDS = {
 def propose_skill(
     cwd: str | Path,
     spec: dict[str, Any],
-    registry: CapabilityRegistry | None = None,
+    registry: CapabilityRegistry,
     top_k: int = 3,
 ) -> dict[str, Any]:
+    if not isinstance(registry, CapabilityRegistry):
+        raise TypeError("registry must be a CapabilityRegistry")
     requested_name = _required_text(spec, "name")
     name = _slugify(requested_name)
     description = _required_text(spec, "description")
@@ -33,7 +34,6 @@ def propose_skill(
     content_outline = str(spec.get("content_outline", "") or "").strip()
     top_k = max(1, int(spec.get("top_k", top_k) or top_k))
 
-    registry = registry or get_registry()
     directories = discover_skill_directories(cwd)
     skills = discover_skills(cwd)
     candidates = _score_directories(
@@ -70,6 +70,20 @@ def propose_skill(
         tools=tools,
         examples=examples,
     )
+    if new_directory_suggestion is not None:
+        next_step = (
+            "Review this proposal. If it is correct, create both the new "
+            f"directory marker at {new_directory_suggestion['path']} and the "
+            f"target Skill at {target_path} with write_file so normal path "
+            "and diff approval still apply. The nested Skill is not "
+            "discoverable until both files exist."
+        )
+    else:
+        next_step = (
+            "Review this proposal. If it is correct, create the target "
+            "SKILL.md with write_file so normal path and diff approval still "
+            "apply."
+        )
 
     return {
         "recommended_directory": recommended_directory,
@@ -89,10 +103,7 @@ def propose_skill(
         ),
         "tool_validation": _tool_validation(tools, registry),
         "new_directory_suggestion": new_directory_suggestion,
-        "next_step": (
-            "Review this proposal. If it is correct, create the target SKILL.md "
-            "with write_file so normal path and diff approval still apply."
-        ),
+        "next_step": next_step,
     }
 
 
@@ -298,6 +309,7 @@ def _tool_validation(tools: list[str], registry: CapabilityRegistry) -> list[dic
                 "domain": capability.metadata.domain.value,
                 "scope": capability.metadata.scope.value,
                 "description": capability.metadata.description,
+                "capability_profile": capability.metadata.profile.to_dict(),
             }
         )
     return results

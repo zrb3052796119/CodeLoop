@@ -5,11 +5,25 @@ import re
 import shlex
 import subprocess
 import sys
+import threading
+import time
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Sequence
 
-from minicode.background_tasks import register_background_shell_task
-from minicode.tooling import ToolDefinition, ToolResult
+from minicode.background_tasks import (
+    register_background_shell_task,
+    release_background_task_slot,
+    reserve_background_task_slot,
+)
+from minicode.subagent_supervisor import _kill_process_tree
+from minicode.task_deadline import TaskDeadlineExceeded, raise_task_deadline
+from minicode.tooling import (
+    ToolDefinition,
+    ToolResult,
+    ToolTerminationReason,
+)
+from minicode.turn_cancellation import TurnCancellationRequested
 from minicode.verification_observation import project_command_verification
 from minicode.workspace import resolve_tool_path
 from minicode.workspace import INTERNAL_WORKSPACE_STORE_NAMES
@@ -28,6 +42,11 @@ _SENSITIVE_ENV_MARKERS = (
     "SECRET",
     "PASSWORD",
     "CREDENTIAL",
+    # Bare TOKEN names carry credentials too: GITHUB_TOKEN,
+    # AWS_SESSION_TOKEN, GITLAB_TOKEN, HF_TOKEN... Over-stripping a
+    # benign TOKENIZE-style variable is harmless compared to leaking one
+    # of these.
+    "TOKEN",
 )
 
 
@@ -166,6 +185,95 @@ def _is_allowed_command(command: str) -> bool:
 def _is_read_only_command(command: str) -> bool:
     cmd = command.lower() if os.name == "nt" else command
     return cmd in READONLY_COMMANDS
+
+
+_INTERPRETER_COMMANDS = frozenset(
+    {
+        "bash",
+        "cmd",
+        "node",
+        "powershell",
+        "pwsh",
+        "python",
+        "python3",
+        "sh",
+    }
+)
+_PATH_CAPABLE_READONLY_COMMANDS = frozenset(
+    {
+        "cat",
+        "dir",
+        "du",
+        "find",
+        "findstr",
+        "grep",
+        "head",
+        "ls",
+        "more",
+        "rg",
+        "sed",
+        "tail",
+        "type",
+        "wc",
+        "where",
+    }
+)
+
+
+def _argument_path_candidate(argument: str) -> str | None:
+    """Project an obvious argv path without pretending to parse every CLI."""
+    value = argument.split("=", 1)[1] if argument.startswith("--") and "=" in argument else argument
+    if not value or value == "-":
+        return None
+    if Path(value).is_absolute() or value.startswith(("../", "..\\")):
+        return value
+    return None
+
+
+def _outside_workspace_path(argument: str, cwd: str) -> bool:
+    candidate = _argument_path_candidate(argument)
+    if candidate is None:
+        return False
+    try:
+        workspace = Path(cwd).resolve(strict=False)
+        target = Path(candidate)
+        if not target.is_absolute():
+            target = workspace / target
+        target.resolve(strict=False).relative_to(workspace)
+        return False
+    except (OSError, ValueError):
+        return True
+
+
+def _command_approval_reason(command: str, args: Sequence[str], cwd: str) -> str | None:
+    """Return why argv is not provably read-only and workspace-contained."""
+    command_name = Path(command).name.lower()
+    lowered_args = [arg.lower() for arg in args]
+    if command_name in _INTERPRETER_COMMANDS:
+        return f"interpreter command can execute arbitrary code: {command_name}"
+    if command_name == "find" and any(
+        arg in {"-delete", "-exec", "-execdir", "-ok", "-okdir"}
+        for arg in lowered_args
+    ):
+        return "find arguments can delete files or execute another command"
+    if command_name == "sed" and any(
+        arg == "--in-place" or arg.startswith("--in-place=")
+        or (arg.startswith("-i") and arg != "-")
+        for arg in lowered_args
+    ):
+        return "sed in-place editing can modify files"
+    if command_name == "rg" and any(
+        arg == "--pre" or arg.startswith("--pre=") for arg in lowered_args
+    ):
+        return "rg preprocessor arguments can execute another command"
+    if command_name in _PATH_CAPABLE_READONLY_COMMANDS:
+        if any(_outside_workspace_path(arg, cwd) for arg in args):
+            return "command arguments reference a path outside the workspace"
+        if args:
+            return "command arguments require review for filesystem scope"
+    if command_name in DEVELOPMENT_COMMANDS:
+        return "development command can execute code or modify the workspace"
+    return None
 
 
 def _internal_store_command_risk(command: str, args: list[str]) -> str | None:
@@ -310,8 +418,255 @@ def _with_verification(input_data: dict, result: ToolResult) -> ToolResult:
     return result
 
 
+@dataclass(slots=True)
+class _StreamCapture:
+    """Drain an arbitrary stream while retaining bounded head/tail output."""
+
+    limit: int = MAX_OUTPUT_CHARS
+    total: int = 0
+    _head: bytearray = field(default_factory=bytearray)
+    _tail: bytearray = field(default_factory=bytearray)
+
+    def add(self, chunk: bytes) -> None:
+        if not chunk:
+            return
+        self.total += len(chunk)
+        head_limit = int(self.limit * 0.6)
+        tail_limit = self.limit - head_limit
+        if len(self._head) < head_limit:
+            used = min(len(chunk), head_limit - len(self._head))
+            self._head.extend(chunk[:used])
+            chunk = chunk[used:]
+        if chunk:
+            self._tail.extend(chunk)
+            if len(self._tail) > tail_limit:
+                del self._tail[: len(self._tail) - tail_limit]
+
+    def text(self) -> str:
+        if self.total <= self.limit:
+            raw = bytes(self._head + self._tail)
+        else:
+            marker = (
+                f"\n\n... [output truncated, was {self.total:,} bytes] ...\n\n"
+            ).encode()
+            raw = bytes(self._head) + marker + bytes(self._tail)
+        return raw.decode("utf-8", errors="replace")
+
+
+class _CommandTimeout(TimeoutError):
+    pass
+
+
+def _execution_deadline(input_data: dict, context) -> tuple[float, float]:
+    timeout_seconds = float(input_data.get("timeout") or COMMAND_TIMEOUT)
+    deadline = time.monotonic() + timeout_seconds
+    task_deadline = getattr(context, "_task_deadline_monotonic", None)
+    if isinstance(task_deadline, (int, float)):
+        deadline = min(deadline, float(task_deadline))
+    return deadline, timeout_seconds
+
+
+def _execution_checkpoint(context, *, deadline: float) -> None:
+    # The shared helper checks the owning Turn token first and then its task
+    # deadline. The command timeout can only shorten that monotonic boundary.
+    raise_task_deadline(context)
+    if time.monotonic() >= deadline:
+        raise _CommandTimeout
+
+
+def _popen_options() -> dict[str, object]:
+    if os.name == "nt":
+        return {
+            "creationflags": int(
+                getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+            )
+        }
+    return {"start_new_session": True}
+
+
+def _finish_reader_threads(
+    process: subprocess.Popen,
+    threads: Sequence[threading.Thread],
+) -> None:
+    for stream in (process.stdout, process.stderr):
+        if stream is not None and not stream.closed:
+            try:
+                stream.close()
+            except OSError:
+                pass
+    for thread in threads:
+        thread.join(timeout=1.0)
+
+
+def _run_with_pipes(
+    argv: list[str],
+    *,
+    cwd: str,
+    environment: dict[str, str],
+    context,
+    deadline: float,
+) -> tuple[int, str]:
+    process: subprocess.Popen[bytes] | None = None
+    threads: list[threading.Thread] = []
+    stdout_capture = _StreamCapture()
+    stderr_capture = _StreamCapture()
+    try:
+        _execution_checkpoint(context, deadline=deadline)
+        process = subprocess.Popen(  # noqa: S603
+            argv,
+            cwd=cwd,
+            env=environment,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            close_fds=True,
+            **_popen_options(),
+        )
+
+        def drain(stream: object, capture: _StreamCapture) -> None:
+            reader = getattr(stream, "read", None)
+            if not callable(reader):
+                return
+            try:
+                while chunk := reader(64 * 1024):
+                    capture.add(chunk)
+            except (OSError, ValueError):
+                pass
+
+        threads = [
+            threading.Thread(
+                target=drain,
+                args=(process.stdout, stdout_capture),
+                name="minicode-command-stdout",
+                daemon=True,
+            ),
+            threading.Thread(
+                target=drain,
+                args=(process.stderr, stderr_capture),
+                name="minicode-command-stderr",
+                daemon=True,
+            ),
+        ]
+        for thread in threads:
+            thread.start()
+        while process.poll() is None:
+            _execution_checkpoint(context, deadline=deadline)
+            remaining = deadline - time.monotonic()
+            time.sleep(min(0.05, max(0.001, remaining)))
+        return_code = process.returncode
+        if not isinstance(return_code, int):
+            return_code = process.wait(timeout=0.1)
+    finally:
+        if process is not None:
+            # A successful direct child can still leave descendants holding the
+            # pipes. End its complete group before joining the drain threads.
+            _kill_process_tree(process, grace_seconds=0.2)
+            _finish_reader_threads(process, threads)
+    output = "\n".join(
+        part.strip()
+        for part in (stdout_capture.text(), stderr_capture.text())
+        if part.strip()
+    )
+    return return_code, _truncate_large_output(output)
+
+
+def _run_with_pty(
+    argv: list[str],
+    *,
+    cwd: str,
+    environment: dict[str, str],
+    context,
+    deadline: float,
+    master_fd: int,
+    slave_fd: int,
+) -> tuple[int, str]:
+    import select
+
+    process: subprocess.Popen[bytes] | None = None
+    capture = _StreamCapture()
+    slave_open = True
+    try:
+        _execution_checkpoint(context, deadline=deadline)
+        process = subprocess.Popen(  # noqa: S603
+            argv,
+            cwd=cwd,
+            env=environment,
+            stdin=slave_fd,
+            stdout=slave_fd,
+            stderr=slave_fd,
+            close_fds=True,
+            **_popen_options(),
+        )
+        os.close(slave_fd)
+        slave_open = False
+
+        while True:
+            _execution_checkpoint(context, deadline=deadline)
+            remaining = deadline - time.monotonic()
+            readable, _, _ = select.select(
+                [master_fd],
+                [],
+                [],
+                min(0.05, max(0.001, remaining)),
+            )
+            if readable:
+                try:
+                    chunk = os.read(master_fd, 64 * 1024)
+                except OSError:
+                    chunk = b""
+                if chunk:
+                    capture.add(chunk)
+                    continue
+            if process.poll() is not None:
+                break
+
+        return_code = process.returncode
+        if not isinstance(return_code, int):
+            return_code = process.wait(timeout=0.1)
+    finally:
+        if process is not None:
+            _kill_process_tree(process, grace_seconds=0.2)
+        if slave_open:
+            try:
+                os.close(slave_fd)
+            except OSError:
+                pass
+        try:
+            os.close(master_fd)
+        except OSError:
+            pass
+    output = capture.text().replace("\r\n", "\n").strip()
+    return return_code, _truncate_large_output(output)
+
+
+def _control_failure_result(input_data: dict, error: BaseException) -> ToolResult:
+    if isinstance(error, TurnCancellationRequested):
+        return _with_verification(
+            input_data,
+            ToolResult(
+                ok=False,
+                output="error[turn_cancelled]: command process group terminated",
+                _termination_reason=ToolTerminationReason.TURN_CANCELLED,
+            ),
+        )
+    if isinstance(error, TaskDeadlineExceeded):
+        return _with_verification(
+            input_data,
+            ToolResult(
+                ok=False,
+                output=f"error[task_deadline_exceeded]: {error}",
+                _termination_reason=ToolTerminationReason.DEADLINE_EXCEEDED,
+            ),
+        )
+    raise TypeError("unsupported command control failure")
+
+
 def _run(input_data: dict, context) -> ToolResult:
-    effective_cwd = str(resolve_tool_path(context, input_data["cwd"], "list")) if input_data.get("cwd") else context.cwd
+    effective_cwd = (
+        str(resolve_tool_path(context, input_data["cwd"], "list"))
+        if input_data.get("cwd")
+        else context.cwd
+    )
     normalized_command, normalized_args = _normalize_command_input(input_data)
     if not normalized_command:
         return ToolResult(ok=False, output="Command not allowed: empty command")
@@ -320,13 +675,15 @@ def _run(input_data: dict, context) -> ToolResult:
     use_shell = _looks_like_shell_snippet(input_data["command"], raw_args)
     background_shell = _is_background_shell_snippet(input_data["command"], raw_args)
     known_command = _is_allowed_command(normalized_command)
-
     internal_store_risk = _internal_store_command_risk(
         normalized_command,
         normalized_args,
     )
     if internal_store_risk:
-        return ToolResult(ok=False, output=f"Command not allowed: {internal_store_risk}.")
+        return ToolResult(
+            ok=False,
+            output=f"Command not allowed: {internal_store_risk}.",
+        )
 
     command, args = _build_execution_command(
         input_data["command"],
@@ -336,160 +693,163 @@ def _run(input_data: dict, context) -> ToolResult:
         background_shell=background_shell,
     )
     if use_shell:
-        # Shell snippets execute through the user's shell and cannot be
-        # statically proven safe, so they always require approval. Known
-        # high-risk patterns get a specific reason; everything else gets a
-        # generic one instead of silently passing through.
         force_prompt_reason = (
             _classify_shell_snippet_risk(input_data["command"])
-            or f"shell snippet executes through the user's shell and requires approval: {input_data['command']}"
+            or "shell snippet executes through the user's shell and requires "
+            f"approval: {input_data['command']}"
         )
-    elif known_command:
-        force_prompt_reason = None
+    elif not known_command:
+        force_prompt_reason = (
+            f"Unknown command '{normalized_command}' is not in the built-in "
+            "read-only/development set"
+        )
     else:
-        force_prompt_reason = f"Unknown command '{normalized_command}' is not in the built-in read-only/development set"
+        force_prompt_reason = _command_approval_reason(
+            normalized_command,
+            normalized_args,
+            effective_cwd,
+        )
 
+    try:
+        _execution_checkpoint(context, deadline=float("inf"))
+    except (TurnCancellationRequested, TaskDeadlineExceeded) as error:
+        return _control_failure_result(input_data, error)
     if context.permissions is not None:
         if force_prompt_reason:
-            context.permissions.ensure_command(command, args, effective_cwd, force_prompt_reason=force_prompt_reason)
+            context.permissions.ensure_command(
+                command,
+                args,
+                effective_cwd,
+                force_prompt_reason=force_prompt_reason,
+            )
         elif use_shell or not _is_read_only_command(normalized_command):
             context.permissions.ensure_command(command, args, effective_cwd)
-        checkpoint = getattr(context.permissions, "ensure_operation_active", None)
-        if checkpoint is not None:
-            checkpoint()
-
-    if use_shell and background_shell:
-        # Platform-specific process isolation flags
-        popen_kwargs: dict = {}
-        if os.name == "nt":
-            popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-        else:
-            # On Unix, start the background process in its own session so
-            # it is not killed when the parent terminal closes.
-            popen_kwargs["start_new_session"] = True
-
-        child = subprocess.Popen(  # noqa: S603
-            [command, *args],
-            cwd=effective_cwd,
-            env=_subprocess_environment(),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            stdin=subprocess.DEVNULL,
-            **popen_kwargs,
+        checkpoint = getattr(
+            context.permissions,
+            "ensure_operation_active",
+            None,
         )
-        
-        if child.pid is None:
+        if callable(checkpoint):
+            checkpoint()
+    try:
+        _execution_checkpoint(context, deadline=float("inf"))
+    except (TurnCancellationRequested, TaskDeadlineExceeded) as error:
+        return _control_failure_result(input_data, error)
+
+    environment = _subprocess_environment()
+    if use_shell and background_shell:
+        reservation_id = reserve_background_task_slot()
+        if reservation_id is None:
             return ToolResult(
                 ok=False,
-                output="Failed to get PID for background command. Process may have exited immediately.",
+                output="No background task slots are available.",
             )
-        
-        background_task = register_background_shell_task(
-            command=_strip_trailing_background_operator(input_data["command"]),
-            pid=child.pid,
-            cwd=effective_cwd,
-        )
+        child: subprocess.Popen | None = None
+        try:
+            _execution_checkpoint(context, deadline=float("inf"))
+            child = subprocess.Popen(  # noqa: S603
+                [command, *args],
+                cwd=effective_cwd,
+                env=environment,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                stdin=subprocess.DEVNULL,
+                close_fds=True,
+                **_popen_options(),
+            )
+            if child.pid is None:
+                raise RuntimeError("spawned background command has no PID")
+            background_task = register_background_shell_task(
+                command=_strip_trailing_background_operator(
+                    input_data["command"]
+                ),
+                pid=child.pid,
+                cwd=effective_cwd,
+                process=child,
+                reservation_id=reservation_id,
+                owns_process_group=True,
+            )
+            reservation_id = None
+        except BaseException:
+            if child is not None:
+                _kill_process_tree(child, grace_seconds=0.2)
+            raise
+        finally:
+            release_background_task_slot(reservation_id)
         return ToolResult(
             ok=True,
-            output=f"Background command started.\nTASK: {background_task.taskId}\nPID: {background_task.pid}",
+            output=(
+                "Background command started.\n"
+                f"TASK: {background_task.taskId}\nPID: {background_task.pid}"
+            ),
             backgroundTask=background_task,
         )
 
-    if sys.platform != "win32":
-        try:
-            import pty
-            import select
-            
-            master_fd, slave_fd = pty.openpty()
-            effective_timeout = input_data.get("timeout") or COMMAND_TIMEOUT
-            
-            process = subprocess.Popen(
-                [command, *args],
-                cwd=effective_cwd,
-                env=_subprocess_environment(),
-                stdin=slave_fd,
-                stdout=slave_fd,
-                stderr=slave_fd,
-                start_new_session=True,
-            )
-            
-            os.close(slave_fd)
-            output_bytes = bytearray()
-            timed_out = False
-            
+    deadline, effective_timeout = _execution_deadline(input_data, context)
+    try:
+        if sys.platform != "win32":
             try:
-                while True:
-                    r, _, _ = select.select([master_fd], [], [], effective_timeout)
-                    if not r:
-                        timed_out = True
-                        process.kill()
-                        process.wait()
-                        break
-                    
-                    try:
-                        data = os.read(master_fd, 4096)
-                        if not data:
-                            break
-                        output_bytes.extend(data)
-                    except OSError:
-                        # EIO happens when child closes the PTY or exits
-                        break
-            finally:
-                os.close(master_fd)
-                if not timed_out:
-                    process.wait()
-                
-            output_str = output_bytes.decode("utf-8", errors="replace").strip()
-            output_str = output_str.replace("\r\n", "\n")
-            output_str = _truncate_large_output(output_str)
-            
-            if timed_out:
+                import pty
+            except ImportError:
+                pass
+            else:
+                # openpty can allocate one descriptor before failing on the
+                # other. Python closes those internally; after success this
+                # call owns both descriptors until _run_with_pty returns.
+                master_fd, slave_fd = pty.openpty()
+                return_code, output = _run_with_pty(
+                    [command, *args],
+                    cwd=effective_cwd,
+                    environment=environment,
+                    context=context,
+                    deadline=deadline,
+                    master_fd=master_fd,
+                    slave_fd=slave_fd,
+                )
                 return _with_verification(
                     input_data,
-                    ToolResult(
-                        ok=False,
-                        output=f"Command timed out after {effective_timeout} seconds (process killed).\nPartial output:\n{output_str}",
-                    ),
+                    ToolResult(ok=return_code == 0, output=output),
                 )
-            return _with_verification(
-                input_data,
-                ToolResult(ok=process.returncode == 0, output=output_str),
-            )
-            
-        except ImportError:
-            pass  # Fallback to subprocess on systems without pty
 
-    try:
-        effective_timeout = input_data.get("timeout") or COMMAND_TIMEOUT
-        completed = subprocess.run(  # noqa: S603
+        return_code, output = _run_with_pipes(
             [command, *args],
             cwd=effective_cwd,
-            env=_subprocess_environment(),
-            capture_output=True,
-            text=True,
-            encoding="utf-8",  # 显式指定 UTF-8
-            errors="replace",   # 无法解码时替换字符而非报错
-            check=False,
-            timeout=effective_timeout,
+            environment=environment,
+            context=context,
+            deadline=deadline,
         )
-        output = "\n".join(part for part in [completed.stdout.strip(), completed.stderr.strip()] if part).strip()
-        output = _truncate_large_output(output)
         return _with_verification(
             input_data,
-            ToolResult(ok=completed.returncode == 0, output=output),
+            ToolResult(ok=return_code == 0, output=output),
         )
-    except subprocess.TimeoutExpired as e:
-        # Capture partial output from timeout
-        partial_stdout = (e.stdout or "").strip() if e.stdout else ""
-        partial_stderr = (e.stderr or "").strip() if e.stderr else ""
-        partial = "\n".join(part for part in [partial_stdout, partial_stderr] if part)
-        if partial:
-            partial = f"\nPartial output:\n{_truncate_large_output(partial)}"
+    except TurnCancellationRequested:
         return _with_verification(
             input_data,
             ToolResult(
                 ok=False,
-                output=f"Command timed out after {effective_timeout} seconds (process killed).{partial}",
+                output="error[turn_cancelled]: command process group terminated",
+                _termination_reason=ToolTerminationReason.TURN_CANCELLED,
+            ),
+        )
+    except TaskDeadlineExceeded as error:
+        return _with_verification(
+            input_data,
+            ToolResult(
+                ok=False,
+                output=f"error[task_deadline_exceeded]: {error}",
+                _termination_reason=ToolTerminationReason.DEADLINE_EXCEEDED,
+            ),
+        )
+    except _CommandTimeout:
+        return _with_verification(
+            input_data,
+            ToolResult(
+                ok=False,
+                output=(
+                    f"Command timed out after {effective_timeout:g} seconds "
+                    "(process group terminated)."
+                ),
+                _termination_reason=ToolTerminationReason.DEADLINE_EXCEEDED,
             ),
         )
 

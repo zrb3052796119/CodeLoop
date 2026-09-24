@@ -1,0 +1,9 @@
+{
+  "model": "qwen3.7-max",
+  "endpointHostname": "token-plan.cn-beijing.maas.aliyuncs.com",
+  "credentialMatchesConfiguredSubagent": true,
+  "noPrimaryCustomHeaders": true,
+  "source": "temporary in-memory host-selected comparison using configured general role transport",
+  "productionAutomaticFallback": false,
+  "subagentDispatch": false
+}

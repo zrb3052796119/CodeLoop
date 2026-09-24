@@ -11,8 +11,8 @@ from threading import Lock
 from typing import Protocol
 
 from minicode.logging_config import get_logger
+from minicode.memory_provenance import MemoryProvenanceBatch
 from minicode.task_outcome_event import project_task_outcome_event
-
 
 _logger = get_logger("run_events")
 
@@ -21,6 +21,7 @@ _MAX_ATTRIBUTED_SKILLS = 20
 _MAX_VERIFICATION_OBSERVATIONS = 10_000
 _MAX_ROUTING_SKILLS = 100_000
 _MAX_MEMORY_COUNT = 100_000
+_MAX_MEMORY_MATERIALIZATIONS = 64
 _MAX_MEMORY_TOKENS = 10_000_000
 _MAX_MODEL_TOKENS = 1_000_000_000
 _MAX_MODEL_DURATION_MS = 86_400_000
@@ -75,6 +76,36 @@ _SKILL_DIRECTORY_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,63}$")
 _SKILL_SOURCES = frozenset(
     {"project", "user", "compat_project", "compat_user"}
 )
+
+
+def _normalized_memory_versions(
+    versions: object,
+) -> tuple[tuple[str, str], ...]:
+    """Return a bounded, content-free set of authority version pairs."""
+    if not isinstance(versions, (list, tuple)):
+        return ()
+    normalized: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for raw_version in versions:
+        if not isinstance(raw_version, (list, tuple)) or len(raw_version) != 2:
+            continue
+        entry_id, digest = raw_version
+        if (
+            not isinstance(entry_id, str)
+            or not entry_id
+            or not isinstance(digest, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", digest)
+        ):
+            continue
+        version = (entry_id, digest)
+        if version not in seen:
+            seen.add(version)
+            normalized.append(version)
+        if len(normalized) >= _MAX_MEMORY_MATERIALIZATIONS:
+            break
+    return tuple(normalized)
+
+
 _INTENT_TYPES = frozenset(
     {
         "code",
@@ -107,6 +138,30 @@ _ACTION_TYPES = frozenset(
         "move",
         "rename",
         "unknown",
+    }
+)
+_SKILL_ROUTE_DECISION_SOURCES = frozenset(
+    {"deterministic", "semantic_reranker"}
+)
+_SKILL_RERANKER_STATUSES = frozenset(
+    {
+        "accepted",
+        "abstained",
+        "budget_exhausted",
+        "candidate_limit_exceeded",
+        "control_unavailable",
+        "disabled",
+        "error",
+        "invalid_adapter",
+        "invalid_request",
+        "invalid_response",
+        "low_confidence",
+        "network",
+        "no_candidates",
+        "provider_error",
+        "timeout",
+        "tool_call_rejected",
+        "unsupported_model",
     }
 )
 _TASK_OUTCOME_STATUSES = frozenset(
@@ -161,7 +216,9 @@ class SkillUsageTracker:
 
     def __init__(self, max_skills: int = _MAX_ATTRIBUTED_SKILLS) -> None:
         self._max_skills = max(1, min(max_skills, _MAX_ATTRIBUTED_SKILLS))
-        self._loaded: dict[tuple[str, str, str, str], dict[str, object]] = {}
+        self._loaded: dict[
+            tuple[str, str, str, str, str], dict[str, object]
+        ] = {}
         self._truncated = False
         self._lock = Lock()
 
@@ -176,6 +233,7 @@ class SkillUsageTracker:
             str(item["qualifiedName"]),
             str(item["source"]),
             str(item["directory"]),
+            str(item.get("routingIdentityDigest") or item["contentDigest"]),
             str(item["contentDigest"]),
         )
         with self._lock:
@@ -426,7 +484,12 @@ def project_context_compaction_failure_event(
     consecutive_failures: object,
     circuit_breaker_tripped: object,
 ) -> dict[str, object]:
-    """Project an ineffective compaction without retaining error/content text."""
+    """Project an ineffective compaction without retaining error/content text.
+
+    A rejected Memory-backed candidate may still leave an earlier, Memory-free
+    compaction stage installed.  Preserve that bounded fact so observers do not
+    mistake a partially effective operation for a total no-op.
+    """
     if result is None or getattr(result, "effective", None) is not False:
         raise ValueError("Context compaction failure was not ineffective")
     if not isinstance(circuit_breaker_tripped, bool):
@@ -436,7 +499,7 @@ def project_context_compaction_failure_event(
         error,
         ("internal_error", True),
     )
-    return {
+    payload: dict[str, object] = {
         "contextVersion": 1,
         "contextOperationId": _context_operation_id(context_operation_id),
         "path": _context_enum(path, _CONTEXT_PATHS),
@@ -455,6 +518,34 @@ def project_context_compaction_failure_event(
         ),
         "circuitBreakerTripped": circuit_breaker_tripped,
     }
+    if getattr(result, "partial_effective", False) is True:
+        tokens_freed = _bounded_count(
+            getattr(result, "memory_free_tokens_freed", None),
+            maximum=_MAX_CONTEXT_TOKENS,
+        )
+        if tokens_freed == 0:
+            raise ValueError("partially effective Context compaction freed no tokens")
+        partial_strategy = _context_enum(
+            getattr(result, "memory_free_strategy", None),
+            _CONTEXT_STRATEGIES,
+        )
+        messages_before = _bounded_count(
+            getattr(result, "memory_free_messages_before", None),
+            maximum=_MAX_CONTEXT_MESSAGES,
+        )
+        messages_after = _bounded_count(
+            getattr(result, "memory_free_messages_after", None),
+            maximum=_MAX_CONTEXT_MESSAGES,
+        )
+        if messages_after > messages_before:
+            raise ValueError("partial Context compaction expanded message count")
+        payload["partialEffective"] = True
+        payload["partialStrategy"] = partial_strategy
+        payload["tokensFreed"] = tokens_freed
+        payload["messagesBefore"] = messages_before
+        payload["messagesAfter"] = messages_after
+        payload["messagesRemoved"] = messages_before - messages_after
+    return payload
 
 
 def project_recovery_started_event(
@@ -640,6 +731,7 @@ def _safe_skill_item(value: object) -> dict[str, object] | None:
     directory = getattr(value, "directory", "")
     score = getattr(value, "score", None)
     content_digest = getattr(value, "content_digest", "")
+    routing_identity_digest = getattr(value, "routing_identity_digest", "")
     evidence_adjustment = getattr(value, "evidence_adjustment", 0.0)
     if not content_digest:
         content = getattr(value, "content", None)
@@ -669,6 +761,12 @@ def _safe_skill_item(value: object) -> dict[str, object] | None:
         and re.fullmatch(r"[0-9a-f]{64}", content_digest)
     ):
         projected["contentDigest"] = content_digest
+    if (
+        isinstance(routing_identity_digest, str)
+        and re.fullmatch(r"[0-9a-f]{64}", routing_identity_digest)
+        and routing_identity_digest != content_digest
+    ):
+        projected["routingIdentityDigest"] = routing_identity_digest
     if (
         isinstance(evidence_adjustment, (int, float))
         and not isinstance(evidence_adjustment, bool)
@@ -719,7 +817,7 @@ def project_skill_routing_event(routing_result: object) -> dict[str, object]:
         )
         else 1
     )
-    return {
+    projected_event: dict[str, object] = {
         "routingVersion": routing_version,
         "intentType": intent_type,
         "actionType": action_type,
@@ -729,6 +827,32 @@ def project_skill_routing_event(routing_result: object) -> dict[str, object]:
         "selectedTruncated": len(selected) < selected_count,
         "usedFallback": used_fallback,
     }
+    # ``routingVersion`` remains the evidence-event schema version (1/2).
+    # V3 decision provenance is a separate, content-free projection so older
+    # evidence ledgers and dashboard readers keep their existing contract.
+    route_decision_version = getattr(routing_result, "routing_version", None)
+    if route_decision_version == 3 and not isinstance(
+        route_decision_version, bool
+    ):
+        candidate_count = _bounded_count(
+            getattr(routing_result, "candidate_count", None),
+            maximum=16,
+        )
+        decision_source = getattr(routing_result, "decision_source", None)
+        reranker_status = getattr(routing_result, "reranker_status", None)
+        if decision_source not in _SKILL_ROUTE_DECISION_SOURCES:
+            raise ValueError("invalid Skill route decision source")
+        if reranker_status not in _SKILL_RERANKER_STATUSES:
+            raise ValueError("invalid Skill reranker status")
+        projected_event.update(
+            {
+                "routeDecisionVersion": 3,
+                "candidateCount": candidate_count,
+                "decisionSource": decision_source,
+                "rerankerStatus": reranker_status,
+            }
+        )
+    return projected_event
 
 
 def emit_skill_routing_safely(
@@ -766,13 +890,21 @@ def project_skill_loaded_event(skill: object) -> dict[str, object]:
         or not isinstance(content, str)
     ):
         raise ValueError("invalid loaded Skill observation")
-    return {
+    projected: dict[str, object] = {
         "loadVersion": 1,
         "qualifiedName": qualified_name,
         "source": source,
         "directory": directory,
         "contentDigest": hashlib.sha256(content.encode("utf-8")).hexdigest(),
     }
+    routing_identity_digest = getattr(skill, "routing_identity_digest", "")
+    if (
+        isinstance(routing_identity_digest, str)
+        and re.fullmatch(r"[0-9a-f]{64}", routing_identity_digest)
+        and routing_identity_digest != projected["contentDigest"]
+    ):
+        projected["routingIdentityDigest"] = routing_identity_digest
+    return projected
 
 
 def emit_skill_loaded_safely(
@@ -882,8 +1014,18 @@ def emit_skill_attribution_safely(
     emit_event_safely(sink, "skill.attributed", step=step, payload=payload)
 
 
-def _result_count(result: object, attribute: str) -> int:
-    value = getattr(result, attribute, None)
+def _result_count(
+    result: object,
+    collection_attribute: str,
+    count_attribute: str,
+) -> int:
+    counts = getattr(result, "counts", None)
+    if counts is not None:
+        return _bounded_count(
+            getattr(counts, count_attribute, None),
+            maximum=_MAX_MEMORY_COUNT,
+        )
+    value = getattr(result, collection_attribute, None)
     if not isinstance(value, (list, tuple)):
         raise ValueError("invalid Memory observation collection")
     return _bounded_count(len(value), maximum=_MAX_MEMORY_COUNT)
@@ -893,10 +1035,14 @@ def project_memory_result_events(
     result: object,
 ) -> tuple[dict[str, object], dict[str, object]]:
     """Project final facts from one already-executed Memory retrieval result."""
-    candidate_count = _result_count(result, "candidate_ids")
-    selected_count = _result_count(result, "selected_ids")
-    suppressed_count = _result_count(result, "suppressed_ids")
-    rendered_count = _result_count(result, "rendered_ids")
+    candidate_count = _result_count(
+        result, "candidate_ids", "candidate_count"
+    )
+    selected_count = _result_count(result, "selected_ids", "selected_count")
+    suppressed_count = _result_count(
+        result, "suppressed_ids", "suppressed_count"
+    )
+    rendered_count = _result_count(result, "rendered_ids", "rendered_count")
     no_match = getattr(result, "no_match", None)
     if not isinstance(no_match, bool):
         raise ValueError("invalid Memory no-match state")
@@ -983,10 +1129,20 @@ def project_memory_result_events(
 
 
 def emit_memory_result_safely(
-    sink: AgentEventSink | None, result: object | None
+    sink: AgentEventSink | None,
+    result: object | None,
+    *,
+    provenance_batch: object | None = None,
 ) -> None:
     """Observe one final Memory result without executing Memory code again."""
-    if sink is None or result is None:
+    if sink is None:
+        return
+    # The exact receipt-bound provenance is independent of the public
+    # presentation projection below.  Persist it first so an optional event
+    # projection failure cannot erase evidence of prompt materialization.
+    if provenance_batch is not None:
+        record_memory_provenance_safely(sink, provenance_batch)
+    if result is None:
         return
     try:
         retrieved, rendered = project_memory_result_events(result)
@@ -1006,6 +1162,16 @@ def _record_rendered_memory_ids_safely(sink: object, result: object) -> None:
     can bind rendered entry IDs to this Run for later corroborated feedback.
     Silently does nothing for sinks (e.g. test doubles) without this seam.
     """
+    versions = tuple(
+        (entry_id, digest)
+        for memory in (getattr(result, "rendered", ()) or ())
+        if isinstance((entry_id := getattr(memory, "entry_id", "")), str)
+        and entry_id
+        and isinstance((digest := getattr(memory, "authority_digest", "")), str)
+        and len(digest) == 64
+        and not any(character not in "0123456789abcdef" for character in digest)
+    )
+    record_rendered_memory_versions_safely(sink, versions)
     recorder = getattr(sink, "record_rendered_memory_ids", None)
     if not callable(recorder):
         return
@@ -1021,6 +1187,61 @@ def _record_rendered_memory_ids_safely(sink: object, result: object) -> None:
             _logger.warning("Memory rendered-id observation unavailable.")
         except Exception:  # noqa: BLE001 - logging must remain optional too
             pass
+
+
+def record_rendered_memory_versions_safely(
+    sink: object | None,
+    versions: object,
+) -> None:
+    """Best-effort bridge for exact prompt materialization versions."""
+    normalized = _normalized_memory_versions(versions)
+    if sink is None or not normalized:
+        return
+    recorder = getattr(sink, "record_rendered_memory_versions", None)
+    if not callable(recorder):
+        return
+    try:
+        recorder(list(normalized))
+    except Exception:  # noqa: BLE001 - observation remains optional
+        try:
+            _logger.warning("Memory rendered-version observation unavailable.")
+        except Exception:  # noqa: BLE001 - logging remains optional too
+            pass
+
+
+def record_memory_provenance_safely(
+    sink: object | None,
+    batch: object,
+) -> bool:
+    """Best-effort bridge with an acknowledgement for durable retry loops.
+
+    Older embedders commonly return ``None`` from observation callbacks.  A
+    callback invocation that returns normally therefore remains a successful
+    acknowledgement; an explicit ``False`` or an exception means the caller
+    may retry the exact idempotent batch later.
+    """
+    if sink is None:
+        return False
+    try:
+        normalized = (
+            batch
+            if isinstance(batch, MemoryProvenanceBatch)
+            else MemoryProvenanceBatch.from_dict(batch)
+        )
+    except (TypeError, ValueError):
+        return False
+    recorder = getattr(sink, "record_memory_provenance", None)
+    if not callable(recorder):
+        return False
+    try:
+        acknowledged = recorder(normalized)
+    except Exception:  # noqa: BLE001 - provenance remains observation only
+        try:
+            _logger.warning("Memory provenance observation unavailable.")
+        except Exception:  # noqa: BLE001 - logging remains optional too
+            pass
+        return False
+    return acknowledged is not False
 
 
 def record_written_memory_id_safely(sink: object | None, entry_id: object) -> None:
@@ -1058,34 +1279,57 @@ def record_written_memory_ids_safely(
             pass
 
 
+def record_written_memory_versions_safely(
+    sink: object | None,
+    versions: object,
+) -> None:
+    """Best-effort bridge for exact versions produced by a Run."""
+    normalized = _normalized_memory_versions(versions)
+    if sink is None or not normalized:
+        return
+    recorder = getattr(sink, "record_written_memory_versions", None)
+    if not callable(recorder):
+        return
+    try:
+        recorder(list(normalized))
+    except Exception:  # noqa: BLE001 - observation remains optional
+        try:
+            _logger.warning("Memory written-version observation unavailable.")
+        except Exception:  # noqa: BLE001 - logging remains optional too
+            pass
+
+
 __all__ = [
     "AgentEventSink",
     "SkillUsageTracker",
     "VerificationTracker",
-    "verification_corroboration",
-    "emit_event_safely",
     "emit_context_compaction_safely",
+    "emit_event_safely",
     "emit_memory_result_safely",
     "emit_recovery_completed_safely",
     "emit_recovery_started_safely",
     "emit_skill_attribution_safely",
-    "emit_task_outcome_safely",
     "emit_skill_loaded_safely",
     "emit_skill_routing_safely",
+    "emit_task_outcome_safely",
     "emit_working_memory_safely",
     "new_context_operation_id",
     "new_model_operation_id",
     "project_context_compaction_event",
+    "project_memory_result_events",
     "project_model_duration_ms",
     "project_model_usage",
-    "project_memory_result_events",
     "project_recovery_completed_event",
     "project_recovery_started_event",
     "project_skill_attribution_event",
     "project_skill_loaded_event",
     "project_skill_routing_event",
+    "project_working_memory_event",
+    "record_memory_provenance_safely",
+    "record_rendered_memory_versions_safely",
+    "record_skill_loaded_safely",
     "record_written_memory_id_safely",
     "record_written_memory_ids_safely",
-    "project_working_memory_event",
-    "record_skill_loaded_safely",
+    "record_written_memory_versions_safely",
+    "verification_corroboration",
 ]

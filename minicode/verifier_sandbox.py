@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from collections.abc import Mapping
 import json
 import os
 from pathlib import Path
@@ -11,7 +12,6 @@ import shutil
 import stat
 import subprocess
 import tempfile
-from typing import Mapping
 
 
 _VERIFIER_COMMAND_NAMES = (
@@ -50,11 +50,37 @@ class DarwinSeatbeltVerifierSandbox:
         argv: tuple[str, ...],
         cwd: str,
         verifier_home: str,
+        extra_read_roots: tuple[str, ...] = (),
     ) -> tuple[str, ...]:
         if not argv or not Path(argv[0]).is_absolute():
             raise ValueError("sandbox argv must start with an absolute executable")
         cwd_literal = self._literal(cwd)
         home_literal = self._literal(verifier_home)
+        # Toolchains legitimately stat their own ancestors (pytest's
+        # collection tree walk probes each parent of the invocation
+        # directory).  Allow metadata-only reads on those ancestor
+        # directories themselves — never their subtrees — so such probes
+        # succeed without exposing any file contents outside the workspace
+        # and the verifier home.
+        ancestor_literals = " ".join(
+            dict.fromkeys(
+                f"(literal {self._literal(str(ancestor))})"
+                for base in (Path(cwd), Path(verifier_home))
+                for ancestor in base.resolve(strict=True).parents
+                if ancestor.parent != ancestor
+            )
+        )
+        # Host-user-registered toolchains (env channel) live outside the
+        # system roots — typically a conda/venv prefix under $HOME.  Their
+        # prefix must stay readable or the very binary the user explicitly
+        # trusted cannot even load its interpreter and libraries.
+        extra_root_literals = " ".join(
+            dict.fromkeys(
+                f"(subpath {self._literal(root)})"
+                for root in extra_read_roots
+                if str(Path(root).resolve(strict=True)) not in {str(Path(cwd).resolve(strict=True)), str(Path(verifier_home).resolve(strict=True))}
+            )
+        )
         profile = "".join(
             (
                 "(version 1)",
@@ -65,19 +91,33 @@ class DarwinSeatbeltVerifierSandbox:
                 "(allow process-exec)",
                 "(allow signal (target self))",
                 "(allow sysctl-read)",
+                (
+                    "(allow file-read-metadata " + ancestor_literals + ")"
+                    if ancestor_literals
+                    else ""
+                ),
                 "(allow file-read* (subpath \"/System\")",
                 " (subpath \"/usr\") (subpath \"/Library\")",
+                # Process startup on current macOS reads the filesystem root
+                # (dyld/platform init); without the literal the wrapped check
+                # aborts (SIGABRT) before reaching the sandboxed process.
+                " (literal \"/\")",
                 " (literal \"/dev/null\") (literal \"/dev/urandom\")",
                 " (subpath ",
                 cwd_literal,
                 ") (subpath ",
                 home_literal,
-                "))",
+                ")",
+                (" " + extra_root_literals) if extra_root_literals else "",
+                ")",
                 "(allow file-write* (subpath ",
                 cwd_literal,
                 ") (subpath ",
                 home_literal,
-                "))",
+                # Toolchain logging defaults open /dev/null for writing; the
+                # device discards everything, so allowing it cannot leak or
+                # persist state.
+                ") (literal \"/dev/null\"))",
                 "(deny network*)",
             )
         )
@@ -140,7 +180,9 @@ def default_verifier_sandbox_backend() -> DarwinSeatbeltVerifierSandbox | None:
         backend = DarwinSeatbeltVerifierSandbox()
         python = Path("/usr/bin/python3").resolve(strict=True)
         with tempfile.TemporaryDirectory(prefix="minicode-sandbox-probe-") as root:
-            root_path = Path(root)
+            # Probe paths must be canonical: Seatbelt literals resolve
+            # symlinks (macOS /var -> /private/var) and deny the rest.
+            root_path = Path(root).resolve()
             workspace = root_path / "workspace"
             home = root_path / "home"
             outside = root_path / "outside"
@@ -183,12 +225,56 @@ def default_verifier_sandbox_backend() -> DarwinSeatbeltVerifierSandbox | None:
     return backend if probe.returncode == 0 else None
 
 
+_USER_TRUSTED_EXECUTABLES_ENV = "MINI_CODE_VERIFIER_TRUSTED_EXECUTABLES"
+
+
+def user_registered_trusted_executables(
+    env: Mapping[str, str] | None = None,
+) -> dict[str, str]:
+    """Resolve host-user-registered trusted executables from the environment.
+
+    ``MINI_CODE_VERIFIER_TRUSTED_EXECUTABLES`` accepts comma-separated
+    ``name=/absolute/path`` pairs, e.g.
+    ``pytest=/opt/verify-venv/bin/pytest``.  This is a user-owned channel on
+    par with the other ``MINI_CODE_*`` knobs: model output can never reach it.
+    Every entry must name an existing, executable, non-workspace file; an
+    invalid entry is dropped rather than weakening the whole channel.  Such
+    explicitly registered executables remain subject to the workspace
+    rejection in ``DeterministicVerifier`` but are exempt from the default
+    ``$HOME`` untrusted root, which is what locks out conda/venv toolchains.
+    """
+
+    source = os.environ if env is None else env
+    raw = source.get(_USER_TRUSTED_EXECUTABLES_ENV)
+    if not raw or not raw.strip():
+        return {}
+    registered: dict[str, str] = {}
+    for item in raw.split(","):
+        name, separator, path = item.partition("=")
+        name = name.strip()
+        path = path.strip()
+        if not separator or not name or "/" in name or "\\" in name:
+            continue
+        candidate = Path(path)
+        if not candidate.is_absolute():
+            continue
+        try:
+            resolved = candidate.resolve(strict=True)
+        except OSError:
+            continue
+        if not resolved.is_file() or not os.access(resolved, os.X_OK):
+            continue
+        registered[name] = str(resolved)
+    return registered
+
+
 def resolve_verifier_host_capabilities(
     runtime: Mapping[str, object] | None,
 ) -> tuple[object | None, dict[str, str]]:
     """Apply host-explicit capabilities over safe platform defaults."""
     backend: object | None = default_verifier_sandbox_backend()
     trusted = default_verifier_trusted_executables()
+    trusted.update(user_registered_trusted_executables())
     if not isinstance(runtime, Mapping):
         return backend, trusted
     verifier_settings = runtime.get("verifier")
@@ -216,4 +302,5 @@ __all__ = [
     "default_verifier_sandbox_backend",
     "default_verifier_trusted_executables",
     "resolve_verifier_host_capabilities",
+    "user_registered_trusted_executables",
 ]

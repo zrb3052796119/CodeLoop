@@ -1,0 +1,43 @@
+{
+  "focused-module": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "-m",
+      "pytest",
+      "tests/test_tools.py",
+      "-q",
+      "--tb=short",
+      "-p",
+      "no:cacheprovider"
+    ],
+    "cwd": "/private/tmp/codeloop-completion-recheck-20260918",
+    "returncode": 0,
+    "stdout": "....................................                                     [100%]\n36 passed in 0.43s\n",
+    "stderr": ""
+  },
+  "lint": {
+    "command": [
+      "/Users/zhourunbo/miniconda3/bin/ruff",
+      "check",
+      "minicode/tools/test_runner.py",
+      "tests/test_tools.py",
+      "--select=E,F",
+      "--ignore=E501"
+    ],
+    "cwd": "/private/tmp/codeloop-completion-recheck-20260918",
+    "returncode": 0,
+    "stdout": "All checks passed!\n",
+    "stderr": ""
+  },
+  "diff-check": {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "cwd": "/private/tmp/codeloop-completion-recheck-20260918",
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "priorReviewCalls": 7,
+  "priorReviewReportedTokens": 62136,
+  "maxModelCalls": 13,
+  "maxTokens": 357864,
+  "combinedReviewCallLimit": 20,
+  "combinedReviewTokenLimit": 420000,
+  "maxCostUsd": 1.7,
+  "history": "actual full previous review messages, including failed timeout",
+  "why": "single bounded recovery from real provider transport timeout; no target source edited by host"
+}

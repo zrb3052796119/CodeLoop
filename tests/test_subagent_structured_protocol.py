@@ -43,7 +43,7 @@ def _reported_turn(**kwargs):
     return [{"role": "assistant", "content": "human hand-back"}]
 
 
-@pytest.mark.parametrize("agent_type", ["explore", "plan", "general"])
+@pytest.mark.parametrize("agent_type", ["explore", "plan"])
 def test_every_direct_task_type_returns_the_same_typed_contract(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -69,6 +69,70 @@ def test_every_direct_task_type_returns_the_same_typed_contract(
     assert result.ok is True
     assert structured is not None
     assert structured["agentType"] == agent_type
+    assert structured["contractStatus"] == "reported"
+    assert structured["files"] == [
+        {"path": "minicode/tools/task.py", "action": "read"}
+    ]
+    assert structured["verification"]["status"] == "passed"
+
+
+def test_general_subprocess_backend_returns_the_same_typed_contract(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`general` runs in a supervised subprocess; the parent's typed contract
+    projection is unchanged — the report simply arrives through the worker's
+    result payload instead of the in-process mailbox."""
+    from minicode.subagent_supervisor import SubagentProcessOutcome
+
+    report = json.dumps(
+        {
+            "resultVersion": 1,
+            "summary": "Inspected and verified the requested scope.",
+            "files": [{"path": "minicode/tools/task.py", "action": "read"}],
+            "risks": ["A legacy caller may omit the prompt."],
+            "verification": {
+                "status": "passed",
+                "checks": ["pytest tests/test_subagent_structured_protocol.py"],
+            },
+        }
+    )
+
+    def fake_supervisor(request, **_kwargs) -> SubagentProcessOutcome:
+        assert request["prompt"] == "Inspect the task implementation."
+        return SubagentProcessOutcome(
+            status="completed",
+            result={
+                "final_message": "human hand-back",
+                "report_content": report,
+                "model_turns": 1,
+                "tool_calls": 0,
+                "result_truncated": False,
+            },
+            error=None,
+            duration_ms=1,
+            pid=None,
+        )
+
+    monkeypatch.setattr(task_module, "run_subagent_process", fake_supervisor)
+
+    result = task_module.task_tool.run(
+        {
+            "description": "typed handback",
+            "prompt": "Inspect the task implementation.",
+            "agent_type": "general",
+        },
+        ToolContext(
+            cwd=str(tmp_path),
+            _runtime={"model": "fake"},
+            _subagent_mailbox=SubagentMailbox(),
+        ),
+    )
+
+    structured = extract_subagent_result(result.output)
+    assert result.ok is True
+    assert structured is not None
+    assert structured["agentType"] == "general"
     assert structured["contractStatus"] == "reported"
     assert structured["files"] == [
         {"path": "minicode/tools/task.py", "action": "read"}

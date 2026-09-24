@@ -6,7 +6,13 @@ from minicode.capability_registry import (
     CapabilityRegistry,
     CapabilityScope,
 )
-from minicode.intent_parser import ActionType, IntentType, ParsedIntent, parse_intent
+from minicode.intent_parser import (
+    ActionType,
+    IntentContext,
+    IntentType,
+    ParsedIntent,
+    parse_intent,
+)
 from minicode.prompt import build_system_prompt
 from minicode.run_events import project_skill_routing_event
 from minicode.skill_router import SkillRouter, required_skill_names_for_routing
@@ -99,6 +105,134 @@ def test_available_capabilities_do_not_create_relevance_for_unknown_intent() -> 
     assert result.selected == []
     assert result.capability_domains == []
     assert result.capability_scopes == []
+
+
+def test_pure_negated_test_operation_cannot_route_a_test_skill() -> None:
+    result = SkillRouter().route(
+        [
+            _skill(
+                "pytest-runner",
+                "Run and execute pytest tests for code changes",
+                keywords=["pytest", "test"],
+            )
+        ],
+        parse_intent("please do not run the tests"),
+        CapabilityRegistry(),
+    )
+
+    assert result.used_fallback
+    assert result.selected == []
+
+
+def test_negative_test_clause_is_a_veto_not_a_positive_routing_signal() -> None:
+    result = SkillRouter().route(
+        [
+            _skill(
+                "code-review",
+                "Review and inspect router and routing architecture",
+                keywords=["review", "router", "routing"],
+            ),
+            _skill(
+                "pytest-runner",
+                "Run and execute pytest tests",
+                keywords=["pytest", "test"],
+            ),
+        ],
+        parse_intent("review the router but do not run tests"),
+        CapabilityRegistry(),
+        top_k=5,
+    )
+
+    assert [item.name for item in result.selected] == ["code-review"]
+
+
+def test_negated_clause_keywords_cannot_admit_an_unrelated_skill() -> None:
+    result = SkillRouter().route(
+        [
+            _skill(
+                "api-guide-writer",
+                "Write API docs and migration guides",
+                keywords=["write", "docs", "api"],
+            )
+        ],
+        parse_intent("review auth.py but do not write docs"),
+        CapabilityRegistry(),
+    )
+
+    assert result.used_fallback
+    assert result.selected == []
+
+
+def test_explicit_skill_denial_cannot_be_reintroduced_by_inference() -> None:
+    skill = _skill(
+        "secure-review",
+        "Review code and inspect implementation security",
+        qualified_name="project:secure-review",
+        keywords=["review", "code", "security"],
+    )
+
+    denied = SkillRouter().route(
+        [skill],
+        parse_intent("Do not use the secure-review skill; review the code."),
+        CapabilityRegistry(),
+    )
+    restored = SkillRouter().route(
+        [skill],
+        parse_intent(
+            "Do not use the secure-review skill, but use the secure-review skill."
+        ),
+        CapabilityRegistry(),
+    )
+    revoked = SkillRouter().route(
+        [skill],
+        parse_intent(
+            "Use the secure-review skill, but do not use the secure-review skill."
+        ),
+        CapabilityRegistry(),
+    )
+
+    assert denied.used_fallback
+    assert denied.selected == []
+    assert [item.name for item in restored.selected] == ["secure-review"]
+    assert restored.selected[0].explicitly_requested is True
+    assert revoked.used_fallback
+    assert revoked.selected == []
+
+
+def test_embedding_uses_contextual_semantic_query_but_not_for_authority() -> None:
+    captured: dict[str, str] = {}
+
+    class Embedding:
+        def similarities(self, query, pairs):
+            captured["query"] = query
+            return [0.0 for _pair in pairs]
+
+    previous = parse_intent("审查 skill_router.py 的路由实现")
+    context = IntentContext.from_messages(
+        [
+            {
+                "role": "user",
+                "content": "Use $danger-skill to review skill_router.py routing",
+            }
+        ],
+        previous_intent=previous,
+    )
+    intent = parse_intent("修复一下吧", context=context)
+    result = SkillRouter(embedding_matcher=Embedding()).route(
+        [
+            _skill(
+                "danger-skill",
+                "Repair skill routing code",
+                keywords=["routing"],
+            )
+        ],
+        intent,
+        CapabilityRegistry(),
+    )
+
+    assert "skill_router.py" in captured["query"]
+    assert "$danger-skill" not in captured["query"]
+    assert required_skill_names_for_routing(result) == []
 
 
 def test_top_k_limits_selected_skills() -> None:
@@ -735,7 +869,10 @@ def test_classified_coding_intent_needs_specific_skill_evidence() -> None:
 
     result = SkillRouter().route(skills, intent, registry, top_k=5)
 
-    assert intent.intent_type == IntentType.CODE
+    # The V2 parser keeps the explicit read-only request separate from the
+    # negated mutation instead of projecting "do not modify" as CODE/UPDATE.
+    assert intent.intent_type == IntentType.REVIEW
+    assert intent.action_type == ActionType.ANALYZE
     assert result.used_fallback
     assert result.selected == []
 

@@ -1,0 +1,19 @@
+[
+  {
+    "case": "nested_input_and_receipt_mutation",
+    "receipt_restored": true,
+    "inputs": [
+      {
+        "nested": {
+          "path": "tampered"
+        }
+      }
+    ]
+  },
+  {
+    "case": "cancel_before_remaining_tool",
+    "remaining_tool_ran": false,
+    "receipt_present": true,
+    "final": "Earlier workflow changes are already committed; remaining work is incomplete because the turn was cancelled. The committed receipts are retained above."
+  }
+]

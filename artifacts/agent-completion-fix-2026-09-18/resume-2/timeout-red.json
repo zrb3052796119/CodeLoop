@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_primary_model_timeout_recovery.py",
+    "--tb=short"
+  ],
+  "returncode": 1,
+  "testSha256": "4283b774ea42074d5227494ab994d6c3fa2cb891d23f69a86edd061b536ad3f8",
+  "sourceSha256": "c5abbbe5d15a7a4057f6c202ac883d9ce62a272fdef5e9a980a26fe7c1b44546"
+}

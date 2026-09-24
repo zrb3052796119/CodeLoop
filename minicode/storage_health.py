@@ -525,7 +525,13 @@ class PersistenceHealthReader:
         *,
         anchor: Path,
         result: _ScanResult,
+        max_bytes: int | None = None,
     ) -> bytes | None:
+        parse_limit = (
+            self._max_file_bytes
+            if max_bytes is None
+            else min(self._max_file_bytes, max_bytes)
+        )
         state = self._safe_chain(anchor, path)
         if state == "missing":
             return None
@@ -540,7 +546,7 @@ class PersistenceHealthReader:
                 return None
             result.add_bytes(path_info.st_size)
             result.observe_mtime(path_info.st_mtime)
-            if path_info.st_size > self._max_file_bytes:
+            if path_info.st_size > parse_limit:
                 result.degrade("oversized_file")
                 return None
             flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
@@ -558,7 +564,7 @@ class PersistenceHealthReader:
                 result.degrade("entry_unsafe")
                 return None
             chunks: list[bytes] = []
-            remaining = self._max_file_bytes + 1
+            remaining = parse_limit + 1
             while remaining > 0:
                 chunk = os.read(descriptor, min(remaining, 64 * 1024))
                 if not chunk:
@@ -566,7 +572,7 @@ class PersistenceHealthReader:
                 chunks.append(chunk)
                 remaining -= len(chunk)
             data = b"".join(chunks)
-            if len(data) > self._max_file_bytes:
+            if len(data) > parse_limit:
                 result.degrade("oversized_file")
                 return None
             return data
@@ -612,8 +618,14 @@ class PersistenceHealthReader:
         *,
         anchor: Path,
         result: _ScanResult,
+        max_bytes: int | None = None,
     ) -> object | None:
-        raw = self._read_file(path, anchor=anchor, result=result)
+        raw = self._read_file(
+            path,
+            anchor=anchor,
+            result=result,
+            max_bytes=max_bytes,
+        )
         if raw is None:
             return None
         try:
@@ -775,6 +787,13 @@ class PersistenceHealthReader:
         result = _ScanResult()
         root = self.data_dir / "dashboard" / "workspaces" / self._workspace_id / "turns"
         for entry in self._directory_entries(root, anchor=self.data_dir, result=result):
+            if re.fullmatch(r"\.turn_[0-9a-f]{32}\.lease", entry.name) is not None:
+                try:
+                    if entry.is_symlink() or not entry.is_file(follow_symlinks=False):
+                        result.degrade("entry_unsafe")
+                except OSError:
+                    result.degrade("read_failed")
+                continue
             match = re.fullmatch(r"(turn_[0-9a-f]{32})\.json", entry.name)
             if match is None:
                 if self._is_temporary_name(entry.name):
@@ -871,6 +890,17 @@ class PersistenceHealthReader:
                 if metadata is not None:
                     result.degrade("invalid_record")
                 continue
+            run_source = metadata.get("source")
+            curator_outbox_version = metadata.get("curatorOutboxVersion")
+            if (
+                curator_outbox_version is not None
+                and (
+                    isinstance(curator_outbox_version, bool)
+                    or curator_outbox_version not in {2, 3}
+                    or run_source not in {"tui", "headless"}
+                )
+            ):
+                result.degrade("invalid_record")
             events_raw = self._read_file(
                 run_dir / "events.ndjson",
                 anchor=self.data_dir,
@@ -895,11 +925,109 @@ class PersistenceHealthReader:
                         ):
                             result.degrade("invalid_record")
                             break
+            curator_receipt_seen = False
             children = self._directory_entries(
                 run_dir, anchor=self.data_dir, result=result
             )
             for child in children:
                 if child.name in {"metadata.json", "events.ndjson"}:
+                    continue
+                if child.name == "curator_receipt.json":
+                    from minicode.curator_schedule import curator_completion_id
+
+                    curator_receipt_seen = True
+                    receipt = self._read_json(
+                        Path(child.path),
+                        anchor=self.data_dir,
+                        result=result,
+                        max_bytes=512,
+                    )
+                    schema = (
+                        receipt.get("schemaVersion")
+                        if isinstance(receipt, dict)
+                        else None
+                    )
+                    prepared_at_ms = (
+                        receipt.get("preparedAtMs")
+                        if isinstance(receipt, dict)
+                        else None
+                    )
+                    state = (
+                        receipt.get("state")
+                        if isinstance(receipt, dict)
+                        else None
+                    )
+                    legacy_valid = (
+                        schema == 1
+                        and not isinstance(schema, bool)
+                        and set(receipt)
+                        == {"schemaVersion", "completionId", "state"}
+                        and state in {"inactive", "pending", "recorded"}
+                    ) if isinstance(receipt, dict) else False
+                    v2_valid = (
+                        schema == 2
+                        and not isinstance(schema, bool)
+                        and set(receipt)
+                        == {
+                            "schemaVersion",
+                            "completionId",
+                            "state",
+                            "preparedAtMs",
+                        }
+                        and curator_outbox_version == 2
+                        and state
+                        in {"inactive", "pending", "delivering", "recorded"}
+                        and not isinstance(prepared_at_ms, bool)
+                        and isinstance(prepared_at_ms, int)
+                        and 0 <= prepared_at_ms <= 99_999_999_999_999
+                        and (
+                            (state == "inactive" and prepared_at_ms == 0)
+                            or (state != "inactive" and prepared_at_ms > 0)
+                        )
+                    ) if isinstance(receipt, dict) else False
+                    current_valid = (
+                        schema == 3
+                        and not isinstance(schema, bool)
+                        and set(receipt)
+                        == {
+                            "schemaVersion",
+                            "completionId",
+                            "state",
+                            "preparedAtMs",
+                        }
+                        and (
+                            curator_outbox_version in {2, 3}
+                            or (
+                                curator_outbox_version is None
+                                and metadata.get("status") == "queued"
+                                and state == "inactive"
+                            )
+                        )
+                        and state
+                        in {
+                            "inactive",
+                            "pending",
+                            "delivering",
+                            "recorded",
+                            "settled",
+                        }
+                        and not isinstance(prepared_at_ms, bool)
+                        and isinstance(prepared_at_ms, int)
+                        and 0 <= prepared_at_ms <= 99_999_999_999_999
+                        and (
+                            (state == "inactive" and prepared_at_ms == 0)
+                            or (state != "inactive" and prepared_at_ms > 0)
+                        )
+                    ) if isinstance(receipt, dict) else False
+                    if (
+                        not isinstance(receipt, dict)
+                        or not (legacy_valid or v2_valid or current_valid)
+                        or run_source not in {"tui", "headless"}
+                        or receipt.get("completionId")
+                        != curator_completion_id(entry.name)
+                    ):
+                        if receipt is not None:
+                            result.degrade("invalid_record")
                     continue
                 if child.name == ".writer.lock":
                     if self._stat_file(
@@ -912,6 +1040,8 @@ class PersistenceHealthReader:
                     if self._is_temporary_name(child.name)
                     else "entry_unsafe"
                 )
+            if curator_outbox_version in {2, 3} and not curator_receipt_seen:
+                result.degrade("invalid_record")
             run_ids.add(entry.name)
             result.add_records()
         if index_ids is not None and index_ids != run_ids:
@@ -975,7 +1105,20 @@ class PersistenceHealthReader:
                 "MEMORY.md",
                 "approval_audit.json",
                 "pipeline_state.json",
+                "curator_schedule.json",
             }:
+                continue
+            if entry.name in {
+                ".curator-schedule.lock",
+                ".curator-execution.lock",
+                ".curator-delivery.lock",
+                ".conversation-commit.lock",
+                ".conversation-turn-state.lock",
+            }:
+                # Scheduling uses content-free advisory-lock files beside its
+                # authority. Validate them as regular contained files without
+                # presenting them as user Memory records.
+                self._stat_file(Path(entry.path), anchor=anchor, result=result)
                 continue
             if self._is_temporary_name(entry.name):
                 self._stat_file(Path(entry.path), anchor=anchor, result=result)
@@ -1070,6 +1213,39 @@ class PersistenceHealthReader:
                     result.add_records()
         return result
 
+    def _scan_memory_pipeline_state(self) -> _ScanResult:
+        from minicode.curator_schedule import (
+            MAX_CURATOR_SCHEDULE_BYTES,
+            validate_curator_schedule_payload,
+        )
+
+        result = self._scan_fixed_files(
+            (
+                (
+                    self.workspace / ".mini-code-memory" / "pipeline_state.json",
+                    self.workspace,
+                    True,
+                ),
+            )
+        )
+        schedule_path = (
+            self.workspace / ".mini-code-memory" / "curator_schedule.json"
+        )
+        schedule = self._read_json(
+            schedule_path,
+            anchor=self.workspace,
+            result=result,
+            max_bytes=MAX_CURATOR_SCHEDULE_BYTES,
+        )
+        if schedule is not None:
+            try:
+                validate_curator_schedule_payload(schedule)
+            except Exception:
+                result.degrade("invalid_record")
+            else:
+                result.add_records()
+        return result
+
     def _scan_file_tree(
         self,
         root: Path,
@@ -1131,15 +1307,7 @@ class PersistenceHealthReader:
             if audit.audit_references - all_memory_ids:
                 audit.degrade("orphan_reference")
 
-        results["memory-pipeline-state"] = self._scan_fixed_files(
-            (
-                (
-                    self.workspace / ".mini-code-memory" / "pipeline_state.json",
-                    self.workspace,
-                    True,
-                ),
-            )
-        )
+        results["memory-pipeline-state"] = self._scan_memory_pipeline_state()
         results["tool-results"] = self._scan_file_tree(
             self.workspace / ".mini-code-tool-results",
             anchor=self.workspace,

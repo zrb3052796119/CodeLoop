@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import http.client
+import os
 import json
 import threading
 import time
@@ -1069,14 +1070,16 @@ def test_real_absolute_write_allow_writes_once_and_returns_relative_output(
     workspace.mkdir()
     target = workspace / "allowed" / "once.txt"
     writes: list[str] = []
-    original_write_text = Path.write_text
+    # apply_reviewed_file_change lands content through the atomic
+    # temp-file + os.replace path, so count replaces onto the target.
+    original_replace = os.replace
 
-    def counted_write_text(self: Path, data: str, *args, **kwargs):
-        if self == target:
-            writes.append(data)
-        return original_write_text(self, data, *args, **kwargs)
+    def counted_replace(src, dst, *args, **kwargs):
+        if Path(dst) == target:
+            writes.append(Path(src).read_text(encoding="utf-8"))
+        return original_replace(src, dst, *args, **kwargs)
 
-    monkeypatch.setattr(Path, "write_text", counted_write_text)
+    monkeypatch.setattr(os, "replace", counted_replace)
     with _pending_tool(
         workspace,
         write_file_tool,

@@ -36,7 +36,7 @@ def main() -> None:
         ROOT
         / "artifacts"
         / (
-            "memory-retrieval-hybrid-qwen-v1-production-evidence.json"
+            "memory-retrieval-hybrid-qwen-v2-production-evidence.json"
             if args.embedding_provider == "qwen"
             else "memory-retrieval-hybrid-v4-production-evidence.json"
         )

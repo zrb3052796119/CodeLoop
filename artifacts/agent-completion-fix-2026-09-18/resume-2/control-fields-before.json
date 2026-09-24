@@ -1,0 +1,9 @@
+{
+  "model": "glm-5.3-flash",
+  "provider": "custom",
+  "maxOutputTokens": null,
+  "temperature": null,
+  "enableThinking": null,
+  "modelTimeoutSeconds": null,
+  "modelMaxRetries": null
+}

@@ -1,0 +1,271 @@
+diff --git a/minicode/tools/test_runner.py b/minicode/tools/test_runner.py
+index 406098c..12760e1 100644
+--- a/minicode/tools/test_runner.py
++++ b/minicode/tools/test_runner.py
+@@ -38,6 +38,12 @@ def _discover_test_files(path: Path, pattern: str = "test_*.py") -> list[Path]:
+ # Test Output Parsers
+ # ---------------------------------------------------------------------------
+ 
++# Header looks like "================= FAILURES ================="; the '=' padding
++# around the word means "FAILURES\s*\n" never matched real pytest output and
++# failure details were silently dropped from the report.
++_FAILURES_SECTION = re.compile(r'=+\s*FAILURES\s*=+\s*\n(.*?)(?=\n={20,}|\Z)', re.DOTALL)
++
++
+ def _parse_pytest_output(output: str) -> dict[str, Any]:
+     """Parse pytest output into structured format."""
+     results = {
+@@ -86,8 +92,7 @@ def _parse_pytest_output(output: str) -> dict[str, Any]:
+         })
+     
+     # Parse failure details
+-    failure_pattern = re.compile(r'FAILURES\s*\n(.*?)(?=\n={50,}|\Z)', re.DOTALL)
+-    failure_match = failure_pattern.search(output)
++    failure_match = _FAILURES_SECTION.search(output)
+     if failure_match:
+         results["failure_details"] = failure_match.group(1)[:2000]
+     
+@@ -161,6 +166,46 @@ def _validate(input_data: dict) -> dict:
+     }
+ 
+ 
++# Above this many discovered files, pass the directory to pytest instead of
++# enumerating every path on the command line (execve argument-size limits).
++_MAX_EXPLICIT_TEST_FILES = 200
++
++
++def _build_pytest_command(
++    target: Path,
++    test_files: list[Path],
++    verbose: bool,
++    coverage: bool,
++    pattern: str | None,
++) -> tuple[list[str], bool]:
++    """Build the pytest command.
++
++    Returns (command, collected_via_directory). Every discovered file must be
++    executed: silently truncating the list (formerly capped at 10 files) made
++    the tool report false passes on directories whose failing tests lived in
++    the dropped files. When the enumeration would grow unwieldy, fall back to
++    letting pytest collect the directory itself.
++    """
++    cmd = [sys.executable, "-m", "pytest"]
++
++    if target.is_dir() and len(test_files) > _MAX_EXPLICIT_TEST_FILES:
++        cmd.append(str(target))
++        return cmd, True
++
++    cmd.extend([str(f) for f in test_files])
++
++    if verbose:
++        cmd.append("-v")
++
++    if coverage:
++        cmd.extend(["--cov", str(target)])
++
++    if pattern:
++        cmd.extend(["-k", pattern])
++
++    return cmd, False
++
++
+ def _run(input_data: dict, context) -> ToolResult:
+     """Run tests with smart discovery and parsing."""
+     try:
+@@ -209,22 +254,11 @@ def _run(input_data: dict, context) -> ToolResult:
+             framework = "unittest"
+     
+     # Build command
++    collected_via_directory = False
+     if framework == "pytest":
+-        cmd = [sys.executable, "-m", "pytest"]
+-        
+-        # Add test files
+-        cmd.extend([str(f) for f in test_files[:10]])  # Limit to 10 files
+-        
+-        if verbose:
+-            cmd.append("-v")
+-        
+-        if coverage:
+-            cmd.extend(["--cov", str(target)])
+-        
+-        # Add pattern
+-        if pattern:
+-            cmd.extend(["-k", pattern])
+-        
++        cmd, collected_via_directory = _build_pytest_command(
++            target, test_files, verbose, coverage, pattern
++        )
+     else:  # unittest
+         cmd = [sys.executable, "-m", "unittest", "discover"]
+         cmd.extend(["-s", str(target)])
+@@ -255,7 +289,12 @@ def _run(input_data: dict, context) -> ToolResult:
+         "=" * 60,
+         "",
+         f"Framework: {framework}",
+-        f"Test files: {len(test_files)}",
++        f"Test files discovered: {len(test_files)}",
++        (
++            "Test selection: pytest directory collection"
++            if collected_via_directory
++            else f"Test files executed: {len(test_files)}"
++        ),
+         f"Pattern: {pattern or 'all'}",
+         f"Coverage: {'enabled' if coverage else 'disabled'}",
+         "",
+@@ -280,6 +319,11 @@ def _run(input_data: dict, context) -> ToolResult:
+             parsed = _parse_pytest_output(output)
+         else:
+             parsed = _parse_unittest_output(output)
++
++        # Defense in depth: the exit code decides the verdict, but reported
++        # failures/errors in the output must never be reported as a pass.
++        if parsed.get("failed", 0) > 0 or parsed.get("errors", 0) > 0:
++            success = False
+         
+         # Format results
+         lines.append("📊 Results:")
+@@ -301,8 +345,7 @@ def _run(input_data: dict, context) -> ToolResult:
+                 lines.append(parsed["failure_details"][:2000])
+             else:
+                 # Extract from output
+-                failure_pattern = re.compile(r'FAILURES\s*\n(.*?)(?=\n={50,}|\Z)', re.DOTALL)
+-                failure_match = failure_pattern.search(output)
++                failure_match = _FAILURES_SECTION.search(output)
+                 if failure_match:
+                     lines.append(failure_match.group(1)[:2000])
+             
+diff --git a/tests/test_tools.py b/tests/test_tools.py
+index 1014b6f..7fd64c7 100644
+--- a/tests/test_tools.py
++++ b/tests/test_tools.py
+@@ -433,6 +433,129 @@ def test_test_runner_attaches_verification_after_suite_exit(
+     }
+ 
+ 
++def test_test_runner_runs_every_discovered_file_beyond_ten(
++    tmp_path: Path,
++    monkeypatch: pytest.MonkeyPatch,
++) -> None:
++    """test_runner used to cap the pytest command at the first 10 discovered
++    files, silently skipping the rest and reporting false passes on
++    directories whose failing tests lived in the dropped files."""
++    for i in range(1, 12):
++        (tmp_path / f"test_mod_{i:02d}.py").write_text(
++            "def test_ok():\n    assert True\n",
++            encoding="utf-8",
++        )
++    (tmp_path / "test_mod_12.py").write_text(
++        "def test_broken():\n    assert 1 == 2\n",
++        encoding="utf-8",
++    )
++
++    captured: dict[str, list[str]] = {}
++
++    def fake_run(cmd, **_kwargs):
++        captured["cmd"] = list(cmd)
++        return SimpleNamespace(returncode=0, stdout="10 passed", stderr="")
++
++    monkeypatch.setattr(test_runner_module.subprocess, "run", fake_run)
++
++    result = test_runner_tool.run(
++        {
++            "path": ".",
++            "framework": "pytest",
++            "verbose": False,
++            "coverage": False,
++            "pattern": None,
++            "timeout": 30,
++        },
++        ToolContext(cwd=str(tmp_path), permissions=None),
++    )
++
++    command_files = [arg for arg in captured["cmd"] if arg.endswith(".py")]
++    discovered = sorted(p.name for p in tmp_path.glob("test_mod_*.py"))
++    executed = sorted(Path(f).name for f in command_files)
++    assert executed == discovered, "every discovered test file must be executed"
++    assert any(f.endswith("test_mod_12.py") for f in command_files)
++    assert f"Test files executed: {len(discovered)}" in result.output
++
++
++def test_test_runner_reports_failure_in_file_beyond_ten(
++    tmp_path: Path,
++) -> None:
++    """End-to-end false-pass regression: 12 test files where the last one
++    (dropped by the old 10-file cap) contains a failing test."""
++    for i in range(1, 12):
++        (tmp_path / f"test_mod_{i:02d}.py").write_text(
++            "def test_ok():\n    assert True\n",
++            encoding="utf-8",
++        )
++    (tmp_path / "test_mod_12.py").write_text(
++        "def test_broken():\n    assert 1 == 2\n",
++        encoding="utf-8",
++    )
++
++    result = test_runner_tool.run(
++        {
++            "path": ".",
++            "framework": "pytest",
++            "verbose": False,
++            "coverage": False,
++            "pattern": None,
++            "timeout": 120,
++        },
++        ToolContext(cwd=str(tmp_path), permissions=None),
++    )
++
++    assert result.ok is False
++    assert "✗ Failed:  1" in result.output
++    assert "test_broken" in result.output
++    assert result.verification == {
++        "verificationVersion": 1,
++        "kind": "tests",
++        "outcome": "failed",
++        "source": "test_runner",
++    }
++
++
++def test_test_runner_never_reports_pass_when_output_reports_failures(
++    tmp_path: Path,
++    monkeypatch: pytest.MonkeyPatch,
++) -> None:
++    """A zero exit code with failures in the output must not count as a pass."""
++    (tmp_path / "test_sample.py").write_text(
++        "def test_sample():\n    assert True\n",
++        encoding="utf-8",
++    )
++    monkeypatch.setattr(
++        test_runner_module.subprocess,
++        "run",
++        lambda *_args, **_kwargs: SimpleNamespace(
++            returncode=0,
++            stdout="3 passed, 1 failed",
++            stderr="",
++        ),
++    )
++
++    result = test_runner_tool.run(
++        {
++            "path": ".",
++            "framework": "pytest",
++            "verbose": False,
++            "coverage": False,
++            "pattern": None,
++            "timeout": 30,
++        },
++        ToolContext(cwd=str(tmp_path), permissions=None),
++    )
++
++    assert result.ok is False
++    assert result.verification == {
++        "verificationVersion": 1,
++        "kind": "tests",
++        "outcome": "failed",
++        "source": "test_runner",
++    }
++
++
+ def test_test_runner_permission_review_stays_approvable_for_an_in_workspace_target(
+     tmp_path: Path,
+     monkeypatch: pytest.MonkeyPatch,

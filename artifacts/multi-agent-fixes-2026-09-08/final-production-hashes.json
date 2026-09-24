@@ -1,0 +1,19 @@
+{
+  "note": "Whole-file observed hashes at final integrated verification; shared files also contain pre-existing and concurrent edits outside this task.",
+  "sha256": {
+    "minicode/agent_loop.py": "c995a1b3463f57ff2f52a45f98a3f736cf1c26f8d7f794aaed729fc2f8ea0173",
+    "minicode/agent_runtime.py": "b5826f45de4251d6d4e4ede44526a5d8f2eb6413164e321805845d06ced8ccd0",
+    "minicode/tooling.py": "14a96c35afce59923f19229e2c6dca089cf6d06534f020c2ce0da6c3bb84fa87",
+    "minicode/workflow_finalization.py": "6fc8117e7e4be0012bab47bf1ed9a586213090714a10b8a0625593dc4247866f",
+    "minicode/tools/task.py": "81433748454e1e18315ad444a18a4f055861567b83132955e23a3cdf828e0a1c",
+    "minicode/workflow_runner.py": "c560f5db56ade8f09e1e30f3b355fb9b74153d9da14c85894daf9d6eebf660df",
+    "minicode/workflow_scope_registry.py": "3d04b441cc93280bbc0135488aec927104804b7616e7de83812a5b0077951f6e",
+    "minicode/workflow_workspace.py": "1e8012433394f176b3de4d8c8f034c0dadc9812a4996c80065fa4ab006d5521e",
+    "minicode/subagent_types.py": "8326d6df3ce10a814a7231308a573ae769281b8458d5696e0bd51a8feadaea79",
+    "minicode/prompt.py": "5ce566e1fd6e25f4f99c4057a1c76ce76d89a3ce5e05af5ba989710e6a6dd1e1",
+    "minicode/central_scheduler.py": "2c32e6530629bf389da70718e633e685b00f321b9464f6dc4f9d3de4bd8a146c",
+    "minicode/scheduler_trace.py": "08c3e1fe8d6394a924dff6bd1580388698d8f9914c8f2c9db8d9c06e1e5781ea",
+    "minicode/scheduler_audit.py": "3a1a7111c2ee6b679ad57b3bac76e85be3b2644b342b218efb98c870ac67070b",
+    "minicode/workflow_repair.py": "f49b160d7201c2e61238946157f8604dc6afdb214e0eb40efb787d3c8b0ae75f"
+  }
+}

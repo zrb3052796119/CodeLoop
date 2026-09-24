@@ -84,9 +84,14 @@ def test_dashboard_assets_load_from_an_installed_wheel(tmp_path: Path) -> None:
     with zipfile.ZipFile(wheels[0]) as archive:
         packaged = set(archive.namelist())
         packaged_app = archive.read("minicode/web/static/assets/app.js").decode("utf-8")
-        packaged_styles = archive.read("minicode/web/static/assets/styles.css").decode("utf-8")
+        packaged_styles = archive.read("minicode/web/static/assets/styles.css").decode(
+            "utf-8"
+        )
     assert {
         "minicode/agent_runtime.py",
+        "minicode/intent_semantic_calibration.py",
+        "minicode/intent_semantic_calibration_cli.py",
+        "minicode/intent_semantic_classifier.py",
         "minicode/conversation.py",
         "minicode/conversation_deletion.py",
         "minicode/conversation_presentation.py",
@@ -206,6 +211,8 @@ from minicode.session_store import SESSION_STORE_LOCK_NAME
 import minicode.agent_loop as agent_loop_module
 import minicode.capability_registry as capability_module
 import minicode.config as config_module
+import minicode.file_review as file_review_module
+from minicode.file_review import _atomic_write_text
 import minicode.intent_parser as intent_module
 import minicode.logging_config as logging_module
 import minicode.memory as memory_module
@@ -1020,12 +1027,9 @@ installed_rejected_memory = installed_memory_manager.add_entry(
 )
 assert installed_rejected_memory is not None
 installed_memory_json = workspace / ".mini-code-memory" / "memory.json"
-installed_memory_data = json.loads(installed_memory_json.read_text(encoding="utf-8"))
-for installed_raw_memory in installed_memory_data["entries"]:
-    installed_raw_memory.pop("approval_policy")
-installed_memory_json.write_text(
-    json.dumps(installed_memory_data, indent=2), encoding="utf-8"
-)
+# Keep the installed authority in the current schema.  Legacy schema migration
+# is exercised separately; mutating current entries here makes the approval
+# endpoint observe corrupted authority and turns a packaging smoke into a 500.
 installed_memory_authority = MemoryApprovalAuthority(workspace)
 
 cross_process_start = workspace / "installed-session-store-start"
@@ -1476,8 +1480,9 @@ def fake_agent_turn(**kwargs):
 agent_loop_module.run_agent_turn = fake_agent_turn
 capability_module.get_registry = lambda: object()
 capability_module.register_tool_capabilities = lambda _tools: None
+capability_module.build_tool_capability_snapshot = lambda _tools: object()
 config_module.load_runtime_config = lambda _cwd: {"model": "fake"}
-intent_module.parse_intent = lambda _prompt: object()
+intent_module.parse_intent = lambda _prompt, **_kwargs: object()
 logging_module.setup_logging = lambda **_kwargs: None
 logging_module.get_logger = lambda _name: FakeLogger()
 memory_module.MemoryManager = lambda **_kwargs: object()
@@ -1485,6 +1490,9 @@ model_module.create_model_adapter = lambda **_kwargs: object()
 permissions_module.PermissionManager = lambda *_args, **_kwargs: FakePermissions()
 prompt_module.build_system_prompt = lambda *_args, **_kwargs: "system"
 skill_router_module.SkillRouter = lambda: type(
+    "Router", (), {"route": lambda self, *_args, **_kwargs: FakeRouting()}
+)()
+skill_router_module.build_skill_router = lambda _workspace: type(
     "Router", (), {"route": lambda self, *_args, **_kwargs: FakeRouting()}
 )()
 gateway_registry_dependencies = []
@@ -1729,12 +1737,12 @@ try:
 
     installed_allow_target = workspace / "installed-absolute-allow.txt"
     installed_allow_writes = []
-    original_path_write_text = Path.write_text
-    def count_installed_allow(self, data, *args, **kwargs):
-        if self == installed_allow_target:
-            installed_allow_writes.append(data)
-        return original_path_write_text(self, data, *args, **kwargs)
-    Path.write_text = count_installed_allow
+    original_atomic_write_text = _atomic_write_text
+    def count_installed_allow(target, content):
+        if Path(target) == installed_allow_target:
+            installed_allow_writes.append(content)
+        return original_atomic_write_text(target, content)
+    file_review_module._atomic_write_text = count_installed_allow
     try:
         (
             installed_allow_turn,
@@ -1780,7 +1788,7 @@ try:
         assert installed_allow_writes == ["installed-absolute-safe\\n"]
         installed_allow_session.close()
     finally:
-        Path.write_text = original_path_write_text
+        file_review_module._atomic_write_text = original_atomic_write_text
 
     installed_deny_target = workspace / "installed-absolute-deny.txt"
     (
@@ -2693,6 +2701,7 @@ def test_ci_workflow_runs_release_quality_gates() -> None:
     assert "python -m compileall -q minicode tests" in content
     assert "python -m pytest -q" in content
     assert "tests/test_packaging.py" in content
+    assert "python scripts/check_clean_archive_package.py" in content
 
 
 def test_cron_runner_empty_config_exits_cleanly(tmp_path: Path) -> None:
@@ -2732,7 +2741,9 @@ def test_gateway_health_endpoint_responds() -> None:
     thread.start()
     try:
         port = server.server_address[1]
-        with urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=5) as response:
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{port}/health", timeout=5
+        ) as response:
             payload = json.loads(response.read().decode("utf-8"))
         assert payload == {"ok": True, "service": "minicode-gateway"}
     finally:
@@ -2772,7 +2783,9 @@ def test_gateway_run_endpoint_returns_headless_response(monkeypatch) -> None:
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        status, payload = _post_gateway_json(server.server_address[1], {"prompt": "hello"})
+        status, payload = _post_gateway_json(
+            server.server_address[1], {"prompt": "hello"}
+        )
         assert status == 200
         assert payload == {"ok": True, "response": "mock:hello"}
         assert calls == [("hello", "gateway")]
@@ -2799,7 +2812,9 @@ def test_gateway_run_endpoint_converts_system_exit_to_json_error(
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        status, payload = _post_gateway_json(server.server_address[1], {"prompt": "hello"})
+        status, payload = _post_gateway_json(
+            server.server_address[1], {"prompt": "hello"}
+        )
         assert status == 500
         assert payload["ok"] is False
         assert "missing config" in payload["error"]

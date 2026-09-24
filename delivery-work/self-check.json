@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "python": "3.12.8",
+  "executable": "/private/tmp/codeloop-delivery-validation-kqrn7gzx/venv/bin/python",
+  "platform": "macOS-15.5-arm64-arm-64bit",
+  "checks": [
+    {
+      "name": "python",
+      "status": "PASS",
+      "minimum": "3.11"
+    },
+    {
+      "name": "normal_installed_distribution",
+      "status": "PASS"
+    },
+    {
+      "name": "entrypoint:minicode-py",
+      "status": "PASS",
+      "target": "minicode.main:main"
+    },
+    {
+      "name": "entrypoint:minicode-gateway",
+      "status": "PASS",
+      "target": "minicode.gateway:run_gateway"
+    },
+    {
+      "name": "entrypoint:minicode-cron",
+      "status": "PASS",
+      "target": "minicode.cron_runner:main"
+    },
+    {
+      "name": "entrypoint:minicode-headless",
+      "status": "PASS",
+      "target": "minicode.headless:main"
+    },
+    {
+      "name": "entrypoint:minicode-calibrate-intent",
+      "status": "PASS",
+      "target": "minicode.intent_semantic_calibration_cli:main"
+    },
+    {
+      "name": "resource:static/index.html",
+      "status": "PASS"
+    },
+    {
+      "name": "resource:static/assets/app.js",
+      "status": "PASS"
+    },
+    {
+      "name": "resource:static/assets/cost-format.js",
+      "status": "PASS"
+    },
+    {
+      "name": "resource:static/assets/styles.css",
+      "status": "PASS"
+    },
+    {
+      "name": "isolated_config_without_mcp",
+      "status": "PASS"
+    },
+    {
+      "name": "mock_headless_list_files",
+      "status": "PASS",
+      "marker_found": true
+    }
+  ],
+  "isolation": {
+    "python_isolated_mode": true,
+    "temporary_project": true,
+    "temporary_home_via_Path_home": true,
+    "model_environment": "allowlist-reset; synthetic mock model/key with loopback endpoint",
+    "network": "non-loopback socket connections and DNS blocked",
+    "child_processes": "blocked",
+    "verifier_sandbox_probe": "disabled for offline list-only smoke"
+  },
+  "verification_boundary": "Offline installed-package smoke check with synthetic model configuration only. The startup verifier sandbox probe is explicitly mocked as unavailable. Real API credentials, provider connectivity, model output quality, interactive TTY, browser interaction, gateway delivery, cron execution, command sandbox capability and cross-platform support are not verified.",
+  "package_version": "0.1.0",
+  "package_location": "/private/tmp/codeloop-delivery-validation-kqrn7gzx/venv/lib/python3.12/site-packages/minicode",
+  "blocked_network_attempts": [],
+  "blocked_process_attempts": [],
+  "captured_output_characters": 0
+}

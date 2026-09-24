@@ -1,0 +1,7 @@
+{
+  "status": "fixture_setup_failed",
+  "exceptionType": "PermissionError",
+  "errno": 1,
+  "message": "[Errno 1] Operation not permitted",
+  "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 8, in <module>\n  File \"/Users/zhourunbo/miniconda3/lib/python3.13/contextlib.py\", line 141, in __enter__\n    return next(self.gen)\n  File \"/Users/zhourunbo/code/coding agent/MiniCode-Python-main/scripts/run_functional_audit.py\", line 462, in _fixture_server\n    server = ThreadingHTTPServer((\"127.0.0.1\", 0), _FixtureHandler)\n  File \"/Users/zhourunbo/miniconda3/lib/python3.13/socketserver.py\", line 457, in __init__\n    self.server_bind()\n    ~~~~~~~~~~~~~~~~^^\n  File \"/Users/zhourunbo/miniconda3/lib/python3.13/http/server.py\", line 140, in server_bind\n    socketserver.TCPServer.server_bind(self)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^\n  File \"/Users/zhourunbo/miniconda3/lib/python3.13/socketserver.py\", line 478, in server_bind\n    self.socket.bind(self.server_address)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^\nPermissionError: [Errno 1] Operation not permitted\n"
+}

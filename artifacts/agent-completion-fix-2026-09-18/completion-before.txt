@@ -1,0 +1,34 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_primary_limit_returns_findings_instead_of_discarding_them ________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-43/test_primary_limit_returns_fin0')
+
+    def test_primary_limit_returns_findings_instead_of_discarding_them(tmp_path):
+        executed = []
+        model = Model()
+        capture = AgentOutcomeCapture()
+        messages = run(tmp_path, model, registry(executed), max_steps=3, outcome_capture=capture)
+>       assert "Collected findings" in messages[-1]["content"]
+E       AssertionError: assert 'Collected findings' in 'Reached the maximum tool step limit for this turn.'
+
+tests/test_primary_agent_completion.py:72: AssertionError
+___________________ test_closing_tool_calls_are_not_executed ___________________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-43/test_closing_tool_calls_are_no0')
+
+    def test_closing_tool_calls_are_not_executed(tmp_path):
+        executed = []
+        closing = call(text="this tool must not run")
+        closing.content = "Findings preserved."
+        model = Model(closing=closing)
+        messages = run(tmp_path, model, registry(executed), max_steps=3)
+>       assert len(executed) == 2
+E       assert 3 == 2
+E        +  where 3 = len([{}, {}, {}])
+
+tests/test_primary_agent_completion.py:86: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_primary_agent_completion.py::test_primary_limit_returns_findings_instead_of_discarding_them
+FAILED tests/test_primary_agent_completion.py::test_closing_tool_calls_are_not_executed
+2 failed, 20 deselected in 0.38s

@@ -9,9 +9,16 @@ import pytest
 
 from minicode.mcp import StdioMcpClient, create_mcp_backed_tools
 from minicode.mcp_observation import mcp_server_key, project_mcp_runtime_observation
+from minicode.auto_mode import PermissionMode
+from minicode.permissions import PermissionManager
 from minicode.run_journal import RunJournal
 from minicode.run_lifecycle import observe_run
 from minicode.tooling import ToolContext, ToolResult
+
+
+def _bypass_permissions(tmp_path: Path) -> PermissionManager:
+    """MCP dispatch is permission-gated; observation tests run in bypass."""
+    return PermissionManager(str(tmp_path), auto_mode=PermissionMode.BYPASS)
 
 
 def _fake_server_script() -> Path:
@@ -231,10 +238,11 @@ def test_wrapper_uses_per_invocation_sink_and_does_not_store_it(tmp_path: Path) 
     tool = next(tool for tool in bundle["tools"] if tool.name == "mcp__fake__echo")
     sink_a = RecordingSink()
     sink_b = RecordingSink()
+    bypass = _bypass_permissions(tmp_path)
 
-    assert tool.run({"text": "a"}, ToolContext(cwd=str(tmp_path), _event_sink=sink_a, _step=1)).ok is True
-    assert tool.run({"text": "b"}, ToolContext(cwd=str(tmp_path), _event_sink=sink_b, _step=2)).ok is True
-    assert tool.run({"text": "outside"}, ToolContext(cwd=str(tmp_path))).ok is True
+    assert tool.run({"text": "a"}, ToolContext(cwd=str(tmp_path), permissions=bypass, _event_sink=sink_a, _step=1)).ok is True
+    assert tool.run({"text": "b"}, ToolContext(cwd=str(tmp_path), permissions=bypass, _event_sink=sink_b, _step=2)).ok is True
+    assert tool.run({"text": "outside"}, ToolContext(cwd=str(tmp_path), permissions=bypass)).ok is True
 
     assert len(_mcp_events(sink_a)) == 1
     assert len(_mcp_events(sink_b)) == 1
@@ -264,7 +272,7 @@ def test_tool_started_runtime_observed_tool_finished_order(tmp_path: Path) -> No
         journal_factory=lambda _workspace, _session_id=None: journal,
     ) as observation:
         observation.tool_started("mcp__fake__echo")
-        result = tool.run({"text": "hi"}, ToolContext(cwd=str(tmp_path), _event_sink=observation, _step=4))
+        result = tool.run({"text": "hi"}, ToolContext(cwd=str(tmp_path), permissions=_bypass_permissions(tmp_path), _event_sink=observation, _step=4))
         observation.tool_finished("mcp__fake__echo", is_error=not result.ok)
         run_id = observation._lifecycle._run_id
 

@@ -5388,7 +5388,10 @@ function chatUserSignal() {
     reject: '已拒绝结果',
   };
   if (chatStore.feedbackPhase === 'recorded') {
-    return `<section class="dock-user-signal recorded"><b>${esc(labels[chatStore.feedbackSignal] || '反馈已记录')}</b><p>只保存了这一项显式选择，不保存消息正文或原因。</p></section>`;
+    const recordedDetail = chatStore.feedbackSignal === 'correct'
+      ? '当前只保存了这一项选择。请在紧邻的下一条消息中用“纠正：…”明确说明正确事实；通过安全门后，它才会成为项目 Memory。'
+      : '只保存了这一项显式选择，不保存消息正文或原因。';
+    return `<section class="dock-user-signal recorded"><b>${esc(labels[chatStore.feedbackSignal] || '反馈已记录')}</b><p>${esc(recordedDetail)}</p></section>`;
   }
   if (['conflict', 'unavailable'].includes(chatStore.feedbackPhase)) {
     return `<section class="dock-user-signal unavailable"><b>反馈不可用</b><p>${esc(chatStore.feedbackError || '这一 Run 无法记录反馈。')}</p></section>`;
@@ -5399,7 +5402,7 @@ function chatUserSignal() {
     : chatStore.feedbackError
       ? `<small class="error">${esc(chatStore.feedbackError)}</small>`
       : '<small>不会把沉默或后续消息当作接受。</small>';
-  return `<section class="dock-user-signal"><b>这次结果是否解决了任务？</b><p>选择会作为与当前 Run 绑定的内容无关证据。</p><div class="dock-user-signal-actions"><button class="snapshot-button" ${disabled} onclick="recordChatFeedback('accept')">接受结果</button><button class="snapshot-button" ${disabled} onclick="recordChatFeedback('correct')">需要纠正</button><button class="snapshot-button" ${disabled} onclick="recordChatFeedback('reject')">拒绝结果</button></div>${status}</section>`;
+  return `<section class="dock-user-signal"><b>这次结果是否解决了任务？</b><p>这里只评价整轮结果，不会直接判定其中每条 Memory 对错；选择会作为与当前 Run 绑定的弱证据。</p><div class="dock-user-signal-actions"><button class="snapshot-button" ${disabled} onclick="recordChatFeedback('accept')">接受结果</button><button class="snapshot-button" ${disabled} onclick="recordChatFeedback('correct')">需要纠正</button><button class="snapshot-button" ${disabled} onclick="recordChatFeedback('reject')">拒绝结果</button></div>${status}</section>`;
 }
 
 function newConversation() {

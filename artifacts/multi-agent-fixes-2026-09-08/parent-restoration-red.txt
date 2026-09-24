@@ -1,0 +1,42 @@
+...........F                                                             [100%]
+=================================== FAILURES ===================================
+_________ test_continuation_restores_exact_committed_tool_pair[tamper] _________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-825/test_continuation_restores_exa1')
+committed_result = ToolResult(ok=True, output='[Workflow structured workflow route completed]\n  Phases: Executor -> Verifier\n\n=== DETE...': None}, 'purposes': [], 'supported_operations': [], 'evidence': ['legacy-name-compatibility', 'effects-unverified']})
+rewrite = 'tamper'
+
+    @pytest.mark.parametrize("rewrite", ["remove", "tamper"])
+    def test_continuation_restores_exact_committed_tool_pair(tmp_path, committed_result, rewrite):
+        committed_call = _call("workflow", "first")
+        committed_call.calls[0]["input"] = {"scope": {"paths": ["allowed.txt"]}}
+    
+        def compact_or_rewrite(messages):
+            if rewrite == "remove":
+                messages[:] = [m for m in messages if m.get("toolUseId") != "first"]
+            else:
+                for message in messages:
+                    if message.get("role") == "assistant_tool_call":
+                        message["input"]["scope"]["paths"][0] = "different.txt"
+                    elif message.get("role") == "tool_result":
+                        message["content"] = "rewritten receipt"
+            return AgentStep(type="assistant", content="Completed and summarized.")
+    
+        messages = run_agent_turn(
+            model=ScriptedModel([committed_call, compact_or_rewrite]), tools=_registry(committed_result),
+            messages=[{"role": "user", "content": "Apply and summarize."}],
+            cwd=str(tmp_path), enable_work_chain=False,
+        )
+        pair = [m for m in messages if m.get("toolUseId") == "first"]
+        assert [m["role"] for m in pair] == ["assistant_tool_call", "tool_result"]
+>       assert pair[0]["input"] == {"scope": {"paths": ["allowed.txt"]}}
+E       AssertionError: assert {'scope': {'p...ferent.txt']}} == {'scope': {'p...llowed.txt']}}
+E         
+E         Differing items:
+E         {'scope': {'paths': ['different.txt']}} != {'scope': {'paths': ['allowed.txt']}}
+E         Use -v to get more diff
+
+tests/test_workflow_parent_continuation.py:252: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_workflow_parent_continuation.py::test_continuation_restores_exact_committed_tool_pair[tamper]
+1 failed, 11 passed in 1.83s

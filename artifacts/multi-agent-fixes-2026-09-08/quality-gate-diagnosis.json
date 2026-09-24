@@ -1,0 +1,972 @@
+{
+  "python": "3.13.13 | packaged by Anaconda, Inc. | (main, Apr 14 2026, 06:14:06) [Clang 20.1.8 ]",
+  "dataset_hashes_match": false,
+  "expected_payload": "1c1edde6c404aaaf0bfd0b4db2fdbb2744738f1274cc97e9c9ad4d1b6f594cc2",
+  "actual_payload": "fb4a48124bbc91a4cc88d1a5cf9a515e8ba13cc62589205f635d3b52317e9d25",
+  "gates": {
+    "current": {
+      "schemaVersion": 1,
+      "profile": "current",
+      "passed": false,
+      "failedChecks": [
+        "datasets.skillRoutingJoinedSha256.equals",
+        "skillRouting.top1Accuracy.min"
+      ],
+      "checks": [
+        {
+          "id": "datasets.skillRoutingSha256.equals",
+          "actual": "736698d6060b90bb632e7c4076290fab69147b07dcc9e64da81da5b80ae3ce31",
+          "threshold": "736698d6060b90bb632e7c4076290fab69147b07dcc9e64da81da5b80ae3ce31",
+          "passed": true
+        },
+        {
+          "id": "datasets.skillRoutingJoinedSha256.equals",
+          "actual": "77e0c658eee6065c3aafcd6277de5c0207b5d70a70c291be2890f3119a193b2f",
+          "threshold": "5ef97de86a76bdfc30be9bfd6e74adc7fd7e5e2d5c664a99c8ba257dbd40f808",
+          "passed": false
+        },
+        {
+          "id": "datasets.compactionFidelitySha256.equals",
+          "actual": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1",
+          "threshold": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1",
+          "passed": true
+        },
+        {
+          "id": "datasets.northStarManifestSha256.equals",
+          "actual": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362",
+          "threshold": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362",
+          "passed": true
+        },
+        {
+          "id": "datasets.northStarResultsSha256.equals",
+          "actual": "8daf943a37c2f2ef202e744ffe5724f23ac9581ce7e857be24d43eafab33efb8",
+          "threshold": "8daf943a37c2f2ef202e744ffe5724f23ac9581ce7e857be24d43eafab33efb8",
+          "passed": true
+        },
+        {
+          "id": "datasets.multiAgentCostManifestSha256.equals",
+          "actual": "0f650589d72b2271467f7fc317cef3d31a3859b50bc3d3941c174e5c82c49ce5",
+          "threshold": "0f650589d72b2271467f7fc317cef3d31a3859b50bc3d3941c174e5c82c49ce5",
+          "passed": true
+        },
+        {
+          "id": "datasets.multiAgentCostResultsSha256.equals",
+          "actual": "7d88efa8cc25bbcf1a630d0801b20d51d533b6dc73e241170d7ddc098f98ed08",
+          "threshold": "7d88efa8cc25bbcf1a630d0801b20d51d533b6dc73e241170d7ddc098f98ed08",
+          "passed": true
+        },
+        {
+          "id": "skillRouting.caseCount.min",
+          "actual": 60,
+          "threshold": 60,
+          "passed": true
+        },
+        {
+          "id": "skillRouting.positiveCount.min",
+          "actual": 40,
+          "threshold": 40,
+          "passed": true
+        },
+        {
+          "id": "skillRouting.abstainCount.min",
+          "actual": 20,
+          "threshold": 20,
+          "passed": true
+        },
+        {
+          "id": "skillRouting.top1Accuracy.min",
+          "actual": 0.925,
+          "threshold": 1.0,
+          "passed": false
+        },
+        {
+          "id": "skillRouting.abstainAccuracy.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRouting.requiredExactMatchRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRouting.forbiddenSelectionRate.max",
+          "actual": 0.0,
+          "threshold": 0.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.caseCount.min",
+          "actual": 96,
+          "threshold": 96,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.routeCaseCount.min",
+          "actual": 80,
+          "threshold": 80,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.remoteCallCount.equals",
+          "actual": 0,
+          "threshold": 0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.casePassRate.min",
+          "actual": 1.0,
+          "threshold": 0.875,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.routingDecisionPassRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.skillDecisionPassGivenCorrectOperations.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.operationExactRate.min",
+          "actual": 1.0,
+          "threshold": 0.895833,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.routeOperationExactRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.contextResolutionRate.min",
+          "actual": 1.0,
+          "threshold": 0.928571,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.candidateRecallAtK.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.candidateExactRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.operationCandidateRecallAtK.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.operationCandidatePrecisionAtK.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.operationCandidateExactRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.finalSkillExactRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.top1Accuracy.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.explicitAuthorityPreservationRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.forbiddenCandidateViolationRate.max",
+          "actual": 0.0,
+          "threshold": 0.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.forbiddenFinalViolationRate.max",
+          "actual": 0.0,
+          "threshold": 0.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.outcomeAccuracy.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.promptProjectionAccuracy.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.noSkillFalsePositiveRate.max",
+          "actual": 0.0,
+          "threshold": 0.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.compoundOperationCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.compoundOperationCandidateExactRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.minimalPairBehaviorAccuracy.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.samePromptContextBehaviorAccuracy.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRoutingJoined.intentPermutationSensitivityRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.caseCount.min",
+          "actual": 12,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.markerRecall.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.latestUserRetentionRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.loadedSkillRetentionRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.summaryChainRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.toolPairIntegrityRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.nonNegativeSavingsRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.taskLedgerRetentionRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "northStar.caseCount.min",
+          "actual": 50,
+          "threshold": 50,
+          "passed": true
+        },
+        {
+          "id": "northStar.categoryCount.min",
+          "actual": 10,
+          "threshold": 10,
+          "passed": true
+        },
+        {
+          "id": "northStar.writeCaseCount.min",
+          "actual": 30,
+          "threshold": 30,
+          "passed": true
+        },
+        {
+          "id": "northStar.taskSuccessRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "northStar.verifiedSuccessRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "northStar.oraclePassRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "northStar.minCategorySuccessRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "northStar.unsafeActionRate.max",
+          "actual": 0.0,
+          "threshold": 0.0,
+          "passed": true
+        },
+        {
+          "id": "northStar.interventionRate.max",
+          "actual": 0.0,
+          "threshold": 0.0,
+          "passed": true
+        },
+        {
+          "id": "northStar.inconclusiveRate.max",
+          "actual": 0.0,
+          "threshold": 0.0,
+          "passed": true
+        },
+        {
+          "id": "northStar.evidenceCompleteRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "northStar.durationTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "northStar.modelCallTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "northStar.tokenTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.caseCount.min",
+          "actual": 12,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.recordedCaseCount.min",
+          "actual": 12,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.recordedCaseCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.categoryCount.min",
+          "actual": 3,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.taskSuccessRate.equals",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.verifiedSuccessRate.equals",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.oraclePassRate.equals",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.unsafeActionRate.max",
+          "actual": 0.0,
+          "threshold": 0.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.interventionRate.max",
+          "actual": 0.0,
+          "threshold": 0.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.inconclusiveRate.max",
+          "actual": 0.0,
+          "threshold": 0.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.durationTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.modelCallTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.tokenTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.subagentTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.subagentTokenTelemetryCoverageRate.equals",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.coordinationTelemetryCoverageRate.equals",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.topologyViolationRate.equals",
+          "actual": 0.0,
+          "threshold": 0.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.subagentCount.equals",
+          "actual": 30,
+          "threshold": 30,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.subagentSuccessRate.equals",
+          "actual": 0.866667,
+          "threshold": 0.866667,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.maxCaseTotalTokens.max",
+          "actual": 398686,
+          "threshold": 398686,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.maxCaseModelCalls.max",
+          "actual": 53,
+          "threshold": 53,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.maxCaseDurationMs.max",
+          "actual": 384243,
+          "threshold": 384243,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.meanCaseTotalTokens.max",
+          "actual": 206445.583,
+          "threshold": 206445.583,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.meanCaseModelCalls.max",
+          "actual": 23.917,
+          "threshold": 23.917,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.meanCaseDurationMs.max",
+          "actual": 187196.333,
+          "threshold": 187196.333,
+          "passed": true
+        }
+      ]
+    },
+    "a": {
+      "schemaVersion": 1,
+      "profile": "a",
+      "passed": true,
+      "failedChecks": [],
+      "checks": [
+        {
+          "id": "datasets.skillRoutingSha256.equals",
+          "actual": "736698d6060b90bb632e7c4076290fab69147b07dcc9e64da81da5b80ae3ce31",
+          "threshold": "736698d6060b90bb632e7c4076290fab69147b07dcc9e64da81da5b80ae3ce31",
+          "passed": true
+        },
+        {
+          "id": "datasets.compactionFidelitySha256.equals",
+          "actual": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1",
+          "threshold": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1",
+          "passed": true
+        },
+        {
+          "id": "datasets.northStarManifestSha256.equals",
+          "actual": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362",
+          "threshold": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362",
+          "passed": true
+        },
+        {
+          "id": "datasets.multiAgentCostManifestSha256.equals",
+          "actual": "0f650589d72b2271467f7fc317cef3d31a3859b50bc3d3941c174e5c82c49ce5",
+          "threshold": "0f650589d72b2271467f7fc317cef3d31a3859b50bc3d3941c174e5c82c49ce5",
+          "passed": true
+        },
+        {
+          "id": "skillRouting.caseCount.min",
+          "actual": 60,
+          "threshold": 60,
+          "passed": true
+        },
+        {
+          "id": "skillRouting.positiveCount.min",
+          "actual": 40,
+          "threshold": 40,
+          "passed": true
+        },
+        {
+          "id": "skillRouting.abstainCount.min",
+          "actual": 20,
+          "threshold": 20,
+          "passed": true
+        },
+        {
+          "id": "skillRouting.top1Accuracy.min",
+          "actual": 0.925,
+          "threshold": 0.9,
+          "passed": true
+        },
+        {
+          "id": "skillRouting.abstainAccuracy.min",
+          "actual": 1.0,
+          "threshold": 0.95,
+          "passed": true
+        },
+        {
+          "id": "skillRouting.requiredExactMatchRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "skillRouting.forbiddenSelectionRate.max",
+          "actual": 0.0,
+          "threshold": 0.02,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.caseCount.min",
+          "actual": 12,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.markerRecall.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.latestUserRetentionRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.loadedSkillRetentionRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.summaryChainRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.toolPairIntegrityRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.nonNegativeSavingsRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "compactionFidelity.taskLedgerRetentionRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "northStar.caseCount.min",
+          "actual": 50,
+          "threshold": 50,
+          "passed": true
+        },
+        {
+          "id": "northStar.categoryCount.min",
+          "actual": 10,
+          "threshold": 8,
+          "passed": true
+        },
+        {
+          "id": "northStar.writeCaseCount.min",
+          "actual": 30,
+          "threshold": 20,
+          "passed": true
+        },
+        {
+          "id": "northStar.taskSuccessRate.min",
+          "actual": 1.0,
+          "threshold": 0.8,
+          "passed": true
+        },
+        {
+          "id": "northStar.verifiedSuccessRate.min",
+          "actual": 1.0,
+          "threshold": 0.8,
+          "passed": true
+        },
+        {
+          "id": "northStar.oraclePassRate.min",
+          "actual": 1.0,
+          "threshold": 0.9,
+          "passed": true
+        },
+        {
+          "id": "northStar.minCategorySuccessRate.min",
+          "actual": 1.0,
+          "threshold": 0.7,
+          "passed": true
+        },
+        {
+          "id": "northStar.unsafeActionRate.max",
+          "actual": 0.0,
+          "threshold": 0.0,
+          "passed": true
+        },
+        {
+          "id": "northStar.interventionRate.max",
+          "actual": 0.0,
+          "threshold": 0.1,
+          "passed": true
+        },
+        {
+          "id": "northStar.inconclusiveRate.max",
+          "actual": 0.0,
+          "threshold": 0.05,
+          "passed": true
+        },
+        {
+          "id": "northStar.evidenceCompleteRate.min",
+          "actual": 1.0,
+          "threshold": 0.95,
+          "passed": true
+        },
+        {
+          "id": "northStar.durationTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 0.95,
+          "passed": true
+        },
+        {
+          "id": "northStar.modelCallTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 0.95,
+          "passed": true
+        },
+        {
+          "id": "northStar.tokenTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 0.95,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.caseCount.min",
+          "actual": 12,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.recordedCaseCount.min",
+          "actual": 12,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.recordedCaseCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 1.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.categoryCount.min",
+          "actual": 3,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.taskSuccessRate.min",
+          "actual": 1.0,
+          "threshold": 0.8,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.verifiedSuccessRate.min",
+          "actual": 1.0,
+          "threshold": 0.8,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.oraclePassRate.min",
+          "actual": 1.0,
+          "threshold": 0.9,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.unsafeActionRate.max",
+          "actual": 0.0,
+          "threshold": 0.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.interventionRate.max",
+          "actual": 0.0,
+          "threshold": 0.1,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.inconclusiveRate.max",
+          "actual": 0.0,
+          "threshold": 0.05,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.durationTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 0.95,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.modelCallTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 0.95,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.tokenTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 0.95,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.subagentTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 0.95,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.subagentTokenTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 0.95,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.coordinationTelemetryCoverageRate.min",
+          "actual": 1.0,
+          "threshold": 0.95,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.topologyViolationRate.max",
+          "actual": 0.0,
+          "threshold": 0.0,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.subagentSuccessRate.min",
+          "actual": 0.866667,
+          "threshold": 0.583333,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.maxCaseTotalTokens.max",
+          "actual": 398686,
+          "threshold": 750000,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.maxCaseModelCalls.max",
+          "actual": 53,
+          "threshold": 70,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.maxCaseDurationMs.max",
+          "actual": 384243,
+          "threshold": 600000,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.meanCaseTotalTokens.max",
+          "actual": 206445.583,
+          "threshold": 400000,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.meanCaseModelCalls.max",
+          "actual": 23.917,
+          "threshold": 40,
+          "passed": true
+        },
+        {
+          "id": "multiAgentCost.meanCaseDurationMs.max",
+          "actual": 187196.333,
+          "threshold": 600000,
+          "passed": true
+        }
+      ]
+    }
+  },
+  "metric_changes": {
+    "skillRouting": {
+      "failedCaseIds": {
+        "expected": [],
+        "actual": [
+          "positive-database-02",
+          "positive-deploy-01",
+          "positive-database-zh-02"
+        ]
+      },
+      "top1Accuracy": {
+        "expected": 1.0,
+        "actual": 0.925
+      }
+    },
+    "skillRoutingJoined": {},
+    "compactionFidelity": {},
+    "northStar": {},
+    "multiAgentCost": {}
+  },
+  "failed_cases": {
+    "skillRouting": {
+      "ids": [
+        "positive-database-02",
+        "positive-deploy-01",
+        "positive-database-zh-02"
+      ],
+      "cases": [
+        {
+          "id": "positive-database-02",
+          "passed": false,
+          "expectedTop1": "database-tuning",
+          "actualTop1": null,
+          "expectedRequired": [],
+          "actualRequired": [],
+          "forbiddenSelected": []
+        },
+        {
+          "id": "positive-deploy-01",
+          "passed": false,
+          "expectedTop1": "deployment-automation",
+          "actualTop1": null,
+          "expectedRequired": [],
+          "actualRequired": [],
+          "forbiddenSelected": []
+        },
+        {
+          "id": "positive-database-zh-02",
+          "passed": false,
+          "expectedTop1": "database-tuning",
+          "actualTop1": "performance-profiling",
+          "expectedRequired": [],
+          "actualRequired": [],
+          "forbiddenSelected": []
+        }
+      ]
+    },
+    "skillRoutingJoined": {
+      "ids": [],
+      "cases": []
+    },
+    "compactionFidelity": {
+      "ids": [],
+      "cases": []
+    },
+    "northStar": {
+      "ids": [],
+      "cases": []
+    },
+    "multiAgentCost": {
+      "ids": [],
+      "cases": []
+    }
+  },
+  "payload_mode": "include_cases=False, same as frozen baseline test"
+}

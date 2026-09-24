@@ -1,0 +1,136 @@
+{
+  "source": "Existing safe configuration summaries and content-free journal model usage events; no secrets or model requests.",
+  "fallback_rates_from_local_code_per_million": {
+    "input": "3.0",
+    "output": "15.0",
+    "cache_read": "0.30",
+    "cache_write": "3.75"
+  },
+  "rates_are_not_provider_prices": true,
+  "runs": [
+    {
+      "name": "continuation",
+      "run_id": "run_b3bc7136802f466f99680ea79000d9ff",
+      "effective_budget": {
+        "maxTokens": 2000000,
+        "maxModelCalls": 60,
+        "maxCostUsd": "5"
+      },
+      "completed_calls": 34,
+      "failed_calls": 0,
+      "input_tokens_reported": 1481666,
+      "output_tokens_reported": 16530,
+      "cache_read_tokens_reported": 1197888,
+      "cache_creation_tokens_reported": 0,
+      "internal_fallback_estimate_usd_units": "5.0523144",
+      "not_actual_provider_charge": true,
+      "failed_events": [],
+      "successful_call_durations_ms": [
+        10171,
+        5890,
+        13209,
+        4500,
+        25479,
+        5058,
+        52043,
+        7610,
+        8142,
+        7376,
+        6283,
+        6100,
+        5312,
+        4785,
+        5417,
+        4472,
+        5064,
+        7650,
+        4592,
+        28384,
+        16098,
+        8904,
+        17218,
+        24139,
+        9432,
+        52794,
+        34657,
+        6279,
+        4765,
+        6139,
+        5529,
+        5561,
+        6578,
+        9219
+      ]
+    },
+    {
+      "name": "review-followup",
+      "run_id": "run_da39459e06164042bbc2a2aaf7524c0f",
+      "effective_budget": {
+        "maxTokens": 420000,
+        "maxModelCalls": 20,
+        "maxCostUsd": "2"
+      },
+      "completed_calls": 6,
+      "failed_calls": 1,
+      "input_tokens_reported": 61311,
+      "output_tokens_reported": 825,
+      "cache_read_tokens_reported": 46592,
+      "cache_creation_tokens_reported": 0,
+      "internal_fallback_estimate_usd_units": "0.2102856",
+      "not_actual_provider_charge": true,
+      "failed_events": [
+        {
+          "step": 7,
+          "failureKind": "timeout",
+          "durationMs": 120005
+        }
+      ],
+      "successful_call_durations_ms": [
+        7985,
+        5711,
+        4935,
+        4470,
+        9845,
+        4228
+      ]
+    },
+    {
+      "name": "review-retry",
+      "run_id": "run_974428e87dfa49ef867b105c2b038f4c",
+      "effective_budget": {
+        "maxTokens": 357864,
+        "maxModelCalls": 13,
+        "maxCostUsd": "1.7"
+      },
+      "completed_calls": 3,
+      "failed_calls": 1,
+      "input_tokens_reported": 46161,
+      "output_tokens_reported": 610,
+      "cache_read_tokens_reported": 22464,
+      "cache_creation_tokens_reported": 0,
+      "internal_fallback_estimate_usd_units": "0.1543722",
+      "not_actual_provider_charge": true,
+      "failed_events": [
+        {
+          "step": 4,
+          "failureKind": "timeout",
+          "durationMs": 120003
+        }
+      ],
+      "successful_call_durations_ms": [
+        6335,
+        14526,
+        5550
+      ]
+    }
+  ],
+  "missing_historical_wire_controls": [
+    "maxOutputTokens",
+    "modelTimeoutSeconds",
+    "modelMaxRetries",
+    "enableThinking",
+    "reasoning_effort",
+    "stream"
+  ],
+  "failed_usage_caveat": "Timed-out calls have no provider usage receipts. Their actual token use and charge are unknown, not zero."
+}

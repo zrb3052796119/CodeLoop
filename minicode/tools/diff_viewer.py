@@ -3,7 +3,10 @@ from __future__ import annotations
 import difflib
 from pathlib import Path
 from typing import Any
+
 from minicode.tooling import ToolDefinition, ToolResult
+from minicode.turn_cancellation import TurnCancellationRequested
+from minicode.workspace import resolve_tool_path
 
 
 # ---------------------------------------------------------------------------
@@ -83,6 +86,19 @@ def _format_diff_output(diff_text: str, max_lines: int = 100) -> str:
 # Tool Implementation
 # ---------------------------------------------------------------------------
 
+def _resolve_file_reference(context, input_path: str) -> Path:
+    """Resolve a ``__file__`` reference without allowing display labels as paths."""
+    candidate = Path(input_path)
+    if candidate.is_absolute() or any(part == ".." for part in candidate.parts):
+        raise PermissionError("File references must use workspace-relative paths")
+    target = resolve_tool_path(context, input_path, "read")
+    try:
+        target.relative_to(Path(context.cwd).resolve())
+    except ValueError as error:
+        raise PermissionError("File reference escapes workspace") from error
+    return target
+
+
 def _validate(input_data: dict) -> dict:
     files = input_data.get("files")
     if not isinstance(files, list):
@@ -117,25 +133,40 @@ def _run(input_data: dict, context) -> ToolResult:
     files = input_data["files"]
     context_lines = input_data["context_lines"]
     format_type = input_data["format"]
-    cwd = Path(context.cwd)
-    
+
     all_diffs = []
     total_additions = 0
     total_deletions = 0
     files_with_changes = 0
     
     for file_entry in files:
-        file_path = cwd / file_entry["path"]
         old_content = file_entry.get("before", "")
         new_content = file_entry.get("after", "")
-        
+
+        # A path is only interpreted when disk content is requested. Display-only
+        # labels remain inert strings, preserving the tool's in-memory use case.
+        if old_content == "__file__" or new_content == "__file__":
+            try:
+                file_path = _resolve_file_reference(context, file_entry["path"])
+            except TurnCancellationRequested:
+                raise
+            except (PermissionError, RuntimeError) as error:
+                return ToolResult(
+                    ok=False,
+                    output=f"error[permission_denied]: {error}",
+                )
+        else:
+            file_path = None
+
         # Load from file if not provided
         if old_content == "__file__":
+            assert file_path is not None
             if file_path.exists():
                 old_content = file_path.read_text(encoding="utf-8")
             else:
                 old_content = ""
         if new_content == "__file__":
+            assert file_path is not None
             if file_path.exists():
                 new_content = file_path.read_text(encoding="utf-8")
             else:

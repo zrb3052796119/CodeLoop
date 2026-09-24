@@ -15,6 +15,7 @@ Permission modes:
 
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass
 from enum import Enum
@@ -410,21 +411,59 @@ class ModeState:
 
 _checker = AutoModeChecker()
 _mode_state = ModeState()
+_env_initialized = False
+
+# Environment variable that selects the startup permission mode for every
+# entrypoint (TUI, headless runs, sub-agent subprocesses). Values match
+# PermissionMode: "default" | "auto" | "bypass" | "plan".
+PERMISSION_MODE_ENV_VAR = "MINI_CODE_PERMISSION_MODE"
+
+
+def _init_mode_from_env() -> None:
+    """Apply MINI_CODE_PERMISSION_MODE to the shared checker, once."""
+    global _env_initialized
+    if _env_initialized:
+        return
+    _env_initialized = True
+    raw = os.environ.get(PERMISSION_MODE_ENV_VAR, "").strip().lower()
+    if not raw:
+        return
+    try:
+        mode = PermissionMode(raw)
+    except ValueError:
+        import warnings
+        warnings.warn(
+            f"Ignoring invalid {PERMISSION_MODE_ENV_VAR}={raw!r}; "
+            f"expected one of: {', '.join(m.value for m in PermissionMode)}"
+        )
+        return
+    _checker.set_mode(mode)
+    _mode_state.mode = mode
 
 
 def get_checker() -> AutoModeChecker:
     """Get global auto mode checker."""
+    _init_mode_from_env()
     return _checker
 
 
 def get_mode_state() -> ModeState:
     """Get global mode state."""
+    _init_mode_from_env()
     return _mode_state
+
+
+def get_permission_mode() -> PermissionMode:
+    """Get the current global permission mode."""
+    _init_mode_from_env()
+    return _checker.mode
 
 
 def set_permission_mode(mode: PermissionMode) -> str:
     """Set global permission mode."""
+    global _env_initialized
     import time
+    _env_initialized = True  # explicit user choice outranks the env default
     _checker.set_mode(mode)
     _mode_state.mode = mode
     _mode_state.mode_changed_at = time.time()

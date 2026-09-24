@@ -177,7 +177,11 @@ def test_workflow_parallel_explore_writes_mailbox_and_feeds_plan(
     assert types.count("plan") == 2
     assert types.count("general") == 1
     assert all(item[2] == 1 for item in captured)
-    assert all(item[3] is budget for item in captured)
+    # Phases share the workflow's single attribution view, which delegates
+    # to the shared budget (see the workflow token-attribution change).
+    assert all(item[3] is captured[0][3] for item in captured)
+    captured[0][3].record_model_call(input_tokens=7, output_tokens=3)
+    assert budget.snapshot().used_total_tokens == 10
     for key in (
         "workflow_explore_architecture",
         "workflow_explore_tests",

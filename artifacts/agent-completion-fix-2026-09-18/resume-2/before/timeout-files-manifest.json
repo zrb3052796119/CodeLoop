@@ -1,0 +1,26 @@
+[
+  {
+    "path": "minicode/agent_loop.py",
+    "sha256": "c5abbbe5d15a7a4057f6c202ac883d9ce62a272fdef5e9a980a26fe7c1b44546"
+  },
+  {
+    "path": "minicode/agent_budget.py",
+    "sha256": "656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05"
+  },
+  {
+    "path": "minicode/turn_completion.py",
+    "sha256": "215bf4f5845df2c9696db8eb1253e2719f3c25e8443df9292c3c11a3be4936bf"
+  },
+  {
+    "path": "minicode/turn_cancellation.py",
+    "sha256": "1423a75023c835b211a0f2dd0e85c1e98d5fcec6910c2435c2f48b2d74daf37f"
+  },
+  {
+    "path": "tests/test_primary_agent_completion.py",
+    "sha256": "0ca723b29f031731a86169120f62640487ffd1c12dd9e067a973cb87dec9a015"
+  },
+  {
+    "path": "tests/test_agent_loop.py",
+    "sha256": "0da2ad39a8918e204e4e83f1c8ec2d3ec2812e9e571d7c9d458fca0a8812015d"
+  }
+]

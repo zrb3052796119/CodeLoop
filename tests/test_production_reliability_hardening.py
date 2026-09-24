@@ -26,7 +26,7 @@ from minicode.reflection_llm import (
     StructuredGenerationResponse,
 )
 from minicode.turn_cancellation import TurnCancellationToken
-from minicode.types import AgentStep, ModelUsage
+from minicode.types import AgentStep, ModelUsage, StepDiagnostics
 from scripts.check_release_reproducibility import classify_porcelain
 
 
@@ -41,8 +41,8 @@ class _RecordingSink:
 def test_default_turn_budget_has_finite_token_call_and_cost_limits() -> None:
     budget = AgentTurnBudget.from_runtime({})
 
-    assert budget.max_total_tokens == 1_000_000
-    assert budget.max_model_calls == 80
+    assert budget.max_total_tokens == 3_000_000
+    assert budget.max_model_calls == 150
     assert str(budget.max_cost_usd) == "5.00"
 
 
@@ -145,7 +145,9 @@ def test_openai_adapter_bounds_socket_and_retry_backoff_by_deadline(
 
     monkeypatch.setattr(control_module, "time", clock)
     monkeypatch.setattr(adapter_module, "open_verified_url", fail_request)
-    monkeypatch.setattr(adapter_module, "calculate_backoff", lambda *_args, **_kwargs: 1.0)
+    monkeypatch.setattr(
+        adapter_module, "calculate_backoff", lambda *_args, **_kwargs: 1.0
+    )
     adapter = OpenAIModelAdapter(
         {
             "model": "deepseek-chat",
@@ -301,9 +303,7 @@ def test_reflection_model_call_inherits_controls_budget_and_observation() -> Non
     )
     engine = ReflectionEngine(
         llm_config=config,
-        llm_synthesizer=LLMReflectionSynthesizer(
-            ReflectionClient(), config
-        ),
+        llm_synthesizer=LLMReflectionSynthesizer(ReflectionClient(), config),
     )
 
     result = engine.reflect(
@@ -330,9 +330,7 @@ def test_reflection_model_call_inherits_controls_budget_and_observation() -> Non
         "model.completed",
         "model.costed",
     ]
-    assert {payload["purpose"] for _, payload in sink.events} == {
-        "memory_reflection"
-    }
+    assert {payload["purpose"] for _, payload in sink.events} == {"memory_reflection"}
     assert budget.snapshot().used_model_calls == 1
     assert budget.snapshot().used_total_tokens == 37
 
@@ -391,9 +389,7 @@ def test_curator_model_call_inherits_controls_budget_and_observation() -> None:
         "model.completed",
         "model.costed",
     ]
-    assert {payload["purpose"] for _, payload in sink.events} == {
-        "memory_curation"
-    }
+    assert {payload["purpose"] for _, payload in sink.events} == {"memory_curation"}
     assert budget.snapshot().used_model_calls == 1
     assert budget.snapshot().used_total_tokens == 26
 
@@ -441,6 +437,7 @@ def test_hybrid_verifier_uses_shared_budget_and_model_observation() -> None:
             return AgentStep(
                 type="assistant",
                 content=json.dumps(payload),
+                diagnostics=StepDiagnostics(stopReason="stop", blockTypes=["text"]),
                 usage=ModelUsage(
                     input_tokens=12,
                     output_tokens=4,
@@ -569,8 +566,8 @@ def test_safe_runtime_summary_never_projects_credentials() -> None:
         "subagentConfigured": True,
     }
     assert summary["effectiveTurnBudget"] == {
-        "maxTokens": 1_000_000,
-        "maxModelCalls": 80,
+        "maxTokens": 3_000_000,
+        "maxModelCalls": 150,
         "maxCostUsd": "5.00",
     }
 

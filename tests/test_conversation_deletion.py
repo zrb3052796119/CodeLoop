@@ -106,6 +106,11 @@ def _terminal_turn(
             "assistantMessageIndex": 1,
         },
     )
+    # Deletion fixtures represent a fully finalized production Turn.  A
+    # completed v2 Turn remains a durable curator outbox until both receipt
+    # transitions have been acknowledged.
+    store.mark_curator_receipt_recorded(turn_id)
+    store.mark_curator_receipt_settled(turn_id)
     return turn_id
 
 

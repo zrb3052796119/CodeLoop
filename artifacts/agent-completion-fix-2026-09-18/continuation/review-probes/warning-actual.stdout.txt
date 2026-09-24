@@ -1,0 +1,15 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.8, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/continuation/review-probes/fixtures/warnings
+configfile: pytest.ini
+collected 1 item
+
+test_warning.py .                                                        [100%]
+
+=============================== warnings summary ===============================
+test_warning.py::test_ok
+  /Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/continuation/review-probes/fixtures/warnings/test_warning.py:4: UserWarning: 1 failed historical request; 2 errors already recovered
+    warnings.warn('1 failed historical request; 2 errors already recovered')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+========================= 1 passed, 1 warning in 0.00s =========================

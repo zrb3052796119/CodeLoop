@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>01 · 把一次任务讲清楚</title><link rel="stylesheet" href="../assets/course.css"></head><body><main>
+<header><div class="eyebrow">CodeLoop · Interview practice · 01</div><h1>把一次任务讲清楚</h1><p class="intro">本课目标：用一个具体请求，解释模型如何通过 Runtime 反复观察、执行和验证。</p></header>
+<p>CodeLoop 基于 MiniCode-Python 扩展。基础循环、工具与各模块已有导入基线；面试介绍应突出后来补强的准入、证据、保真和协作契约。依据：<a href="../../../CONTRIBUTIONS.md">贡献清单的 Inherited Runtime Foundation</a>。</p>
+<h2>从“读文件并解释函数”开始</h2>
+<div class="flow" aria-label="工具调用循环"><span class="node">当前消息与上下文</span><span class="arrow">→</span><span class="node">模型提出调用</span><span class="arrow">→</span><span class="node">Runtime 校验与执行</span><span class="arrow">→</span><span class="node">结果回填后再调模型</span></div>
+<p>例如用户说“读取 <code>calculator.py</code>，解释 <code>divide</code> 函数”。模型可以提出 <code>read_file</code> 调用。本地程序查找工具、验证参数并按执行路径检查权限，读取结果以同一调用 ID 回填。模型随后根据真正读到的内容解释函数。如果工具失败，错误也可以成为下一步的输入。</p>
+<p>这里的文件名是教学示例，并非声称仓库中存在该文件。真实协议见 <a href="../../../minicode/types.py">types.py</a>；执行入口见 <a href="../../../minicode/tooling.py">ToolRegistry.execute</a>。</p>
+<pre aria-label="概念伪代码">while 未超过步骤、预算与期限:
+    检查取消，治理当前上下文
+    step = 调用模型(当前消息)
+    if step 是可结束的最终回答 and 必要契约满足:
+        返回回答
+    if step 含工具调用:
+        校验、检查权限、调度并执行
+        按调用 ID 回填调用与结果
+    else:
+        处理进度、空响应或错误等分支</pre>
+<p class="small">这是概念图，不是可运行代码。当前实现还包含预算预留、模型异常恢复、子任务收尾和显式 Skill 加载检查。</p>
+<h2>四个扩展分别接在哪里</h2>
+<table><thead><tr><th>模块</th><th>给循环提供什么</th><th>要回答的问题</th></tr></thead><tbody>
+<tr><td>Skill 路由</td><td>候选元数据；需要时通过 load_skill 加载全文</td><td>本次任务适用哪些操作方法？</td></tr>
+<tr><td>记忆</td><td>检索相关经验；执行后按证据与策略沉淀</td><td>哪些过去经验值得复用？</td></tr>
+<tr><td>压缩</td><td>治理消息大小，保留任务状态与检索入口</td><td>长会话还能保留必要信息吗？</td></tr>
+<tr><td>多 Agent</td><td>通过 task 委派有边界的子任务并回传结果</td><td>怎样拆任务并约束副作用？</td></tr>
+</tbody></table>
+<aside><strong>必须分清：</strong>正常结束说明循环进入了结束分支；业务正确需要测试、oracle 或其他验证证据。当前代码还会区分进度、空回答，检查待完成子任务与显式 Skill 加载契约，因此“没调工具就立刻成功”也过于简化。</aside>
+<h2>闭卷练习 · 两分钟</h2>
+<p>先遮住正文回答：用户要求读取文件并解释函数，从收到输入到最终回答经历了哪些步骤？明确指出模型输出了什么、本地程序执行了什么、第二次模型调用比第一次多看到了什么。</p>
+<details><summary>回答后再展开核对点</summary><p>应包含：准备上下文 → 模型产生结构化调用 → Runtime 查找工具、验证参数与检查权限 → 实际读取 → 调用和结果通过 ID 对应回填 → 模型基于结果解释 → 结束条件与相关契约检查。</p><p>追问：文件不存在时怎么办？返回最终回答是否证明解释正确？如回答漏掉这两点，回到上文重新口述。</p></details>
+<footer><p>首选源码：<a href="../../../minicode/agent_loop.py">run_agent_turn</a>（本次核对：入口 1867，循环 2833，调用模型 3062，结束契约 3589 附近，回填 4329 附近；行号可能随修改漂移）。</p><p>推荐原始资料：<a href="https://code.claude.com/docs/en/how-claude-code-works">Claude Code 官方 agentic loop 说明</a>。公开设计用于理解思想，CodeLoop 的行为以本仓库为准。</p><p><a href="../reference/0001-runtime-map.html">打开源码速查卡</a> · 不清楚的地方直接在对话里问我；下一步根据你的回答继续追问。</p></footer>
+</main></body></html>

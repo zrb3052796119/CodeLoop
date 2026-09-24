@@ -16,11 +16,20 @@ import secrets
 import stat
 import tempfile
 import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
+from functools import wraps
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Any, Callable, Literal
 
+from minicode.advisory_lock import (
+    acquire_advisory_lock,
+    prepare_advisory_lock_file,
+    release_advisory_lock,
+)
+from minicode.memory_store import MemoryStoreCoordinator
 from minicode.run_journal import stable_workspace_id
 from minicode.turn_cancellation import (
     TurnCancellationRegistry,
@@ -64,7 +73,7 @@ TURN_ERROR_CODES = frozenset(
         "turn_cancelled",
     }
 )
-_RECORD_FIELDS = frozenset(
+_LEGACY_RECORD_FIELDS = frozenset(
     {
         "schemaVersion",
         "turnId",
@@ -82,6 +91,14 @@ _RECORD_FIELDS = frozenset(
         "ownerId",
     }
 )
+_ONE_PHASE_RECORD_FIELDS = _LEGACY_RECORD_FIELDS | {
+    "curatorReceiptRecorded"
+}
+_TWO_PHASE_RECORD_FIELDS = _ONE_PHASE_RECORD_FIELDS | {
+    "curatorReceiptSettled"
+}
+_RECORD_FIELDS = _TWO_PHASE_RECORD_FIELDS | {"curatorOutboxVersion"}
+_CURATOR_OUTBOX_VERSION = 2
 _MARKER_FIELDS = frozenset(
     {"schemaVersion", "userMessageIndex", "assistantMessageIndex"}
 )
@@ -120,9 +137,12 @@ class TurnRecord:
     error_code: str | None
     commit_marker: dict[str, int] | None
     owner_id: str
+    curator_outbox_version: int | None = None
+    curator_receipt_recorded: bool = False
+    curator_receipt_settled: bool = False
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "schemaVersion": self.schema_version,
             "turnId": self.turn_id,
             "workspaceId": self.workspace_id,
@@ -138,6 +158,13 @@ class TurnRecord:
             "commitMarker": self.commit_marker,
             "ownerId": self.owner_id,
         }
+        if self.curator_outbox_version is not None:
+            payload.update(
+                curatorOutboxVersion=_CURATOR_OUTBOX_VERSION,
+                curatorReceiptRecorded=self.curator_receipt_recorded,
+                curatorReceiptSettled=self.curator_receipt_settled,
+            )
+        return payload
 
 
 @dataclass(frozen=True, slots=True)
@@ -179,8 +206,19 @@ class TurnDeletionSnapshot:
     diagnostics: tuple[str, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class TurnCuratorReceiptScan:
+    """Bounded, content-free recovery view for Dashboard completion outboxes."""
+
+    items: tuple[TurnRecord, ...]
+    exhaustive: bool
+    diagnostics: tuple[str, ...] = ()
+
+
 _ROOT_LOCKS_GUARD = threading.Lock()
 _ROOT_LOCKS: dict[str, threading.RLock] = {}
+_LEASE_FDS_GUARD = threading.Lock()
+_LEASE_FDS: set[int] = set()
 
 
 def _root_lock(path: Path) -> threading.RLock:
@@ -191,6 +229,45 @@ def _root_lock(path: Path) -> threading.RLock:
             lock = threading.RLock()
             _ROOT_LOCKS[key] = lock
         return lock
+
+
+def _reset_execution_leases_after_fork() -> None:
+    """A child must not keep a parent Gateway's Turn lease alive."""
+
+    global _LEASE_FDS_GUARD, _LEASE_FDS
+    for descriptor in tuple(_LEASE_FDS):
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
+    _LEASE_FDS_GUARD = threading.Lock()
+    _LEASE_FDS = set()
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_reset_execution_leases_after_fork)
+
+
+def _curator_delivery_fenced(method):
+    """Serialize receipt state changes across TurnStore processes."""
+
+    @wraps(method)
+    def wrapped(self, *args: Any, **kwargs: Any):
+        with self._curator_delivery_coordinator.transaction():
+            return method(self, *args, **kwargs)
+
+    return wrapped
+
+
+def _turn_state_fenced(method):
+    """Serialize Turn read-modify-write operations across Gateway processes."""
+
+    @wraps(method)
+    def wrapped(self, *args: Any, **kwargs: Any):
+        with self._turn_state_coordinator.transaction():
+            return method(self, *args, **kwargs)
+
+    return wrapped
 
 
 def _platform_name() -> str:
@@ -285,8 +362,35 @@ def _validate_marker(value: object) -> dict[str, int] | None:
 
 
 def _record_from_dict(value: object, *, expected_turn_id: str) -> TurnRecord:
-    if not isinstance(value, dict) or set(value) != _RECORD_FIELDS:
+    if not isinstance(value, dict) or frozenset(value) not in {
+        _LEGACY_RECORD_FIELDS,
+        _ONE_PHASE_RECORD_FIELDS,
+        _TWO_PHASE_RECORD_FIELDS,
+        _RECORD_FIELDS,
+    }:
         raise TurnStoreCorruptError("turn record is invalid")
+    record_fields = frozenset(value)
+    if record_fields == _LEGACY_RECORD_FIELDS:
+        curator_outbox_version = None
+    elif record_fields == _ONE_PHASE_RECORD_FIELDS:
+        curator_outbox_version = 1
+    else:
+        curator_outbox_version = _CURATOR_OUTBOX_VERSION
+    curator_receipt_recorded = value.get(
+        "curatorReceiptRecorded",
+        False,
+    )
+    # The earlier one-bit protocol used ``recorded`` as its terminal state and
+    # never created a scheduler pin. Treat those records as already settled;
+    # current writes always include the explicit second bit.
+    curator_receipt_settled = value.get(
+        "curatorReceiptSettled",
+        curator_receipt_recorded,
+    )
+    stored_outbox_version = value.get(
+        "curatorOutboxVersion",
+        curator_outbox_version,
+    )
     schema_version = value.get("schemaVersion")
     turn_id = value.get("turnId")
     workspace_id = value.get("workspaceId")
@@ -325,6 +429,16 @@ def _record_from_dict(value: object, *, expected_turn_id: str) -> TurnRecord:
         and (not isinstance(error_code, str) or error_code not in TURN_ERROR_CODES)
         or not isinstance(owner_id, str)
         or _OWNER_ID_PATTERN.fullmatch(owner_id) is None
+        or not isinstance(curator_receipt_recorded, bool)
+        or not isinstance(curator_receipt_settled, bool)
+        or curator_receipt_settled and not curator_receipt_recorded
+        or (
+            record_fields == _RECORD_FIELDS
+            and (
+                isinstance(stored_outbox_version, bool)
+                or stored_outbox_version != _CURATOR_OUTBOX_VERSION
+            )
+        )
     ):
         raise TurnStoreCorruptError("turn record is invalid")
     created_at = value.get("createdAt")
@@ -357,6 +471,15 @@ def _record_from_dict(value: object, *, expected_turn_id: str) -> TurnRecord:
         raise TurnStoreCorruptError("turn record is invalid")
     if (session_id is None) != (created_session is None):
         raise TurnStoreCorruptError("turn record is invalid")
+    if (
+        curator_receipt_recorded
+        and status_value not in {"committing", "completed"}
+        and not (
+            curator_receipt_settled
+            and status_value in TERMINAL_TURN_STATUSES
+        )
+    ):
+        raise TurnStoreCorruptError("turn record is invalid")
     return TurnRecord(
         schema_version=TURN_STORE_SCHEMA_VERSION,
         turn_id=turn_id,
@@ -372,6 +495,9 @@ def _record_from_dict(value: object, *, expected_turn_id: str) -> TurnRecord:
         error_code=error_code,
         commit_marker=marker,
         owner_id=owner_id,
+        curator_outbox_version=curator_outbox_version,
+        curator_receipt_recorded=curator_receipt_recorded,
+        curator_receipt_settled=curator_receipt_settled,
     )
 
 
@@ -419,11 +545,145 @@ class ConversationTurnStore:
         self.scan_limit = scan_limit
         self.terminal_max_age = terminal_max_age
         self._lock = _root_lock(self._turns_root)
+        self._curator_delivery_coordinator = MemoryStoreCoordinator(
+            self.workspace / ".mini-code-memory",
+            lock_name=".curator-delivery.lock",
+        )
+        self._commit_coordinator = MemoryStoreCoordinator(
+            self.workspace / ".mini-code-memory",
+            lock_name=".conversation-commit.lock",
+        )
+        self._turn_state_coordinator = MemoryStoreCoordinator(
+            self.workspace / ".mini-code-memory",
+            lock_name=".conversation-turn-state.lock",
+        )
         self._active_turns: set[str] = set()
         self._cancellations = TurnCancellationRegistry()
+        self._lease_pid = os.getpid()
+        self._execution_lease_fds: dict[str, int] = {}
 
     def record_path(self, turn_id: str) -> Path:
         return self._turns_root / f"{validate_turn_id(turn_id)}.json"
+
+    def _lease_path(self, turn_id: str) -> Path:
+        return self._turns_root / f".{validate_turn_id(turn_id)}.lease"
+
+    def _refresh_lease_process(self) -> None:
+        if self._lease_pid == os.getpid():
+            return
+        self._execution_lease_fds.clear()
+        self._active_turns.clear()
+        self._lease_pid = os.getpid()
+
+    def _open_execution_lease(self, turn_id: str) -> int:
+        self._ensure_storage_root()
+        path = self._lease_path(turn_id)
+        flags = os.O_RDWR | os.O_CREAT
+        flags |= getattr(os, "O_CLOEXEC", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+        descriptor = -1
+        try:
+            descriptor = os.open(path, flags, 0o600)
+            descriptor_stat = os.fstat(descriptor)
+            path_stat = os.lstat(path)
+            if (
+                not stat.S_ISREG(descriptor_stat.st_mode)
+                or not stat.S_ISREG(path_stat.st_mode)
+                or descriptor_stat.st_dev != path_stat.st_dev
+                or descriptor_stat.st_ino != path_stat.st_ino
+            ):
+                raise OSError("unsafe Turn lease")
+            prepare_advisory_lock_file(descriptor, mode=0o600)
+            return descriptor
+        except OSError as error:
+            if descriptor >= 0:
+                try:
+                    os.close(descriptor)
+                except OSError:
+                    pass
+            raise TurnStoreError("turn store unavailable") from error
+
+    def _try_acquire_execution_lease_locked(self, turn_id: str) -> bool:
+        self._refresh_lease_process()
+        if turn_id in self._execution_lease_fds:
+            return True
+        descriptor = self._open_execution_lease(turn_id)
+        try:
+            if not acquire_advisory_lock(descriptor):
+                os.close(descriptor)
+                return False
+        except OSError as error:
+            os.close(descriptor)
+            raise TurnStoreError("turn store unavailable") from error
+        self._execution_lease_fds[turn_id] = descriptor
+        with _LEASE_FDS_GUARD:
+            _LEASE_FDS.add(descriptor)
+        return True
+
+    def _execution_lease_is_held_locked(self, turn_id: str) -> bool:
+        self._refresh_lease_process()
+        if turn_id in self._execution_lease_fds:
+            return True
+        descriptor = self._open_execution_lease(turn_id)
+        acquired = False
+        try:
+            try:
+                acquired = acquire_advisory_lock(descriptor)
+            except OSError as error:
+                raise TurnStoreError("turn store unavailable") from error
+            if not acquired:
+                return True
+            release_advisory_lock(descriptor)
+        finally:
+            os.close(descriptor)
+        # Probing an abandoned Turn may have created the empty lease artifact.
+        # The state fence prevents another cooperating Gateway from acquiring
+        # it between the successful probe and cleanup.
+        if acquired:
+            try:
+                self._lease_path(turn_id).unlink()
+            except FileNotFoundError:
+                pass
+            except OSError:
+                pass
+        return False
+
+    def _release_execution_lease_locked(self, turn_id: str) -> None:
+        self._refresh_lease_process()
+        descriptor = self._execution_lease_fds.pop(turn_id, None)
+        if descriptor is None:
+            return
+        with _LEASE_FDS_GUARD:
+            _LEASE_FDS.discard(descriptor)
+        try:
+            release_advisory_lock(descriptor)
+        except OSError:
+            pass
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
+        try:
+            self._lease_path(turn_id).unlink()
+        except FileNotFoundError:
+            pass
+        except OSError:
+            # The zero-content lock artifact is harmless and can be reused by
+            # a stale-owner recovery after restart.
+            pass
+
+    def _owns_execution_lease_locked(self, turn_id: str) -> bool:
+        """Return whether this Store instance owns the live Turn lease."""
+
+        self._refresh_lease_process()
+        return turn_id in self._execution_lease_fds
+
+    @contextmanager
+    def commit_fence(self) -> Iterator[None]:
+        """Fence Session CAS publication against foreign Turn recovery."""
+
+        with self._commit_coordinator.transaction():
+            yield
 
     def _ensure_storage_root(self) -> None:
         try:
@@ -572,10 +832,17 @@ class ConversationTurnStore:
                     raise OSError("turn root escapes data directory")
                 with os.scandir(root) as scanner:
                     entries = []
-                    for index, entry in enumerate(scanner):
-                        if index >= self.scan_limit:
+                    examined = 0
+                    for entry in scanner:
+                        if re.fullmatch(
+                            r"\.turn_[0-9a-f]{32}\.lease",
+                            entry.name,
+                        ) is not None:
+                            continue
+                        if examined >= self.scan_limit:
                             diagnostics.add("turn_scan_limited")
                             break
+                        examined += 1
                         entries.append(entry.name)
             except OSError:
                 return TurnDeletionSnapshot((), (), ("turn_scan_unavailable",))
@@ -593,7 +860,16 @@ class ConversationTurnStore:
                     continue
                 if record is None or record.session_id != session_id:
                     continue
-                if record.status in TERMINAL_TURN_STATUSES:
+                if (
+                    record.status == "completed"
+                    and record.run_id is not None
+                    and record.curator_outbox_version is not None
+                    and not record.curator_receipt_settled
+                ):
+                    # The Turn is a durable producer outbox until scheduler
+                    # pin release has itself been durably acknowledged.
+                    active.append(record)
+                elif record.status in TERMINAL_TURN_STATUSES:
                     terminal.append(record)
                 else:
                     active.append(record)
@@ -603,6 +879,7 @@ class ConversationTurnStore:
             tuple(sorted(diagnostics)),
         )
 
+    @_turn_state_fenced
     def delete_terminal_for_session(self, session_id: str) -> int:
         """Delete exactly the currently terminal Turns linked to one Session."""
         with self._lock:
@@ -624,6 +901,11 @@ class ConversationTurnStore:
                     ):
                         raise OSError("turn changed during deletion")
                     path.unlink()
+                    self._release_execution_lease_locked(record.turn_id)
+                    try:
+                        self._lease_path(record.turn_id).unlink()
+                    except OSError:
+                        pass
                     self._active_turns.discard(record.turn_id)
                     self._cancellations.release(record.turn_id)
                     deleted += 1
@@ -633,6 +915,7 @@ class ConversationTurnStore:
                     raise TurnStoreError("turn deletion unavailable") from error
             return deleted
 
+    @_turn_state_fenced
     def claim(self, *, turn_id: str, fingerprint: str) -> TurnClaim:
         validated = validate_turn_id(turn_id)
         if not isinstance(fingerprint, str) or _FINGERPRINT_PATTERN.fullmatch(fingerprint) is None:
@@ -652,7 +935,14 @@ class ConversationTurnStore:
                     and validated in self._active_turns
                 ):
                     return TurnClaim("in_progress", existing)
+                if self._execution_lease_is_held_locked(validated):
+                    return TurnClaim("in_progress", existing)
                 return TurnClaim("recover", existing)
+            if not self._try_acquire_execution_lease_locked(validated):
+                # No record is visible while holding the Turn-state fence, so
+                # a held lease belongs to an interrupted claim publication.
+                # Fail closed rather than starting a second execution.
+                raise TurnStoreError("turn store unavailable")
             now = _timestamp(self._clock())
             record = TurnRecord(
                 schema_version=TURN_STORE_SCHEMA_VERSION,
@@ -669,8 +959,15 @@ class ConversationTurnStore:
                 error_code=None,
                 commit_marker=None,
                 owner_id=self.owner_id,
+                curator_outbox_version=_CURATOR_OUTBOX_VERSION,
+                curator_receipt_recorded=False,
+                curator_receipt_settled=False,
             )
-            self._write(record)
+            try:
+                self._write(record)
+            except BaseException:
+                self._release_execution_lease_locked(validated)
+                raise
             self._active_turns.add(validated)
             self._enforce_retention(current_turn_id=validated)
             return TurnClaim("claimed", record)
@@ -680,9 +977,25 @@ class ConversationTurnStore:
         with self._lock:
             return validated in self._active_turns
 
-    def release_claim(self, turn_id: str) -> None:
+    @_turn_state_fenced
+    def has_live_owner(self, turn_id: str) -> bool:
+        """Return whether a nonterminal Turn still owns an OS-backed lease."""
+
         validated = validate_turn_id(turn_id)
         with self._lock:
+            record = self._read(validated)
+            if (
+                record is None
+                or record.workspace_id != self.workspace_id
+                or record.status in TERMINAL_TURN_STATUSES
+            ):
+                return False
+            return self._execution_lease_is_held_locked(validated)
+
+    def release_claim(self, turn_id: str) -> None:
+        validated = validate_turn_id(turn_id)
+        with self._turn_state_coordinator.transaction(), self._lock:
+            self._release_execution_lease_locked(validated)
             self._active_turns.discard(validated)
             self._cancellations.release(validated)
 
@@ -702,7 +1015,10 @@ class ConversationTurnStore:
         record = self._read(validate_turn_id(turn_id))
         if record is None or record.workspace_id != self.workspace_id:
             raise TurnStoreError("turn store unavailable")
-        if record.owner_id != self.owner_id:
+        if (
+            record.owner_id != self.owner_id
+            or not self._owns_execution_lease_locked(record.turn_id)
+        ):
             raise TurnStoreError("turn store unavailable")
         return record
 
@@ -715,10 +1031,12 @@ class ConversationTurnStore:
             error_code="turn_cancelled",
         )
         self._write(updated)
+        self._release_execution_lease_locked(record.turn_id)
         self._active_turns.discard(record.turn_id)
         self._cancellations.release(record.turn_id)
         return updated
 
+    @_turn_state_fenced
     def mark_running(self, turn_id: str) -> TurnStartDecision:
         """Atomically start execution or finish a cancellation that won first."""
         with self._lock:
@@ -736,6 +1054,7 @@ class ConversationTurnStore:
             self._write(updated)
             return TurnStartDecision(updated, True)
 
+    @_turn_state_fenced
     def request_cancel(self, turn_id: str) -> TurnCancellationDecision:
         """Persist an idempotent request; committing and terminal states win."""
         validated = validate_turn_id(turn_id)
@@ -757,6 +1076,7 @@ class ConversationTurnStore:
             self._cancellations.request(validated)
             return TurnCancellationDecision(updated, True)
 
+    @_turn_state_fenced
     def begin_commit(self, turn_id: str) -> TurnCommitDecision:
         """Atomically decide whether completion or cancellation owns the Turn."""
         with self._lock:
@@ -794,7 +1114,7 @@ class ConversationTurnStore:
                 session_id,
                 data_dir=self.data_dir,
             ):
-                with self._lock:
+                with self._turn_state_coordinator.transaction(), self._lock:
                     record = self._owned_record(turn_id)
                     if (
                         record.status not in {"running", "cancel_requested"}
@@ -812,6 +1132,7 @@ class ConversationTurnStore:
         except DeletionStoreError as error:
             raise TurnStoreError("turn association unavailable") from error
 
+    @_turn_state_fenced
     def attach_run(self, turn_id: str, *, run_id: str | None) -> TurnRecord:
         if run_id is not None and (
             not isinstance(run_id, str) or _RUN_ID_PATTERN.fullmatch(run_id) is None
@@ -827,6 +1148,8 @@ class ConversationTurnStore:
             self._write(updated)
             return updated
 
+    @_curator_delivery_fenced
+    @_turn_state_fenced
     def mark_completed(
         self,
         turn_id: str,
@@ -836,8 +1159,20 @@ class ConversationTurnStore:
         marker = _validate_marker(commit_marker)
         if marker is None:
             raise ValueError("invalid commit marker")
+        validated = validate_turn_id(turn_id)
         with self._lock:
-            record = self._owned_record(turn_id)
+            record = self._read(validated)
+            if record is None or record.workspace_id != self.workspace_id:
+                raise TurnStoreError("turn store unavailable")
+            if record.status == "completed":
+                if record.session_id is None or record.commit_marker != marker:
+                    raise TurnStoreError("invalid turn transition")
+                self._release_execution_lease_locked(validated)
+                self._active_turns.discard(validated)
+                self._cancellations.release(validated)
+                return record
+            if record.owner_id != self.owner_id:
+                raise TurnStoreError("turn store unavailable")
             if record.status != "committing" or record.session_id is None:
                 raise TurnStoreError("invalid turn transition")
             now = _timestamp(self._clock())
@@ -850,10 +1185,211 @@ class ConversationTurnStore:
                 commit_marker=marker,
             )
             self._write(updated)
-            self._active_turns.discard(turn_id)
-            self._cancellations.release(turn_id)
+            self._release_execution_lease_locked(validated)
+            self._active_turns.discard(validated)
+            self._cancellations.release(validated)
             return updated
 
+    @_curator_delivery_fenced
+    @_turn_state_fenced
+    def mark_curator_receipt_recorded(self, turn_id: str) -> TurnRecord:
+        """Durably acknowledge delivery of one committed Turn's receipt.
+
+        The receipt contains no conversation content and may be replayed by a
+        later process after scheduler delivery is proven under the shared
+        delivery fence.
+        """
+
+        validated = validate_turn_id(turn_id)
+        with self._lock:
+            record = self._read(validated)
+            if (
+                record is None
+                or record.workspace_id != self.workspace_id
+                or record.status not in {"committing", "completed"}
+                or record.session_id is None
+                or record.run_id is None
+                or record.curator_outbox_version is None
+            ):
+                raise TurnStoreError("invalid turn transition")
+            if record.curator_receipt_recorded:
+                return record
+            updated = replace(
+                record,
+                owner_id=(
+                    record.owner_id
+                    if record.status == "committing"
+                    else self.owner_id
+                ),
+                curator_receipt_recorded=True,
+                curator_receipt_settled=False,
+                updated_at=_timestamp(self._clock()),
+            )
+            self._write(updated)
+            return updated
+
+    @_curator_delivery_fenced
+    @_turn_state_fenced
+    def mark_curator_receipt_settled(self, turn_id: str) -> TurnRecord:
+        """Make an acknowledged receipt deletable after scheduler pin release."""
+
+        validated = validate_turn_id(turn_id)
+        with self._lock:
+            record = self._read(validated)
+            if (
+                record is None
+                or record.workspace_id != self.workspace_id
+                or record.status not in {"committing", "completed"}
+                or record.session_id is None
+                or record.run_id is None
+                or record.curator_outbox_version is None
+                or not record.curator_receipt_recorded
+            ):
+                raise TurnStoreError("invalid turn transition")
+            if record.curator_receipt_settled:
+                return record
+            updated = replace(
+                record,
+                owner_id=(
+                    record.owner_id
+                    if record.status == "committing"
+                    else self.owner_id
+                ),
+                curator_receipt_settled=True,
+                updated_at=_timestamp(self._clock()),
+            )
+            self._write(updated)
+            return updated
+
+    @_turn_state_fenced
+    def curator_receipt_recovery_records(
+        self,
+        *,
+        limit: int = 1_000,
+        include_settled_committing: bool = False,
+    ) -> TurnCuratorReceiptScan:
+        """Snapshot Turns needing outbox or Session-commit recovery.
+
+        Settled ``committing`` Turns are normally invisible to the shared
+        outbox reconciler because their scheduler handshake is complete.  A
+        Conversation owner may opt into them so an authoritative Session
+        marker can still finish the independent Turn state transition.
+        """
+
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not 1 <= limit <= 1_000
+        ):
+            raise ValueError("invalid curator receipt limit")
+        if not isinstance(include_settled_committing, bool):
+            raise TypeError("include_settled_committing must be a boolean")
+        with self._lock:
+            if not self._turns_root.exists():
+                return TurnCuratorReceiptScan((), True)
+            self._ensure_storage_root()
+            diagnostics: set[str] = set()
+            exhaustive = True
+            try:
+                if self._turns_root.is_symlink():
+                    raise OSError("unsafe turn root")
+                root = self._turns_root.resolve(strict=True)
+                if not root.is_relative_to(self._data_root):
+                    raise OSError("turn root escapes data directory")
+                with os.scandir(root) as scanner:
+                    names: list[str] = []
+                    examined = 0
+                    for entry in scanner:
+                        if re.fullmatch(
+                            r"\.turn_[0-9a-f]{32}\.lease",
+                            entry.name,
+                        ) is not None:
+                            continue
+                        if examined >= self.scan_limit:
+                            diagnostics.add("turn_scan_limited")
+                            exhaustive = False
+                            break
+                        examined += 1
+                        if re.fullmatch(
+                            r"turn_[0-9a-f]{32}\.json",
+                            entry.name,
+                        ) is None:
+                            continue
+                        try:
+                            if entry.is_symlink() or not entry.is_file(
+                                follow_symlinks=False
+                            ):
+                                diagnostics.add("turn_record_invalid")
+                                exhaustive = False
+                                continue
+                        except OSError:
+                            diagnostics.add("turn_record_invalid")
+                            exhaustive = False
+                            continue
+                        names.append(entry.name[:-5])
+            except OSError as error:
+                raise TurnStoreError("turn store unavailable") from error
+            records: list[TurnRecord] = []
+            for candidate_turn_id in sorted(names):
+                try:
+                    record = self._read(candidate_turn_id)
+                except TurnStoreError:
+                    diagnostics.add("turn_record_invalid")
+                    exhaustive = False
+                    continue
+                if (
+                    record is not None
+                    and record.status in {"committing", "completed"}
+                    and record.run_id is not None
+                    and record.curator_outbox_version is not None
+                    and (
+                        not record.curator_receipt_settled
+                        or (
+                            include_settled_committing
+                            and record.status == "committing"
+                        )
+                    )
+                ):
+                    if (
+                        record.status == "committing"
+                        and not self._owns_execution_lease_locked(record.turn_id)
+                        and self._execution_lease_is_held_locked(record.turn_id)
+                    ):
+                        # A different Gateway still owns execution.  The
+                        # commit fence only serializes Session publication; it
+                        # does not prove that an owner waiting to enter that
+                        # fence has died.  Leave live work to its owner.
+                        continue
+                    if (
+                        record.status == "committing"
+                        and self._owns_execution_lease_locked(record.turn_id)
+                    ):
+                        continue
+                    records.append(record)
+            records.sort(
+                key=lambda record: (
+                    (
+                        0
+                        if record.curator_receipt_recorded
+                        else 1
+                        if record.status == "completed"
+                        else 2
+                    ),
+                    _parse_timestamp(record.updated_at),
+                    record.turn_id,
+                )
+            )
+            if len(records) > limit:
+                exhaustive = False
+                diagnostics.add("curator_receipt_page_limited")
+            return TurnCuratorReceiptScan(
+                tuple(records[:limit]),
+                exhaustive,
+                tuple(sorted(diagnostics)),
+            )
+
+    @_curator_delivery_fenced
+    @_turn_state_fenced
     def recover_completed(
         self,
         turn_id: str,
@@ -865,6 +1401,17 @@ class ConversationTurnStore:
             raise ValueError("invalid commit marker")
         with self._lock:
             record = self._read(validate_turn_id(turn_id))
+            if (
+                record is not None
+                and record.workspace_id == self.workspace_id
+                and record.status == "completed"
+            ):
+                if record.session_id is None or record.commit_marker != marker:
+                    raise TurnStoreError("invalid turn transition")
+                self._release_execution_lease_locked(turn_id)
+                self._active_turns.discard(turn_id)
+                self._cancellations.release(turn_id)
+                return record
             if (
                 record is None
                 or record.workspace_id != self.workspace_id
@@ -883,10 +1430,13 @@ class ConversationTurnStore:
                 commit_marker=marker,
             )
             self._write(updated)
+            self._release_execution_lease_locked(turn_id)
             self._active_turns.discard(turn_id)
             self._cancellations.release(turn_id)
             return updated
 
+    @_curator_delivery_fenced
+    @_turn_state_fenced
     def mark_failed(self, turn_id: str, *, error_code: str) -> TurnFailureDecision:
         """Atomically record failure unless a persisted cancellation won first."""
         if error_code not in TURN_ERROR_CODES or error_code == "turn_interrupted":
@@ -898,6 +1448,15 @@ class ConversationTurnStore:
                     self._mark_cancelled_locked(record),
                     False,
                 )
+            if (
+                record.status == "committing"
+                and record.curator_receipt_recorded
+                and not record.curator_receipt_settled
+            ):
+                # ``recorded`` proves scheduler delivery and therefore an
+                # outstanding pin.  Only the receipt reconciler may first
+                # release that pin and make this Turn safe to terminalize.
+                raise TurnStoreError("invalid turn transition")
             if record.status not in {"accepted", "running", "committing"}:
                 raise TurnStoreError("invalid turn transition")
             updated = replace(
@@ -907,10 +1466,13 @@ class ConversationTurnStore:
                 error_code=error_code,
             )
             self._write(updated)
+            self._release_execution_lease_locked(turn_id)
             self._active_turns.discard(turn_id)
             self._cancellations.release(turn_id)
             return TurnFailureDecision(updated, True)
 
+    @_curator_delivery_fenced
+    @_turn_state_fenced
     def mark_interrupted(self, turn_id: str) -> TurnRecord:
         with self._lock:
             record = self._read(validate_turn_id(turn_id))
@@ -918,6 +1480,15 @@ class ConversationTurnStore:
                 record is None
                 or record.workspace_id != self.workspace_id
                 or record.status not in {"accepted", "running", "committing"}
+                or (
+                    record.status == "committing"
+                    and record.curator_receipt_recorded
+                    and not record.curator_receipt_settled
+                )
+                or (
+                    not self._owns_execution_lease_locked(turn_id)
+                    and self._execution_lease_is_held_locked(turn_id)
+                )
             ):
                 raise TurnStoreError("invalid turn transition")
             updated = replace(
@@ -928,10 +1499,12 @@ class ConversationTurnStore:
                 error_code="turn_interrupted",
             )
             self._write(updated)
+            self._release_execution_lease_locked(turn_id)
             self._active_turns.discard(turn_id)
             self._cancellations.release(turn_id)
             return updated
 
+    @_turn_state_fenced
     def mark_cancelled(self, turn_id: str) -> TurnRecord:
         with self._lock:
             record = self._read(validate_turn_id(turn_id))
@@ -939,6 +1512,10 @@ class ConversationTurnStore:
                 record is None
                 or record.workspace_id != self.workspace_id
                 or record.status != "cancel_requested"
+                or (
+                    not self._owns_execution_lease_locked(turn_id)
+                    and self._execution_lease_is_held_locked(turn_id)
+                )
             ):
                 raise TurnStoreError("invalid turn transition")
             return self._mark_cancelled_locked(record)
@@ -948,12 +1525,18 @@ class ConversationTurnStore:
         try:
             entries: list[os.DirEntry[str]] = []
             with os.scandir(self._turns_root) as scanner:
-                for index, entry in enumerate(scanner):
-                    if index >= self.scan_limit:
+                for entry in scanner:
+                    if re.fullmatch(
+                        r"\.turn_[0-9a-f]{32}\.lease",
+                        entry.name,
+                    ) is not None:
+                        continue
+                    if len(entries) >= self.scan_limit:
                         return
                     entries.append(entry)
             now = self._clock()
             records: list[tuple[datetime, Path, TurnRecord]] = []
+            record_entry_count = 0
             for entry in entries:
                 path = Path(entry.path)
                 if entry.name.startswith(".turn-") and entry.name.endswith(".tmp"):
@@ -970,6 +1553,7 @@ class ConversationTurnStore:
                 match = re.fullmatch(r"(turn_[0-9a-f]{32})\.json", entry.name)
                 if match is None or entry.is_symlink() or not entry.is_file(follow_symlinks=False):
                     continue
+                record_entry_count += 1
                 try:
                     record = self._read(match.group(1))
                     if record is not None and record.status in TERMINAL_TURN_STATUSES:
@@ -977,14 +1561,28 @@ class ConversationTurnStore:
                 except TurnStoreError:
                     continue
             records.sort(key=lambda item: item[0])
-            excess = max(0, len(entries) - self.max_records)
+            excess = max(0, record_entry_count - self.max_records)
             cutoff = now - self.terminal_max_age
             for updated, path, record in records:
                 if record.turn_id == current_turn_id:
                     continue
+                # This completed Turn is the durable producer outbox while the
+                # curator scheduler is unavailable.  Silent retention would
+                # turn a transient scheduling failure into permanent debt loss.
+                if (
+                    record.status == "completed"
+                    and record.run_id is not None
+                    and record.curator_outbox_version is not None
+                    and not record.curator_receipt_settled
+                ):
+                    continue
                 if updated < cutoff or excess > 0:
                     try:
                         path.unlink()
+                        try:
+                            self._lease_path(record.turn_id).unlink()
+                        except OSError:
+                            pass
                         excess = max(0, excess - 1)
                     except OSError:
                         pass
@@ -1001,6 +1599,7 @@ __all__ = [
     "TurnClaim",
     "TurnCancellationDecision",
     "TurnCommitDecision",
+    "TurnCuratorReceiptScan",
     "TurnFailureDecision",
     "TurnDeletionSnapshot",
     "TurnStartDecision",

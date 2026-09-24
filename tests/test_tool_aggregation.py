@@ -453,6 +453,33 @@ def test_model_failure_can_recover_without_becoming_run_failure() -> None:
     ]
 
 
+def test_routing_embedding_budget_failure_is_valid_model_evidence() -> None:
+    aggregate = aggregate_run_failures(
+        [
+            _run_event("run.queued"),
+            _model_event(
+                "model.started",
+                "a",
+                purpose="skill-routing",
+            ),
+            _model_event(
+                "model.failed",
+                "a",
+                purpose="skill-routing",
+                failureKind="budget_exhausted",
+            ),
+        ],
+        run_status="queued",
+    )
+
+    metric = project_failure_metric(aggregate)
+    assert metric["value"]["modelFailures"] == 1
+    assert metric["coverage"]["invalidEvents"] == 0
+    assert project_failure_breakdown(aggregate)["modelFailureKinds"] == [
+        {"failureKind": "budget_exhausted", "attempts": 1}
+    ]
+
+
 def test_terminal_failure_interruption_and_cancellation_stay_separate() -> None:
     failed = aggregate_run_failures(
         [_run_event("run.queued"), _run_event("run.started"), _run_event("run.failed")],

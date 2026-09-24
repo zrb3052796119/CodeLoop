@@ -53,7 +53,9 @@ def _request(
     *,
     kind: str = "change",
     risk: str = "low",
-    complex: bool = False,
+    # Default True keeps this fixture on the full reviewed chain; tests for
+    # the scoped EXECUTOR->VERIFIER route opt out with complex=False.
+    complex: bool = True,
 ):
     return {
         "requestVersion": 1,
@@ -148,21 +150,20 @@ def _verification_result(request):
     }
 
 
-def _write_analyst_result(
+def _analyst_result_document(
     input_data,
-    context,
     *,
     prepare_change: bool,
     unknowns: list[str] | None = None,
     risks: list[dict] | None = None,
     step_allowed_paths: list[str] | None = None,
-) -> None:
+) -> dict:
     assignment_match = re.search(
         r'"assignmentId":\s*"([^"]+)"',
         input_data["prompt"],
     )
     assert assignment_match is not None
-    result = {
+    return {
         "resultVersion": 1,
         "assignmentId": assignment_match.group(1),
         "status": "completed",
@@ -203,9 +204,28 @@ def _write_analyst_result(
         },
         "ballot": None,
     }
+
+
+def _write_analyst_result(
+    input_data,
+    context,
+    *,
+    prepare_change: bool,
+    unknowns: list[str] | None = None,
+    risks: list[dict] | None = None,
+    step_allowed_paths: list[str] | None = None,
+) -> None:
     context._subagent_mailbox.write(
         input_data["_result_key"],
-        json.dumps(result),
+        json.dumps(
+            _analyst_result_document(
+                input_data,
+                prepare_change=prepare_change,
+                unknowns=unknowns,
+                risks=risks,
+                step_allowed_paths=step_allowed_paths,
+            )
+        ),
         author="analyst",
     )
 
@@ -215,6 +235,8 @@ def _worker_role(input_data: dict) -> str:
 
     result_key = input_data.get("_result_key")
     prompt = input_data["prompt"]
+    if isinstance(result_key, str) and '"role": "adjudicator"' in prompt:
+        return "adjudicator"
     if isinstance(result_key, str) and '"role": "analyst"' in prompt:
         return "analyst"
     if isinstance(result_key, str) and '"role": "reviewer"' in prompt:
@@ -222,6 +244,47 @@ def _worker_role(input_data: dict) -> str:
     if isinstance(result_key, str) and '"role": "executor"' in prompt:
         return "executor"
     raise AssertionError("worker prompt did not carry one known locked role")
+
+
+def _write_adjudication_result(
+    input_data,
+    context,
+    *,
+    decision: str,
+) -> None:
+    assignment = _prompt_json(input_data["prompt"], "ASSIGNMENT")
+    package = _prompt_json(input_data["prompt"], "CONFLICT PACKAGE")
+    claims = package["claims"]
+    resolved = [
+        {
+            "claimId": claim["claimId"],
+            "resolution": (
+                "Selected: the frozen evidence supports this claim."
+                if claim["choice"] == "proceed_under_locked_classification"
+                and decision == "select_b"
+                or claim["choice"] == "stop_for_reclassification"
+                and decision == "select_a"
+                else "Rejected: the frozen evidence does not support it."
+            ),
+            "evidenceRefs": claim["evidenceRefs"][:1],
+        }
+        for claim in claims
+    ]
+    context._subagent_mailbox.write(
+        input_data["_result_key"],
+        json.dumps(
+            {
+                "resultVersion": 1,
+                "assignmentId": assignment["assignmentId"],
+                "conflictId": package["conflictId"],
+                "decision": decision,
+                "resolvedClaims": resolved if decision != "insufficient" else [],
+                "conditions": [],
+                "confidence": "high",
+            }
+        ),
+        author="adjudicator",
+    )
 
 
 def _review_patch_digest(prompt: str) -> str:
@@ -316,6 +379,7 @@ def _run(
     approval_provider=None,
     cancellation_token=None,
     central_enforced: bool = False,
+    commit_audit_waived: bool = False,
     task_deadline_monotonic: float | None = None,
 ):
     return task_module.task_tool.run(
@@ -332,6 +396,7 @@ def _run(
             _runtime={"model": "fake"},
             _event_sink=event_sink,
             _central_workflow_v2_enforced=central_enforced,
+            _workflow_commit_audit_waived=commit_audit_waived,
             _workflow_human_approval_provider=approval_provider,
             _cancellation_token=cancellation_token,
             _task_deadline_monotonic=task_deadline_monotonic,
@@ -340,7 +405,7 @@ def _run(
     )
 
 
-def test_public_low_scoped_change_retains_semantic_reviewer_gate(
+def test_public_low_scoped_change_takes_executor_verifier_route(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -350,7 +415,68 @@ def test_public_low_scoped_change_retains_semantic_reviewer_gate(
     def worker(input_data, context):
         role = _worker_role(input_data)
         roles.append(role)
+        assert role == "executor"
+        Path(context.cwd, "allowed.txt").write_text(
+            "after", encoding="utf-8"
+        )
+        _write_executor_declaration(input_data, context)
+        return ToolResult(ok=True, output=f"{role} completed")
+
+    def verifier(self, **request):
+        roles.append("verifier")
+        return _verification_result(request)
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(DeterministicVerifier, "run", verifier)
+
+    result = _run(
+        tmp_path,
+        _request(complex=False),
+        monkeypatch,
+        commit_audit_waived=True,
+    )
+
+    # The narrow, fully covered, low-risk scope skips Analyst and Reviewer;
+    # the deterministic Verifier gate still runs and the change still
+    # commits through the frozen-promotion path.
+    assert result.ok is True
+    assert roles == ["executor", "verifier"]
+    assert (tmp_path / "allowed.txt").read_text(encoding="utf-8") == "after"
+    projected = extract_subagent_result(result.output)
+    assert projected is not None
+    assert projected["files"] == [{"path": "allowed.txt", "action": "modified"}]
+    assert projected["verification"]["status"] == "passed"
+    trace = extract_scheduler_trace(result.output)
+    assert trace is not None
+    assert trace["ruleId"] == "route.scoped_change"
+    assert trace["status"] == "completed"
+    assert trace["committed"] is True
+    assert [
+        transition["stage"]
+        for transition in trace["transitions"]
+    ].count("analyst") == 0
+
+
+def test_executor_order_narrowing_write_scope_passes_sealed_audit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "allowed.txt").write_text("before", encoding="utf-8")
+    audits = []
+
+    class DurableSink:
+        def emit(self, *_args, **_kwargs):
+            return None
+
+        def record_scheduler_audit(self, audit):
+            audits.append(audit)
+            return True
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
         if role == "analyst":
+            # The Analyst locks an implementation order for "allowed.txt" only,
+            # a strict subset of the Assignment write scope.
             _write_analyst_result(input_data, context, prepare_change=True)
         elif role == "executor":
             Path(context.cwd, "allowed.txt").write_text(
@@ -363,31 +489,35 @@ def test_public_low_scoped_change_retains_semantic_reviewer_gate(
         return ToolResult(ok=True, output=f"{role} completed")
 
     def verifier(self, **request):
-        roles.append("verifier")
         return _verification_result(request)
 
     monkeypatch.setattr(task_module, "_run", worker)
     monkeypatch.setattr(DeterministicVerifier, "run", verifier)
 
-    result = _run(tmp_path, _request(), monkeypatch)
+    request = _request()
+    request["scope"]["writePaths"] = ["allowed.txt", "second.txt"]
+
+    result = _run(
+        tmp_path,
+        request,
+        monkeypatch,
+        event_sink=DurableSink(),
+        commit_audit_waived=True,
+    )
 
     assert result.ok is True
-    assert roles == ["analyst", "executor", "verifier", "reviewer"]
     assert (tmp_path / "allowed.txt").read_text(encoding="utf-8") == "after"
-    projected = extract_subagent_result(result.output)
-    assert projected is not None
-    assert projected["files"] == [{"path": "allowed.txt", "action": "modified"}]
-    assert projected["summary"] == (
-        "Central scheduler completed a frozen change set for 1 file(s)."
+    # The sealed audit must accept the narrowed order scope on replay: subset
+    # of the Assignment write scope is legal, only widening is rejected.
+    assert len(audits) == 1
+    replayed = project_scheduler_audit(
+        profile=audits[0].profile,
+        plan=audits[0].plan,
+        trace=audits[0].trace,
+        artifacts=audits[0].artifacts,
+        contract_mode="v2",
     )
-    assert projected["verification"]["status"] == "passed"
-    assert len(projected["verification"]["checks"]) == 1
-    assert projected["verification"]["checks"][0].startswith(
-        "check_tests: passed [artifact_verification_"
-    )
-    trace = extract_scheduler_trace(result.output)
-    assert trace is not None
-    assert trace["ruleId"] == "route.reviewed_change"
+    assert replayed.trace == audits[0].trace
 
 
 def test_nested_structured_workflow_keeps_scope_relative_to_invocation_cwd(
@@ -429,7 +559,12 @@ def test_nested_structured_workflow_keeps_scope_relative_to_invocation_cwd(
     monkeypatch.setattr(task_module, "_run", worker)
     monkeypatch.setattr(DeterministicVerifier, "run", verifier)
 
-    result = _run(nested, _request(), monkeypatch)
+    result = _run(
+        nested,
+        _request(),
+        monkeypatch,
+        commit_audit_waived=True,
+    )
 
     assert result.ok is True
     assert target.read_text(encoding="utf-8") == "after"
@@ -565,6 +700,7 @@ def test_host_bound_human_approval_resumes_the_full_high_risk_chain(
         monkeypatch,
         event_sink=AuditSink(),
         approval_provider=ApprovalProvider(),
+        commit_audit_waived=True,
     )
 
     assert result.ok is True
@@ -739,6 +875,7 @@ def test_human_approval_request_is_stable_across_wait_then_resume(
         _request(risk="high", complex=True),
         monkeypatch,
         approval_provider=provider,
+        commit_audit_waived=True,
     )
     assert waiting.awaitUser is True
     first_request_id = provider.requests[0]["approval_request_id"]
@@ -751,6 +888,7 @@ def test_human_approval_request_is_stable_across_wait_then_resume(
         _request(risk="high", complex=True),
         monkeypatch,
         approval_provider=provider,
+        commit_audit_waived=True,
     )
 
     assert resumed.ok is True
@@ -896,6 +1034,9 @@ def test_analyst_discovered_high_risk_requires_scheduler_reclassification(
     def worker(input_data, context):
         role = _worker_role(input_data)
         roles.append(role)
+        if role == "adjudicator":
+            _write_adjudication_result(input_data, context, decision="insufficient")
+            return ToolResult(ok=True, output="adjudication inconclusive")
         assert role == "analyst"
         _write_analyst_result(
             input_data,
@@ -916,12 +1057,151 @@ def test_analyst_discovered_high_risk_requires_scheduler_reclassification(
     result = _run(tmp_path, _request(risk="medium", complex=True), monkeypatch)
 
     assert result.ok is False
-    assert roles == ["analyst"]
+    assert roles == ["analyst", "adjudicator"]
     assert target.read_text(encoding="utf-8") == "before"
-    assert "analyst_risk_requires_reclassification" in result.output
     trace = extract_scheduler_trace(result.output)
     assert trace is not None
     assert trace["status"] == "failed"
+    assert trace["terminalReason"] == "adjudication_inconclusive"
+    assert [
+        transition["outcome"]
+        for transition in trace["transitions"]
+        if transition["stage"] == "analyst"
+    ] == ["dispatched", "blocked"]
+    assert [
+        transition["outcome"]
+        for transition in trace["transitions"]
+        if transition["stage"] == "adjudicator"
+    ] == ["dispatched", "rejected"]
+    blocked = [
+        transition
+        for transition in trace["transitions"]
+        if transition["stage"] == "analyst"
+        and transition["outcome"] == "blocked"
+    ]
+    assert blocked[0]["errorCode"] == "analyst_risk_requires_reclassification"
+
+
+def test_analyst_risk_conflict_adjudicated_continuation_resumes_the_locked_route(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+    roles: list[str] = []
+    audits = []
+
+    class AuditSink:
+        def emit(self, *_args, **_kwargs):
+            return None
+
+        def record_scheduler_audit(self, audit):
+            audits.append(audit)
+            return True
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
+        roles.append(role)
+        if role == "adjudicator":
+            _write_adjudication_result(input_data, context, decision="select_b")
+            return ToolResult(ok=True, output="locked profile stands")
+        if role == "analyst":
+            _write_analyst_result(
+                input_data,
+                context,
+                prepare_change=True,
+                risks=[
+                    {
+                        "severity": "high",
+                        "statement": "The declared medium-risk route is unsafe.",
+                        "evidenceRefs": ["claim_route"],
+                    }
+                ],
+            )
+            return ToolResult(ok=True, output="analysis raised the risk")
+        if role == "executor":
+            Path(context.cwd, "allowed.txt").write_text("after", encoding="utf-8")
+            _write_executor_declaration(input_data, context)
+            return ToolResult(ok=True, output="bounded execution complete")
+        _write_reviewer_result(input_data, context)
+        return ToolResult(ok=True, output="strict review approved")
+
+    def verifier(self, **request):
+        roles.append("verifier")
+        return _verification_result(request)
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(DeterministicVerifier, "run", verifier)
+
+    result = _run(
+        tmp_path,
+        _request(risk="medium", complex=True),
+        monkeypatch,
+        event_sink=AuditSink(),
+        commit_audit_waived=True,
+    )
+
+    assert result.ok is True
+    assert roles == ["analyst", "adjudicator", "executor", "verifier", "reviewer"]
+    assert target.read_text(encoding="utf-8") == "after"
+    trace = extract_scheduler_trace(result.output)
+    assert trace is not None
+    assert trace["status"] == "completed"
+    assert trace["committed"] is True
+    assert [
+        transition["outcome"]
+        for transition in trace["transitions"]
+        if transition["stage"] == "adjudicator"
+    ] == ["dispatched", "completed"]
+    analyst_outcomes = [
+        transition["outcome"]
+        for transition in trace["transitions"]
+        if transition["stage"] == "analyst"
+    ]
+    assert analyst_outcomes == ["dispatched", "blocked", "completed"]
+    assert len(audits) == 1
+
+
+def test_analyst_risk_conflict_adjudicated_stop_terminates_before_executor(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+    roles: list[str] = []
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
+        roles.append(role)
+        if role == "adjudicator":
+            _write_adjudication_result(input_data, context, decision="select_a")
+            return ToolResult(ok=True, output="reclassification required")
+        assert role == "analyst"
+        _write_analyst_result(
+            input_data,
+            context,
+            prepare_change=True,
+            risks=[
+                {
+                    "severity": "critical",
+                    "statement": "The route would delete production state.",
+                    "evidenceRefs": ["claim_route"],
+                }
+            ],
+        )
+        return ToolResult(ok=True, output="analysis raised the risk")
+
+    monkeypatch.setattr(task_module, "_run", worker)
+
+    result = _run(tmp_path, _request(risk="medium", complex=True), monkeypatch)
+
+    assert result.ok is False
+    assert roles == ["analyst", "adjudicator"]
+    assert target.read_text(encoding="utf-8") == "before"
+    trace = extract_scheduler_trace(result.output)
+    assert trace is not None
+    assert trace["status"] == "failed"
+    assert trace["terminalReason"] == "adjudicated_reclassification_required"
 
 
 def test_analyst_phase_failure_retries_with_exact_reason_not_port_failure(
@@ -1411,6 +1691,7 @@ def test_medium_complex_request_runs_strict_full_chain_in_role_order_and_commits
         _request(risk="medium", complex=True),
         monkeypatch,
         event_sink=AuditSink(),
+        commit_audit_waived=True,
     )
 
     assert result.ok is True
@@ -1500,6 +1781,7 @@ def test_offline_audit_replays_completed_authority_artifacts(
         _request(risk="medium", complex=True),
         monkeypatch,
         event_sink=AuditSink(),
+        commit_audit_waived=True,
     )
     assert result.ok is True
     audit = audits[0]
@@ -2112,7 +2394,7 @@ def test_failed_verifier_artifact_remains_replayable_and_tamper_evident(
 
     with pytest.raises(
         SchedulerAuditValidationError,
-        match="Verifier terminal artifact",
+        match="repair previous evidence|Verifier terminal artifact",
     ):
         project_scheduler_audit(
             profile=audit.profile,
@@ -2162,7 +2444,7 @@ def test_failed_verifier_artifact_remains_replayable_and_tamper_evident(
     )
     with pytest.raises(
         SchedulerAuditValidationError,
-        match="Verifier terminal cause",
+        match="repairable failed evidence|Verifier terminal cause",
     ):
         project_scheduler_audit(
             profile=audit.profile,
@@ -2391,6 +2673,7 @@ def test_committed_change_reports_audit_persistence_failure_without_lying(
         _request(risk="medium", complex=True),
         monkeypatch,
         event_sink=FailingAuditSink(),
+        commit_audit_waived=True,
     )
 
     assert result.ok is False
@@ -2460,6 +2743,60 @@ def test_production_commit_ready_persistence_failure_blocks_promotion(
     )
     assert f'"commitReadyStatus": "{expected_status}"' in result.output
     assert observed_parent_states == ([] if recorder_mode == "missing" else ["before"])
+
+
+def test_missing_commit_ready_recorder_fails_closed_without_enforced_mode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Non-production mode no longer commits with zero persisted audit: a
+    # missing commit-ready recorder refuses promotion by default, and only an
+    # explicit waiver reopens the lenient path.
+    target = tmp_path / "allowed.txt"
+    target.write_text("before", encoding="utf-8")
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
+        if role == "analyst":
+            _write_analyst_result(input_data, context, prepare_change=True)
+        elif role == "executor":
+            Path(context.cwd, "allowed.txt").write_text(
+                "after",
+                encoding="utf-8",
+            )
+            _write_executor_declaration(input_data, context)
+        else:
+            _write_reviewer_result(input_data, context)
+        return ToolResult(ok=True, output=f"{role} complete")
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(
+        DeterministicVerifier,
+        "run",
+        lambda self, **request: _verification_result(request),
+    )
+
+    result = _run(
+        tmp_path,
+        _request(risk="medium", complex=True),
+        monkeypatch,
+    )
+
+    assert result.ok is False
+    assert target.read_text(encoding="utf-8") == "before"
+    assert "commit_ready_persistence_failed" in result.output
+    assert '"commitReadyStatus": "recorder_missing"' in result.output
+
+    waived = _run(
+        tmp_path,
+        _request(risk="medium", complex=True),
+        monkeypatch,
+        commit_audit_waived=True,
+    )
+
+    assert waived.ok is True
+    assert target.read_text(encoding="utf-8") == "after"
+    assert '"commitReadyStatus": "waived"' in waived.output
 
 
 def test_production_commit_ready_is_sealed_before_parent_promotion(
@@ -3245,7 +3582,12 @@ def test_unknown_parent_promotion_is_projected_as_must_deliver_fallback(
         lambda self, **request: _verification_result(request),
     )
 
-    result = _run(tmp_path, _request(), monkeypatch)
+    result = _run(
+        tmp_path,
+        _request(),
+        monkeypatch,
+        commit_audit_waived=True,
+    )
 
     assert result.ok is False
     assert result._must_deliver is True
@@ -3301,6 +3643,7 @@ def test_cancellation_after_commit_preserves_truthful_finalization(
         monkeypatch,
         event_sink=CancellingAuditSink(),
         cancellation_token=token,
+        commit_audit_waived=True,
     )
 
     assert target.read_text(encoding="utf-8") == "after"
@@ -3366,6 +3709,7 @@ def test_cancellation_immediately_after_promotion_still_persists_audit(
         monkeypatch,
         event_sink=AuditSink(),
         cancellation_token=token,
+        commit_audit_waived=True,
     )
 
     assert target.read_text(encoding="utf-8") == "after"
@@ -3611,7 +3955,13 @@ def test_changes_required_review_is_rejected_and_durably_audited(
     assert "review_not_approved" in result.output
     assert len(audits) == 1
     audit = audits[0]
-    assert audit.trace["terminalReason"] == "review_not_approved"
+    assert audit.trace["terminalReason"] == "implementation_repair_no_change"
+    assert any(
+        transition["stage"] == "reviewer"
+        and transition["outcome"] == "rejected"
+        and transition["errorCode"] == "review_not_approved"
+        for transition in audit.trace["transitions"]
+    )
     assert (
         project_scheduler_audit(
             profile=audit.profile,
@@ -4253,3 +4603,253 @@ def test_hung_final_observation_is_bounded_and_does_not_erase_audit(
     assert result.ok is True
     assert len(audits) == 1
     assert '"auditStatus": "persisted"' in result.output
+
+
+def test_analyst_retry_prompt_carries_bounded_validation_feedback(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "allowed.txt").write_text("before", encoding="utf-8")
+    roles: list[str] = []
+    analyst_instructions: list[str] = []
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
+        roles.append(role)
+        if role == "analyst":
+            analyst_instructions.append(input_data["_result_instruction"])
+            if len(analyst_instructions) == 1:
+                invalid = _analyst_result_document(input_data, prepare_change=True)
+                invalid["assignmentId"] = "asg_wrong_assignment"
+                context._subagent_mailbox.write(
+                    input_data["_result_key"],
+                    json.dumps(invalid),
+                    author="analyst",
+                )
+            else:
+                _write_analyst_result(input_data, context, prepare_change=True)
+        elif role == "executor":
+            Path(context.cwd, "allowed.txt").write_text(
+                "after",
+                encoding="utf-8",
+            )
+            _write_executor_declaration(input_data, context)
+        else:
+            _write_reviewer_result(input_data, context)
+        return ToolResult(ok=True, output=f"{role} completed")
+
+    def verifier(self, **request):
+        roles.append("verifier")
+        return _verification_result(request)
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(DeterministicVerifier, "run", verifier)
+
+    result = _run(
+        tmp_path,
+        _request(),
+        monkeypatch,
+        commit_audit_waived=True,
+    )
+
+    assert result.ok is True
+    assert roles == ["analyst", "analyst", "executor", "verifier", "reviewer"]
+    assert (tmp_path / "allowed.txt").read_text(encoding="utf-8") == "after"
+    assert len(analyst_instructions) == 2
+    assert "failed validation" not in analyst_instructions[0]
+    assert "failed validation" in analyst_instructions[1]
+    assert "AnalystReport assignmentId does not match" in analyst_instructions[1]
+
+
+def test_analyst_unrecoverable_payload_stays_fail_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "allowed.txt").write_text("before", encoding="utf-8")
+    roles: list[str] = []
+    analyst_instructions: list[str] = []
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
+        roles.append(role)
+        if role == "analyst":
+            analyst_instructions.append(input_data["_result_instruction"])
+            try:
+                context._subagent_mailbox.write(
+                    input_data["_result_key"],
+                    "I summarized the repository but wrote no JSON.",
+                    author="analyst",
+                )
+            except Exception:
+                # The real subagent_note_write tool surfaces this as a tool
+                # error; a weak model may still end its turn without a
+                # successful write.
+                pass
+            return ToolResult(ok=True, output="analyst completed")
+        raise AssertionError(f"unexpected stage after analyst failure: {role}")
+
+    monkeypatch.setattr(task_module, "_run", worker)
+
+    result = _run(
+        tmp_path,
+        _request(),
+        monkeypatch,
+        commit_audit_waived=True,
+    )
+
+    assert result.ok is False
+    assert roles == ["analyst", "analyst"]
+    assert "analyst_result_invalid" in result.output
+    assert len(analyst_instructions) == 2
+    assert "failed validation" in analyst_instructions[1]
+    assert "role result is missing" in analyst_instructions[1]
+    assert (tmp_path / "allowed.txt").read_text(encoding="utf-8") == "before"
+
+
+def test_analyst_format_repair_is_audited_with_repair_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "allowed.txt").write_text("before", encoding="utf-8")
+    roles: list[str] = []
+    audits = []
+
+    class AuditSink:
+        def emit(self, *_args, **_kwargs):
+            return None
+
+        def record_scheduler_audit(self, audit):
+            audits.append(audit)
+            return True
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
+        roles.append(role)
+        if role == "analyst":
+            document = _analyst_result_document(input_data, prepare_change=True)
+            context._subagent_mailbox.write(
+                input_data["_result_key"],
+                "Here is the validated report:\n```json\n"
+                + json.dumps(document, indent=2)
+                + "\n```",
+                author="analyst",
+            )
+        elif role == "executor":
+            Path(context.cwd, "allowed.txt").write_text(
+                "after",
+                encoding="utf-8",
+            )
+            _write_executor_declaration(input_data, context)
+        else:
+            _write_reviewer_result(input_data, context)
+        return ToolResult(ok=True, output=f"{role} completed")
+
+    def verifier(self, **request):
+        roles.append("verifier")
+        return _verification_result(request)
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(DeterministicVerifier, "run", verifier)
+
+    result = _run(
+        tmp_path,
+        _request(),
+        monkeypatch,
+        event_sink=AuditSink(),
+        commit_audit_waived=True,
+    )
+
+    assert result.ok is True
+    assert roles == ["analyst", "executor", "verifier", "reviewer"]
+    assert (tmp_path / "allowed.txt").read_text(encoding="utf-8") == "after"
+    assert len(audits) == 1
+    repair_receipts = [
+        json.loads(artifact.content)
+        for artifact in audits[0].artifacts
+        if json.loads(artifact.content).get("resultType")
+        == "RoleResultRepairReceipt.v1"
+    ]
+    assert len(repair_receipts) == 1
+    receipt = repair_receipts[0]
+    assert receipt["repaired"] is True
+    assert receipt["role"] == "analyst"
+    assert receipt["stage"] == "analyst"
+    assert receipt["receiptVersion" if "receiptVersion" in receipt else "repairReceiptVersion"] == 1
+
+
+def test_executor_instruction_states_blocked_status_rule(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "allowed.txt").write_text("before", encoding="utf-8")
+    executor_instructions: list[str] = []
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
+        if role == "analyst":
+            _write_analyst_result(input_data, context, prepare_change=True)
+        elif role == "executor":
+            executor_instructions.append(input_data["_result_instruction"])
+            Path(context.cwd, "allowed.txt").write_text("after", encoding="utf-8")
+            _write_executor_declaration(input_data, context)
+        else:
+            _write_reviewer_result(input_data, context)
+        return ToolResult(ok=True, output=f"{role} completed")
+
+    def verifier(self, **request):
+        return _verification_result(request)
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(DeterministicVerifier, "run", verifier)
+
+    result = _run(tmp_path, _request(), monkeypatch, commit_audit_waived=True)
+
+    assert result.ok is True
+    assert len(executor_instructions) == 1
+    instruction = executor_instructions[0]
+    assert "Status rule" in instruction
+    assert '"blocked"' in instruction
+    assert 'never report "completed" with blockers' in instruction
+
+
+def test_analyst_evidence_feedback_includes_actual_line_count(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "allowed.txt").write_text("before\n", encoding="utf-8")
+    analyst_instructions: list[str] = []
+
+    def worker(input_data, context):
+        role = _worker_role(input_data)
+        if role == "analyst":
+            analyst_instructions.append(input_data["_result_instruction"])
+            document = _analyst_result_document(input_data, prepare_change=True)
+            if len(analyst_instructions) == 1:
+                # One line in the snapshot file; the citation overshoots it.
+                document["findings"][0]["evidence"][0]["lineEnd"] = 5
+            context._subagent_mailbox.write(
+                input_data["_result_key"],
+                json.dumps(document),
+                author="analyst",
+            )
+        elif role == "executor":
+            Path(context.cwd, "allowed.txt").write_text("after", encoding="utf-8")
+            _write_executor_declaration(input_data, context)
+        else:
+            _write_reviewer_result(input_data, context)
+        return ToolResult(ok=True, output=f"{role} completed")
+
+    def verifier(self, **request):
+        return _verification_result(request)
+
+    monkeypatch.setattr(task_module, "_run", worker)
+    monkeypatch.setattr(DeterministicVerifier, "run", verifier)
+
+    result = _run(tmp_path, _request(), monkeypatch, commit_audit_waived=True)
+
+    assert result.ok is True
+    assert len(analyst_instructions) == 2
+    retry_instruction = analyst_instructions[1]
+    assert "failed validation" in retry_instruction
+    assert "allowed.txt has 1 lines" in retry_instruction
+    assert "lineEnd 5" in retry_instruction

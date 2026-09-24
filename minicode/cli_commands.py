@@ -43,6 +43,7 @@ SLASH_COMMANDS = [
     SlashCommand("/skills", "/skills", "List discovered SKILL.md workflows."),
     SlashCommand("/mcp", "/mcp", "Show configured MCP servers and connection state."),
     SlashCommand("/permissions", "/permissions", "Show mini-code permission storage path."),
+    SlashCommand("/mode", "/mode [default|auto|bypass|plan]", "Show or switch the permission mode."),
     SlashCommand("/exit", "/exit", "Exit mini-code."),
     SlashCommand("/debug", "/debug", "Show scroll and terminal diagnostics."),
     SlashCommand("/user", "/user", "Show or manage user profile (preferences, coding style)."),
@@ -65,7 +66,7 @@ def format_slash_commands() -> str:
             "Inspect  /ls /grep /read /tools",
             "Edit     /write /edit /modify; /patch multiple",
             "Run      /cmd /retry",
-            "Agent    /skills /mcp /permissions /user",
+            "Agent    /skills /mcp /permissions /mode /user",
             "Session  /history /clear /exit",
             "Model    /model /cost /config",
             "More     /cybernetics /config-paths /transcript-save",
@@ -115,6 +116,19 @@ def try_handle_local_command(user_input: str, tools=None, cwd: str | None = None
 
     if user_input == "/permissions":
         return f"permission store: {MINI_CODE_PERMISSIONS_PATH}"
+
+    if user_input == "/mode" or user_input.startswith("/mode "):
+        from minicode.auto_mode import PermissionMode, get_mode_state, set_permission_mode
+        arg = user_input[len("/mode"):].strip()
+        if not arg:
+            modes = "  ".join(m.value for m in PermissionMode)
+            return f"{get_mode_state().format_status()}\n\nSwitch with: /mode <{modes}>"
+        try:
+            mode = PermissionMode(arg.lower())
+        except ValueError:
+            modes = ", ".join(m.value for m in PermissionMode)
+            return f"Unknown permission mode: {arg!r}. Expected one of: {modes}."
+        return set_permission_mode(mode)
 
     if user_input == "/skills":
         skills = tools.get_skills() if tools else []

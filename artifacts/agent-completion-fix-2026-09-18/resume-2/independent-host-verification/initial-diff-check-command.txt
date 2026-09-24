@@ -1,0 +1,1 @@
+git diff --check -- minicode/agent_loop.py minicode/tools/git.py tests/test_primary_model_timeout_recovery.py tests/test_git_status_regressions.py

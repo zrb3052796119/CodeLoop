@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "result": "DIFF_EXPOSED",
+  "change": {
+    "new_root": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main",
+    "baseline": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/before",
+    "changed_files": [
+      "minicode/agent_intelligence.py"
+    ]
+  },
+  "test": {
+    "path": "tests/test_error_classification_regressions.py",
+    "sha256": "061eb463d824a9d419b902f07f0b0fbd4b2b206c44fa73ce13b4e5cb020f29c2",
+    "command": [
+      ".venv-acceptance/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_error_classification_regressions.py",
+      "-p",
+      "no:cacheprovider"
+    ]
+  },
+  "iterations": 2,
+  "execution": {
+    "new": {
+      "exit_code": 0,
+      "timed_out": false
+    },
+    "old": {
+      "exit_code": 1,
+      "timed_out": false
+    },
+    "new_changed_lines_reached": 100,
+    "old_changed_lines_reached": 43,
+    "union_coverage": 0.5958333333333333,
+    "identical_test_bytes": true,
+    "new_result": "22 passed",
+    "old_result": "20 failed, 2 passed",
+    "related_tests_result": "61 passed"
+  },
+  "attribution": {
+    "behavior": "Recovery follows terminal exception/test failure diagnostics, ignoring keywords in source excerpts and paths; import errors request dependency repair and failed assertions request implementation/test setup repair.",
+    "old_failure_matches_behavior": true,
+    "rationale": "Old failures are direct expected-category assertions through the public ErrorClassifier.classify API. No collection/import/environment failures occurred. The two resource controls also pass the baseline."
+  },
+  "limitations": [
+    "Text diagnostics remain heuristic; unknown error shapes retain UNKNOWN rather than inferring resource/network failures from isolated keywords.",
+    "Old/new proof uses minimal isolated source trees containing the byte-identical affected production module and test; repository integration is covered separately by the 61-test run.",
+    "Full Ruff still reports pre-existing RUF046 on ToolSchedulerController int(round(...)); Ruff passes with only that existing rule excluded."
+  ],
+  "raw_evidence": "comparison.json"
+}

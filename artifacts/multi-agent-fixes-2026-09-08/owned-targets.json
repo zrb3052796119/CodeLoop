@@ -1,0 +1,19 @@
+{
+  "note": "Final production file scope. File-level ownership is partial where concurrent Skill-selection work modifies other sections, particularly agent_loop.py, agent_runtime.py, prompt.py and tools/task.py. Never revert unrelated hunks.",
+  "production": [
+    "minicode/agent_loop.py",
+    "minicode/agent_runtime.py",
+    "minicode/tooling.py",
+    "minicode/workflow_finalization.py",
+    "minicode/tools/task.py",
+    "minicode/workflow_runner.py",
+    "minicode/workflow_scope_registry.py",
+    "minicode/workflow_workspace.py",
+    "minicode/subagent_types.py",
+    "minicode/prompt.py",
+    "minicode/central_scheduler.py",
+    "minicode/scheduler_trace.py",
+    "minicode/scheduler_audit.py",
+    "minicode/workflow_repair.py"
+  ]
+}

@@ -181,6 +181,45 @@ def _service(workspace, data_dir, factory, *, store=None, creator=create_new_ses
     )
 
 
+def test_runtime_factory_receives_the_turn_observation_and_cancellation_token(
+    isolated,
+) -> None:
+    workspace, data_dir = isolated
+
+    class ContextRuntime(Runtime):
+        execution_token = None
+
+        def execute(
+            self,
+            messages,
+            _observation,
+            *,
+            cancellation_token=None,
+        ):
+            self.execution_token = cancellation_token
+            return super().execute(
+                messages,
+                _observation,
+                cancellation_token=cancellation_token,
+            )
+
+    runtime = ContextRuntime()
+    captured: dict[str, object] = {}
+
+    def factory(**kwargs):
+        captured.update(kwargs)
+        return runtime
+
+    _service(workspace, data_dir, factory).turn(
+        message="lifecycle context",
+        session_id=None,
+        turn_id=TURN_ID,
+    )
+
+    assert captured["event_sink"] is not None
+    assert captured["cancellation_token"] is runtime.execution_token
+
+
 def test_completed_turn_records_one_explicit_run_user_signal(isolated) -> None:
     workspace, data_dir = isolated
     service = _service(workspace, data_dir, RuntimeFactory(Runtime()))
@@ -209,19 +248,22 @@ def test_completed_turn_records_one_explicit_run_user_signal(isolated) -> None:
 
 
 class RenderingRuntime(Runtime):
-    """A fake Runtime that also binds rendered Memory IDs to the Run, the
+    """A fake Runtime that binds rendered Memory versions to the Run, the
     way the real AgentTurnRuntime does via emit_memory_result_safely."""
 
-    def __init__(self, entry_ids: list[str]) -> None:
+    def __init__(self, versions: list[tuple[str, str]]) -> None:
         super().__init__()
-        self.entry_ids = entry_ids
+        self.versions = versions
 
     def execute(self, messages, observation, *, cancellation_token=None):
-        observation.record_rendered_memory_ids(self.entry_ids)
+        observation.record_rendered_memory_versions(self.versions)
+        observation.record_rendered_memory_ids(
+            [entry_id for entry_id, _digest in self.versions]
+        )
         return super().execute(messages, observation, cancellation_token=cancellation_token)
 
 
-def test_accepted_feedback_applies_corroborated_memory_feedback_once(
+def test_accepted_feedback_applies_ordinary_memory_feedback_once(
     isolated,
 ) -> None:
     from minicode.memory import MemoryManager, MemoryScope
@@ -237,7 +279,11 @@ def test_accepted_feedback_applies_corroborated_memory_feedback_once(
     assert entry is not None
 
     service = _service(
-        workspace, data_dir, RuntimeFactory(RenderingRuntime([entry.id]))
+        workspace,
+        data_dir,
+        RuntimeFactory(
+            RenderingRuntime([(entry.id, entry.approval_content_hash)])
+        ),
     )
     service.turn(message="safe", session_id=None, turn_id=TURN_ID)
 
@@ -246,7 +292,8 @@ def test_accepted_feedback_applies_corroborated_memory_feedback_once(
 
     reloaded = MemoryManager(project_root=workspace)
     updated = reloaded.memories[MemoryScope.PROJECT]._id_index[entry.id]
-    assert updated.corroborated_success_count == 1
+    assert updated.success_count == 1
+    assert updated.corroborated_success_count == 0
     assert updated.corroborated_failure_count == 0
 
 
@@ -266,11 +313,15 @@ def test_feedback_retry_repairs_a_missed_memory_side_effect(
     )
     assert entry is not None
     service = _service(
-        workspace, data_dir, RuntimeFactory(RenderingRuntime([entry.id]))
+        workspace,
+        data_dir,
+        RuntimeFactory(
+            RenderingRuntime([(entry.id, entry.approval_content_hash)])
+        ),
     )
     service.turn(message="safe", session_id=None, turn_id=TURN_ID)
 
-    original_apply = conversation_module._apply_corroborated_memory_feedback
+    original_apply = conversation_module._apply_run_outcome_memory_feedback
     attempts = 0
 
     def defer_first_delivery(workspace, journal, run_id, signal):
@@ -281,7 +332,7 @@ def test_feedback_retry_repairs_a_missed_memory_side_effect(
 
     monkeypatch.setattr(
         conversation_module,
-        "_apply_corroborated_memory_feedback",
+        "_apply_run_outcome_memory_feedback",
         defer_first_delivery,
     )
 
@@ -290,7 +341,7 @@ def test_feedback_retry_repairs_a_missed_memory_side_effect(
     assert (
         missed.memories[MemoryScope.PROJECT]
         ._id_index[entry.id]
-        .corroborated_success_count
+        .success_count
         == 0
     )
 
@@ -299,14 +350,14 @@ def test_feedback_retry_repairs_a_missed_memory_side_effect(
     assert (
         repaired.memories[MemoryScope.PROJECT]
         ._id_index[entry.id]
-        .corroborated_success_count
+        .success_count
         == 1
     )
     assert attempts == 2
 
 
 @pytest.mark.parametrize("signal", ["correct", "reject"])
-def test_explicit_negative_feedback_quarantines_rendered_memory(
+def test_explicit_negative_run_feedback_is_weak_and_does_not_quarantine(
     isolated,
     signal: str,
 ) -> None:
@@ -323,7 +374,11 @@ def test_explicit_negative_feedback_quarantines_rendered_memory(
     assert entry is not None
 
     service = _service(
-        workspace, data_dir, RuntimeFactory(RenderingRuntime([entry.id]))
+        workspace,
+        data_dir,
+        RuntimeFactory(
+            RenderingRuntime([(entry.id, entry.approval_content_hash)])
+        ),
     )
     service.turn(message="safe", session_id=None, turn_id=TURN_ID)
 
@@ -331,10 +386,11 @@ def test_explicit_negative_feedback_quarantines_rendered_memory(
 
     reloaded = MemoryManager(project_root=workspace)
     updated = reloaded.memories[MemoryScope.PROJECT]._id_index[entry.id]
+    assert updated.failure_count == 1
     assert updated.corroborated_success_count == 0
-    assert updated.corroborated_failure_count == 1
-    assert updated.approval_status == "rejected"
-    assert updated.lifecycle_status == "rejected"
+    assert updated.corroborated_failure_count == 0
+    assert updated.approval_status == "approved"
+    assert updated.lifecycle_status == "active"
 
 
 def test_feedback_without_rendered_memory_ids_leaves_memory_untouched(
@@ -361,6 +417,82 @@ def test_feedback_without_rendered_memory_ids_leaves_memory_untouched(
     updated = reloaded.memories[MemoryScope.PROJECT]._id_index[entry.id]
     assert updated.corroborated_success_count == 0
     assert updated.corroborated_failure_count == 0
+
+
+def test_real_agent_loop_dashboard_feedback_is_bound_to_rendered_content_version(
+    isolated,
+) -> None:
+    from minicode.agent_runtime import AgentTurnRuntime
+    from minicode.memory import MemoryManager, MemoryScope
+    from minicode.tooling import ToolRegistry
+    from minicode.types import AgentStep
+
+    class CapturingFinalModel:
+        def __init__(self) -> None:
+            self.messages = []
+
+        def next(self, messages, on_stream_chunk=None):
+            self.messages = messages
+            return AgentStep(type="assistant", content="safe reply")
+
+    workspace, data_dir = isolated
+    manager = MemoryManager(project_root=workspace)
+    entry = manager.add_entry(
+        MemoryScope.PROJECT,
+        "testing",
+        "OLD VERSION: checkout rounding follows decimal line aggregation.",
+        tags=["checkout", "rounding", "decimal"],
+    )
+    assert entry is not None
+    old_version = (entry.id, entry.approval_content_hash)
+    model = CapturingFinalModel()
+    runtime = AgentTurnRuntime(
+        workspace=workspace,
+        runtime={},
+        tools=ToolRegistry([]),
+        permissions=Permissions(),
+        memory_manager=manager,
+        model=model,
+        skill_routing=None,
+        system_prompt="SYSTEM",
+    )
+    service = _service(
+        workspace,
+        data_dir,
+        RuntimeFactory(runtime),
+    )
+
+    turn = service.turn(
+        message="fix checkout rounding after decimal aggregation",
+        session_id=None,
+        turn_id=TURN_ID,
+    )
+
+    assert "OLD VERSION" in str(model.messages)
+    journal = RunJournal(workspace, data_dir=data_dir)
+    assert journal.get_rendered_memory_versions(turn.run_id) == (old_version,)
+    replacement = MemoryManager(project_root=workspace)
+    assert replacement.update_entry(
+        MemoryScope.PROJECT,
+        entry.id,
+        "NEW VERSION: checkout rounding follows transactional aggregation.",
+    )
+    new_entry = replacement.memories[MemoryScope.PROJECT]._id_index[entry.id]
+    new_digest = new_entry.approval_content_hash
+    assert new_digest != old_version[1]
+
+    feedback = service.record_feedback(TURN_ID, "reject")
+
+    assert feedback.run_id == turn.run_id
+    assert journal.get_user_signal(turn.run_id).signal == "reject"
+    current = MemoryManager(project_root=workspace)
+    current_entry = current.memories[MemoryScope.PROJECT]._id_index[entry.id]
+    assert current_entry.content.startswith("NEW VERSION")
+    assert current_entry.approval_content_hash == new_digest
+    assert current_entry.failure_count == 0
+    assert current_entry.corroborated_failure_count == 0
+    assert current_entry.feedback_observations == {}
+    assert current_entry.is_active is True
 
 
 def test_accepted_cancel_wins_before_running_without_runtime_or_session_side_effects(

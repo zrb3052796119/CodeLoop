@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import threading
 import time
+
 from minicode.tooling import ToolDefinition, ToolResult
 
-# In-memory task storage (resets per session)
+# Process-global compatibility storage. Calls are serialized, but moving this
+# state into a session-owned context remains separate architectural work.
 _tasks = []
 _task_id_counter = 0
+_tasks_lock = threading.Lock()
 
 
 def _validate(input_data: dict) -> dict:
@@ -23,27 +27,40 @@ def _validate(input_data: dict) -> dict:
     return {"todos": todos}
 
 
-def _run(input_data: dict, context) -> ToolResult:
-    global _tasks, _task_id_counter
+def _run_locked(input_data: dict, context) -> ToolResult:
+    global _task_id_counter
 
     todos = input_data["todos"]
 
-    # Clear existing tasks and replace
+    # Preserve the previous complete-list snapshot long enough to carry stable
+    # identity and timestamps into the replacement list.
+    previous_tasks = list(_tasks)
     _tasks.clear()
 
     for todo in todos:
-        # Try to find existing task by content
-        existing = None
-        for task in _tasks:
-            if task["content"] == todo["content"]:
-                existing = task
-                break
+        # Prefer an item already selected into this replacement (deduplicating
+        # repeated content), then fall back to the previous snapshot.
+        existing = next(
+            (task for task in _tasks if task["content"] == todo["content"]),
+            None,
+        )
+        if existing is None:
+            existing = next(
+                (
+                    task
+                    for task in previous_tasks
+                    if task["content"] == todo["content"]
+                ),
+                None,
+            )
 
         if existing:
             # Update existing task
             existing["status"] = todo.get("status", existing["status"])
             if todo.get("status") == "completed" and not existing.get("completed_at"):
                 existing["completed_at"] = time.time()
+            if existing not in _tasks:
+                _tasks.append(existing)
         else:
             # Create new task
             _task_id_counter += 1
@@ -81,6 +98,14 @@ def _run(input_data: dict, context) -> ToolResult:
     ])
 
     return ToolResult(ok=True, output="\n".join(lines))
+
+
+def _run(input_data: dict, context) -> ToolResult:
+    # The tool replaces one process-global list. ToolRegistry now classifies
+    # it as serial, and the lock also protects direct callers or independent
+    # registries from interleaving clear/append operations.
+    with _tasks_lock:
+        return _run_locked(input_data, context)
 
 
 todo_write_tool = ToolDefinition(

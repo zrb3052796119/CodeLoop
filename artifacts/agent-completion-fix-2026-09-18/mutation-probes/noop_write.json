@@ -1,0 +1,36 @@
+{
+  "backend": "semantic-probe",
+  "baseline": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_turn_completion_policy.py"
+    ],
+    "duration_seconds": 0.227,
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": ".........................                                                [100%]\n25 passed in 0.11s\n",
+    "timed_out": false
+  },
+  "description": "Unchanged write must not earn mutation progress",
+  "mutated": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_turn_completion_policy.py"
+    ],
+    "duration_seconds": 0.152,
+    "exit_code": 1,
+    "stderr": "",
+    "stdout": ".F.......................                                                [100%]\n=================================== FAILURES ===================================\n_____ test_new_file_counts_but_unchanged_write_and_successful_reads_do_not _____\n\ntmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-35/test_new_file_counts_but_uncha0')\n\n    def test_new_file_counts_but_unchanged_write_and_successful_reads_do_not(tmp_path: Path):\n        policy = TurnCompletionPolicy(50, 35, str(tmp_path))\n        _mutate(policy, tmp_path, step=30)\n        assert policy.extend(35, 35, True) == 40\n        _mutate(policy, tmp_path, step=39)\n        policy.observe_results([\n            ({\"toolName\": \"read_file\", \"input\": {\"path\": \"change.py\"}}, ToolResult(ok=True, output=\"new\")),\n            ({\"toolName\": \"todo_write\", \"input\": {}}, ToolResult(ok=True, output=\"done\")),\n        ], {}, 40)\n>       assert policy.mutation_epoch == 1\nE       assert 2 == 1\nE        +  where 2 = <minicode.turn_completion.TurnCompletionPolicy object at 0x103729c10>.mutation_epoch\n\ntests/test_turn_completion_policy.py:62: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_turn_completion_policy.py::test_new_file_counts_but_unchanged_write_and_successful_reads_do_not\n1 failed, 24 passed in 0.05s\n",
+    "timed_out": false
+  },
+  "probe_id": "noop_write",
+  "schema_version": 1,
+  "status": "KILLED",
+  "target": "minicode/turn_completion.py"
+}

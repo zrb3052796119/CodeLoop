@@ -1,0 +1,109 @@
+FF.FF                                                                    [100%]
+=================================== FAILURES ===================================
+______ test_committed_workflow_returns_control_for_remaining_parent_work _______
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-799/test_committed_workflow_return0')
+committed_result = ToolResult(ok=True, output='[Workflow structured workflow route completed]\n  Phases: Executor -> Verifier\n\n=== DETE...': None}, 'purposes': [], 'supported_operations': [], 'evidence': ['legacy-name-compatibility', 'effects-unverified']})
+
+    def test_committed_workflow_returns_control_for_remaining_parent_work(tmp_path, committed_result):
+        remaining = []
+        model = ScriptedModel([
+            _call("workflow", "first"), _call("remaining_work", "second"),
+            AgentStep(type="assistant", content="Both requested tasks are complete."),
+        ])
+        messages = run_agent_turn(
+            model=model,
+            tools=_registry(committed_result, extra=lambda _i, _c: (
+                remaining.append("completed") or ToolResult(ok=True, output="second task complete")
+            )),
+            messages=[{"role": "user", "content": "Complete both tasks, then summarize."}],
+            cwd=str(tmp_path), enable_work_chain=False,
+        )
+>       assert remaining == ["completed"]
+E       AssertionError: assert [] == ['completed']
+E         
+E         Right contains one more item: 'completed'
+E         Use -v to get more diff
+
+tests/test_workflow_parent_continuation.py:91: AssertionError
+________ test_committed_workflow_still_waits_for_async_result_synthesis ________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-799/test_committed_workflow_still_0')
+committed_result = ToolResult(ok=True, output='[Workflow structured workflow route completed]\n  Phases: Executor -> Verifier\n\n=== DETE...': None}, 'purposes': [], 'supported_operations': [], 'evidence': ['legacy-name-compatibility', 'effects-unverified']})
+
+    def test_committed_workflow_still_waits_for_async_result_synthesis(tmp_path, committed_result):
+        lifecycle = AsyncSubagentLifecycle(max_workers=1)
+        release = threading.Event()
+        entered = threading.Event()
+    
+        def investigation(_identity, _cancel):
+            entered.set()
+            assert release.wait(3)
+            return ToolResult(ok=True, output="independent investigation evidence")
+    
+        job = lifecycle.spawn(agent_type="explore", runner=investigation)
+        assert entered.wait(1)
+    
+        def premature_final(_messages):
+            release.set()
+            lifecycle.poll(str(job["subagentId"]), wait_seconds=1, observe_terminal=False)
+            return AgentStep(type="assistant", content="Attempted early final.")
+    
+        def synthesize(messages):
+            assert any("independent investigation evidence" in str(m.get("content")) for m in messages)
+            return AgentStep(type="assistant", content="Combined result from both tasks.")
+    
+        # The concrete lifecycle's barrier must expose the terminal result before final.
+        try:
+            model = ScriptedModel([_call("workflow", "first"), premature_final, synthesize])
+            messages = run_agent_turn(
+                model=model, tools=_registry(committed_result),
+                messages=[{"role": "user", "content": "Apply change and synthesize the investigation."}],
+                cwd=str(tmp_path), enable_work_chain=False, subagent_lifecycle=lifecycle,
+            )
+>           assert messages[-1]["content"] == "Combined result from both tasks."
+E           assert '[Workflow st...s":"passed"}}' == 'Combined res...m both tasks.'
+E             
+E             - Combined result from both tasks.
+E             + [Workflow structured workflow route completed]
+E             +   Phases: Executor -> Verifier
+E             + 
+E             + === DETERMINISTIC VERIFICATION ===
+E             + {"checks": [{"artifactRef": "artifact_verification_e7477c30e41bfad4830894c3", "checkId": "check_tests", "durationMs": 1, "exitCode": 0, "kind": "tests", "status": "passed"}], "executionAssignmentId": "asg_b2c38660cd96_1_executor", "patchDigest": "sha256:3659b7dfd07ee5a741d22277ac2fd8f2839bad50a421f9f4b9b1c4530a02e1e4", "resultType": "VerificationResult.v1", "status": "passed", "taskId": "task_structured_route", "verifi...
+E             
+E             ...Full output truncated (13 lines hidden), use '-vv' to show
+
+tests/test_workflow_parent_continuation.py:126: AssertionError
+___ test_current_workflow_receipt_takes_precedence_over_previous_turn_answer ___
+
+    def test_current_workflow_receipt_takes_precedence_over_previous_turn_answer():
+        messages = [
+            {"role": "assistant", "content": "Previous answer."},
+            {"role": "user", "content": "Apply another change."},
+            {"role": "assistant_tool_call", "toolName": "task", "toolUseId": "current"},
+            {"role": "tool_result", "toolName": "task", "toolUseId": "current", "content": "Current change committed."},
+        ]
+>       assert final_response_text(messages) == "Current change committed."
+E       AssertionError: assert 'Previous answer.' == 'Current change committed.'
+E         
+E         - Current change committed.
+E         + Previous answer.
+
+tests/test_workflow_parent_continuation.py:152: AssertionError
+________ test_unanswered_current_turn_does_not_display_previous_answer _________
+
+    def test_unanswered_current_turn_does_not_display_previous_answer():
+>       assert final_response_text([
+            {"role": "assistant", "content": "Previous answer."},
+            {"role": "user", "content": "New request."},
+        ]) is None
+E       AssertionError: assert 'Previous answer.' is None
+E        +  where 'Previous answer.' = final_response_text([{'role': 'assistant', 'content': 'Previous answer.'}, {'role': 'user', 'content': 'New request.'}])
+
+tests/test_workflow_parent_continuation.py:156: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_workflow_parent_continuation.py::test_committed_workflow_returns_control_for_remaining_parent_work
+FAILED tests/test_workflow_parent_continuation.py::test_committed_workflow_still_waits_for_async_result_synthesis
+FAILED tests/test_workflow_parent_continuation.py::test_current_workflow_receipt_takes_precedence_over_previous_turn_answer
+FAILED tests/test_workflow_parent_continuation.py::test_unanswered_current_turn_does_not_display_previous_answer
+4 failed, 1 passed in 0.87s

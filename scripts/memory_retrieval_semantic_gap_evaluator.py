@@ -18,7 +18,7 @@ import unicodedata
 from collections import Counter, defaultdict
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, Literal
 from unittest.mock import patch
 
 import jsonschema
@@ -30,11 +30,11 @@ from scripts.memory_retrieval_phase2b_evaluator import (
 )
 from scripts.memory_retrieval_production_baseline import (
     ACTIVE_PRODUCTION_RETRIEVAL_HASHES,
+    PINNED_MANIFEST_SHA256,
     verify_active_baseline,
 )
 
-
-EVALUATOR_VERSION = "1.1.0"
+EVALUATOR_VERSION = "2.0.0"
 REFERENCE_TIME = 1736942400.0
 DATASET_MANIFEST_SHA256 = "59638f40dc76df881c63804275eda5cf137679b77b72916694635b5c51ac9f8b"
 ACCEPTED_V1_ARTIFACT_SHA256 = (
@@ -43,6 +43,46 @@ ACCEPTED_V1_ARTIFACT_SHA256 = (
 ACCEPTED_V1_BEHAVIOR_PROJECTION_SHA256 = (
     "b9fabf0aede79044963c8452f367c3667eec696204c98d04365491c1ae1bbd60"
 )
+V2_CANDIDATE_ARTIFACT_SHA256 = (
+    "7c68c5e1d767c748a57b12e3972f43d64d11593d3e428a0a91f70234320b291f"
+)
+ACCEPTED_V2_ARTIFACT_SHA256 = (
+    "4f1bb69ce1f79a3a91253c7a11078c0668fd25999d29dd39f8fef96b7687333f"
+)
+V2_CANDIDATE_CASE_FINGERPRINT_SHA256 = (
+    "74556bb634a4afb28102a67d3e261206569cf4ca4d6d5d1e5a316b3fb3e9989c"
+)
+V2_CANDIDATE_BEHAVIOR_PROJECTION_SHA256 = (
+    "f7d8e45028c7c55955f2825ee36bb06f8f2e638ad9ec51de1035b311b99b507e"
+)
+PRODUCTION_V40_MANIFEST_SHA256 = (
+    "52d7131db710ef61674e776f931426e6efa8e91764df95eaa86612295f79e4f7"
+)
+ACCEPTED_V1_CASE_FINGERPRINT_SHA256 = (
+    "b73da444d03864a49401c4a629466125d96e953f8e679fb581704a8fd4ca8667"
+)
+USEFULNESS_SEMANTICS_V1 = "serialized_v1"
+USEFULNESS_SEMANTICS_V2 = "derived_counters_v2"
+USEFULNESS_MIGRATION_ALLOWED_DIFFERENCE_SHAPES = {
+    "<index>/canonical_diagnostic/candidate_ids_top20/<index>": 46,
+    "<index>/canonical_diagnostic/candidate_ids_top50/<index>": 46,
+    "<index>/canonical_diagnostic/scores_top50/<entry_id>/final_score": 3456,
+    "<index>/canonical_diagnostic/scores_top50/<entry_id>/lexical_score": 969,
+    "<index>/canonical_diagnostic/scores_top50/<entry_id>/rank": 46,
+    "<index>/canonical_diagnostic/suppressed_ids/<index>": 39,
+    "<index>/canonical_production/candidate_ids_top20/<index>": 46,
+    "<index>/canonical_production/candidate_ids_top50/<index>": 46,
+    "<index>/canonical_production/scores_top50/<entry_id>/final_score": 3456,
+    "<index>/canonical_production/scores_top50/<entry_id>/lexical_score": 969,
+    "<index>/canonical_production/scores_top50/<entry_id>/rank": 46,
+    "<index>/canonical_production/suppressed_ids/<index>": 39,
+    "<index>/manager_global_search/candidate_ids_top20/<index>": 59,
+    "<index>/manager_global_search/candidate_ids_top50/<index>": 72,
+    "<index>/manager_global_search/scores_top50/<entry_id>/manager_relevance": 968,
+    "<index>/manager_global_search/scores_top50/<entry_id>/rank": 72,
+    "<index>/primary_diagnostic_rank": 6,
+    "<index>/primary_manager_rank": 7,
+}
 MAX_CASE_MEMORIES = 8
 MAX_BACKGROUND_MEMORIES = 32
 MAX_CONTENT_CHARS = 4000
@@ -65,11 +105,11 @@ PHASE2B_FROZEN_HASHES = {
     "docs/memory-retrieval-phase2b-performance.md": "3cff028426be913baa06cacbd2eff69b3141f74ff16528d5e44b4f37416a5235",
     "docs/memory-retrieval-phase2b.md": "9ec83beff0ab5a5c0b2af3fd65e62f37b441a4416e556b98c751032e51027da9",
     "scripts/evaluate_memory_retrieval_phase2b.py": "841883544b031ff5b58ea759a2688413637e70143cd231708514843700ed05dd",
-    "scripts/memory_retrieval_phase2b_evaluator.py": "1ff170cfbf856dad668912905e662ec8bd8284be26329cae8c047d5d8adc8096",
+    "scripts/memory_retrieval_phase2b_evaluator.py": "6b0910cbd53795257f64a7b3b97fe05e6423a5bba75ca4068f1e70576eb74ea8",
     "tests/fixtures/memory_retrieval_phase2b_holdout.json": "5ceb46134d0d17060c7b635bb99aeae8a43c799a3f6dd40a07d65978930b1136",
     "tests/fixtures/memory_retrieval_phase2b_holdout.schema.json": "c1d4461fcf2e23949585d0742fd20af4d2486d05f1406ad3469c204a21a83ae4",
     "tests/test_memory_candidate_consolidation.py": "4c7011ba7168388b88fc58a3fe253366a3d5c19dd68dac36c50c8febdf4de67c",
-    "tests/test_memory_retrieval_phase2b.py": "9999eeb12f4248ab3a83506dd6a5d6ee34e57b4d75ccd89aa4d65bfa8c0882e8",
+    "tests/test_memory_retrieval_phase2b.py": "fed30024ad20c6560023c22543128d83d7f833ec25859ed878b118f5bde5ee97",
     "tests/test_memory_retrieval_phase2b_evaluator.py": "828bf028c91ed00c6d3d103d4d84e8c5632a0fddd28022b0c6cc11af3f8537c3",
 }
 
@@ -153,15 +193,21 @@ def _validate_memory_store_lock_artifact(lock_path: Path) -> None:
 
 def snapshot_isolated_case_tree(root: Path) -> dict[str, Any]:
     """Snapshot authoritative case outputs, excluding derived store artifacts."""
-    lock_relative = Path("home/.mini-code/memory-store.lock")
-    lock_path = root / lock_relative
-    if lock_path.exists() or lock_path.is_symlink():
-        _validate_memory_store_lock_artifact(lock_path)
+    lock_relatives = {
+        Path("home/.mini-code/memory-store.lock"),
+        Path("workspace/.minicode-memory-authority.lock"),
+    }
+    for lock_relative in lock_relatives:
+        lock_path = root / lock_relative
+        if lock_path.exists() or lock_path.is_symlink():
+            _validate_memory_store_lock_artifact(lock_path)
     snapshot = snapshot_tree(root)
     files = [
         item
         for item in snapshot["files"]
-        if item["path"] != lock_relative.as_posix()
+        if item["path"] not in {
+            relative.as_posix() for relative in lock_relatives
+        }
         # The redacted approval-audit file is a rebuildable human/tooling
         # projection. Its authority is embedded in memory.json, so counting it
         # as retrieval semantics makes the accepted behavior fingerprint depend
@@ -370,25 +416,38 @@ class _InstrumentedManagerMixin:
         self.save_events.append(scope.value)
         super()._save_scope(scope)
 
-    def record_retrievals(self, entry_ids: list[str]) -> None:
+    def record_retrievals(
+        self,
+        entry_ids: list[str],
+        *,
+        observation_id: str | None = None,
+    ) -> None:
         self.retrieval_calls.append(list(entry_ids))
-        super().record_retrievals(entry_ids)
+        super().record_retrievals(entry_ids, observation_id=observation_id)
 
     def record_retrievals_and_injections(
         self,
         retrieved_entry_ids: list[str],
         injected_entry_ids: list[str],
+        *,
+        observation_id: str | None = None,
     ) -> None:
         self.retrieval_calls.append(list(retrieved_entry_ids))
         self.injection_calls.append(list(injected_entry_ids))
         super().record_retrievals_and_injections(
             retrieved_entry_ids,
             injected_entry_ids,
+            observation_id=observation_id,
         )
 
-    def record_feedback(self, entry_ids: list[str], success: bool) -> None:
+    def record_feedback(
+        self,
+        entry_ids: list[str],
+        success: bool,
+        **kwargs: Any,
+    ) -> None:
         self.feedback_calls.append({"entry_ids": list(entry_ids), "success": success})
-        super().record_feedback(entry_ids, success)
+        super().record_feedback(entry_ids, success, **kwargs)
 
 
 def _entry_counter_snapshot(manager: Any) -> dict[str, tuple[int, int, int, int]]:
@@ -404,19 +463,37 @@ def _entry_counter_snapshot(manager: Any) -> dict[str, tuple[int, int, int, int]
     }
 
 
-def _memory_entry(spec: dict[str, Any]) -> Any:
+def _memory_entry(
+    spec: dict[str, Any],
+    *,
+    usefulness_semantics: Literal[
+        "serialized_v1", "derived_counters_v2"
+    ] = USEFULNESS_SEMANTICS_V2,
+) -> Any:
     from minicode.memory import MemoryEntry
 
     data = copy.deepcopy(spec)
     data["last_accessed"] = REFERENCE_TIME - 3600
     data["last_used"] = 0.0
-    return MemoryEntry.from_dict(data)
+    entry = MemoryEntry.from_dict(data)
+    if usefulness_semantics == USEFULNESS_SEMANTICS_V1:
+        # Counterfactual replay only: v1 accepted the serialized score even
+        # when no success/failure evidence counters accompanied it. Production
+        # v2 deliberately derives this value in MemoryEntry.from_dict instead.
+        entry.usefulness_score = float(data.get("usefulness_score", 0.0))
+    elif usefulness_semantics != USEFULNESS_SEMANTICS_V2:
+        raise ValueError("unknown usefulness semantics")
+    return entry
 
 
 @contextmanager
 def isolated_case_manager(
     case: dict[str, Any],
     background: list[dict[str, Any]],
+    *,
+    usefulness_semantics: Literal[
+        "serialized_v1", "derived_counters_v2"
+    ] = USEFULNESS_SEMANTICS_V2,
 ) -> Iterator[tuple[Any, Path]]:
     with tempfile.TemporaryDirectory(prefix="minicode-phase3a-case-") as temporary:
         root = Path(temporary)
@@ -444,7 +521,10 @@ def isolated_case_manager(
             with patch.object(memory_module, "MINI_CODE_DIR", home / ".mini-code"):
                 manager = InstrumentedMemoryManager(project_root=workspace)
             for spec in (*background, *case["memories"]):
-                entry = _memory_entry(spec)
+                entry = _memory_entry(
+                    spec,
+                    usefulness_semantics=usefulness_semantics,
+                )
                 manager.memories[entry.scope].entries.append(entry)
             for memory_file in manager.memories.values():
                 memory_file._rebuild_indices()
@@ -558,8 +638,6 @@ def _production_arm(manager: Any, case: dict[str, Any]) -> tuple[Any, dict[str, 
         enable_reranker=False,
         enable_vector=False,
     )
-    if pipeline._injector is not None:
-        pipeline._injector._injection_cooldown = 0.0
     messages = [{"role": "system", "content": "SYNTHETIC_SYSTEM_BASE"}]
     save_start = len(manager.save_events)
     started = time.perf_counter()
@@ -622,9 +700,20 @@ class NetworkGuard:
         raise AssertionError("network access is forbidden in the Phase 3A evaluator")
 
 
-def evaluate_case(case: dict[str, Any], background: list[dict[str, Any]]) -> dict[str, Any]:
+def evaluate_case(
+    case: dict[str, Any],
+    background: list[dict[str, Any]],
+    *,
+    usefulness_semantics: Literal[
+        "serialized_v1", "derived_counters_v2"
+    ] = USEFULNESS_SEMANTICS_V2,
+) -> dict[str, Any]:
     started = time.perf_counter()
-    with isolated_case_manager(case, background) as (manager, temporary_root), patch(
+    with isolated_case_manager(
+        case,
+        background,
+        usefulness_semantics=usefulness_semantics,
+    ) as (manager, temporary_root), patch(
         "minicode.memory.time.time", return_value=REFERENCE_TIME
     ), patch("minicode.memory_retrieval.time.time", return_value=REFERENCE_TIME), patch(
         "minicode.memory_pipeline.time.time", return_value=REFERENCE_TIME
@@ -1064,7 +1153,12 @@ def _isolated_benchmark_manager(count: int) -> Iterator[Any]:
         workspace.mkdir()
         with patch.dict(os.environ, {"HOME": str(home), "USERPROFILE": str(home)}):
             from minicode import memory as memory_module
-            from minicode.memory import MemoryEntry, MemoryManager, MemoryScope, MemoryTier
+            from minicode.memory import (
+                MemoryEntry,
+                MemoryManager,
+                MemoryScope,
+                MemoryTier,
+            )
 
             with patch.object(memory_module, "MINI_CODE_DIR", home / ".mini-code"):
                 manager = MemoryManager(project_root=workspace)
@@ -1220,8 +1314,193 @@ def deterministic_case_view(results: list[dict[str, Any]]) -> list[dict[str, Any
     return view
 
 
+def _migration_difference_shapes(
+    legacy: list[dict[str, Any]],
+    derived: list[dict[str, Any]],
+) -> dict[str, int]:
+    """Return a bounded structural description of the v1-to-v2 delta.
+
+    The accepted migration intentionally changes ranking through one evidence
+    signal. Recording exact normalized leaf paths prevents a future evaluator
+    from treating unrelated field additions or removals as part of that
+    migration merely because a new gold artifact was generated.
+    """
+
+    changed_paths: list[tuple[str | int, ...]] = []
+
+    def visit(first: Any, second: Any, path: tuple[str | int, ...]) -> None:
+        if type(first) is not type(second):
+            changed_paths.append(path)
+            return
+        if isinstance(first, dict):
+            for key in sorted(set(first) | set(second)):
+                if key not in first or key not in second:
+                    changed_paths.append((*path, key))
+                else:
+                    visit(first[key], second[key], (*path, key))
+            return
+        if isinstance(first, list):
+            if len(first) != len(second):
+                changed_paths.append((*path, "<length>"))
+            for index, (left, right) in enumerate(zip(first, second)):
+                visit(left, right, (*path, index))
+            return
+        if first != second:
+            changed_paths.append(path)
+
+    visit(legacy, derived, ())
+
+    def normalized(path: tuple[str | int, ...]) -> str:
+        parts: list[str] = []
+        for index, part in enumerate(path):
+            if isinstance(part, int):
+                parts.append("<index>")
+            elif index and path[index - 1] == "scores_top50":
+                parts.append("<entry_id>")
+            else:
+                parts.append(part)
+        return "/".join(parts)
+
+    return dict(sorted(Counter(normalized(path) for path in changed_paths).items()))
+
+
+def evaluate_v1_to_v2_usefulness_migration(
+    dataset: dict[str, Any],
+    derived_results: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Prove the v2 baseline is one finite evidence-semantics migration.
+
+    Both arms execute the same current retrieval source. The legacy arm only
+    restores v1's unsafe fixture behavior of trusting a bare serialized
+    ``usefulness_score``. Its exact match to the immutable v1 case fingerprint
+    attributes the accepted v2 delta to the counter-derived policy rather than
+    silently blessing the current working tree.
+    """
+
+    background = dataset["background"]
+    case_entries = [
+        entry for case in dataset["cases"] for entry in case["memories"]
+    ]
+    all_entries = [*background, *case_entries]
+    persisted_counter_names = {
+        "success_count",
+        "failure_count",
+        "corroborated_success_count",
+        "corroborated_failure_count",
+    }
+    nonzero_bare = [
+        entry
+        for entry in all_entries
+        if float(entry.get("usefulness_score", 0.0)) != 0.0
+        and not (persisted_counter_names & set(entry))
+    ]
+    nonzero_ids = {entry["id"] for entry in nonzero_bare}
+    fixture_contract = {
+        "background_entry_count": len(background),
+        "case_entry_count": len(case_entries),
+        "entries_with_persisted_counters": sum(
+            bool(persisted_counter_names & set(entry)) for entry in all_entries
+        ),
+        "nonzero_bare_usefulness_entry_count": len(nonzero_bare),
+        "nonzero_bare_usefulness_locations": sorted(
+            {
+                "background" if entry["id"] in {item["id"] for item in background}
+                else "case"
+                for entry in nonzero_bare
+            }
+        ),
+        "nonzero_bare_usefulness_values": sorted(
+            {float(entry["usefulness_score"]) for entry in nonzero_bare}
+        ),
+        "v1_semantics": (
+            "serialized usefulness_score was accepted without evidence counters"
+        ),
+        "v2_semantics": (
+            "usefulness_score is derived from success_count and failure_count"
+        ),
+    }
+    expected_fixture_contract = {
+        "background_entry_count": 32,
+        "case_entry_count": 110,
+        "entries_with_persisted_counters": 0,
+        "nonzero_bare_usefulness_entry_count": 32,
+        "nonzero_bare_usefulness_locations": ["background"],
+        "nonzero_bare_usefulness_values": [0.2],
+        "v1_semantics": (
+            "serialized usefulness_score was accepted without evidence counters"
+        ),
+        "v2_semantics": (
+            "usefulness_score is derived from success_count and failure_count"
+        ),
+    }
+    if nonzero_ids != {entry["id"] for entry in background}:
+        fixture_contract["nonzero_bare_usefulness_locations"] = ["unexpected"]
+
+    guard = NetworkGuard()
+    with patch.object(socket, "create_connection", guard.blocked), patch.object(
+        socket.socket, "connect", guard.blocked
+    ):
+        legacy_results = [
+            evaluate_case(
+                case,
+                background,
+                usefulness_semantics=USEFULNESS_SEMANTICS_V1,
+            )
+            for case in dataset["cases"]
+        ]
+    legacy_view = deterministic_case_view(legacy_results)
+    derived_view = deterministic_case_view(derived_results)
+    legacy_fingerprint = hashlib.sha256(
+        json.dumps(
+            legacy_view,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    derived_fingerprint = hashlib.sha256(
+        json.dumps(
+            derived_view,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    observed_shapes = _migration_difference_shapes(legacy_view, derived_view)
+    gates = {
+        "fixture_contract_is_exact": fixture_contract == expected_fixture_contract,
+        "legacy_counterfactual_matches_immutable_v1": (
+            legacy_fingerprint == ACCEPTED_V1_CASE_FINGERPRINT_SHA256
+        ),
+        "derived_behavior_matches_v2_pin": (
+            derived_fingerprint == V2_CANDIDATE_CASE_FINGERPRINT_SHA256
+        ),
+        "difference_surface_is_exact": (
+            observed_shapes == USEFULNESS_MIGRATION_ALLOWED_DIFFERENCE_SHAPES
+        ),
+        "counterfactual_replay_has_zero_network_calls": guard.call_count == 0,
+    }
+    return {
+        "migration_id": "bare-usefulness-to-counter-derived-v2",
+        "reason": (
+            "Persisted feedback scores without supporting counters are not "
+            "evidence and no longer receive retrieval authority."
+        ),
+        "fixture_contract": fixture_contract,
+        "legacy_v1_case_fingerprint_sha256": legacy_fingerprint,
+        "derived_v2_case_fingerprint_sha256": derived_fingerprint,
+        "allowed_difference_shapes": dict(
+            sorted(USEFULNESS_MIGRATION_ALLOWED_DIFFERENCE_SHAPES.items())
+        ),
+        "observed_difference_shapes": observed_shapes,
+        "difference_count": sum(observed_shapes.values()),
+        "gates": gates,
+        "passed": all(gates.values()),
+    }
+
+
 def semantic_behavior_view(report: dict[str, Any]) -> dict[str, Any]:
-    """Project only deterministic retrieval semantics for v1/v2/v3/v4 certification.
+    """Project deterministic retrieval semantics shared by v1 and v2.
 
     Source hashes, formal-tree metadata, performance, timings, paths, process
     state, and the certification-dependent Phase 3B gate are intentionally
@@ -1280,6 +1559,119 @@ def semantic_behavior_projection_fingerprint(report: dict[str, Any]) -> str:
         separators=(",", ":"),
     )
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def semantic_behavior_v2_view(report: dict[str, Any]) -> dict[str, Any]:
+    """Project the deterministic v2 candidate and its migration proof.
+
+    Full source certification is deliberately excluded. It is a separate gate
+    and remains unavailable until a production v40 source baseline exists.
+    """
+
+    acceptance = report["acceptance"]
+    return {
+        "semantic_behavior": semantic_behavior_view(report),
+        "v1_to_v2_migration": copy.deepcopy(report["v1_to_v2_migration"]),
+        "behavior_candidate": copy.deepcopy(acceptance["behavior_candidate"]),
+    }
+
+
+def semantic_behavior_v2_projection_fingerprint(report: dict[str, Any]) -> str:
+    encoded = json.dumps(
+        semantic_behavior_v2_view(report),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def finalize_v2_candidate_status(report: dict[str, Any]) -> None:
+    """Separate deterministic behavior candidacy from source certification."""
+
+    actual_fingerprint = semantic_behavior_fingerprint(report)
+    migration_passed = bool(report["v1_to_v2_migration"]["passed"])
+    determinism = report.get("determinism", {})
+    hashseed_state = determinism.get("matches")
+    behavior_gates = {
+        "case_count_is_108": report["dataset"]["case_count"] == 108,
+        "dataset_freeze_matches": bool(report["dataset"]["freeze"]["matches"]),
+        "migration_contract_passes": migration_passed,
+        "v2_case_fingerprint_matches": (
+            actual_fingerprint == V2_CANDIDATE_CASE_FINGERPRINT_SHA256
+        ),
+        "zero_network_calls": report["remote_call_count"] == 0,
+        "artifact_security_scan_passes": bool(
+            report.get("artifact_security_scan", {}).get("passed", False)
+        ),
+        "hashseed_determinism_not_failed": hashseed_state is not False,
+    }
+    behavior_passed = all(behavior_gates.values())
+
+    source_gates = dict(report["integrity"]["gates"])
+    baseline_before = report["integrity"]["production_baseline_before"]
+    baseline_after = report["integrity"]["production_baseline_after"]
+    v40_verified = bool(
+        baseline_before.get("matches")
+        and baseline_after.get("matches")
+        and baseline_before.get("activeBaselineId")
+        == "memory-retrieval-production-v40"
+        and baseline_after.get("activeBaselineId")
+        == "memory-retrieval-production-v40"
+        and baseline_before.get("currentFiles", {}).get("fileCount") == 73
+        and baseline_after.get("currentFiles", {}).get("fileCount") == 73
+        and baseline_before.get("candidateMatches") is True
+        and baseline_after.get("candidateMatches") is True
+        and baseline_before.get("manifestIntegrity", {}).get("v40") is True
+        and baseline_after.get("manifestIntegrity", {}).get("v40") is True
+        and PRODUCTION_V40_MANIFEST_SHA256 == PINNED_MANIFEST_SHA256["v40"]
+    )
+    source_gates["production_v40_baseline_verifies"] = v40_verified
+    source_gates["pythonhashseed_determinism_verified"] = hashseed_state is True
+    source_passed = all(source_gates.values())
+    failed_source_gates = sorted(
+        name for name, passed in source_gates.items() if not passed
+    )
+    report["acceptance"] = {
+        "accepted": behavior_passed and source_passed,
+        "status": (
+            "accepted_source_certified"
+            if behavior_passed and source_passed
+            else "candidate_behavior_failed_or_source_uncertified"
+        ),
+        "behavior_candidate": {
+            "passed": behavior_passed,
+            "case_count": report["dataset"]["case_count"],
+            "expected_case_fingerprint_sha256": (
+                V2_CANDIDATE_CASE_FINGERPRINT_SHA256
+            ),
+            "actual_case_fingerprint_sha256": actual_fingerprint,
+            "gates": behavior_gates,
+        },
+        "source_certification": {
+            "passed": source_passed,
+            "status": "certified" if source_passed else "not_certified",
+            "required_production_baseline": "v40",
+            "production_baseline_binding": {
+                "manifest_id": "memory-retrieval-production-v40",
+                "manifest_sha256": PRODUCTION_V40_MANIFEST_SHA256,
+                "current_file_count": 73,
+                "candidate_matches": True,
+                "manifest_integrity_v40": True,
+            },
+            "failed_gates": failed_source_gates,
+            "gates": source_gates,
+        },
+        "interpretation": (
+            "The 108-case deterministic v2 behavior and its bounded migration "
+            "are accepted against the separately verified production v40 "
+            "source certification."
+        ),
+    }
+    # ``evaluation_passed`` remains the full acceptance verdict. A caller may
+    # separately publish a clearly named candidate when the bounded behavior
+    # gates pass, but an uncertified candidate must never look accepted.
+    report["evaluation_passed"] = bool(behavior_passed and source_passed)
 
 
 def evaluate_fingerprint(dataset_root: Path) -> str:
@@ -1391,6 +1783,7 @@ def evaluate_semantic_gap(
         results = [
             evaluate_case(case, dataset["background"]) for case in dataset["cases"]
         ]
+    migration = evaluate_v1_to_v2_usefulness_migration(dataset, results)
     _, evaluation_peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
     with patch.object(socket, "create_connection", network_guard.blocked), patch.object(
@@ -1438,7 +1831,7 @@ def evaluate_semantic_gap(
     }
     audit_passed = all(integrity_gates.values())
     report: dict[str, Any] = {
-        "schema_version": "memory-retrieval-semantic-gap-baseline-v1",
+        "schema_version": "memory-retrieval-semantic-gap-baseline-v2",
         "evaluator_version": EVALUATOR_VERSION,
         "reference_time": int(REFERENCE_TIME),
         "synthetic_data": True,
@@ -1509,6 +1902,7 @@ def evaluate_semantic_gap(
             },
         },
         "remote_call_count": network_guard.call_count,
+        "v1_to_v2_migration": migration,
         "integrity": {
             "gates": integrity_gates,
             "formal_before": tree_summary(formal_before),
@@ -1529,6 +1923,7 @@ def evaluate_semantic_gap(
             "File/module rename cases are excluded from confirmed semantic gaps when structured rename provenance is the primary relevance evidence.",
             "No embedding, vector database, LLM, remote reranker, query rewrite, synonym patch, or case-specific production rule is evaluated.",
             "Latency and peak memory are machine-dependent and excluded from deterministic fingerprints.",
+            "This v2 artifact is a behavior candidate only; source certification requires a verified production v40 baseline.",
         ],
     }
     report["phase3b_entry_gate"] = _phase3b_gate(
@@ -1541,6 +1936,7 @@ def evaluate_semantic_gap(
     report["evaluation_passed"] = report["evaluation_passed"] and report[
         "artifact_security_scan"
     ]["passed"]
+    finalize_v2_candidate_status(report)
     return report
 
 
@@ -1564,6 +1960,9 @@ def render_baseline_markdown(report: dict[str, Any]) -> str:
         "## Acceptance",
         "",
         f"- Evaluation integrity passed: `{report['evaluation_passed']}`",
+        f"- Behavior candidate passed: `{report['acceptance']['behavior_candidate']['passed']}`",
+        f"- Source certification passed: `{report['acceptance']['source_certification']['passed']}`",
+        f"- Accepted baseline: `{report['acceptance']['accepted']}`",
         "- Production code modified by Phase 3A: `False`",
         f"- Remote calls: `{report['remote_call_count']}`",
         f"- Dataset: `{report['dataset']['case_count']}` cases (`{report['dataset']['positive_count']}` positive, `{report['dataset']['hard_negative_count']}` hard negative)",

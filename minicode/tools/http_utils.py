@@ -1,16 +1,25 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import http.client
 import socket
 import ssl
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Mapping
+from dataclasses import dataclass
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
+from minicode.capability_contracts import (
+    CapabilityDomain,
+    CapabilityEffects,
+    CapabilityProfile,
+    CapabilityScope,
+    CapabilitySource,
+    CapabilityStatus,
+)
 from minicode.permissions import NetworkPermissionError
-from minicode.tooling import ToolDefinition, ToolContext, ToolResult
+from minicode.tooling import ToolContext, ToolDefinition, ToolResult
 from minicode.tools.network_safety import (
     MAX_REDIRECTS,
     NetworkSafetyError,
@@ -372,6 +381,38 @@ def _validate_http_request(input_data: dict):
     return normalize_http_request(input_data)
 
 
+def _capability_for(call_input: Mapping[str, object]) -> CapabilityProfile:
+    """Use normalized HTTP methods as effect hints, without contacting the host."""
+    request = _validate_http_request(dict(call_input))
+    method = request.method
+    read_only = method in {"GET", "HEAD", "OPTIONS"}
+    scope = (
+        CapabilityScope.EXTERNAL
+        if read_only
+        else CapabilityScope.DESTRUCTIVE
+        if method == "DELETE"
+        else CapabilityScope.WRITE
+    )
+    return CapabilityProfile(
+        domain=CapabilityDomain.WEB,
+        scope=scope,
+        source=CapabilitySource.BUILTIN,
+        status=CapabilityStatus.HINTED,
+        effects=CapabilityEffects(
+            read_only=read_only,
+            destructive=False if read_only else True if method == "DELETE" else None,
+            external=True,
+            executes_code=False,
+            delegates=False,
+        ),
+        evidence=(
+            f"Validated normalized HTTP method: {method}; external network interaction.",
+            "Method semantics are hints; the remote server's actual side effects are not guaranteed.",
+            "OPTIONS and mutation methods still require the existing network permission check.",
+        ),
+    )
+
+
 def _run_http_request(
     input_data: NormalizedHttpRequest,
     context: ToolContext,
@@ -446,4 +487,5 @@ http_request_tool = ToolDefinition(
     },
     validator=_validate_http_request,
     run=_run_http_request,
+    capability_for=_capability_for,
 )

@@ -11,10 +11,15 @@ import sys
 import tempfile
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ACCEPTED_GOLD_PATH = (
     PROJECT_ROOT / "artifacts" / "memory-retrieval-semantic-gap-baseline.json"
+)
+V2_CANDIDATE_PATH = (
+    PROJECT_ROOT / "artifacts" / "memory-retrieval-semantic-gap-v2-candidate.json"
+)
+ACCEPTED_V2_PATH = (
+    PROJECT_ROOT / "artifacts" / "memory-retrieval-semantic-gap-baseline-v2.json"
 )
 DEFAULT_GENERATED_REPORT_PATH = (
     PROJECT_ROOT / "artifacts" / "memory-retrieval-semantic-gap-evaluation.json"
@@ -62,6 +67,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--fingerprint", action="store_true")
     parser.add_argument("--skip-hashseed-check", action="store_true")
+    parser.add_argument(
+        "--write-v2-candidate",
+        action="store_true",
+        help="Explicitly refresh the protected v2 behavior-candidate artifact.",
+    )
     return parser.parse_args()
 
 
@@ -95,16 +105,31 @@ def _hashseed_fingerprints(dataset: Path) -> dict[str, object]:
 
 
 def main() -> int:
+    args = parse_args()
+    protected_paths = {
+        ACCEPTED_GOLD_PATH.resolve(),
+        ACCEPTED_V2_PATH.resolve(),
+        V2_CANDIDATE_PATH.resolve(),
+    }
+    if args.output.resolve() in protected_paths and not (
+        args.write_v2_candidate
+        and args.output.resolve() == V2_CANDIDATE_PATH.resolve()
+    ):
+        raise ValueError(
+            "The protected semantic artifact is immutable without the explicit "
+            "--write-v2-candidate workflow."
+        )
+    if args.write_v2_candidate and args.output.resolve() != V2_CANDIDATE_PATH.resolve():
+        raise ValueError("--write-v2-candidate may only target the v2 candidate path.")
     from scripts.memory_retrieval_semantic_gap_evaluator import (
         _safe_report_scan,
         evaluate_fingerprint,
         evaluate_semantic_gap,
+        finalize_v2_candidate_status,
+        semantic_behavior_v2_view,
         write_reports,
     )
 
-    args = parse_args()
-    if args.output.resolve() == ACCEPTED_GOLD_PATH.resolve():
-        raise ValueError("The accepted semantic baseline is immutable.")
     if args.fingerprint:
         print(evaluate_fingerprint(args.dataset))
         return 0
@@ -130,6 +155,21 @@ def main() -> int:
     report["evaluation_passed"] = (
         report["evaluation_passed"] and report["artifact_security_scan"]["passed"]
     )
+    finalize_v2_candidate_status(report)
+    if ACCEPTED_V2_PATH.is_file() and args.output.resolve() != ACCEPTED_V2_PATH.resolve():
+        accepted_v2 = json.loads(ACCEPTED_V2_PATH.read_text(encoding="utf-8"))
+        matches_v2 = semantic_behavior_v2_view(report) == semantic_behavior_v2_view(
+            accepted_v2
+        )
+        report["accepted_v2_comparison"] = {
+            "artifact": ACCEPTED_V2_PATH.name,
+            "matches": matches_v2,
+        }
+        report["evaluation_passed"] = report["evaluation_passed"] and matches_v2
+    if args.write_v2_candidate and not report["acceptance"]["behavior_candidate"][
+        "passed"
+    ]:
+        raise ValueError("The v2 behavior candidate gates did not pass.")
     write_reports(
         report,
         json_path=args.output,
@@ -142,6 +182,16 @@ def main() -> int:
             {
                 "cases": report["dataset"]["case_count"],
                 "evaluation_passed": report["evaluation_passed"],
+                "behavior_candidate_passed": report["acceptance"][
+                    "behavior_candidate"
+                ]["passed"],
+                "source_certification_passed": report["acceptance"][
+                    "source_certification"
+                ]["passed"],
+                "accepted": report["acceptance"]["accepted"],
+                "accepted_v2_matches": report.get("accepted_v2_comparison", {}).get(
+                    "matches"
+                ),
                 "confirmed_gaps": report["semantic_gap_adjudication"]["confirmed_count"],
                 "phase3b_gate": report["phase3b_entry_gate"]["passed"],
                 "remote_calls": report["remote_call_count"],
@@ -151,6 +201,8 @@ def main() -> int:
             sort_keys=True,
         )
     )
+    if args.write_v2_candidate:
+        return 0 if report["acceptance"]["behavior_candidate"]["passed"] else 1
     return 0 if report["evaluation_passed"] else 1
 
 

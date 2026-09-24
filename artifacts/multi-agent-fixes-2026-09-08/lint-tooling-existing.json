@@ -1,0 +1,10 @@
+{
+  "fixed": {
+    "returncode": 1,
+    "output": "E731 Do not assign a `lambda` expression, use a `def`\n   --> minicode/tooling.py:337:9\n    |\n335 |         getter = value.get\n336 |     else:\n337 |         getter = lambda name, default=None: getattr(value, name, default)\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n338 |     try:\n339 |         qualified_name = getter(\"qualified_name\")\n    |\nhelp: Rewrite `getter` as a `def`\n\nFound 1 error.\nNo fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).\n"
+  },
+  "baseline": {
+    "returncode": 1,
+    "output": "E731 Do not assign a `lambda` expression, use a `def`\n   --> /private/tmp/minicode-multi-agent-buggy-ahhcgrxd/minicode/tooling.py:332:9\n    |\n330 |         getter = value.get\n331 |     else:\n332 |         getter = lambda name, default=None: getattr(value, name, default)\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n333 |     try:\n334 |         qualified_name = getter(\"qualified_name\")\n    |\nhelp: Rewrite `getter` as a `def`\n\nFound 1 error.\nNo fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).\n"
+  }
+}

@@ -51,8 +51,13 @@ Thumbs.db
 *.tmp
 *.bak
 
-# MiniCode specific
-.mini-code/
+# MiniCode specific. Runtime indexes/version state stay local, while project
+# Skill source is configuration and must survive a clean checkout.
+.mini-code/*
+!.mini-code/skills/
+!.mini-code/skills/**
+.mini-code/skills/**/.DS_Store
+.minicode-memory-authority.lock
 minicode_session/
 # Project-local / session runtime state is never versioned by design.
 # Durable project Memory is useful at runtime but may contain private paths,
@@ -90,6 +95,11 @@ out.txt
 /artifacts/**/journal/
 /artifacts/**/workspace/
 /artifacts/**/memory-store.lock
+
+# Real-request intent evaluation keeps linkable Session locators local-only.
+/.design-work/intent-semantic-production-evaluation/build_pilot_manifests.py
+/.design-work/intent-semantic-production-evaluation/artifacts/private/
+/.design-work/intent-semantic-production-evaluation/artifacts/contract-v2/private/
 
 # One-off development smokes are local diagnostics, not frozen acceptance
 # evidence. Curated acceptance manifests and results remain allowlisted by

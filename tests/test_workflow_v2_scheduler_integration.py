@@ -333,7 +333,7 @@ def test_public_prompt_and_task_schema_advertise_only_the_central_mutation_path(
     ]["description"]
 
     assert "agent_type='workflow'" in prompt
-    assert "complete WorkflowRequest.v1" in prompt
+    assert "the scheduler constructs WorkflowRequest.v1 for you" in prompt
     assert "agent_type='general' is a deprecated" in prompt
-    assert "A production workflow must provide WorkflowRequest.v1" in task_description
+    assert "creates or modifies files" in task_description
     assert "legacy-only 'general'" in agent_type_description

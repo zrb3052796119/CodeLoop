@@ -19,12 +19,34 @@ from pathlib import Path
 from typing import Any
 
 from minicode.config import MINI_CODE_DIR
+from minicode.memory_audit_contract import (
+    MemoryAuditSegment,
+    decode_memory_audit_head,
+    decode_memory_audit_records,
+    validate_memory_audit_segment_chain,
+)
 from minicode.memory import (
     MemoryEntry,
     MemoryFile,
     MemoryScope,
     MemoryTier,
+    _apply_approval_authority_state,
+    _bind_memory_authority_scope,
+    _interpret_loaded_entry_approval,
+    _validate_memory_data,
     assess_memory_safety,
+)
+from minicode.memory_approval_interpretation import ApprovalInterpretationMode
+from minicode.memory_blob_store import MemoryBlobStore
+from minicode.memory_authority_io import (
+    CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION,
+    MAX_AUTHORITY_AUDIT_RECORDS,
+    MAX_CURRENT_AUTHORITY_CONTENT_BYTES,
+    MAX_CURRENT_AUTHORITY_ENTRIES,
+    MEMORY_ENTRY_ID_RE,
+    MIGRATABLE_MEMORY_AUTHORITY_SCHEMA_VERSIONS,
+    parse_memory_authority_json,
+    read_memory_authority_file,
 )
 from minicode.mcp_event_contract import normalize_mcp_runtime_payload
 from minicode.permission_event_contract import normalize_permission_event_payload
@@ -47,6 +69,7 @@ from minicode.skill_evidence import SkillEvidenceLedger
 from minicode.skill_versions import SkillVersionLedger
 from minicode.skills import (
     SkillSummary,
+    _routing_identity_digest,
     discover_skills,
     extract_description,
     parse_frontmatter,
@@ -119,7 +142,6 @@ _ASSIGNMENT_RE = re.compile(
     r"credential|authorization|cookie)\b(\s*[:=]\s*)[^\s,;/'\"]+"
 )
 _MAX_SOURCE_FILE_BYTES = 2 * 1024 * 1024
-_MAX_MEMORY_ENTRIES = 1_000
 _MAX_SESSION_INDEX_ENTRIES = 10_000
 _MAX_SKILL_SUMMARIES = 10_000
 _DEFAULT_PAGE_LIMIT = 20
@@ -145,7 +167,7 @@ _MAX_CURSOR_CHARS = 512
 _SESSION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
 _CURSOR_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 _CATEGORY_RE = re.compile(r"^[\w.-]{1,64}$")
-_MEMORY_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")
+_MEMORY_ID_RE = MEMORY_ENTRY_ID_RE
 _SKILL_NAME_RE = re.compile(r"^[\w][\w.-]{0,127}$")
 _SKILL_QUALIFIED_NAME_RE = re.compile(r"^[\w][\w./-]{0,255}$")
 _SKILL_DIRECTORY_RE = re.compile(r"^[\w][\w.-]{0,63}$")
@@ -2404,7 +2426,11 @@ class DashboardReadModel:
         scope_states: dict[str, dict[str, object]] = {}
         for memory_scope, (directory, configured_root) in scope_paths.items():
             try:
-                memory_file, entry_diagnostics = self._read_memory_scope_for_page(
+                (
+                    memory_file,
+                    entry_diagnostics,
+                    migration_required,
+                ) = self._read_memory_scope_for_page(
                     memory_scope, directory, configured_root
                 )
             except Exception:  # noqa: BLE001 - isolate one corrupt scope
@@ -2427,6 +2453,8 @@ class DashboardReadModel:
                 "count": len(memory_file.entries),
                 "location": self._memory_location(memory_scope),
             }
+            if migration_required:
+                scope_states[memory_scope.value]["migrationRequired"] = True
             all_entries.extend(memory_file.entries)
 
         by_scope = {
@@ -3094,30 +3122,30 @@ class DashboardReadModel:
             inherited = directory_summary.get(key, [])
             return list(inherited) if isinstance(inherited, list) else []
 
-        return (
-            SkillSummary(
-                name=name,
-                qualified_name=qualified_name,
-                description=extract_description(text),
-                path=str(path),
-                source=source,
-                directory=directory,
-                directory_description=(
-                    str(directory_summary.get("description", ""))
-                    if directory_summary is not None
-                    else ""
-                ),
-                domains=values("domains"),
-                scopes=values("scopes"),
-                tools=self._skill_metadata_values(metadata.get("tools")),
-                keywords=values("keywords"),
-                examples=self._skill_metadata_values(metadata.get("examples")),
-                content_digest=hashlib.sha256(
-                    text.encode("utf-8")
-                ).hexdigest(),
+        summary = SkillSummary(
+            name=name,
+            qualified_name=qualified_name,
+            description=extract_description(text),
+            path=str(path),
+            source=source,
+            directory=directory,
+            directory_description=(
+                str(directory_summary.get("description", ""))
+                if directory_summary is not None
+                else ""
             ),
-            path.resolve(strict=True).stat().st_mtime,
+            domains=values("domains"),
+            scopes=values("scopes"),
+            tools=self._skill_metadata_values(metadata.get("tools")),
+            keywords=values("keywords"),
+            examples=self._skill_metadata_values(metadata.get("examples")),
+            content_digest=hashlib.sha256(text.encode("utf-8")).hexdigest(),
         )
+        summary.routing_identity_digest = _routing_identity_digest(
+            summary,
+            directory_summary=directory_summary,
+        )
+        return summary, path.resolve(strict=True).stat().st_mtime
 
     @staticmethod
     def _strict_skill_frontmatter(text: str) -> tuple[dict[str, Any], str]:
@@ -3482,7 +3510,7 @@ class DashboardReadModel:
         }
         for scope, (directory, root) in memory_paths.items():
             try:
-                _, entry_diagnostics = self._read_memory_scope_for_page(
+                _, entry_diagnostics, _ = self._read_memory_scope_for_page(
                     scope, directory, root
                 )
                 memory_statuses[scope] = "error" if entry_diagnostics else "live"
@@ -3596,79 +3624,164 @@ class DashboardReadModel:
             return "0.1.0"
 
     @staticmethod
+    def _validate_versioned_memory_audit(
+        scope: MemoryScope,
+        directory: Path,
+        parsed: dict[str, Any],
+    ) -> None:
+        """Apply the shared typed/segmented audit contract without writes."""
+
+        hot = decode_memory_audit_records(
+            parsed.get("approval_audit"),
+            expected_scope=scope.value,
+            maximum_records=MAX_AUTHORITY_AUDIT_RECORDS,
+        )
+        if (
+            parsed.get("schemaVersion")
+            != CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION
+        ):
+            return
+        head = decode_memory_audit_head(parsed.get("approval_audit_head"))
+        segments: list[MemoryAuditSegment] = []
+        if head is not None:
+            reference = head.blob
+            store = MemoryBlobStore(directory)
+            for _ in range(head.segment_count):
+                segment = MemoryAuditSegment.from_dict(
+                    store.read_json(reference),
+                    expected_scope=scope.value,
+                )
+                segments.append(segment)
+                if segment.previous is None:
+                    break
+                reference = segment.previous
+        validate_memory_audit_segment_chain(
+            head,
+            segments,
+            expected_scope=scope.value,
+            hot_records=hot,
+        )
+
+    @staticmethod
     def _read_memory_scope_for_page(
         scope: MemoryScope, directory: Path, configured_root: Path
-    ) -> tuple[MemoryFile, list[dict[str, str]]]:
-        memory_json = directory / "memory.json"
-        memory_md = directory / "MEMORY.md"
+    ) -> tuple[MemoryFile, list[dict[str, str]], bool]:
+        """Decode one scope through the canonical read-only authority contract.
+
+        Current JSON authorities are atomic security objects: a bad schema,
+        scope binding, entry digest, duplicate identity, receipt, approval, or
+        capacity check rejects the whole scope.  Unversioned JSON and Markdown
+        remain readable for diagnostics, but are explicitly marked as needing
+        migration and never bypass the canonical approval interpreter.
+        """
+
+        resolved_root = configured_root.resolve(strict=False)
+        resolved_directory = directory.resolve(strict=False)
+        if not resolved_directory.is_relative_to(resolved_root):
+            raise OSError("memory scope escapes its configured root")
+
         diagnostics: list[dict[str, str]] = []
-        if memory_json.exists():
-            parsed = json.loads(
-                DashboardReadModel._read_bounded_text(memory_json, configured_root)
-            )
+        json_source = read_memory_authority_file(directory, "memory.json")
+        if json_source is not None:
+            parsed = parse_memory_authority_json(json_source.text)
             if not isinstance(parsed, dict) or not isinstance(parsed.get("entries"), list):
                 raise ValueError("invalid memory data")
-            if len(parsed["entries"]) > _MAX_MEMORY_ENTRIES:
-                raise ValueError("memory scope exceeds the Dashboard read limit")
+
+            has_schema_version = "schemaVersion" in parsed
+            is_current = (
+                parsed.get("schemaVersion")
+                == CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION
+            )
+            is_migratable = (
+                parsed.get("schemaVersion")
+                in MIGRATABLE_MEMORY_AUTHORITY_SCHEMA_VERSIONS
+            )
+            is_versioned = is_current or is_migratable
+            if has_schema_version and not is_versioned:
+                raise ValueError("unsupported Memory authority schema")
+
+            parsed, scope_errors = _bind_memory_authority_scope(
+                parsed,
+                scope.value,
+            )
+            if scope_errors:
+                raise ValueError("Memory authority scope binding failed")
+            is_valid, validation_errors = _validate_memory_data(parsed)
+            if is_versioned and (not is_valid or validation_errors):
+                raise ValueError("invalid versioned Memory authority")
+
+            if is_versioned:
+                DashboardReadModel._validate_versioned_memory_audit(
+                    scope,
+                    directory,
+                    parsed,
+                )
+
+            raw_entries = parsed["entries"]
+            seen_ids: set[str] = set()
+            for raw_entry in raw_entries:
+                if not isinstance(raw_entry, dict):
+                    if is_versioned:
+                        raise ValueError("invalid versioned Memory entry")
+                    continue
+                entry_id = raw_entry.get("id")
+                if isinstance(entry_id, str):
+                    if entry_id in seen_ids:
+                        raise ValueError("duplicate Memory entry identity")
+                    seen_ids.add(entry_id)
+
             entries: list[MemoryEntry] = []
-            for raw_entry in parsed["entries"]:
+            for raw_entry in raw_entries:
                 try:
                     if not isinstance(raw_entry, dict):
                         raise TypeError("invalid memory entry")
+                    if not is_versioned:
+                        entry_valid, _ = _validate_memory_data(
+                            {"entries": [raw_entry]}
+                        )
+                        if not entry_valid:
+                            raise ValueError("invalid legacy memory entry")
                     entry_id = raw_entry.get("id")
                     category = raw_entry.get("category", "general")
                     content = raw_entry.get("content")
                     raw_tier = raw_entry.get("tier", MemoryTier.SHORT_TERM.value)
+                    if (
+                        not is_versioned
+                        and isinstance(category, str)
+                        and _CATEGORY_RE.fullmatch(category) is None
+                    ):
+                        category = "general"
                     if (
                         not isinstance(entry_id, str)
                         or not _MEMORY_ID_RE.fullmatch(entry_id)
                         or not isinstance(category, str)
                         or not _CATEGORY_RE.fullmatch(category)
                         or not isinstance(content, str)
+                        or not content.strip()
                         or raw_tier not in {item.value for item in MemoryTier}
                     ):
                         raise ValueError("invalid memory entry")
                     normalized = dict(raw_entry)
                     normalized["scope"] = scope.value
+                    normalized["category"] = category
                     entry = MemoryEntry.from_dict(normalized)
-                    assessed_safety = assess_memory_safety(
+                    safety = assess_memory_safety(
                         entry.content, source="dashboard_read"
                     )
-                    safety_rank = {"safe": 0, "suspicious": 1, "unsafe": 2}
-                    if safety_rank.get(assessed_safety.status, 1) > safety_rank.get(
-                        entry.safety_status, 1
-                    ):
-                        entry.safety_status = assessed_safety.status
-                        if assessed_safety.status == "unsafe":
-                            entry.approval_status = "rejected"
-                            entry.lifecycle_status = "rejected"
-                        elif entry.approval_status == "approved":
-                            entry.approval_status = "pending"
-                    numeric_values = (
-                        entry.created_at,
-                        entry.updated_at,
-                        entry.last_accessed,
-                        entry.last_used,
-                        entry.usefulness_score,
-                        entry.corroborated_usefulness_score,
+                    interpretation = _interpret_loaded_entry_approval(
+                        entry,
+                        raw_entry,
+                        safety,
+                        mode=ApprovalInterpretationMode.STRICT_FAIL_CLOSED,
+                        transition_time=entry.approval_decided_at,
+                        requires_complete_authority=is_versioned,
                     )
-                    counters = (
-                        entry.retrieval_count,
-                        entry.injection_count,
-                        entry.success_count,
-                        entry.failure_count,
-                        entry.corroborated_success_count,
-                        entry.corroborated_failure_count,
-                    )
-                    if (
-                        any(not math.isfinite(float(value)) for value in numeric_values)
-                        or any(value < 0 for value in counters)
-                        or len(entry.lifecycle_status) > 64
-                        or len(entry.safety_status) > 64
-                        or len(entry.approval_status) > 64
-                    ):
-                        raise ValueError("invalid memory entry")
+                    if interpretation.failure is not None or interpretation.state is None:
+                        raise ValueError("invalid Memory approval authority")
+                    _apply_approval_authority_state(entry, interpretation.state)
                 except Exception:  # noqa: BLE001 - isolate one malformed entry
+                    if is_versioned:
+                        raise ValueError("invalid versioned Memory entry")
                     diagnostics.append(
                         DashboardReadModel._diagnostic(
                             "memory",
@@ -3678,34 +3791,58 @@ class DashboardReadModel:
                     )
                     continue
                 entries.append(entry)
-            return MemoryFile(scope=scope, entries=entries), diagnostics
 
-        if memory_md.exists():
+            memory_file = MemoryFile(scope=scope, entries=entries)
+            if (
+                len(memory_file.entries) > MAX_CURRENT_AUTHORITY_ENTRIES
+                or memory_file.size_bytes > MAX_CURRENT_AUTHORITY_CONTENT_BYTES
+            ):
+                raise ValueError("Memory scope exceeds canonical capacity")
+            return memory_file, diagnostics, not is_current
+
+        markdown_source = read_memory_authority_file(directory, "MEMORY.md")
+        if markdown_source is not None:
             entries: list[MemoryEntry] = []
             category = "general"
-            text = DashboardReadModel._read_bounded_text(memory_md, configured_root)
-            for line in text.splitlines():
+            for line in markdown_source.text.splitlines():
                 stripped = line.strip()
                 if stripped.startswith("## "):
                     candidate = stripped[3:].strip().lower()
                     category = candidate if _CATEGORY_RE.fullmatch(candidate) else "general"
                 elif stripped.startswith("- "):
-                    if len(entries) >= _MAX_MEMORY_ENTRIES:
-                        raise ValueError("memory scope exceeds the Dashboard read limit")
-                    entries.append(
-                        MemoryEntry(
-                            id=f"{scope.value}-markdown-{len(entries) + 1}",
-                            scope=scope,
-                            category=category,
-                            content=stripped[2:].strip(),
-                            tier=MemoryTier.SHORT_TERM,
-                            safety_status="suspicious",
-                            approval_status="pending",
-                        )
+                    entry = MemoryEntry(
+                        id=f"{scope.value}-markdown-{len(entries) + 1}",
+                        scope=scope,
+                        category=category,
+                        content=stripped[2:].strip(),
+                        tier=MemoryTier.SHORT_TERM,
                     )
-            return MemoryFile(scope=scope, entries=entries), diagnostics
+                    if not entry.content:
+                        raise ValueError("invalid legacy Markdown entry")
+                    safety = assess_memory_safety(
+                        entry.content,
+                        source="dashboard_read",
+                    )
+                    interpretation = _interpret_loaded_entry_approval(
+                        entry,
+                        {},
+                        safety,
+                        mode=ApprovalInterpretationMode.STRICT_FAIL_CLOSED,
+                        transition_time=entry.approval_decided_at,
+                    )
+                    if interpretation.failure is not None or interpretation.state is None:
+                        raise ValueError("invalid legacy Markdown approval")
+                    _apply_approval_authority_state(entry, interpretation.state)
+                    entries.append(entry)
+            memory_file = MemoryFile(scope=scope, entries=entries)
+            if (
+                len(memory_file.entries) > MAX_CURRENT_AUTHORITY_ENTRIES
+                or memory_file.size_bytes > MAX_CURRENT_AUTHORITY_CONTENT_BYTES
+            ):
+                raise ValueError("Memory scope exceeds canonical capacity")
+            return memory_file, diagnostics, True
 
-        return MemoryFile(scope=scope), diagnostics
+        return MemoryFile(scope=scope), diagnostics, False
 
     def _workspace_id(self) -> str:
         return stable_workspace_id(self.workspace)
@@ -4014,7 +4151,11 @@ class DashboardReadModel:
 
         for scope, (directory, configured_root) in scope_paths.items():
             try:
-                memory_file = self._read_memory_scope(
+                (
+                    memory_file,
+                    entry_diagnostics,
+                    migration_required,
+                ) = self._read_memory_scope_for_page(
                     scope, directory, configured_root
                 )
             except Exception:  # noqa: BLE001 - isolate one corrupt scope
@@ -4027,16 +4168,21 @@ class DashboardReadModel:
                 }
                 continue
 
+            if entry_diagnostics:
+                errors.append(scope.value)
+
             tiers = Counter(entry.tier.value for entry in memory_file.entries)
             categories = Counter(entry.category for entry in memory_file.entries)
             scope_tiers = self._tier_counts(tiers)
             scope_categories = dict(sorted(categories.items()))
             scopes[scope.value] = {
-                "status": "live",
+                "status": "error" if entry_diagnostics else "live",
                 "count": len(memory_file.entries),
                 "tiers": scope_tiers,
                 "categories": scope_categories,
             }
+            if migration_required:
+                scopes[scope.value]["migrationRequired"] = True
             known_count += len(memory_file.entries)
             total_tiers.update(tiers)
             total_categories.update(categories)
@@ -4055,54 +4201,16 @@ class DashboardReadModel:
     def _read_memory_scope(
         scope: MemoryScope, directory: Path, configured_root: Path
     ) -> MemoryFile:
-        memory_json = directory / "memory.json"
-        memory_md = directory / "MEMORY.md"
-        if memory_json.exists():
-            parsed = json.loads(
-                DashboardReadModel._read_bounded_text(
-                    memory_json, configured_root
-                )
+        memory_file, diagnostics, _ = (
+            DashboardReadModel._read_memory_scope_for_page(
+                scope,
+                directory,
+                configured_root,
             )
-            if not isinstance(parsed, dict) or not isinstance(parsed.get("entries"), list):
-                raise ValueError("invalid memory data")
-            if len(parsed["entries"]) > _MAX_MEMORY_ENTRIES:
-                raise ValueError("memory scope exceeds the Dashboard read limit")
-            entries: list[MemoryEntry] = []
-            for raw_entry in parsed["entries"]:
-                if not isinstance(raw_entry, dict):
-                    raise TypeError("invalid memory entry")
-                if not isinstance(raw_entry.get("id"), str) or not isinstance(
-                    raw_entry.get("content"), str
-                ):
-                    raise ValueError("invalid memory entry")
-                normalized = dict(raw_entry)
-                normalized["scope"] = scope.value
-                entries.append(MemoryEntry.from_dict(normalized))
-            return MemoryFile(scope=scope, entries=entries)
-
-        if memory_md.exists():
-            entries = []
-            category = "general"
-            text = DashboardReadModel._read_bounded_text(
-                memory_md, configured_root
-            )
-            for line in text.splitlines():
-                stripped = line.strip()
-                if stripped.startswith("## "):
-                    category = stripped[3:].strip().lower() or "general"
-                elif stripped.startswith("- "):
-                    entries.append(
-                        MemoryEntry(
-                            id=f"{scope.value}-markdown-{len(entries) + 1}",
-                            scope=scope,
-                            category=category,
-                            content=stripped[2:].strip(),
-                            tier=MemoryTier.SHORT_TERM,
-                        )
-                    )
-            return MemoryFile(scope=scope, entries=entries)
-
-        return MemoryFile(scope=scope)
+        )
+        if diagnostics:
+            raise ValueError("legacy Memory scope contains invalid entries")
+        return memory_file
 
     @staticmethod
     def _tier_counts(counts: Counter[str]) -> dict[str, int]:

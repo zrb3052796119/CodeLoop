@@ -13,42 +13,434 @@ Search uses TF-IDF relevance scoring for intelligent retrieval.
 
 from __future__ import annotations
 
-import functools
 import base64
 import binascii
+import copy
+import functools
 import hashlib
 import json
 import logging
 import math
 import os
 import re
+import threading
 import time
 import unicodedata
 import uuid
 from collections import Counter
-from contextlib import contextmanager
+from collections.abc import Sequence
+from contextlib import ExitStack, contextmanager, nullcontext
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
+import minicode.memory_authority_io as memory_authority_io_module
 from minicode.config import MINI_CODE_DIR
+from minicode.memory_approval_interpretation import (
+    ApprovalAuthorityState,
+    ApprovalInterpretation,
+    ApprovalInterpretationInput,
+    ApprovalInterpretationMode,
+    interpret_loaded_approval,
+)
+from minicode.memory_audit_contract import (
+    MAX_MEMORY_AUDIT_CHAIN_RECORDS,
+    MAX_MEMORY_AUDIT_RECORDS_PER_SEGMENT,
+    MemoryAuditHead,
+    MemoryAuditRecord,
+    MemoryAuditSegment,
+    decode_legacy_memory_audit_records,
+    decode_memory_audit_head,
+    decode_memory_audit_records,
+    validate_memory_audit_segment_chain,
+)
+from minicode.memory_authority_io import (
+    CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION,
+    MAX_AUTHORITY_AUDIT_RECORDS,
+    MAX_AUTHORITY_ENTRIES,
+    MAX_CURRENT_AUTHORITY_CONTENT_BYTES,
+    MAX_CURRENT_AUTHORITY_ENTRIES,
+    MAX_MEMORY_COUNTER,
+    MAX_MEMORY_TIMESTAMP,
+    MAX_MEMORY_USEFULNESS_SCORE,
+    MIGRATABLE_MEMORY_AUTHORITY_SCHEMA_VERSIONS,
+    MIN_MEMORY_USEFULNESS_SCORE,
+    MemoryAuthorityLimitError,
+    MemoryAuthoritySource,
+    MemoryAuthoritySourceError,
+    MemoryAuthorityTooLargeError,
+    is_memory_entry_id,
+    parse_memory_authority_json,
+    read_memory_authority_file,
+    validate_memory_authority_commit,
+    validate_memory_authority_value,
+)
+from minicode.memory_authority_publisher import MemoryAuthorityPublisher
+from minicode.memory_blob_store import (
+    MemoryBlobReference,
+    MemoryBlobStore,
+    canonical_memory_blob_bytes,
+    memory_blob_digest,
+)
 from minicode.memory_store import (
+    MemoryStoreBusy,
     MemoryStoreConflict,
     MemoryStoreCoordinator,
     MemoryStoreError,
+    MemoryStoreUnavailable,
     MemoryStoreUnsafePath,
+)
+from minicode.memory_write_contract import (
+    MAX_MEMORY_CLAIMS_PER_BATCH,
+    MemoryAuthorityCommit,
+    MemoryAuthorityReceiptReference,
+    MemoryMaterialization,
 )
 
 logger = logging.getLogger(__name__)
 
+_MEMORY_MANAGER_TRANSACTION_STATE = threading.local()
+
+
+def _active_memory_manager_transaction() -> object | None:
+    """Return this thread's manager owner, clearing inherited fork state."""
+
+    pid = os.getpid()
+    if getattr(_MEMORY_MANAGER_TRANSACTION_STATE, "pid", None) != pid:
+        _MEMORY_MANAGER_TRANSACTION_STATE.pid = pid
+        _MEMORY_MANAGER_TRANSACTION_STATE.owner = None
+    return getattr(_MEMORY_MANAGER_TRANSACTION_STATE, "owner", None)
+
+_CURRENT_ENTRY_REQUIRED_FIELDS = frozenset(
+    {
+        "id",
+        "scope",
+        "category",
+        "content",
+        "created_at",
+        "updated_at",
+        "tags",
+        "usage_count",
+        "domains",
+        "tier",
+        "last_accessed",
+        "related_to",
+        "metadata",
+        "source",
+        "provenance",
+        "retrieval_count",
+        "injection_count",
+        "success_count",
+        "failure_count",
+        "last_used",
+        "usefulness_score",
+        "corroborated_success_count",
+        "corroborated_failure_count",
+        "corroborated_usefulness_score",
+        "feedback_observations",
+        "lifecycle_status",
+        "tier_reason",
+        "deprecated_at",
+        "curator_locked",
+        "safety_status",
+        "safety_reason",
+        "approval_status",
+        "approval_content_hash",
+        "approval_reason",
+        "approval_actor",
+        "approval_decided_at",
+        "approval_policy",
+        "authority_state_digest",
+    }
+)
+_V2_ENTRY_REQUIRED_FIELDS = frozenset(
+    _CURRENT_ENTRY_REQUIRED_FIELDS - {"authority_state_digest"}
+)
+_SEALED_ENTRY_SCHEMA_VERSIONS = frozenset(
+    {3, 4, 5, CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION}
+)
+_RECEIPT_REFERENCE_SCHEMA_VERSIONS = frozenset(
+    {4, 5, CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION}
+)
+_CURRENT_ROOT_REQUIRED_FIELDS = frozenset(
+    {
+        "schemaVersion",
+        "scope",
+        "last_updated",
+        "entries",
+        "approval_audit",
+        "approval_audit_head",
+        "write_receipts",
+        "pipeline_operation_receipts",
+        "observation_receipts",
+    }
+)
+_V5_ROOT_REQUIRED_FIELDS = frozenset(
+    _CURRENT_ROOT_REQUIRED_FIELDS - {"observation_receipts"}
+)
+_PRE_SEGMENTED_ROOT_REQUIRED_FIELDS = frozenset(
+    _V5_ROOT_REQUIRED_FIELDS - {"approval_audit_head"}
+)
+_CURRENT_VALID_MEMORY_TIERS = frozenset(
+    {"working", "short_term", "long_term", "archival"}
+)
+_VALID_LIFECYCLE_STATUSES = frozenset(
+    {
+        "active",
+        "pending",
+        "held",
+        "archived",
+        "deprecated",
+        "rejected",
+        "invalid",
+        "superseded",
+        "archived_duplicate",
+        "evicted",
+    }
+)
+_CURRENT_VALID_APPROVAL_POLICIES = frozenset(
+    {"user_explicit", "user_review_required", "auto_approve_verified"}
+)
+_SHA256_HEX_RE = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _authority_state_digest_for_data(data: dict[str, Any]) -> str:
+    """Bind every field that can make one persisted entry injectable.
+
+    The approval-content hash remains the version identity used by feedback.
+    This second, derived seal prevents a versioned decoder from silently
+    replacing missing or edited authority fields with permissive defaults.
+    It is an integrity invariant, not a secret-key signature.
+    """
+
+    payload = {
+        "digestVersion": 1,
+        "id": data.get("id"),
+        "scope": data.get("scope"),
+        "tier": data.get("tier"),
+        "lifecycle_status": data.get("lifecycle_status"),
+        "curator_locked": data.get("curator_locked"),
+        "safety_status": data.get("safety_status"),
+        "safety_reason": data.get("safety_reason"),
+        "approval_status": data.get("approval_status"),
+        "approval_content_hash": data.get("approval_content_hash"),
+        "approval_reason": data.get("approval_reason"),
+        "approval_actor": data.get("approval_actor"),
+        "approval_decided_at": data.get("approval_decided_at"),
+        "approval_policy": data.get("approval_policy"),
+        "deprecated_at": data.get("deprecated_at"),
+        "tier_reason": data.get("tier_reason"),
+    }
+    encoded = json.dumps(
+        payload,
+        sort_keys=True,
+        ensure_ascii=False,
+        allow_nan=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _derived_usefulness_score(success_count: int, failure_count: int) -> float:
+    total = success_count + failure_count
+    return (
+        (success_count - failure_count) / total
+        if total
+        else 0.0
+    )
+
+
+def _saturating_counter_add(current: int, increment: int = 1) -> int:
+    """Advance a persisted JSON counter without making the store unwritable."""
+
+    if type(current) is not int or type(increment) is not int:
+        raise TypeError("Memory counters require integer arithmetic")
+    if current < 0 or increment < 0:
+        raise ValueError("Memory counters cannot be negative")
+    return min(MAX_MEMORY_COUNTER, current + increment)
+
+
+def _bounded_age_hours(timestamp: float, *, now: float | None = None) -> float:
+    """Return a non-negative age so future clock skew cannot amplify rank."""
+
+    reference = time.time() if now is None else now
+    return max(0.0, (reference - timestamp) / 3600.0)
+
+
+def _fits_persistence_depth(value: object, *, initial_depth: int = 1) -> bool:
+    """Match the canonical persistence sanitizer's structural depth budget."""
+
+    stack: list[tuple[object, int]] = [(value, initial_depth)]
+    while stack:
+        current, depth = stack.pop()
+        if depth > _PERSISTENCE_MAX_DEPTH:
+            return False
+        if isinstance(current, dict):
+            stack.extend((nested, depth + 1) for nested in current.values())
+        elif isinstance(current, list):
+            stack.extend((nested, depth + 1) for nested in current)
+    return True
+
+
+def _parse_memory_write_receipt_authority(
+    value: object,
+    *,
+    expected_scope: str,
+    authority_schema_version: int | None = None,
+) -> dict[
+    str,
+    MemoryAuthorityCommit | MemoryAuthorityReceiptReference,
+]:
+    """Parse inline legacy receipts or current content-addressed references."""
+
+    if not isinstance(value, list) or len(value) > _MAX_MEMORY_WRITE_RECEIPTS:
+        raise ValueError("invalid_memory_write_receipts")
+    receipts: dict[
+        str,
+        MemoryAuthorityCommit | MemoryAuthorityReceiptReference,
+    ] = {}
+    current_references = (
+        authority_schema_version in _RECEIPT_REFERENCE_SCHEMA_VERSIONS
+    )
+    for raw_receipt in value:
+        receipt = (
+            MemoryAuthorityReceiptReference.from_dict(raw_receipt)
+            if current_references
+            else MemoryAuthorityCommit.from_dict(raw_receipt)
+        )
+        if receipt.scope != expected_scope or receipt.operation_id in receipts:
+            raise ValueError("invalid_memory_write_receipts")
+        if isinstance(receipt, MemoryAuthorityCommit):
+            receipt.to_json()
+        receipts[receipt.operation_id] = receipt
+    return receipts
+
+
+def _parse_pipeline_operation_receipt_authority(
+    value: object,
+) -> dict[str, str]:
+    """Parse the aggregate receipts shared by every authority reader."""
+
+    if (
+        not isinstance(value, list)
+        or len(value) > _MAX_PIPELINE_OPERATION_RECEIPTS
+    ):
+        raise ValueError("invalid_pipeline_operation_receipts")
+    receipts: dict[str, str] = {}
+    for raw_receipt in value:
+        if not isinstance(raw_receipt, dict) or set(raw_receipt) != {
+            "operationId",
+            "aggregateDigest",
+        }:
+            raise ValueError("invalid_pipeline_operation_receipts")
+        operation_id = raw_receipt.get("operationId")
+        aggregate_digest = raw_receipt.get("aggregateDigest")
+        if (
+            not isinstance(operation_id, str)
+            or _MEMORY_WRITE_OPERATION_RE.fullmatch(operation_id) is None
+            or not isinstance(aggregate_digest, str)
+            or _MEMORY_WRITE_DIGEST_RE.fullmatch(aggregate_digest) is None
+            or operation_id in receipts
+        ):
+            raise ValueError("invalid_pipeline_operation_receipts")
+        receipts[operation_id] = aggregate_digest
+    return receipts
+
+
+def _parse_observation_receipt_authority(
+    value: object,
+) -> dict[str, dict[str, str]]:
+    """Parse bounded, content-free multi-scope delivery receipts by lane."""
+
+    if not isinstance(value, dict) or set(value) != _OBSERVATION_RECEIPT_LANES:
+        raise ValueError("invalid_observation_receipts")
+    receipts: dict[str, dict[str, str]] = {}
+    for lane in sorted(_OBSERVATION_RECEIPT_LANES):
+        raw_lane = value.get(lane)
+        if (
+            not isinstance(raw_lane, list)
+            or len(raw_lane) > _MAX_OBSERVATION_RECEIPTS_PER_LANE
+        ):
+            raise ValueError("invalid_observation_receipts")
+        lane_receipts: dict[str, str] = {}
+        for raw_receipt in raw_lane:
+            if not isinstance(raw_receipt, dict) or set(raw_receipt) != {
+                "observationDigest",
+                "payloadDigest",
+            }:
+                raise ValueError("invalid_observation_receipts")
+            observation_digest = raw_receipt.get("observationDigest")
+            payload_digest = raw_receipt.get("payloadDigest")
+            if (
+                not isinstance(observation_digest, str)
+                or _MEMORY_WRITE_DIGEST_RE.fullmatch(observation_digest) is None
+                or not isinstance(payload_digest, str)
+                or _MEMORY_WRITE_DIGEST_RE.fullmatch(payload_digest) is None
+                or observation_digest in lane_receipts
+            ):
+                raise ValueError("invalid_observation_receipts")
+            lane_receipts[observation_digest] = payload_digest
+        receipts[lane] = lane_receipts
+    return receipts
 
 # ---------------------------------------------------------------------------
 # Memory data validation
 # ---------------------------------------------------------------------------
 
 
-def _validate_memory_data(data: dict) -> tuple[bool, list[str]]:
+def _bind_memory_authority_scope(
+    data: Any,
+    expected_scope: str,
+) -> tuple[Any, list[str]]:
+    """Bind one parsed authority container and its entries to its owning root.
+
+    A missing container or entry scope is a supported legacy representation.
+    An explicit mismatch is authority corruption and must be rejected before
+    partial recovery can copy an entry into a different scope.
+    """
+
+    if not isinstance(data, dict):
+        return data, []
+    errors: list[str] = []
+    schema_version = data.get("schemaVersion")
+    versioned_schema = schema_version in (
+        {CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION}
+        | set(MIGRATABLE_MEMORY_AUTHORITY_SCHEMA_VERSIONS)
+    )
+    container_scope = data.get("scope")
+    if versioned_schema and "scope" not in data:
+        errors.append("Versioned authority is missing its scope")
+    if container_scope is not None and container_scope != expected_scope:
+        errors.append(
+            f"Authority scope '{container_scope}' does not match root "
+            f"'{expected_scope}'"
+        )
+
+    entries = data.get("entries")
+    if not isinstance(entries, list):
+        return data, errors
+    normalized_entries: list[Any] = []
+    for index, raw_entry in enumerate(entries):
+        if not isinstance(raw_entry, dict):
+            normalized_entries.append(raw_entry)
+            continue
+        entry_scope = raw_entry.get("scope")
+        if entry_scope is not None and entry_scope != expected_scope:
+            errors.append(
+                f"Entry at index {index} scope '{entry_scope}' does not match "
+                f"root '{expected_scope}'"
+            )
+        normalized_entry = dict(raw_entry)
+        if not versioned_schema:
+            normalized_entry.setdefault("scope", expected_scope)
+        normalized_entries.append(normalized_entry)
+    normalized = dict(data)
+    normalized["entries"] = normalized_entries
+    return normalized, errors
+
+
+def _validate_memory_data(data: Any) -> tuple[bool, list[str]]:
     """Validate the structure of memory JSON data before loading.
 
     Checks for:
@@ -67,6 +459,92 @@ def _validate_memory_data(data: dict) -> tuple[bool, list[str]]:
     if not isinstance(data, dict):
         return False, ["Root data must be a dictionary"]
 
+    if "schemaVersion" in data:
+        schema_version = data["schemaVersion"]
+        if type(schema_version) is not int or schema_version not in (
+            {CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION}
+            | set(MIGRATABLE_MEMORY_AUTHORITY_SCHEMA_VERSIONS)
+        ):
+            errors.append("Unsupported Memory authority schemaVersion")
+
+    schema_version = data.get("schemaVersion")
+    versioned_schema = schema_version in (
+        {CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION}
+        | set(MIGRATABLE_MEMORY_AUTHORITY_SCHEMA_VERSIONS)
+    )
+    if versioned_schema:
+        required_root_fields = (
+            _CURRENT_ROOT_REQUIRED_FIELDS
+            if schema_version == CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION
+            else (
+                _V5_ROOT_REQUIRED_FIELDS
+                if schema_version == 5
+                else _PRE_SEGMENTED_ROOT_REQUIRED_FIELDS
+            )
+        )
+        for field_name in required_root_fields:
+            if field_name not in data:
+                errors.append(
+                    f"Versioned authority is missing required field: '{field_name}'"
+                )
+        root_scope = data.get("scope")
+        if not isinstance(root_scope, str) or root_scope not in _VALID_SCOPES:
+            errors.append("Versioned authority has an invalid or missing scope")
+        last_updated = data.get("last_updated")
+        if (
+            isinstance(last_updated, bool)
+            or not isinstance(last_updated, (int, float))
+            or not math.isfinite(last_updated)
+            or not 0 <= last_updated <= MAX_MEMORY_TIMESTAMP
+        ):
+            errors.append("Versioned authority has an invalid last_updated")
+        try:
+            write_receipts = _parse_memory_write_receipt_authority(
+                data.get("write_receipts"),
+                expected_scope=str(root_scope),
+                authority_schema_version=schema_version,
+            )
+            pipeline_receipts = _parse_pipeline_operation_receipt_authority(
+                data.get("pipeline_operation_receipts")
+            )
+            if schema_version == CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION:
+                _parse_observation_receipt_authority(
+                    data.get("observation_receipts")
+                )
+            elif "observation_receipts" in data:
+                raise ValueError(
+                    "Legacy authority cannot declare observation receipts"
+                )
+            for operation_id in set(write_receipts).intersection(
+                pipeline_receipts
+            ):
+                if (
+                    write_receipts[operation_id].payload_digest
+                    != pipeline_receipts[operation_id]
+                ):
+                    raise ValueError("receipt_digests_disagree")
+        except (TypeError, ValueError):
+            errors.append("Versioned authority has invalid operation receipts")
+        try:
+            audit_records = decode_memory_audit_records(
+                data.get("approval_audit"),
+                expected_scope=str(root_scope),
+                maximum_records=MAX_AUTHORITY_AUDIT_RECORDS,
+            )
+            if schema_version == CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION:
+                audit_head = decode_memory_audit_head(
+                    data.get("approval_audit_head")
+                )
+                cold_count = audit_head.record_count if audit_head else 0
+                if cold_count + len(audit_records) > MAX_MEMORY_AUDIT_CHAIN_RECORDS:
+                    raise ValueError("Memory audit history is too large")
+            elif "approval_audit_head" in data:
+                raise ValueError(
+                    "Pre-segmented authority cannot declare an audit head"
+                )
+        except (TypeError, ValueError):
+            errors.append("Versioned authority has invalid approval audit")
+
     if "entries" not in data:
         errors.append("Missing required field: 'entries'")
         return False, errors
@@ -75,15 +553,41 @@ def _validate_memory_data(data: dict) -> tuple[bool, list[str]]:
     if not isinstance(entries, list):
         errors.append("'entries' must be a list")
         return False, errors
+    entry_limit = (
+        MAX_CURRENT_AUTHORITY_ENTRIES
+        if versioned_schema
+        else MAX_AUTHORITY_ENTRIES
+    )
+    if len(entries) > entry_limit:
+        errors.append("'entries' exceeds the bounded authority limit")
+        return False, errors
 
+    seen_entry_ids: set[str] = set()
     for idx, entry_data in enumerate(entries):
-        _, entry_errors = _validate_entry(entry_data, idx)
+        _, entry_errors = _validate_entry(
+            entry_data,
+            idx,
+            authority_schema_version=(
+                schema_version if versioned_schema else None
+            ),
+        )
         errors.extend(entry_errors)
+        if isinstance(entry_data, dict):
+            entry_id = entry_data.get("id")
+            if isinstance(entry_id, str) and entry_id in seen_entry_ids:
+                errors.append(f"Duplicate Memory entry id: '{entry_id}'")
+            elif isinstance(entry_id, str):
+                seen_entry_ids.add(entry_id)
 
     return len(errors) == 0, errors
 
 
-def _validate_entry(entry: Any, index: int) -> tuple[bool, list[str]]:
+def _validate_entry(
+    entry: Any,
+    index: int,
+    *,
+    authority_schema_version: int | None = None,
+) -> tuple[bool, list[str]]:
     """Validate a single memory entry dictionary.
 
     Returns:
@@ -95,13 +599,24 @@ def _validate_entry(entry: Any, index: int) -> tuple[bool, list[str]]:
     if not isinstance(entry, dict):
         return False, [f"{prefix} is not a dictionary"]
 
-    required_fields = ["id", "content"]
+    sealed_schema = authority_schema_version in _SEALED_ENTRY_SCHEMA_VERSIONS
+    if sealed_schema:
+        required_fields = _CURRENT_ENTRY_REQUIRED_FIELDS
+    elif authority_schema_version == 2:
+        required_fields = _V2_ENTRY_REQUIRED_FIELDS
+    else:
+        required_fields = frozenset({"id", "content"})
     for field_name in required_fields:
         if field_name not in entry:
             errors.append(f"{prefix} missing required field: '{field_name}'")
 
-    if "id" in entry and not isinstance(entry["id"], str):
-        errors.append(f"{prefix} field 'id' must be a string")
+    if "id" in entry:
+        entry_id = entry["id"]
+        if (
+            not isinstance(entry_id, str)
+            or not is_memory_entry_id(entry_id)
+        ):
+            errors.append(f"{prefix} field 'id' is invalid")
 
     if "scope" in entry:
         scope_val = entry["scope"]
@@ -113,21 +628,37 @@ def _validate_entry(entry: Any, index: int) -> tuple[bool, list[str]]:
                 f"Must be one of: {', '.join(sorted(_VALID_SCOPES))}"
             )
 
-    if "category" in entry and not isinstance(entry["category"], str):
-        errors.append(f"{prefix} field 'category' must be a string")
+    if "category" in entry:
+        if not isinstance(entry["category"], str):
+            errors.append(f"{prefix} field 'category' must be a string")
+        elif authority_schema_version is not None and not entry["category"].strip():
+            errors.append(f"{prefix} field 'category' must not be empty")
 
-    if "content" in entry and not isinstance(entry["content"], str):
-        errors.append(f"{prefix} field 'content' must be a string")
+    if "content" in entry:
+        if not isinstance(entry["content"], str):
+            errors.append(f"{prefix} field 'content' must be a string")
+        elif authority_schema_version is not None and not entry["content"].strip():
+            errors.append(f"{prefix} field 'content' must not be empty")
 
     if "created_at" in entry:
         val = entry["created_at"]
-        if not isinstance(val, (int, float)):
-            errors.append(f"{prefix} field 'created_at' must be a number")
+        if (
+            isinstance(val, bool)
+            or not isinstance(val, (int, float))
+            or not math.isfinite(val)
+            or not 0 <= val <= MAX_MEMORY_TIMESTAMP
+        ):
+            errors.append(f"{prefix} field 'created_at' must be a finite timestamp")
 
     if "updated_at" in entry:
         val = entry["updated_at"]
-        if not isinstance(val, (int, float)):
-            errors.append(f"{prefix} field 'updated_at' must be a number")
+        if (
+            isinstance(val, bool)
+            or not isinstance(val, (int, float))
+            or not math.isfinite(val)
+            or not 0 <= val <= MAX_MEMORY_TIMESTAMP
+        ):
+            errors.append(f"{prefix} field 'updated_at' must be a finite timestamp")
 
     if "tags" in entry:
         val = entry["tags"]
@@ -138,8 +669,8 @@ def _validate_entry(entry: Any, index: int) -> tuple[bool, list[str]]:
 
     if "usage_count" in entry:
         val = entry["usage_count"]
-        if not isinstance(val, int):
-            errors.append(f"{prefix} field 'usage_count' must be an integer")
+        if type(val) is not int or not 0 <= val <= MAX_MEMORY_COUNTER:
+            errors.append(f"{prefix} field 'usage_count' must be a non-negative integer")
 
     for list_field in ("domains", "related_to"):
         if list_field in entry:
@@ -180,8 +711,15 @@ def _validate_entry(entry: Any, index: int) -> tuple[bool, list[str]]:
         "corroborated_success_count",
         "corroborated_failure_count",
     ):
-        if int_field in entry and not isinstance(entry[int_field], int):
-            errors.append(f"{prefix} field '{int_field}' must be an integer")
+        if int_field in entry:
+            value = entry[int_field]
+            if (
+                type(value) is not int
+                or not 0 <= value <= MAX_MEMORY_COUNTER
+            ):
+                errors.append(
+                    f"{prefix} field '{int_field}' must be a non-negative integer"
+                )
 
     for float_field in (
         "last_accessed",
@@ -189,12 +727,42 @@ def _validate_entry(entry: Any, index: int) -> tuple[bool, list[str]]:
         "usefulness_score",
         "corroborated_usefulness_score",
     ):
-        if float_field in entry and not isinstance(entry[float_field], (int, float)):
-            errors.append(f"{prefix} field '{float_field}' must be a number")
+        if float_field in entry:
+            value = entry[float_field]
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or (
+                    float_field in {"last_accessed", "last_used"}
+                    and not 0 <= value <= MAX_MEMORY_TIMESTAMP
+                )
+                or (
+                    float_field
+                    in {
+                        "usefulness_score",
+                        "corroborated_usefulness_score",
+                    }
+                    and not (
+                        MIN_MEMORY_USEFULNESS_SCORE
+                        <= value
+                        <= MAX_MEMORY_USEFULNESS_SCORE
+                    )
+                )
+            ):
+                errors.append(f"{prefix} field '{float_field}' must be finite")
 
     for dict_field in ("metadata", "provenance"):
         if dict_field in entry and not isinstance(entry[dict_field], dict):
             errors.append(f"{prefix} field '{dict_field}' must be a dictionary")
+        elif (
+            authority_schema_version is not None
+            and dict_field in entry
+            and not _fits_persistence_depth(entry[dict_field])
+        ):
+            errors.append(
+                f"{prefix} field '{dict_field}' exceeds persistence depth"
+            )
 
     for str_field in (
         "tier",
@@ -214,13 +782,84 @@ def _validate_entry(entry: Any, index: int) -> tuple[bool, list[str]]:
 
     for nullable_float_field in ("deprecated_at", "approval_decided_at"):
         if entry.get(nullable_float_field) is not None:
-            if not isinstance(entry[nullable_float_field], (int, float)):
+            value = entry[nullable_float_field]
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or not 0 <= value <= MAX_MEMORY_TIMESTAMP
+            ):
                 errors.append(
-                    f"{prefix} field '{nullable_float_field}' must be a number or null"
+                    f"{prefix} field '{nullable_float_field}' must be a finite timestamp or null"
                 )
+
+    if authority_schema_version is not None:
+        for success_field, failure_field, score_field in (
+            ("success_count", "failure_count", "usefulness_score"),
+            (
+                "corroborated_success_count",
+                "corroborated_failure_count",
+                "corroborated_usefulness_score",
+            ),
+        ):
+            success_value = entry.get(success_field)
+            failure_value = entry.get(failure_field)
+            score_value = entry.get(score_field)
+            if (
+                type(success_value) is int
+                and type(failure_value) is int
+                and isinstance(score_value, (int, float))
+                and not isinstance(score_value, bool)
+                and math.isfinite(score_value)
+            ):
+                expected_score = _derived_usefulness_score(
+                    success_value,
+                    failure_value,
+                )
+                if not math.isclose(
+                    float(score_value),
+                    expected_score,
+                    rel_tol=1e-12,
+                    abs_tol=1e-12,
+                ):
+                    errors.append(
+                        f"{prefix} field '{score_field}' disagrees with its counters"
+                    )
 
     if "curator_locked" in entry and not isinstance(entry["curator_locked"], bool):
         errors.append(f"{prefix} field 'curator_locked' must be a boolean")
+
+    if authority_schema_version is not None:
+        enum_contracts = {
+            "tier": _CURRENT_VALID_MEMORY_TIERS,
+            "lifecycle_status": _VALID_LIFECYCLE_STATUSES,
+            "safety_status": _VALID_SAFETY_STATUSES,
+            "approval_status": _VALID_APPROVAL_STATUSES,
+            "approval_policy": _CURRENT_VALID_APPROVAL_POLICIES,
+        }
+        for field_name, allowed in enum_contracts.items():
+            value = entry.get(field_name)
+            if not isinstance(value, str) or value not in allowed:
+                errors.append(
+                    f"{prefix} field '{field_name}' has an invalid value"
+                )
+        digest_fields = ["approval_content_hash"]
+        if sealed_schema:
+            digest_fields.append("authority_state_digest")
+        for digest_field in digest_fields:
+            value = entry.get(digest_field)
+            if not isinstance(value, str) or _SHA256_HEX_RE.fullmatch(value) is None:
+                errors.append(
+                    f"{prefix} field '{digest_field}' must be a SHA-256 digest"
+                )
+        if sealed_schema and _CURRENT_ENTRY_REQUIRED_FIELDS.issubset(entry):
+            try:
+                expected_digest = _authority_state_digest_for_data(entry)
+            except (TypeError, ValueError, UnicodeEncodeError):
+                errors.append(f"{prefix} authority state cannot be digested")
+            else:
+                if entry.get("authority_state_digest") != expected_digest:
+                    errors.append(f"{prefix} authority state digest does not match")
 
     return len(errors) == 0, errors
 
@@ -229,40 +868,42 @@ def _validate_entry(entry: Any, index: int) -> tuple[bool, list[str]]:
 # Corrupted data recovery
 # ---------------------------------------------------------------------------
 
-def _recover_entries(data: dict, memory_json_path: Path) -> list[dict]:
-    """Attempt to recover valid entries from corrupted memory data.
-
-    Creates a backup of the corrupted file and returns only valid entries.
-
-    Args:
-        data: Parsed JSON data (may be partially corrupted)
-        memory_json_path: Path to the original memory.json file
-
-    Returns:
-        List of valid entry dictionaries
-    """
-    backup_path = memory_json_path.with_suffix(".json.bak")
-    try:
-        import shutil
-        shutil.copy2(str(memory_json_path), str(backup_path))
-        logger.warning(
-            "Corrupted memory file backed up to %s", backup_path
-        )
-    except OSError as e:
-        logger.error(
-            "Failed to create backup of corrupted memory file: %s", e
-        )
-
+def _recover_entries(data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return valid entries from one already bounded, parsed authority."""
     entries = data.get("entries", [])
-    valid_entries = []
+    valid_entries: list[dict[str, Any]] = []
     recovered_count = 0
 
+    schema_version = data.get("schemaVersion")
+    versioned_schema = schema_version in (
+        {CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION}
+        | set(MIGRATABLE_MEMORY_AUTHORITY_SCHEMA_VERSIONS)
+    )
+    seen_ids: set[str] = set()
     for idx, entry_data in enumerate(entries):
-        entry_valid, _ = _validate_entry(entry_data, idx)
+        entry_valid, _ = _validate_entry(
+            entry_data,
+            idx,
+            authority_schema_version=(
+                schema_version if versioned_schema else None
+            ),
+        )
+        entry_id = entry_data.get("id") if isinstance(entry_data, dict) else None
+        content = (
+            entry_data.get("content") if isinstance(entry_data, dict) else None
+        )
+        if (
+            not isinstance(content, str)
+            or not content.strip()
+            or not isinstance(entry_id, str)
+            or entry_id in seen_ids
+        ):
+            entry_valid = False
         if not entry_valid:
             logger.warning("Skipping corrupted entry at index %d", idx)
         else:
             valid_entries.append(entry_data)
+            seen_ids.add(entry_id)
             recovered_count += 1
 
     total = len(entries)
@@ -748,9 +1389,22 @@ _VALID_APPROVAL_STATUSES = {
     _APPROVAL_REJECTED,
 }
 _CORROBORATED_FAILURE_QUARANTINE_THRESHOLD = 2
+# Independent later traces re-observing the same pending claim before it is
+# auto-promoted to approved. Mirrors the quarantine threshold's philosophy:
+# corroboration across independent observations, never single-trace trust.
+RECURRENCE_AUTO_APPROVE_THRESHOLD = 3
+# Independent personal-facet observations before a USER profile candidate is
+# flagged as review-ready.  Unlike lesson recurrence, reaching the threshold
+# never auto-approves: a USER facet flows cross-project, so a human confirms
+# it exactly once.
+USER_FACET_REVIEW_THRESHOLD = 3
+USER_PROFILE_CATEGORY = "user_profile"
 _MAX_FEEDBACK_OBSERVATIONS = 256
 _FEEDBACK_OBSERVATION_DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
 _FEEDBACK_OBSERVATION_RESULTS = frozenset({"success", "failure"})
+_ORDINARY_FEEDBACK_SOURCES = frozenset(
+    {"task_outcome", "explicit_run_outcome", "contribution_review"}
+)
 _CORROBORATED_FEEDBACK_SOURCES = frozenset(
     {
         "independent_verification",
@@ -763,13 +1417,7 @@ _CORROBORATED_FEEDBACK_SOURCES = frozenset(
 # Backward-compatible names for older callers that import these constants.
 _SAFETY_ACTIVE = _SAFETY_SAFE
 _SAFETY_REJECTED = _SAFETY_UNSAFE
-_NON_INJECTABLE_LIFECYCLES = {
-    "pending",
-    "rejected",
-    "deprecated",
-    "invalid",
-    "archived_duplicate",
-}
+_NON_INJECTABLE_LIFECYCLES = _VALID_LIFECYCLE_STATUSES - {"active"}
 
 
 @dataclass(frozen=True)
@@ -981,21 +1629,70 @@ def _safe_feedback_observations(value: Any) -> dict[str, str]:
     return dict(valid[-_MAX_FEEDBACK_OBSERVATIONS:])
 
 
+def _normalize_delivery_id(value: str | None, *, label: str) -> str | None:
+    """Validate a caller-owned retry identity without persisting raw text."""
+
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{label} must be a non-empty string")
+    normalized = value.strip()
+    if len(normalized.encode("utf-8")) > 256:
+        raise ValueError(f"{label} is too long")
+    return normalized
+
+
 def _feedback_observation_digest(
     observation_id: str | None,
     *,
     channel: str,
 ) -> str | None:
     """Return a content-free receipt key for one stable feedback delivery."""
-    if observation_id is None:
+    normalized = _normalize_delivery_id(
+        observation_id,
+        label="feedback observation_id",
+    )
+    if normalized is None:
         return None
-    if not isinstance(observation_id, str) or not observation_id.strip():
-        raise ValueError("feedback observation_id must be a non-empty string")
-    normalized = observation_id.strip()
-    if len(normalized.encode("utf-8")) > 256:
-        raise ValueError("feedback observation_id is too long")
     envelope = f"minicode-memory-feedback-v1\0{channel}\0{normalized}"
     return hashlib.sha256(envelope.encode("utf-8")).hexdigest()
+
+
+def _operation_observation_receipt(
+    observation_id: str | None,
+    *,
+    channel: str,
+    payload: object,
+) -> tuple[str, str] | None:
+    """Bind one retry identity to an exact content-free operation payload."""
+
+    normalized = _normalize_delivery_id(
+        observation_id,
+        label="Memory operation observation_id",
+    )
+    if normalized is None:
+        return None
+    observation_envelope = (
+        f"minicode-memory-observation-v1\0{channel}\0{normalized}"
+    )
+    try:
+        payload_bytes = json.dumps(
+            {
+                "schema": "memory_observation_payload_v1",
+                "channel": channel,
+                "payload": payload,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    except (TypeError, ValueError, UnicodeEncodeError) as error:
+        raise ValueError("Memory operation payload is invalid") from error
+    return (
+        hashlib.sha256(observation_envelope.encode("utf-8")).hexdigest(),
+        hashlib.sha256(payload_bytes).hexdigest(),
+    )
 
 
 def _claim_feedback_observation(
@@ -1018,6 +1715,66 @@ def _claim_feedback_observation(
         oldest = next(iter(entry.feedback_observations))
         del entry.feedback_observations[oldest]
     return True
+
+
+def _expected_memory_versions(
+    value: object,
+) -> dict[str, frozenset[str]] | None:
+    """Validate optional full-authority fences for feedback mutation."""
+    if value is None:
+        return None
+    if not isinstance(value, (list, tuple)):
+        raise ValueError("expected Memory versions must be a list")
+    by_id: dict[str, set[str]] = {}
+    for raw_version in value:
+        if not isinstance(raw_version, (list, tuple)) or len(raw_version) != 2:
+            raise ValueError("expected Memory version is invalid")
+        entry_id, digest = raw_version
+        if (
+            not isinstance(entry_id, str)
+            or not entry_id
+            or len(entry_id) > 128
+            or not isinstance(digest, str)
+            or not _FEEDBACK_OBSERVATION_DIGEST_RE.fullmatch(digest)
+        ):
+            raise ValueError("expected Memory version is invalid")
+        by_id.setdefault(entry_id, set()).add(digest)
+    return {
+        entry_id: frozenset(digests)
+        for entry_id, digests in by_id.items()
+    }
+
+
+def _reset_version_scoped_observations(
+    entry: "MemoryEntry",
+) -> dict[str, int | float]:
+    """Reset evidence that belongs to the previous authority version."""
+    previous: dict[str, int | float] = {
+        "retrieval_count": entry.retrieval_count,
+        "injection_count": entry.injection_count,
+        "usage_count": entry.usage_count,
+        "success_count": entry.success_count,
+        "failure_count": entry.failure_count,
+        "usefulness_score": entry.usefulness_score,
+        "corroborated_success_count": entry.corroborated_success_count,
+        "corroborated_failure_count": entry.corroborated_failure_count,
+        "corroborated_usefulness_score": entry.corroborated_usefulness_score,
+        "feedback_observation_count": len(entry.feedback_observations),
+        "last_accessed": entry.last_accessed,
+    }
+    entry.retrieval_count = 0
+    entry.injection_count = 0
+    entry.usage_count = 0
+    entry.success_count = 0
+    entry.failure_count = 0
+    entry.usefulness_score = 0.0
+    entry.corroborated_success_count = 0
+    entry.corroborated_failure_count = 0
+    entry.corroborated_usefulness_score = 0.0
+    entry.feedback_observations = {}
+    entry.last_used = 0.0
+    entry.last_accessed = 0.0
+    return previous
 
 
 def _normalize_safety_status(value: Any) -> str:
@@ -1169,6 +1926,34 @@ def assess_memory_safety(content: str, source: str = "") -> MemorySafetyResult:
     return MemorySafetyResult(_SAFETY_SAFE, "", "low")
 
 
+@dataclass(frozen=True, slots=True)
+class _MemoryAuthorityStateSnapshot:
+    """Manager-sealed fields that can alter one entry's authority.
+
+    This includes the persisted ``authority_state_digest`` input plus mutable
+    relationship edges. Keeping the live capability fence complete prevents a
+    caller holding the ``MemoryEntry`` returned by ``add_entry`` from
+    laundering a pre-existing authority edit through a later Manager mutation.
+    """
+
+    entry_id: str
+    scope: str
+    tier: str
+    lifecycle_status: str
+    curator_locked: bool
+    safety_status: str
+    safety_reason: str
+    approval_status: str
+    approval_content_hash: str
+    approval_reason: str
+    approval_actor: str
+    approval_decided_at: float
+    approval_policy: str
+    deprecated_at: float | None
+    tier_reason: str
+    related_to: tuple[str, ...]
+
+
 @dataclass
 class MemoryEntry:
     """A single memory entry (fact, pattern, decision, etc.)."""
@@ -1212,7 +1997,7 @@ class MemoryEntry:
     approval_policy: MemoryApprovalPolicy = MemoryApprovalPolicy.USER_EXPLICIT
     _cached_tokens: list[str] | None = field(default=None, repr=False)
     _last_relevance: float = field(default=0.0, repr=False, compare=False)
-    _authority_state_snapshot: tuple[str, str, bool, str, str, str] | None = field(
+    _authority_state_snapshot: _MemoryAuthorityStateSnapshot | None = field(
         default=None,
         repr=False,
         compare=False,
@@ -1238,14 +2023,24 @@ class MemoryEntry:
     def invalidate_tokens(self) -> None:
         self._cached_tokens = None
 
-    def _current_authority_state(self) -> tuple[str, str, bool, str, str, str]:
-        return (
-            str(self.approval_status),
-            str(self.lifecycle_status),
-            bool(self.curator_locked),
-            str(self.safety_status),
-            self.tier.value,
-            str(self.approval_content_hash),
+    def _current_authority_state(self) -> _MemoryAuthorityStateSnapshot:
+        return _MemoryAuthorityStateSnapshot(
+            entry_id=str(self.id),
+            scope=self.scope.value,
+            tier=self.tier.value,
+            lifecycle_status=str(self.lifecycle_status),
+            curator_locked=bool(self.curator_locked),
+            safety_status=str(self.safety_status),
+            safety_reason=str(self.safety_reason),
+            approval_status=str(self.approval_status),
+            approval_content_hash=str(self.approval_content_hash),
+            approval_reason=str(self.approval_reason),
+            approval_actor=str(self.approval_actor),
+            approval_decided_at=float(self.approval_decided_at),
+            approval_policy=self.approval_policy.value,
+            deprecated_at=self.deprecated_at,
+            tier_reason=str(self.tier_reason),
+            related_to=tuple(self.related_to),
         )
 
     def _seal_authority_state(self) -> None:
@@ -1266,9 +2061,22 @@ class MemoryEntry:
         current = self._current_authority_state()
         if current == trusted:
             return False
-        # A caller-supplied approval hash can counterfeit a content review and
-        # is never accepted as a monotonic restriction.
-        if current[5] != trusted[5]:
+        # Identity, approval policy, hashes and explanatory authority metadata
+        # have no safe caller-controlled monotonic transition.  Every such
+        # change must pass through a Manager operation that seals it.
+        if (
+            current.entry_id != trusted.entry_id
+            or current.scope != trusted.scope
+            or current.approval_content_hash != trusted.approval_content_hash
+            or current.approval_policy != trusted.approval_policy
+            or current.safety_reason != trusted.safety_reason
+            or current.approval_reason != trusted.approval_reason
+            or current.approval_actor != trusted.approval_actor
+            or current.approval_decided_at != trusted.approval_decided_at
+            or current.deprecated_at != trusted.deprecated_at
+            or current.tier_reason != trusted.tier_reason
+            or current.related_to != trusted.related_to
+        ):
             return True
 
         approval_rank = {
@@ -1282,14 +2090,16 @@ class MemoryEntry:
             _SAFETY_SAFE: 2,
         }
 
-        def ranks(state: tuple[str, str, bool, str, str, str]) -> tuple[int, ...]:
-            approval, lifecycle, locked, safety, tier, _content_hash = state
+        def ranks(state: _MemoryAuthorityStateSnapshot) -> tuple[int, ...]:
             return (
-                approval_rank.get(approval, 0),
-                1 if lifecycle == _ACTIVE_LIFECYCLE else 0,
-                0 if locked else 1,
-                safety_rank.get(_normalize_safety_status(safety), 0),
-                0 if tier == MemoryTier.ARCHIVAL.value else 1,
+                approval_rank.get(state.approval_status, 0),
+                1 if state.lifecycle_status == _ACTIVE_LIFECYCLE else 0,
+                0 if state.curator_locked else 1,
+                safety_rank.get(
+                    _normalize_safety_status(state.safety_status),
+                    0,
+                ),
+                0 if state.tier == MemoryTier.ARCHIVAL.value else 1,
             )
 
         trusted_ranks = ranks(trusted)
@@ -1308,15 +2118,23 @@ class MemoryEntry:
             return False
         if self._authority_state_snapshot == self._current_authority_state():
             return False
-        (
-            self.approval_status,
-            self.lifecycle_status,
-            self.curator_locked,
-            self.safety_status,
-            tier,
-            self.approval_content_hash,
-        ) = self._authority_state_snapshot
-        self.tier = _coerce_tier(tier)
+        trusted = self._authority_state_snapshot
+        self.id = trusted.entry_id
+        self.scope = _coerce_scope(trusted.scope)
+        self.tier = _coerce_tier(trusted.tier)
+        self.lifecycle_status = trusted.lifecycle_status
+        self.curator_locked = trusted.curator_locked
+        self.safety_status = trusted.safety_status
+        self.safety_reason = trusted.safety_reason
+        self.approval_status = trusted.approval_status
+        self.approval_content_hash = trusted.approval_content_hash
+        self.approval_reason = trusted.approval_reason
+        self.approval_actor = trusted.approval_actor
+        self.approval_decided_at = trusted.approval_decided_at
+        self.approval_policy = MemoryApprovalPolicy(trusted.approval_policy)
+        self.deprecated_at = trusted.deprecated_at
+        self.tier_reason = trusted.tier_reason
+        self.related_to = list(trusted.related_to)
         return True
 
     @property
@@ -1395,6 +2213,9 @@ class MemoryEntry:
                 metadata = {}
                 sanitized["metadata"] = metadata
             metadata["persistence_sanitized"] = {"content": True}
+        sanitized["authority_state_digest"] = (
+            _authority_state_digest_for_data(sanitized)
+        )
         return sanitized
     
     @classmethod
@@ -1409,6 +2230,14 @@ class MemoryEntry:
                 metadata = {}
                 data["metadata"] = metadata
             metadata["persistence_sanitized"] = {"content": True}
+        success_count = int(data.get("success_count", 0) or 0)
+        failure_count = int(data.get("failure_count", 0) or 0)
+        corroborated_success_count = int(
+            data.get("corroborated_success_count", 0) or 0
+        )
+        corroborated_failure_count = int(
+            data.get("corroborated_failure_count", 0) or 0
+        )
         return cls(
             id=data["id"],
             scope=_coerce_scope(data.get("scope", "user")),
@@ -1427,14 +2256,18 @@ class MemoryEntry:
             provenance=_safe_dict(data.get("provenance", {})),
             retrieval_count=int(data.get("retrieval_count", 0) or 0),
             injection_count=int(data.get("injection_count", 0) or 0),
-            success_count=int(data.get("success_count", 0) or 0),
-            failure_count=int(data.get("failure_count", 0) or 0),
+            success_count=success_count,
+            failure_count=failure_count,
             last_used=float(data.get("last_used", 0.0) or 0.0),
-            usefulness_score=float(data.get("usefulness_score", 0.0) or 0.0),
-            corroborated_success_count=int(data.get("corroborated_success_count", 0) or 0),
-            corroborated_failure_count=int(data.get("corroborated_failure_count", 0) or 0),
-            corroborated_usefulness_score=float(
-                data.get("corroborated_usefulness_score", 0.0) or 0.0
+            usefulness_score=_derived_usefulness_score(
+                success_count,
+                failure_count,
+            ),
+            corroborated_success_count=corroborated_success_count,
+            corroborated_failure_count=corroborated_failure_count,
+            corroborated_usefulness_score=_derived_usefulness_score(
+                corroborated_success_count,
+                corroborated_failure_count,
             ),
             feedback_observations=_safe_feedback_observations(
                 data.get("feedback_observations", {})
@@ -1463,19 +2296,214 @@ class MemoryEntry:
         )
 
 
+def _approval_authority_state(entry: MemoryEntry) -> ApprovalAuthorityState:
+    """Project one loaded entry into the pure approval-policy state."""
+
+    return ApprovalAuthorityState(
+        approval_status=entry.approval_status,
+        approval_content_hash=entry.approval_content_hash,
+        approval_reason=entry.approval_reason,
+        approval_actor=entry.approval_actor,
+        approval_decided_at=entry.approval_decided_at,
+        approval_policy=entry.approval_policy.value,
+        safety_status=entry.safety_status,
+        safety_reason=entry.safety_reason,
+        lifecycle_status=entry.lifecycle_status,
+        tier=entry.tier.value,
+        tier_reason=entry.tier_reason,
+        curator_locked=entry.curator_locked,
+    )
+
+
+def _apply_approval_authority_state(
+    entry: MemoryEntry,
+    state: ApprovalAuthorityState,
+) -> None:
+    """Apply one interpreted authority state to its caller-owned entry."""
+
+    entry.approval_status = state.approval_status
+    entry.approval_content_hash = state.approval_content_hash
+    entry.approval_reason = state.approval_reason
+    entry.approval_actor = state.approval_actor
+    entry.approval_decided_at = state.approval_decided_at
+    entry.approval_policy = MemoryApprovalPolicy(state.approval_policy)
+    entry.safety_status = state.safety_status
+    entry.safety_reason = state.safety_reason
+    entry.lifecycle_status = state.lifecycle_status
+    entry.tier = MemoryTier(state.tier)
+    entry.tier_reason = state.tier_reason
+    entry.curator_locked = state.curator_locked
+
+
+def _interpret_loaded_entry_approval(
+    entry: MemoryEntry,
+    raw_data: dict[str, Any],
+    safety: MemorySafetyResult,
+    *,
+    mode: ApprovalInterpretationMode,
+    transition_time: float,
+    requires_complete_authority: bool = False,
+) -> ApprovalInterpretation:
+    """Adapt a normalized ``MemoryEntry`` to the pure approval interpreter."""
+
+    return interpret_loaded_approval(
+        ApprovalInterpretationInput(
+            state=_approval_authority_state(entry),
+            raw_has_approval="approval_status" in raw_data,
+            raw_has_hash="approval_content_hash" in raw_data,
+            assessed_safety_status=safety.status,
+            assessed_safety_reason=safety.reason,
+            canonical_hash=_approval_hash_for_entry(entry),
+            transition_time=transition_time,
+            raw_has_policy="approval_policy" in raw_data,
+            raw_approval_policy=(
+                raw_data.get("approval_policy")
+                if isinstance(raw_data.get("approval_policy"), str)
+                else None
+            ),
+            requires_complete_authority=requires_complete_authority,
+        ),
+        mode=mode,
+    )
+
+
+def _memory_entry_relationships(entry: MemoryEntry) -> tuple[str, ...]:
+    """Return every durable relationship edge owned by one entry."""
+
+    references = list(entry.related_to)
+    metadata = entry.metadata if isinstance(entry.metadata, dict) else {}
+    supersedes = metadata.get("supersedes", [])
+    if isinstance(supersedes, list):
+        references.extend(
+            value for value in supersedes if isinstance(value, str) and value
+        )
+    superseded_by = metadata.get("superseded_by")
+    if isinstance(superseded_by, str) and superseded_by:
+        references.append(superseded_by)
+    return tuple(
+        reference
+        for reference in references
+        if isinstance(reference, str) and reference
+    )
+
+
+def _remove_memory_relationship_reference(
+    entry: MemoryEntry,
+    target_id: str,
+) -> int:
+    """Remove all edges to ``target_id`` and reseal the authorized result."""
+
+    removed = entry.related_to.count(target_id)
+    if removed:
+        entry.related_to = [
+            reference
+            for reference in entry.related_to
+            if reference != target_id
+        ]
+
+    metadata = dict(entry.metadata) if isinstance(entry.metadata, dict) else {}
+    metadata_changed = False
+    supersedes = metadata.get("supersedes")
+    if isinstance(supersedes, list):
+        supersedes_removed = sum(value == target_id for value in supersedes)
+        if supersedes_removed:
+            metadata["supersedes"] = [
+                value for value in supersedes if value != target_id
+            ]
+            removed += supersedes_removed
+            metadata_changed = True
+    if metadata.get("superseded_by") == target_id:
+        metadata.pop("superseded_by", None)
+        removed += 1
+        metadata_changed = True
+
+    if not removed:
+        return 0
+    if metadata_changed:
+        entry.metadata = metadata
+        if entry.approval_content_hash:
+            _reset_version_scoped_observations(entry)
+            entry.approval_content_hash = _approval_hash_for_entry(entry)
+    entry.updated_at = time.time()
+    entry.invalidate_tokens()
+    entry._seal_authority_state()
+    return removed
+
+
+def _rewrite_memory_relationship_references(
+    entry: MemoryEntry,
+    replacements: dict[str, str],
+) -> int:
+    """Redirect removed same-scope identities and normalize every edge field."""
+
+    if not replacements:
+        return 0
+
+    def resolve(reference: str) -> str | None:
+        current = reference
+        visited: set[str] = set()
+        while current in replacements:
+            if current in visited:
+                return None
+            visited.add(current)
+            current = replacements[current]
+        return current or None
+
+    def rewrite_many(references: list[Any]) -> list[str]:
+        rewritten: list[str] = []
+        seen: set[str] = set()
+        for value in references:
+            if not isinstance(value, str) or not value:
+                continue
+            target = resolve(value)
+            if target is None or target == entry.id or target in seen:
+                continue
+            seen.add(target)
+            rewritten.append(target)
+        return rewritten
+
+    previous_related = list(entry.related_to)
+    rewritten_related = rewrite_many(previous_related)
+    metadata = dict(entry.metadata) if isinstance(entry.metadata, dict) else {}
+    previous_metadata = dict(metadata)
+    supersedes = metadata.get("supersedes")
+    if isinstance(supersedes, list):
+        metadata["supersedes"] = rewrite_many(supersedes)
+    superseded_by = metadata.get("superseded_by")
+    if isinstance(superseded_by, str) and superseded_by:
+        rewritten = resolve(superseded_by)
+        if rewritten is None or rewritten == entry.id:
+            metadata.pop("superseded_by", None)
+        else:
+            metadata["superseded_by"] = rewritten
+
+    related_changed = rewritten_related != previous_related
+    metadata_changed = metadata != previous_metadata
+    if not related_changed and not metadata_changed:
+        return 0
+    entry.related_to = rewritten_related
+    if metadata_changed:
+        entry.metadata = metadata
+        if entry.approval_content_hash:
+            _reset_version_scoped_observations(entry)
+            entry.approval_content_hash = _approval_hash_for_entry(entry)
+    entry.updated_at = time.time()
+    entry.invalidate_tokens()
+    entry._seal_authority_state()
+    return 1
+
+
 @dataclass
 class MemoryFile:
     """Represents a MEMORY.md file content with indexed lookups."""
     scope: MemoryScope
     entries: list[MemoryEntry] = field(default_factory=list)
-    max_entries: int = 200  # Claude Code limit
-    max_size_bytes: int = 25 * 1024  # 25KB limit
+    max_entries: int = MAX_CURRENT_AUTHORITY_ENTRIES
+    max_size_bytes: int = MAX_CURRENT_AUTHORITY_CONTENT_BYTES
     _id_index: dict[str, MemoryEntry] = field(default_factory=dict, repr=False)
     _tag_index: dict[str, set[MemoryEntry]] = field(default_factory=dict, repr=False)
     _category_index: dict[str, list[MemoryEntry]] = field(default_factory=dict, repr=False)
     _tokens_cache: dict[str, list[str]] = field(default_factory=dict, repr=False)
-    _idf_cache: dict[str, float] | None = field(default=None, repr=False)
-    _avgdl_cache: float | None = field(default=None, repr=False)
     _cache_dirty: bool = field(default=True, repr=False)
 
     def _rebuild_indices(self) -> None:
@@ -1483,8 +2511,6 @@ class MemoryFile:
         self._tag_index.clear()
         self._category_index.clear()
         self._tokens_cache.clear()
-        self._idf_cache = None
-        self._avgdl_cache = None
         for entry in self.entries:
             self._id_index[entry.id] = entry
             for tag in entry.tags:
@@ -1496,11 +2522,6 @@ class MemoryFile:
                 self._category_index[cat] = []
             self._category_index[cat].append(entry)
             self._tokens_cache[entry.id] = entry.get_tokens()
-        # Precompute IDF and avgdl
-        if self._tokens_cache:
-            all_tokens = list(self._tokens_cache.values())
-            self._idf_cache = _compute_idf(all_tokens)
-            self._avgdl_cache = _compute_avgdl(all_tokens)
         self._cache_dirty = False
 
     def _ensure_cache_valid(self) -> None:
@@ -1509,8 +2530,6 @@ class MemoryFile:
 
     def _invalidate_cache(self) -> None:
         self._cache_dirty = True
-        self._idf_cache = None
-        self._avgdl_cache = None
 
     @property
     def size_bytes(self) -> int:
@@ -1521,10 +2540,12 @@ class MemoryFile:
         disk. Metadata lives in ``memory.json`` beside the content and is
         bounded separately by the same file-size guard.
         """
-        return sum(
-            len(str(e.content).encode("utf-8"))
-            + sum(len(str(tag).encode("utf-8")) for tag in e.tags)
-            for e in self.entries
+        return sum(self._entry_size_bytes(entry) for entry in self.entries)
+
+    @staticmethod
+    def _entry_size_bytes(entry: MemoryEntry) -> int:
+        return len(str(entry.content).encode("utf-8")) + sum(
+            len(str(tag).encode("utf-8")) for tag in entry.tags
         )
 
     def add_entry(
@@ -1532,17 +2553,19 @@ class MemoryFile:
         entry: MemoryEntry,
         *,
         on_evict: Any | None = None,
-    ) -> None:
+    ) -> bool:
         """Unsafe/internal add: caller must have applied safety and approval.
 
         ``on_evict`` receives ``(evicted_entry, previous_lifecycle,
-        previous_tier_reason)`` for every oldest entry removed by the count or
-        byte limits, so the owning manager can persist an audit tombstone.
+        previous_tier_reason)`` for every entry removed by the count or byte
+        limits, so the owning manager can persist an audit tombstone. Returns
+        ``True`` only when the proposed entry remains admitted after retention.
         """
         self.entries.append(entry)
         self._invalidate_cache()
-        self._enforce_limits(on_evict)
+        self._enforce_limits(on_evict, admission_entry=entry)
         self._ensure_cache_valid()
+        return self._id_index.get(entry.id) is entry
     
     def update_entry(self, entry_id: str, content: str) -> bool:
         """Update existing entry using index."""
@@ -1550,6 +2573,8 @@ class MemoryFile:
         entry = self._id_index.get(entry_id)
         if entry is None:
             return False
+        if entry.content != content:
+            _reset_version_scoped_observations(entry)
         entry.content = content
         entry.updated_at = time.time()
         entry.invalidate_tokens()
@@ -1569,17 +2594,11 @@ class MemoryFile:
         self.entries = [e for e in self.entries if e.id != entry_id]
         if len(self.entries) == original_len:
             return False
-        # Backlinks are durable references into the same store. A deleted or
-        # evicted entry must not leave live entries pointing at a missing id,
-        # or the next spreading-activation / curator pass will re-create it.
+        # Relationship edges are durable references into the same store. A
+        # deleted or evicted entry must not leave either graph backlinks or
+        # supersession metadata pointing at a missing id.
         for remaining in self.entries:
-            if removed_id in remaining.related_to:
-                remaining.related_to = [
-                    related
-                    for related in remaining.related_to
-                    if related != removed_id
-                ]
-                remaining.invalidate_tokens()
+            _remove_memory_relationship_reference(remaining, removed_id)
         self._rebuild_indices()
         return True
     
@@ -1667,7 +2686,7 @@ class MemoryFile:
 
             usage_bonus = math.log1p(entry.usage_count) * 0.2
             feedback_bonus = entry.usefulness_score * 0.2
-            age_hours = (time.time() - entry.updated_at) / 3600
+            age_hours = _bounded_age_hours(entry.updated_at)
             recency_bonus = 1.0 / (1.0 + age_hours / 24.0) * 0.5
 
             total_score = final_relevance + usage_bonus + feedback_bonus + recency_bonus
@@ -1677,21 +2696,80 @@ class MemoryFile:
         scored.sort(key=lambda x: x[0], reverse=True)
         if record_usage:
             for _, entry in scored[:10]:
-                entry.retrieval_count += 1
+                entry.retrieval_count = _saturating_counter_add(
+                    entry.retrieval_count
+                )
         return [entry for _, entry in scored]
     
-    def _enforce_limits(self, on_evict: Any | None = None) -> None:
-        """Remove oldest entries if exceeding limits.
+    @staticmethod
+    def _retention_key(entry: MemoryEntry) -> tuple[Any, ...]:
+        """Return a deterministic, ascending worst-to-best authority key."""
+
+        def finite_number(value: Any) -> float:
+            try:
+                number = float(value)
+            except (TypeError, ValueError, OverflowError):
+                return 0.0
+            return number if math.isfinite(number) else 0.0
+
+        safety_rank = {
+            _SAFETY_UNSAFE: 0,
+            _SAFETY_SUSPICIOUS: 1,
+            _SAFETY_SAFE: 2,
+        }.get(_normalize_safety_status(entry.safety_status), 0)
+        approval_rank = {
+            _APPROVAL_REJECTED: 0,
+            _APPROVAL_PENDING: 1,
+            _APPROVAL_APPROVED: 2,
+        }.get(_normalize_approval_status(entry.approval_status), 0)
+        tier_rank = {
+            MemoryTier.ARCHIVAL: 0,
+            MemoryTier.WORKING: 1,
+            MemoryTier.SHORT_TERM: 2,
+            MemoryTier.LONG_TERM: 3,
+        }.get(_coerce_tier(entry.tier), 0)
+        return (
+            1 if entry.is_active else 0,
+            safety_rank,
+            approval_rank,
+            1 if entry.lifecycle_status == _ACTIVE_LIFECYCLE else 0,
+            tier_rank,
+            finite_number(entry.corroborated_usefulness_score),
+            int(entry.corroborated_success_count),
+            -int(entry.corroborated_failure_count),
+            finite_number(entry.usefulness_score),
+            int(entry.success_count),
+            -int(entry.failure_count),
+            max(
+                finite_number(entry.last_used),
+                finite_number(entry.last_accessed),
+            ),
+            finite_number(entry.created_at),
+            str(entry.id),
+        )
+
+    def _enforce_limits(
+        self,
+        on_evict: Any | None = None,
+        *,
+        admission_entry: MemoryEntry | None = None,
+    ) -> None:
+        """Remove the lowest-authority entries if exceeding limits.
 
         Eviction is now an observable state transition rather than a silent
-        ``pop(0)``: the entry is marked ``evicted``, live backlinks are
+        removal: the entry is marked ``evicted``, live backlinks are
         cleaned, and the owning manager receives the previous lifecycle so it
         can write an audit tombstone.
         """
         removed = False
 
-        def evict() -> MemoryEntry:
-            entry = self.entries.pop(0)
+        def evict(eviction_index: int | None = None) -> MemoryEntry:
+            if eviction_index is None:
+                eviction_index = min(
+                    range(len(self.entries)),
+                    key=lambda index: self._retention_key(self.entries[index]),
+                )
+            entry = self.entries.pop(eviction_index)
             previous_lifecycle = entry.lifecycle_status
             previous_tier_reason = entry.tier_reason
             entry.lifecycle_status = "evicted"
@@ -1699,16 +2777,28 @@ class MemoryFile:
             entry.deprecated_at = time.time()
             removed_id = entry.id
             for remaining in self.entries:
-                if removed_id in remaining.related_to:
-                    remaining.related_to = [
-                        related
-                        for related in remaining.related_to
-                        if related != removed_id
-                    ]
-                    remaining.invalidate_tokens()
+                _remove_memory_relationship_reference(remaining, removed_id)
             if on_evict is not None:
                 on_evict(entry, previous_lifecycle, previous_tier_reason)
             return entry
+
+        # An entry that cannot fit by itself must never evict a viable store
+        # before inevitably evicting itself. Treat this as failed admission.
+        if (
+            admission_entry is not None
+            and self._entry_size_bytes(admission_entry) > self.max_size_bytes
+        ):
+            admission_index = next(
+                (
+                    index
+                    for index, candidate in enumerate(self.entries)
+                    if candidate is admission_entry
+                ),
+                None,
+            )
+            if admission_index is not None:
+                evict(admission_index)
+                removed = True
 
         # Check entry count
         while len(self.entries) > self.max_entries:
@@ -1777,6 +2867,15 @@ class MemoryPaths:
             project_memory=workspace_path / ".mini-code-memory",
             local_memory=workspace_path / ".mini-code-memory-local",
         )
+
+
+@dataclass(frozen=True, slots=True)
+class _PreparedScopeAuthority:
+    """One bounded canonical source parsed and scope-bound exactly once."""
+
+    source: MemoryAuthoritySource | None
+    data: Any = None
+    legacy_markdown: MemoryAuthoritySource | None = None
 
 
 _ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
@@ -2094,17 +3193,197 @@ def _redact_audit_value(value: Any, depth: int = 0) -> Any:
     return _sanitize_untrusted_text(repr(value), max_chars=160)
 
 
+_MEMORY_WRITE_OPERATION_RE = re.compile(r"memoryop_[0-9a-f]{32}")
+_MEMORY_WRITE_DIGEST_RE = re.compile(r"[0-9a-f]{64}")
+_MAX_MEMORY_WRITE_RECEIPTS = 128
+_MAX_PIPELINE_OPERATION_RECEIPTS = 128
+_OBSERVATION_RECEIPT_LANES = frozenset({"telemetry", "maintenance"})
+_MAX_OBSERVATION_RECEIPTS_PER_LANE = 512
+_REFLECTION_CLAIM_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
+_MEMORY_ADD_ENTRY_KEYS = frozenset(
+    {
+        "category",
+        "content",
+        "tags",
+        "domains",
+        "metadata",
+        "tier",
+        "source",
+        "provenance",
+        "lifecycle_status",
+        "tier_reason",
+        "safety_status",
+        "safety_reason",
+        "approval_policy",
+    }
+)
+
+
+def _snapshot_memory_add_entry_kwargs(value: object) -> dict[str, Any]:
+    """Validate and detach one normal MemoryManager.add_entry payload."""
+
+    if not isinstance(value, dict):
+        raise TypeError("add_entry_kwargs must be a dict")
+    unknown = set(value).difference(_MEMORY_ADD_ENTRY_KEYS)
+    if unknown:
+        raise ValueError("add_entry_kwargs contains unsupported fields")
+    if not str(value.get("content", "") or "").strip():
+        raise ValueError("add_entry_kwargs content must be non-empty")
+    return copy.deepcopy(value)
+
+
+@dataclass(frozen=True, slots=True)
+class ReflectionClaimWrite:
+    """One validated reflection claim proposed for an atomic Project write.
+
+    The manager, rather than the Pipeline, resolves recurrence and
+    supersession from freshly loaded authority. ``add_entry_kwargs`` contains
+    only the normal Memory entry fields; scope and duplicate policy remain
+    manager-owned so a batch cannot escape Project authority or merge two
+    independently evidenced claims by accident.
+    """
+
+    claim_id: str
+    semantic_key: str
+    statement: str
+    add_entry_kwargs: dict[str, Any]
+
+    def __post_init__(self) -> None:
+        for field_name, value, max_chars in (
+            ("claim_id", self.claim_id, 128),
+            ("semantic_key", self.semantic_key, 160),
+            ("statement", self.statement, 1_200),
+        ):
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{field_name} must be a non-empty string")
+            if value != value.strip() or len(value) > max_chars:
+                raise ValueError(f"{field_name} is not canonical")
+        if _REFLECTION_CLAIM_ID_RE.fullmatch(self.claim_id) is None:
+            raise ValueError("claim_id is not canonical")
+        if re.fullmatch(r"[a-z0-9_\u4e00-\u9fff]+", self.semantic_key) is None:
+            raise ValueError("semantic_key is not canonical")
+        object.__setattr__(
+            self,
+            "add_entry_kwargs",
+            _snapshot_memory_add_entry_kwargs(self.add_entry_kwargs),
+        )
+
+
+def _canonical_memory_write_value(value: Any) -> Any:
+    """Return a deterministic JSON value for reflection payload binding."""
+
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, dict):
+        normalized: dict[str, Any] = {}
+        for key in sorted(value, key=lambda item: str(item)):
+            if not isinstance(key, str):
+                raise TypeError("memory write mapping keys must be strings")
+            normalized[key] = _canonical_memory_write_value(value[key])
+        return normalized
+    if isinstance(value, (list, tuple)):
+        return [_canonical_memory_write_value(item) for item in value]
+    if isinstance(value, (set, frozenset)):
+        normalized_items = [_canonical_memory_write_value(item) for item in value]
+        return sorted(
+            normalized_items,
+            key=lambda item: json.dumps(
+                item,
+                sort_keys=True,
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ),
+        )
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("memory write numbers must be finite")
+        return value
+    if isinstance(value, (str, int, bool)) or value is None:
+        return value
+    raise TypeError("memory write payload contains an unsupported value")
+
+
+def reflection_batch_payload_digest(
+    claims: tuple[ReflectionClaimWrite, ...] | list[ReflectionClaimWrite],
+) -> str:
+    """Bind a reflection batch to the exact canonical payload the manager uses."""
+
+    if not isinstance(claims, (list, tuple)):
+        raise TypeError("claims must be a list or tuple")
+    normalized = []
+    for claim in claims:
+        if not isinstance(claim, ReflectionClaimWrite):
+            raise TypeError("claims must contain ReflectionClaimWrite values")
+        normalized.append(
+            {
+                "claim_id": claim.claim_id,
+                "semantic_key": claim.semantic_key,
+                "statement": claim.statement,
+                "add_entry_kwargs": _canonical_memory_write_value(
+                    claim.add_entry_kwargs
+                ),
+            }
+        )
+    encoded = json.dumps(
+        {"schema": "reflection_memory_batch_v1", "claims": normalized},
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def conversation_fact_payload_digest(
+    *,
+    claim_id: str,
+    add_entry_kwargs: dict[str, Any],
+) -> str:
+    """Bind one conversation fact to the exact canonical write payload."""
+
+    if (
+        not isinstance(claim_id, str)
+        or _REFLECTION_CLAIM_ID_RE.fullmatch(claim_id) is None
+    ):
+        raise ValueError("claim_id is not canonical")
+    snapshot = _snapshot_memory_add_entry_kwargs(add_entry_kwargs)
+    encoded = json.dumps(
+        {
+            "schema": "conversation_fact_memory_v1",
+            "claim_id": claim_id,
+            "add_entry_kwargs": _canonical_memory_write_value(snapshot),
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def _coordinated_scope_write(method):
     """Run a scope-first manager mutation against freshly loaded authority."""
 
     @functools.wraps(method)
     def wrapped(self, *args, **kwargs):
-        if self.in_write_transaction:
-            return method(self, *args, **kwargs)
         raw_scope = kwargs.get("scope", args[0] if args else MemoryScope.PROJECT)
         scope = _coerce_scope(raw_scope, MemoryScope.PROJECT)
+        required_scopes = (
+            tuple(MemoryScope)
+            if self._scope_has_unresolved_relationships(scope)
+            else (scope,)
+        )
+        covered = self._transaction_covers(required_scopes)
+        if self.in_write_transaction and not covered:
+            raise MemoryStoreConflict(
+                "Memory transaction does not cover requested authority scopes"
+            )
+        if covered:
+            # Nested public mutations remain capability boundaries. An outer
+            # callback must not mutate live authority after its one preflight
+            # and then use this method's audit append to bless that state.
+            self._assert_live_authority_is_sealed((scope,))
+            return method(self, *args, **kwargs)
         return self.coordinated_write(
-            (scope,), lambda: method(self, *args, **kwargs)
+            required_scopes, lambda: method(self, *args, **kwargs)
         )
 
     return wrapped
@@ -2115,10 +3394,17 @@ def _coordinated_all_write(method):
 
     @functools.wraps(method)
     def wrapped(self, *args, **kwargs):
-        if self.in_write_transaction:
+        scopes = tuple(MemoryScope)
+        covered = self._transaction_covers(scopes)
+        if self.in_write_transaction and not covered:
+            raise MemoryStoreConflict(
+                "Memory transaction does not cover requested authority scopes"
+            )
+        if covered:
+            self._assert_live_authority_is_sealed(scopes)
             return method(self, *args, **kwargs)
         return self.coordinated_write(
-            tuple(MemoryScope), lambda: method(self, *args, **kwargs)
+            scopes, lambda: method(self, *args, **kwargs)
         )
 
     return wrapped
@@ -2126,7 +3412,7 @@ def _coordinated_all_write(method):
 
 class MemoryManager:
     """Manages layered memory system."""
-    
+
     def __init__(
         self,
         workspace: str | Path | None = None,
@@ -2134,6 +3420,9 @@ class MemoryManager:
         project_root: str | Path | None = None,
         store_timeout: float = 5.0,
         readonly_load: bool = False,
+        approval_interpretation_mode: ApprovalInterpretationMode = (
+            ApprovalInterpretationMode.RECOVER_TO_PENDING
+        ),
         data_root: str | Path | None = None,
     ):
         # Backward compatibility: older call sites pass `project_root=...`.
@@ -2141,16 +3430,55 @@ class MemoryManager:
         if resolved_workspace is None:
             resolved_workspace = Path.cwd()
 
-        self.workspace = str(resolved_workspace)
+        # Canonicalize the workspace identity once. Different lexical aliases
+        # for the same checkout must coordinate on one lock and one authority
+        # path rather than deadlocking or publishing through a changed alias.
+        workspace_path = Path(resolved_workspace).resolve(strict=False)
+        self.workspace = str(workspace_path)
         if not isinstance(readonly_load, bool):
             raise TypeError("readonly_load must be a bool")
+        if not isinstance(approval_interpretation_mode, ApprovalInterpretationMode):
+            raise TypeError(
+                "approval_interpretation_mode must be an ApprovalInterpretationMode"
+            )
         self._recover_on_load = not readonly_load
+        self._approval_interpretation_mode = approval_interpretation_mode
         self.paths = MemoryPaths.for_workspace(self.workspace)
-        self._data_root = Path(data_root) if data_root is not None else Path(MINI_CODE_DIR)
+        self._data_root = (
+            Path(data_root) if data_root is not None else Path(MINI_CODE_DIR)
+        ).resolve(strict=False)
         if data_root is not None:
             self.paths.user_memory = self._data_root / "memory"
+        # User authority is shared by every workspace using this data root,
+        # while Project and Local authorities are owned by the workspace.
+        # Keeping those lock identities separate prevents unrelated projects
+        # from serializing every write and still makes managers with different
+        # data roots agree on the lock for one workspace. The workspace lock
+        # lives at the workspace root so its open directory descriptor binds
+        # the same owner inode as both authority directories. Acquiring it
+        # cannot create a partially durable scope authority directory.
         self._store = MemoryStoreCoordinator(self._data_root, timeout=store_timeout)
+        self._workspace_store = MemoryStoreCoordinator(
+            workspace_path,
+            timeout=store_timeout,
+            lock_name=".minicode-memory-authority.lock",
+        )
+        self._store_timeout = float(store_timeout)
+        self._transaction_local = threading.local()
+        self._transaction_pid = os.getpid()
+        # A read-only constructor intentionally takes no lock. Its entries and
+        # sampled revisions can therefore straddle a concurrent commit. The
+        # first later write to each scope must reload under that scope's fence
+        # unconditionally instead of trusting the constructor's revision.
+        self._unfenced_loaded_scopes: set[MemoryScope] = (
+            set(MemoryScope) if readonly_load else set()
+        )
         self._disk_revisions: dict[MemoryScope, str] = {}
+        # Human-readable reason for the most recent ``add_entry`` rejection
+        # (empty content, retention limit, sanitization). Consumed by the
+        # chat-facing handlers so a rejected write reports its cause instead
+        # of an unrelated usage hint.
+        self.last_add_rejection: str | None = None
         self.memories: dict[MemoryScope, MemoryFile] = {
             MemoryScope.USER: MemoryFile(scope=MemoryScope.USER),
             MemoryScope.PROJECT: MemoryFile(scope=MemoryScope.PROJECT),
@@ -2161,39 +3489,296 @@ class MemoryManager:
             MemoryScope.PROJECT: [],
             MemoryScope.LOCAL: [],
         }
+        # Current authorities keep only a bounded hot audit tail inline.  The
+        # immutable cold history is reached through one content-addressed head
+        # and cached separately so ordinary callers cannot accidentally mutate
+        # already-published audit records.
+        self._approval_audit_heads: dict[
+            MemoryScope, MemoryAuditHead | None
+        ] = {scope: None for scope in MemoryScope}
+        self._approval_audit_cold_records: dict[
+            MemoryScope, tuple[dict[str, Any], ...]
+        ] = {scope: () for scope in MemoryScope}
+        # Content-free, bounded receipts share the same one-file commit point
+        # as their entries.  They make a lost-response retry distinguishable
+        # from a genuinely new recurrence without introducing another
+        # authority sidecar.
+        self._memory_write_receipts: dict[MemoryScope, dict[str, Any]] = {
+            MemoryScope.USER: {},
+            MemoryScope.PROJECT: {},
+            MemoryScope.LOCAL: {},
+        }
+        # Aggregate Pipeline envelopes fence one run/turn operation before its
+        # output kind is projected into a lesson, conversation fact, or
+        # facts-only result. They intentionally share memory.json's commit
+        # point with authority receipts instead of creating another sidecar.
+        self._pipeline_operation_receipts: dict[
+            MemoryScope, dict[str, str]
+        ] = {
+            MemoryScope.USER: {},
+            MemoryScope.PROJECT: {},
+            MemoryScope.LOCAL: {},
+        }
+        # High-frequency telemetry and periodic maintenance need their own
+        # replay lane.  They must not evict content-write receipts or
+        # per-entry user-feedback evidence.  Only hashes are persisted.
+        self._observation_receipts: dict[
+            MemoryScope, dict[str, dict[str, str]]
+        ] = {
+            scope: {lane: {} for lane in _OBSERVATION_RECEIPT_LANES}
+            for scope in MemoryScope
+        }
+        self._deferred_batch_scope: MemoryScope | None = None
+        # Revision authority follows the same precedence as the loader.  A
+        # canonical JSON with embedded audit is one-file authority; legacy
+        # JSON without it also depends on approval_audit.json.
+        self._scope_has_embedded_audit: dict[MemoryScope, bool] = {
+            scope: False for scope in MemoryScope
+        }
         self._last_retrieval_result: Any = None
-        with self._store.transaction():
+        for scope in (MemoryScope.PROJECT, MemoryScope.LOCAL):
+            self._validate_scope_root(scope)
+        all_scopes = tuple(MemoryScope)
+        # Initialization may migrate, repair, or auto-recover any scope that
+        # becomes visible while it is loading. Take the complete ordered lock
+        # set for a writable constructor; an existence precheck cannot safely
+        # predict which authority another process creates during ``_load_all``.
+        initial_scopes = all_scopes
+        initial_transaction = (
+            nullcontext()
+            if readonly_load
+            else self._transaction_for_scopes(initial_scopes)
+        )
+        with initial_transaction:
             self._load_all()
             self._disk_revisions = {
                 scope: self._scope_disk_revision(scope) for scope in MemoryScope
             }
-
     @property
     def in_write_transaction(self) -> bool:
-        return self._store.in_transaction
+        """Whether this thread observes any Memory authority transaction."""
+
+        return bool(self._manager_held_stores()) or (
+            self._store.in_transaction or self._workspace_store.in_transaction
+        )
+
+    def _manager_held_stores(self) -> frozenset[MemoryStoreCoordinator]:
+        """Return capabilities acquired by this manager in this process.
+
+        ``MemoryStoreCoordinator`` deliberately shares a re-entrant lock per
+        path. That physical-lock state is not proof that *this* manager has
+        reloaded its snapshot: a second manager in the same thread observes
+        the same lock depth. Keep the logical capability manager-local so it
+        cannot take the nested fast path and overwrite a newer snapshot.
+        """
+
+        pid = os.getpid()
+        if self._transaction_pid != pid:
+            self._transaction_pid = pid
+            self._transaction_local = threading.local()
+            if hasattr(self, "_unfenced_loaded_scopes"):
+                self._unfenced_loaded_scopes.update(MemoryScope)
+            if hasattr(self, "_deferred_batch_scope"):
+                self._deferred_batch_scope = None
+            if hasattr(self, "_last_retrieval_result"):
+                self._last_retrieval_result = None
+        _active_memory_manager_transaction()
+        held = getattr(self._transaction_local, "held_stores", frozenset())
+        return held if isinstance(held, frozenset) else frozenset()
+
+    def _scope_store(self, scope: MemoryScope) -> MemoryStoreCoordinator:
+        return (
+            self._store
+            if scope is MemoryScope.USER
+            else self._workspace_store
+        )
+
+    def _transaction_covers(
+        self,
+        scopes: tuple[MemoryScope, ...] | list[MemoryScope],
+    ) -> bool:
+        """Return whether the current thread owns every requested authority."""
+
+        normalized = tuple(dict.fromkeys(_coerce_scope(scope) for scope in scopes))
+        held = self._manager_held_stores()
+        return all(self._scope_store(scope) in held for scope in normalized)
+
+    @contextmanager
+    def _transaction_for_scopes(
+        self,
+        scopes: tuple[MemoryScope, ...] | list[MemoryScope],
+    ):
+        """Acquire the exact authority lock set in one fixed global order.
+
+        Nested calls are capabilities, not a boolean escape hatch.  They may
+        use a subset of locks already held by this thread, but may not upgrade
+        a partial lock set at runtime: another thread could hold the missing
+        lock and wait for ours in the opposite direction.
+        """
+
+        normalized = tuple(dict.fromkeys(_coerce_scope(scope) for scope in scopes))
+        requested_stores = tuple(
+            dict.fromkeys(self._scope_store(scope) for scope in normalized)
+        )
+        manager_held = self._manager_held_stores()
+        if all(store in manager_held for store in requested_stores):
+            yield
+            return
+        if manager_held:
+            raise MemoryStoreConflict(
+                "Memory transaction does not cover requested authority scopes"
+            )
+        active_manager = _active_memory_manager_transaction()
+        if active_manager is not None and active_manager is not self:
+            raise MemoryStoreConflict(
+                "Memory transaction belongs to another manager"
+            )
+        physically_held = tuple(
+            store
+            for store in (self._store, self._workspace_store)
+            if store.in_transaction
+        )
+        if physically_held:
+            raise MemoryStoreConflict(
+                "Memory authority lock belongs to another manager transaction"
+            )
+
+        deadline = time.monotonic() + self._store_timeout
+        # The canonical order is shared User authority before workspace
+        # authority.  ExitStack releases them in reverse order.
+        ordered = tuple(
+            store
+            for store in (self._store, self._workspace_store)
+            if store in requested_stores
+        )
+        with ExitStack() as stack:
+            for store in ordered:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise MemoryStoreBusy("Memory store is busy")
+                stack.enter_context(store.transaction(timeout=remaining))
+            self._transaction_local.held_stores = frozenset(ordered)
+            _MEMORY_MANAGER_TRANSACTION_STATE.pid = os.getpid()
+            _MEMORY_MANAGER_TRANSACTION_STATE.owner = self
+            try:
+                yield
+            finally:
+                if os.getpid() == self._transaction_pid:
+                    self._transaction_local.held_stores = frozenset()
+                    if (
+                        _active_memory_manager_transaction() is self
+                    ):
+                        _MEMORY_MANAGER_TRANSACTION_STATE.owner = None
 
     def _scope_disk_revision(self, scope: MemoryScope) -> str:
-        self._validate_scope_root(scope)
         digest = hashlib.sha256()
-        root = self._get_scope_path(scope)
-        # memory.json is the single authority and embeds its audit records.
-        # For a legacy scope that has no memory.json yet, include the old
-        # audit file so its first migration is still revision-fenced.
-        filenames = (
-            ("memory.json",)
-            if (root / "memory.json").exists()
-            else ("memory.json", "approval_audit.json")
-        )
-        for filename in filenames:
-            path = root / filename
+        memory_json = self._read_authority_source(scope, "memory.json")
+        if memory_json is not None:
+            sources: tuple[tuple[str, MemoryAuthoritySource | None], ...] = (
+                ("memory.json", memory_json),
+            )
+            if not self._scope_has_embedded_audit.get(scope, False):
+                sources += (
+                    (
+                        "approval_audit.json",
+                        self._read_authority_source(scope, "approval_audit.json"),
+                    ),
+                )
+        else:
+            sources = (
+                ("memory.json", None),
+                (
+                    "MEMORY.md",
+                    self._read_authority_source(scope, "MEMORY.md"),
+                ),
+                (
+                    "approval_audit.json",
+                    self._read_authority_source(scope, "approval_audit.json"),
+                ),
+            )
+        for filename, source in sources:
             digest.update(filename.encode("ascii"))
-            try:
-                digest.update(path.read_bytes())
-            except FileNotFoundError:
+            if source is None:
                 digest.update(b"\0missing")
-            except OSError as error:
-                raise MemoryStoreConflict("Memory authority could not be read") from error
+            else:
+                digest.update(source.data)
         return digest.hexdigest()
+
+    @staticmethod
+    def _embedded_authority_revision(authority_bytes: bytes) -> str:
+        """Return the revision represented by one embedded-audit authority."""
+
+        digest = hashlib.sha256()
+        digest.update(b"memory.json")
+        digest.update(authority_bytes)
+        return digest.hexdigest()
+
+    def _read_authority_source(
+        self,
+        scope: MemoryScope,
+        filename: str,
+        *,
+        oversized_as_missing: bool = False,
+    ) -> MemoryAuthoritySource | None:
+        """Read one scope file through the shared bounded authority seam."""
+
+        self._validate_scope_root(scope)
+        try:
+            return read_memory_authority_file(
+                self._get_scope_path(scope),
+                filename,
+            )
+        except MemoryAuthorityTooLargeError as error:
+            if oversized_as_missing:
+                return None
+            raise MemoryStoreUnavailable(
+                f"Memory authority source {filename} is unavailable"
+            ) from error
+        except MemoryAuthoritySourceError as error:
+            raise MemoryStoreUnavailable(
+                f"Memory authority source {filename} is unavailable"
+            ) from error
+
+    def prompt_authority_revision(self) -> str:
+        """Hash only state that can change prompt selection or rendering.
+
+        Retrieval/injection counters and their access timestamps are
+        observational telemetry.  Including them in the prompt fence makes
+        two harmless concurrent reads invalidate each other after expensive
+        semantic work.  Feedback, usefulness, content, metadata, and every
+        approval/safety/lifecycle field remain covered because they can alter
+        admission, ordering, consolidation, or rendered text.
+        """
+        observational_fields = {
+            "retrieval_count",
+            "injection_count",
+            "last_accessed",
+            "last_used",
+            "feedback_observations",
+        }
+        entries: list[dict[str, Any]] = []
+        for scope in MemoryScope:
+            for entry in sorted(
+                self.memories[scope].entries,
+                key=lambda item: item.id,
+            ):
+                if not entry.is_active:
+                    continue
+                authority = entry._raw_persistence_payload()
+                for field_name in observational_fields:
+                    authority.pop(field_name, None)
+                entries.append(authority)
+        encoded = json.dumps(
+            {
+                "schema": "memory_prompt_authority_v1",
+                "entries": entries,
+            },
+            sort_keys=True,
+            ensure_ascii=False,
+            default=_json_default,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return "memorypromptrev_" + hashlib.sha256(encoded).hexdigest()
 
     def refresh_if_stale(self) -> tuple[MemoryScope, ...]:
         """Reload any scope whose on-disk authority changed since last sync.
@@ -2208,76 +3793,208 @@ class MemoryManager:
         multi-second model call — so it deliberately reuses the same revision
         notion as the write path instead of introducing a second, weaker one.
         """
-        if self.in_write_transaction:
-            # The caller owns an open transaction and its own consistency
-            # window; reloading underneath it would discard uncommitted state.
-            return ()
-        try:
-            stale = tuple(
+        scopes = tuple(MemoryScope)
+        if self._transaction_covers(scopes):
+            # The caller owns the complete consistency window. Reloading here
+            # could discard its uncommitted state, except when process/readonly
+            # initialization explicitly marked the snapshot as unfenced.
+            unfenced = tuple(
                 scope
                 for scope in MemoryScope
-                if scope in self._disk_revisions
-                and self._disk_revisions[scope] != self._scope_disk_revision(scope)
+                if scope in self._unfenced_loaded_scopes
+            )
+            if unfenced:
+                self._reload_scopes(scopes)
+                return unfenced
+            if any(
+                self._disk_revisions.get(scope)
+                != self._scope_disk_revision(scope)
+                for scope in MemoryScope
+            ):
+                # Taking the complete physical lock set does not prove that
+                # this Manager reloaded before entering it.  A reload here
+                # could erase an outer callback's uncommitted live mutation,
+                # while returning success would falsely bless a stale view.
+                raise MemoryStoreConflict(
+                    "Memory authority is stale during refresh"
+                )
+            return ()
+        if self.in_write_transaction:
+            raise MemoryStoreConflict(
+                "Memory refresh requires a complete authority transaction"
+            )
+        try:
+            preliminary_stale = tuple(
+                scope
+                for scope in MemoryScope
+                if scope in self._unfenced_loaded_scopes
+                or (
+                    scope in self._disk_revisions
+                    and self._disk_revisions[scope]
+                    != self._scope_disk_revision(scope)
+                )
             )
         except MemoryStoreError:
             # Retrieval authority is fail-closed. Serving the previous view
             # could resurrect an entry another process just rejected.
             raise
-        if not stale:
+        if not preliminary_stale:
             return ()
-        with self._store.transaction():
-            self._reload_scopes(stale)
+        # Lock and then recompute. The preliminary hash is only an optimization;
+        # it is never authority for the reload decision.
+        with self._transaction_for_scopes(scopes):
+            stale = tuple(
+                scope
+                for scope in MemoryScope
+                if self._disk_revisions.get(scope)
+                != self._scope_disk_revision(scope)
+            )
+            reload_scopes = tuple(
+                scope
+                for scope in MemoryScope
+                if scope in self._unfenced_loaded_scopes or scope in stale
+            )
+            if not reload_scopes:
+                return ()
+            self._reload_scopes(reload_scopes)
         return stale
+
+    def _existing_authority_lock_scopes(self) -> tuple[MemoryScope, ...]:
+        """Return one representative scope for each authority lock in use.
+
+        An absent authority has no state to protect yet. Skipping its lock
+        keeps read-only snapshots side-effect free; retrieval_snapshot checks
+        the roots again before yielding and reports a concurrent creation as a
+        revision conflict on exit.
+        """
+
+        scopes: list[MemoryScope] = []
+        if self.paths.user_memory.exists():
+            scopes.append(MemoryScope.USER)
+        if self.paths.project_memory.exists() or self.paths.local_memory.exists():
+            scopes.append(MemoryScope.PROJECT)
+        return tuple(scopes)
 
     @contextmanager
     def retrieval_snapshot(self):
-        """Hold one revision-fenced authority view through prompt rendering."""
-        if self.in_write_transaction:
+        """Yield one revision-fenced authority view under the store lock.
+
+        Callers must keep this context short.  Expensive semantic or model work
+        should use an immutable copy captured here, then open a second snapshot
+        and compare revisions before publishing the result.
+        """
+        scopes = tuple(MemoryScope)
+        if self._transaction_covers(scopes):
+            # A manager inherited across fork, or created with readonly_load,
+            # may appear to have an in-memory snapshot while none of those
+            # bytes were loaded under this process's authority fence.
+            if self._unfenced_loaded_scopes:
+                self._reload_scopes(scopes)
+            self._store.assert_transaction_valid()
+            self._workspace_store.assert_transaction_valid()
             revisions = tuple(
                 (scope.value, self._scope_disk_revision(scope))
                 for scope in MemoryScope
             )
+            if any(
+                self._disk_revisions.get(scope) != revision
+                for scope, (_scope_name, revision) in zip(
+                    MemoryScope,
+                    revisions,
+                )
+            ):
+                # A raw complete lock acquisition does not imply that this
+                # Manager reloaded before entering it. Reloading here could
+                # discard a caller's uncommitted live state, so a previously
+                # fenced but stale view must fail closed instead.
+                raise MemoryStoreConflict(
+                    "Memory authority is stale during retrieval"
+                )
             yield revisions
-            return
-        with self._store.transaction():
-            current = {
-                scope: self._scope_disk_revision(scope) for scope in MemoryScope
-            }
-            stale = tuple(
-                scope
-                for scope in MemoryScope
-                if self._disk_revisions.get(scope) != current[scope]
-            )
-            if stale:
-                self._reload_scopes(stale)
-                current = {
-                    scope: self._scope_disk_revision(scope)
-                    for scope in MemoryScope
-                }
-            revision = tuple(
-                (scope.value, current[scope]) for scope in MemoryScope
-            )
-            yield revision
-            # Writers share this lock, so a changed revision means an unsafe
-            # out-of-band mutation bypassed coordination.
+            self._store.assert_transaction_valid()
+            self._workspace_store.assert_transaction_valid()
             after = tuple(
                 (scope.value, self._scope_disk_revision(scope))
                 for scope in MemoryScope
             )
-            if after != revision:
+            if after != revisions:
                 raise MemoryStoreConflict(
                     "Memory authority changed during retrieval"
                 )
+            return
+        if self.in_write_transaction:
+            raise MemoryStoreConflict(
+                "Memory retrieval requires a complete authority transaction"
+            )
+        for _attempt in range(3):
+            lock_scopes = self._existing_authority_lock_scopes()
+            with self._transaction_for_scopes(lock_scopes):
+                if lock_scopes != self._existing_authority_lock_scopes():
+                    continue
+                current = {
+                    scope: self._scope_disk_revision(scope)
+                    for scope in MemoryScope
+                }
+                stale = tuple(
+                    scope
+                    for scope in MemoryScope
+                    if self._disk_revisions.get(scope) != current[scope]
+                    or (
+                        scope in self._unfenced_loaded_scopes
+                        and self._transaction_covers((scope,))
+                    )
+                )
+                if stale:
+                    if not self._transaction_covers(stale):
+                        continue
+                    self._reload_scopes(stale)
+                    current = {
+                        scope: self._scope_disk_revision(scope)
+                        for scope in MemoryScope
+                    }
+                    if lock_scopes != self._existing_authority_lock_scopes():
+                        continue
+                # Scopes whose roots are still absent need no physical lock.
+                # The stable root-set check above proves that their lock-free
+                # constructor view remains empty at this point; the exit
+                # revision check catches a creation while the caller uses the
+                # snapshot.
+                for scope in tuple(self._unfenced_loaded_scopes):
+                    if not self._transaction_covers((scope,)):
+                        self._unfenced_loaded_scopes.discard(scope)
+                revision = tuple(
+                    (scope.value, current[scope]) for scope in MemoryScope
+                )
+                yield revision
+                after = tuple(
+                    (scope.value, self._scope_disk_revision(scope))
+                    for scope in MemoryScope
+                )
+                if after != revision:
+                    raise MemoryStoreConflict(
+                        "Memory authority changed during retrieval"
+                    )
+                return
+        raise MemoryStoreBusy("Memory authority changed while acquiring snapshot")
 
     def _reload_scopes(self, scopes: tuple[MemoryScope, ...]) -> None:
+        prepared = {
+            scope: self._prepare_scope_authority(scope) for scope in scopes
+        }
+        self._assert_cross_scope_unique(prepared)
         for scope in scopes:
             self.memories[scope] = MemoryFile(scope=scope)
             self.approval_audit[scope] = []
-            self._load_approval_audit(scope)
-            self._load_scope(scope)
+            self._memory_write_receipts[scope] = {}
+            self._pipeline_operation_receipts[scope] = {}
+            self._observation_receipts[scope] = {
+                lane: {} for lane in _OBSERVATION_RECEIPT_LANES
+            }
+            self._load_scope(scope, prepared=prepared[scope])
             if self._recover_on_load:
                 self._auto_recover_scope(scope)
             self._disk_revisions[scope] = self._scope_disk_revision(scope)
+            self._unfenced_loaded_scopes.discard(scope)
 
     def coordinated_write(
         self,
@@ -2285,21 +4002,38 @@ class MemoryManager:
         operation,
         *,
         reject_stale: bool = False,
+        recover_live_authority: bool = False,
     ):
         """Reload, validate and mutate one or more scopes under the store lock."""
         normalized = tuple(dict.fromkeys(_coerce_scope(scope) for scope in scopes))
-        if self.in_write_transaction:
+        if self._transaction_covers(normalized):
             return operation()
-        with self._store.transaction():
+        with self._transaction_for_scopes(normalized):
             stale = any(
-                scope in self._disk_revisions
-                and self._disk_revisions[scope] != self._scope_disk_revision(scope)
+                scope in self._unfenced_loaded_scopes
+                or (
+                    scope in self._disk_revisions
+                    and self._disk_revisions[scope]
+                    != self._scope_disk_revision(scope)
+                )
                 for scope in normalized
             )
             if stale:
                 self._reload_scopes(normalized)
                 if reject_stale:
                     raise MemoryStoreConflict("Memory content changed")
+            try:
+                self._assert_live_authority_is_sealed(normalized)
+            except MemoryStoreConflict:
+                if recover_live_authority:
+                    self._restore_live_authority_state(normalized)
+                    self._assert_live_authority_is_sealed(normalized)
+                else:
+                    # Public mutations must never bless authority edits made
+                    # through a previously returned mutable MemoryEntry.
+                    # Restore the canonical view before reporting failure.
+                    self._reload_scopes(normalized)
+                    raise
             try:
                 result = operation()
             except BaseException:
@@ -2310,17 +4044,294 @@ class MemoryManager:
                 except BaseException:  # preserve the original write failure
                     pass
                 raise
-            for scope in normalized:
-                self._disk_revisions[scope] = self._scope_disk_revision(scope)
             return result
+
+    def _assert_live_authority_is_sealed(
+        self,
+        scopes: tuple[MemoryScope, ...],
+    ) -> None:
+        """Reject caller-side authority edits before an authorized mutation.
+
+        ``_append_approval_audit`` seals the *result* of an authorized
+        transition. Without this entry precondition, that final seal could
+        launder a mutation which happened before the Manager operation began.
+        """
+
+        for scope in scopes:
+            for entry in self.memories[scope].entries:
+                trusted = entry._authority_state_snapshot
+                if trusted is None or entry._authority_state_is_current():
+                    continue
+                current = entry._current_authority_state()
+                if current.scope != trusted.scope:
+                    raise MemoryStoreConflict(
+                        "Memory entry scope does not match its authority root"
+                    )
+                if current.entry_id != trusted.entry_id:
+                    other_ids = {
+                        other.id
+                        for other_scope in MemoryScope
+                        if other_scope is not scope
+                        for other in self.memories[other_scope].entries
+                    }
+                    if current.entry_id in other_ids:
+                        raise MemoryStoreConflict(
+                            "Memory authority has a cross-scope duplicate ID"
+                        )
+                    raise MemoryStoreConflict(
+                        "Memory entry identity changed outside the Manager"
+                    )
+                raise MemoryStoreConflict(
+                    "Memory entry authority changed outside the Manager"
+                )
+
+    def _restore_live_authority_state(
+        self,
+        scopes: tuple[MemoryScope, ...],
+    ) -> None:
+        """Restore sealed authority in place for fail-closed read paths."""
+
+        for scope in scopes:
+            rebuild_indices = False
+            for entry in self.memories[scope].entries:
+                trusted = entry._authority_state_snapshot
+                if trusted is None or entry._authority_state_is_current():
+                    continue
+                rebuild_indices = (
+                    rebuild_indices
+                    or entry.id != trusted.entry_id
+                    or entry.scope.value != trusted.scope
+                )
+                entry._restore_authority_state()
+            if rebuild_indices:
+                self.memories[scope]._rebuild_indices()
     
     def _load_all(self) -> None:
         """Load all memory files."""
-        for scope in MemoryScope:
-            self._load_approval_audit(scope)
-            self._load_scope(scope)
+        scopes = tuple(MemoryScope)
+        prepared = {
+            scope: self._prepare_scope_authority(scope) for scope in scopes
+        }
+        # Preflight every canonical scope before approval migration, partial
+        # recovery, projection repair, or any other load-time persistence.
+        self._assert_cross_scope_unique(prepared)
+        for scope in scopes:
+            self._load_scope(scope, prepared=prepared[scope])
             if self._recover_on_load:
                 self._auto_recover_scope(scope)
+
+    def _prepare_scope_authority(
+        self,
+        scope: MemoryScope,
+    ) -> _PreparedScopeAuthority:
+        """Read, parse, and bind one canonical JSON authority without writes."""
+
+        source = self._read_authority_source(scope, "memory.json")
+        if source is None:
+            return _PreparedScopeAuthority(
+                source=None,
+                legacy_markdown=self._read_authority_source(scope, "MEMORY.md"),
+            )
+        try:
+            data = parse_memory_authority_json(source.text)
+        except (json.JSONDecodeError, RecursionError, ValueError) as error:
+            raise MemoryStoreConflict("Memory authority is invalid") from error
+        if isinstance(data, dict) and "schemaVersion" in data:
+            schema_version = data["schemaVersion"]
+            if (
+                type(schema_version) is not int
+                or schema_version
+                not in (
+                    {CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION}
+                    | set(MIGRATABLE_MEMORY_AUTHORITY_SCHEMA_VERSIONS)
+                )
+            ):
+                raise MemoryStoreConflict("Memory authority is invalid")
+        data, scope_errors = _bind_memory_authority_scope(data, scope.value)
+        if scope_errors:
+            raise MemoryStoreConflict("Memory authority is invalid")
+        return _PreparedScopeAuthority(source=source, data=data)
+
+    @staticmethod
+    def _authority_ids(
+        prepared: _PreparedScopeAuthority,
+        scope: MemoryScope,
+    ) -> tuple[str, ...]:
+        data = prepared.data
+        if not isinstance(data, dict) or not isinstance(data.get("entries"), list):
+            if prepared.legacy_markdown is None:
+                return ()
+            count = sum(
+                1
+                for line in prepared.legacy_markdown.text.splitlines()
+                if line.strip().startswith("- ")
+            )
+            if count > MAX_AUTHORITY_ENTRIES:
+                raise MemoryStoreConflict(
+                    "Legacy Memory authority exceeds the entry limit"
+                )
+            return tuple(f"{scope.value}-{index}" for index in range(1, count + 1))
+        ids: list[str] = []
+        for raw_entry in data["entries"]:
+            if not isinstance(raw_entry, dict):
+                continue
+            entry_id = raw_entry.get("id")
+            if isinstance(entry_id, str) and entry_id:
+                ids.append(entry_id)
+        return tuple(ids)
+
+    @staticmethod
+    def _raw_entry_relationship_edges(
+        raw_entry: dict[str, Any],
+    ) -> tuple[tuple[str, str], ...]:
+        edges: list[tuple[str, str]] = []
+        related_to = raw_entry.get("related_to", [])
+        if isinstance(related_to, list):
+            edges.extend(
+                ("related_to", value)
+                for value in related_to
+                if isinstance(value, str) and value
+            )
+        metadata = raw_entry.get("metadata")
+        if isinstance(metadata, dict):
+            supersedes = metadata.get("supersedes", [])
+            if isinstance(supersedes, list):
+                edges.extend(
+                    ("supersedes", value)
+                    for value in supersedes
+                    if isinstance(value, str) and value
+                )
+            superseded_by = metadata.get("superseded_by")
+            if isinstance(superseded_by, str) and superseded_by:
+                edges.append(("superseded_by", superseded_by))
+        return tuple(edges)
+
+    @classmethod
+    def _raw_entry_relationships(cls, raw_entry: dict[str, Any]) -> tuple[str, ...]:
+        return tuple(
+            reference
+            for _kind, reference in cls._raw_entry_relationship_edges(raw_entry)
+        )
+
+    def _authority_relationship_keys(
+        self,
+        scope: MemoryScope,
+        prepared: _PreparedScopeAuthority,
+    ) -> Counter[tuple[MemoryScope, str, str, str]]:
+        """Count unresolved committed edges by owner, kind, and target."""
+
+        data = prepared.data
+        raw_entries = (
+            data.get("entries", []) if isinstance(data, dict) else []
+        )
+        owned_ids = {
+            raw_entry.get("id")
+            for raw_entry in raw_entries
+            if isinstance(raw_entry, dict)
+            and isinstance(raw_entry.get("id"), str)
+            and raw_entry.get("id")
+        }
+        return Counter(
+            (scope, entry_id, relation_kind, reference)
+            for raw_entry in raw_entries
+            if isinstance(raw_entry, dict)
+            for entry_id in (raw_entry.get("id"),)
+            if isinstance(entry_id, str) and entry_id
+            for relation_kind, reference in self._raw_entry_relationship_edges(
+                raw_entry
+            )
+            if reference not in owned_ids
+        )
+
+    def _scope_has_unresolved_relationships(self, scope: MemoryScope) -> bool:
+        """Whether a legacy edge needs a complete cross-scope read fence."""
+
+        entries = self.memories[scope].entries
+        owned_ids = {entry.id for entry in entries}
+        return any(
+            reference not in owned_ids
+            for entry in entries
+            for reference in _memory_entry_relationships(entry)
+        )
+
+    def _assert_cross_scope_unique(
+        self,
+        prepared: dict[MemoryScope, _PreparedScopeAuthority],
+        *,
+        reject_new_unresolved: bool = False,
+        grandfathered_relationships: Counter[
+            tuple[MemoryScope, str, str, str]
+        ] | None = None,
+    ) -> None:
+        owners: dict[str, MemoryScope] = {}
+        ids_by_scope: dict[MemoryScope, set[str]] = {}
+        allowed_unresolved = grandfathered_relationships or Counter()
+        proposed_unresolved: Counter[
+            tuple[MemoryScope, str, str, str]
+        ] = Counter()
+        for scope in MemoryScope:
+            ids = (
+                self._authority_ids(prepared[scope], scope)
+                if scope in prepared
+                else tuple(entry.id for entry in self.memories[scope].entries)
+            )
+            ids_by_scope[scope] = set(ids)
+            for entry_id in ids:
+                owner = owners.get(entry_id)
+                if owner is not None and owner is not scope:
+                    raise MemoryStoreConflict(
+                        "Memory authority has a cross-scope duplicate ID"
+                    )
+                owners[entry_id] = scope
+
+        # Relationship state is committed with exactly one scope root. A
+        # cross-scope edge would let approval/supersession mutate one root
+        # while returning success after publishing another, so current
+        # authorities reject such references at every load/write boundary.
+        for scope in MemoryScope:
+            if scope in prepared:
+                data = prepared[scope].data
+                raw_entries = (
+                    data.get("entries", []) if isinstance(data, dict) else []
+                )
+            else:
+                raw_entries = [
+                    entry.to_dict() for entry in self.memories[scope].entries
+                ]
+            for raw_entry in raw_entries:
+                if not isinstance(raw_entry, dict):
+                    continue
+                entry_id = raw_entry.get("id")
+                for relation_kind, reference in self._raw_entry_relationship_edges(
+                    raw_entry
+                ):
+                    if reference in ids_by_scope[scope]:
+                        continue
+                    owner = owners.get(reference)
+                    if owner is not None and owner is not scope:
+                        raise MemoryStoreConflict(
+                            "Memory authority has a cross-scope relationship"
+                        )
+                    relationship = (
+                        scope,
+                        str(entry_id or ""),
+                        relation_kind,
+                        reference,
+                    )
+                    proposed_unresolved[relationship] += 1
+                    # Loads retain historic dangling relationships. A write
+                    # may preserve one but cannot introduce another unresolved
+                    # edge; otherwise one old deletion makes its entire scope
+                    # permanently unwritable.
+                    if (
+                        reject_new_unresolved
+                        and proposed_unresolved[relationship]
+                        > allowed_unresolved[relationship]
+                    ):
+                        raise MemoryStoreConflict(
+                            "Memory authority introduces an unresolved "
+                            "relationship"
+                        )
     
     def _auto_recover_scope(self, scope: MemoryScope) -> None:
         """Check integrity and auto-recover if issues are found.
@@ -2373,6 +4384,7 @@ class MemoryManager:
                 continue
 
             if not entry.category or not isinstance(entry.category, str):
+                _reset_version_scoped_observations(entry)
                 entry.category = "general"
                 fixed_count += 1
 
@@ -2460,6 +4472,7 @@ class MemoryManager:
         raw_data: dict[str, Any] | None = None,
         *,
         save_audit: bool = True,
+        authority_schema_version: int | None = None,
     ) -> bool:
         """Safety-scan loaded entries and migrate legacy approval semantics."""
         raw_data = raw_data or {}
@@ -2467,64 +4480,35 @@ class MemoryManager:
         safety = assess_memory_safety(entry.content, source=entry.source or "load")
         previous_approval = entry.approval_status
         previous_lifecycle = entry.lifecycle_status
-        previous_hash = entry.approval_content_hash
-        changed = False
-
         raw_has_approval = "approval_status" in raw_data
         raw_has_hash = "approval_content_hash" in raw_data
-        current_hash = _approval_hash_for_entry(entry)
-
-        entry.safety_status = _normalize_safety_status(safety.status)
-        entry.safety_reason = safety.reason
-
-        if not raw_has_approval:
-            if safety.status == _SAFETY_SAFE:
-                entry.approval_status = (
-                    _APPROVAL_APPROVED
-                    if entry.lifecycle_status == _ACTIVE_LIFECYCLE
-                    else _APPROVAL_PENDING
-                )
-            else:
-                entry.approval_status = self._approval_for_safety(safety.status)
-            entry.approval_reason = safety.reason or "legacy migration"
-            entry.approval_actor = "migration"
-            entry.approval_decided_at = time.time()
-            changed = True
-        elif safety.status == _SAFETY_UNSAFE:
-            entry.approval_status = _APPROVAL_REJECTED
-            entry.approval_reason = safety.reason
-            entry.approval_actor = "safety_gate"
-            entry.approval_decided_at = time.time()
-            changed = True
-        elif raw_has_hash and previous_hash and previous_hash != current_hash:
-            entry.approval_status = _APPROVAL_PENDING
-            entry.approval_reason = "approval hash mismatch after load"
-            entry.approval_actor = "migration"
-            entry.approval_decided_at = time.time()
-            changed = True
-        elif not raw_has_hash:
-            if safety.status == _SAFETY_SUSPICIOUS and entry.approval_status != _APPROVAL_REJECTED:
-                entry.approval_status = _APPROVAL_PENDING
-                entry.approval_reason = safety.reason
-                entry.approval_actor = "migration"
-            changed = True
-
-        if entry.approval_status == _APPROVAL_REJECTED:
-            entry.lifecycle_status = "rejected"
-            entry.curator_locked = False
-        if entry.safety_status == _SAFETY_UNSAFE:
-            entry.lifecycle_status = "rejected"
-            entry.tier_reason = "safety_gate"
-
-        if entry.approval_content_hash != current_hash:
-            entry.approval_content_hash = current_hash
-            changed = True
-        if not entry.approval_actor:
-            entry.approval_actor = "migration"
-            changed = True
-        if entry.approval_status not in _VALID_APPROVAL_STATUSES:
-            entry.approval_status = _APPROVAL_PENDING
-            changed = True
+        raw_has_policy = "approval_policy" in raw_data
+        raw_policy = raw_data.get("approval_policy")
+        invalid_policy = bool(
+            raw_has_policy
+            and raw_policy not in {policy.value for policy in MemoryApprovalPolicy}
+        )
+        interpretation = _interpret_loaded_entry_approval(
+            entry,
+            raw_data,
+            safety,
+            mode=self._approval_interpretation_mode,
+            transition_time=time.time(),
+            requires_complete_authority=(
+                authority_schema_version in _SEALED_ENTRY_SCHEMA_VERSIONS
+            ),
+        )
+        if interpretation.state is None or interpretation.failure is not None:
+            raise MemoryStoreConflict("Memory approval authority is invalid")
+        canonical_hash = _approval_hash_for_entry(entry)
+        persisted_hash = str(raw_data.get("approval_content_hash", "") or "")
+        reset_observations = (
+            _reset_version_scoped_observations(entry)
+            if not raw_has_hash or persisted_hash != canonical_hash
+            else None
+        )
+        _apply_approval_authority_state(entry, interpretation.state)
+        changed = interpretation.migration_required
 
         if changed:
             self._append_approval_audit(
@@ -2536,7 +4520,13 @@ class MemoryManager:
                 previous_lifecycle=previous_lifecycle,
                 reason=entry.approval_reason,
                 safety=safety,
-                extra={"had_approval": raw_has_approval, "had_hash": raw_has_hash},
+                extra={
+                    "had_approval": raw_has_approval,
+                    "had_hash": raw_has_hash,
+                    "had_policy": raw_has_policy,
+                    "invalid_policy": invalid_policy,
+                    "version_observations_reset": reset_observations,
+                },
                 save=save_audit,
             )
         return changed
@@ -2557,7 +4547,7 @@ class MemoryManager:
         # Every load/reload entrypoint holds the same cooperative transaction
         # used by authority writers.  Refuse an accidental future call outside
         # that fence rather than racing a newer memory.json commit.
-        if not self.in_write_transaction:
+        if not self._transaction_covers((scope,)):
             raise MemoryStoreConflict(
                 "Memory Markdown projection repair requires a store transaction"
             )
@@ -2571,116 +4561,490 @@ class MemoryManager:
                 if entry.is_active
             ],
         ).format_as_markdown()
-        try:
-            current = memory_md.read_text(encoding="utf-8")
-        except FileNotFoundError:
-            current = ""
-        except OSError as error:
-            logger.warning(
-                "Memory Markdown projection read failed for %s: %s",
-                scope.value,
-                error,
-            )
-            return False
+        current_source = self._read_authority_source(
+            scope,
+            "MEMORY.md",
+            oversized_as_missing=True,
+        )
+        current = current_source.text if current_source is not None else ""
         if self._projection_body(current) == self._projection_body(expected):
             return False
         self._ensure_scope_path(scope)
         self._atomic_write(memory_md, expected)
         logger.info("Rebuilt stale Memory Markdown projection for %s", scope.value)
         return True
-    
-    def _load_scope(self, scope: MemoryScope) -> None:
-        """Load memory file for a scope."""
-        path = self._get_scope_path(scope)
-        memory_md = path / "MEMORY.md"
-        memory_json = path / "memory.json"
-        
-        if not memory_md.exists() and not memory_json.exists():
-            return
-        
-        # Load JSON metadata if exists
-        if memory_json.exists():
+
+    def _backup_legacy_authority_for_migration(
+        self,
+        scope: MemoryScope,
+        *,
+        source: MemoryAuthoritySource,
+        source_name: str,
+    ) -> str:
+        """Preserve the exact legacy source before a lossy-safe migration.
+
+        Legacy audit dictionaries and over-capacity entries cannot be copied
+        into the current strict authority unchanged.  Keep their complete
+        source bytes in a content-addressed quarantine first, so migration can
+        fail closed without either blessing incomplete history or silently
+        discarding it.
+        """
+
+        scope_root_digest = hashlib.sha256(
+            os.path.abspath(os.fspath(self._get_scope_path(scope))).encode(
+                "utf-8",
+                errors="surrogateescape",
+            )
+        ).hexdigest()[:32]
+        source_digest = hashlib.sha256(source.data).hexdigest()
+        quarantine_root = self._data_root / "memory-migration-quarantine"
+        backup_root = quarantine_root / scope_root_digest
+        for candidate in (quarantine_root, backup_root):
             try:
-                raw_text = memory_json.read_text(encoding="utf-8")
-                data = json.loads(raw_text)
-                
+                if candidate.is_symlink():
+                    raise MemoryStoreUnsafePath(
+                        "Memory migration quarantine is a symbolic link"
+                    )
+                candidate.mkdir(mode=0o700, parents=True, exist_ok=True)
+                if candidate.is_symlink() or not candidate.is_dir():
+                    raise MemoryStoreUnsafePath(
+                        "Memory migration quarantine is unavailable"
+                    )
+            except OSError as error:
+                raise MemoryStoreUnavailable(
+                    "Memory migration quarantine is unavailable"
+                ) from error
+        backup_path = backup_root / (
+            f"{scope.value}-{source_name}-{source_digest}.bak"
+        )
+        try:
+            existing_backup = read_memory_authority_file(
+                backup_root,
+                backup_path.name,
+            )
+        except MemoryAuthoritySourceError as error:
+            raise MemoryStoreUnavailable(
+                "Memory migration quarantine is unavailable"
+            ) from error
+        if existing_backup is None:
+            self._atomic_write(backup_path, source.text)
+        elif existing_backup.data != source.data:
+            raise MemoryStoreConflict("Memory migration backup conflicts")
+        return source_digest
+
+    def _migrate_legacy_approval_audit(
+        self,
+        scope: MemoryScope,
+        *,
+        source: MemoryAuthoritySource,
+        source_name: str,
+        legacy_records: Sequence[dict[str, Any]],
+    ) -> bool:
+        """Quarantine sparse legacy audit and replace it with typed provenance."""
+
+        if not legacy_records:
+            return False
+        source_digest = self._backup_legacy_authority_for_migration(
+            scope,
+            source=source,
+            source_name=source_name,
+        )
+        legacy_id_digest = hashlib.sha256(
+            json.dumps(
+                [record.get("audit_id") for record in legacy_records],
+                ensure_ascii=False,
+                allow_nan=False,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+
+        memory_file = self.memories[scope]
+        if memory_file.entries:
+            bound_entry = next(
+                (
+                    memory_file._id_index[record["entry_id"]]
+                    for record in legacy_records
+                    if isinstance(record.get("entry_id"), str)
+                    and record["entry_id"] in memory_file._id_index
+                ),
+                memory_file.entries[0],
+            )
+            self._append_approval_audit(
+                scope,
+                bound_entry,
+                action="legacy_audit_migration",
+                actor="migration",
+                previous_approval=bound_entry.approval_status,
+                previous_lifecycle=bound_entry.lifecycle_status,
+                reason="unversioned audit quarantined before typed migration",
+                extra={
+                    "source_schema_version": 0,
+                    "target_schema_version": (
+                        CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION
+                    ),
+                    "legacy_audit_record_count": len(legacy_records),
+                    "legacy_audit_ids_digest": legacy_id_digest,
+                    "migration_backup_digest": source_digest,
+                },
+                save=False,
+            )
+        return True
+
+    def _enforce_legacy_runtime_capacity(
+        self,
+        scope: MemoryScope,
+        *,
+        source: MemoryAuthoritySource,
+        source_name: str,
+    ) -> bool:
+        """Migrate one bounded legacy source into the current runtime limits."""
+
+        memory_file = self.memories[scope]
+        exceeds_runtime_capacity = (
+            len(memory_file.entries) > memory_file.max_entries
+            or memory_file.size_bytes > memory_file.max_size_bytes
+        )
+        if not exceeds_runtime_capacity:
+            return False
+        if not self._recover_on_load:
+            raise MemoryStoreConflict(
+                "Legacy Memory authority requires capacity migration"
+            )
+
+        source_digest = self._backup_legacy_authority_for_migration(
+            scope,
+            source=source,
+            source_name=source_name,
+        )
+
+        evictions: list[tuple[MemoryEntry, str, str]] = []
+
+        def capture_eviction(
+            evicted: MemoryEntry,
+            previous_lifecycle: str,
+            previous_tier_reason: str,
+        ) -> None:
+            evictions.append(
+                (evicted, previous_lifecycle, previous_tier_reason)
+            )
+
+        memory_file._enforce_limits(capture_eviction)
+        for evicted, previous_lifecycle, previous_tier_reason in evictions:
+            self._append_approval_audit(
+                scope,
+                evicted,
+                action="capacity_migration_eviction",
+                actor="migration",
+                previous_approval=evicted.approval_status,
+                previous_lifecycle=previous_lifecycle,
+                reason="legacy authority exceeded the v2 runtime capacity",
+                extra={
+                    "previous_tier_reason": previous_tier_reason,
+                    "retention_policy": "authority_first_v1",
+                    "source_schema_version": 0,
+                    "target_schema_version": (
+                        CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION
+                    ),
+                    "migration_backup_digest": source_digest,
+                    "evicted_content_hash": hashlib.sha256(
+                        evicted.content.encode("utf-8")
+                    ).hexdigest(),
+                },
+                save=False,
+            )
+        return bool(evictions)
+
+    def _load_scope(
+        self,
+        scope: MemoryScope,
+        *,
+        prepared: _PreparedScopeAuthority | None = None,
+    ) -> None:
+        """Load memory file for a scope."""
+        self._scope_has_embedded_audit[scope] = False
+        self._approval_audit_heads[scope] = None
+        self._approval_audit_cold_records[scope] = ()
+        legacy_audit_records: tuple[dict[str, Any], ...] = ()
+        prepared = prepared or self._prepare_scope_authority(scope)
+        memory_json = prepared.source
+        if memory_json is not None:
+            try:
+                data = prepared.data
+                if isinstance(data, dict):
+                    raw_entries = data.get("entries")
+                    schema_version = data.get("schemaVersion")
+                    is_unversioned_authority = "schemaVersion" not in data
+                    is_migratable_versioned_authority = (
+                        schema_version
+                        in MIGRATABLE_MEMORY_AUTHORITY_SCHEMA_VERSIONS
+                    )
+                    needs_schema_migration = (
+                        schema_version
+                        != CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION
+                    )
+                    if (
+                        is_migratable_versioned_authority
+                        and not self._recover_on_load
+                    ):
+                        raise MemoryStoreConflict(
+                            "Memory authority requires schema migration"
+                        )
+                    if (
+                        not is_unversioned_authority
+                        and isinstance(raw_entries, list)
+                        and len(raw_entries) > MAX_CURRENT_AUTHORITY_ENTRIES
+                    ):
+                        raise MemoryStoreConflict(
+                            "Versioned Memory authority exceeds runtime capacity"
+                        )
+                    loaded_write_receipts = self._validated_memory_write_receipts(
+                        data.get("write_receipts", []),
+                        scope=scope,
+                        authority_schema_version=schema_version,
+                    )
+                    loaded_pipeline_receipts = (
+                        self._validated_pipeline_operation_receipts(
+                            data.get("pipeline_operation_receipts", [])
+                        )
+                    )
+                    loaded_observation_receipts = (
+                        self._validated_observation_receipts(
+                            data.get(
+                                "observation_receipts",
+                                {
+                                    lane: []
+                                    for lane in _OBSERVATION_RECEIPT_LANES
+                                },
+                            )
+                        )
+                    )
+                    for operation_id in set(loaded_write_receipts).intersection(
+                        loaded_pipeline_receipts
+                    ):
+                        if (
+                            loaded_write_receipts[operation_id].payload_digest
+                            != loaded_pipeline_receipts[operation_id]
+                        ):
+                            raise MemoryStoreConflict(
+                                "Memory operation receipt digests disagree"
+                            )
+                    if "approval_audit" in data:
+                        self._scope_has_embedded_audit[scope] = True
+                        if is_unversioned_authority:
+                            decoded_legacy_audit = self._validated_audit_records(
+                                data["approval_audit"],
+                                scope=scope,
+                                versioned=False,
+                            )
+                            if self._recover_on_load:
+                                legacy_audit_records = tuple(
+                                    decoded_legacy_audit
+                                )
+                                # Migration and safety transitions created
+                                # below must start in a clean typed history.
+                                # Sparse legacy dictionaries remain available
+                                # from the exact quarantine backup.
+                                self.approval_audit[scope] = []
+                            else:
+                                self.approval_audit[scope] = (
+                                    decoded_legacy_audit
+                                )
+                        else:
+                            self._load_versioned_approval_audit(
+                                scope,
+                                data,
+                                schema_version=schema_version,
+                            )
+                    else:
+                        self._load_approval_audit_projection(scope)
                 is_valid, errors = _validate_memory_data(data)
                 if is_valid:
-                    embedded_audit = data.get("approval_audit")
-                    if isinstance(embedded_audit, list):
-                        self.approval_audit[scope] = [
-                            record
-                            for record in embedded_audit
-                            if isinstance(record, dict)
-                        ]
-                    changed = False
+                    self._memory_write_receipts[scope] = loaded_write_receipts
+                    self._pipeline_operation_receipts[
+                        scope
+                    ] = loaded_pipeline_receipts
+                    self._observation_receipts[
+                        scope
+                    ] = loaded_observation_receipts
+                    changed = needs_schema_migration
                     for entry_data in data.get("entries", []):
                         entry = MemoryEntry.from_dict(entry_data)
                         changed = self._apply_loaded_entry_safety(
                             entry,
                             entry_data,
                             save_audit=False,
+                            authority_schema_version=data.get(
+                                "schemaVersion"
+                            ),
                         ) or changed
+                        if (
+                            schema_version == 2
+                            and entry.approval_status == _APPROVAL_APPROVED
+                        ):
+                            previous_approval = entry.approval_status
+                            previous_lifecycle = entry.lifecycle_status
+                            entry.approval_status = _APPROVAL_PENDING
+                            entry.approval_reason = (
+                                "v2 authority seal migration requires review"
+                            )
+                            entry.approval_actor = "migration"
+                            entry.approval_decided_at = time.time()
+                            self._append_approval_audit(
+                                scope,
+                                entry,
+                                action="authority_schema_migration",
+                                actor="migration",
+                                previous_approval=previous_approval,
+                                previous_lifecycle=previous_lifecycle,
+                                reason=entry.approval_reason,
+                                extra={
+                                    "source_schema_version": schema_version,
+                                    "target_schema_version": (
+                                        CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION
+                                    ),
+                                    "authority_resealed": True,
+                                },
+                                save=False,
+                            )
+                            changed = True
+                        if (
+                            needs_schema_migration
+                            and self._recover_on_load
+                            and entry.lifecycle_status
+                            not in _VALID_LIFECYCLE_STATUSES
+                        ):
+                            previous_approval = entry.approval_status
+                            previous_lifecycle = entry.lifecycle_status
+                            entry.lifecycle_status = "invalid"
+                            if entry.approval_status != _APPROVAL_REJECTED:
+                                entry.approval_status = _APPROVAL_PENDING
+                            entry.approval_reason = (
+                                "unknown legacy lifecycle requires review"
+                            )
+                            entry.approval_actor = "migration"
+                            entry.approval_decided_at = time.time()
+                            self._append_approval_audit(
+                                scope,
+                                entry,
+                                action="legacy_lifecycle_migration",
+                                actor="migration",
+                                previous_approval=previous_approval,
+                                previous_lifecycle=previous_lifecycle,
+                                reason=entry.approval_reason,
+                                extra={
+                                    "source_lifecycle_digest": hashlib.sha256(
+                                        previous_lifecycle.encode(
+                                            "utf-8",
+                                            errors="replace",
+                                        )
+                                    ).hexdigest(),
+                                    "target_lifecycle": "invalid",
+                                },
+                                save=False,
+                            )
+                            changed = True
                         entry._seal_authority_state()
                         self.memories[scope].entries.append(entry)
                     self.memories[scope]._rebuild_indices()
+                    memory_file = self.memories[scope]
+                    exceeds_runtime_capacity = (
+                        len(memory_file.entries) > memory_file.max_entries
+                        or memory_file.size_bytes > memory_file.max_size_bytes
+                    )
+                    if exceeds_runtime_capacity and not is_unversioned_authority:
+                        raise MemoryStoreConflict(
+                            "Versioned Memory authority exceeds runtime capacity"
+                        )
+                    if is_unversioned_authority:
+                        if self._recover_on_load:
+                            changed = (
+                                self._migrate_legacy_approval_audit(
+                                    scope,
+                                    source=memory_json,
+                                    source_name="memory-json",
+                                    legacy_records=legacy_audit_records,
+                                )
+                                or changed
+                            )
+                        changed = (
+                            self._enforce_legacy_runtime_capacity(
+                                scope,
+                                source=memory_json,
+                                source_name="memory-json",
+                            )
+                            or changed
+                        )
                     if changed and self._recover_on_load:
-                        self._save_approval_audit(scope)
                         self._save_scope(scope)
                     elif self._recover_on_load:
                         self._repair_markdown_projection(scope)
                     return
-                else:
-                    logger.warning(
-                        "Memory data validation failed for scope %s: %s",
-                        scope.value,
-                        "; ".join(errors[:5]),
+                logger.warning(
+                    "Memory data validation failed for scope %s: %s",
+                    scope.value,
+                    "; ".join(errors[:5]),
+                )
+                entries_value = data.get("entries") if isinstance(data, dict) else None
+                if (
+                    not self._recover_on_load
+                    or not isinstance(entries_value, list)
+                    or len(entries_value) > MAX_AUTHORITY_ENTRIES
+                ):
+                    raise MemoryStoreConflict("Memory authority is invalid")
+                valid_entries = _recover_entries(data)
+                if not valid_entries:
+                    raise MemoryStoreConflict("Memory authority is invalid")
+                backup_path = self._get_scope_path(scope) / "memory.json.bak"
+                self._atomic_write(backup_path, memory_json.text)
+                logger.warning(
+                    "Corrupted Memory authority backed up to %s",
+                    backup_path,
+                )
+                for entry_data in valid_entries:
+                    entry = MemoryEntry.from_dict(entry_data)
+                    self._apply_loaded_entry_safety(
+                        entry,
+                        entry_data,
+                        save_audit=False,
+                        authority_schema_version=data.get("schemaVersion"),
                     )
-                    if not self._recover_on_load:
-                        raise MemoryStoreConflict("Memory authority is invalid")
-                    valid_entries = _recover_entries(data, memory_json)
-                    changed = False
-                    for entry_data in valid_entries:
-                        entry = MemoryEntry.from_dict(entry_data)
-                        changed = self._apply_loaded_entry_safety(
-                            entry,
-                            entry_data,
-                            save_audit=False,
-                        ) or changed
-                        entry._seal_authority_state()
-                        self.memories[scope].entries.append(entry)
-                    self.memories[scope]._rebuild_indices()
-                    if valid_entries or changed:
-                        if changed:
-                            self._save_approval_audit(scope)
-                        self._save_scope(scope)
-                    return
+                    entry._seal_authority_state()
+                    self.memories[scope].entries.append(entry)
+                self.memories[scope]._rebuild_indices()
+                self._save_scope(scope)
+                return
             except json.JSONDecodeError as e:
                 logger.error(
                     "JSON decode error in scope %s: %s", scope.value, e
                 )
-                if not self._recover_on_load:
-                    raise MemoryStoreConflict("Memory authority is invalid") from e
-                # memory.json is the authority whenever it exists.  A derived
-                # Markdown projection may be stale, so it must never be
-                # promoted merely because the authority cannot be decoded.
-                return
+                raise MemoryStoreConflict("Memory authority is invalid") from e
             except KeyError as e:
                 logger.error(
                     "Missing key in scope %s data: %s", scope.value, e
                 )
-                if not self._recover_on_load:
-                    raise MemoryStoreConflict("Memory authority is invalid") from e
-                return
-        
-        # Explicit legacy migration is allowed only before a JSON authority
-        # exists.  Once memory.json is present, MEMORY.md remains a derived,
-        # human-facing projection and can never become authoritative.
-        if not memory_json.exists() and memory_md.exists():
-            content = memory_md.read_text(encoding="utf-8")
-            self._parse_memory_md(content, scope)
-            if self.memories[scope].entries and self._recover_on_load:
-                self._save_scope(scope)
+                raise MemoryStoreConflict("Memory authority is invalid") from e
+            except (TypeError, ValueError, OverflowError, RecursionError) as e:
+                logger.error(
+                    "Invalid normalized entry in scope %s: %s",
+                    scope.value,
+                    type(e).__name__,
+                )
+                raise MemoryStoreConflict("Memory authority is invalid") from e
+
+        # Explicit legacy migration is allowed only before JSON authority
+        # exists.  Its standalone audit and Markdown are both bounded sources.
+        self._load_approval_audit_projection(scope)
+        memory_md = prepared.legacy_markdown
+        if memory_md is None:
+            return
+        self._parse_memory_md(memory_md.text, scope)
+        self._enforce_legacy_runtime_capacity(
+            scope,
+            source=memory_md,
+            source_name="memory-markdown",
+        )
+        if self.memories[scope].entries and self._recover_on_load:
+            self._save_scope(scope)
     
     def _parse_memory_md(self, content: str, scope: MemoryScope) -> None:
         """Parse MEMORY.md file into entries."""
@@ -2699,6 +5063,10 @@ class MemoryManager:
             
             # Parse list items
             if line.startswith("- "):
+                if entry_counter >= MAX_AUTHORITY_ENTRIES:
+                    raise MemoryStoreConflict(
+                        "Legacy Memory authority exceeds the entry limit"
+                    )
                 entry_content = line[2:]
                 
                 # Extract tags
@@ -2718,7 +5086,10 @@ class MemoryManager:
                     content=entry_content,
                     tags=tags,
                 )
-                self._apply_loaded_entry_safety(entry, {})
+                # Parsing may run under ``readonly_load=True``.  Accumulate the
+                # migration record in memory only; the normal recovery path
+                # commits the complete parsed scope once after this method.
+                self._apply_loaded_entry_safety(entry, {}, save_audit=False)
                 entry._seal_authority_state()
                 self.memories[scope].entries.append(entry)
         # Rebuild indices after Markdown-based loading
@@ -2775,26 +5146,356 @@ class MemoryManager:
         # Validate before mkdir: mkdir(exist_ok=True) follows an existing
         # symlink, so checking afterwards would already have been too late.
         self._validate_scope_root(scope)
-        path.mkdir(parents=True, exist_ok=True)
+        MemoryAuthorityPublisher.ensure_directory(path)
         self._validate_scope_root(scope)
 
     def _approval_audit_path(self, scope: MemoryScope) -> Path:
         return self._get_scope_path(scope) / "approval_audit.json"
 
-    def _load_approval_audit(self, scope: MemoryScope) -> None:
-        path = self._approval_audit_path(scope)
-        if not path.exists():
-            return
+    @staticmethod
+    def _validated_audit_records(
+        value: object,
+        *,
+        scope: MemoryScope,
+        versioned: bool,
+    ) -> list[dict[str, Any]]:
+        """Decode one audit list through the explicit current/legacy seam."""
+
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError) as exc:
-            logger.warning("Failed to load approval audit for %s: %s", scope.value, exc)
+            if versioned:
+                records = decode_memory_audit_records(
+                    value,
+                    expected_scope=scope.value,
+                    maximum_records=MAX_AUTHORITY_AUDIT_RECORDS,
+                )
+                return [record.to_dict() for record in records]
+            return [
+                dict(record)
+                for record in decode_legacy_memory_audit_records(
+                    value,
+                    expected_scope=scope.value,
+                )
+            ]
+        except (TypeError, ValueError) as error:
+            raise MemoryStoreConflict("Memory approval audit is invalid") from error
+
+    def _resolve_approval_audit_chain(
+        self,
+        scope: MemoryScope,
+        head: MemoryAuditHead | None,
+        hot_records: tuple[MemoryAuditRecord, ...],
+    ) -> tuple[dict[str, Any], ...]:
+        """Resolve and verify a complete newest-to-oldest immutable chain."""
+
+        if head is None:
+            validate_memory_audit_segment_chain(
+                None,
+                (),
+                expected_scope=scope.value,
+                hot_records=hot_records,
+            )
+            return ()
+        store = self._blob_store_for_scope(scope)
+        reference = head.blob
+        segments: list[MemoryAuditSegment] = []
+        for _ in range(head.segment_count):
+            try:
+                value = store.read_json(reference)
+                segment = MemoryAuditSegment.from_dict(
+                    value,
+                    expected_scope=scope.value,
+                )
+            except (MemoryStoreError, TypeError, ValueError) as error:
+                raise MemoryStoreConflict(
+                    "Memory approval audit segment is invalid"
+                ) from error
+            segments.append(segment)
+            if segment.previous is None:
+                break
+            reference = segment.previous
+        try:
+            validate_memory_audit_segment_chain(
+                head,
+                segments,
+                expected_scope=scope.value,
+                hot_records=hot_records,
+            )
+        except (TypeError, ValueError) as error:
+            raise MemoryStoreConflict(
+                "Memory approval audit segment chain is invalid"
+            ) from error
+        return tuple(
+            record.to_dict()
+            for segment in reversed(segments)
+            for record in segment.records
+        )
+
+    def _load_versioned_approval_audit(
+        self,
+        scope: MemoryScope,
+        data: dict[str, Any],
+        *,
+        schema_version: int,
+    ) -> None:
+        """Load typed hot history and the optional current cold-chain head."""
+
+        try:
+            hot_records = decode_memory_audit_records(
+                data.get("approval_audit"),
+                expected_scope=scope.value,
+                maximum_records=MAX_AUTHORITY_AUDIT_RECORDS,
+            )
+            head = (
+                decode_memory_audit_head(data.get("approval_audit_head"))
+                if schema_version == CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION
+                else None
+            )
+        except (TypeError, ValueError) as error:
+            raise MemoryStoreConflict("Memory approval audit is invalid") from error
+        cold_records = self._resolve_approval_audit_chain(
+            scope,
+            head,
+            hot_records,
+        )
+        self._approval_audit_heads[scope] = head
+        self._approval_audit_cold_records[scope] = cold_records
+        self.approval_audit[scope] = [
+            record.to_dict() for record in hot_records
+        ]
+
+    def _validated_memory_write_receipts(
+        self,
+        value: object,
+        *,
+        scope: MemoryScope,
+        authority_schema_version: int | None,
+    ) -> dict[str, MemoryAuthorityCommit]:
+        """Resolve bounded idempotency receipts without repair or coercion."""
+
+        try:
+            parsed = _parse_memory_write_receipt_authority(
+                value,
+                expected_scope=scope.value,
+                authority_schema_version=authority_schema_version,
+            )
+        except (TypeError, ValueError) as error:
+            raise MemoryStoreConflict("Memory write receipts are invalid") from error
+        resolved: dict[str, MemoryAuthorityCommit] = {}
+        blob_store = MemoryBlobStore(self._get_scope_path(scope))
+        for operation_id, receipt in parsed.items():
+            if isinstance(receipt, MemoryAuthorityCommit):
+                resolved[operation_id] = receipt
+                continue
+            try:
+                blob_value = blob_store.read_json(receipt.blob)
+                commit = MemoryAuthorityCommit.from_dict(blob_value)
+                receipt.validate_commit(commit)
+            except (TypeError, ValueError) as error:
+                raise MemoryStoreConflict(
+                    "Memory write receipt blob is invalid"
+                ) from error
+            resolved[operation_id] = commit
+        return resolved
+
+    def _serialized_memory_write_receipts(
+        self,
+        scope: MemoryScope,
+    ) -> tuple[list[dict[str, object]], tuple[MemoryAuthorityCommit, ...]]:
+        """Prepare receipt references without publishing their blob bytes."""
+
+        receipts = self._memory_write_receipts.get(scope, {})
+        if len(receipts) > _MAX_MEMORY_WRITE_RECEIPTS:
+            raise MemoryStoreConflict("Memory write receipts exceed the bounded limit")
+        serialized: list[dict[str, object]] = []
+        pending_blobs: list[MemoryAuthorityCommit] = []
+        for receipt in receipts.values():
+            if not isinstance(receipt, MemoryAuthorityCommit):
+                raise MemoryStoreConflict("Memory write receipt state is invalid")
+            if receipt.scope != scope.value or receipt.replayed:
+                raise MemoryStoreConflict("Memory write receipt state is invalid")
+            receipt.to_json()
+            encoded = canonical_memory_blob_bytes(receipt.to_dict())
+            blob = MemoryBlobReference(
+                digest=memory_blob_digest(encoded),
+                size_bytes=len(encoded),
+            )
+            try:
+                reference = MemoryAuthorityReceiptReference.from_commit(
+                    receipt,
+                    blob,
+                )
+            except (TypeError, ValueError) as error:
+                raise MemoryStoreConflict(
+                    "Memory write receipt blob is invalid"
+                ) from error
+            serialized.append(reference.to_dict())
+            pending_blobs.append(receipt)
+        return serialized, tuple(pending_blobs)
+
+    def _blob_store_for_scope(self, scope: MemoryScope) -> MemoryBlobStore:
+        """Use the active root-bound scope session when one is available."""
+
+        active = getattr(self._transaction_local, "scope_publication", None)
+        if (
+            isinstance(active, tuple)
+            and len(active) == 2
+            and active[0] is scope
+        ):
+            return active[1].blob_store()
+        return MemoryBlobStore(self._get_scope_path(scope))
+
+    @staticmethod
+    def _validated_pipeline_operation_receipts(
+        value: object,
+    ) -> dict[str, str]:
+        """Parse bounded aggregate operation envelopes without repair."""
+
+        try:
+            return _parse_pipeline_operation_receipt_authority(value)
+        except (TypeError, ValueError) as error:
+            raise MemoryStoreConflict(
+                "Memory Pipeline operation receipts are invalid"
+            ) from error
+
+    def _serialized_pipeline_operation_receipts(
+        self,
+        scope: MemoryScope,
+    ) -> list[dict[str, str]]:
+        receipts = self._pipeline_operation_receipts.get(scope, {})
+        if len(receipts) > _MAX_PIPELINE_OPERATION_RECEIPTS:
+            raise MemoryStoreConflict(
+                "Memory Pipeline operation receipts exceed the bounded limit"
+            )
+        serialized: list[dict[str, str]] = []
+        for operation_id, aggregate_digest in receipts.items():
+            if (
+                not isinstance(operation_id, str)
+                or _MEMORY_WRITE_OPERATION_RE.fullmatch(operation_id) is None
+                or not isinstance(aggregate_digest, str)
+                or _MEMORY_WRITE_DIGEST_RE.fullmatch(aggregate_digest) is None
+            ):
+                raise MemoryStoreConflict(
+                    "Memory Pipeline operation receipt state is invalid"
+                )
+            serialized.append(
+                {
+                    "operationId": operation_id,
+                    "aggregateDigest": aggregate_digest,
+                }
+            )
+        return serialized
+
+    @staticmethod
+    def _validated_observation_receipts(
+        value: object,
+    ) -> dict[str, dict[str, str]]:
+        """Parse replay receipts without repairing ambiguous state."""
+
+        try:
+            return _parse_observation_receipt_authority(value)
+        except (TypeError, ValueError) as error:
+            raise MemoryStoreConflict(
+                "Memory observation receipts are invalid"
+            ) from error
+
+    def _serialized_observation_receipts(
+        self,
+        scope: MemoryScope,
+    ) -> dict[str, list[dict[str, str]]]:
+        receipts = self._observation_receipts.get(scope, {})
+        if set(receipts) != _OBSERVATION_RECEIPT_LANES:
+            raise MemoryStoreConflict(
+                "Memory observation receipt state is invalid"
+            )
+        serialized: dict[str, list[dict[str, str]]] = {}
+        for lane in sorted(_OBSERVATION_RECEIPT_LANES):
+            lane_receipts = receipts.get(lane)
+            if (
+                not isinstance(lane_receipts, dict)
+                or len(lane_receipts) > _MAX_OBSERVATION_RECEIPTS_PER_LANE
+            ):
+                raise MemoryStoreConflict(
+                    "Memory observation receipts exceed the bounded limit"
+                )
+            serialized_lane: list[dict[str, str]] = []
+            for observation_digest, payload_digest in lane_receipts.items():
+                if (
+                    not isinstance(observation_digest, str)
+                    or _MEMORY_WRITE_DIGEST_RE.fullmatch(observation_digest)
+                    is None
+                    or not isinstance(payload_digest, str)
+                    or _MEMORY_WRITE_DIGEST_RE.fullmatch(payload_digest) is None
+                ):
+                    raise MemoryStoreConflict(
+                        "Memory observation receipt state is invalid"
+                    )
+                serialized_lane.append(
+                    {
+                        "observationDigest": observation_digest,
+                        "payloadDigest": payload_digest,
+                    }
+                )
+            serialized[lane] = serialized_lane
+        return serialized
+
+    def _load_approval_audit_projection(self, scope: MemoryScope) -> None:
+        source = self._read_authority_source(scope, "approval_audit.json")
+        if source is None:
+            self._approval_audit_heads[scope] = None
+            self._approval_audit_cold_records[scope] = ()
             self.approval_audit[scope] = []
             return
-        records = data.get("records", []) if isinstance(data, dict) else []
-        self.approval_audit[scope] = [
-            record for record in records if isinstance(record, dict)
-        ]
+        try:
+            data = parse_memory_authority_json(source.text)
+        except (ValueError, TypeError, RecursionError) as error:
+            raise MemoryStoreConflict("Memory approval audit is invalid") from error
+        if not isinstance(data, dict):
+            raise MemoryStoreConflict("Memory approval audit is invalid")
+        self._approval_audit_heads[scope] = None
+        self._approval_audit_cold_records[scope] = ()
+        self.approval_audit[scope] = self._validated_audit_records(
+            data.get("records", []),
+            scope=scope,
+            versioned=False,
+        )
+
+    def _load_approval_audit(self, scope: MemoryScope) -> None:
+        """Load canonical audit, consulting projection only for legacy stores."""
+        memory_json = self._read_authority_source(scope, "memory.json")
+        if memory_json is None:
+            self._load_approval_audit_projection(scope)
+            return
+        try:
+            data = parse_memory_authority_json(memory_json.text)
+        except (ValueError, TypeError, RecursionError) as error:
+            raise MemoryStoreConflict("Memory authority is invalid") from error
+        if not isinstance(data, dict):
+            raise MemoryStoreConflict("Memory authority is invalid")
+        schema_version = data.get("schemaVersion")
+        if (
+            isinstance(schema_version, int)
+            and schema_version
+            in (
+                {CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION}
+                | set(MIGRATABLE_MEMORY_AUTHORITY_SCHEMA_VERSIONS)
+            )
+        ):
+            self._load_versioned_approval_audit(
+                scope,
+                data,
+                schema_version=schema_version,
+            )
+            return
+        if "approval_audit" in data:
+            self._approval_audit_heads[scope] = None
+            self._approval_audit_cold_records[scope] = ()
+            self.approval_audit[scope] = self._validated_audit_records(
+                data["approval_audit"],
+                scope=scope,
+                versioned=False,
+            )
+            return
+        self._load_approval_audit_projection(scope)
 
     def _save_approval_audit(self, scope: MemoryScope) -> None:
         """Commit audit together with Memory authority.
@@ -2802,23 +5503,46 @@ class MemoryManager:
         ``approval_audit.json`` remains a human/tooling projection only; the
         authoritative records live inside the atomic memory.json commit.
         """
-        if not self.in_write_transaction:
-            with self._store.transaction():
+        # Synchronize PID-owned capabilities before inspecting the unfenced
+        # marker. A child process must not persist a mutable snapshot inherited
+        # from its parent through this private compatibility seam.
+        self._manager_held_stores()
+        if scope in self._unfenced_loaded_scopes:
+            raise MemoryStoreConflict(
+                "Unfenced Memory snapshot requires coordinated reload"
+            )
+        required_scopes = (
+            tuple(MemoryScope)
+            if self._scope_has_unresolved_relationships(scope)
+            else (scope,)
+        )
+        if not self._transaction_covers(required_scopes):
+            with self._transaction_for_scopes(required_scopes):
                 expected = self._disk_revisions.get(scope)
                 if expected is not None and expected != self._scope_disk_revision(scope):
                     raise MemoryStoreConflict("Memory approval audit changed")
                 self._save_scope_locked(scope)
-                self._disk_revisions[scope] = self._scope_disk_revision(scope)
                 return
         self._save_scope_locked(scope)
 
     def _write_approval_audit_projection(self, scope: MemoryScope) -> None:
-        self._ensure_scope_path(scope)
+        active = getattr(self._transaction_local, "scope_publication", None)
+        if not (
+            isinstance(active, tuple)
+            and len(active) == 2
+            and active[0] is scope
+        ):
+            self._ensure_scope_path(scope)
         path = self._approval_audit_path(scope)
         data = {
             "scope": scope.value,
             "last_updated": time.time(),
             "records": self.approval_audit.get(scope, []),
+            "cold_history": (
+                self._approval_audit_heads[scope].to_dict()
+                if self._approval_audit_heads.get(scope) is not None
+                else None
+            ),
         }
         self._atomic_write(path, json.dumps(data, indent=2, ensure_ascii=False, default=_json_default))
 
@@ -2841,17 +5565,40 @@ class MemoryManager:
         # caller cannot counterfeit approval/lifecycle state merely by holding
         # the mutable entry returned from add_entry.
         entry._seal_authority_state()
+        audit_extra = dict(extra or {})
+        canonical_previous_approval = previous_approval
+        if canonical_previous_approval not in (_VALID_APPROVAL_STATUSES | {"new"}):
+            audit_extra["legacy_previous_approval_status"] = (
+                _sanitize_untrusted_text(previous_approval, max_chars=120)
+            )
+            canonical_previous_approval = _APPROVAL_PENDING
+        canonical_previous_lifecycle = previous_lifecycle
+        if canonical_previous_lifecycle not in (_VALID_LIFECYCLE_STATUSES | {"new"}):
+            audit_extra["legacy_previous_lifecycle_status"] = (
+                _sanitize_untrusted_text(previous_lifecycle, max_chars=120)
+            )
+            canonical_previous_lifecycle = "invalid"
+        canonical_lifecycle = entry.lifecycle_status
+        if canonical_lifecycle not in _VALID_LIFECYCLE_STATUSES:
+            audit_extra["legacy_lifecycle_status"] = _sanitize_untrusted_text(
+                canonical_lifecycle,
+                max_chars=120,
+            )
+            canonical_lifecycle = "invalid"
         record = {
             "audit_id": f"audit-{time.time_ns()}-{uuid.uuid4().hex[:8]}",
             "entry_id": entry.id,
             "scope": scope.value,
-            "action": action,
-            "actor": actor,
+            # Public approval methods accept an actor label. Bound it at the
+            # producer rather than allowing an untrusted label to make the
+            # entire authority permanently unwritable.
+            "action": _sanitize_untrusted_text(action, max_chars=32) or "unknown",
+            "actor": _sanitize_untrusted_text(actor, max_chars=64) or "unknown",
             "created_at": time.time(),
-            "previous_approval_status": previous_approval,
+            "previous_approval_status": canonical_previous_approval,
             "approval_status": entry.approval_status,
-            "previous_lifecycle_status": previous_lifecycle,
-            "lifecycle_status": entry.lifecycle_status,
+            "previous_lifecycle_status": canonical_previous_lifecycle,
+            "lifecycle_status": canonical_lifecycle,
             "safety_status": entry.safety_status,
             "safety_reason": _sanitize_untrusted_text(
                 safety.reason if safety else entry.safety_reason,
@@ -2862,12 +5609,20 @@ class MemoryManager:
             "reason": _sanitize_untrusted_text(reason or entry.approval_reason, max_chars=240),
             "source": _sanitize_untrusted_text(entry.source, max_chars=120),
             "provenance": _redact_audit_value(entry.provenance),
-            "extra": _redact_audit_value(extra or {}),
+            "extra": _redact_audit_value(audit_extra),
         }
-        self.approval_audit.setdefault(scope, []).append(record)
+        try:
+            canonical_record = MemoryAuditRecord.from_dict(
+                record,
+                expected_scope=scope.value,
+                expected_entry_id=entry.id,
+            ).to_dict()
+        except (TypeError, ValueError) as error:
+            raise MemoryStoreConflict("Memory approval audit is invalid") from error
+        self.approval_audit.setdefault(scope, []).append(canonical_record)
         if save:
             self._save_scope(scope)
-        return record
+        return canonical_record
 
     def get_approval_audit(self, entry_id: str) -> list[dict[str, Any]]:
         """Return persisted approval audit records for one memory id."""
@@ -2875,7 +5630,10 @@ class MemoryManager:
         for scope in MemoryScope:
             records.extend(
                 record
-                for record in self.approval_audit.get(scope, [])
+                for record in (
+                    *self._approval_audit_cold_records.get(scope, ()),
+                    *self.approval_audit.get(scope, []),
+                )
                 if record.get("entry_id") == entry_id
             )
         return sorted(records, key=lambda r: float(r.get("created_at", 0.0) or 0.0))
@@ -2914,14 +5672,18 @@ class MemoryManager:
             tags: Optional list of tags
 
         Returns:
-            The created or merged MemoryEntry, or None for empty content.
+            The created or merged MemoryEntry, or ``None`` for empty content
+            or when the proposed entry is immediately rejected by retention.
             Unsafe content is persisted as rejected so it can be audited but
-            cannot be searched or injected.
+            cannot be searched or injected, unless a full higher-authority
+            store rejects its admission and retains only the audit tombstone.
         """
         scope = _coerce_scope(scope, MemoryScope.PROJECT)
         if not isinstance(approval_policy, MemoryApprovalPolicy):
-            raise TypeError("approval_policy must be MemoryApprovalPolicy")
+            raise TypeError("approval_policy must be a MemoryApprovalPolicy")
+        self.last_add_rejection = None
         if not content or not content.strip():
+            self.last_add_rejection = "content is empty"
             return None
 
         self._ensure_scope_path(scope)
@@ -2935,6 +5697,7 @@ class MemoryManager:
             }
         )
         if not isinstance(sanitized_write, dict):
+            self.last_add_rejection = "persistence sanitization rejected the write"
             return None
         content = str(sanitized_write.get("content", ""))
         metadata_value = sanitized_write.get("metadata", {})
@@ -2945,6 +5708,7 @@ class MemoryManager:
             metadata["persistence_sanitized"] = {"content": True}
         source = _sanitize_untrusted_text(source, max_chars=None)
         if not content.strip():
+            self.last_add_rejection = "content is empty after sanitization"
             return None
 
         final_category = category
@@ -2982,6 +5746,7 @@ class MemoryManager:
             duplicate = self._find_duplicate_entry(scope, content)
             if duplicate is not None:
                 changed = False
+                previous_authority_digest = _approval_hash_for_entry(duplicate)
                 for tag in final_tags:
                     if tag not in duplicate.tags:
                         duplicate.tags.append(tag)
@@ -3005,6 +5770,12 @@ class MemoryManager:
                 if changed:
                     previous_approval = duplicate.approval_status
                     previous_lifecycle = duplicate.lifecycle_status
+                    reset_observations = (
+                        _reset_version_scoped_observations(duplicate)
+                        if _approval_hash_for_entry(duplicate)
+                        != previous_authority_digest
+                        else None
+                    )
                     if previous_approval == _APPROVAL_REJECTED or previous_lifecycle == "rejected":
                         duplicate.safety_status = safety.status
                         duplicate.safety_reason = safety.reason
@@ -3015,13 +5786,29 @@ class MemoryManager:
                         duplicate.approval_content_hash = _approval_hash_for_entry(duplicate)
                         duplicate.lifecycle_status = "rejected"
                     else:
+                        # A pending entry must stay pending no matter how the
+                        # near-duplicate write arrived: a chat "# remember"
+                        # line (USER_EXPLICIT) must not approve a lesson the
+                        # user has never seen in the review flow. Human
+                        # review or recurrence corroboration are the only
+                        # paths to approved.
+                        merge_policy = approval_policy
+                        if previous_approval == _APPROVAL_PENDING and (
+                            merge_policy == MemoryApprovalPolicy.USER_EXPLICIT
+                        ):
+                            merge_policy = MemoryApprovalPolicy.USER_REVIEW_REQUIRED
                         self._set_entry_safety_and_approval(
                             duplicate,
                             safety,
                             actor="safety_gate",
-                            reason="duplicate merge",
+                            reason=(
+                                "duplicate merge held pending user review"
+                                if merge_policy == MemoryApprovalPolicy.USER_REVIEW_REQUIRED
+                                and previous_approval == _APPROVAL_PENDING
+                                else "duplicate merge"
+                            ),
                             lifecycle_status=lifecycle_status,
-                            approval_policy=approval_policy,
+                            approval_policy=merge_policy,
                         )
                     duplicate.updated_at = time.time()
                     duplicate.invalidate_tokens()
@@ -3035,6 +5822,14 @@ class MemoryManager:
                         previous_lifecycle=previous_lifecycle,
                         reason="metadata/source/provenance merge invalidated approval",
                         safety=safety,
+                        extra={
+                            "previous_authority_digest": (
+                                previous_authority_digest
+                            ),
+                            "version_observations_reset": (
+                                reset_observations
+                            ),
+                        },
                     )
                     self._save_scope(scope)
                 return duplicate
@@ -3082,8 +5877,9 @@ class MemoryManager:
                 (evicted, previous_lifecycle, previous_tier_reason)
             )
 
-        self.memories[scope].add_entry(entry, on_evict=record_eviction)
+        admitted = self.memories[scope].add_entry(entry, on_evict=record_eviction)
         for evicted, previous_lifecycle, previous_tier_reason in evictions:
+            admission_rejected = evicted is entry
             self._append_approval_audit(
                 scope,
                 evicted,
@@ -3091,10 +5887,16 @@ class MemoryManager:
                 actor="retention",
                 previous_approval=evicted.approval_status,
                 previous_lifecycle=previous_lifecycle,
-                reason="capacity limit evicted oldest entry",
+                reason=(
+                    "capacity limit rejected proposed entry by retention policy"
+                    if admission_rejected
+                    else "capacity limit evicted lower-retention entry"
+                ),
                 safety=None,
                 extra={
                     "previous_tier_reason": previous_tier_reason,
+                    "admission_rejected": admission_rejected,
+                    "retention_policy": "authority_first_v1",
                     "evicted_content_hash": hashlib.sha256(
                         evicted.content.encode("utf-8")
                     ).hexdigest(),
@@ -3112,7 +5914,13 @@ class MemoryManager:
             safety=safety,
         )
         self._save_scope(scope)
-        return entry
+        if not admitted:
+            self.last_add_rejection = (
+                "content exceeds the single-entry retention limit "
+                f"({self.memories[scope].max_size_bytes} bytes); "
+                "split it into smaller memories"
+            )
+        return entry if admitted else None
 
     def _find_duplicate_entry(
         self, scope: MemoryScope, content: str
@@ -3160,6 +5968,7 @@ class MemoryManager:
                 entry_id,
             )
             return False
+        previous_authority_digest = _approval_hash_for_entry(entry)
         metadata = entry.metadata if isinstance(entry.metadata, dict) else {}
         if content != original_content:
             metadata["persistence_sanitized"] = {"content": True}
@@ -3170,6 +5979,9 @@ class MemoryManager:
         previous_approval = entry.approval_status
         previous_lifecycle = entry.lifecycle_status
         entry.content = content
+        reset_observations: dict[str, int | float] | None = None
+        if _approval_hash_for_entry(entry) != previous_authority_digest:
+            reset_observations = _reset_version_scoped_observations(entry)
         entry.updated_at = time.time()
         entry.invalidate_tokens()
         memory_file._invalidate_cache()
@@ -3190,6 +6002,14 @@ class MemoryManager:
             previous_lifecycle=previous_lifecycle,
             reason=entry.approval_reason,
             safety=safety,
+            extra=(
+                {
+                    "previous_authority_digest": previous_authority_digest,
+                    "version_observations_reset": reset_observations,
+                }
+                if reset_observations is not None
+                else None
+            ),
         )
         self._save_scope(scope)
         return True
@@ -3225,6 +6045,59 @@ class MemoryManager:
         return False
 
     @_coordinated_scope_write
+    def set_related_memories(
+        self,
+        scope: MemoryScope,
+        entry_id: str,
+        related_ids: list[str] | tuple[str, ...],
+    ) -> bool:
+        """Replace one entry's same-scope graph links through an audited fence.
+
+        Returned ``MemoryEntry`` objects remain mutable for compatibility, but
+        direct authority edits are rejected at the next write. This method is
+        the sanctioned capability for callers that intentionally update the
+        relationship graph.
+        """
+
+        scope = _coerce_scope(scope)
+        if not isinstance(entry_id, str) or not entry_id:
+            raise ValueError("entry_id must be a non-empty string")
+        if not isinstance(related_ids, (list, tuple)) or not all(
+            isinstance(value, str) and value for value in related_ids
+        ):
+            raise TypeError("related_ids must contain non-empty strings")
+        normalized = list(dict.fromkeys(related_ids))
+        if len(normalized) > MAX_CURRENT_AUTHORITY_ENTRIES:
+            raise ValueError("related_ids exceeds the authority entry limit")
+        if entry_id in normalized:
+            raise MemoryStoreConflict("Memory entry cannot relate to itself")
+
+        memory_file = self.memories[scope]
+        memory_file._ensure_cache_valid()
+        entry = memory_file._id_index.get(entry_id)
+        if entry is None:
+            return False
+        unknown = [
+            related_id
+            for related_id in normalized
+            if related_id not in memory_file._id_index
+        ]
+        if unknown:
+            raise MemoryStoreConflict(
+                "Memory relationships must target the same authority scope"
+            )
+        if entry.related_to == normalized:
+            return False
+
+        entry.related_to = normalized
+        entry.updated_at = time.time()
+        entry.invalidate_tokens()
+        entry._seal_authority_state()
+        memory_file._invalidate_cache()
+        self._save_scope(scope)
+        return True
+
+    @_coordinated_scope_write
     def add_tag(self, scope: MemoryScope, entry_id: str, tag: str) -> bool:
         """Add a tag to an entry."""
         for entry in self.memories[scope].entries:
@@ -3232,7 +6105,9 @@ class MemoryManager:
                 if tag not in entry.tags:
                     previous_approval = entry.approval_status
                     previous_lifecycle = entry.lifecycle_status
+                    previous_authority_digest = _approval_hash_for_entry(entry)
                     entry.tags.append(tag)
+                    reset_observations = _reset_version_scoped_observations(entry)
                     safety = assess_memory_safety(entry.content, source="metadata")
                     if previous_approval != _APPROVAL_REJECTED and previous_lifecycle != "rejected":
                         self._set_entry_safety_and_approval(
@@ -3258,6 +6133,10 @@ class MemoryManager:
                         previous_lifecycle=previous_lifecycle,
                         reason="tag metadata changed",
                         safety=safety,
+                        extra={
+                            "previous_authority_digest": previous_authority_digest,
+                            "version_observations_reset": reset_observations,
+                        },
                     )
                     self._save_scope(scope)
                 return True
@@ -3271,7 +6150,9 @@ class MemoryManager:
                 if tag in entry.tags:
                     previous_approval = entry.approval_status
                     previous_lifecycle = entry.lifecycle_status
+                    previous_authority_digest = _approval_hash_for_entry(entry)
                     entry.tags.remove(tag)
+                    reset_observations = _reset_version_scoped_observations(entry)
                     safety = assess_memory_safety(entry.content, source="metadata")
                     if previous_approval != _APPROVAL_REJECTED and previous_lifecycle != "rejected":
                         self._set_entry_safety_and_approval(
@@ -3297,6 +6178,10 @@ class MemoryManager:
                         previous_lifecycle=previous_lifecycle,
                         reason="tag metadata changed",
                         safety=safety,
+                        extra={
+                            "previous_authority_digest": previous_authority_digest,
+                            "version_observations_reset": reset_observations,
+                        },
                     )
                     self._save_scope(scope)
                 return True
@@ -3347,12 +6232,12 @@ class MemoryManager:
         Returns:
             Entries ranked by relevance (TF-IDF + domain + usage + recency)
         """
-        if record_usage and not self.in_write_transaction:
-            coordinated_scopes = (
-                (_coerce_scope(scope, MemoryScope.PROJECT),)
-                if scope is not None
-                else tuple(MemoryScope)
-            )
+        coordinated_scopes = (
+            (_coerce_scope(scope, MemoryScope.PROJECT),)
+            if scope is not None
+            else tuple(MemoryScope)
+        )
+        if record_usage and not self._transaction_covers(coordinated_scopes):
             return self.coordinated_write(
                 coordinated_scopes,
                 lambda: self.search(
@@ -3363,6 +6248,7 @@ class MemoryManager:
                     active_domains=active_domains,
                     record_usage=record_usage,
                 ),
+                recover_live_authority=True,
             )
 
         results = []
@@ -3436,7 +6322,7 @@ class MemoryManager:
             entry_domains = set(entry.domains)
             union = active | entry_domains
             domain_boost = (len(active & entry_domains) / len(union)) * 0.25 if union else 0.0
-        age_hours = (time.time() - entry.updated_at) / 3600
+        age_hours = _bounded_age_hours(entry.updated_at)
         recency = 1.0 / (1.0 + age_hours / 24.0) * 0.10
         feedback = entry.usefulness_score * 0.25
         raw_relevance = getattr(entry, "_last_relevance", 0.0)
@@ -3475,7 +6361,7 @@ class MemoryManager:
 
         usage_bonus = math.log1p(entry.usage_count) * 0.3
 
-        age_hours = (time.time() - entry.updated_at) / 3600
+        age_hours = _bounded_age_hours(entry.updated_at)
         recency_bonus = 1.0 / (1.0 + age_hours / 24.0) * 0.5
 
         return bm25 + substring_score + tag_score + usage_bonus + recency_bonus
@@ -3525,7 +6411,10 @@ class MemoryManager:
                 )
             )
             self._last_retrieval_result = result
-            self.record_retrievals(list(result.selected_ids))
+            self.record_retrievals(
+                list(result.selected_ids),
+                observation_id=f"manager-context-{uuid.uuid4().hex}",
+            )
             return result.prompt_text
         
         parts = []
@@ -3573,25 +6462,123 @@ class MemoryManager:
                 return scope, entry
         return None, None
 
+    def _prepare_scope_effect_receipt(
+        self,
+        observation_id: str | None,
+        *,
+        lane: str,
+        channel: str,
+        payload: object,
+    ) -> tuple[str, str] | None:
+        """Validate one operation identity against every committed scope."""
+
+        if lane not in _OBSERVATION_RECEIPT_LANES:
+            raise ValueError("Memory observation receipt lane is invalid")
+        receipt = _operation_observation_receipt(
+            observation_id,
+            channel=channel,
+            payload=payload,
+        )
+        if receipt is None:
+            return None
+        observation_digest, payload_digest = receipt
+        for scope in MemoryScope:
+            previous = self._observation_receipts[scope][lane].get(
+                observation_digest
+            )
+            if previous is not None and previous != payload_digest:
+                raise MemoryStoreConflict(
+                    "Memory observation operation payload changed"
+                )
+        return receipt
+
+    def _claim_scope_effect_receipt(
+        self,
+        scope: MemoryScope,
+        *,
+        lane: str,
+        receipt: tuple[str, str] | None,
+    ) -> bool:
+        """Claim a scope-local effect, returning false on an exact replay."""
+
+        if receipt is None:
+            return True
+        observation_digest, payload_digest = receipt
+        lane_receipts = self._observation_receipts[scope][lane]
+        previous = lane_receipts.get(observation_digest)
+        if previous is not None:
+            if previous != payload_digest:
+                raise MemoryStoreConflict(
+                    "Memory observation operation payload changed"
+                )
+            return False
+        lane_receipts[observation_digest] = payload_digest
+        while len(lane_receipts) > _MAX_OBSERVATION_RECEIPTS_PER_LANE:
+            lane_receipts.pop(next(iter(lane_receipts)))
+        return True
+
+    @staticmethod
+    def _require_replay_identity_for_multiple_scopes(
+        scopes: set[MemoryScope],
+        receipt: tuple[str, str] | None,
+    ) -> None:
+        """Refuse an unidentifiable non-idempotent multi-root mutation."""
+
+        if len(scopes) > 1 and receipt is None:
+            raise MemoryStoreConflict(
+                "A stable observation_id is required for multi-scope Memory accounting"
+            )
+
     @_coordinated_all_write
-    def record_injections(self, entry_ids: list[str]) -> None:
-        """Persist that specific memories were actually injected."""
-        touched: set[MemoryScope] = set()
-        now = time.time()
-        for entry_id in dict.fromkeys(entry_ids):
+    def record_injections(
+        self,
+        entry_ids: list[str],
+        *,
+        observation_id: str | None = None,
+    ) -> None:
+        """Persist actual injection, replay-safe when an observation ID is supplied."""
+
+        normalized_ids = tuple(sorted(set(entry_ids)))
+        receipt = self._prepare_scope_effect_receipt(
+            observation_id,
+            lane="telemetry",
+            channel="injection",
+            payload={"entry_ids": normalized_ids},
+        )
+        by_scope: dict[MemoryScope, list[MemoryEntry]] = {}
+        for entry_id in normalized_ids:
             scope, entry = self._find_entry_by_id(entry_id)
             if scope is None or entry is None:
-                logger.debug("Memory injection feedback skipped missing entry_id=%s", entry_id)
+                logger.debug(
+                    "Memory injection feedback skipped missing entry_id=%s",
+                    entry_id,
+                )
                 continue
-            entry.injection_count += 1
-            entry.last_used = now
-            entry.last_accessed = now
-            touched.add(scope)
-        for scope in sorted(touched, key=lambda item: item.value):
+            by_scope.setdefault(scope, []).append(entry)
+        self._require_replay_identity_for_multiple_scopes(set(by_scope), receipt)
+        now = time.time()
+        for scope in sorted(by_scope, key=lambda item: item.value):
+            if not self._claim_scope_effect_receipt(
+                scope,
+                lane="telemetry",
+                receipt=receipt,
+            ):
+                continue
+            for entry in by_scope[scope]:
+                entry.injection_count = _saturating_counter_add(
+                    entry.injection_count
+                )
+                entry.last_used = now
+                entry.last_accessed = now
             self._save_scope(scope)
 
     @_coordinated_all_write
-    def reinforce_reflection_entry(self, entry_id: str) -> bool:
+    def reinforce_reflection_entry(
+        self,
+        entry_id: str,
+        *,
+        return_version: bool = False,
+    ) -> bool | tuple[str, str]:
         """Record that a lesson recurred in a later trace.
 
         Recurrence, not repetition, is what makes a lesson trustworthy: the
@@ -3603,12 +6590,37 @@ class MemoryManager:
             return False
         previous_approval = entry.approval_status
         previous_lifecycle = entry.lifecycle_status
+        previous_authority_digest = _approval_hash_for_entry(entry)
         metadata = entry.metadata if isinstance(entry.metadata, dict) else {}
         metadata["recurrence"] = int(metadata.get("recurrence", 1) or 1) + 1
         entry.metadata = metadata
         provenance = entry.provenance if isinstance(entry.provenance, dict) else {}
         provenance["last_recurred_at"] = time.time()
         entry.provenance = provenance
+        # Each recurrence is an independent later trace re-observing the same
+        # semantic claim. After enough independent observations a pending
+        # lesson is corroborated evidence, not a one-off guess: promote it to
+        # approved so the injection valve can actually use it. Safety class
+        # is re-checked; anything not plainly safe stays pending.
+        promoted_to_approved = False
+        recurrence_count = int(metadata["recurrence"])
+        if (
+            previous_approval == _APPROVAL_PENDING
+            and entry.safety_status == _SAFETY_SAFE
+            and recurrence_count >= RECURRENCE_AUTO_APPROVE_THRESHOLD
+        ):
+            entry.approval_status = _APPROVAL_APPROVED
+            entry.approval_reason = (
+                f"recurrence corroborated across {recurrence_count} independent traces"
+            )
+            entry.approval_actor = "reflection"
+            entry.approval_decided_at = time.time()
+            promoted_to_approved = True
+        reset_observations = (
+            _reset_version_scoped_observations(entry)
+            if _approval_hash_for_entry(entry) != previous_authority_digest
+            else None
+        )
         entry.updated_at = time.time()
         entry.invalidate_tokens()
         self.memories[scope]._invalidate_cache()
@@ -3620,29 +6632,164 @@ class MemoryManager:
         self._append_approval_audit(
             scope,
             entry,
-            action="recurrence_reinforced",
+            action=(
+                "recurrence_promoted"
+                if promoted_to_approved
+                else "recurrence_reinforced"
+            ),
             actor="reflection",
             previous_approval=previous_approval,
             previous_lifecycle=previous_lifecycle,
-            reason="semantic lesson recurrence observed",
+            reason=(
+                "pending lesson corroborated by independent recurrence"
+                if promoted_to_approved
+                else "semantic lesson recurrence observed"
+            ),
+            extra={
+                "previous_authority_digest": previous_authority_digest,
+                "version_observations_reset": reset_observations,
+                "recurrence_count": recurrence_count,
+            },
         )
         self._save_scope(scope)
+        if return_version:
+            return entry.id, entry.approval_content_hash
         return True
 
+    def record_user_facet_observation(
+        self,
+        facet_key: str,
+        value: str,
+        *,
+        source: str = "conversation",
+    ) -> tuple[str, str | None, int]:
+        """Record one independent observation of a personal facet.
+
+        Personal facets live in the USER scope so they can follow the user
+        across projects, which is exactly why nothing here auto-approves:
+        the first observation creates a *pending* candidate, repeats only
+        accumulate an observation count, and a previously rejected facet is
+        never re-created (negative memory).  A human confirms each facet
+        exactly once via the normal review flow.
+        """
+
+        def _operation() -> tuple[str, str | None, int]:
+            return self._record_user_facet_observation(
+                facet_key, value, source=source
+            )
+
+        return self.coordinated_write((MemoryScope.USER,), _operation)
+
+    def _record_user_facet_observation(
+        self,
+        facet_key: str,
+        value: str,
+        *,
+        source: str = "conversation",
+    ) -> tuple[str, str | None, int]:
+        scope = MemoryScope.USER
+        key = str(facet_key or "").strip().lower() or "background"
+        text = str(value or "").strip()
+        if not text:
+            return ("invalid", None, 0)
+        content = f"{key}: {text}"[:400]
+
+        normalized_content = _normalize_memory_content(content)
+        for entry in self.memories[scope].entries:
+            if entry.category != USER_PROFILE_CATEGORY:
+                continue
+            if _normalize_memory_content(entry.content) != normalized_content:
+                continue
+            if entry.approval_status == _APPROVAL_APPROVED:
+                return ("known", entry.id, int(
+                    (entry.metadata or {}).get("facet_observations", 1)
+                ))
+            if entry.approval_status == _APPROVAL_REJECTED:
+                # Negative memory: the user rejected this exact facet once;
+                # do not re-observe it back into the review queue.
+                return ("suppressed", entry.id, 0)
+
+            previous_digest = _approval_hash_for_entry(entry)
+            metadata = entry.metadata if isinstance(entry.metadata, dict) else {}
+            observations = int(metadata.get("facet_observations", 1) or 1) + 1
+            metadata["facet_observations"] = observations
+            metadata["facet"] = key
+            entry.metadata = metadata
+            provenance = entry.provenance if isinstance(entry.provenance, dict) else {}
+            provenance["last_facet_observed_at"] = time.time()
+            entry.provenance = provenance
+            if observations >= USER_FACET_REVIEW_THRESHOLD:
+                entry.approval_reason = (
+                    f"{observations} independent observations; awaiting "
+                    "one-time user confirmation"
+                )
+            # Metadata and provenance participate in the approval hash, so
+            # the observation bump must refresh it inside this same write.
+            entry.approval_content_hash = _approval_hash_for_entry(entry)
+            entry.updated_at = time.time()
+            entry.invalidate_tokens()
+            self.memories[scope]._invalidate_cache()
+            self._append_approval_audit(
+                scope,
+                entry,
+                action="user_facet_observed",
+                actor="pipeline",
+                previous_approval=entry.approval_status,
+                previous_lifecycle=entry.lifecycle_status,
+                reason=(
+                    f"independent facet observation #{observations} "
+                    f"(facet: {key})"
+                ),
+                extra={
+                    "previous_authority_digest": previous_digest,
+                    "facet": key,
+                    "facet_observations": observations,
+                },
+            )
+            self._save_scope(scope)
+            return ("observed", entry.id, observations)
+
+        entry = self.add_entry(
+            scope,
+            USER_PROFILE_CATEGORY,
+            content,
+            tags=["user-facet"],
+            source=source,
+            metadata={"facet": key, "facet_observations": 1},
+            approval_policy=MemoryApprovalPolicy.USER_REVIEW_REQUIRED,
+        )
+        if entry is None:
+            return ("rejected", None, 0)
+        return ("created", entry.id, 1)
+
     def _apply_declared_supersession(self, replacement: MemoryEntry) -> int:
-        """Retract older claim entries named by an approved replacement."""
-        if not replacement.is_active:
-            return 0
+        """Retract older claim entries named by an approved replacement.
+
+        A pending replacement may only retract pending predecessors — the
+        review queue should not hold two contradictory candidates for one
+        semantic key. Retracting an approved lesson still requires the
+        replacement itself to be approved.
+        """
+
         metadata = replacement.metadata if isinstance(replacement.metadata, dict) else {}
         supersedes = metadata.get("supersedes", [])
         if not isinstance(supersedes, list):
             return 0
+        replacement_approved = replacement.is_active
         changed = 0
         for old_id in dict.fromkeys(str(value) for value in supersedes if str(value)):
             old_scope, old = self._find_entry_by_id(old_id)
             if old_scope is None or old is None or old.id == replacement.id:
                 continue
+            if old_scope is not replacement.scope:
+                raise MemoryStoreConflict(
+                    "Memory supersession cannot cross authority scopes"
+                )
             if old.lifecycle_status == "superseded":
+                continue
+            if not replacement_approved and old.approval_status == _APPROVAL_APPROVED:
+                # A pending replacement cannot retire an approved lesson;
+                # only a reviewed replacement carries that authority.
                 continue
             previous_approval = old.approval_status
             previous_lifecycle = old.lifecycle_status
@@ -3654,8 +6801,14 @@ class MemoryManager:
             old.curator_locked = False
             old.updated_at = time.time()
             old_metadata = old.metadata if isinstance(old.metadata, dict) else {}
+            previous_authority_digest = _approval_hash_for_entry(old)
             old_metadata["superseded_by"] = replacement.id
             old.metadata = old_metadata
+            reset_observations = (
+                _reset_version_scoped_observations(old)
+                if _approval_hash_for_entry(old) != previous_authority_digest
+                else None
+            )
             old.approval_content_hash = _approval_hash_for_entry(old)
             self.memories[old_scope]._invalidate_cache()
             self._append_approval_audit(
@@ -3666,7 +6819,11 @@ class MemoryManager:
                 previous_approval=previous_approval,
                 previous_lifecycle=previous_lifecycle,
                 reason=old.approval_reason,
-                extra={"replacement_id": replacement.id},
+                extra={
+                    "replacement_id": replacement.id,
+                    "previous_authority_digest": previous_authority_digest,
+                    "version_observations_reset": reset_observations,
+                },
             )
             changed += 1
         return changed
@@ -3678,23 +6835,1049 @@ class MemoryManager:
             return 0
         changed = self._apply_declared_supersession(replacement)
         if changed:
-            for memory_scope in MemoryScope:
-                self._save_scope(memory_scope)
+            self._save_scope(scope)
         return changed
 
-    def record_retrievals(self, entry_ids: list[str]) -> None:
-        """Persist one retrieval observation per selected entry and scope."""
-        touched: set[MemoryScope] = set()
-        now = time.time()
-        for entry_id in dict.fromkeys(entry_ids):
+    @staticmethod
+    def _reflection_identity(
+        entry: MemoryEntry,
+    ) -> tuple[str, str] | None:
+        """Return the canonical semantic key and statement for one lesson."""
+
+        metadata = entry.metadata if isinstance(entry.metadata, dict) else {}
+        identity = metadata.get("claim_identity")
+        identity_key = ""
+        identity_statement = ""
+        if isinstance(identity, dict):
+            identity_key = str(identity.get("semantic_key", "") or "")
+            identity_statement = str(identity.get("statement", "") or "").strip()
+            if identity_key and identity_statement:
+                return identity_key, identity_statement
+
+        reflection = metadata.get("structured_reflection")
+        claims = reflection.get("claims") if isinstance(reflection, dict) else None
+        if not isinstance(claims, list):
+            return None
+        for claim in claims:
+            if not isinstance(claim, dict):
+                continue
+            semantic_key = str(claim.get("semantic_key", "") or "")
+            statement = str(claim.get("statement", "") or "").strip()
+            if identity_key and semantic_key != identity_key:
+                continue
+            if semantic_key and statement:
+                return semantic_key, statement
+        return None
+
+    def _find_reflection_entry_locked(
+        self,
+        semantic_key: str,
+    ) -> tuple[MemoryEntry | None, str]:
+        """Resolve a lesson identity from the freshly loaded Project scope."""
+
+        memory_file = self.memories[MemoryScope.PROJECT]
+        # Newer replacements appear later.  Searching in reverse avoids
+        # reviving a superseded generation when legacy stores contain both.
+        for entry in reversed(memory_file.entries):
+            identity = self._reflection_identity(entry)
+            if identity is not None and identity[0] == semantic_key:
+                return entry, identity[1]
+        return None, ""
+
+    def _assert_memory_operation_scope_available(
+        self,
+        operation_id: str,
+        *,
+        target_scope: MemoryScope,
+    ) -> None:
+        """Fence one logical write to exactly one Memory authority scope."""
+
+        for other_scope in (MemoryScope.PROJECT, MemoryScope.USER):
+            if other_scope is target_scope:
+                continue
+            if (
+                operation_id in self._memory_write_receipts[other_scope]
+                or operation_id
+                in self._pipeline_operation_receipts[other_scope]
+            ):
+                raise MemoryStoreConflict(
+                    "Memory write operation already committed in another "
+                    "authority scope"
+                )
+
+    def _upgrade_authority_operation_envelope_locked(
+        self,
+        *,
+        scope: MemoryScope,
+        operation_id: str,
+        aggregate_digest: str,
+        prior: MemoryAuthorityCommit,
+    ) -> MemoryAuthorityCommit:
+        """Atomically bind an existing authority receipt to its Pipeline digest.
+
+        Authority receipts written before Pipeline-wide operation envelopes used
+        the exact lesson/fact digest as ``payload_digest``.  A current Pipeline
+        retry instead supplies its aggregate digest.  Once the caller has
+        independently proved that the legacy receipt matches the exact payload,
+        migrate both records in the same authority replace.  A newer aggregate
+        receipt whose envelope is missing takes the same repair path without
+        changing its materializations.
+        """
+
+        if not self._transaction_covers((MemoryScope.PROJECT, MemoryScope.USER)):
+            raise MemoryStoreConflict(
+                "Memory receipt migration requires a store transaction"
+            )
+        if self._deferred_batch_scope is not None:
+            raise MemoryStoreConflict("Nested atomic Memory batches are not supported")
+
+        original_memory = self.memories[scope]
+        original_audit = self.approval_audit[scope]
+        original_authority_receipts = self._memory_write_receipts[scope]
+        original_pipeline_receipts = self._pipeline_operation_receipts[scope]
+        self.memories[scope] = copy.deepcopy(original_memory)
+        self.approval_audit[scope] = copy.deepcopy(original_audit)
+        self._memory_write_receipts[scope] = dict(original_authority_receipts)
+        self._pipeline_operation_receipts[scope] = dict(
+            original_pipeline_receipts
+        )
+        committed = False
+        try:
+            migrated = MemoryAuthorityCommit(
+                operation_id=prior.operation_id,
+                payload_digest=aggregate_digest,
+                scope=prior.scope,
+                materializations=prior.materializations,
+                rejected_claim_ids=prior.rejected_claim_ids,
+                receipt_version=prior.receipt_version,
+            )
+            self._memory_write_receipts[scope][operation_id] = migrated
+            pipeline_receipts = self._pipeline_operation_receipts[scope]
+            pipeline_receipts[operation_id] = aggregate_digest
+            while len(pipeline_receipts) > _MAX_PIPELINE_OPERATION_RECEIPTS:
+                pipeline_receipts.pop(next(iter(pipeline_receipts)))
+            self._save_scope_locked(scope)
+            committed = True
+            return migrated.as_replay()
+        finally:
+            if not committed:
+                self.memories[scope] = original_memory
+                self.approval_audit[scope] = original_audit
+                self._memory_write_receipts[
+                    scope
+                ] = original_authority_receipts
+                self._pipeline_operation_receipts[
+                    scope
+                ] = original_pipeline_receipts
+
+    def _resolve_authority_operation_replay_locked(
+        self,
+        *,
+        scope: MemoryScope,
+        operation_id: str,
+        aggregate_digest: str,
+        exact_authority_digest: str,
+        pipeline_envelope_requested: bool,
+    ) -> MemoryAuthorityCommit | None:
+        """Resolve, upgrade, or reject a prior single-scope authority write."""
+
+        envelope_digest = self._pipeline_operation_receipts[scope].get(
+            operation_id
+        )
+        if envelope_digest is not None and envelope_digest != aggregate_digest:
+            raise MemoryStoreConflict("Memory write operation payload changed")
+
+        prior = self._memory_write_receipts[scope].get(operation_id)
+        if prior is None:
+            if envelope_digest is not None:
+                raise MemoryStoreConflict(
+                    "Memory write operation already completed without authority"
+                )
+            return None
+        if not isinstance(prior, MemoryAuthorityCommit):
+            raise MemoryStoreConflict("Memory write receipt state is invalid")
+
+        if envelope_digest is not None:
+            # The strict loader (and canonical serializer) require these two
+            # records to agree.  Keep the runtime guard for in-memory tampering.
+            if prior.payload_digest != aggregate_digest:
+                raise MemoryStoreConflict("Memory write operation payload changed")
+            return prior.as_replay()
+
+        if not pipeline_envelope_requested:
+            # Compatibility for direct pre-envelope callers: exact replays are
+            # byte-stable and do not manufacture a Pipeline provenance record.
+            if prior.payload_digest != aggregate_digest:
+                raise MemoryStoreConflict("Memory write operation payload changed")
+            return prior.as_replay()
+
+        if prior.payload_digest not in {
+            aggregate_digest,
+            exact_authority_digest,
+        }:
+            raise MemoryStoreConflict("Memory write operation payload changed")
+        return self._upgrade_authority_operation_envelope_locked(
+            scope=scope,
+            operation_id=operation_id,
+            aggregate_digest=aggregate_digest,
+            prior=prior,
+        )
+
+    def _reconcile_pipeline_operation_locked(
+        self,
+        *,
+        operation_id: str,
+        aggregate_digest: str,
+        authority_kind: str,
+        authority_payload_digest: str | None,
+        project_facts_payload_digest: str | None,
+        project_facts_receipt: Any,
+    ) -> str:
+        """Reconcile one legacy operation while both authority locks are held."""
+
+        if not self._transaction_covers((MemoryScope.PROJECT, MemoryScope.USER)):
+            raise MemoryStoreConflict(
+                "Memory Pipeline reconciliation requires a store transaction"
+            )
+
+        project_authority = self._memory_write_receipts[
+            MemoryScope.PROJECT
+        ].get(operation_id)
+        user_authority = self._memory_write_receipts[MemoryScope.USER].get(
+            operation_id
+        )
+        project_envelope = self._pipeline_operation_receipts[
+            MemoryScope.PROJECT
+        ].get(operation_id)
+        user_envelope = self._pipeline_operation_receipts[
+            MemoryScope.USER
+        ].get(operation_id)
+
+        project_state_exists = (
+            project_authority is not None or project_envelope is not None
+        )
+        user_state_exists = user_authority is not None or user_envelope is not None
+        if project_state_exists and user_state_exists:
+            raise MemoryStoreConflict(
+                "Memory write operation already spans multiple authority scopes"
+            )
+
+        facts_receipt_digest = None
+        if project_facts_receipt is not None:
+            receipt_operation_id = getattr(
+                project_facts_receipt,
+                "operation_id",
+                None,
+            )
+            facts_receipt_digest = getattr(
+                project_facts_receipt,
+                "payload_digest",
+                None,
+            )
+            if (
+                receipt_operation_id != operation_id
+                or not isinstance(facts_receipt_digest, str)
+                or _MEMORY_WRITE_DIGEST_RE.fullmatch(facts_receipt_digest) is None
+            ):
+                raise MemoryStoreConflict(
+                    "Project Facts operation receipt state is invalid"
+                )
+            if (
+                project_facts_payload_digest is None
+                or facts_receipt_digest != project_facts_payload_digest
+            ):
+                raise MemoryStoreConflict(
+                    "Memory write operation Project Facts payload changed"
+                )
+
+        envelope_scope: MemoryScope | None = None
+        envelope_digest: str | None = None
+        if project_envelope is not None:
+            envelope_scope = MemoryScope.PROJECT
+            envelope_digest = project_envelope
+        elif user_envelope is not None:
+            envelope_scope = MemoryScope.USER
+            envelope_digest = user_envelope
+
+        if envelope_scope is not None:
+            if envelope_digest != aggregate_digest:
+                raise MemoryStoreConflict("Memory write operation payload changed")
+            if authority_kind == "lesson":
+                shape_matches = (
+                    envelope_scope is MemoryScope.PROJECT
+                    and isinstance(project_authority, MemoryAuthorityCommit)
+                    and user_authority is None
+                )
+            elif authority_kind == "conversation_fact":
+                shape_matches = (
+                    envelope_scope is MemoryScope.USER
+                    and isinstance(user_authority, MemoryAuthorityCommit)
+                    and project_authority is None
+                    and project_facts_payload_digest is None
+                    and facts_receipt_digest is None
+                )
+            else:
+                shape_matches = (
+                    envelope_scope is MemoryScope.PROJECT
+                    and project_authority is None
+                    and user_authority is None
+                )
+            if not shape_matches:
+                raise MemoryStoreConflict(
+                    "Memory write operation output kind changed"
+                )
+            return "already_bound"
+
+        if project_authority is not None:
+            if (
+                not isinstance(project_authority, MemoryAuthorityCommit)
+                or authority_kind != "lesson"
+                or authority_payload_digest is None
+                or user_authority is not None
+            ):
+                raise MemoryStoreConflict(
+                    "Memory write operation output kind changed"
+                )
+            if project_authority.payload_digest not in {
+                aggregate_digest,
+                authority_payload_digest,
+            }:
+                raise MemoryStoreConflict("Memory write operation payload changed")
+            # An exact Project receipt plus current facts can only be proven to
+            # be a legacy mixed operation when its second authority receipt is
+            # still present.  Missing evidence is ambiguous, so fail closed.
+            if (
+                project_authority.payload_digest == authority_payload_digest
+                and project_facts_payload_digest is not None
+                and facts_receipt_digest is None
+            ):
+                raise MemoryStoreConflict(
+                    "Legacy mixed Memory operation is missing Project Facts receipt"
+                )
+            self._upgrade_authority_operation_envelope_locked(
+                scope=MemoryScope.PROJECT,
+                operation_id=operation_id,
+                aggregate_digest=aggregate_digest,
+                prior=project_authority,
+            )
+            return "authority_migrated"
+
+        if user_authority is not None:
+            if (
+                not isinstance(user_authority, MemoryAuthorityCommit)
+                or authority_kind != "conversation_fact"
+                or authority_payload_digest is None
+                or project_facts_payload_digest is not None
+                or facts_receipt_digest is not None
+            ):
+                raise MemoryStoreConflict(
+                    "Memory write operation output kind changed"
+                )
+            if user_authority.payload_digest not in {
+                aggregate_digest,
+                authority_payload_digest,
+            }:
+                raise MemoryStoreConflict("Memory write operation payload changed")
+            self._upgrade_authority_operation_envelope_locked(
+                scope=MemoryScope.USER,
+                operation_id=operation_id,
+                aggregate_digest=aggregate_digest,
+                prior=user_authority,
+            )
+            return "authority_migrated"
+
+        if facts_receipt_digest is not None:
+            if authority_kind != "none" or project_facts_payload_digest is None:
+                raise MemoryStoreConflict(
+                    "Memory write operation output kind changed"
+                )
+            self._bind_memory_write_operation_locked(
+                operation_id=operation_id,
+                payload_digest=aggregate_digest,
+                scope=MemoryScope.PROJECT,
+            )
+            return "facts_only_migrated"
+
+        return "new"
+
+    def reconcile_pipeline_operation(
+        self,
+        *,
+        project_facts_store: Any,
+        operation_id: str,
+        aggregate_digest: str,
+        authority_kind: str,
+        authority_payload_digest: str | None = None,
+        project_facts_payload_digest: str | None = None,
+    ) -> str:
+        """Reconcile retained legacy receipts before a Pipeline write.
+
+        Lock order is fixed as canonical Memory then Project Facts.  The facts
+        guard is read-only and remains held through the sole possible migration
+        commit in ``memory.json``.  This closes the old inspect-then-bind race
+        without claiming an atomic transaction across two authority files.
+        """
+
+        if (
+            not isinstance(operation_id, str)
+            or _MEMORY_WRITE_OPERATION_RE.fullmatch(operation_id) is None
+        ):
+            raise ValueError("Memory operation ID is invalid")
+        if (
+            not isinstance(aggregate_digest, str)
+            or _MEMORY_WRITE_DIGEST_RE.fullmatch(aggregate_digest) is None
+        ):
+            raise ValueError("Memory payload digest is invalid")
+        if authority_kind not in {"none", "lesson", "conversation_fact"}:
+            raise ValueError("Memory authority kind is invalid")
+        if authority_kind == "none":
+            if authority_payload_digest is not None:
+                raise ValueError(
+                    "Authority-free Memory operation cannot carry a payload digest"
+                )
+        elif (
+            not isinstance(authority_payload_digest, str)
+            or _MEMORY_WRITE_DIGEST_RE.fullmatch(authority_payload_digest) is None
+        ):
+            raise ValueError("Memory authority payload digest is invalid")
+        if project_facts_payload_digest is not None and (
+            not isinstance(project_facts_payload_digest, str)
+            or _MEMORY_WRITE_DIGEST_RE.fullmatch(project_facts_payload_digest) is None
+        ):
+            raise ValueError("Project Facts payload digest is invalid")
+        if (
+            authority_kind == "conversation_fact"
+            and project_facts_payload_digest is not None
+        ):
+            raise ValueError(
+                "Conversation fact operations cannot include Project Facts"
+            )
+
+        receipt_guard = getattr(
+            project_facts_store,
+            "operation_receipt_guard",
+            None,
+        )
+        if not callable(receipt_guard):
+            raise TypeError("Project Facts store lacks the receipt guard")
+
+        scopes = (MemoryScope.PROJECT, MemoryScope.USER)
+        with self._transaction_for_scopes(scopes):
+            # Reload unconditionally under the first lock.  A revision-only
+            # fast path would leave a stale in-memory legacy receipt view.
+            self._reload_scopes(scopes)
+            try:
+                with receipt_guard(operation_id) as project_facts_receipt:
+                    return self._reconcile_pipeline_operation_locked(
+                        operation_id=operation_id,
+                        aggregate_digest=aggregate_digest,
+                        authority_kind=authority_kind,
+                        authority_payload_digest=authority_payload_digest,
+                        project_facts_payload_digest=project_facts_payload_digest,
+                        project_facts_receipt=project_facts_receipt,
+                    )
+            except BaseException:
+                # Never retain an in-memory migration that did not reach its
+                # one canonical Memory replace.
+                try:
+                    self._reload_scopes(scopes)
+                except BaseException:
+                    pass
+                raise
+
+    @staticmethod
+    def _reflection_entry_is_rejected(entry: MemoryEntry) -> bool:
+        return (
+            entry.approval_status == _APPROVAL_REJECTED
+            or entry.lifecycle_status in {"rejected", "superseded", "evicted"}
+        )
+
+    def _commit_reflection_batch_locked(
+        self,
+        *,
+        operation_id: str,
+        payload_digest: str,
+        exact_authority_digest: str,
+        pipeline_envelope_requested: bool,
+        claims: tuple[ReflectionClaimWrite, ...],
+    ) -> MemoryAuthorityCommit:
+        """Stage and commit one already-validated Project batch under the lock."""
+
+        if not self._transaction_covers((MemoryScope.PROJECT, MemoryScope.USER)):
+            raise MemoryStoreConflict("Reflection batch requires a store transaction")
+        scope = MemoryScope.PROJECT
+        self._assert_memory_operation_scope_available(
+            operation_id,
+            target_scope=scope,
+        )
+        replay = self._resolve_authority_operation_replay_locked(
+            scope=scope,
+            operation_id=operation_id,
+            aggregate_digest=payload_digest,
+            exact_authority_digest=exact_authority_digest,
+            pipeline_envelope_requested=pipeline_envelope_requested,
+        )
+        if replay is not None:
+            return replay
+        if self._deferred_batch_scope is not None:
+            raise MemoryStoreConflict("Nested atomic Memory batches are not supported")
+
+        original_memory = self.memories[scope]
+        original_audit = self.approval_audit[scope]
+        original_receipts = self._memory_write_receipts[scope]
+        original_pipeline_receipts = self._pipeline_operation_receipts[scope]
+        self.memories[scope] = copy.deepcopy(original_memory)
+        self.approval_audit[scope] = copy.deepcopy(original_audit)
+        self._memory_write_receipts[scope] = dict(original_receipts)
+        self._pipeline_operation_receipts[scope] = dict(
+            original_pipeline_receipts
+        )
+        self._deferred_batch_scope = scope
+        committed = False
+        staged_materializations: list[MemoryMaterialization] = []
+        rejected_claim_ids: list[str] = []
+        try:
+            for claim in claims:
+                existing, existing_statement = self._find_reflection_entry_locked(
+                    claim.semantic_key
+                )
+                if existing is not None and existing_statement == claim.statement:
+                    if self._reflection_entry_is_rejected(existing):
+                        rejected_claim_ids.append(claim.claim_id)
+                        continue
+                    reinforced = self.reinforce_reflection_entry(
+                        existing.id,
+                        return_version=True,
+                    )
+                    if not (
+                        isinstance(reinforced, tuple)
+                        and len(reinforced) == 2
+                        and all(isinstance(value, str) for value in reinforced)
+                    ):
+                        raise MemoryStoreConflict(
+                            "Reflection recurrence disappeared during atomic write"
+                        )
+                    staged_materializations.append(
+                        MemoryMaterialization(
+                            claim_id=claim.claim_id,
+                            entry_id=reinforced[0],
+                            authority_digest=reinforced[1],
+                            disposition="reinforced",
+                        )
+                    )
+                    continue
+
+                add_entry_kwargs = copy.deepcopy(claim.add_entry_kwargs)
+                metadata_value = add_entry_kwargs.get("metadata", {})
+                if not isinstance(metadata_value, dict):
+                    raise TypeError("reflection entry metadata must be a dict")
+                metadata = dict(metadata_value)
+                metadata["claim_identity"] = {
+                    "claim_id": claim.claim_id,
+                    "semantic_key": claim.semantic_key,
+                    "statement": claim.statement,
+                }
+                # Supersession is authority derived inside this lock.  A
+                # caller-provided target could otherwise retract an unrelated
+                # or cross-scope entry.
+                metadata.pop("supersedes", None)
+                if existing is not None:
+                    metadata["supersedes"] = [existing.id]
+                add_entry_kwargs["metadata"] = metadata
+
+                entry = self.add_entry(
+                    scope=scope,
+                    allow_duplicate=True,
+                    **add_entry_kwargs,
+                )
+                if entry is None:
+                    rejected_claim_ids.append(claim.claim_id)
+                    continue
+
+                superseded_ids: tuple[str, ...] = ()
+                if existing is not None:
+                    # The supersession gate inside decides by authority:
+                    # a pending replacement may retire pending predecessors
+                    # but never an approved lesson.
+                    changed = self._apply_declared_supersession(entry)
+                    if changed and existing.lifecycle_status == "superseded":
+                        superseded_ids = (existing.id,)
+                staged_materializations.append(
+                    MemoryMaterialization(
+                        claim_id=claim.claim_id,
+                        entry_id=entry.id,
+                        authority_digest=entry.approval_content_hash,
+                        disposition="created",
+                        superseded_entry_ids=superseded_ids,
+                    )
+                )
+
+            # Canonicalize before binding receipt versions.  ``add_entry``
+            # already applies the write sanitizer to content/metadata/
+            # provenance, but tags and domains are normalized at the final
+            # persistence boundary.  Binding a receipt before that pass could
+            # leave its digest referring to a pre-canonical in-memory shape
+            # that never became authority.
+            serialized_entries = self._canonicalize_scope_authority(scope)
+
+            # A later claim can evict an earlier staged entry.  Only entries
+            # present in the final authority may become written-version
+            # provenance; every displaced claim is an explicit rejection.
+            final_memory = self.memories[scope]
+            final_memory._ensure_cache_valid()
+            materializations: list[MemoryMaterialization] = []
+            for materialization in staged_materializations:
+                entry_id = materialization.entry_id
+                current = (
+                    final_memory._id_index.get(entry_id)
+                    if entry_id is not None
+                    else None
+                )
+                if current is None:
+                    rejected_claim_ids.append(materialization.claim_id)
+                    continue
+                materializations.append(
+                    MemoryMaterialization(
+                        claim_id=materialization.claim_id,
+                        entry_id=current.id,
+                        authority_digest=_approval_hash_for_entry(current),
+                        disposition=materialization.disposition,
+                        superseded_entry_ids=materialization.superseded_entry_ids,
+                    )
+                )
+
+            commit = MemoryAuthorityCommit(
+                operation_id=operation_id,
+                payload_digest=payload_digest,
+                scope=scope.value,
+                materializations=tuple(materializations),
+                rejected_claim_ids=tuple(dict.fromkeys(rejected_claim_ids)),
+            )
+            receipts = self._memory_write_receipts[scope]
+            receipts[operation_id] = commit
+            while len(receipts) > _MAX_MEMORY_WRITE_RECEIPTS:
+                receipts.pop(next(iter(receipts)))
+            pipeline_receipts = self._pipeline_operation_receipts[scope]
+            pipeline_receipts[operation_id] = payload_digest
+            while (
+                len(pipeline_receipts) > _MAX_PIPELINE_OPERATION_RECEIPTS
+            ):
+                pipeline_receipts.pop(next(iter(pipeline_receipts)))
+
+            # All public mutators above were redirected to the staged snapshot.
+            # This is the batch's only canonical authority replace.
+            self._save_scope_locked(
+                scope,
+                serialized_entries=serialized_entries,
+            )
+            committed = True
+            return commit
+        finally:
+            self._deferred_batch_scope = None
+            if not committed:
+                self.memories[scope] = original_memory
+                self.approval_audit[scope] = original_audit
+                self._memory_write_receipts[scope] = original_receipts
+                self._pipeline_operation_receipts[
+                    scope
+                ] = original_pipeline_receipts
+
+    def commit_reflection_batch(
+        self,
+        *,
+        operation_id: str,
+        payload_digest: str,
+        claims: tuple[ReflectionClaimWrite, ...] | list[ReflectionClaimWrite],
+        authority_payload_digest: str | None = None,
+    ) -> MemoryAuthorityCommit:
+        """Atomically create/reinforce one bounded batch of Project lessons.
+
+        The payload digest is independently recomputed before entering the
+        transaction, so an operation ID cannot be replayed against different
+        content merely by reusing the old caller-supplied digest. Replay
+        protection covers the 128 most recently committed operations in this
+        scope; the bound prevents receipt metadata from growing without limit.
+        """
+
+        if (
+            not isinstance(operation_id, str)
+            or _MEMORY_WRITE_OPERATION_RE.fullmatch(operation_id) is None
+        ):
+            raise ValueError("Memory operation ID is invalid")
+        if (
+            not isinstance(payload_digest, str)
+            or _MEMORY_WRITE_DIGEST_RE.fullmatch(payload_digest) is None
+        ):
+            raise ValueError("Memory payload digest is invalid")
+        if not isinstance(claims, (list, tuple)):
+            raise TypeError("claims must be a list or tuple")
+        if not claims or len(claims) > MAX_MEMORY_CLAIMS_PER_BATCH:
+            raise ValueError("reflection claim batch size is invalid")
+        snapshot_items: list[ReflectionClaimWrite] = []
+        for claim in claims:
+            if not isinstance(claim, ReflectionClaimWrite):
+                raise TypeError("claims must contain ReflectionClaimWrite values")
+            snapshot_items.append(
+                ReflectionClaimWrite(
+                    claim_id=claim.claim_id,
+                    semantic_key=claim.semantic_key,
+                    statement=claim.statement,
+                    add_entry_kwargs=claim.add_entry_kwargs,
+                )
+            )
+        snapshot = tuple(snapshot_items)
+        claim_ids = [claim.claim_id for claim in snapshot]
+        semantic_keys = [claim.semantic_key for claim in snapshot]
+        if len(set(claim_ids)) != len(claim_ids):
+            raise ValueError("reflection batch contains duplicate claim IDs")
+        if len(set(semantic_keys)) != len(semantic_keys):
+            raise ValueError("reflection batch contains duplicate semantic keys")
+        exact_authority_digest = (
+            payload_digest
+            if authority_payload_digest is None
+            else authority_payload_digest
+        )
+        if (
+            not isinstance(exact_authority_digest, str)
+            or _MEMORY_WRITE_DIGEST_RE.fullmatch(exact_authority_digest) is None
+        ):
+            raise ValueError("Memory authority payload digest is invalid")
+        if reflection_batch_payload_digest(snapshot) != exact_authority_digest:
+            raise MemoryStoreConflict("Memory reflection payload digest does not match")
+
+        return self.coordinated_write(
+            (MemoryScope.PROJECT, MemoryScope.USER),
+            lambda: self._commit_reflection_batch_locked(
+                operation_id=operation_id,
+                payload_digest=payload_digest,
+                exact_authority_digest=exact_authority_digest,
+                pipeline_envelope_requested=(
+                    authority_payload_digest is not None
+                ),
+                claims=snapshot,
+            ),
+        )
+
+    def _commit_conversation_fact_locked(
+        self,
+        *,
+        operation_id: str,
+        payload_digest: str,
+        exact_authority_digest: str,
+        pipeline_envelope_requested: bool,
+        claim_id: str,
+        add_entry_kwargs: dict[str, Any],
+    ) -> MemoryAuthorityCommit:
+        """Stage and commit one conversation fact under fresh User authority."""
+
+        if not self._transaction_covers((MemoryScope.PROJECT, MemoryScope.USER)):
+            raise MemoryStoreConflict(
+                "Conversation fact commit requires a store transaction"
+            )
+        scope = MemoryScope.USER
+        self._assert_memory_operation_scope_available(
+            operation_id,
+            target_scope=scope,
+        )
+        replay = self._resolve_authority_operation_replay_locked(
+            scope=scope,
+            operation_id=operation_id,
+            aggregate_digest=payload_digest,
+            exact_authority_digest=exact_authority_digest,
+            pipeline_envelope_requested=pipeline_envelope_requested,
+        )
+        if replay is not None:
+            return replay
+        if self._deferred_batch_scope is not None:
+            raise MemoryStoreConflict("Nested atomic Memory batches are not supported")
+
+        original_memory = self.memories[scope]
+        original_audit = self.approval_audit[scope]
+        original_receipts = self._memory_write_receipts[scope]
+        original_pipeline_receipts = self._pipeline_operation_receipts[scope]
+        self.memories[scope] = copy.deepcopy(original_memory)
+        self.approval_audit[scope] = copy.deepcopy(original_audit)
+        self._memory_write_receipts[scope] = dict(original_receipts)
+        self._pipeline_operation_receipts[scope] = dict(
+            original_pipeline_receipts
+        )
+        self._deferred_batch_scope = scope
+        committed = False
+        try:
+            staged_memory = self.memories[scope]
+            staged_memory._ensure_cache_valid()
+            existing_ids = set(staged_memory._id_index)
+            entry = self.add_entry(
+                scope=scope,
+                allow_duplicate=False,
+                **copy.deepcopy(add_entry_kwargs),
+            )
+            serialized_entries = self._canonicalize_scope_authority(scope)
+            staged_memory._ensure_cache_valid()
+            current = (
+                staged_memory._id_index.get(entry.id)
+                if entry is not None
+                else None
+            )
+            rejected = (
+                current is None
+                or current.approval_status == _APPROVAL_REJECTED
+                or current.lifecycle_status in {
+                    "rejected",
+                    "superseded",
+                    "evicted",
+                }
+            )
+            materializations = (
+                ()
+                if rejected
+                else (
+                    MemoryMaterialization(
+                        claim_id=claim_id,
+                        entry_id=current.id,
+                        authority_digest=_approval_hash_for_entry(current),
+                        disposition=(
+                            "reinforced"
+                            if current.id in existing_ids
+                            else "created"
+                        ),
+                    ),
+                )
+            )
+            commit = MemoryAuthorityCommit(
+                operation_id=operation_id,
+                payload_digest=payload_digest,
+                scope=scope.value,
+                materializations=materializations,
+                rejected_claim_ids=(claim_id,) if rejected else (),
+            )
+            receipts = self._memory_write_receipts[scope]
+            receipts[operation_id] = commit
+            while len(receipts) > _MAX_MEMORY_WRITE_RECEIPTS:
+                receipts.pop(next(iter(receipts)))
+            pipeline_receipts = self._pipeline_operation_receipts[scope]
+            pipeline_receipts[operation_id] = payload_digest
+            while (
+                len(pipeline_receipts) > _MAX_PIPELINE_OPERATION_RECEIPTS
+            ):
+                pipeline_receipts.pop(next(iter(pipeline_receipts)))
+            self._save_scope_locked(
+                scope,
+                serialized_entries=serialized_entries,
+            )
+            committed = True
+            return commit
+        finally:
+            self._deferred_batch_scope = None
+            if not committed:
+                self.memories[scope] = original_memory
+                self.approval_audit[scope] = original_audit
+                self._memory_write_receipts[scope] = original_receipts
+                self._pipeline_operation_receipts[
+                    scope
+                ] = original_pipeline_receipts
+
+    def commit_conversation_fact(
+        self,
+        *,
+        operation_id: str,
+        payload_digest: str,
+        claim_id: str,
+        add_entry_kwargs: dict[str, Any],
+        authority_payload_digest: str | None = None,
+    ) -> MemoryAuthorityCommit:
+        """Materialize a User fact within the 128-operation replay window."""
+
+        if (
+            not isinstance(operation_id, str)
+            or _MEMORY_WRITE_OPERATION_RE.fullmatch(operation_id) is None
+        ):
+            raise ValueError("Memory operation ID is invalid")
+        if (
+            not isinstance(payload_digest, str)
+            or _MEMORY_WRITE_DIGEST_RE.fullmatch(payload_digest) is None
+        ):
+            raise ValueError("Memory payload digest is invalid")
+        if (
+            not isinstance(claim_id, str)
+            or _REFLECTION_CLAIM_ID_RE.fullmatch(claim_id) is None
+        ):
+            raise ValueError("claim_id is not canonical")
+        snapshot = _snapshot_memory_add_entry_kwargs(add_entry_kwargs)
+        exact_authority_digest = (
+            payload_digest
+            if authority_payload_digest is None
+            else authority_payload_digest
+        )
+        if (
+            not isinstance(exact_authority_digest, str)
+            or _MEMORY_WRITE_DIGEST_RE.fullmatch(exact_authority_digest) is None
+        ):
+            raise ValueError("Memory authority payload digest is invalid")
+        if conversation_fact_payload_digest(
+            claim_id=claim_id,
+            add_entry_kwargs=snapshot,
+        ) != exact_authority_digest:
+            raise MemoryStoreConflict(
+                "Memory conversation fact payload digest does not match"
+            )
+        return self.coordinated_write(
+            (MemoryScope.PROJECT, MemoryScope.USER),
+            lambda: self._commit_conversation_fact_locked(
+                operation_id=operation_id,
+                payload_digest=payload_digest,
+                exact_authority_digest=exact_authority_digest,
+                pipeline_envelope_requested=(
+                    authority_payload_digest is not None
+                ),
+                claim_id=claim_id,
+                add_entry_kwargs=snapshot,
+            ),
+        )
+
+    def _bind_memory_write_operation_locked(
+        self,
+        *,
+        operation_id: str,
+        payload_digest: str,
+        scope: MemoryScope,
+    ) -> bool:
+        """Atomically bind one authority-free Pipeline operation envelope."""
+
+        if not self._transaction_covers((MemoryScope.PROJECT, MemoryScope.USER)):
+            raise MemoryStoreConflict(
+                "Memory operation binding requires a store transaction"
+            )
+        self._assert_memory_operation_scope_available(
+            operation_id,
+            target_scope=scope,
+        )
+        envelope_digest = self._pipeline_operation_receipts[scope].get(
+            operation_id
+        )
+        authority_receipt = self._memory_write_receipts[scope].get(operation_id)
+        if envelope_digest is not None:
+            if envelope_digest != payload_digest:
+                raise MemoryStoreConflict("Memory write operation payload changed")
+            if authority_receipt is not None:
+                raise MemoryStoreConflict(
+                    "Memory write operation already produced authority"
+                )
+            return False
+        if authority_receipt is not None:
+            raise MemoryStoreConflict(
+                "Memory write operation already produced authority"
+            )
+
+        original_memory = self.memories[scope]
+        original_audit = self.approval_audit[scope]
+        original_authority_receipts = self._memory_write_receipts[scope]
+        original_pipeline_receipts = self._pipeline_operation_receipts[scope]
+        self.memories[scope] = copy.deepcopy(original_memory)
+        self.approval_audit[scope] = copy.deepcopy(original_audit)
+        self._memory_write_receipts[scope] = dict(
+            original_authority_receipts
+        )
+        self._pipeline_operation_receipts[scope] = dict(
+            original_pipeline_receipts
+        )
+        committed = False
+        try:
+            pipeline_receipts = self._pipeline_operation_receipts[scope]
+            pipeline_receipts[operation_id] = payload_digest
+            while (
+                len(pipeline_receipts) > _MAX_PIPELINE_OPERATION_RECEIPTS
+            ):
+                pipeline_receipts.pop(next(iter(pipeline_receipts)))
+            self._save_scope_locked(scope)
+            committed = True
+            return True
+        finally:
+            if not committed:
+                self.memories[scope] = original_memory
+                self.approval_audit[scope] = original_audit
+                self._memory_write_receipts[
+                    scope
+                ] = original_authority_receipts
+                self._pipeline_operation_receipts[
+                    scope
+                ] = original_pipeline_receipts
+
+    def bind_memory_write_operation(
+        self,
+        *,
+        operation_id: str,
+        payload_digest: str,
+        scope: MemoryScope = MemoryScope.PROJECT,
+    ) -> bool:
+        """Bind one authority-free operation; return ``False`` on replay."""
+
+        if (
+            not isinstance(operation_id, str)
+            or _MEMORY_WRITE_OPERATION_RE.fullmatch(operation_id) is None
+        ):
+            raise ValueError("Memory operation ID is invalid")
+        if (
+            not isinstance(payload_digest, str)
+            or _MEMORY_WRITE_DIGEST_RE.fullmatch(payload_digest) is None
+        ):
+            raise ValueError("Memory payload digest is invalid")
+        if not isinstance(scope, MemoryScope):
+            try:
+                scope = MemoryScope(scope)
+            except (TypeError, ValueError) as error:
+                raise ValueError("Memory operation scope is invalid") from error
+        if scope not in {MemoryScope.PROJECT, MemoryScope.USER}:
+            raise ValueError("Memory operation scope is invalid")
+        return self.coordinated_write(
+            (MemoryScope.PROJECT, MemoryScope.USER),
+            lambda: self._bind_memory_write_operation_locked(
+                operation_id=operation_id,
+                payload_digest=payload_digest,
+                scope=scope,
+            ),
+        )
+
+    @_coordinated_all_write
+    def record_retrievals(
+        self,
+        entry_ids: list[str],
+        *,
+        observation_id: str | None = None,
+    ) -> None:
+        """Persist retrieval, replay-safe when an observation ID is supplied."""
+
+        normalized_ids = tuple(sorted(set(entry_ids)))
+        receipt = self._prepare_scope_effect_receipt(
+            observation_id,
+            lane="telemetry",
+            channel="retrieval",
+            payload={"entry_ids": normalized_ids},
+        )
+        by_scope: dict[MemoryScope, list[MemoryEntry]] = {}
+        for entry_id in normalized_ids:
             scope, entry = self._find_entry_by_id(entry_id)
             if scope is None or entry is None:
-                logger.debug("Memory retrieval skipped missing entry_id=%s", entry_id)
+                logger.debug(
+                    "Memory retrieval skipped missing entry_id=%s",
+                    entry_id,
+                )
                 continue
-            entry.retrieval_count += 1
-            entry.last_accessed = now
-            touched.add(scope)
-        for scope in sorted(touched, key=lambda item: item.value):
+            by_scope.setdefault(scope, []).append(entry)
+        self._require_replay_identity_for_multiple_scopes(set(by_scope), receipt)
+        now = time.time()
+        for scope in sorted(by_scope, key=lambda item: item.value):
+            if not self._claim_scope_effect_receipt(
+                scope,
+                lane="telemetry",
+                receipt=receipt,
+            ):
+                continue
+            for entry in by_scope[scope]:
+                entry.retrieval_count = _saturating_counter_add(
+                    entry.retrieval_count
+                )
+                entry.last_accessed = now
             self._save_scope(scope)
 
     @_coordinated_all_write
@@ -3702,28 +7885,65 @@ class MemoryManager:
         self,
         retrieved_entry_ids: list[str],
         injected_entry_ids: list[str],
+        *,
+        observation_id: str | None = None,
     ) -> None:
-        """Batch task-start counters so each touched scope is saved once."""
+        """Batch task-start counters with one replay receipt per scope."""
+
+        retrieved_ids = tuple(sorted(set(retrieved_entry_ids)))
+        injected_ids = tuple(sorted(set(injected_entry_ids)))
+        receipt = self._prepare_scope_effect_receipt(
+            observation_id,
+            lane="telemetry",
+            channel="retrieval_and_injection",
+            payload={
+                "retrieved_entry_ids": retrieved_ids,
+                "injected_entry_ids": injected_ids,
+            },
+        )
+        retrieved_by_scope: dict[MemoryScope, list[MemoryEntry]] = {}
+        injected_by_scope: dict[MemoryScope, list[MemoryEntry]] = {}
         touched: set[MemoryScope] = set()
+        for entry_id in retrieved_ids:
+            scope, entry = self._find_entry_by_id(entry_id)
+            if scope is None or entry is None:
+                logger.debug(
+                    "Memory retrieval skipped missing entry_id=%s",
+                    entry_id,
+                )
+                continue
+            retrieved_by_scope.setdefault(scope, []).append(entry)
+            touched.add(scope)
+        for entry_id in injected_ids:
+            scope, entry = self._find_entry_by_id(entry_id)
+            if scope is None or entry is None:
+                logger.debug(
+                    "Memory injection skipped missing entry_id=%s",
+                    entry_id,
+                )
+                continue
+            injected_by_scope.setdefault(scope, []).append(entry)
+            touched.add(scope)
+        self._require_replay_identity_for_multiple_scopes(touched, receipt)
         now = time.time()
-        for entry_id in dict.fromkeys(retrieved_entry_ids):
-            scope, entry = self._find_entry_by_id(entry_id)
-            if scope is None or entry is None:
-                logger.debug("Memory retrieval skipped missing entry_id=%s", entry_id)
-                continue
-            entry.retrieval_count += 1
-            entry.last_accessed = now
-            touched.add(scope)
-        for entry_id in dict.fromkeys(injected_entry_ids):
-            scope, entry = self._find_entry_by_id(entry_id)
-            if scope is None or entry is None:
-                logger.debug("Memory injection skipped missing entry_id=%s", entry_id)
-                continue
-            entry.injection_count += 1
-            entry.last_used = now
-            entry.last_accessed = now
-            touched.add(scope)
         for scope in sorted(touched, key=lambda item: item.value):
+            if not self._claim_scope_effect_receipt(
+                scope,
+                lane="telemetry",
+                receipt=receipt,
+            ):
+                continue
+            for entry in retrieved_by_scope.get(scope, ()):
+                entry.retrieval_count = _saturating_counter_add(
+                    entry.retrieval_count
+                )
+                entry.last_accessed = now
+            for entry in injected_by_scope.get(scope, ()):
+                entry.injection_count = _saturating_counter_add(
+                    entry.injection_count
+                )
+                entry.last_used = now
+                entry.last_accessed = now
             self._save_scope(scope)
 
     @_coordinated_all_write
@@ -3733,6 +7953,10 @@ class MemoryManager:
         success: bool,
         *,
         observation_id: str | None = None,
+        source: str = "task_outcome",
+        expected_versions: list[tuple[str, str]]
+        | tuple[tuple[str, str], ...]
+        | None = None,
     ) -> None:
         """Persist task-outcome feedback for memories that were injected.
 
@@ -3740,16 +7964,46 @@ class MemoryManager:
         instances. Receipts retain the most recent 256 observations per entry;
         omitting the ID preserves the legacy count-every-call API.
         """
+        normalized_source = str(source).strip().lower()
+        if normalized_source not in _ORDINARY_FEEDBACK_SOURCES:
+            raise ValueError("invalid ordinary Memory feedback source")
+        version_fences = _expected_memory_versions(expected_versions)
         observation_digest = _feedback_observation_digest(
             observation_id,
-            channel="task_outcome",
+            channel=normalized_source,
         )
+        candidate_scopes: set[MemoryScope] = set()
+        for entry_id in dict.fromkeys(entry_ids):
+            candidate_scope, candidate = self._find_entry_by_id(entry_id)
+            if candidate_scope is None or candidate is None:
+                continue
+            if version_fences is not None and (
+                entry_id not in version_fences
+                or _approval_hash_for_entry(candidate)
+                not in version_fences[entry_id]
+            ):
+                continue
+            candidate_scopes.add(candidate_scope)
+        if len(candidate_scopes) > 1 and observation_digest is None:
+            raise MemoryStoreConflict(
+                "A stable observation_id is required for multi-scope Memory feedback"
+            )
         touched: set[MemoryScope] = set()
         now = time.time()
         for entry_id in dict.fromkeys(entry_ids):
             scope, entry = self._find_entry_by_id(entry_id)
             if scope is None or entry is None:
                 logger.debug("Memory outcome feedback skipped missing entry_id=%s", entry_id)
+                continue
+            if version_fences is not None and (
+                entry_id not in version_fences
+                or _approval_hash_for_entry(entry)
+                not in version_fences[entry_id]
+            ):
+                logger.debug(
+                    "Memory outcome feedback skipped stale entry_id=%s",
+                    entry_id,
+                )
                 continue
             if not _claim_feedback_observation(
                 entry,
@@ -3758,10 +8012,16 @@ class MemoryManager:
             ):
                 continue
             if success:
-                entry.success_count += 1
-                entry.usage_count += 1
+                entry.success_count = _saturating_counter_add(
+                    entry.success_count
+                )
+                entry.usage_count = _saturating_counter_add(
+                    entry.usage_count
+                )
             else:
-                entry.failure_count += 1
+                entry.failure_count = _saturating_counter_add(
+                    entry.failure_count
+                )
             entry.last_used = now
             entry.last_accessed = now
             total = entry.success_count + entry.failure_count
@@ -3782,6 +8042,9 @@ class MemoryManager:
         *,
         source: str = "independent_verification",
         observation_id: str | None = None,
+        expected_versions: list[tuple[str, str]]
+        | tuple[tuple[str, str], ...]
+        | None = None,
     ) -> None:
         """Persist feedback backed by independent verification or an explicit
         user accept/correct/reject signal, kept separate from whole-turn
@@ -3817,6 +8080,23 @@ class MemoryManager:
             observation_id,
             channel=f"corroborated:{normalized_source}",
         )
+        version_fences = _expected_memory_versions(expected_versions)
+        candidate_scopes: set[MemoryScope] = set()
+        for entry_id in dict.fromkeys(entry_ids):
+            candidate_scope, candidate = self._find_entry_by_id(entry_id)
+            if candidate_scope is None or candidate is None:
+                continue
+            if version_fences is not None and (
+                entry_id not in version_fences
+                or _approval_hash_for_entry(candidate)
+                not in version_fences[entry_id]
+            ):
+                continue
+            candidate_scopes.add(candidate_scope)
+        if len(candidate_scopes) > 1 and observation_digest is None:
+            raise MemoryStoreConflict(
+                "A stable observation_id is required for multi-scope Memory feedback"
+            )
         touched: set[MemoryScope] = set()
         now = time.time()
         for entry_id in dict.fromkeys(entry_ids):
@@ -3826,6 +8106,16 @@ class MemoryManager:
                     "Memory corroborated feedback skipped missing entry_id=%s", entry_id
                 )
                 continue
+            if version_fences is not None and (
+                entry_id not in version_fences
+                or _approval_hash_for_entry(entry)
+                not in version_fences[entry_id]
+            ):
+                logger.debug(
+                    "Memory corroborated feedback skipped stale entry_id=%s",
+                    entry_id,
+                )
+                continue
             if not _claim_feedback_observation(
                 entry,
                 observation_digest,
@@ -3833,9 +8123,13 @@ class MemoryManager:
             ):
                 continue
             if success:
-                entry.corroborated_success_count += 1
+                entry.corroborated_success_count = _saturating_counter_add(
+                    entry.corroborated_success_count
+                )
             else:
-                entry.corroborated_failure_count += 1
+                entry.corroborated_failure_count = _saturating_counter_add(
+                    entry.corroborated_failure_count
+                )
             entry.last_used = now
             entry.last_accessed = now
             total = entry.corroborated_success_count + entry.corroborated_failure_count
@@ -3945,6 +8239,21 @@ class MemoryManager:
             entry.approval_actor = str(
                 safe_payload.get("approval_actor", "") or ""
             )
+            # Usefulness is persisted as a denormalized view of the feedback
+            # counters, never as independently writable authority.  Public
+            # feedback methods keep it current, but legacy/test integrations
+            # can still construct a live ``MemoryEntry`` directly.  Repair
+            # that live writer state at the canonical commit boundary while
+            # retaining strict fail-closed validation for an inconsistent
+            # score already present in a versioned on-disk authority.
+            entry.usefulness_score = _derived_usefulness_score(
+                entry.success_count,
+                entry.failure_count,
+            )
+            entry.corroborated_usefulness_score = _derived_usefulness_score(
+                entry.corroborated_success_count,
+                entry.corroborated_failure_count,
+            )
             entry.invalidate_tokens()
 
             canonical_hash = _approval_hash_for_entry(entry)
@@ -3955,6 +8264,12 @@ class MemoryManager:
             # live-object mutation still takes the strict mismatch path.
             approval_was_current = (
                 not previous_hash or previous_hash == canonical_hash
+            )
+            reset_observations = (
+                _reset_version_scoped_observations(entry)
+                if canonicalized_bound_fields
+                or bool(previous_hash and not approval_was_current)
+                else None
             )
             safety = assess_memory_safety(
                 entry.content,
@@ -4030,6 +8345,7 @@ class MemoryManager:
                         ),
                         "approval_hash_was_current": approval_was_current,
                         "bound_fields_sanitized": canonicalized_bound_fields,
+                        "version_observations_reset": reset_observations,
                     },
                 )
                 rebuild_indices = True
@@ -4042,114 +8358,544 @@ class MemoryManager:
             # fall back to a fresh boundary pass. This equality check also
             # catches live mutation inside nested metadata/provenance values.
             final_raw_payload = entry._raw_persistence_payload()
+            comparable_safe_payload = dict(safe_payload)
+            comparable_safe_payload.pop("authority_state_digest", None)
             serialized_entries.append(
                 safe_payload
-                if final_raw_payload == safe_payload
+                if final_raw_payload == comparable_safe_payload
                 else entry.to_dict()
             )
+            # The entry now exactly matches the payload proposed for this
+            # canonical commit. Seal after canonicalization so safety-driven
+            # fields (for example the persistence-boundary actor on an unsafe
+            # entry) do not leave the live manager spuriously dirty. Any
+            # caller-side drift that predates a public operation was already
+            # rejected by ``coordinated_write``; direct saves still restore
+            # privilege-expanding drift above before reaching this point.
+            entry._seal_authority_state()
 
-        sanitized_audit = sanitize_for_persistence(
-            list(self.approval_audit.get(scope, []))
-        )
-        self.approval_audit[scope] = (
-            [record for record in sanitized_audit if isinstance(record, dict)]
-            if isinstance(sanitized_audit, list)
-            else []
-        )
+        # Audit records are immutable authority, not another content field to
+        # repair in place. They were sanitized at creation and are decoded
+        # strictly immediately before commit; silently rewriting an older
+        # record here would invalidate the very history it is meant to prove.
         if rebuild_indices:
             scope_file._rebuild_indices()
         return serialized_entries
 
     def _save_scope(self, scope: MemoryScope) -> None:
         """Save memory to disk (atomic write to prevent corruption)."""
-        if not self.in_write_transaction:
-            with self._store.transaction():
+        # ``_manager_held_stores`` also notices a POSIX fork and marks every
+        # inherited scope unfenced. Run that check before the private-save
+        # guard below rather than only while testing transaction coverage.
+        self._manager_held_stores()
+        if self._deferred_batch_scope is not None:
+            if scope is not self._deferred_batch_scope:
+                raise MemoryStoreConflict(
+                    "Atomic Memory batch attempted a cross-scope write"
+            )
+            return
+        if scope in self._unfenced_loaded_scopes:
+            raise MemoryStoreConflict(
+                "Unfenced Memory snapshot requires coordinated reload"
+            )
+        required_scopes = (
+            tuple(MemoryScope)
+            if self._scope_has_unresolved_relationships(scope)
+            else (scope,)
+        )
+        if not self._transaction_covers(required_scopes):
+            with self._transaction_for_scopes(required_scopes):
                 expected = self._disk_revisions.get(scope)
                 if expected is not None and expected != self._scope_disk_revision(scope):
                     raise MemoryStoreConflict("Memory scope changed")
+                # A direct/private save is a recovery seam, not an authority
+                # grant. Restore the last Manager-sealed state in place before
+                # entering the strict commit seam.
+                self._restore_live_authority_state((scope,))
                 self._save_scope_locked(scope)
                 return
         self._save_scope_locked(scope)
 
-    def _save_scope_locked(self, scope: MemoryScope) -> None:
-        """Write one scope while the caller owns the cooperative transaction."""
-        path = self._get_scope_path(scope)
-        self._ensure_scope_path(scope)
-        serialized_entries = self._canonicalize_scope_authority(scope)
-        
-        # Save JSON metadata (atomic: write to temp, then replace)
-        memory_json = path / "memory.json"
-        data = {
-            "scope": scope.value,
-            "last_updated": time.time(),
-            "entries": serialized_entries,
-            "approval_audit": list(self.approval_audit.get(scope, [])),
-        }
-        self._atomic_write(memory_json, json.dumps(data, indent=2, ensure_ascii=False))
-        
-        # MEMORY.md is a human-facing projection, not the audit authority.
-        # Keep pending/rejected/unsafe/inactive/archival entries in memory.json
-        # and approval_audit.json, but never advertise them as current lessons.
-        memory_md = path / "MEMORY.md"
-        authoritative_projection = MemoryFile(
-            scope=scope,
-            entries=[
-                entry
-                for entry in self.memories[scope].entries
-                if entry.is_active
-            ],
-        )
-        self._atomic_write(
-            memory_md,
-            authoritative_projection.format_as_markdown(),
-        )
-        try:
-            self._write_approval_audit_projection(scope)
-        except OSError as error:
-            # Derived projection failure cannot roll back or contradict the
-            # already-committed authority. A later save rebuilds it.
-            logger.warning(
-                "Memory approval audit projection write failed for %s: %s",
-                scope.value,
-                error,
-            )
-        self._disk_revisions[scope] = self._scope_disk_revision(scope)
-    
     @staticmethod
-    def _atomic_write(target: Path, content: str) -> None:
-        """Write content atomically: write to temp file, then os.replace().
-        
-        This prevents data corruption if the process is killed mid-write
-        or if multiple instances write to the same file concurrently.
+    def _encode_memory_authority(data: dict[str, Any]) -> tuple[str, bytes]:
+        """Encode the exact pretty JSON representation used by the root."""
 
-        Also refuses a symlinked target or parent as defense in depth: every
-        store write funnels through here, so a caller that skipped scope-root
-        validation still cannot redirect the write off-target.
-        """
-        import tempfile
         try:
-            if target.is_symlink() or target.parent.is_symlink():
-                raise MemoryStoreUnsafePath(f"{target.name} target is a symbolic link")
-        except OSError as error:
-            raise MemoryStoreUnsafePath(
-                f"{target.name} target could not be validated"
+            text = json.dumps(
+                data,
+                indent=2,
+                ensure_ascii=False,
+                allow_nan=False,
+            )
+            return text, text.encode("utf-8")
+        except (TypeError, ValueError, UnicodeEncodeError) as error:
+            raise MemoryStoreConflict(
+                "Memory authority contains invalid JSON values"
             ) from error
-        tmp_fd, tmp_path = tempfile.mkstemp(
-            dir=str(target.parent),
-            prefix=f".{target.name}.",
-            suffix=".tmp",
-        )
+
+    def _build_memory_authority_data(
+        self,
+        scope: MemoryScope,
+        *,
+        serialized_entries: list[dict[str, Any]],
+        hot_audit: list[dict[str, Any]],
+        audit_head: MemoryAuditHead | None,
+        write_receipts: list[dict[str, object]],
+        pipeline_receipts: list[dict[str, str]],
+        observation_receipts: dict[str, list[dict[str, str]]],
+        last_updated: float,
+    ) -> dict[str, Any]:
+        return {
+            "schemaVersion": CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION,
+            "scope": scope.value,
+            "last_updated": last_updated,
+            "entries": serialized_entries,
+            "approval_audit": hot_audit,
+            "approval_audit_head": (
+                audit_head.to_dict() if audit_head is not None else None
+            ),
+            "write_receipts": write_receipts,
+            "pipeline_operation_receipts": pipeline_receipts,
+            "observation_receipts": observation_receipts,
+        }
+
+    def _prepare_approval_audit_commit(
+        self,
+        scope: MemoryScope,
+        *,
+        build_root: Any,
+    ) -> tuple[
+        list[dict[str, Any]],
+        MemoryAuditHead | None,
+        tuple[dict[str, Any], ...],
+        tuple[MemoryAuditSegment, ...],
+    ]:
+        """Validate the live audit and rotate its hot tail when required.
+
+        Segment objects are prepared without filesystem mutation.  The caller
+        publishes them before the root replace, then installs the returned
+        in-memory state only after that replace succeeds.
+        """
+
         try:
-            with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
-                f.write(content)
-            os.replace(tmp_path, str(target))
-        except BaseException:
-            # Clean up temp file on any failure
+            hot_records = decode_memory_audit_records(
+                list(self.approval_audit.get(scope, [])),
+                expected_scope=scope.value,
+                maximum_records=MAX_MEMORY_AUDIT_CHAIN_RECORDS,
+            )
+        except (TypeError, ValueError) as error:
+            raise MemoryStoreConflict("Memory approval audit is invalid") from error
+
+        head = self._approval_audit_heads.get(scope)
+        cold_records = self._resolve_approval_audit_chain(
+            scope,
+            head,
+            hot_records,
+        )
+        if cold_records != self._approval_audit_cold_records.get(scope, ()):
+            raise MemoryStoreConflict("Memory approval audit cache is inconsistent")
+        # Exceeding the chain history limit drops the oldest history by
+        # rebasing instead of failing every future write: hot records are
+        # rotated into a fresh genesis chain, orphaning the immutable cold
+        # segments. A hard failure here would permanently wedge all memory
+        # writes for a long-lived workspace.
+        rebase_required = (
+            len(cold_records) + len(hot_records) > MAX_MEMORY_AUDIT_CHAIN_RECORDS
+        )
+
+        hot_payload = [record.to_dict() for record in hot_records]
+        provisional = build_root(hot_payload, head)
+        _, provisional_bytes = self._encode_memory_authority(provisional)
+        should_rotate = (
+            len(hot_records) > MAX_AUTHORITY_AUDIT_RECORDS
+            or len(provisional_bytes)
+            > memory_authority_io_module.MAX_AUTHORITY_FILE_BYTES
+            or rebase_required
+        )
+        if not should_rotate:
+            return hot_payload, head, cold_records, ()
+        if not hot_records:
+            raise MemoryStoreConflict("Memory authority exceeds bounded limits")
+
+        # Rotate the complete hot generation.  This deliberately favors a
+        # simple immutable boundary over retaining a tiny inline prefix: every
+        # record stays reachable, while the root immediately regains maximal
+        # headroom.  Individual blobs are packed to the canonical 64 KiB cap.
+        prepared_segments: list[MemoryAuditSegment] = []
+        if rebase_required:
+            previous_head = None
+            previous_reference = None
+            logger.warning(
+                "Memory approval audit for scope %s exceeded %d records; "
+                "rebased to a fresh chain, dropping %d oldest cold records",
+                scope.value,
+                MAX_MEMORY_AUDIT_CHAIN_RECORDS,
+                len(cold_records),
+            )
+        else:
+            previous_head = head
+            previous_reference = head.blob if head is not None else None
+        pending: list[MemoryAuditRecord] = []
+
+        def finish_pending() -> None:
+            nonlocal pending, previous_head, previous_reference
+            if not pending:
+                return
+            segment = MemoryAuditSegment.from_records(
+                pending,
+                scope=scope.value,
+                previous=previous_reference,
+            )
+            previous_head = MemoryAuditHead.from_segment(
+                segment,
+                previous_head=previous_head,
+            )
+            previous_reference = segment.blob_reference
+            prepared_segments.append(segment)
+            pending = []
+
+        for record in hot_records:
+            candidate = [*pending, record]
+            if len(candidate) > MAX_MEMORY_AUDIT_RECORDS_PER_SEGMENT:
+                finish_pending()
+                pending = [record]
+                continue
             try:
-                os.unlink(tmp_path)
-            except OSError:
-                pass
-            raise
+                MemoryAuditSegment.from_records(
+                    candidate,
+                    scope=scope.value,
+                    previous=previous_reference,
+                )
+            except MemoryAuthorityLimitError:
+                if not pending:
+                    raise MemoryStoreConflict(
+                        "Memory approval audit record exceeds the segment limit"
+                    )
+                finish_pending()
+                pending = [record]
+            else:
+                pending = candidate
+        finish_pending()
+        if previous_head is None or not prepared_segments:
+            raise MemoryStoreConflict("Memory approval audit rotation failed")
+
+        rotated_root = build_root([], previous_head)
+        _, rotated_bytes = self._encode_memory_authority(rotated_root)
+        if len(rotated_bytes) > memory_authority_io_module.MAX_AUTHORITY_FILE_BYTES:
+            raise MemoryStoreConflict("Memory authority exceeds bounded limits")
+        if rebase_required:
+            # The rebased chain's cold history is exactly the records just
+            # rotated out of the hot tail; the dropped segments stay on disk
+            # as unreferenced immutable blobs.
+            rebased_cold = tuple(
+                record.to_dict() for record in hot_records
+            )
+        else:
+            rebased_cold = (
+                *cold_records,
+                *(record.to_dict() for record in hot_records),
+            )
+        return (
+            [],
+            previous_head,
+            rebased_cold,
+            tuple(prepared_segments),
+        )
+
+    @contextmanager
+    def _bound_scope_publication(
+        self,
+        scope: MemoryScope,
+        path: Path,
+    ):
+        """Keep one transaction-bound scope inode for an entire commit."""
+
+        store = self._scope_store(scope)
+        binding = store.transaction_root_binding()
+        previous = getattr(self._transaction_local, "scope_publication", None)
+        if previous is not None:
+            raise MemoryStoreConflict("Nested Memory scope publication")
+        if os.name != "posix" or binding.root_fd is None:
+            # The portable publisher still validates the transaction-bound
+            # root around every replace. POSIX additionally holds one scope fd
+            # across blobs, the authority root, and derived projections.
+            with MemoryAuthorityPublisher.bind_transaction_root(binding):
+                yield None
+            return
+        with MemoryAuthorityPublisher.open_scope(
+            binding,
+            path.name,
+            create=True,
+        ) as publication:
+            self._transaction_local.scope_publication = (scope, publication)
+            try:
+                yield publication
+            finally:
+                if previous is None:
+                    try:
+                        del self._transaction_local.scope_publication
+                    except AttributeError:
+                        pass
+                else:
+                    self._transaction_local.scope_publication = previous
+
+    def _save_scope_locked(
+        self,
+        scope: MemoryScope,
+        *,
+        serialized_entries: list[dict[str, Any]] | None = None,
+    ) -> None:
+        """Write one scope while the caller owns the cooperative transaction."""
+        self._manager_held_stores()
+        if scope in self._unfenced_loaded_scopes:
+            raise MemoryStoreConflict(
+                "Unfenced Memory snapshot requires coordinated reload"
+            )
+        if not self._transaction_covers((scope,)):
+            raise MemoryStoreConflict(
+                "Memory transaction does not cover the saved authority scope"
+            )
+        self._scope_store(scope).assert_transaction_valid()
+        # Defense in depth for arbitrary coordinated_write callbacks: a
+        # callback may mutate a live object after the outer preflight and call
+        # this private seam directly. Never let canonicalization or an audit
+        # append turn that unsealed state into durable authority.
+        self._assert_live_authority_is_sealed((scope,))
+        path = self._get_scope_path(scope)
+        if serialized_entries is None:
+            serialized_entries = self._canonicalize_scope_authority(scope)
+        memory_file = self.memories[scope]
+        if (
+            len(serialized_entries) > MAX_CURRENT_AUTHORITY_ENTRIES
+            or memory_file.size_bytes > MAX_CURRENT_AUTHORITY_CONTENT_BYTES
+        ):
+            raise MemoryStoreConflict(
+                "Memory authority exceeds runtime capacity"
+            )
+        
+        # Prepare the one root payload. Receipts and audit segments publish
+        # their immutable blobs first; memory.json remains the sole commit
+        # point that makes those objects reachable.
+        memory_json = path / "memory.json"
+        last_updated = time.time()
+        write_receipts, receipt_blobs = self._serialized_memory_write_receipts(
+            scope
+        )
+        pipeline_receipts = self._serialized_pipeline_operation_receipts(scope)
+        observation_receipts = self._serialized_observation_receipts(scope)
+
+        def build_root(
+            hot_audit: list[dict[str, Any]],
+            audit_head: MemoryAuditHead | None,
+        ) -> dict[str, Any]:
+            return self._build_memory_authority_data(
+                scope,
+                serialized_entries=serialized_entries,
+                hot_audit=hot_audit,
+                audit_head=audit_head,
+                write_receipts=write_receipts,
+                pipeline_receipts=pipeline_receipts,
+                observation_receipts=observation_receipts,
+                last_updated=last_updated,
+            )
+
+        (
+            hot_audit,
+            audit_head,
+            cold_audit,
+            new_segments,
+        ) = self._prepare_approval_audit_commit(
+            scope,
+            build_root=build_root,
+        )
+        data = build_root(hot_audit, audit_head)
+        _, scope_errors = _bind_memory_authority_scope(data, scope.value)
+        if scope_errors:
+            raise MemoryStoreConflict(
+                "Memory entry scope does not match its authority root"
+            )
+        # New IDs are created only by ``add_entry`` and are scope-qualified;
+        # Manager APIs never accept or mutate an ID. Relationships are also
+        # scope-local. That contract makes an ordinary one-scope commit safe
+        # to validate against the Manager's already-vetted live snapshot and
+        # avoids a racy, unlocked read of a different authority shard.
+        # Initialization, migration and explicitly all-scope operations hold
+        # both locks and retain the stronger canonical-file cross-check.
+        if self._transaction_covers(tuple(MemoryScope)):
+            prepared = {
+                candidate_scope: (
+                    _PreparedScopeAuthority(source=None, data=data)
+                    if candidate_scope is scope
+                    else self._prepare_scope_authority(candidate_scope)
+                )
+                for candidate_scope in MemoryScope
+            }
+        else:
+            prepared = {
+                scope: _PreparedScopeAuthority(source=None, data=data)
+            }
+        committed_scope = self._prepare_scope_authority(scope)
+        self._assert_cross_scope_unique(
+            prepared,
+            reject_new_unresolved=True,
+            grandfathered_relationships=self._authority_relationship_keys(
+                scope,
+                committed_scope,
+            ),
+        )
+        is_valid, validation_errors = _validate_memory_data(data)
+        if not is_valid:
+            raise MemoryStoreConflict(
+                "Memory authority contains invalid state: "
+                + "; ".join(validation_errors[:3])
+            )
+        try:
+            validate_memory_authority_value(data)
+        except ValueError as error:
+            raise MemoryStoreConflict(
+                "Memory authority contains invalid JSON values"
+            ) from error
+        authority_text, authority_bytes = self._encode_memory_authority(data)
+        try:
+            validate_memory_authority_commit(
+                authority_bytes,
+                entry_count=len(serialized_entries),
+                audit_count=len(data["approval_audit"]),
+            )
+        except (MemoryAuthorityLimitError, UnicodeEncodeError) as error:
+            raise MemoryStoreConflict(
+                "Memory authority exceeds bounded limits"
+            ) from error
+        # No filesystem mutation occurs before every authority invariant and
+        # the transaction's bound root have both been revalidated. On POSIX,
+        # one scope descriptor now spans receipt/audit blobs, memory.json, and
+        # both projections so a path replacement cannot split the commit.
+        self._scope_store(scope).assert_transaction_valid()
+        with self._bound_scope_publication(scope, path):
+            blob_store = self._blob_store_for_scope(scope)
+            for receipt in receipt_blobs:
+                encoded_receipt = canonical_memory_blob_bytes(receipt.to_dict())
+                expected_receipt = MemoryBlobReference(
+                    digest=memory_blob_digest(encoded_receipt),
+                    size_bytes=len(encoded_receipt),
+                )
+                if blob_store.put_json(receipt.to_dict()) != expected_receipt:
+                    raise MemoryStoreConflict(
+                        "Memory write receipt publication changed"
+                    )
+            for segment in new_segments:
+                published = blob_store.put_json(segment.to_dict())
+                if published != segment.blob_reference:
+                    raise MemoryStoreConflict(
+                        "Memory approval audit segment publication changed"
+                    )
+            self._scope_store(scope).assert_transaction_valid()
+            self._atomic_write(memory_json, authority_text)
+            self._scope_store(scope).assert_transaction_valid()
+            self._approval_audit_heads[scope] = audit_head
+            self._approval_audit_cold_records[scope] = cold_audit
+            self.approval_audit[scope] = hot_audit
+            self._scope_has_embedded_audit[scope] = True
+            # ``memory.json`` is the commit point. Derive the new revision from
+            # the exact committed payload so a fallible post-replace read
+            # cannot turn a durable entry+receipt into an apparent failure.
+            self._disk_revisions[scope] = self._embedded_authority_revision(
+                authority_bytes
+            )
+
+            # MEMORY.md is a human-facing projection, not audit authority.
+            # Pending/rejected/unsafe/inactive/archival entries stay only in
+            # the canonical JSON and audit projection.
+            memory_md = path / "MEMORY.md"
+            authoritative_projection = MemoryFile(
+                scope=scope,
+                entries=[
+                    entry
+                    for entry in self.memories[scope].entries
+                    if entry.is_active
+                ],
+            )
+            try:
+                self._atomic_write(
+                    memory_md,
+                    authoritative_projection.format_as_markdown(),
+                )
+            except (MemoryStoreError, OSError) as error:
+                logger.warning(
+                    "Memory Markdown projection write failed for %s: %s",
+                    scope.value,
+                    error,
+                )
+            try:
+                self._write_approval_audit_projection(scope)
+            except (MemoryStoreError, OSError) as error:
+                logger.warning(
+                    "Memory approval audit projection write failed for %s: %s",
+                    scope.value,
+                    error,
+                )
+
+    def _atomic_write(self, target: Path, content: str) -> None:
+        """Publish one authorized target through its bound transaction root."""
+
+        candidate = Path(os.path.abspath(os.fspath(target)))
+        allowed_scope_names = {*self._STORE_FILENAMES, "memory.json.bak"}
+        selected_scope: MemoryScope | None = None
+        selected_store: MemoryStoreCoordinator | None = None
+        for scope in MemoryScope:
+            root = Path(
+                os.path.abspath(os.fspath(self._get_scope_path(scope)))
+            )
+            if candidate.parent == root and candidate.name in allowed_scope_names:
+                selected_scope = scope
+                selected_store = self._scope_store(scope)
+                break
+
+        if selected_store is None:
+            quarantine_root = self._data_root / "memory-migration-quarantine"
+            try:
+                quarantine_relative = candidate.relative_to(quarantine_root)
+            except ValueError:
+                quarantine_relative = None
+            if (
+                quarantine_relative is not None
+                and quarantine_relative.parts
+                and candidate.suffix == ".bak"
+            ):
+                selected_scope = MemoryScope.USER
+                selected_store = self._store
+
+        if selected_scope is None or selected_store is None:
+            raise MemoryStoreConflict(
+                "Memory publication target is outside an authority root"
+            )
+        if not self._transaction_covers((selected_scope,)):
+            raise MemoryStoreConflict(
+                "Memory publication requires its authority transaction"
+            )
+
+        active = getattr(self._transaction_local, "scope_publication", None)
+        if (
+            isinstance(active, tuple)
+            and len(active) == 2
+            and active[0] is selected_scope
+            and candidate.parent
+            == Path(
+                os.path.abspath(
+                    os.fspath(self._get_scope_path(selected_scope))
+                )
+            )
+        ):
+            active[1].publish_text(candidate.name, content)
+            return
+
+        binding = selected_store.transaction_root_binding()
+        # Keep the root binding active inside the final publisher seam. If a
+        # hook or hostile local process replaces the workspace after this
+        # method's preflight, publish_text opens the scope directory from the
+        # already-held root fd and refuses the replacement pathname.
+        with MemoryAuthorityPublisher.bind_transaction_root(binding):
+            MemoryAuthorityPublisher.publish_text(candidate, content)
     
     def get_stats(self) -> dict[str, Any]:
         """Get memory statistics."""
@@ -4346,7 +9092,7 @@ class MemoryManager:
         actor: str = "user",
         reason: str = "",
     ) -> str:
-        if not self.in_write_transaction:
+        if not self._transaction_covers(tuple(MemoryScope)):
             try:
                 return self.coordinated_write(
                     tuple(MemoryScope),
@@ -4373,6 +9119,7 @@ class MemoryManager:
         previous_approval = entry.approval_status
         previous_lifecycle = entry.lifecycle_status
         if entry.approval_content_hash != current_hash:
+            reset_observations = _reset_version_scoped_observations(entry)
             safety = assess_memory_safety(entry.content, source="approve")
             self._set_entry_safety_and_approval(
                 entry,
@@ -4396,6 +9143,9 @@ class MemoryManager:
                 previous_lifecycle=previous_lifecycle,
                 reason=entry.approval_reason,
                 safety=safety,
+                extra={
+                    "version_observations_reset": reset_observations,
+                },
             )
             self._save_scope(scope)
             return f"Approval blocked for memory {entry.id}: content hash changed; review it again."
@@ -4446,7 +9196,7 @@ class MemoryManager:
         return f"Approved memory {entry.id}."
 
     def reject_entry(self, entry_id: str, *, actor: str = "user", reason: str = "") -> str:
-        if not self.in_write_transaction:
+        if not self._transaction_covers(tuple(MemoryScope)):
             try:
                 return self.coordinated_write(
                     tuple(MemoryScope),
@@ -4465,6 +9215,12 @@ class MemoryManager:
             return f"Memory {entry.id} is already rejected."
         previous_approval = entry.approval_status
         previous_lifecycle = entry.lifecycle_status
+        current_hash = _approval_hash_for_entry(entry)
+        reset_observations = (
+            _reset_version_scoped_observations(entry)
+            if entry.approval_content_hash != current_hash
+            else None
+        )
         safety = assess_memory_safety(entry.content, source="reject")
         entry.safety_status = safety.status
         entry.safety_reason = safety.reason
@@ -4472,7 +9228,7 @@ class MemoryManager:
         entry.approval_reason = reason or "rejected by user"
         entry.approval_actor = actor
         entry.approval_decided_at = time.time()
-        entry.approval_content_hash = _approval_hash_for_entry(entry)
+        entry.approval_content_hash = current_hash
         entry.lifecycle_status = "rejected"
         entry.curator_locked = False
         entry.updated_at = time.time()
@@ -4485,6 +9241,9 @@ class MemoryManager:
             previous_lifecycle=previous_lifecycle,
             reason=entry.approval_reason,
             safety=safety,
+            extra={
+                "version_observations_reset": reset_observations,
+            },
         )
         self._save_scope(scope)
         return f"Rejected memory {entry.id}."
@@ -4510,9 +9269,39 @@ class MemoryManager:
             return f"Memory not found: {entry_id}"
         if entry.is_active:
             return f"Memory {entry.id} is already active and approved."
+        if entry.lifecycle_status == "superseded":
+            # A superseded lesson was retired because a replacement is live.
+            # Restoring it while the replacement is still approved would
+            # revive exactly the contradiction the supersession machinery
+            # retired; once the replacement is itself retired, restoring the
+            # old lesson is legitimate.
+            replacement = next(
+                (
+                    candidate
+                    for candidate in self.memories[scope].entries
+                    if entry.id
+                    in (
+                        candidate.metadata.get("supersedes", [])
+                        if isinstance(candidate.metadata, dict)
+                        else []
+                    )
+                ),
+                None,
+            )
+            if replacement is not None and replacement.is_active:
+                return (
+                    f"Memory {entry.id} is superseded by the approved "
+                    f"replacement {replacement.id} and cannot be restored."
+                )
 
         previous_approval = entry.approval_status
         previous_lifecycle = entry.lifecycle_status
+        current_hash = _approval_hash_for_entry(entry)
+        reset_observations = (
+            _reset_version_scoped_observations(entry)
+            if entry.approval_content_hash != current_hash
+            else None
+        )
         safety = assess_memory_safety(entry.content, source="restore")
         missing_refs = self._entry_reference_warnings(entry)
         if missing_refs and safety.status == _SAFETY_SAFE:
@@ -4545,7 +9334,10 @@ class MemoryManager:
             previous_lifecycle=previous_lifecycle,
             reason=entry.approval_reason,
             safety=safety,
-            extra={"missing_references": missing_refs},
+            extra={
+                "missing_references": missing_refs,
+                "version_observations_reset": reset_observations,
+            },
         )
         self._save_scope(scope)
         if entry.approval_status == _APPROVAL_APPROVED:
@@ -4636,6 +9428,18 @@ class MemoryManager:
             if scope_match:
                 scope = MemoryScope(scope_match.group(1).lower())
                 content = scope_match.group(2).strip()
+                # USER-scope facet syntax ("role: 资深后端") files the entry
+                # into the always-rendered User Profile block instead of the
+                # query-gated retrieval lane.
+                if scope == MemoryScope.USER:
+                    facet_match = re.match(
+                        r"^(role|skill|domain|concern|preference|compliance|"
+                        r"background)\s*[:：]\s*(.+)$",
+                        content,
+                        flags=re.I,
+                    )
+                    if facet_match:
+                        category = USER_PROFILE_CATEGORY
         else:
             return None
 
@@ -4644,6 +9448,9 @@ class MemoryManager:
 
         entry = self.add_entry(scope, category, content, tags=["chat"])
         if entry is None:
+            rejection = self.last_add_rejection
+            if rejection:
+                return f"Memory not saved ({scope.value}): {rejection}"
             return "Usage: # <memory> or /memory add [user|project|local:] <memory>"
         if entry.approval_status == _APPROVAL_PENDING:
             reason = _sanitize_untrusted_text(entry.safety_reason or entry.approval_reason, max_chars=160)
@@ -4712,7 +9519,8 @@ class MemoryManager:
 
         Merges entries with content similarity above the threshold.
         Removes duplicate entries (exact content matches).
-        Updates timestamps and preserves usage counts.
+        Updates timestamps and preserves usage counts only when the surviving
+        entry's approval-bound authority version is unchanged.
 
         Args:
             scope: Memory scope to compress
@@ -4728,6 +9536,7 @@ class MemoryManager:
 
         seen_content: dict[str, int] = {}
         duplicates_removed = 0
+        removed_to_survivor: dict[str, str] = {}
 
         unique_entries = []
         for entry in entries:
@@ -4735,11 +9544,65 @@ class MemoryManager:
             if content_key in seen_content:
                 master_idx = seen_content[content_key]
                 master = unique_entries[master_idx]
-                master.usage_count += entry.usage_count
+                removed_to_survivor[entry.id] = master.id
+                previous_approval = master.approval_status
+                previous_lifecycle = master.lifecycle_status
+                previous_authority_digest = _approval_hash_for_entry(master)
+                master.usage_count = _saturating_counter_add(
+                    master.usage_count,
+                    entry.usage_count,
+                )
                 master.updated_at = max(master.updated_at, entry.updated_at)
                 master.tags = sorted(
                     list(set(master.tags + entry.tags))
                 )
+                if _approval_hash_for_entry(master) != previous_authority_digest:
+                    reset_observations = _reset_version_scoped_observations(master)
+                    safety = assess_memory_safety(
+                        master.content,
+                        source="compress",
+                    )
+                    if (
+                        previous_approval != _APPROVAL_REJECTED
+                        and previous_lifecycle != "rejected"
+                    ):
+                        self._set_entry_safety_and_approval(
+                            master,
+                            safety,
+                            actor="safety_gate",
+                            reason=(
+                                "exact duplicate tag merge invalidated approval"
+                            ),
+                            lifecycle_status=master.lifecycle_status,
+                            approval_policy=(
+                                MemoryApprovalPolicy.USER_REVIEW_REQUIRED
+                            ),
+                        )
+                    else:
+                        master.safety_status = safety.status
+                        master.safety_reason = safety.reason
+                        master.approval_content_hash = _approval_hash_for_entry(
+                            master
+                        )
+                    self._append_approval_audit(
+                        scope,
+                        master,
+                        action="compress_exact_duplicate",
+                        actor="safety_gate",
+                        previous_approval=previous_approval,
+                        previous_lifecycle=previous_lifecycle,
+                        reason=(
+                            "exact duplicate tag merge invalidated approval"
+                        ),
+                        safety=safety,
+                        extra={
+                            "merged_entry_id": entry.id,
+                            "previous_authority_digest": (
+                                previous_authority_digest
+                            ),
+                            "version_observations_reset": reset_observations,
+                        },
+                    )
                 duplicates_removed += 1
             else:
                 seen_content[content_key] = len(unique_entries)
@@ -4757,7 +9620,10 @@ class MemoryManager:
             best_similarity = 0.0
 
             for j, entry_b in enumerate(unique_entries):
-                if i == j or j in merged_indices:
+                # Earlier entries are deterministic survivors. Restricting
+                # candidates to the suffix also ensures every replacement map
+                # points from an actually removed entry to a retained one.
+                if j <= i or j in merged_indices:
                     continue
 
                 similarity = self._jaccard_similarity(
@@ -4774,13 +9640,23 @@ class MemoryManager:
                 )
                 previous_approval = entry_a.approval_status
                 previous_lifecycle = entry_a.lifecycle_status
+                previous_authority_digest = _approval_hash_for_entry(entry_a)
                 entry_a.content = merged_content
-                entry_a.usage_count += entry_b.usage_count
+                entry_a.usage_count = _saturating_counter_add(
+                    entry_a.usage_count,
+                    entry_b.usage_count,
+                )
                 entry_a.updated_at = max(
                     entry_a.updated_at, entry_b.updated_at
                 )
                 entry_a.tags = sorted(
                     list(set(entry_a.tags + entry_b.tags))
+                )
+                reset_observations = (
+                    _reset_version_scoped_observations(entry_a)
+                    if _approval_hash_for_entry(entry_a)
+                    != previous_authority_digest
+                    else None
                 )
                 safety = assess_memory_safety(entry_a.content, source="compress")
                 if previous_approval != _APPROVAL_REJECTED and previous_lifecycle != "rejected":
@@ -4805,12 +9681,22 @@ class MemoryManager:
                     previous_lifecycle=previous_lifecycle,
                     reason="compression merge invalidated approval",
                     safety=safety,
+                    extra={
+                        "previous_authority_digest": previous_authority_digest,
+                        "version_observations_reset": reset_observations,
+                    },
                 )
+                removed_to_survivor[entry_b.id] = entry_a.id
                 merged_indices.add(best_match_idx)
                 merged_count += 1
 
             final_entries.append(entry_a)
 
+        for entry in final_entries:
+            _rewrite_memory_relationship_references(
+                entry,
+                removed_to_survivor,
+            )
         self.memories[scope].entries = final_entries
         self.memories[scope]._rebuild_indices()
         self._save_scope(scope)
@@ -4902,26 +9788,85 @@ class MemoryManager:
         return conflicts
 
     @_coordinated_all_write
-    def decay_memories(self, max_age_days: float = 30.0, decay_factor: float = 0.5) -> int:
+    def decay_memories(
+        self,
+        max_age_days: float = 30.0,
+        decay_factor: float = 0.5,
+        *,
+        operation_id: str | None = None,
+        effective_at: float | None = None,
+    ) -> int:
         """Apply time-based decay to memory usage_count.
 
         Entries older than max_age_days have their usage_count halved
         (multiplied by decay_factor), reducing their search ranking.
-        Returns number of entries decayed.
+        Returns number of entries changed by this invocation. A stable
+        ``operation_id`` makes partial multi-scope publication replay-safe;
+        reusing it with a different policy fails closed. ``effective_at`` can
+        freeze eligibility across a delayed retry.
         """
-        now = time.time()
-        decayed = 0
+        if (
+            isinstance(max_age_days, bool)
+            or not isinstance(max_age_days, (int, float))
+            or not math.isfinite(float(max_age_days))
+            or float(max_age_days) < 0
+        ):
+            raise ValueError("max_age_days must be a finite non-negative number")
+        if (
+            isinstance(decay_factor, bool)
+            or not isinstance(decay_factor, (int, float))
+            or not math.isfinite(float(decay_factor))
+            or not 0 <= float(decay_factor) <= 1
+        ):
+            raise ValueError("decay_factor must be between zero and one")
+        if effective_at is None:
+            now = time.time()
+        elif (
+            isinstance(effective_at, bool)
+            or not isinstance(effective_at, (int, float))
+            or not math.isfinite(float(effective_at))
+            or not 0 <= float(effective_at) <= MAX_MEMORY_TIMESTAMP
+        ):
+            raise ValueError("effective_at must be a valid timestamp")
+        else:
+            now = float(effective_at)
+        receipt = self._prepare_scope_effect_receipt(
+            operation_id,
+            lane="maintenance",
+            channel="decay",
+            payload={
+                "max_age_days": float(max_age_days),
+                "decay_factor": float(decay_factor),
+                "effective_at": (
+                    float(effective_at) if effective_at is not None else None
+                ),
+            },
+        )
+        candidates: dict[MemoryScope, list[MemoryEntry]] = {}
         for scope in MemoryScope:
-            if scope not in self.memories:
-                continue
-            for entry in self.memories[scope].entries:
+            for entry in self.memories.get(scope, MemoryFile(scope=scope)).entries:
                 age_days = (now - entry.updated_at) / 86400.0
-                if age_days > max_age_days and entry.usage_count > 0:
-                    entry.usage_count = max(0, int(entry.usage_count * decay_factor))
-                    decayed += 1
-        if decayed:
-            for scope in MemoryScope:
-                self._save_scope(scope)
+                if age_days > float(max_age_days) and entry.usage_count > 0:
+                    candidates.setdefault(scope, []).append(entry)
+        self._require_replay_identity_for_multiple_scopes(
+            set(candidates),
+            receipt,
+        )
+        decayed = 0
+        for scope in sorted(candidates, key=lambda item: item.value):
+            if not self._claim_scope_effect_receipt(
+                scope,
+                lane="maintenance",
+                receipt=receipt,
+            ):
+                continue
+            for entry in candidates[scope]:
+                entry.usage_count = max(
+                    0,
+                    int(entry.usage_count * float(decay_factor)),
+                )
+                decayed += 1
+            self._save_scope(scope)
         return decayed
 
     @_coordinated_all_write
@@ -4933,6 +9878,7 @@ class MemoryManager:
         """
         now = time.time()
         stats = {"promoted_to_long": 0, "demoted_to_archival": 0, "reactivated": 0}
+        touched_scopes: set[MemoryScope] = set()
         for scope in MemoryScope:
             if scope not in self.memories:
                 continue
@@ -4940,19 +9886,32 @@ class MemoryManager:
                 if not entry.is_active:
                     continue
                 age_days = (now - entry.updated_at) / 86400.0
-                accessed_days = (now - entry.last_accessed) / 86400.0
+                # A content/version rewrite is new activity without being a
+                # retrieval.  Version resets therefore clear ``last_accessed``
+                # but ``updated_at`` prevents that fresh version from looking
+                # epoch-old and being archived immediately.
+                activity_at = max(entry.updated_at, entry.last_accessed)
+                accessed_days = (now - activity_at) / 86400.0
                 if entry.tier == MemoryTier.SHORT_TERM and entry.usage_count >= 5 and age_days > 7:
                     entry.tier = MemoryTier.LONG_TERM
                     entry.tier_reason = "usage"
                     entry._seal_authority_state()
                     stats["promoted_to_long"] += 1
+                    touched_scopes.add(scope)
                     continue
                 if entry.tier == MemoryTier.LONG_TERM and accessed_days > 30:
                     previous_approval = entry.approval_status
                     previous_lifecycle = entry.lifecycle_status
+                    previous_authority_digest = _approval_hash_for_entry(entry)
                     entry.tier = MemoryTier.ARCHIVAL
                     entry.tier_reason = "age_decay"
                     entry.content = self._summarize_content(entry.content)
+                    reset_observations = (
+                        _reset_version_scoped_observations(entry)
+                        if _approval_hash_for_entry(entry)
+                        != previous_authority_digest
+                        else None
+                    )
                     entry.invalidate_tokens()
                     safety = assess_memory_safety(entry.content, source="curator")
                     entry.safety_status = safety.status
@@ -4977,23 +9936,33 @@ class MemoryManager:
                         previous_lifecycle=previous_lifecycle,
                         reason=entry.approval_reason,
                         safety=safety,
+                        extra={
+                            "previous_authority_digest": (
+                                previous_authority_digest
+                            ),
+                            "version_observations_reset": (
+                                reset_observations
+                            ),
+                        },
                     )
                     stats["demoted_to_archival"] += 1
+                    touched_scopes.add(scope)
                     continue
                 if entry.tier == MemoryTier.ARCHIVAL and accessed_days < 7:
                     entry.tier = MemoryTier.SHORT_TERM
                     entry.tier_reason = "recent_access"
                     entry._seal_authority_state()
                     stats["reactivated"] += 1
-        if any(stats.values()):
-            for scope in MemoryScope:
-                self._save_scope(scope)
+                    touched_scopes.add(scope)
+        for scope in sorted(touched_scopes, key=lambda item: item.value):
+            self._save_scope(scope)
         return stats
 
     @_coordinated_all_write
     def link_memories(self, similarity_threshold: float = 0.4) -> int:
         """Auto-link related memories by content similarity. Returns link count."""
         links = 0
+        touched_scopes: set[MemoryScope] = set()
         for scope in MemoryScope:
             if scope not in self.memories:
                 continue
@@ -5009,10 +9978,12 @@ class MemoryManager:
                         b.related_to.append(a.id)
                         a.updated_at = time.time()
                         b.updated_at = time.time()
+                        a._seal_authority_state()
+                        b._seal_authority_state()
                         links += 2
-        if links:
-            for scope in MemoryScope:
-                self._save_scope(scope)
+                        touched_scopes.add(scope)
+        for scope in sorted(touched_scopes, key=lambda item: item.value):
+            self._save_scope(scope)
         return links
 
     def get_linked_memories(self, entry_id: str, depth: int = 1) -> list[MemoryEntry]:
@@ -5132,6 +10103,7 @@ Use this context to inform your decisions and follow established patterns."""
     memory_manager.record_retrievals_and_injections(
         list(result.selected_ids),
         list(result.rendered_ids),
+        observation_id=f"compatibility-prompt-{uuid.uuid4().hex}",
     )
     return injected_prompt
 

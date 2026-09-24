@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "payload_files": 280,
+  "runtime_python_files": 263,
+  "wheel_runtime_files_matched": 267,
+  "handoff_relative_links": "PASS",
+  "manifest_and_working_tree_match": "PASS",
+  "excluded_private_state_paths": "PASS",
+  "common_key_pattern_hits": 0,
+  "secret_scan_scope": "allowlisted payload only; common token/private-key patterns, not a guarantee for all secret formats",
+  "outputs": [
+    {
+      "name": "minicode_py-0.1.0-py3-none-any.whl",
+      "bytes": 1773937
+    },
+    {
+      "name": "manifest.json",
+      "bytes": 62837
+    },
+    {
+      "name": "CodeLoop-source-2026-09-18.zip",
+      "bytes": 1823110
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "bytes": 278
+    }
+  ]
+}

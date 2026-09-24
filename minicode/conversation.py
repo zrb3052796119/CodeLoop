@@ -7,10 +7,10 @@ fixed domain failures.  HTTP and frontend concerns deliberately stay outside.
 
 from __future__ import annotations
 
+import inspect
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
-import inspect
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
 
@@ -42,6 +42,7 @@ from minicode.session import (
     find_turn_commit,
     load_session,
     save_session,
+    validate_turn_commits,
 )
 from minicode.turn_cancellation import (
     TurnCancellationRequested,
@@ -53,6 +54,7 @@ if TYPE_CHECKING:
     from minicode.conversation_presentation import ConversationPresentation
     from minicode.mcp_current_state import McpCurrentStateRegistry
     from minicode.permission_approval import PermissionApprovalBroker
+    from minicode.user_evidence import TrustedUserEvidenceSeed
 
 
 class RuntimeFactory(Protocol):
@@ -62,6 +64,9 @@ class RuntimeFactory(Protocol):
         workspace: Path,
         prompt: str,
         mcp_current_state_registry: McpCurrentStateRegistry | None = None,
+        event_sink: Any | None = None,
+        cancellation_token: TurnCancellationToken | None = None,
+        trusted_user_evidence: tuple[TrustedUserEvidenceSeed, ...] = (),
     ) -> AgentTurnRuntime: ...
 
 
@@ -193,6 +198,14 @@ def _turn_result(
     *,
     turn_id: str,
 ) -> tuple[str, int, int] | None:
+    """Project only the result produced after this turn's user message.
+
+    A committed Workflow intentionally ends with an authoritative
+    ``tool_result`` rather than a closing assistant message.  That result is
+    valid only when it is paired with the immediately preceding
+    ``assistant_tool_call``; this prevents an unrelated historical tool output
+    from becoming the current turn's answer.
+    """
     if not isinstance(messages, list):
         return None
 
@@ -209,10 +222,27 @@ def _turn_result(
 
     for index in range(len(messages) - 1, user_index, -1):
         message = messages[index]
-        if not isinstance(message, dict) or message.get("role") != "assistant":
+        if not isinstance(message, dict):
             continue
         content = message.get("content")
-        if isinstance(content, str) and content:
+        if message.get("role") == "assistant":
+            if isinstance(content, str) and content:
+                return content, user_index, index
+            continue
+        if message.get("role") != "tool_result":
+            continue
+        if not isinstance(content, str) or not content:
+            continue
+        if index <= user_index:
+            continue
+        previous = messages[index - 1]
+        if not isinstance(previous, dict):
+            continue
+        if (
+            previous.get("role") == "assistant_tool_call"
+            and message.get("toolUseId")
+            and previous.get("toolUseId") == message.get("toolUseId")
+        ):
             return content, user_index, index
     return None
 
@@ -230,83 +260,70 @@ def _error_for_code(code: str | None) -> ConversationError:
     return errors.get(code or "", ConversationTurnFailed)()
 
 
-def _apply_corroborated_memory_feedback(
+def _apply_run_outcome_memory_feedback(
     workspace: Path,
     journal: Any,
     run_id: str,
     signal: str,
 ) -> None:
-    """Best-effort: bind a freshly recorded explicit user signal to this
-    Run's rendered Memory entries as corroborated feedback. Kept separate
-    from Memory's whole-turn success/failure counters, and never allowed to
-    change the outcome of recording the user signal itself."""
+    """Best-effort weak response feedback for exact rendered versions.
+
+    The Dashboard signal evaluates the whole response, not an individual
+    Memory claim. It can therefore update ordinary usefulness evidence but
+    can never corroborate or quarantine every rendered entry. Legacy ID-only
+    Runs fail closed because they cannot prove which content was evaluated.
+    """
     try:
-        rendered_ids = journal.get_rendered_memory_ids(run_id)
-    except Exception:  # noqa: BLE001 - corroboration is optional
+        rendered_versions = journal.get_rendered_memory_versions(run_id)
+    except Exception:  # noqa: BLE001 - response attribution is optional
         return
-    if not rendered_ids:
+    if not rendered_versions:
         return
     try:
         from minicode.memory import MemoryManager
 
         manager = MemoryManager(project_root=workspace)
-        source = {
-            "accept": "explicit_user_accept",
-            "correct": "explicit_user_correction",
-            "reject": "explicit_user_reject",
-        }[signal]
-        manager.record_corroborated_feedback(
-            list(rendered_ids),
+        manager.record_feedback(
+            list(dict.fromkeys(entry_id for entry_id, _ in rendered_versions)),
             signal == "accept",
-            source=source,
             observation_id=run_id,
+            source="explicit_run_outcome",
+            expected_versions=rendered_versions,
         )
-    except Exception:  # noqa: BLE001 - corroboration must not fail feedback
+    except Exception:  # noqa: BLE001 - attribution must not fail feedback
         pass
 
 
-def _apply_written_memory_verdict(
+def _apply_written_run_outcome_feedback(
     workspace: Path,
     journal: Any,
     run_id: str,
     signal: str,
 ) -> None:
-    """Best-effort: let an explicit user verdict reach the lesson this Run wrote.
+    """Best-effort weak response feedback for exact written versions.
 
-    The rendered sidecar answers "did the memories shown to this turn help?".
-    This answers a different question: "should the conclusion this turn drew
-    be trusted at all?". A turn the user marked wrong has no business leaving
-    a durable lesson sitting in the approval queue as if it had gone well.
-
-    Rejection is chosen over a score nudge because the costs are asymmetric: a
-    wrong lesson that gets approved is injected into every later run, while a
-    sound lesson that gets rejected is merely unused. Both directions are
-    recorded in the approval audit, so the decision stays reviewable.
+    A response-level signal does not prove that every lesson extracted from
+    that response is true or false. Version-bound ordinary evidence is the
+    strongest safe attribution until a concrete claim is shown to, and
+    explicitly judged by, the user.
     """
     try:
-        written_ids = journal.get_written_memory_ids(run_id)
+        written_versions = journal.get_written_memory_versions(run_id)
     except Exception:  # noqa: BLE001 - the verdict is optional
         return
-    if not written_ids:
+    if not written_versions:
         return
     try:
         from minicode.memory import MemoryManager
 
         manager = MemoryManager(project_root=workspace)
-        if signal == "accept":
-            manager.record_corroborated_feedback(
-                list(written_ids),
-                True,
-                source="explicit_user_accept",
-                observation_id=run_id,
-            )
-            return
-        for entry_id in written_ids:
-            manager.reject_entry(
-                entry_id,
-                actor="user_signal",
-                reason=f"the user marked this turn '{signal}'",
-            )
+        manager.record_feedback(
+            list(dict.fromkeys(entry_id for entry_id, _ in written_versions)),
+            signal == "accept",
+            observation_id=run_id,
+            source="explicit_run_outcome",
+            expected_versions=written_versions,
+        )
     except Exception:  # noqa: BLE001 - the verdict must not fail feedback
         pass
 
@@ -456,7 +473,453 @@ class ConversationTurnService:
             kwargs["presentation"] = presentation
         if approval_session is not None and (has_kwargs or "approval_session" in names):
             kwargs["approval_session"] = approval_session
+        if has_kwargs or "defer_curator_maintenance" in names:
+            # ConversationTurnService owns the Session compare-and-swap. A
+            # losing pre-commit execution must not count as a completed task.
+            kwargs["defer_curator_maintenance"] = True
         return runtime.execute(messages, observation, **kwargs)
+
+    def _create_runtime(
+        self,
+        *,
+        message: str,
+        observation: Any,
+        cancellation_token: TurnCancellationToken,
+        intent_context: object | None = None,
+        trusted_user_evidence: tuple[TrustedUserEvidenceSeed, ...] = (),
+    ) -> Any:
+        """Pass lifecycle seams only when an injected factory supports them."""
+        try:
+            parameters = tuple(
+                inspect.signature(self._runtime_factory).parameters.values()
+            )
+        except (TypeError, ValueError):
+            parameters = ()
+        has_kwargs = any(
+            parameter.kind == inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters
+        )
+        names = {parameter.name for parameter in parameters}
+        kwargs: dict[str, object] = {
+            "workspace": self.workspace,
+            "prompt": message,
+            "mcp_current_state_registry": self._mcp_current_state_registry,
+        }
+        if has_kwargs or "event_sink" in names:
+            kwargs["event_sink"] = observation
+        if has_kwargs or "cancellation_token" in names:
+            kwargs["cancellation_token"] = cancellation_token
+        if intent_context is not None and (
+            has_kwargs or "intent_context" in names
+        ):
+            kwargs["intent_context"] = intent_context
+        if trusted_user_evidence and (
+            has_kwargs or "trusted_user_evidence" in names
+        ):
+            kwargs["trusted_user_evidence"] = trusted_user_evidence
+        return self._runtime_factory(**kwargs)
+
+    def _trusted_correction_evidence(
+        self,
+        *,
+        session: SessionData,
+        message: str,
+        current_turn_id: str,
+        current_run_id: str | None,
+    ) -> tuple[TrustedUserEvidenceSeed, ...]:
+        """Join an adjacent explicit ``correct`` signal to its follow-up text.
+
+        Every durable identity in this chain is independently checked. Any
+        stale, malformed, cross-session, non-adjacent, or non-correction state
+        yields no strong evidence and never blocks the user's Turn.
+        """
+        if current_run_id is None:
+            return ()
+        try:
+            from minicode.user_evidence import (
+                TrustedUserEvidenceSeed,
+                looks_like_correction,
+            )
+
+            if not looks_like_correction(message.strip()):
+                return ()
+            markers = validate_turn_commits(
+                session.turn_commits,
+                messages=session.messages,
+            )
+            if not markers:
+                return ()
+            marker = max(markers, key=lambda item: item["assistantMessageIndex"])
+            conversational_indexes = [
+                index
+                for index, item in enumerate(session.messages)
+                if isinstance(item, dict)
+                and item.get("role") in {"user", "assistant"}
+            ]
+            if (
+                not conversational_indexes
+                or conversational_indexes[-1] != marker["assistantMessageIndex"]
+            ):
+                return ()
+            prior_turn_id = str(marker["turnId"])
+            record = self._turn_store.get(prior_turn_id)
+            store_marker = self._store_marker(marker)
+            if (
+                record is None
+                or record.status != "completed"
+                or record.session_id != session.session_id
+                or record.run_id is None
+                or record.commit_marker != store_marker
+                or self._authoritative_result(record) is None
+            ):
+                return ()
+            journal = (
+                self._journal_factory(self.workspace)
+                if self._journal_factory is not None
+                else RunJournal(self.workspace)
+            )
+            prior_run = journal.get_run(record.run_id)
+            signal = journal.get_user_signal(record.run_id)
+            if (
+                prior_run is None
+                or prior_run.id != record.run_id
+                or prior_run.status != "completed"
+                or prior_run.source != "gateway"
+                or prior_run.session_id != session.session_id
+                or signal is None
+                or signal.signal != "correct"
+                or signal.source != "explicit_user_action"
+            ):
+                return ()
+            return (
+                TrustedUserEvidenceSeed.followup_correction(
+                    message,
+                    current_turn_id=current_turn_id,
+                    current_run_id=current_run_id,
+                    prior_turn_id=prior_turn_id,
+                    prior_run_id=record.run_id,
+                ),
+            )
+        except Exception:  # noqa: BLE001 - strong evidence fails closed
+            return ()
+
+    @staticmethod
+    def _defer_runtime_user_evidence(
+        runtime: Any,
+        *,
+        message: str,
+        turn_id: str,
+        run_id: str | None,
+    ) -> tuple[TrustedUserEvidenceSeed, ...]:
+        """Take strong evidence out of pre-commit Agent reflection."""
+        take = getattr(runtime, "take_trusted_user_evidence_for_commit", None)
+        if not callable(take):
+            return ()
+        try:
+            value = take(
+                direct_user_message=message,
+                current_turn_id=turn_id,
+                current_run_id=run_id,
+            )
+        except Exception:  # noqa: BLE001 - evidence fails closed, Turn continues
+            return ()
+        return value if isinstance(value, tuple) else ()
+
+    @staticmethod
+    def _persist_committed_runtime_user_evidence(
+        runtime: Any,
+        evidence: tuple[TrustedUserEvidenceSeed, ...],
+        observation: Any,
+        *,
+        message: str,
+        turn_id: str,
+        run_id: str | None,
+    ) -> None:
+        """Best-effort post-Session effect; committed conversation truth wins."""
+        if not evidence:
+            return
+        persist = getattr(runtime, "persist_committed_user_evidence", None)
+        if not callable(persist):
+            return
+        try:
+            persist(
+                evidence,
+                observation,
+                direct_user_message=message,
+                current_turn_id=turn_id,
+                current_run_id=run_id,
+            )
+        except BaseException as error:  # committed Session remains authoritative
+            try:
+                from minicode.agent_runtime import (
+                    CommittedUserEvidencePersistenceUnavailable,
+                )
+                from minicode.memory_persistence_event import (
+                    MEMORY_PERSISTENCE_FAILURE_EVENT_TYPE,
+                    memory_persistence_failure_payload,
+                )
+                from minicode.user_evidence import (
+                    committed_user_evidence_operation_id,
+                )
+
+                operation_id = committed_user_evidence_operation_id(turn_id, run_id)
+                reason_codes = ("unexpected_failure",)
+                if isinstance(
+                    error,
+                    CommittedUserEvidencePersistenceUnavailable,
+                ):
+                    operation_id = error.operation_id
+                    reason_codes = error.reason_codes
+                observation.emit(
+                    MEMORY_PERSISTENCE_FAILURE_EVENT_TYPE,
+                    payload=memory_persistence_failure_payload(
+                        phase="committed_user_evidence",
+                        operation_id=operation_id,
+                        reason_codes=reason_codes,
+                    ),
+                )
+            except BaseException:
+                pass
+
+    @staticmethod
+    def _maintain_committed_runtime_turn(
+        runtime: Any,
+        observation: Any,
+        *,
+        turn_id: str,
+        run_id: str | None,
+    ) -> None:
+        """Best-effort maintenance strictly after Session CAS success."""
+
+        maintain = getattr(runtime, "maintain_committed_turn", None)
+        if not callable(maintain):
+            return
+        try:
+            parameters = tuple(inspect.signature(maintain).parameters.values())
+        except (TypeError, ValueError):
+            return
+        supports_recorded = any(
+            parameter.name == "completion_already_recorded"
+            or parameter.kind is inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters
+        )
+        if not supports_recorded:
+            # Calling an older implementation would make it re-record the
+            # already settled Dashboard completion through the CLI facade.
+            return
+        try:
+            maintain(
+                observation,
+                current_turn_id=turn_id,
+                current_run_id=run_id,
+                completion_already_recorded=True,
+            )
+        except Exception:
+            # Conversation truth and its user-visible response are already
+            # committed. Durable scheduler state retains or leases any debt.
+            pass
+
+    def _record_committed_curator_completion(
+        self,
+        *,
+        turn_id: str,
+        run_id: str | None,
+    ) -> bool:
+        """Persist the recoverable completion debt without claiming work."""
+
+        try:
+            from minicode.curator_schedule import (
+                CuratorScheduleStore,
+                curator_completion_id,
+            )
+
+            completion_id = curator_completion_id(run_id, turn_id)
+            if completion_id is None:
+                return False
+            schedule = CuratorScheduleStore(self.workspace)
+            with schedule.delivery_fence():
+                schedule.record_completion(
+                    completion_id,
+                    pin=True,
+                    promote_existing=True,
+                )
+            return True
+        except Exception:
+            # The committed Turn record remains a durable reconstruction
+            # source. Recovery and terminal replay retry this exact receipt.
+            return False
+
+    def _reconcile_cli_curator_receipts(self, schedule: object) -> bool:
+        """Drain CLI-owned workspace receipts before a Dashboard delivery."""
+
+        try:
+            from minicode.curator_outbox import reconcile_run_curator_outbox
+
+            journal = (
+                self._journal_factory(self.workspace)
+                if self._journal_factory is not None
+                else RunJournal(
+                    self.workspace,
+                    data_dir=self._turn_store.data_dir,
+                )
+            )
+            return reconcile_run_curator_outbox(journal, schedule)
+        except Exception:
+            return False
+
+    def _ensure_committed_curator_completion(
+        self,
+        record: TurnRecord,
+    ) -> TurnRecord:
+        """Deliver and acknowledge a committed Turn's durable receipt."""
+
+        try:
+            from minicode.curator_schedule import (
+                CuratorScheduleStore,
+                curator_completion_id,
+            )
+
+            completion_id = curator_completion_id(
+                record.run_id,
+                record.turn_id,
+            )
+            if completion_id is None:
+                return record
+            schedule = CuratorScheduleStore(self.workspace)
+            with schedule.delivery_fence():
+                if not self._reconcile_cli_curator_receipts(schedule):
+                    return record
+                # The caller may have scanned before another worker completed
+                # the handshake. Re-read under the delivery fence so a stale
+                # snapshot can never resurrect an already-settled receipt.
+                current = self._turn_store.get(record.turn_id)
+                if current is None:
+                    return record
+                if (
+                    current.curator_outbox_version is None
+                    or current.status not in {"committing", "completed"}
+                    or current.session_id is None
+                    or current.run_id is None
+                    or curator_completion_id(
+                        current.run_id,
+                        current.turn_id,
+                    )
+                    != completion_id
+                ):
+                    return current
+                if current.curator_receipt_settled:
+                    return current
+                if not current.curator_receipt_recorded:
+                    if not self._record_committed_curator_completion(
+                        turn_id=current.turn_id,
+                        run_id=current.run_id,
+                    ):
+                        return current
+                    current = self._turn_store.mark_curator_receipt_recorded(
+                        current.turn_id
+                    )
+                schedule.acknowledge_completion(completion_id)
+                return self._turn_store.mark_curator_receipt_settled(
+                    current.turn_id
+                )
+        except Exception:
+            # The unsettled Turn stays retention-protected and is retried by
+            # terminal replay or the bounded release reconciler.
+            return record
+
+    def _reconcile_curator_receipts(self) -> bool:
+        """Best-effort recovery of committed Dashboard completion receipts."""
+
+        try:
+            from minicode.curator_outbox import (
+                reconcile_turn_curator_outbox,
+                turn_recovery_scan_budget,
+            )
+            from minicode.curator_schedule import CuratorScheduleStore
+
+            if not reconcile_turn_curator_outbox(
+                self._turn_store,
+                CuratorScheduleStore(self.workspace),
+            ):
+                return False
+            # Bound this invocation by the store's own durable scan horizon.
+            # Counting unique Turns (rather than arbitrary pages) makes a
+            # complete recovery pass independent of page size while repeated
+            # unresolved records fail closed instead of spinning.
+            scan_budget = turn_recovery_scan_budget(self._turn_store)
+            observed_turn_ids: set[str] = set()
+            while True:
+                remaining = scan_budget - len(observed_turn_ids)
+                scan = self._turn_store.curator_receipt_recovery_records(
+                    limit=min(1_000, max(1, remaining)),
+                    include_settled_committing=True,
+                )
+                if not scan.items:
+                    return bool(scan.exhaustive)
+                page_turn_ids = {record.turn_id for record in scan.items}
+                newly_observed = page_turn_ids - observed_turn_ids
+                if len(newly_observed) > remaining:
+                    return False
+                observed_turn_ids.update(page_turn_ids)
+                progressed = False
+                actionable = False
+                for record in scan.items:
+                    current = record
+                    if current.status == "committing":
+                        # Once this fence is acquired, no live owner can still
+                        # publish the Session marker for this Turn.  Resolve
+                        # every stable committing record here so abandoned
+                        # receipts cannot occupy the bounded recovery page and
+                        # starve newer authoritative commits forever.
+                        with self._turn_store.commit_fence():
+                            refreshed = self._turn_store.get(current.turn_id)
+                            if refreshed is None:
+                                progressed = True
+                                continue
+                            current = refreshed
+                            if current.status == "committing":
+                                authoritative = self._authoritative_result(
+                                    current
+                                )
+                                if authoritative is None:
+                                    self._turn_store.mark_interrupted(
+                                        current.turn_id
+                                    )
+                                    progressed = True
+                                    continue
+                                current = self._turn_store.recover_completed(
+                                    current.turn_id,
+                                    commit_marker=authoritative[1],
+                                )
+                            elif current.status != "completed":
+                                progressed = True
+                                continue
+                        actionable = True
+                    else:
+                        actionable = True
+                    settled = self._ensure_committed_curator_completion(
+                        current
+                    )
+                    progressed = (
+                        progressed or settled.curator_receipt_settled
+                    )
+                if not actionable:
+                    if progressed:
+                        # Terminalized stable no-marker records disappear from
+                        # the next page. Continue until the bounded scan proves
+                        # there is no authoritative commit hidden behind them.
+                        continue
+                    unsafe_diagnostics = set(scan.diagnostics) - {
+                        "curator_receipt_page_limited"
+                    }
+                    return bool(scan.exhaustive) and not unsafe_diagnostics
+                if not progressed:
+                    return False
+                if not newly_observed:
+                    return False
+        except Exception:
+            # Each source record remains durable and non-retention-eligible.
+            return False
 
     @staticmethod
     def _store_marker(session_marker: dict[str, Any]) -> dict[str, int]:
@@ -489,9 +952,28 @@ class ConversationTurnService:
             or assistant_index >= len(session.messages)
         ):
             return None
-        assistant_message = session.messages[assistant_index]
-        assistant = assistant_message.get("content")
-        if assistant_message.get("role") != "assistant" or not isinstance(assistant, str) or not assistant:
+        result_message = session.messages[assistant_index]
+        assistant = result_message.get("content")
+        if (
+            result_message.get("role") == "assistant"
+            and isinstance(assistant, str)
+            and assistant
+        ):
+            pass
+        elif (
+            result_message.get("role") == "tool_result"
+            and isinstance(assistant, str)
+            and assistant
+            and assistant_index > 0
+            and isinstance(session.messages[assistant_index - 1], dict)
+            and session.messages[assistant_index - 1].get("role")
+            == "assistant_tool_call"
+            and result_message.get("toolUseId")
+            and session.messages[assistant_index - 1].get("toolUseId")
+            == result_message.get("toolUseId")
+        ):
+            pass
+        else:
             return None
         return (
             ConversationTurnResult(
@@ -506,13 +988,54 @@ class ConversationTurnService:
         )
 
     def _reconcile_active(self, record: TurnRecord) -> TurnRecord:
-        authoritative = self._authoritative_result(record)
         try:
+            if record.status == "committing":
+                # Status/feedback/cancel endpoints can reach this recovery
+                # without the new-Turn preflight.  First close only delivery
+                # work already evidenced by a producer ack or scheduler pin;
+                # the shared reconciler deliberately does not count a bare
+                # committing Turn.
+                from minicode.curator_outbox import (
+                    reconcile_turn_curator_outbox,
+                )
+                from minicode.curator_schedule import CuratorScheduleStore
+
+                if not reconcile_turn_curator_outbox(
+                    self._turn_store,
+                    CuratorScheduleStore(self.workspace),
+                ):
+                    raise ConversationTurnFailed()
+                # A live committer holds this fence across Session CAS and the
+                # terminal Turn write. Once acquired, a missing Session marker
+                # is stable and can be interrupted without racing publication.
+                with self._turn_store.commit_fence():
+                    current = self._turn_store.get(record.turn_id)
+                    if current is None:
+                        raise ConversationTurnFailed()
+                    if current.status in {
+                        "completed",
+                        "failed",
+                        "interrupted",
+                        "cancelled",
+                    }:
+                        return current
+                    authoritative = self._authoritative_result(current)
+                    if authoritative is not None:
+                        recovered = self._turn_store.recover_completed(
+                            current.turn_id,
+                            commit_marker=authoritative[1],
+                        )
+                        return self._ensure_committed_curator_completion(
+                            recovered
+                        )
+                    return self._turn_store.mark_interrupted(current.turn_id)
+            authoritative = self._authoritative_result(record)
             if authoritative is not None:
-                return self._turn_store.recover_completed(
+                recovered = self._turn_store.recover_completed(
                     record.turn_id,
                     commit_marker=authoritative[1],
                 )
+                return self._ensure_committed_curator_completion(recovered)
             if record.status == "cancel_requested":
                 return self._turn_store.mark_cancelled(record.turn_id)
             return self._turn_store.mark_interrupted(record.turn_id)
@@ -523,6 +1046,7 @@ class ConversationTurnService:
         if record.status == "completed":
             authoritative = self._authoritative_result(record)
             if authoritative is not None:
+                self._ensure_committed_curator_completion(record)
                 return authoritative[0]
             raise ConversationTurnInterrupted()
         raise _error_for_code(record.error_code)
@@ -553,7 +1077,12 @@ class ConversationTurnService:
                 or not self._turn_store.is_active(record.turn_id)
             )
         ):
-            record = self._reconcile_active(record)
+            try:
+                live_owner = self._turn_store.has_live_owner(record.turn_id)
+            except Exception as error:
+                raise ConversationTurnFailed() from error
+            if not live_owner:
+                record = self._reconcile_active(record)
         result_available = (
             record.status == "completed"
             and self._authoritative_result(record) is not None
@@ -595,7 +1124,12 @@ class ConversationTurnService:
                 or not self._turn_store.is_active(record.turn_id)
             )
         ):
-            record = self._reconcile_active(record)
+            try:
+                live_owner = self._turn_store.has_live_owner(record.turn_id)
+            except Exception as error:
+                raise ConversationFeedbackUnavailable() from error
+            if not live_owner:
+                record = self._reconcile_active(record)
         if (
             record.status != "completed"
             or record.run_id is None
@@ -618,10 +1152,10 @@ class ConversationTurnService:
         # Re-apply on every idempotent Run-signal replay. Memory owns a durable
         # observation receipt, so this safely closes the crash window between
         # the immutable journal write and its best-effort Memory side effect.
-        _apply_corroborated_memory_feedback(
+        _apply_run_outcome_memory_feedback(
             self.workspace, journal, record.run_id, stored.signal
         )
-        _apply_written_memory_verdict(
+        _apply_written_run_outcome_feedback(
             self.workspace, journal, record.run_id, stored.signal
         )
         return ConversationFeedbackResult(
@@ -650,7 +1184,12 @@ class ConversationTurnService:
                 or not self._turn_store.is_active(record.turn_id)
             )
         ):
-            record = self._reconcile_active(record)
+            try:
+                live_owner = self._turn_store.has_live_owner(record.turn_id)
+            except Exception as error:
+                raise ConversationTurnFailed() from error
+            if not live_owner:
+                record = self._reconcile_active(record)
         try:
             decision = self._turn_store.request_cancel(record.turn_id)
         except Exception as error:  # noqa: BLE001
@@ -679,6 +1218,7 @@ class ConversationTurnService:
         turn_id: str,
         cancellation_token: TurnCancellationToken,
         presentation: ConversationPresentation | None,
+        curator_backlog_safe: bool,
     ) -> ConversationTurnResult:
         raise_if_cancelled(cancellation_token)
         session, created = self._session(session_id)
@@ -723,12 +1263,30 @@ class ConversationTurnService:
                     except Exception as error:  # noqa: BLE001
                         raise ConversationRuntimeUnavailable() from error
                 try:
-                    runtime = self._runtime_factory(
-                        workspace=self.workspace,
-                        prompt=message,
-                        mcp_current_state_registry=self._mcp_current_state_registry,
+                    from minicode.intent_parser import IntentContext
+
+                    trusted_user_evidence = self._trusted_correction_evidence(
+                        session=session,
+                        message=message,
+                        current_turn_id=turn_id,
+                        current_run_id=observation.run_id,
                     )
-                except (KeyboardInterrupt, SystemExit):
+                    runtime = self._create_runtime(
+                        message=message,
+                        observation=observation,
+                        cancellation_token=cancellation_token,
+                        intent_context=IntentContext.from_messages(
+                            session.messages
+                        ),
+                        trusted_user_evidence=trusted_user_evidence,
+                    )
+                    deferred_user_evidence = self._defer_runtime_user_evidence(
+                        runtime,
+                        message=message,
+                        turn_id=turn_id,
+                        run_id=observation.run_id,
+                    )
+                except (KeyboardInterrupt, SystemExit, TurnCancellationRequested):
                     raise
                 except Exception as error:  # noqa: BLE001
                     raise ConversationRuntimeUnavailable() from error
@@ -814,26 +1372,55 @@ class ConversationTurnService:
                     "userMessageIndex": user_index,
                     "assistantMessageIndex": assistant_index,
                 }
-                try:
-                    gate = self._turn_store.begin_commit(turn_id)
-                except Exception as error:  # noqa: BLE001
-                    raise ConversationTurnFailed() from error
-                if not gate.commit_allowed:
-                    raise TurnCancellationRequested(turn_id)
-                self._commit(
-                    session,
-                    messages=result_messages,
-                    user_message=message,
-                    runtime=runtime,
-                    turn_marker=session_marker,
-                )
-                try:
-                    self._turn_store.mark_completed(
-                        turn_id,
-                        commit_marker=self._store_marker(session_marker),
+                curator_receipt_settled = False
+                # Fence the publication sequence so another Gateway cannot
+                # observe ``committing`` between Session CAS and the terminal
+                # Turn write, then overwrite receipt flags from a stale view.
+                with self._turn_store.commit_fence():
+                    try:
+                        gate = self._turn_store.begin_commit(turn_id)
+                    except Exception as error:  # noqa: BLE001
+                        raise ConversationTurnFailed() from error
+                    if not gate.commit_allowed:
+                        raise TurnCancellationRequested(turn_id)
+                    self._commit(
+                        session,
+                        messages=result_messages,
+                        user_message=message,
+                        runtime=runtime,
+                        turn_marker=session_marker,
                     )
-                except Exception as error:  # noqa: BLE001
-                    raise _TurnCompletionWriteFailed() from error
+                    if curator_backlog_safe:
+                        curator_record = (
+                            self._ensure_committed_curator_completion(
+                                gate.record
+                            )
+                        )
+                        curator_receipt_settled = bool(
+                            curator_record.curator_receipt_settled
+                        )
+                    try:
+                        self._turn_store.mark_completed(
+                            turn_id,
+                            commit_marker=self._store_marker(session_marker),
+                        )
+                    except Exception as error:  # noqa: BLE001
+                        raise _TurnCompletionWriteFailed() from error
+                self._persist_committed_runtime_user_evidence(
+                    runtime,
+                    deferred_user_evidence,
+                    observation,
+                    message=message,
+                    turn_id=turn_id,
+                    run_id=observation.run_id,
+                )
+                if curator_backlog_safe and curator_receipt_settled:
+                    self._maintain_committed_runtime_turn(
+                        runtime,
+                        observation,
+                        turn_id=turn_id,
+                        run_id=observation.run_id,
+                    )
                 observation.assistant_completed(
                     content_present=True,
                     content_length=len(assistant),
@@ -867,6 +1454,7 @@ class ConversationTurnService:
         turn_id: str | None = None,
         presentation: ConversationPresentation | None = None,
     ) -> ConversationTurnResult:
+        curator_backlog_safe = self._reconcile_curator_receipts()
         validated_turn_id = create_turn_id() if turn_id is None else validate_turn_id(turn_id)
         fingerprint = request_fingerprint(
             workspace_id=self._turn_store.workspace_id,
@@ -907,6 +1495,7 @@ class ConversationTurnService:
                 turn_id=validated_turn_id,
                 cancellation_token=cancellation_token,
                 presentation=presentation,
+                curator_backlog_safe=curator_backlog_safe,
             )
         except _TurnCompletionWriteFailed as error:
             # Preserve committing + Session marker so a new process can reconcile
@@ -922,7 +1511,23 @@ class ConversationTurnService:
             raise ConversationTurnCancelled() from error
         except (KeyboardInterrupt, SystemExit):
             try:
-                self._turn_store.mark_interrupted(validated_turn_id)
+                current = self._turn_store.get(validated_turn_id)
+                if current is not None and current.status == "committing":
+                    # Session CAS may already be durable. Reconcile under the
+                    # commit fence instead of destroying the recoverable
+                    # producer receipt with an ``interrupted`` transition.
+                    # Execution is ending, so first relinquish its lease. This
+                    # also lets the generic outbox path join an already-durable
+                    # scheduler pin without replaying the producer callback.
+                    self._turn_store.release_claim(validated_turn_id)
+                    self._reconcile_active(current)
+                elif current is not None and current.status not in {
+                    "completed",
+                    "failed",
+                    "interrupted",
+                    "cancelled",
+                }:
+                    self._turn_store.mark_interrupted(validated_turn_id)
             except Exception:  # noqa: BLE001 - process exit remains primary
                 self._turn_store.release_claim(validated_turn_id)
             raise

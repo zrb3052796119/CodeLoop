@@ -80,6 +80,202 @@ def test_empty_roots_return_a_strict_read_only_inventory_without_creating_files(
     )
 
 
+def test_curator_schedule_artifacts_are_known_and_safely_scanned(
+    tmp_path: Path,
+) -> None:
+    from minicode.curator_schedule import (
+        CuratorScheduleStore,
+        curator_completion_id,
+    )
+    from minicode.storage_health import PersistenceHealthReader
+
+    workspace = tmp_path / "workspace"
+    data_dir = tmp_path / "home" / ".mini-code"
+    workspace.mkdir()
+    data_dir.mkdir(parents=True)
+    completion = curator_completion_id("run_" + "1" * 32)
+    assert completion is not None
+    schedule = CuratorScheduleStore(workspace)
+    schedule.record_completion(completion)
+    with schedule.execution_fence():
+        decision = schedule.claim_due(interval=10)
+    assert decision.claim is None
+    assert (
+        workspace / ".mini-code-memory" / ".curator-execution.lock"
+    ).is_file()
+
+    snapshot = PersistenceHealthReader(workspace, data_dir=data_dir).snapshot()
+
+    assert _store(snapshot, "memory-project")["status"] == "live"
+    assert _store(snapshot, "memory-pipeline-state")["status"] == "live"
+    assert "entry_unsafe" not in {
+        item["code"] for item in snapshot["diagnostics"]
+    }
+
+
+def test_live_turn_execution_lease_is_a_known_health_artifact(
+    tmp_path: Path,
+) -> None:
+    from minicode.conversation_turn_store import (
+        ConversationTurnStore,
+        request_fingerprint,
+    )
+    from minicode.storage_health import PersistenceHealthReader
+
+    workspace = tmp_path / "workspace"
+    data_dir = tmp_path / "home" / ".mini-code"
+    workspace.mkdir()
+    store = ConversationTurnStore(workspace, data_dir=data_dir)
+    turn_id = "turn_" + "a" * 32
+    fingerprint = request_fingerprint(
+        workspace_id=store.workspace_id,
+        session_id=None,
+        message="live health probe",
+    )
+    assert store.claim(turn_id=turn_id, fingerprint=fingerprint).disposition == "claimed"
+    store.mark_running(turn_id)
+
+    try:
+        snapshot = PersistenceHealthReader(workspace, data_dir=data_dir).snapshot()
+    finally:
+        store.release_claim(turn_id)
+
+    assert _store(snapshot, "conversation-turns")["status"] == "live"
+    assert "entry_unsafe" not in {
+        item["code"] for item in snapshot["diagnostics"]
+    }
+
+
+def test_invalid_curator_schedule_is_visible_in_storage_health(
+    tmp_path: Path,
+) -> None:
+    from minicode.storage_health import PersistenceHealthReader
+
+    workspace = tmp_path / "workspace"
+    data_dir = tmp_path / "home" / ".mini-code"
+    state_root = workspace / ".mini-code-memory"
+    state_root.mkdir(parents=True)
+    data_dir.mkdir(parents=True)
+    (state_root / "curator_schedule.json").write_text(
+        json.dumps({"schemaVersion": 999}),
+        encoding="utf-8",
+    )
+
+    snapshot = PersistenceHealthReader(workspace, data_dir=data_dir).snapshot()
+
+    assert _store(snapshot, "memory-pipeline-state")["status"] == "partial"
+    assert {
+        (item["storeId"], item["code"])
+        for item in snapshot["diagnostics"]
+    } >= {("memory-pipeline-state", "invalid_record")}
+
+
+def test_curator_schedule_health_uses_the_runtime_size_limit(
+    tmp_path: Path,
+) -> None:
+    from minicode.curator_schedule import (
+        MAX_CURATOR_SCHEDULE_BYTES,
+        CuratorScheduleCorrupt,
+        CuratorScheduleStore,
+        curator_completion_id,
+    )
+    from minicode.storage_health import PersistenceHealthReader
+
+    workspace = tmp_path / "workspace"
+    data_dir = tmp_path / "home" / ".mini-code"
+    workspace.mkdir()
+    data_dir.mkdir(parents=True)
+    completion = curator_completion_id("run_" + "2" * 32)
+    assert completion is not None
+    store = CuratorScheduleStore(workspace)
+    store.record_completion(completion)
+    valid = store.path.read_bytes()
+    store.path.write_bytes(b" " * MAX_CURATOR_SCHEDULE_BYTES + valid)
+
+    with pytest.raises(CuratorScheduleCorrupt):
+        store.snapshot()
+    snapshot = PersistenceHealthReader(workspace, data_dir=data_dir).snapshot()
+    pipeline_state = _store(snapshot, "memory-pipeline-state")
+    assert pipeline_state["status"] == "partial"
+    assert {
+        (item["storeId"], item["code"])
+        for item in snapshot["diagnostics"]
+    } >= {("memory-pipeline-state", "oversized_file")}
+
+
+def test_run_curator_receipt_is_strictly_validated_by_storage_health(
+    tmp_path: Path,
+) -> None:
+    from minicode.run_journal import RunJournal
+    from minicode.storage_health import PersistenceHealthReader
+
+    workspace = tmp_path / "workspace"
+    data_dir = tmp_path / "home" / ".mini-code"
+    workspace.mkdir()
+    journal = RunJournal(workspace, data_dir=data_dir)
+    record = journal.create_run(title="healthy outbox", source="headless")
+    journal.transition(record.id, "running")
+    journal.transition(record.id, "completed")
+
+    healthy = PersistenceHealthReader(workspace, data_dir=data_dir).snapshot()
+    assert _store(healthy, "run-journal")["status"] == "live"
+    assert "entry_unsafe" not in {
+        item["code"] for item in healthy["diagnostics"]
+    }
+
+    receipt_path = (
+        data_dir
+        / "dashboard"
+        / "workspaces"
+        / record.workspace_id
+        / "runs"
+        / record.id
+        / "curator_receipt.json"
+    )
+    payload = json.loads(receipt_path.read_text(encoding="utf-8"))
+    payload["schemaVersion"] = True
+    receipt_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    invalid = PersistenceHealthReader(workspace, data_dir=data_dir).snapshot()
+    assert _store(invalid, "run-journal")["status"] == "partial"
+    assert {
+        (item["storeId"], item["code"])
+        for item in invalid["diagnostics"]
+    } >= {("run-journal", "invalid_record")}
+
+
+def test_current_cli_outbox_marker_makes_missing_receipt_unhealthy(
+    tmp_path: Path,
+) -> None:
+    from minicode.run_journal import RunJournal
+    from minicode.storage_health import PersistenceHealthReader
+
+    workspace = tmp_path / "workspace"
+    data_dir = tmp_path / "home" / ".mini-code"
+    workspace.mkdir()
+    journal = RunJournal(workspace, data_dir=data_dir)
+    record = journal.create_run(title="missing outbox", source="headless")
+    journal.transition(record.id, "running")
+    journal.transition(record.id, "completed")
+    receipt_path = (
+        data_dir
+        / "dashboard"
+        / "workspaces"
+        / record.workspace_id
+        / "runs"
+        / record.id
+        / "curator_receipt.json"
+    )
+    receipt_path.unlink()
+
+    snapshot = PersistenceHealthReader(workspace, data_dir=data_dir).snapshot()
+    assert _store(snapshot, "run-journal")["status"] == "partial"
+    assert {
+        (item["storeId"], item["code"])
+        for item in snapshot["diagnostics"]
+    } >= {("run-journal", "invalid_record")}
+
+
 @pytest.mark.parametrize("value", [True, -1, (2**53), 1.25])
 def test_strict_snapshot_validator_rejects_unsafe_count_values(value: object) -> None:
     from minicode.storage_health import (

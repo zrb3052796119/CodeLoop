@@ -1,0 +1,22 @@
+[
+  {
+    "path": "minicode/agent_loop.py",
+    "beforeSha256": "c5abbbe5d15a7a4057f6c202ac883d9ce62a272fdef5e9a980a26fe7c1b44546",
+    "afterSha256": "ff5cb8fabc57fd6e435ace77e0ee3a924d039f480dad3522d7b4d1cc8c1fcded"
+  },
+  {
+    "path": "minicode/tools/git.py",
+    "beforeSha256": "172bea83c3022eac3d8d7ca9b277bd9604078d79420b775b0a7041124c6007d1",
+    "afterSha256": "5cd7642374433c9908f085188c695a9c86915effd66b241a45f0764442702fa6"
+  },
+  {
+    "path": "tests/test_primary_model_timeout_recovery.py",
+    "beforeSha256": null,
+    "afterSha256": "d37984380bca503c874bc0fd14fb558a6ca12e8a99b9fb2890ad1d8e39fda3eb"
+  },
+  {
+    "path": "tests/test_git_status_regressions.py",
+    "beforeSha256": null,
+    "afterSha256": "e0712d447130ac6e01f13c5ee0fc5ea4ffddf64210e820bc5a11dcbcfe954bf3"
+  }
+]

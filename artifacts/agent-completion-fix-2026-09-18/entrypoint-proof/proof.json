@@ -1,0 +1,53 @@
+{
+  "baseline": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "-m",
+      "pytest",
+      "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-se8f34bf/baseline/tests/test_bounded_completion_entrypoints.py",
+      "-q",
+      "--tb=short"
+    ],
+    "duration_seconds": 0.844,
+    "returncode": 1,
+    "stderr": "",
+    "stdout": "FFFF                                                                     [100%]\n=================================== FAILURES ===================================\n_____ test_prepared_runtime_enables_bounded_completion_when_executed[True] _____\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-se8f34bf/baseline/tests/test_bounded_completion_entrypoints.py:64: in test_prepared_runtime_enables_bounded_completion_when_executed\n    assert calls[0].get(\"enable_bounded_completion\") is True\nE   AssertionError: assert None is True\nE    +  where None = <built-in method get of dict object at 0x102da9d40>('enable_bounded_completion')\nE    +    where <built-in method get of dict object at 0x102da9d40> = {'model': <object object at 0x10065f450>, 'tools': namespace(get_skills=<function _tools.<locals>.<lambda> at 0x1041cc...te/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-46/test_prepared_runtime_enables_0', ...}.get\n____ test_prepared_runtime_enables_bounded_completion_when_executed[False] _____\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-se8f34bf/baseline/tests/test_bounded_completion_entrypoints.py:64: in test_prepared_runtime_enables_bounded_completion_when_executed\n    assert calls[0].get(\"enable_bounded_completion\") is True\nE   AssertionError: assert None is True\nE    +  where None = <built-in method get of dict object at 0x10413d9c0>('enable_bounded_completion')\nE    +    where <built-in method get of dict object at 0x10413d9c0> = {'model': <object object at 0x10065f500>, 'tools': namespace(get_skills=<function _tools.<locals>.<lambda> at 0x1041e5...te/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-46/test_prepared_runtime_enables_1', ...}.get\n_________ test_classic_cli_enables_bounded_completion_for_a_user_turn __________\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-se8f34bf/baseline/tests/test_bounded_completion_entrypoints.py:130: in test_classic_cli_enables_bounded_completion_for_a_user_turn\n    assert calls[0].get(\"enable_bounded_completion\") is True\nE   AssertionError: assert None is True\nE    +  where None = <built-in method get of dict object at 0x1007b3440>('enable_bounded_completion')\nE    +    where <built-in method get of dict object at 0x1007b3440> = {'model': <object object at 0x10065f620>, 'tools': namespace(get_skills=<function _tools.<locals>.<lambda> at 0x1041cc...te/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-46/test_classic_cli_enables_bound0', ...}.get\n----------------------------- Captured stdout call -----------------------------\nCodeLoop \u00b7 test_classic_cli_enables_bound0 \u00b7 unconfigured\nworkspace: /private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-46/test_classic_cli_enables_bound0\nskills: 0 \u00b7 mcp: 0\naccess: cwd: /private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-46/test_classic_cli_enables_bound0\n\nTry: \u5e2e\u6211\u5206\u6790\u8fd9\u4e2a\u9879\u76ee\u7684\u7ed3\u6784\nCommands: /help \u00b7 /skills \u00b7 /status \u00b7 /exit\ncompleted\n------------------------------ Captured log call -------------------------------\nWARNING  minicode.run_events:run_events.py:868 Skill routing observation unavailable.\n______ test_interactive_tui_enables_bounded_completion_in_background_turn ______\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-se8f34bf/baseline/tests/test_bounded_completion_entrypoints.py:176: in test_interactive_tui_enables_bounded_completion_in_background_turn\n    assert calls[0].get(\"enable_bounded_completion\") is True\nE   AssertionError: assert None is True\nE    +  where None = <built-in method get of dict object at 0x1040c0380>('enable_bounded_completion')\nE    +    where <built-in method get of dict object at 0x1040c0380> = {'model': <object object at 0x10065f630>, 'tools': <minicode.tooling.ToolRegistry object at 0x1031eaa50>, 'messages': ...te/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-46/test_interactive_tui_enables_b0', ...}.get\n=========================== short test summary info ============================\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-se8f34bf/baseline/tests/test_bounded_completion_entrypoints.py::test_prepared_runtime_enables_bounded_completion_when_executed[True]\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-se8f34bf/baseline/tests/test_bounded_completion_entrypoints.py::test_prepared_runtime_enables_bounded_completion_when_executed[False]\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-se8f34bf/baseline/tests/test_bounded_completion_entrypoints.py::test_classic_cli_enables_bounded_completion_for_a_user_turn\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-se8f34bf/baseline/tests/test_bounded_completion_entrypoints.py::test_interactive_tui_enables_bounded_completion_in_background_turn\n4 failed in 0.73s\n",
+    "timed_out": false
+  },
+  "baseline_failure_review": "All four tests fail on the missing enable_bounded_completion argument (None is True), not import, dependency, or filesystem errors.",
+  "baseline_kind": "directory",
+  "baseline_source": {
+    "files": {
+      "minicode/agent_runtime.py": "9d67804a604835e05653e3d951e65434cadebd9b2f768b2bed3df4a1557a2f7c",
+      "minicode/main.py": "282ddb62cdba18ae4e174731e4cd1624d353e66ca5d33c6861aeb5aebeca007c",
+      "minicode/tui/input_handler.py": "e43ace9a4c1c03765c58cad1ba804cf3cf70068dfef2b887e07d1e2a34ba3f68"
+    },
+    "kind": "pre-change workspace snapshot",
+    "path": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/before"
+  },
+  "contract": "The prepared runtime (interactive and noninteractive), classic CLI, and interactive TUI must forward enable_bounded_completion=True to the real loop boundary.",
+  "fixed": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "-m",
+      "pytest",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/tests/test_bounded_completion_entrypoints.py",
+      "-q",
+      "--tb=short"
+    ],
+    "duration_seconds": 0.596,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "....                                                                     [100%]\n4 passed in 0.41s\n",
+    "timed_out": false
+  },
+  "fixed_root": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main",
+  "scope": "Four production entrypoint dispatch tests only; no lifecycle suite rerun.",
+  "status": "PROVEN",
+  "test_files": [
+    {
+      "path": "tests/test_bounded_completion_entrypoints.py",
+      "sha256": "c1a42c066beb13efccfb346ae6206b713953d9a46aacc51de2bf9b04544e7640"
+    }
+  ]
+}

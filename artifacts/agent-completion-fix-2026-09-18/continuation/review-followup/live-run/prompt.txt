@@ -1,0 +1,5 @@
+继续完成现有分支的 test_runner 修复与交付。当前已有未提交的源码和3个新增回归，独立验收确认12文件末位失败场景已正确执行全部文件，相关测试36项通过，但审查用真实pytest发现三个新增回归，需要修正：
+1. _build_pytest_command 的201文件目录分支丢掉了 verbose/coverage/pattern；200文件时这些参数正常。
+2. 构造201个test_selected_*.py通过文件，以及test_other.py中一个失败函数test_selected_outside_filename；pattern=selected时原先文件名筛选不应选中test_other.py。目录分支却执行了它，即使补回-k也仍然扩大测试集合。
+3. 一个通过测试里warnings.warn('1 failed historical request; 2 errors already recovered')，真实pytest退出0、1 passed 1 warning；新逻辑却把这个警告当成测试失败并返回ok=False。
+请处理这些实际回归并补有针对性的测试，保留原始漏跑修复，完成必要验证和lint，只提交相关改动。随后创建GitHub PR；若未登录则保留本地提交并写好PR标题/描述，准确报告阻塞和未完成项目。只依据实际执行汇报。

@@ -62,9 +62,10 @@ CodeLoop 是 [MiniCode Python](https://github.com/QUSETIONS/MiniCode-Python)
 
 | 系统证据 | 结果 | 能说明什么，不能说明什么 |
 | --- | ---: | --- |
-| [仓库回归测试](./.github/workflows/ci.yml) | **4,474 passed, 2 skipped** | 2026-08-24 在 Python 3.12 对 [Runtime/测试提交 `4f7b53d`](https://github.com/zrb3052796119/CodeLoop/commit/4f7b53d) 完成的本地发布验收；说明已实现行为受到回归保护，不代表通用 Agent 智能。推送后 CI 会在 3 OS × 2 Python 矩阵重跑。 |
-| [Skill 路由门禁](./docs/agent-quality-gates.md) | **60/60** | 40 个正例/显式调用 + 20 个弃权/对抗负例；top-1、弃权和 required exact 均为 1.0。离线、`remoteCallCount=0`，不是 live Qwen 或第三方 benchmark。 |
-| [重复压缩门禁](./docs/agent-quality-gates.md) | **12/12** | 对 1–5 轮强制压缩检查摘要链、被否方案、任务账本、最新指令、已加载 Skill 和工具轮次。证明冻结合同，不证明任意长会话都无语义漂移。 |
+| [仓库回归测试](./.github/workflows/ci.yml) | **4,482 passed, 2 skipped** | 2026-08-25 在 Python 3.12 完成的本地发布验收；说明已实现行为受到回归保护，不代表通用 Agent 智能。推送后 CI 会在 3 OS × 2 Python 矩阵重跑。 |
+| [Skill 路由门禁](./docs/agent-quality-gates.md) | **旧集 60/60；joined 路由决策 96/96** | production-shaped 开发集的完整 case 为 84/96；剩余 12 条是意图/上下文标签差异，不是 Skill 选错。两套均为 `remoteCallCount=0` 的离线证据，不是 live Qwen、盲测生产集或第三方 benchmark。 |
+| [重复压缩门禁](./docs/agent-quality-gates.md) | **12/12 门禁 + 60/60 压测** | 对 1–5 轮强制压缩检查摘要链、被否方案、任务账本、最新指令、已加载 Skill 和工具轮次，并覆盖 4 档历史规模和 3 种 marker 位置。证明冻结合同，不证明任意长会话都无语义漂移。 |
+| [上下文压缩配对实验](./docs/context-compaction-experiment-study.md) | **12/12 配对完成；24 个 case** | canonical/control 的 provider 输入 token 为 4,288,270 vs 6,011,480（**聚合 -28.7%，配对中位数 -22.7%**，exact `p=0.00537`）。严格成功率为 9/12 vs 10/12，5 个 case 遇到远端 `IncompleteRead`；但所有可执行测试和保护 marker 均通过。因此证据支持 token 效率，不支持“质量完全无损”。 |
 | [记录任务门禁](./docs/agent-quality-gates.md) | **50/50** | 10 类、30 个写任务的真实模型/Runtime 运行记录来自隔离合成仓库；当前命令只离线复验冻结记录，`a` 接受同 manifest 的新结果，不会自动重跑 provider，也不是第三方认证。 |
 | [主/子模型 live 路由](./docs/model-routing-live-acceptance-2026-08-23.md) | **4/4 actors × 2 轮** | Parent、Explore、Plan、General 每轮各一次 HTTP 请求，出站与 provider 回报 model 一致；这是脱敏策展投影，不是 provider 签名回执。 |
 
@@ -93,7 +94,7 @@ task/子 Agent 工具。这些不能被描述成 CodeLoop 从零新增的模块�
 
 | 方向 | 导入基线之后的 CodeLoop 工作 | 证据面 |
 | --- | --- | --- |
-| Skill 多层路由 | 在基线已有目录/Skill 确定性评分器之上，新增真正弃权、双语意图与 alias、可选 Qwen/OpenAI-compatible embedding、严格显式点名语法、候选幅度门、digest 绑定加载，以及只对已独立准入候选生效的跨 Run 有界重排。 | 冻结的 60 例中英双语/显式调用/弃权/对抗门禁；router、semantic cache/degradation、显式语法、digest loader 和 evidence tests。 |
+| Skill 多层路由 | 在基线已有目录/Skill 确定性评分器之上，新增上下文复合操作、operation×topic 车道、真正弃权/澄清、双语意图与 alias、可选 Qwen/OpenAI-compatible embedding、严格显式点名语法、候选幅度门、digest 绑定加载，以及只对已独立准入候选生效的跨 Run 有界重排。 | 冻结的 60 例 router 门禁 + 96 例 parse-to-prompt joined 开发集，以及 semantic cache/degradation、权限、digest loader 和 evidence tests。 |
 | 上下文保真 | summary-of-summary 摘要链；保存目标/显式约束/typed fact/失败码的压缩免疫账本；原子 provider 工具轮次、usage 校准、未变化状态重试身份；让强制路径遵守基线已有熔断器。 | 重复压缩门禁和大文件回放。 |
 | 多 Agent Runtime | 面向只读 `explore/plan` 的异步 `spawn` / `poll` / `cancel`、结构化结果、`subagentId` 日志 join、共享 Turn 预算、deadline 与按角色模型路由。 | 生命周期、取消、结果协议、路由、日志与预算测试。 |
 | 持久化经验 | 在基线已有存储、通用恢复合成、sanitizer、审批、词法检索/重排、内容哈希和渲染反馈之上，强化 corroborated/idempotent 反馈、隔离与投影卫生、操作恢复、canonical Hybrid 检索和验收归因。 | warm/cold 配对实验、V1–V5 确定性合同（V5 live/provider 运行待执行）和 Memory 回归矩阵。 |
@@ -163,7 +164,15 @@ source、目录、文件和 SHA-256 digest，避免 route-old/load-new 漂移、
 60/60、`remoteCallCount=0`。因此它验证的是确定性路由合同，不应被表述为 CI 真实调用了
 Qwen；远程路径由 transport mock、cache/degradation 测试和单独 smoke 覆盖。
 
-继续阅读：[Skill 路由反馈](./docs/skill-routing-feedback.md)、
+另一套 96 例 joined 开发集会把真实的解析、有界上下文、operation×topic 候选车道、显式
+权限、最终 Skill 与 Prompt 投影串起来测试。当前路由决策为 96/96，完整 case 为 84/96；
+12 条完整残差由 10 条保守的域外意图 taxonomy 标签和 2 条 context-use 标签组成。由于这套
+数据参与了本轮实现迭代，它是回归开发集，不是盲测生产准确率。
+
+可选的上下文语义意图层只会在确定性解析弃权后发起一次有预算、禁用工具的模型调用；
+默认关闭，并继续服从否定语义和显式权限边界，只接受经过严格校验与校准的建议操作。
+继续阅读：[语义意图运行合同](./docs/intent-semantic-classifier.md)、
+[Skill 路由反馈](./docs/skill-routing-feedback.md)、
 [完整贡献图谱](./docs/CONTRIBUTION_AUDIT.md)。
 
 ### 2. 不丢任务状态的上下文压缩
@@ -180,14 +189,25 @@ CodeLoop 使用一条 canonical 压缩路径。它不会拆开 provider 原生�
 
 ### 3. 有边界的多 Agent 协作
 
-目前有四种 task 角色：
+生产环境支持三个 task 入口，并保留一个旧版兼容入口：
 
 | 角色 | 典型工作 | 生命周期 |
 | --- | --- | --- |
 | `explore` | 只读探索仓库 | 可通过 `spawn` / `poll` / `cancel` 异步运行。 |
 | `plan` | 只读分析与实现计划 | 可使用同一套异步生命周期。 |
-| `general` | 聚焦的实现或分析委派 | 同步执行，可以获得写工具。 |
-| `workflow` | 带版本协议的 review/decision 工作流 | 同步执行；裁决格式错误时 fail-closed。 |
+| `workflow` | 按需调度 Analyst、Executor、Reviewer、Adjudicator | 同步运行确定性调度和验证；通过后回写，父 Agent 继续剩余工作与结果汇总。 |
+| `general` | 旧版嵌入调用兼容；也是 Executor 的底层模型路由 | 生产主循环拒绝直接委派。 |
+
+Workflow 的角色权限和证据读取由宿主绑定；裁决者只能读取明确授权的路径和冻结证据。
+成功回写不代表整个用户目标完成，父 Agent 仍须处理剩余任务和异步结果；后续取消、
+超时或模型失败会保留提交回执，并说明剩余工作未完成。
+并发候选晋升时会在跨进程锁内复核完整父工作区基线，依赖已变化的候选必须重新执行。
+同步 `run` 和异步 `spawn` 共享只读委派失败熔断；两次连续失败后，本轮停止继续委派。
+
+结构化写入流程默认允许一次实现修复，宿主策略可设为 0–2 次。只有已完成的检查失败
+或满足条件的 Reviewer 修改意见才会回到 Executor；新补丁必须重新经过验证和所需审查。
+每轮保留独立证据，并撤销旧补丁的回写资格。权限、人工确认、基础设施故障和证据不足
+仍会停止流程；所有修复继续消耗同一份预算并服从原截止时间。
 
 每个子 Agent 与父 Agent 共享同一份 Turn 预算。通用结果使用
 `summary / files / risks / verification` 结构，完成事件携带稳定
@@ -348,7 +368,8 @@ GitHub Actions 会在 Linux、macOS、Windows 和 Python 3.11/3.12 矩阵上执�
 
 ## 诚实的限制
 
-- 60 例 Skill 门禁是冻结的离线路由合同，不调用远程 embedding，也不是 60 个真实项目任务；可选 Qwen embedding 路径不能据此宣传为 live benchmark。
+- 60 例 Skill 门禁和 96 例 joined 开发集都是冻结的离线合同，不调用远程 embedding，也不是盲测真实项目任务；可选 Qwen embedding 路径不能据此宣传为 live benchmark。
+- 语义意图 fallback 尚无仓库内真实生产纠错语料；内置置信度映射只是保守 bootstrap policy，明确不是 production-fit 校准。
 - 最强的效率数据来自合成仓库。它们在受控条件下证明了机制，但不是对所有真实编码任务的生产力承诺。
 - 路径恢复经验在已测范围内最成熟；命令恢复和验证规则证据较强；抽象项目约束在当前配对实验中仍是负结果。
 - V5 修复后的 provider 验收尚未执行。确定性测试已通过；最近完成的 V4 provider 运行是 7/10 case、84/91 oracle、10/10 精确 Memory 归因。

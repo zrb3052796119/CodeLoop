@@ -293,6 +293,7 @@ class TestOrchestratorInit:
         assert verifier_runtime["maxOutputTokens"] == 6000
         assert verifier_runtime["modelMaxRetries"] == 1
         assert verifier_runtime["modelTimeoutSeconds"] == 90
+        assert verifier_runtime["enableThinking"] is False
 
     def test_evidence_bound_deepseek_verifier_uses_its_own_transport(self, monkeypatch):
         pipeline = MagicMock()

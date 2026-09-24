@@ -1,0 +1,15 @@
+{
+  "all_frozen_files_unchanged": true,
+  "files": {
+    "minicode/tools/test_runner.py": {
+      "after_sha256": "a87b98b17990487d38677d7c968c04f36de8bbaaf8051b3d6a5dcaa83726a28c",
+      "unchanged": true
+    },
+    "tests/test_tools.py": {
+      "after_sha256": "5cda3a97ea5d9031c446204b242e350773109bf56942fedca46bffea081c4c74",
+      "unchanged": true
+    }
+  },
+  "status_after": " M minicode/tools/test_runner.py\n M tests/test_tools.py\n?? .minicode-memory-authority.lock\n",
+  "status_unchanged": true
+}

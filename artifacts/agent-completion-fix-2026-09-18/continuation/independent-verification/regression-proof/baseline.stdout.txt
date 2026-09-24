@@ -1,0 +1,25 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+____________ test_test_runner_runs_every_discovered_file_beyond_ten ____________
+/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-hw7z4qta/baseline/tests/test_tools.py:476: in test_test_runner_runs_every_discovered_file_beyond_ten
+    assert executed == discovered, "every discovered test file must be executed"
+E   AssertionError: every discovered test file must be executed
+E   assert ['test_mod_01...d_06.py', ...] == ['test_mod_01...d_06.py', ...]
+E     
+E     Right contains 2 more items, first extra item: 'test_mod_11.py'
+E     Use -v to get more diff
+_____________ test_test_runner_reports_failure_in_file_beyond_ten ______________
+/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-hw7z4qta/baseline/tests/test_tools.py:508: in test_test_runner_reports_failure_in_file_beyond_ten
+    assert result.ok is False
+E   AssertionError: assert True is False
+E    +  where True = ToolResult(ok=True, output='🧪 Test Runner\n============================================================\n\nFramework: ...waitUser=False, verification={'verificationVersion': 1, 'kind': 'tests', 'outcome': 'passed', 'source': 'test_runner'}).ok
+_______ test_test_runner_never_reports_pass_when_output_reports_failures _______
+/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-hw7z4qta/baseline/tests/test_tools.py:550: in test_test_runner_never_reports_pass_when_output_reports_failures
+    assert result.ok is False
+E   AssertionError: assert True is False
+E    +  where True = ToolResult(ok=True, output='🧪 Test Runner\n============================================================\n\nFramework: ...waitUser=False, verification={'verificationVersion': 1, 'kind': 'tests', 'outcome': 'passed', 'source': 'test_runner'}).ok
+=========================== short test summary info ============================
+FAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-hw7z4qta/baseline/tests/test_tools.py::test_test_runner_runs_every_discovered_file_beyond_ten
+FAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-hw7z4qta/baseline/tests/test_tools.py::test_test_runner_reports_failure_in_file_beyond_ten
+FAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-hw7z4qta/baseline/tests/test_tools.py::test_test_runner_never_reports_pass_when_output_reports_failures
+3 failed, 33 deselected in 0.55s

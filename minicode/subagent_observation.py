@@ -21,7 +21,16 @@ from minicode.run_events import emit_event_safely
 SUBAGENT_EVENT_TYPE = "subagent.completed"
 
 _AGENT_TYPES = frozenset({"explore", "plan", "general", "workflow"})
-_OUTCOMES = frozenset({"completed", "failed", "depth_rejected", "budget_exceeded"})
+_OUTCOMES = frozenset(
+    {
+        "completed",
+        "failed",
+        "depth_rejected",
+        "budget_exceeded",
+        "timed_out",
+        "cancelled",
+    }
+)
 _MAX_COUNT = 100_000
 _MAX_DURATION_MS = 86_400_000
 _SUBAGENT_ID_RE = re.compile(r"^sub_[0-9a-f]{32}$")
@@ -70,6 +79,14 @@ _V3_FIELDS = frozenset(
         "resultContractStatus",
     }
 )
+# v4 = v3 + ``resultPartial``: a soft-landed run exhausted its model-turn
+# limit and its summary comes from one tool-free closing turn. Its modelTurns
+# counts admitted provider calls, which in-step retries already inflate
+# beyond the step limit (pre-partial incident journals show 13-14 against a
+# limit of 12), so v4 deliberately keeps only the generic _MAX_COUNT bound
+# instead of v3's step-limit invariant. v1-v3 payloads keep their exact
+# shapes so stored journals written by older versions still normalize.
+_V4_FIELDS = frozenset(_V3_FIELDS | {"resultPartial"})
 
 
 def normalize_subagent_payload(
@@ -91,6 +108,8 @@ def normalize_subagent_payload(
         return _normalize_v2(payload)
     if payload.get("subagentVersion") == 3:
         return _normalize_v3(payload)
+    if payload.get("subagentVersion") == 4:
+        return _normalize_v4(payload)
     return None
 
 
@@ -270,6 +289,89 @@ def _normalize_v3(payload: Mapping[str, object]) -> dict[str, object] | None:
     }
 
 
+def _normalize_v4(payload: Mapping[str, object]) -> dict[str, object] | None:
+    """v3 plus the soft-landing marker, without the step-limit invariant.
+
+    ``modelTurns`` counts admitted provider calls; in-step retries (empty
+    responses, recoverable thinking, unfinished actions) already push it past
+    the step limit on ordinary runs, and a soft landing adds one closing
+    turn. The count stays bounded by ``_MAX_COUNT`` like every other field.
+    """
+    if set(payload) != _V4_FIELDS:
+        return None
+    subagent_id = payload.get("subagentId")
+    agent_type = payload.get("agentType")
+    outcome = payload.get("outcome")
+    model_turns = payload.get("modelTurns")
+    tool_calls = payload.get("toolCalls")
+    duration_ms = payload.get("durationMs")
+    model_turn_limit = payload.get("modelTurnLimit")
+    phase_count = payload.get("phaseCount")
+    max_phases = payload.get("maxPhases")
+    result_truncated = payload.get("resultTruncated")
+    result_contract_status = payload.get("resultContractStatus")
+    result_partial = payload.get("resultPartial")
+    required_counts = (
+        model_turns,
+        tool_calls,
+        duration_ms,
+        phase_count,
+        max_phases,
+    )
+    if (
+        not isinstance(subagent_id, str)
+        or _SUBAGENT_ID_RE.fullmatch(subagent_id) is None
+        or agent_type not in _AGENT_TYPES
+        or outcome not in _OUTCOMES
+        or any(
+            isinstance(value, bool)
+            or not isinstance(value, int)
+            or value < 0
+            for value in required_counts
+        )
+        or isinstance(model_turn_limit, bool)
+        or (
+            model_turn_limit is not None
+            and (
+                not isinstance(model_turn_limit, int)
+                or model_turn_limit < 0
+                or model_turn_limit > _MAX_COUNT
+            )
+        )
+        or any(
+            value > _MAX_COUNT
+            for value in (model_turns, tool_calls, phase_count, max_phases)
+        )
+        or duration_ms > _MAX_DURATION_MS
+        or max_phases < 1
+        or phase_count > max_phases
+        or not isinstance(result_truncated, bool)
+        or result_contract_status not in _RESULT_CONTRACT_STATUSES
+        # The marker is the reason v4 exists; a non-partial run stays on v3.
+        or result_partial is not True
+        or (
+            outcome == "completed"
+            and result_contract_status == "unavailable"
+        )
+    ):
+        return None
+    return {
+        "subagentVersion": 4,
+        "subagentId": subagent_id,
+        "agentType": agent_type,
+        "outcome": outcome,
+        "modelTurns": model_turns,
+        "toolCalls": tool_calls,
+        "durationMs": duration_ms,
+        "modelTurnLimit": model_turn_limit,
+        "phaseCount": phase_count,
+        "maxPhases": max_phases,
+        "resultTruncated": result_truncated,
+        "resultContractStatus": result_contract_status,
+        "resultPartial": True,
+    }
+
+
 def project_subagent_event(
     *,
     agent_type: str,
@@ -284,12 +386,17 @@ def project_subagent_event(
     result_truncated: bool,
     subagent_id: str | None = None,
     result_contract_status: str | None = None,
+    result_partial: bool = False,
 ) -> dict[str, object] | None:
     """Build a strict payload, preserving v1/v2 reader compatibility.
 
     Producers that provide parent-owned correlation fields get the unified v3
     schema. Omitting both fields retains the legacy v1/v2 projector for stored
-    journal replay and compatibility tests.
+    journal replay and compatibility tests. ``result_partial=True`` marks a
+    soft-landed run and upgrades the payload to v4, which drops v3's
+    step-limit invariant (in-step retries and the closing turn legitimately
+    push the provider-call count past the limit); non-partial runs stay on
+    v3.
     """
     if subagent_id is not None or result_contract_status is not None:
         if subagent_id is None or result_contract_status is None:
@@ -307,22 +414,33 @@ def project_subagent_event(
             projected_phase_count = 1 if outcome == "completed" else 0
             projected_max_phases = 1
             projected_model_limit = max_turns
-        return normalize_subagent_payload(
-            {
-                "subagentVersion": 3,
-                "subagentId": subagent_id,
-                "agentType": agent_type,
-                "outcome": outcome,
-                "modelTurns": model_turns,
-                "toolCalls": tool_calls,
-                "durationMs": duration_ms,
-                "modelTurnLimit": projected_model_limit,
-                "phaseCount": projected_phase_count,
-                "maxPhases": projected_max_phases,
-                "resultTruncated": result_truncated,
-                "resultContractStatus": result_contract_status,
-            }
-        )
+        v3_payload: dict[str, object] = {
+            "subagentVersion": 3,
+            "subagentId": subagent_id,
+            "agentType": agent_type,
+            "outcome": outcome,
+            "modelTurns": model_turns,
+            "toolCalls": tool_calls,
+            "durationMs": duration_ms,
+            "modelTurnLimit": projected_model_limit,
+            "phaseCount": projected_phase_count,
+            "maxPhases": projected_max_phases,
+            "resultTruncated": result_truncated,
+            "resultContractStatus": result_contract_status,
+        }
+        if result_partial:
+            # A workflow's phases soft-land individually; the workflow-level
+            # event has no single closing turn to account for.
+            if is_workflow:
+                return None
+            return normalize_subagent_payload(
+                {
+                    **v3_payload,
+                    "subagentVersion": 4,
+                    "resultPartial": True,
+                }
+            )
+        return normalize_subagent_payload(v3_payload)
     if phase_count is not None or max_phases is not None:
         if phase_count is None or max_phases is None or max_turns is not None:
             return None

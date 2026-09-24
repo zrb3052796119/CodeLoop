@@ -14,6 +14,7 @@ from typing import Any, Literal
 
 _TOOL_OPERATION_ID_RE = re.compile(r"^toolop_[0-9a-f]{32}$")
 _TOOL_NAME_RE = re.compile(r"^[A-Za-z0-9_.:-]{1,128}$")
+_MODEL_PURPOSE_RE = re.compile(r"^[a-z][a-z0-9_.:-]{0,79}$")
 _RUN_SOURCES = frozenset({"tui", "headless", "gateway", "unknown"})
 _MAX_EVENTS = 1_000
 _MAX_AGGREGATES = 100
@@ -98,6 +99,13 @@ def _tool_name(payload: Mapping[str, Any]) -> str | None:
     if isinstance(value, str) and _TOOL_NAME_RE.fullmatch(value):
         return value
     return None
+
+
+def _has_valid_optional_model_purpose(payload: Mapping[str, Any]) -> bool:
+    purpose = payload.get("purpose")
+    return "purpose" not in payload or (
+        isinstance(purpose, str) and _MODEL_PURPOSE_RE.fullmatch(purpose) is not None
+    )
 
 
 def _tool_counts(aggregate: ToolAggregate) -> dict[str, int]:
@@ -435,7 +443,13 @@ def aggregate_run_failures(
     lifecycle_observed = False
     model_observed = False
     model_id_re = re.compile(r"^modelop_[0-9a-f]{32}$")
-    failure_kinds = {"interrupted", "network", "timeout", "provider_error"}
+    failure_kinds = {
+        "budget_exhausted",
+        "interrupted",
+        "network",
+        "timeout",
+        "provider_error",
+    }
     lifecycle_types = {
         "run.queued",
         "run.started",
@@ -481,7 +495,10 @@ def aggregate_run_failures(
             )
             continue
         if event_type == "model.started":
-            if set(raw_payload) != {"operationId"}:
+            if (
+                not set(raw_payload).issubset({"operationId", "purpose"})
+                or not _has_valid_optional_model_purpose(raw_payload)
+            ):
                 invalid_events += 1
                 diagnostic(
                     "failure_event_invalid",
@@ -507,6 +524,13 @@ def aggregate_run_failures(
             )
             continue
         if event_type == "model.completed":
+            if not _has_valid_optional_model_purpose(raw_payload):
+                invalid_events += 1
+                diagnostic(
+                    "failure_event_invalid",
+                    "A malformed Model failure event was ignored.",
+                )
+                continue
             if state[0] == "started":
                 model_states[operation_id] = ("completed", None)
             elif state[0] == "completed":
@@ -528,8 +552,9 @@ def aggregate_run_failures(
         if (
             failure_kind not in failure_kinds
             or not set(raw_payload).issubset(
-                {"operationId", "failureKind", "durationMs"}
+                {"operationId", "failureKind", "durationMs", "purpose"}
             )
+            or not _has_valid_optional_model_purpose(raw_payload)
             or (
                 "durationMs" in raw_payload
                 and (

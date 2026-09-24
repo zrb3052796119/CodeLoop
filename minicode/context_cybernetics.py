@@ -54,6 +54,7 @@ if TYPE_CHECKING:
 
 from .context_compactor import (
     CompactStrategy,
+    CompactionMaterializationState,
     CompactionResult,
     ContextCompactor,
 )
@@ -662,6 +663,10 @@ class ContextCyberneticsOrchestrator:
         self._last_result: CompactionResult | None = None
         self._last_error_rate: float = 0.0
         self._last_avg_latency: float = 0.0
+        self._pending_materialization_feedback: dict[
+            str,
+            tuple[ControlAction, float, float],
+        ] = {}
 
     @property
     def last_action(self) -> ControlAction | None:
@@ -680,6 +685,57 @@ class ContextCyberneticsOrchestrator:
         reading = self.sensor.get_recent_readings(1)
         context_pressure = reading[0].usage_ratio if reading else 0.0
         self.threshold_mgr.update_coupling(context_pressure, error_rate, avg_latency)
+
+    def _record_compaction_feedback(
+        self,
+        action: ControlAction,
+        result: CompactionResult,
+        usage_before: float,
+        usage_after: float,
+    ) -> None:
+        self.feedback.record(action, result, usage_before, usage_after)
+        pid_adjustment = self.feedback.recommend_pid_adjustment()
+        if pid_adjustment:
+            self.pid.kd = min(1.0, self.pid.kd + pid_adjustment["kd_boost"])
+            self.pid.kp = max(0.5, self.pid.kp - pid_adjustment["kp_reduce"])
+
+    def finalize_materialization(
+        self,
+        result: CompactionResult,
+        *,
+        installed: bool,
+    ) -> bool:
+        """Feed a fenced compaction to the controller exactly once."""
+        receipt = result.memory_receipt
+        if receipt is None:
+            return False
+        state = result.materialization_state
+        if state not in {
+            CompactionMaterializationState.INSTALLED,
+            CompactionMaterializationState.REJECTED,
+        }:
+            return False
+        state_installed = state is CompactionMaterializationState.INSTALLED
+        if bool(installed) != state_installed:
+            return False
+        receipt_id = str(getattr(receipt, "receipt_id", "") or "")
+        pending_key = receipt_id or f"legacy-object-{id(receipt)}"
+        pending = self._pending_materialization_feedback.pop(
+            pending_key,
+            None,
+        )
+        if pending is None:
+            return False
+        action, usage_before, candidate_usage_after = pending
+        if not state_installed:
+            result.success = False
+        self._record_compaction_feedback(
+            action,
+            result,
+            usage_before,
+            candidate_usage_after if state_installed else usage_before,
+        )
+        return True
 
     def run_cycle(
         self,
@@ -751,12 +807,35 @@ class ContextCyberneticsOrchestrator:
         # dragged effectiveness_rate down and made the outer loop misread a
         # stable system as degrading.
         if result is not None:
-            self.feedback.record(action, result, reading.usage_ratio, usage_after)
-
-        pid_adjustment = self.feedback.recommend_pid_adjustment()
-        if pid_adjustment:
-            self.pid.kd = min(1.0, self.pid.kd + pid_adjustment["kd_boost"])
-            self.pid.kp = max(0.5, self.pid.kp - pid_adjustment["kp_reduce"])
+            if (
+                result.materialization_state
+                is CompactionMaterializationState.PENDING
+                and result.memory_receipt is not None
+            ):
+                # The returned messages are only a candidate until the agent
+                # atomically revalidates and installs the Memory receipt.
+                # Bound the pending map for callers that abandon candidates.
+                if len(self._pending_materialization_feedback) >= 16:
+                    oldest_key = next(iter(self._pending_materialization_feedback))
+                    self._pending_materialization_feedback.pop(oldest_key, None)
+                receipt_id = str(
+                    getattr(result.memory_receipt, "receipt_id", "") or ""
+                )
+                pending_key = receipt_id or (
+                    f"legacy-object-{id(result.memory_receipt)}"
+                )
+                self._pending_materialization_feedback[pending_key] = (
+                    action,
+                    reading.usage_ratio,
+                    usage_after,
+                )
+            else:
+                self._record_compaction_feedback(
+                    action,
+                    result,
+                    reading.usage_ratio,
+                    usage_after,
+                )
 
         self._last_action = action
         self._last_result = result

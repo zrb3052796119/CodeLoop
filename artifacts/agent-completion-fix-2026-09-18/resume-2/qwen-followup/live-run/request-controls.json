@@ -1,0 +1,9 @@
+{
+  "model": "qwen3.7-max",
+  "provider": "custom",
+  "maxOutputTokens": 8192,
+  "modelTimeoutSeconds": 180,
+  "modelMaxRetries": 1,
+  "enableThinking": null,
+  "temperature": null
+}

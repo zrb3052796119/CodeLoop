@@ -24,8 +24,8 @@
     "precision-positive-multilingual-recovery-102",
     "precision-positive-lock-recovery-103",
     "precision-positive-two-verifications-104",
-    "precision-positive-gap-recovery-105",
-    "precision-positive-gap-recovery-106",
+    "precision-positive-root-cause-107",
+    "precision-positive-multiple-errors-111",
     "precision-positive-cross-decision-110"
   ]
 }

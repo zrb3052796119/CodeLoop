@@ -73,3 +73,45 @@ The equivalent `settings.json` shape is:
 Environment variables take precedence over settings. Child prompts, selected
 memory, and tool results are sent to the configured remote model, so enable
 the route only for workspaces whose data policy permits that transfer.
+
+## General-subagent budget isolation
+
+Write-capable `general` agents run in a separate process so the parent can
+terminate a blocked provider call. A Python budget object cannot be shared
+across that boundary. Before spawning the worker, the parent atomically
+reserves a finite lease from the shared turn budget (model calls, tokens, and
+cost), while retaining one parent model call. Concurrent workers therefore
+cannot each observe and spend the same remaining balance. Even when the
+parent budget has unbounded fields, the child lease uses finite runtime
+defaults.
+
+The worker strictly validates the parent-generated lease and constructs its
+local budget from those limits; semantic intent classification, Skill
+routing, and Agent execution all consume that one allowance. On a normal
+result, the child returns only content-free usage counters, the matching lease
+ID, and a parent-generated random nonce. The parent checks the nonce, result
+status/version, model-turn lower bound, and all usage ceilings before settling
+the lease once. This prevents stale receipts from another Turn from matching a
+new numeric lease ID. Prompt text, model output, and exceptions are not part of
+the receipt.
+
+If the process is hard-killed, exits without a result, or returns a missing,
+malformed, replayed, mismatched, or over-limit receipt, the parent
+conservatively charges the entire reserved lease. It does the same when the
+child still has an active model-call reservation or a transmitted request has
+no authoritative provider usage/cost receipt. Exact settlement requires both
+provider-reported token counts and a price from the versioned catalog;
+estimated counts or an unpriced model therefore receive the full lease charge.
+This may overstate actual usage, but it prevents unobservable subprocess work
+from escaping the parent turn budget.
+
+The worker process is trusted runtime code, not a security boundary against a
+hostile process running as the same OS user. The nonce protects against stale
+or accidentally crossed result files; it cannot attest usage against a child
+that can read its own request and deliberately forge its own result. A threat
+model that treats the child itself as hostile must either charge every lease in
+full or broker provider calls and accounting in the parent process.
+As with the parent budget itself, token and price totals are known only after
+a provider response; the lease is an admission/accounting ceiling, not a
+guarantee that one already-admitted provider response cannot report an
+over-limit output or external charge.

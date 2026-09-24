@@ -23,14 +23,28 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from minicode.concurrent_tool_terminal import (
     CONCURRENT_TOOL_TERMINAL_EVENT_TYPE,
     normalize_concurrent_tool_terminal,
 )
+from minicode.curator_schedule import curator_completion_id
 from minicode.config import MINI_CODE_DIR
 from minicode.mcp_event_contract import normalize_mcp_runtime_payload
+from minicode.memory_persistence_event import (
+    MEMORY_PERSISTENCE_FAILURE_EVENT_TYPE,
+    normalize_memory_persistence_failure,
+)
+from minicode.memory_provenance import (
+    MAX_MEMORY_PROVENANCE_BATCHES,
+    MAX_MEMORY_PROVENANCE_VERSIONS,
+    MEMORY_PROVENANCE_COVERAGE,
+    MEMORY_PROVENANCE_EFFECTS,
+    MemoryProvenanceBatch,
+    is_memory_entry_id,
+)
+from minicode.memory_store import MemoryStoreCoordinator
 from minicode.permission_event_contract import (
     PERMISSION_EVENT_TYPES,
     normalize_permission_event_payload,
@@ -121,12 +135,15 @@ EVENT_TYPES = frozenset(
         "assistant.completed",
         "task.outcome",
         "execution.stopped",
+        "execution.steps_extended",
+        "execution.completion_limited",
         VERIFICATION_EVENT_TYPE,
         "skill.routed",
         "skill.loaded",
         "skill.attributed",
         "memory.retrieved",
         "memory.rendered",
+        MEMORY_PERSISTENCE_FAILURE_EVENT_TYPE,
         "working_memory.observed",
         "context.compacted",
         "context.compaction.failed",
@@ -205,8 +222,30 @@ _USER_SIGNAL_SOURCE = "explicit_user_action"
 _MAX_RENDERED_MEMORY_IDS = 20
 _MAX_RENDERED_MEMORY_BYTES = 4_096
 _RENDERED_MEMORY_FILE = "memory_rendered.json"
+_MAX_RENDERED_MEMORY_VERSIONS = MAX_MEMORY_PROVENANCE_VERSIONS
+_MAX_MEMORY_MATERIALIZATIONS_PER_RUN = 512
+# The hard pair/record limits encode below 1.1 MiB at their maximum shape;
+# retain bounded headroom for JSON field names without making reads unbounded.
+_MAX_RENDERED_MEMORY_VERSION_BYTES = 2 * 1024 * 1024
+_RENDERED_MEMORY_VERSION_FILE = "memory_rendered_versions.json"
+_WRITTEN_MEMORY_VERSION_FILE = "memory_written_versions.json"
+_LEGACY_MEMORY_MATERIALIZATION_SIDECAR_VERSION = 1
+_MEMORY_MATERIALIZATION_SIDECAR_VERSION = 2
+# Must match MemoryManager's `_approval_hash_for_entry` authority payload.
+_MEMORY_AUTHORITY_DIGEST_SCHEMA = "memory-approval-content-sha256-v1"
 _WRITTEN_MEMORY_FILE = "memory_written.json"
-_MEMORY_ENTRY_ID_RE = re.compile(r"^(user|project|local)-[0-9]{1,20}-[0-9a-f]{8}$")
+_CURATOR_RECEIPT_FILE = "curator_receipt.json"
+_MAX_CURATOR_RECEIPT_BYTES = 512
+_CURATOR_OUTBOX_VERSION = 3
+_READABLE_CURATOR_OUTBOX_VERSIONS = frozenset({2, 3})
+_READABLE_CURATOR_RECEIPT_VERSIONS = frozenset({1, 2, 3})
+_CURATOR_RECEIPT_SOURCES = frozenset({"tui", "headless"})
+_CURATOR_RECEIPT_STATES = frozenset(
+    {"inactive", "pending", "delivering", "recorded", "settled"}
+)
+_MEMORY_AUTHORITY_DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
+_SUBAGENT_ID_RE = re.compile(r"^sub_[0-9a-f]{32}$")
+_MEMORY_PROVENANCE_ACTOR_KINDS = frozenset({"run_root", "subagent"})
 
 
 def _utc_now() -> datetime:
@@ -223,6 +262,17 @@ def _iso_time(value: datetime) -> str:
     return value.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace(
         "+00:00", "Z"
     )
+
+
+def _datetime_ms(value: object) -> int:
+    if not isinstance(value, datetime):
+        raise RunJournalValidationError("Run clock is invalid.")
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    milliseconds = int(value.astimezone(timezone.utc).timestamp() * 1000)
+    if not 0 <= milliseconds <= 99_999_999_999_999:
+        raise RunJournalValidationError("Run clock is out of range.")
+    return milliseconds
 
 
 def _parse_time(value: str) -> datetime:
@@ -343,6 +393,13 @@ def _sanitize_event_payload(event_type: str, payload: Mapping[str, Any] | None) 
                 "Verification event payload is invalid."
             )
         return normalized_verification
+    if event_type == MEMORY_PERSISTENCE_FAILURE_EVENT_TYPE:
+        normalized_memory_failure = normalize_memory_persistence_failure(sanitized)
+        if normalized_memory_failure is None:
+            raise RunJournalValidationError(
+                "Memory persistence failure payload is invalid."
+            )
+        return normalized_memory_failure
     return sanitized
 
 
@@ -369,9 +426,146 @@ def _normalize_rendered_memory_ids(entry_ids: object) -> tuple[str, ...]:
     if len(deduped) > _MAX_RENDERED_MEMORY_IDS:
         raise RunJournalValidationError("Too many rendered Memory IDs.")
     for entry_id in deduped:
-        if not isinstance(entry_id, str) or not _MEMORY_ENTRY_ID_RE.fullmatch(entry_id):
+        if not is_memory_entry_id(entry_id):
             raise RunJournalValidationError("Rendered Memory ID is invalid.")
     return deduped
+
+
+def _normalize_rendered_memory_versions(
+    versions: object,
+    *,
+    max_versions: int = _MAX_RENDERED_MEMORY_VERSIONS,
+) -> tuple[tuple[str, str], ...]:
+    """Validate bounded `(entry_id, authority_digest)` materializations."""
+    if not isinstance(versions, (list, tuple)):
+        raise RunJournalValidationError(
+            "Rendered Memory versions must be a list."
+        )
+    normalized: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for raw_version in versions:
+        if not isinstance(raw_version, (list, tuple)) or len(raw_version) != 2:
+            raise RunJournalValidationError(
+                "Rendered Memory version is invalid."
+            )
+        entry_id, digest = raw_version
+        if (
+            not is_memory_entry_id(entry_id)
+            or not isinstance(digest, str)
+            or not _MEMORY_AUTHORITY_DIGEST_RE.fullmatch(digest)
+        ):
+            raise RunJournalValidationError(
+                "Rendered Memory version is invalid."
+            )
+        version = (entry_id, digest)
+        if version not in seen:
+            seen.add(version)
+            normalized.append(version)
+    if len(normalized) > max_versions:
+        raise RunJournalValidationError("Too many rendered Memory versions.")
+    return tuple(normalized)
+
+
+def _normalize_memory_provenance_actor(
+    actor_kind: object,
+    subagent_id: object,
+) -> "RunMemoryProvenanceActor":
+    if not isinstance(actor_kind, str) or actor_kind not in _MEMORY_PROVENANCE_ACTOR_KINDS:
+        raise RunJournalValidationError("Memory provenance actor kind is invalid.")
+    if actor_kind == "run_root":
+        if subagent_id is not None:
+            raise RunJournalValidationError(
+                "Run-root Memory provenance cannot name a sub-agent."
+            )
+        return RunMemoryProvenanceActor(kind=actor_kind)
+    if not isinstance(subagent_id, str) or not _SUBAGENT_ID_RE.fullmatch(subagent_id):
+        raise RunJournalValidationError("Memory provenance sub-agent ID is invalid.")
+    return RunMemoryProvenanceActor(
+        kind=actor_kind,
+        subagent_id=subagent_id,
+    )
+
+
+def _memory_provenance_record_to_dict(
+    record: "RunMemoryProvenanceRecord",
+) -> dict[str, object]:
+    actor: dict[str, object] = {"kind": record.actor.kind}
+    if record.actor.subagent_id is not None:
+        actor["subagentId"] = record.actor.subagent_id
+    return {"actor": actor, "batch": record.batch.to_dict()}
+
+
+def _memory_provenance_record_from_dict(
+    value: object,
+) -> "RunMemoryProvenanceRecord":
+    if not isinstance(value, dict) or set(value) != {"actor", "batch"}:
+        raise ValueError("invalid Memory provenance record")
+    raw_actor = value.get("actor")
+    if not isinstance(raw_actor, dict):
+        raise ValueError("invalid Memory provenance actor")
+    fields = set(raw_actor)
+    if fields == {"kind"}:
+        actor = _normalize_memory_provenance_actor(raw_actor.get("kind"), None)
+    elif fields == {"kind", "subagentId"}:
+        actor = _normalize_memory_provenance_actor(
+            raw_actor.get("kind"),
+            raw_actor.get("subagentId"),
+        )
+    else:
+        raise ValueError("invalid Memory provenance actor")
+    return RunMemoryProvenanceRecord(
+        actor=actor,
+        batch=MemoryProvenanceBatch.from_dict(value.get("batch")),
+    )
+
+
+def _memory_provenance_identity_overlaps(
+    left: MemoryProvenanceBatch,
+    right: MemoryProvenanceBatch,
+) -> bool:
+    return bool(
+        left.receipt_id is not None
+        and left.receipt_id == right.receipt_id
+    ) or bool(
+        left.context_operation_id is not None
+        and left.context_operation_id == right.context_operation_id
+    )
+
+
+def _is_bounded_partial_replay(
+    prior: "RunMemoryProvenanceRecord",
+    batch: MemoryProvenanceBatch,
+    materializations: set[tuple[str, str]],
+) -> bool:
+    """Recognize a retry of a batch previously truncated at the Run cap.
+
+    Once coverage is partial, payload outside the bounded projection cannot
+    be distinguished or trusted.  The representable prefix and every scalar
+    operation identity must still match exactly.
+    """
+    prior_batch = prior.batch
+    return (
+        prior_batch.coverage == "partial"
+        and prior_batch.effect == batch.effect
+        and prior_batch.origin == batch.origin
+        and prior_batch.receipt_id == batch.receipt_id
+        and prior_batch.context_operation_id == batch.context_operation_id
+        and prior_batch.authority_versions
+        == tuple(
+            version
+            for version in batch.authority_versions
+            if version in materializations
+        )
+        and len(prior_batch.authority_versions) < len(batch.authority_versions)
+    )
+
+
+def _memory_provenance_storage(effect: object) -> tuple[str, str]:
+    if not isinstance(effect, str) or effect not in MEMORY_PROVENANCE_EFFECTS:
+        raise RunJournalValidationError("Memory provenance effect is invalid.")
+    if effect == "rendered":
+        return _RENDERED_MEMORY_VERSION_FILE, "Rendered"
+    return _WRITTEN_MEMORY_VERSION_FILE, "Written"
 
 
 class RunJournalError(RuntimeError):
@@ -400,6 +594,47 @@ class RunJournalStorageError(RunJournalError):
 
 class RunJournalUserSignalConflictError(RunJournalError):
     """Raised when an immutable Run already has a different user signal."""
+
+
+class RunJournalMemoryProvenanceConflictError(RunJournalError):
+    """Raised when one actor reuses an operation identity for new evidence."""
+
+
+@dataclass(frozen=True, slots=True)
+class RunMemoryProvenanceActor:
+    """Content-free identity of the Run participant reporting one batch."""
+
+    kind: str
+    subagent_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RunMemoryProvenanceRecord:
+    """One strictly decoded actor-bound provenance batch."""
+
+    actor: RunMemoryProvenanceActor
+    batch: MemoryProvenanceBatch
+
+
+@dataclass(frozen=True, slots=True)
+class RunMemoryProvenanceSnapshot:
+    """Bounded, content-free provenance state for one Run effect."""
+
+    effect: str
+    materializations: tuple[tuple[str, str], ...]
+    records: tuple[RunMemoryProvenanceRecord, ...]
+    coverage: str
+
+
+@dataclass(frozen=True, slots=True)
+class _MemoryVersionSidecar:
+    """Canonical in-memory form shared by legacy v1 and current v2."""
+
+    schema_version: int
+    effect: str
+    materializations: tuple[tuple[str, str], ...]
+    records: tuple[RunMemoryProvenanceRecord, ...]
+    coverage: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -461,10 +696,11 @@ class RunRecord:
     last_sequence: int
     event_count: int
     error_count: int
+    curator_outbox_version: int | None = None
     metadata: dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "schemaVersion": self.schema_version,
             "id": self.id,
             "workspaceId": self.workspace_id,
@@ -481,6 +717,9 @@ class RunRecord:
             "errorCount": self.error_count,
             "metadata": dict(self.metadata),
         }
+        if self.curator_outbox_version is not None:
+            payload["curatorOutboxVersion"] = self.curator_outbox_version
+        return payload
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> "RunRecord":
@@ -498,6 +737,7 @@ class RunRecord:
         )
         optional_times = (raw.get("startedAt"), raw.get("completedAt"))
         counts = (raw.get("lastSequence"), raw.get("eventCount"), raw.get("errorCount"))
+        curator_outbox_version = raw.get("curatorOutboxVersion")
         if (
             not isinstance(run_id, str)
             or not _RUN_ID_RE.fullmatch(run_id)
@@ -511,6 +751,15 @@ class RunRecord:
             or any(not isinstance(item, str) for item in timestamps)
             or any(item is not None and not isinstance(item, str) for item in optional_times)
             or any(isinstance(item, bool) or not isinstance(item, int) or item < 0 for item in counts)
+            or (
+                curator_outbox_version is not None
+                and (
+                    isinstance(curator_outbox_version, bool)
+                    or curator_outbox_version
+                    not in _READABLE_CURATOR_OUTBOX_VERSIONS
+                    or source not in _CURATOR_RECEIPT_SOURCES
+                )
+            )
         ):
             raise ValueError("invalid RunRecord")
         for timestamp in (*timestamps, *(item for item in optional_times if item is not None)):
@@ -531,6 +780,7 @@ class RunRecord:
             last_sequence=counts[0],
             event_count=counts[1],
             error_count=counts[2],
+            curator_outbox_version=curator_outbox_version,
             metadata=metadata,
         )
 
@@ -633,6 +883,23 @@ class RetentionResult:
 
 
 @dataclass(frozen=True, slots=True)
+class CuratorCompletionScan:
+    """Bounded, content-free view of the durable CLI curator outbox.
+
+    ``exhaustive=False`` means at least one potential obligation was unsafe or
+    fell beyond the bounded Run scan. Consumers may deliver ``items`` but must
+    not advance newer receipts until a later scan is exhaustive.
+    """
+
+    items: tuple[tuple[str, str], ...]
+    exhaustive: bool
+    diagnostics: tuple[str, ...] = ()
+    # Producer acknowledgements that still need the scheduler pin released.
+    # They are separate from delivery items so reconciliation never recounts.
+    release_items: tuple[tuple[str, str], ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class RunDeletionSnapshot:
     """Content-free records relevant to one Session deletion plan."""
 
@@ -665,7 +932,11 @@ class RunJournal:
             / self.workspace_id
             / "runs"
         )
-        if isinstance(max_runs, bool) or not isinstance(max_runs, int) or max_runs < 1:
+        if (
+            isinstance(max_runs, bool)
+            or not isinstance(max_runs, int)
+            or not 1 <= max_runs <= _MAX_RUNS_SCANNED
+        ):
             raise RunJournalValidationError("max_runs is invalid.")
         if max_total_bytes is not None and (
             isinstance(max_total_bytes, bool)
@@ -684,6 +955,10 @@ class RunJournal:
         self._clock = clock
         self._writers: dict[str, tuple[str, int]] = {}
         self._writer_mutexes: dict[str, threading.Lock] = {}
+        self._curator_delivery_coordinator = MemoryStoreCoordinator(
+            self.workspace / ".mini-code-memory",
+            lock_name=".curator-delivery.lock",
+        )
 
     @_conversation_fenced_run_create
     def create_run(
@@ -742,6 +1017,10 @@ class RunJournal:
                 last_sequence=0,
                 event_count=0,
                 error_count=0,
+                # Publish outbox capability only after its inactive receipt is
+                # durable. A crash before that point leaves an ordinary queued
+                # Run, not an impossible marker-without-sidecar obligation.
+                curator_outbox_version=None,
                 metadata=safe_metadata,
             )
             self._write_metadata(run_dir, initial)
@@ -749,6 +1028,23 @@ class RunJournal:
             self._append_event_line(run_dir, event)
             record = replace(initial, last_sequence=1, event_count=1)
             self._write_metadata(run_dir, record)
+            if source in _CURATOR_RECEIPT_SOURCES:
+                completion_id = curator_completion_id(run_id)
+                if completion_id is None:  # closed-format run_id invariant
+                    raise RunJournalStorageError(
+                        "Curator completion identity is unavailable."
+                    )
+                self._write_curator_receipt(
+                    run_dir,
+                    completion_id=completion_id,
+                    state="inactive",
+                    prepared_at_ms=0,
+                )
+                record = replace(
+                    record,
+                    curator_outbox_version=_CURATOR_OUTBOX_VERSION,
+                )
+                self._write_metadata(run_dir, record)
         except Exception:
             self._writers.pop(run_id, None)
             self._writer_mutexes.pop(run_id, None)
@@ -760,6 +1056,290 @@ class RunJournal:
         self._validate_run_id(run_id)
         record, _ = self._read_run(run_id)
         return record
+
+    def pending_curator_completions(
+        self,
+        *,
+        limit: int = 1_000,
+    ) -> tuple[tuple[str, str], ...]:
+        """Compatibility view of replayable content-free CLI receipts."""
+
+        return self.scan_pending_curator_completions(limit=limit).items
+
+    def scan_pending_curator_completions(
+        self,
+        *,
+        limit: int = 1_000,
+    ) -> CuratorCompletionScan:
+        """Return pending receipts plus proof that the bounded scan completed."""
+
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not 1 <= limit <= 1_000
+        ):
+            raise RunJournalValidationError(
+                "Curator completion limit is invalid."
+            )
+        if not self._runs_root.exists():
+            return CuratorCompletionScan((), True)
+        try:
+            root = self._runs_root.resolve(strict=True)
+            if self._runs_root.is_symlink() or not root.is_relative_to(
+                self._data_root
+            ):
+                raise OSError("unsafe Run root")
+            entries, limited = self._bounded_run_entries(root)
+        except Exception as error:
+            raise RunJournalStorageError(
+                "Curator completion storage is unavailable."
+            ) from error
+        pending_candidates: list[tuple[int, int, str, str, str]] = []
+        release_candidates: list[tuple[int, str, str, str]] = []
+        diagnostics: set[str] = set()
+        exhaustive = not limited
+        if limited:
+            diagnostics.add("run_scan_limited")
+        for directory in entries:
+            if directory.is_symlink() or not directory.is_dir():
+                exhaustive = False
+                diagnostics.add("run_path_unsafe")
+                continue
+            record, record_diagnostics = self._read_run(directory.name)
+            if record is None:
+                # A corrupt legacy/non-CLI Run without a receipt is unrelated
+                # to this outbox. A receipt-shaped artifact cannot be safely
+                # classified and therefore blocks the exhaustive proof.
+                try:
+                    os.lstat(directory / _CURATOR_RECEIPT_FILE)
+                except FileNotFoundError:
+                    pass
+                except OSError:
+                    exhaustive = False
+                    diagnostics.add("run_record_invalid")
+                else:
+                    exhaustive = False
+                    diagnostics.add("run_record_invalid")
+                continue
+            if record_diagnostics:
+                diagnostics.add("run_record_recovered")
+            if record.source not in _CURATOR_RECEIPT_SOURCES:
+                continue
+            try:
+                receipt = self._read_curator_receipt(directory)
+            except RunJournalStorageError:
+                # Healthy items still drain, but this obligation prevents a
+                # false "outbox empty" result and is protected by retention.
+                exhaustive = False
+                diagnostics.add("curator_receipt_invalid")
+                continue
+            if receipt is None:
+                if record.curator_outbox_version is not None:
+                    exhaustive = False
+                    diagnostics.add("curator_receipt_missing")
+                continue
+            expected = curator_completion_id(record.id)
+            if receipt[0] != expected:
+                exhaustive = False
+                diagnostics.add("curator_receipt_identity_mismatch")
+                continue
+            if receipt[1] != "inactive" and record.status == "queued":
+                exhaustive = False
+                diagnostics.add("curator_receipt_invalid_state")
+                continue
+            if receipt[1] in {"pending", "delivering"}:
+                pending_candidates.append(
+                    (
+                        0 if receipt[1] == "delivering" else 1,
+                        receipt[2],
+                        record.created_at,
+                        record.id,
+                        receipt[0],
+                    )
+                )
+            elif receipt[1] == "recorded" and receipt[3] == 3:
+                release_candidates.append(
+                    (
+                        receipt[2],
+                        record.created_at,
+                        record.id,
+                        receipt[0],
+                    )
+                )
+        pending_candidates.sort()
+        release_candidates.sort()
+        if len(pending_candidates) > limit:
+            exhaustive = False
+            diagnostics.add("curator_receipt_page_limited")
+        if len(release_candidates) > limit:
+            exhaustive = False
+            diagnostics.add("curator_release_page_limited")
+        pending = tuple(
+            (run_id, completion_id)
+            for _priority, _prepared, _created, run_id, completion_id in (
+                pending_candidates[:limit]
+            )
+        )
+        return CuratorCompletionScan(
+            items=pending,
+            exhaustive=exhaustive,
+            diagnostics=tuple(sorted(diagnostics)),
+            release_items=tuple(
+                (run_id, completion_id)
+                for _prepared, _created, run_id, completion_id in (
+                    release_candidates[:limit]
+                )
+            ),
+        )
+
+    def prepare_curator_completion(
+        self,
+        run_id: str,
+        completion_id: str,
+    ) -> bool | Literal["settled"] | None:
+        """Activate this owned Run's outbox before scheduler delivery.
+
+        ``None`` means this Run source intentionally has no CLI outbox;
+        ``False`` means an expected outbox could not be activated.
+        """
+
+        self._validate_run_id(run_id)
+        if completion_id != curator_completion_id(run_id):
+            raise RunJournalValidationError(
+                "Curator completion identity is invalid."
+            )
+        record, _diagnostics = self._read_run(run_id)
+        if record is None:
+            return False
+        if record.source not in _CURATOR_RECEIPT_SOURCES:
+            return None
+        if record.status not in {"running", "cancel_requested"}:
+            return False
+        run_dir = self._run_directory(run_id, must_exist=True)
+        mutex = self._writer_mutexes.get(run_id)
+        if mutex is None:
+            return False
+        with mutex:
+            self._require_writer(run_id, run_dir)
+            receipt = self._read_curator_receipt(run_dir)
+            if receipt is None or receipt[0] != completion_id:
+                return False
+            if receipt[1] == "settled" or (
+                receipt[1] == "recorded" and receipt[3] < 3
+            ):
+                return "settled"
+            if receipt[1] in {"pending", "delivering", "recorded"}:
+                return True
+            self._write_curator_receipt(
+                run_dir,
+                completion_id=completion_id,
+                state="pending",
+                prepared_at_ms=_datetime_ms(self._clock()),
+            )
+            return True
+
+    def acknowledge_curator_completion(
+        self,
+        run_id: str,
+        completion_id: str,
+    ) -> bool:
+        """Mark one scheduler delivery durable for a current or terminal Run."""
+
+        self._validate_run_id(run_id)
+        expected = curator_completion_id(run_id)
+        if completion_id != expected:
+            raise RunJournalValidationError(
+                "Curator completion identity is invalid."
+            )
+        with self._curator_delivery_coordinator.transaction():
+            record, _diagnostics = self._read_run(run_id)
+            if (
+                record is None
+                or record.source not in _CURATOR_RECEIPT_SOURCES
+                or record.status == "queued"
+            ):
+                return False
+            run_dir = self._run_directory(run_id, must_exist=True)
+            mutex = self._writer_mutexes.get(run_id)
+            if mutex is not None:
+                with mutex:
+                    self._require_writer(run_id, run_dir)
+                    return self._acknowledge_curator_receipt_locked(
+                        run_dir,
+                        completion_id,
+                    )
+            return self._acknowledge_curator_receipt_locked(
+                run_dir,
+                completion_id,
+            )
+
+    def begin_curator_completion_delivery(
+        self,
+        run_id: str,
+        completion_id: str,
+    ) -> bool:
+        """Durably mark one receipt in-flight before scheduler delivery."""
+
+        self._validate_run_id(run_id)
+        if completion_id != curator_completion_id(run_id):
+            raise RunJournalValidationError(
+                "Curator completion identity is invalid."
+            )
+        with self._curator_delivery_coordinator.transaction():
+            record, _diagnostics = self._read_run(run_id)
+            if (
+                record is None
+                or record.source not in _CURATOR_RECEIPT_SOURCES
+                or record.status == "queued"
+            ):
+                return False
+            run_dir = self._run_directory(run_id, must_exist=True)
+            mutex = self._writer_mutexes.get(run_id)
+            if mutex is not None:
+                with mutex:
+                    self._require_writer(run_id, run_dir)
+                    return self._begin_curator_receipt_delivery_locked(
+                        run_dir,
+                        completion_id,
+                    )
+            return self._begin_curator_receipt_delivery_locked(
+                run_dir,
+                completion_id,
+            )
+
+    def settle_curator_completion(
+        self,
+        run_id: str,
+        completion_id: str,
+    ) -> bool:
+        """Mark the producer receipt deletable after scheduler pin release."""
+
+        self._validate_run_id(run_id)
+        if completion_id != curator_completion_id(run_id):
+            raise RunJournalValidationError(
+                "Curator completion identity is invalid."
+            )
+        with self._curator_delivery_coordinator.transaction():
+            record, _diagnostics = self._read_run(run_id)
+            if (
+                record is None
+                or record.source not in _CURATOR_RECEIPT_SOURCES
+                or record.status == "queued"
+            ):
+                return False
+            run_dir = self._run_directory(run_id, must_exist=True)
+            mutex = self._writer_mutexes.get(run_id)
+            if mutex is not None:
+                with mutex:
+                    self._require_writer(run_id, run_dir)
+                    return self._settle_curator_receipt_locked(
+                        run_dir,
+                        completion_id,
+                    )
+            return self._settle_curator_receipt_locked(
+                run_dir,
+                completion_id,
+            )
 
     def get_user_signal(self, run_id: str) -> RunUserSignal | None:
         """Read one immutable content-free post-terminal user action."""
@@ -883,7 +1463,18 @@ class RunJournal:
                 pass
             except OSError:
                 diagnostics.add("run_writer_invalid")
-            if record.status in TERMINAL_STATUSES and not writer_present:
+            try:
+                curator_receipt_blocks_deletion = (
+                    self._curator_receipt_blocks_deletion(record, entry)
+                )
+            except RunJournalStorageError:
+                diagnostics.add("curator_receipt_invalid")
+                continue
+            if (
+                record.status in TERMINAL_STATUSES
+                and not writer_present
+                and not curator_receipt_blocks_deletion
+            ):
                 terminal.append(record)
             else:
                 active.append(record)
@@ -913,6 +1504,10 @@ class RunJournal:
                     or current.session_id != session_id
                     or current.status not in TERMINAL_STATUSES
                     or (directory / ".writer.lock").exists()
+                    or self._curator_receipt_blocks_deletion(
+                        current,
+                        directory,
+                    )
                 ):
                     raise RunJournalStorageError(
                         "Run changed during deletion."
@@ -934,6 +1529,30 @@ class RunJournal:
         if deleted:
             self._refresh_index_best_effort()
         return deleted
+
+    def _curator_receipt_blocks_deletion(
+        self,
+        record: RunRecord,
+        directory: Path,
+    ) -> bool:
+        """Return whether a Run still carries a live curator obligation."""
+
+        if record.source not in _CURATOR_RECEIPT_SOURCES:
+            return False
+        receipt = self._read_curator_receipt(directory)
+        if receipt is None:
+            if record.curator_outbox_version is not None:
+                raise RunJournalStorageError(
+                    "Expected curator completion receipt is missing."
+                )
+            return False
+        if receipt[0] != curator_completion_id(record.id):
+            raise RunJournalStorageError(
+                "Curator completion receipt identity is invalid."
+            )
+        return receipt[1] in {"pending", "delivering"} or (
+            receipt[1] == "recorded" and receipt[3] == 3
+        )
 
     def list_runs(
         self,
@@ -1130,15 +1749,52 @@ class RunJournal:
             )
 
     def get_rendered_memory_ids(self, run_id: str) -> tuple[str, ...] | None:
-        """Read the content-free rendered Memory entry IDs for this Run."""
+        """Read rendered IDs, preferring the authoritative version sidecar."""
         self._validate_run_id(run_id)
         record, _ = self._read_run(run_id)
         if record is None:
             raise RunJournalNotFoundError("Run was not found.")
         run_dir = self._run_directory(run_id, must_exist=True)
+        versions = self._read_memory_version_sidecar(
+            run_dir,
+            _RENDERED_MEMORY_VERSION_FILE,
+            "Rendered",
+        )
+        if versions is not None:
+            return tuple(
+                dict.fromkeys(
+                    entry_id
+                    for entry_id, _digest in versions.materializations
+                )
+            )
         return self._read_memory_id_sidecar(
             run_dir, _RENDERED_MEMORY_FILE, "Rendered"
         )
+
+    def record_rendered_memory_versions(
+        self,
+        run_id: str,
+        versions: list[tuple[str, str]] | tuple[tuple[str, str], ...],
+    ) -> None:
+        """Append exact authority versions materialized into one Run prompt."""
+        self._record_memory_versions(run_id, versions, effect="rendered")
+
+    def get_rendered_memory_versions(
+        self,
+        run_id: str,
+    ) -> tuple[tuple[str, str], ...] | None:
+        """Read version-bound Memory materializations for delayed feedback."""
+        self._validate_run_id(run_id)
+        record, _ = self._read_run(run_id)
+        if record is None:
+            raise RunJournalNotFoundError("Run was not found.")
+        run_dir = self._run_directory(run_id, must_exist=True)
+        sidecar = self._read_memory_version_sidecar(
+            run_dir,
+            _RENDERED_MEMORY_VERSION_FILE,
+            "Rendered",
+        )
+        return sidecar.materializations if sidecar is not None else None
 
     def record_written_memory_ids(
         self,
@@ -1174,13 +1830,318 @@ class RunJournal:
             )
 
     def get_written_memory_ids(self, run_id: str) -> tuple[str, ...] | None:
-        """Read the content-free Memory entry IDs this Run produced."""
+        """Read written IDs, preferring the authoritative version sidecar."""
         self._validate_run_id(run_id)
         record, _ = self._read_run(run_id)
         if record is None:
             raise RunJournalNotFoundError("Run was not found.")
         run_dir = self._run_directory(run_id, must_exist=True)
+        versions = self._read_memory_version_sidecar(
+            run_dir,
+            _WRITTEN_MEMORY_VERSION_FILE,
+            "Written",
+        )
+        if versions is not None:
+            return tuple(
+                dict.fromkeys(
+                    entry_id
+                    for entry_id, _digest in versions.materializations
+                )
+            )
         return self._read_memory_id_sidecar(run_dir, _WRITTEN_MEMORY_FILE, "Written")
+
+    def record_written_memory_versions(
+        self,
+        run_id: str,
+        versions: list[tuple[str, str]] | tuple[tuple[str, str], ...],
+    ) -> None:
+        """Append exact authority versions produced by one Run."""
+        self._record_memory_versions(run_id, versions, effect="written")
+
+    def get_written_memory_versions(
+        self,
+        run_id: str,
+    ) -> tuple[tuple[str, str], ...] | None:
+        """Read version-bound Memory writes for delayed feedback."""
+        self._validate_run_id(run_id)
+        record, _ = self._read_run(run_id)
+        if record is None:
+            raise RunJournalNotFoundError("Run was not found.")
+        run_dir = self._run_directory(run_id, must_exist=True)
+        sidecar = self._read_memory_version_sidecar(
+            run_dir,
+            _WRITTEN_MEMORY_VERSION_FILE,
+            "Written",
+        )
+        return sidecar.materializations if sidecar is not None else None
+
+    def record_memory_provenance(
+        self,
+        run_id: str,
+        batch: MemoryProvenanceBatch,
+        *,
+        actor_kind: str = "run_root",
+        subagent_id: str | None = None,
+    ) -> None:
+        """Append one actor-bound, content-free Memory provenance batch.
+
+        Capacity exhaustion is represented durably as partial coverage.  The
+        prefix that fits is committed atomically instead of raising an error
+        that an observation-only caller could accidentally swallow.
+        """
+        self._validate_run_id(run_id)
+        if not isinstance(batch, MemoryProvenanceBatch):
+            raise RunJournalValidationError(
+                "Memory provenance batch is invalid."
+            )
+        actor = _normalize_memory_provenance_actor(actor_kind, subagent_id)
+        filename, label = _memory_provenance_storage(batch.effect)
+        mutex = self._writer_mutexes.get(run_id)
+        if mutex is None:
+            raise RunJournalOwnershipError(
+                "This process does not own the Run writer."
+            )
+        with mutex:
+            run_dir = self._run_directory(run_id, must_exist=True)
+            self._require_writer(run_id, run_dir)
+            run, _ = self._read_run(run_id)
+            if run is None:
+                raise RunJournalNotFoundError("Run was not found.")
+            if run.status in TERMINAL_STATUSES:
+                raise RunJournalTransitionError(
+                    f"A terminal Run cannot accept {label.lower()} Memory provenance."
+                )
+            existing = self._read_memory_version_sidecar(
+                run_dir,
+                filename,
+                label,
+            )
+            records = list(existing.records if existing is not None else ())
+            materializations = list(
+                existing.materializations if existing is not None else ()
+            )
+            known = set(materializations)
+            for prior in records:
+                if prior.actor != actor:
+                    continue
+                if prior.batch == batch:
+                    return
+                if _memory_provenance_identity_overlaps(prior.batch, batch):
+                    if _is_bounded_partial_replay(prior, batch, known):
+                        return
+                    raise RunJournalMemoryProvenanceConflictError(
+                        "Memory provenance operation identity was reused."
+                    )
+
+            accepted: list[tuple[str, str]] = []
+            truncated = False
+            for version in batch.authority_versions:
+                if version in known:
+                    accepted.append(version)
+                    continue
+                if len(materializations) >= _MAX_MEMORY_MATERIALIZATIONS_PER_RUN:
+                    truncated = True
+                    continue
+                materializations.append(version)
+                known.add(version)
+                accepted.append(version)
+
+            stored_batch: MemoryProvenanceBatch | None = batch
+            if truncated:
+                stored_batch = (
+                    replace(
+                        batch,
+                        authority_versions=tuple(accepted),
+                        coverage="partial",
+                    )
+                    if accepted
+                    else None
+                )
+            record_overflow = len(records) >= MAX_MEMORY_PROVENANCE_BATCHES
+            if stored_batch is not None and not record_overflow:
+                records.append(
+                    RunMemoryProvenanceRecord(actor=actor, batch=stored_batch)
+                )
+
+            if existing is None:
+                coverage = (
+                    stored_batch.coverage
+                    if stored_batch is not None and not record_overflow
+                    else "partial"
+                )
+            elif (
+                existing.coverage == "complete"
+                and stored_batch is not None
+                and stored_batch.coverage == "complete"
+                and not truncated
+                and not record_overflow
+            ):
+                coverage = "complete"
+            elif (
+                existing.coverage == "unknown"
+                and stored_batch is not None
+                and stored_batch.coverage == "unknown"
+                and not materializations
+                and not record_overflow
+            ):
+                coverage = "unknown"
+            else:
+                coverage = "partial"
+
+            updated = _MemoryVersionSidecar(
+                schema_version=_MEMORY_MATERIALIZATION_SIDECAR_VERSION,
+                effect=batch.effect,
+                materializations=tuple(materializations),
+                records=tuple(records),
+                coverage=coverage,
+            )
+            if existing == updated:
+                return
+            self._write_memory_version_sidecar(
+                run_dir,
+                updated,
+                filename,
+                label,
+            )
+
+    def get_memory_provenance(
+        self,
+        run_id: str,
+        effect: str,
+    ) -> RunMemoryProvenanceSnapshot:
+        """Read one strict, content-free provenance snapshot and coverage."""
+        self._validate_run_id(run_id)
+        filename, label = _memory_provenance_storage(effect)
+        run, _ = self._read_run(run_id)
+        if run is None:
+            raise RunJournalNotFoundError("Run was not found.")
+        run_dir = self._run_directory(run_id, must_exist=True)
+        sidecar = self._read_memory_version_sidecar(
+            run_dir,
+            filename,
+            label,
+        )
+        terminal_gaps = self._terminal_memory_provenance_gaps(run_id)
+        if sidecar is None:
+            return RunMemoryProvenanceSnapshot(
+                effect=effect,
+                materializations=(),
+                records=(),
+                coverage="unknown",
+            )
+        coverage = sidecar.coverage
+        if effect in terminal_gaps and coverage == "complete":
+            coverage = "partial" if sidecar.materializations else "unknown"
+        return RunMemoryProvenanceSnapshot(
+            effect=effect,
+            materializations=sidecar.materializations,
+            records=sidecar.records,
+            coverage=coverage,
+        )
+
+    def _terminal_memory_provenance_gaps(self, run_id: str) -> frozenset[str]:
+        """Read the terminal closure marker that dominates sidecar coverage.
+
+        The marker is written in the same durable lifecycle event that makes
+        a Run terminal.  Therefore a persistently failing optional sidecar
+        cannot leave an older prefix looking complete after finalization.
+        A malformed marker fails closed for both effects.
+        """
+        events, _diagnostics = self._read_events(run_id)
+        terminal_types = {
+            LIFECYCLE_EVENT_FOR_STATUS[status]
+            for status in TERMINAL_STATUSES
+        }
+        for event in reversed(events):
+            if event.type not in terminal_types:
+                continue
+            if "memoryProvenanceGaps" not in event.payload:
+                return frozenset()
+            raw_gaps = event.payload.get("memoryProvenanceGaps")
+            if (
+                not isinstance(raw_gaps, list)
+                or len(raw_gaps) > len(MEMORY_PROVENANCE_EFFECTS)
+                or any(
+                    not isinstance(effect, str)
+                    or effect not in MEMORY_PROVENANCE_EFFECTS
+                    for effect in raw_gaps
+                )
+            ):
+                return frozenset(MEMORY_PROVENANCE_EFFECTS)
+            return frozenset(raw_gaps)
+        return frozenset()
+
+    def _record_memory_versions(
+        self,
+        run_id: str,
+        versions: list[tuple[str, str]] | tuple[tuple[str, str], ...],
+        *,
+        effect: str,
+    ) -> None:
+        """Compatibility writer for version projection without provenance."""
+        self._validate_run_id(run_id)
+        normalized = _normalize_rendered_memory_versions(versions)
+        if not normalized:
+            return
+        filename, label = _memory_provenance_storage(effect)
+        mutex = self._writer_mutexes.get(run_id)
+        if mutex is None:
+            raise RunJournalOwnershipError(
+                "This process does not own the Run writer."
+            )
+        with mutex:
+            run_dir = self._run_directory(run_id, must_exist=True)
+            self._require_writer(run_id, run_dir)
+            run, _ = self._read_run(run_id)
+            if run is None:
+                raise RunJournalNotFoundError("Run was not found.")
+            if run.status in TERMINAL_STATUSES:
+                raise RunJournalTransitionError(
+                    f"A terminal Run cannot accept {label.lower()} Memory versions."
+                )
+            existing = self._read_memory_version_sidecar(
+                run_dir,
+                filename,
+                label,
+            )
+            materializations = list(
+                existing.materializations if existing is not None else ()
+            )
+            known = set(materializations)
+            truncated = False
+            for version in normalized:
+                if version in known:
+                    continue
+                if len(materializations) >= _MAX_MEMORY_MATERIALIZATIONS_PER_RUN:
+                    truncated = True
+                    continue
+                materializations.append(version)
+                known.add(version)
+            coverage = "partial"
+            updated = _MemoryVersionSidecar(
+                schema_version=_MEMORY_MATERIALIZATION_SIDECAR_VERSION,
+                effect=effect,
+                materializations=tuple(materializations),
+                records=existing.records if existing is not None else (),
+                coverage=(
+                    coverage
+                    if truncated
+                    or existing is None
+                    or existing.schema_version
+                    == _LEGACY_MEMORY_MATERIALIZATION_SIDECAR_VERSION
+                    or tuple(materializations)
+                    != existing.materializations
+                    else existing.coverage
+                ),
+            )
+            if existing == updated:
+                return
+            self._write_memory_version_sidecar(
+                run_dir,
+                updated,
+                filename,
+                label,
+            )
 
     def record_scheduler_commit_ready(
         self,
@@ -1340,17 +2301,89 @@ class RunJournal:
         """Read one sub-agent's bounded event stream."""
         return self.open_subagent_journal(run_id).list_events(subagent_id)
 
+    def _terminal_coordination(
+        self, run_id: str, run_dir: Path
+    ) -> dict[str, int] | None:
+        """Split one terminal Run's tokens: parent's own vs sub-agent totals.
+
+        Parent model calls are the only ``model.completed`` events in this
+        stream (sub-agents write to the sidecar journal), so their usage
+        sums are exactly the parent's own coordination cost.  Sub-agent
+        totals come from the sidecar's attributed finish records.  Best
+        effort: any read failure simply omits the section.
+        """
+        try:
+            events, _ = self._read_events(run_id)
+            parent_input = 0
+            parent_output = 0
+            parent_seen = False
+            for event in events:
+                if event.type != "model.completed":
+                    continue
+                usage = event.payload.get("usage")
+                if not isinstance(usage, dict):
+                    continue
+                input_tokens = usage.get("inputTokens")
+                output_tokens = usage.get("outputTokens")
+                if isinstance(input_tokens, int) and not isinstance(
+                    input_tokens, bool
+                ):
+                    parent_input += max(0, input_tokens)
+                    parent_seen = True
+                if isinstance(output_tokens, int) and not isinstance(
+                    output_tokens, bool
+                ):
+                    parent_output += max(0, output_tokens)
+                    parent_seen = True
+            subagent_input = 0
+            subagent_output = 0
+            subagent_seen = False
+            for summary in SubagentRunJournal(run_dir).list_runs():
+                if summary.input_tokens is None or summary.output_tokens is None:
+                    continue
+                subagent_input += summary.input_tokens
+                subagent_output += summary.output_tokens
+                subagent_seen = True
+        except Exception:  # noqa: BLE001 - terminal telemetry is optional
+            return None
+        if not parent_seen and not subagent_seen:
+            return None
+        return {
+            "parentInputTokens": parent_input,
+            "parentOutputTokens": parent_output,
+            "subagentInputTokens": subagent_input,
+            "subagentOutputTokens": subagent_output,
+        }
+
     def transition(
         self,
         run_id: str,
         status: str,
         *,
         reason: str | None = None,
+        memory_provenance_gaps: tuple[str, ...] = (),
     ) -> RunRecord:
         """Apply a legal lifecycle transition; repeated terminal state is idempotent."""
         self._validate_run_id(run_id)
         if status not in RUN_STATUSES:
             raise RunJournalValidationError("Run status is invalid.")
+        if (
+            not isinstance(memory_provenance_gaps, tuple)
+            or len(memory_provenance_gaps) > len(MEMORY_PROVENANCE_EFFECTS)
+            or any(
+                not isinstance(effect, str)
+                or effect not in MEMORY_PROVENANCE_EFFECTS
+                for effect in memory_provenance_gaps
+            )
+            or len(set(memory_provenance_gaps)) != len(memory_provenance_gaps)
+        ):
+            raise RunJournalValidationError(
+                "Memory provenance terminal gaps are invalid."
+            )
+        if memory_provenance_gaps and status not in TERMINAL_STATUSES:
+            raise RunJournalValidationError(
+                "Memory provenance gaps require a terminal transition."
+            )
         record, _ = self._read_run(run_id)
         if record is None:
             raise RunJournalNotFoundError("Run was not found.")
@@ -1376,6 +2409,17 @@ class RunJournal:
                     f"Run cannot transition from {current.status} to {status}."
                 )
             payload = {"summary": reason} if reason else None
+            if status in TERMINAL_STATUSES:
+                coordination = self._terminal_coordination(run_id, run_dir)
+                if coordination is not None:
+                    payload = {**(payload or {}), "coordination": coordination}
+                if memory_provenance_gaps:
+                    payload = {
+                        **(payload or {}),
+                        "memoryProvenanceGaps": list(
+                            sorted(memory_provenance_gaps)
+                        ),
+                    }
             event = self._new_event(
                 current,
                 LIFECYCLE_EVENT_FOR_STATUS[status],
@@ -1511,8 +2555,57 @@ class RunJournal:
                 continue
             candidates.append((record, entry, size))
 
+        terminal_candidates: list[tuple[RunRecord, Path, int]] = []
+        for item in candidates:
+            record, directory, _size = item
+            if record.status not in TERMINAL_STATUSES:
+                continue
+            if record.source in _CURATOR_RECEIPT_SOURCES:
+                try:
+                    receipt = self._read_curator_receipt(directory)
+                except RunJournalStorageError:
+                    diagnostics.append(
+                        self._diagnostic(
+                            "curator_receipt_invalid",
+                            "A pending curator receipt could not be verified.",
+                        )
+                    )
+                    # Fail closed: retention must not destroy a potentially
+                    # undelivered durable completion obligation.
+                    continue
+                if (
+                    receipt is None
+                    and record.curator_outbox_version is not None
+                ):
+                    diagnostics.append(
+                        self._diagnostic(
+                            "curator_receipt_missing",
+                            "An expected curator receipt is missing.",
+                        )
+                    )
+                    continue
+                if (
+                    receipt is not None
+                    and receipt[0] != curator_completion_id(record.id)
+                ):
+                    diagnostics.append(
+                        self._diagnostic(
+                            "curator_receipt_invalid",
+                            "A pending curator receipt has the wrong identity.",
+                        )
+                    )
+                    continue
+                if (
+                    receipt is not None
+                    and (
+                        receipt[1] in {"pending", "delivering"}
+                        or (receipt[1] == "recorded" and receipt[3] == 3)
+                    )
+                ):
+                    continue
+            terminal_candidates.append(item)
         terminal = sorted(
-            (item for item in candidates if item[0].status in TERMINAL_STATUSES),
+            terminal_candidates,
             key=lambda item: (
                 _parse_time(item[0].completed_at or item[0].updated_at),
                 item[0].id,
@@ -1577,6 +2670,35 @@ class RunJournal:
             deleted_count=deleted,
             diagnostics=tuple(diagnostics[:_MAX_DIAGNOSTICS]),
         )
+
+    def enforce_retention_if_due(self) -> RetentionResult:
+        """Bound production Run growth without scanning every payload each Run.
+
+        Directory names are checked on every terminal lifecycle, while the
+        more expensive byte/age scan runs every eight Runs or whenever the
+        configured count bound (plus a small bounded margin) is crossed.
+        """
+
+        if not self._runs_root.exists():
+            return RetentionResult(deleted_count=0)
+        try:
+            root = self._runs_root.resolve(strict=True)
+            if self._runs_root.is_symlink() or not root.is_relative_to(
+                self._data_root
+            ):
+                raise OSError("unsafe retention root")
+            entries, limited = self._bounded_run_entries(root)
+        except Exception:
+            return self.enforce_retention()
+        count = len(entries)
+        count_margin = min(7, max(0, self.max_runs // 10))
+        if (
+            limited
+            or count > self.max_runs + count_margin
+            or (count > 0 and count % 8 == 0)
+        ):
+            return self.enforce_retention()
+        return RetentionResult(deleted_count=0)
 
     def _ensure_storage_root(self) -> None:
         self._data_root.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -1917,6 +3039,235 @@ class RunJournal:
                 "User signal storage is unsafe."
             ) from error
 
+    def _write_curator_receipt(
+        self,
+        run_dir: Path,
+        *,
+        completion_id: str,
+        state: str,
+        prepared_at_ms: int,
+    ) -> None:
+        if (
+            not isinstance(completion_id, str)
+            or re.fullmatch(r"[0-9a-f]{64}", completion_id) is None
+            or state not in _CURATOR_RECEIPT_STATES
+            or isinstance(prepared_at_ms, bool)
+            or not isinstance(prepared_at_ms, int)
+            or not 0 <= prepared_at_ms <= 99_999_999_999_999
+            or (state == "inactive" and prepared_at_ms != 0)
+            or (state != "inactive" and prepared_at_ms == 0)
+        ):
+            raise RunJournalValidationError(
+                "Curator completion receipt is invalid."
+            )
+        encoded = (
+            json.dumps(
+                {
+                    "schemaVersion": _CURATOR_OUTBOX_VERSION,
+                    "completionId": completion_id,
+                    "state": state,
+                    "preparedAtMs": prepared_at_ms,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n"
+        ).encode("utf-8")
+        if len(encoded) > _MAX_CURATOR_RECEIPT_BYTES:
+            raise RunJournalStorageError(
+                "Curator completion receipt exceeds the byte limit."
+            )
+        target = run_dir / _CURATOR_RECEIPT_FILE
+        try:
+            existing = os.lstat(target)
+        except FileNotFoundError:
+            existing = None
+        except OSError as error:
+            raise RunJournalStorageError(
+                "Curator completion receipt is unavailable."
+            ) from error
+        if existing is not None and (
+            stat.S_ISLNK(existing.st_mode)
+            or not stat.S_ISREG(existing.st_mode)
+        ):
+            raise RunJournalStorageError(
+                "Curator completion receipt is unsafe."
+            )
+        fd, temporary = tempfile.mkstemp(
+            prefix=".curator-receipt-",
+            suffix=".tmp",
+            dir=run_dir,
+        )
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                if _platform_name() == "posix":
+                    os.fchmod(handle.fileno(), 0o600)
+                handle.write(encoded)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, target)
+            self._fsync_directory(run_dir)
+        except OSError as error:
+            try:
+                os.unlink(temporary)
+            except FileNotFoundError:
+                pass
+            raise RunJournalStorageError(
+                "Curator completion receipt is unavailable."
+            ) from error
+
+    def _read_curator_receipt(
+        self,
+        run_dir: Path,
+    ) -> tuple[str, str, int, int] | None:
+        path = run_dir / _CURATOR_RECEIPT_FILE
+        try:
+            before = os.lstat(path)
+        except FileNotFoundError:
+            return None
+        except OSError as error:
+            raise RunJournalStorageError(
+                "Curator completion receipt is unavailable."
+            ) from error
+        if (
+            stat.S_ISLNK(before.st_mode)
+            or not stat.S_ISREG(before.st_mode)
+            or before.st_size <= 0
+            or before.st_size > _MAX_CURATOR_RECEIPT_BYTES
+        ):
+            raise RunJournalStorageError(
+                "Curator completion receipt is unsafe."
+            )
+        flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+        try:
+            descriptor = os.open(path, flags)
+            try:
+                after = os.fstat(descriptor)
+                if (
+                    not stat.S_ISREG(after.st_mode)
+                    or after.st_dev != before.st_dev
+                    or after.st_ino != before.st_ino
+                    or after.st_size != before.st_size
+                ):
+                    raise OSError("curator receipt changed during read")
+                raw = os.read(descriptor, _MAX_CURATOR_RECEIPT_BYTES + 1)
+            finally:
+                os.close(descriptor)
+            if len(raw) != before.st_size:
+                raise OSError("short curator receipt read")
+            payload = json.loads(raw.decode("utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise RunJournalStorageError(
+                "Curator completion receipt is unsafe."
+            ) from error
+        if not isinstance(payload, dict):
+            raise RunJournalStorageError(
+                "Curator completion receipt is unsafe."
+            )
+        completion_id = payload.get("completionId")
+        state = payload.get("state")
+        schema_version = payload.get("schemaVersion")
+        prepared_at_ms = payload.get("preparedAtMs", 0)
+        expected_fields = (
+            {"schemaVersion", "completionId", "state"}
+            if schema_version == 1
+            else {
+                "schemaVersion",
+                "completionId",
+                "state",
+                "preparedAtMs",
+            }
+        )
+        if (
+            isinstance(schema_version, bool)
+            or schema_version not in _READABLE_CURATOR_RECEIPT_VERSIONS
+            or set(payload) != expected_fields
+            or not isinstance(completion_id, str)
+            or re.fullmatch(r"[0-9a-f]{64}", completion_id) is None
+            or state not in _CURATOR_RECEIPT_STATES
+            or (schema_version == 1 and state == "delivering")
+            or (schema_version in {1, 2} and state == "settled")
+            or isinstance(prepared_at_ms, bool)
+            or not isinstance(prepared_at_ms, int)
+            or not 0 <= prepared_at_ms <= 99_999_999_999_999
+            or (
+                schema_version in {2, _CURATOR_OUTBOX_VERSION}
+                and (
+                    (state == "inactive" and prepared_at_ms != 0)
+                    or (state != "inactive" and prepared_at_ms == 0)
+                )
+            )
+        ):
+            raise RunJournalStorageError(
+                "Curator completion receipt is unsafe."
+            )
+        return completion_id, state, prepared_at_ms, schema_version
+
+    def _acknowledge_curator_receipt_locked(
+        self,
+        run_dir: Path,
+        completion_id: str,
+    ) -> bool:
+        receipt = self._read_curator_receipt(run_dir)
+        if receipt is None or receipt[0] != completion_id:
+            return False
+        if receipt[1] in {"inactive", "pending"}:
+            return False
+        if receipt[1] in {"recorded", "settled"}:
+            return True
+        self._write_curator_receipt(
+            run_dir,
+            completion_id=completion_id,
+            state="recorded",
+            prepared_at_ms=receipt[2] or _datetime_ms(self._clock()),
+        )
+        return True
+
+    def _begin_curator_receipt_delivery_locked(
+        self,
+        run_dir: Path,
+        completion_id: str,
+    ) -> bool:
+        receipt = self._read_curator_receipt(run_dir)
+        if receipt is None or receipt[0] != completion_id:
+            return False
+        if receipt[1] == "inactive":
+            return False
+        if receipt[1] == "settled" or (
+            receipt[1] == "recorded" and receipt[3] < 3
+        ):
+            return False
+        if receipt[1] in {"delivering", "recorded"}:
+            return True
+        self._write_curator_receipt(
+            run_dir,
+            completion_id=completion_id,
+            state="delivering",
+            prepared_at_ms=receipt[2] or _datetime_ms(self._clock()),
+        )
+        return True
+
+    def _settle_curator_receipt_locked(
+        self,
+        run_dir: Path,
+        completion_id: str,
+    ) -> bool:
+        receipt = self._read_curator_receipt(run_dir)
+        if receipt is None or receipt[0] != completion_id:
+            return False
+        if receipt[1] == "settled":
+            return True
+        if receipt[1] != "recorded":
+            return False
+        self._write_curator_receipt(
+            run_dir,
+            completion_id=completion_id,
+            state="settled",
+            prepared_at_ms=receipt[2] or _datetime_ms(self._clock()),
+        )
+        return True
+
     def _write_memory_id_sidecar(
         self,
         run_dir: Path,
@@ -1973,6 +3324,274 @@ class RunJournal:
                 pass
             raise RunJournalStorageError(
                 f"{label} Memory ID storage is unavailable."
+            ) from error
+
+    def _write_memory_version_sidecar(
+        self,
+        run_dir: Path,
+        sidecar: _MemoryVersionSidecar,
+        filename: str,
+        label: str,
+    ) -> None:
+        if (
+            sidecar.schema_version != _MEMORY_MATERIALIZATION_SIDECAR_VERSION
+            or sidecar.effect != label.lower()
+            or sidecar.coverage not in MEMORY_PROVENANCE_COVERAGE
+            or len(sidecar.materializations)
+            > _MAX_MEMORY_MATERIALIZATIONS_PER_RUN
+            or len(sidecar.records) > MAX_MEMORY_PROVENANCE_BATCHES
+        ):
+            raise RunJournalStorageError(
+                f"{label} Memory versions cannot be encoded safely."
+            )
+        encoded = (
+            json.dumps(
+                {
+                    "schemaVersion": sidecar.schema_version,
+                    "digestSchema": _MEMORY_AUTHORITY_DIGEST_SCHEMA,
+                    "kind": sidecar.effect,
+                    "coverage": sidecar.coverage,
+                    "materializations": [
+                        {
+                            "entryId": entry_id,
+                            "authorityDigest": digest,
+                        }
+                        for entry_id, digest in sidecar.materializations
+                    ],
+                    "provenance": [
+                        _memory_provenance_record_to_dict(record)
+                        for record in sidecar.records
+                    ],
+                },
+                ensure_ascii=False,
+                allow_nan=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n"
+        ).encode("utf-8")
+        if len(encoded) > _MAX_RENDERED_MEMORY_VERSION_BYTES:
+            raise RunJournalStorageError(
+                f"{label} Memory versions exceed the byte limit."
+            )
+        fd, temporary = tempfile.mkstemp(
+            prefix=f".memory-{label.lower()}-versions-",
+            suffix=".tmp",
+            dir=run_dir,
+        )
+        target = run_dir / filename
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                if _platform_name() == "posix":
+                    os.fchmod(handle.fileno(), 0o600)
+                handle.write(encoded)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, target)
+            self._fsync_directory(run_dir)
+        except OSError as error:
+            try:
+                os.unlink(temporary)
+            except FileNotFoundError:
+                pass
+            raise RunJournalStorageError(
+                f"{label} Memory version storage is unavailable."
+            ) from error
+
+    def _read_memory_version_sidecar(
+        self,
+        run_dir: Path,
+        filename: str,
+        label: str,
+    ) -> _MemoryVersionSidecar | None:
+        path = run_dir / filename
+        try:
+            before = os.lstat(path)
+        except FileNotFoundError:
+            return None
+        except OSError as error:
+            raise RunJournalStorageError(
+                f"{label} Memory version storage is unavailable."
+            ) from error
+        if (
+            stat.S_ISLNK(before.st_mode)
+            or not stat.S_ISREG(before.st_mode)
+            or before.st_size <= 0
+            or before.st_size > _MAX_RENDERED_MEMORY_VERSION_BYTES
+        ):
+            raise RunJournalStorageError(
+                f"{label} Memory version storage is unsafe."
+            )
+        flags = os.O_RDONLY
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        try:
+            fd = os.open(path, flags)
+            try:
+                after = os.fstat(fd)
+                if (
+                    after.st_dev != before.st_dev
+                    or after.st_ino != before.st_ino
+                    or not stat.S_ISREG(after.st_mode)
+                    or after.st_size != before.st_size
+                ):
+                    raise OSError(
+                        "rendered Memory versions changed during read"
+                    )
+                raw = os.read(fd, _MAX_RENDERED_MEMORY_VERSION_BYTES + 1)
+            finally:
+                os.close(fd)
+            if len(raw) != before.st_size:
+                raise OSError("short rendered Memory version read")
+            decoded = json.loads(raw.decode("utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise RunJournalStorageError(
+                f"{label} Memory version storage is unsafe."
+            ) from error
+        if not isinstance(decoded, dict):
+            raise RunJournalStorageError(
+                f"{label} Memory version storage is unsafe."
+            )
+        schema_version = decoded.get("schemaVersion")
+        if isinstance(schema_version, bool) or not isinstance(
+            schema_version,
+            int,
+        ):
+            raise RunJournalStorageError(
+                f"{label} Memory version storage is unsafe."
+            )
+        if schema_version == _LEGACY_MEMORY_MATERIALIZATION_SIDECAR_VERSION:
+            expected_fields = {
+                "schemaVersion",
+                "digestSchema",
+                "kind",
+                "materializations",
+            }
+        elif schema_version == _MEMORY_MATERIALIZATION_SIDECAR_VERSION:
+            expected_fields = {
+                "schemaVersion",
+                "digestSchema",
+                "kind",
+                "coverage",
+                "materializations",
+                "provenance",
+            }
+        else:
+            raise RunJournalStorageError(
+                f"{label} Memory version storage is unsafe."
+            )
+        if (
+            set(decoded) != expected_fields
+            or decoded.get("digestSchema")
+            != _MEMORY_AUTHORITY_DIGEST_SCHEMA
+            or decoded.get("kind") != label.lower()
+            or not isinstance(decoded.get("materializations"), list)
+        ):
+            raise RunJournalStorageError(
+                f"{label} Memory version storage is unsafe."
+            )
+        versions: list[tuple[str, str]] = []
+        for materialization in decoded["materializations"]:
+            if (
+                not isinstance(materialization, dict)
+                or set(materialization) != {"entryId", "authorityDigest"}
+            ):
+                raise RunJournalStorageError(
+                    f"{label} Memory version storage is unsafe."
+                )
+            versions.append(
+                (
+                    materialization.get("entryId"),
+                    materialization.get("authorityDigest"),
+                )
+            )
+        try:
+            normalized = _normalize_rendered_memory_versions(
+                versions,
+                max_versions=(
+                    _MAX_RENDERED_MEMORY_VERSIONS
+                    if schema_version
+                    == _LEGACY_MEMORY_MATERIALIZATION_SIDECAR_VERSION
+                    else _MAX_MEMORY_MATERIALIZATIONS_PER_RUN
+                ),
+            )
+            if (
+                schema_version == _MEMORY_MATERIALIZATION_SIDECAR_VERSION
+                and len(normalized) != len(versions)
+            ):
+                raise ValueError("duplicate Memory materialization")
+            if schema_version == _LEGACY_MEMORY_MATERIALIZATION_SIDECAR_VERSION:
+                return _MemoryVersionSidecar(
+                    schema_version=schema_version,
+                    effect=label.lower(),
+                    materializations=normalized,
+                    records=(),
+                    coverage="partial",
+                )
+
+            coverage = decoded.get("coverage")
+            raw_records = decoded.get("provenance")
+            if (
+                not isinstance(coverage, str)
+                or coverage not in MEMORY_PROVENANCE_COVERAGE
+                or not isinstance(raw_records, list)
+                or len(raw_records) > MAX_MEMORY_PROVENANCE_BATCHES
+            ):
+                raise ValueError("invalid Memory provenance envelope")
+            records = tuple(
+                _memory_provenance_record_from_dict(value)
+                for value in raw_records
+            )
+            materialization_set = set(normalized)
+            seen_records: set[RunMemoryProvenanceRecord] = set()
+            for index, record in enumerate(records):
+                if (
+                    record.batch.effect != label.lower()
+                    or not set(record.batch.authority_versions).issubset(
+                        materialization_set
+                    )
+                    or record in seen_records
+                ):
+                    raise ValueError("invalid Memory provenance projection")
+                for prior in records[:index]:
+                    if (
+                        prior.actor == record.actor
+                        and prior.batch != record.batch
+                        and _memory_provenance_identity_overlaps(
+                            prior.batch,
+                            record.batch,
+                        )
+                    ):
+                        raise ValueError("conflicting Memory provenance identity")
+                seen_records.add(record)
+            if coverage == "unknown" and normalized:
+                raise ValueError("unknown Memory provenance has materializations")
+            if coverage == "complete":
+                covered = {
+                    version
+                    for record in records
+                    if record.batch.coverage == "complete"
+                    for version in record.batch.authority_versions
+                }
+                if (
+                    not records
+                    or any(
+                        record.batch.coverage != "complete"
+                        for record in records
+                    )
+                    or covered != materialization_set
+                ):
+                    raise ValueError("incomplete Memory provenance projection")
+            return _MemoryVersionSidecar(
+                schema_version=schema_version,
+                effect=label.lower(),
+                materializations=normalized,
+                records=records,
+                coverage=coverage,
+            )
+        except (RunJournalValidationError, TypeError, ValueError) as error:
+            raise RunJournalStorageError(
+                f"{label} Memory version storage is unsafe."
             ) from error
 
     def _read_memory_id_sidecar(

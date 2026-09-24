@@ -1,0 +1,17 @@
+{
+  "status": "completed_with_observability_fix",
+  "destinations": [
+    "open.bigmodel.cn",
+    "token-plan.cn-beijing.maas.aliyuncs.com"
+  ],
+  "maxModelCalls": 8,
+  "maxTokens": 400000,
+  "authorization": "User explicitly approved the bounded retest after disclosure of source/tool-output destinations.",
+  "runId": "run_ad516d64824a4663807c9c29f374c5fc",
+  "modelCalls": 8,
+  "totalTokens": 161723,
+  "subagents": 0,
+  "realModelCompletionVerified": true,
+  "targetTaskCompleted": false,
+  "journalFixVerifiedLocally": true
+}

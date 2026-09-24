@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import hashlib
-from types import SimpleNamespace
 from pathlib import Path
+from types import SimpleNamespace
 
 from minicode.agent_loop import run_agent_turn
+from minicode.conversation import _apply_run_outcome_memory_feedback
 from minicode.memory import MemoryManager, MemoryScope
-from minicode.memory_retrieval import MemoryRetrievalResult
-from minicode.run_journal import RunJournal
-from minicode.run_lifecycle import observe_run
+from minicode.memory_retrieval import (
+    CanonicalMemoryRetriever,
+    MemoryRetrievalResult,
+)
 from minicode.run_events import (
     SkillUsageTracker,
     VerificationTracker,
@@ -17,6 +19,8 @@ from minicode.run_events import (
     project_skill_attribution_event,
     verification_corroboration,
 )
+from minicode.run_journal import RunJournal
+from minicode.run_lifecycle import observe_run
 from minicode.task_outcome import canonicalize_task_outcome
 from minicode.tooling import ToolContext, ToolDefinition, ToolRegistry, ToolResult
 from minicode.tools.load_skill import create_load_skill_tool
@@ -385,6 +389,7 @@ def test_skill_attribution_is_persisted_in_the_same_run(
         title="Load an audit Skill",
         journal_factory=lambda _workspace: journal,
     ) as observation:
+        assert observation.observation_active is True
         run_id = observation.run_id
         run_agent_turn(
             model=RepeatedSkillLoadModel(),
@@ -398,6 +403,7 @@ def test_skill_attribution_is_persisted_in_the_same_run(
             max_steps=4,
         )
 
+    assert observation.observation_active is False
     assert run_id is not None
     events = journal.list_events(run_id, limit=100).items
     event_types = [event.type for event in events]
@@ -619,6 +625,40 @@ def test_memory_result_forwards_rendered_ids_to_a_sink_that_supports_it() -> Non
     assert sink.recorded_ids == ["project-1785082406796413000-b6ecf281"]
 
 
+def test_memory_result_forwards_versioned_materializations_without_exposing_digest() -> None:
+    class SinkWithVersionBinding(RecordingSink):
+        def __init__(self) -> None:
+            super().__init__()
+            self.recorded_versions: list[tuple[str, str]] | None = None
+
+        def record_rendered_memory_versions(
+            self,
+            versions: list[tuple[str, str]],
+        ) -> None:
+            self.recorded_versions = list(versions)
+
+    entry_id = "project-1785082406796413000-b6ecf281"
+    digest = "a" * 64
+    result = MemoryRetrievalResult(
+        rendered_ids=(entry_id,),
+        rendered=(
+            SimpleNamespace(
+                entry_id=entry_id,
+                authority_digest=digest,
+            ),
+        ),
+        no_match=False,
+        no_match_reason="",
+        controller_decision={"mode": "standard"},
+    )
+    sink = SinkWithVersionBinding()
+
+    emit_memory_result_safely(sink, result)
+
+    assert sink.recorded_versions == [(entry_id, digest)]
+    assert digest not in str(sink.events)
+
+
 def test_memory_result_forwarding_ignores_a_sink_that_raises() -> None:
     class RaisingSink(RecordingSink):
         def record_rendered_memory_ids(self, entry_ids: list[str]) -> None:
@@ -720,6 +760,7 @@ def test_runtime_projection_rejects_invalid_enums_counts_and_nonfinite_scores() 
 
 def test_agent_loop_observes_the_single_real_memory_injection_before_model(
     tmp_path: Path,
+    monkeypatch,
 ) -> None:
     manager = MemoryManager(project_root=tmp_path)
     entry = manager.add_entry(
@@ -729,14 +770,14 @@ def test_agent_loop_observes_the_single_real_memory_injection_before_model(
         tags=["checkout", "total", "rounding"],
     )
     assert entry is not None
-    search_calls: list[str] = []
-    original_search = manager.search
+    retrieval_calls: list[str] = []
+    original_retrieve = CanonicalMemoryRetriever.retrieve
 
-    def observed_search(query: str, *args, **kwargs):
-        search_calls.append(query)
-        return original_search(query, *args, **kwargs)
+    def observed_retrieve(self, request, **kwargs):
+        retrieval_calls.append(request.query)
+        return original_retrieve(self, request, **kwargs)
 
-    manager.search = observed_search  # type: ignore[method-assign]
+    monkeypatch.setattr(CanonicalMemoryRetriever, "retrieve", observed_retrieve)
     sink = RecordingSink()
 
     messages = run_agent_turn(
@@ -760,11 +801,218 @@ def test_agent_loop_observes_the_single_real_memory_injection_before_model(
     ]
     assert event_types.count("memory.retrieved") == 1
     assert event_types.count("memory.rendered") == 1
-    assert search_calls == ["fix checkout total rounding"]
+    assert retrieval_calls == ["fix checkout total rounding"]
     assert entry.retrieval_count == 1
     assert entry.injection_count == 1
     system = next(message["content"] for message in messages if message["role"] == "system")
     assert system.count(entry.content) == 1
+
+
+def test_real_run_journal_feedback_chain_is_version_bound_end_to_end(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    manager = MemoryManager(project_root=workspace)
+    entry = manager.add_entry(
+        scope=MemoryScope.PROJECT,
+        category="architecture",
+        content="Checkout total rounding happens after decimal line aggregation.",
+        tags=["checkout", "total", "rounding"],
+    )
+    assert entry is not None
+    materialized_version = (entry.id, entry.approval_content_hash)
+    journal = RunJournal(
+        workspace,
+        data_dir=tmp_path / "journal-home" / ".mini-code",
+    )
+
+    with observe_run(
+        workspace=workspace,
+        source="headless",
+        title="Fix checkout total rounding",
+        journal_factory=lambda _workspace: journal,
+    ) as observation:
+        run_id = observation.run_id
+        run_agent_turn(
+            model=FinalModel(),
+            tools=ToolRegistry([]),
+            messages=[
+                {"role": "system", "content": "SYSTEM"},
+                {"role": "user", "content": "fix checkout total rounding"},
+            ],
+            cwd=str(workspace),
+            memory_manager=manager,
+            event_sink=observation,
+            max_steps=2,
+        )
+
+    assert run_id is not None
+    assert journal.get_rendered_memory_versions(run_id) == (
+        materialized_version,
+    )
+    provenance = journal.get_memory_provenance(run_id, "rendered")
+    task_start_records = [
+        record
+        for record in provenance.records
+        if record.batch.origin == "task_start"
+    ]
+    assert len(task_start_records) == 1
+    task_start = task_start_records[0]
+    assert task_start.actor.kind == "run_root"
+    assert task_start.actor.subagent_id is None
+    assert task_start.batch.effect == "rendered"
+    assert task_start.batch.authority_versions == (materialized_version,)
+    assert task_start.batch.receipt_id is not None
+    assert len(task_start.batch.receipt_id) == 32
+    assert set(task_start.batch.receipt_id) <= set("0123456789abcdef")
+    assert task_start.batch.context_operation_id is None
+    assert task_start.batch.coverage == "complete"
+    before_feedback = MemoryManager(project_root=workspace)
+    before = before_feedback.memories[MemoryScope.PROJECT]._id_index[entry.id]
+    automatic_successes = before.success_count
+    assert automatic_successes == 0
+
+    _apply_run_outcome_memory_feedback(
+        workspace,
+        journal,
+        run_id,
+        "accept",
+    )
+
+    after_feedback = MemoryManager(project_root=workspace)
+    after = after_feedback.memories[MemoryScope.PROJECT]._id_index[entry.id]
+    assert after.success_count == automatic_successes + 1
+    assert after.corroborated_success_count == 0
+
+
+def test_reflection_written_provenance_reaches_sink_with_legacy_callback(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from minicode.cybernetic_orchestrator import CyberneticOrchestrator
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "journal-home" / ".mini-code"
+    written_version = (
+        "project-1785082406796413000-b6ecf281",
+        "f" * 64,
+    )
+
+    def persist_controlled_reflection(self, **_kwargs):
+        self.memory_pipeline._last_written_ids = [written_version[0]]
+        self.memory_pipeline._last_written_versions = [written_version]
+        return written_version[0]
+
+    monkeypatch.setattr(
+        CyberneticOrchestrator,
+        "reflect_on_task",
+        persist_controlled_reflection,
+    )
+    callback_ids: list[str] = []
+    journal = RunJournal(workspace, data_dir=data_dir)
+    with observe_run(
+        workspace=workspace,
+        source="headless",
+        title="Write one reflected Memory",
+        journal_factory=lambda _workspace: journal,
+    ) as observation:
+        run_id = observation.run_id
+        run_agent_turn(
+            model=FinalModel(),
+            tools=ToolRegistry([]),
+            messages=[
+                {"role": "system", "content": "SYSTEM"},
+                {
+                    "role": "user",
+                    "content": "implement and verify checkout rounding",
+                },
+            ],
+            cwd=str(workspace),
+            memory_manager=MemoryManager(project_root=workspace),
+            event_sink=observation,
+            on_memory_written=callback_ids.append,
+            max_steps=2,
+        )
+
+    assert run_id is not None
+    assert callback_ids == [written_version[0]]
+    snapshot = journal.get_memory_provenance(run_id, "written")
+    assert snapshot.materializations == (written_version,)
+    assert len(snapshot.records) == 1
+    record = snapshot.records[0]
+    assert record.actor.kind == "run_root"
+    assert record.actor.subagent_id is None
+    assert record.batch.effect == "written"
+    assert record.batch.origin == "reflection"
+    assert record.batch.authority_versions == (written_version,)
+    assert record.batch.receipt_id is None
+    assert record.batch.context_operation_id is None
+    assert record.batch.coverage == "complete"
+
+
+def test_reflection_mixed_malformed_versions_do_not_emit_complete_provenance(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from minicode.cybernetic_orchestrator import CyberneticOrchestrator
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    entry_id = "project-1785082406796413000-b6ecf281"
+
+    def persist_mixed_reflection(self, **_kwargs):
+        self.memory_pipeline._last_written_ids = [entry_id]
+        self.memory_pipeline._last_written_versions = [
+            (entry_id, "f" * 64),
+            ("malformed-version",),
+        ]
+        return entry_id
+
+    monkeypatch.setattr(
+        CyberneticOrchestrator,
+        "reflect_on_task",
+        persist_mixed_reflection,
+    )
+    callback_ids: list[str] = []
+    journal = RunJournal(
+        workspace,
+        data_dir=tmp_path / "journal-home" / ".mini-code",
+    )
+    with observe_run(
+        workspace=workspace,
+        source="headless",
+        title="Reject mixed reflection authority",
+        journal_factory=lambda _workspace: journal,
+    ) as observation:
+        run_id = observation.run_id
+        run_agent_turn(
+            model=FinalModel(),
+            tools=ToolRegistry([]),
+            messages=[
+                {"role": "system", "content": "SYSTEM"},
+                {"role": "user", "content": "record one reflection"},
+            ],
+            cwd=str(workspace),
+            memory_manager=MemoryManager(project_root=workspace),
+            event_sink=observation,
+            on_memory_written=callback_ids.append,
+            max_steps=2,
+        )
+
+    assert run_id is not None
+    assert callback_ids == [entry_id]
+    snapshot = journal.get_memory_provenance(run_id, "written")
+    assert snapshot.materializations == ()
+    assert snapshot.coverage == "unknown"
+    assert len(snapshot.records) == 1
+    record = snapshot.records[0]
+    assert record.actor.kind == "run_root"
+    assert record.batch.effect == "written"
+    assert record.batch.origin == "reflection"
+    assert record.batch.authority_versions == ()
+    assert record.batch.coverage == "unknown"
 
 
 def test_agent_loop_replayed_run_observation_does_not_double_count_feedback(
@@ -866,8 +1114,16 @@ def test_failing_sink_does_not_change_memory_prompt_counters_or_result(
             event_sink=sink,
             max_steps=2,
         )
+        observable_result = [
+            {
+                key: value
+                for key, value in message.items()
+                if not key.startswith("_memory_")
+            }
+            for message in result
+        ]
         return (
-            result,
+            observable_result,
             entry.retrieval_count,
             entry.injection_count,
             entry.success_count,

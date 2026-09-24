@@ -13,6 +13,7 @@ from minicode.central_scheduler import (
     SchedulerTransition,
     WorkflowExecutionOutcome,
 )
+from minicode.workflow_repair import MAX_IMPLEMENTATION_REPAIRS, REPAIR_TRANSITION_ERROR
 
 
 SCHEDULER_TRACE_VERSION = 1
@@ -31,6 +32,7 @@ _TRANSITION_OUTCOMES = frozenset(
         "failed",
         "inconclusive",
         "rejected",
+        "repairing",
         "retrying",
         "timed_out",
         "waiting_human",
@@ -117,20 +119,159 @@ _ATTEMPT_TERMINALS = frozenset(
     }
 )
 _PREDISPATCH_TERMINALS = frozenset({"timed_out", "waiting_human"})
+_IMPLEMENTATION_STAGES = frozenset({"executor", "verifier", "reviewer"})
+_REPAIR_RULES = frozenset({"route.scoped_change", "route.reviewed_change"})
 
 
-def _valid_attempt_lifecycle(outcomes: list[str]) -> bool:
+def _validate_repair_boundaries(
+    transitions: list[Mapping[str, object]], *, rule_id: str
+) -> bool:
+    """Authorize only explicit, bounded failure-to-new-implementation edges."""
+    historical_ids: dict[str, set[object]] = {
+        key: set() for key in ("assignmentId", "attemptId", "agentRunId")
+    }
+    prior_round_ids = {key: set() for key in historical_ids}
+    repairs = 0
+    for index, item in enumerate(transitions):
+        stage = item.get("stage")
+        if stage in _IMPLEMENTATION_STAGES:
+            if any(item.get(key) in values for key, values in prior_round_ids.items()):
+                return False
+            for key in historical_ids:
+                historical_ids[key].add(item.get(key))
+        if item.get("outcome") != "repairing":
+            continue
+        repairs += 1
+        if rule_id not in _REPAIR_RULES or repairs > MAX_IMPLEMENTATION_REPAIRS or not 0 < index < len(transitions) - 1:
+            return False
+        previous, following = transitions[index - 1], transitions[index + 1]
+        if (
+            stage not in {"verifier", "reviewer"}
+            or previous.get("outcome") not in {"failed", "inconclusive", "rejected"}
+            or any(previous.get(key) != item.get(key) for key in (
+                "stage", "assignmentId", "attemptId", "agentRunId", "artifactId"
+            ))
+            or item.get("artifactId") is None
+            or item.get("errorCode") != REPAIR_TRANSITION_ERROR
+            or following.get("stage") != "executor"
+            or following.get("outcome") not in {"dispatched", "timed_out"}
+        ):
+            return False
+        prior_round_ids = {key: set(values) for key, values in historical_ids.items()}
+    return True
+
+
+def _effective_completed_stages(
+    transitions: list[Mapping[str, object]],
+) -> set[str]:
+    completed: set[str] = set()
+    for item in transitions:
+        if item.get("outcome") == "repairing":
+            completed.difference_update(_IMPLEMENTATION_STAGES)
+        elif item.get("outcome") == "completed":
+            completed.add(str(item.get("stage")))
+    return completed
+
+
+def _valid_attempt_lifecycle(
+    outcomes: list[str],
+    *,
+    adjudicated: bool = False,
+) -> bool:
     if len(outcomes) == 1:
         return outcomes[0] in _PREDISPATCH_TERMINALS
     if outcomes[0] != "dispatched" or outcomes[1] not in _ATTEMPT_TERMINALS:
         return False
     if len(outcomes) == 2:
         return True
+    if (
+        len(outcomes) == 3
+        and adjudicated
+        and outcomes[1] == "blocked"
+        and outcomes[2] == "completed"
+    ):
+        # One frozen-conflict escalation: the blocked attempt resumed after
+        # a binding adjudication selected the continuation claim.
+        return True
     return (
         len(outcomes) == 3
         and outcomes[1] != "completed"
-        and outcomes[2] == "retrying"
+        and outcomes[2] in {"retrying", "repairing"}
     )
+
+
+_ADJUDICATION_TERMINALS = frozenset(
+    {"completed", "rejected", "failed", "timed_out"}
+)
+
+
+def _valid_adjudication_block(outcomes: list[str]) -> bool:
+    """Validate one ADJUDICATOR escalation block's outcome sequence."""
+
+    if not outcomes:
+        return False
+    if outcomes == ["timed_out"]:
+        return True
+    if outcomes[0] != "dispatched":
+        return False
+    if len(outcomes) == 2:
+        return outcomes[1] in _ADJUDICATION_TERMINALS
+    if len(outcomes) == 4 and outcomes[2] == "retrying":
+        # One bounded verdict-repair retry before the terminal decision.
+        return outcomes[3] in _ADJUDICATION_TERMINALS
+    return False
+
+
+def _split_adjudication_escalations(
+    transitions: list[SchedulerTransition],
+) -> tuple[list[SchedulerTransition], set[tuple[object, ...]]]:
+    """Split ADJUDICATOR escalation blocks out of a plan-stage trace.
+
+    Each block must directly follow a plan stage's ``blocked`` transition —
+    the frozen-conflict escalation point — and carry a bounded verdict
+    lifecycle.  The blocked attempt's identity is returned so its
+    ``dispatched, blocked, completed`` resumption stays legal.
+    """
+
+    plan_transitions: list[SchedulerTransition] = []
+    adjudicated_identities: set[tuple[object, ...]] = set()
+    index = 0
+    while index < len(transitions):
+        transition = transitions[index]
+        if transition.stage is not DispatchStage.ADJUDICATOR:
+            plan_transitions.append(transition)
+            index += 1
+            continue
+        if not plan_transitions or plan_transitions[-1].outcome != "blocked":
+            raise ValueError(
+                "scheduler trace adjudication lacks its blocked escalation"
+            )
+        escalated = plan_transitions[-1]
+        identity = (
+            escalated.stage,
+            escalated.assignment_id,
+            escalated.attempt_id,
+            escalated.agent_run_id,
+        )
+        if identity in adjudicated_identities:
+            raise ValueError(
+                "scheduler trace adjudicates one conflict twice"
+            )
+        block: list[SchedulerTransition] = []
+        while (
+            index < len(transitions)
+            and transitions[index].stage is DispatchStage.ADJUDICATOR
+        ):
+            block.append(transitions[index])
+            index += 1
+        if not _valid_adjudication_block(
+            [item.outcome for item in block]
+        ):
+            raise ValueError(
+                "scheduler trace adjudication lifecycle is invalid"
+            )
+        adjudicated_identities.add(identity)
+    return plan_transitions, adjudicated_identities
 
 
 def _valid_global_lifecycle(
@@ -153,6 +294,11 @@ def _valid_global_lifecycle(
     completed: set[str] = set()
     current_attempt: dict[str, tuple[str, str, str, str]] = {}
     for index, (stage, outcome, identity) in enumerate(events):
+        if outcome == "repairing":
+            completed.difference_update(_IMPLEMENTATION_STAGES)
+            for implementation_stage in _IMPLEMENTATION_STAGES:
+                current_attempt.pop(implementation_stage, None)
+            continue
         position = stage_positions.get(stage)
         if position is None or any(
             prior not in completed for prior in ordered_stages[:position]
@@ -310,6 +456,15 @@ def _validate_scheduler_state(
         or not 1 <= len(transitions) <= _MAX_TRANSITIONS
     ):
         raise ValueError("scheduler trace scheduler state is invalid")
+    # Escalation blocks (frozen-conflict adjudications) interleave with plan
+    # stages; every plan-oriented invariant below runs on the plan-pure
+    # stream, and the failure-stage check keeps the original terminal
+    # transition — an adjudication rejection ends the workflow.
+    plan_transitions, adjudicated_identities = _split_adjudication_escalations(
+        transitions
+    )
+    if not plan_transitions:
+        raise ValueError("scheduler trace scheduler state is invalid")
     if outcome.failure_stage is not None and not isinstance(
         outcome.failure_stage, DispatchStage
     ):
@@ -348,7 +503,7 @@ def _validate_scheduler_state(
     last_stage_index = -1
     decision_ids: set[str] = set()
     commit_completed = False
-    for transition in transitions:
+    for transition in plan_transitions:
         index = stage_order.get(transition.stage)
         if (
             index is None
@@ -356,32 +511,30 @@ def _validate_scheduler_state(
             or transition.decision_id in decision_ids
         ):
             raise ValueError("scheduler trace scheduler state is invalid")
-        last_stage_index = index
+        last_stage_index = (
+            stage_order.get(DispatchStage.EXECUTOR, 0) - 1
+            if transition.outcome == "repairing" else index
+        )
         decision_ids.add(transition.decision_id)
         commit_completed = commit_completed or (
             transition.stage is DispatchStage.COMMIT
             and transition.outcome == "completed"
         )
-    observed_completed_stages = {
-        transition.stage
-        for transition in transitions
-        if transition.outcome == "completed"
-    }
-    if any(
-        sum(
-            transition.stage is stage
-            and transition.outcome == "completed"
-            for transition in transitions
-        )
-        > 1
-        for stage in observed_completed_stages
-    ):
-        raise ValueError("scheduler trace stage completed more than once")
+    observed_completed_stages: set[DispatchStage] = set()
+    for transition in plan_transitions:
+        if transition.outcome == "repairing":
+            observed_completed_stages.difference_update(
+                {DispatchStage.EXECUTOR, DispatchStage.VERIFIER, DispatchStage.REVIEWER}
+            )
+        elif transition.outcome == "completed":
+            if transition.stage in observed_completed_stages:
+                raise ValueError("scheduler trace stage completed more than once")
+            observed_completed_stages.add(transition.stage)
     dispatched_identities: set[tuple[DispatchStage, str, str, str]] = set()
     attempt_lifecycles: dict[
         tuple[DispatchStage, str, str, str], list[str]
     ] = {}
-    for transition in transitions:
+    for transition in plan_transitions:
         identity = (
             transition.stage,
             transition.assignment_id,
@@ -409,8 +562,11 @@ def _validate_scheduler_state(
                 "scheduler trace completed stage lacks its dispatch lifecycle"
             )
     if any(
-        not _valid_attempt_lifecycle(outcomes)
-        for outcomes in attempt_lifecycles.values()
+        not _valid_attempt_lifecycle(
+            outcomes,
+            adjudicated=identity in adjudicated_identities,
+        )
+        for identity, outcomes in attempt_lifecycles.items()
     ):
         raise ValueError("scheduler trace attempt lifecycle is invalid")
     typed_events = [
@@ -424,7 +580,7 @@ def _validate_scheduler_state(
                 transition.agent_run_id,
             ),
         )
-        for transition in transitions
+        for transition in plan_transitions
     ]
     if not _valid_global_lifecycle(
         typed_events,
@@ -435,15 +591,15 @@ def _validate_scheduler_state(
         committed=outcome.committed,
     ):
         raise ValueError("scheduler trace global lifecycle is invalid")
-    if plan.rule_id == "route.parent_only" and transitions[0].artifact_id is not None:
+    if (
+        plan.rule_id == "route.parent_only"
+        and plan_transitions[0].artifact_id is not None
+    ):
         raise ValueError("scheduler parent trace cannot reference an artifact")
     actual_completed_stages = tuple(
         stage
         for stage in planned_stages
-        if any(
-            transition.stage is stage and transition.outcome == "completed"
-            for transition in transitions
-        )
+        if stage in observed_completed_stages
     )
     if actual_completed_stages != completed_stages:
         raise ValueError("scheduler trace completed stages are inconsistent")
@@ -532,6 +688,10 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
     commit_completed = False
     dispatched_identities: set[tuple[str, str, str, str]] = set()
     attempt_lifecycles: dict[tuple[str, str, str, str], list[str]] = {}
+    adjudication_blocks: list[list[str]] = []
+    current_block: list[str] | None = None
+    adjudicated_identities: set[tuple[str, str, str, str]] = set()
+    previous_item: dict[str, object] | None = None
     for expected_sequence, item in enumerate(transitions, start=1):
         if not isinstance(item, Mapping) or set(item) != _TRANSITION_FIELDS:
             return None
@@ -540,14 +700,47 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
         transition_outcome = item.get("outcome")
         artifact_id = item.get("artifactId")
         error_code = item.get("errorCode")
+        positional_ok = stage in stage_order and not (
+            stage_order[stage] < last_stage_index
+        )
+        if stage == "adjudicator":
+            # Escalation blocks attach positionally to the plan stage whose
+            # blocked transition directly precedes them.
+            previous_stage = (
+                str(previous_item.get("stage")) if previous_item else None
+            )
+            if previous_stage == "adjudicator":
+                positional_ok = last_stage_index >= 0
+            elif (
+                previous_item is not None
+                and previous_stage in stage_order
+                and previous_item.get("outcome") == "blocked"
+                and last_stage_index >= 0
+            ):
+                positional_ok = True
+                if current_block is not None:
+                    adjudication_blocks.append(current_block)
+                current_block = [str(transition_outcome)]
+                adjudicated_identities.add(
+                    (
+                        previous_stage,
+                        str(previous_item.get("assignmentId")),
+                        str(previous_item.get("attemptId")),
+                        str(previous_item.get("agentRunId")),
+                    )
+                )
+            else:
+                positional_ok = False
+            if current_block is not None and positional_ok:
+                if previous_stage == "adjudicator":
+                    current_block.append(str(transition_outcome))
         if (
             type(sequence) is not int
             or sequence != expected_sequence
             or item.get("workflowId") != workflow_id
             or item.get("taskId") != task_id
             or stage not in _STAGES
-            or stage not in stage_order
-            or stage_order[stage] < last_stage_index
+            or not positional_ok
             or transition_outcome not in _TRANSITION_OUTCOMES
         ):
             return None
@@ -613,10 +806,13 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
             }
         )
         identity = (stage, assignment_id, attempt_id, agent_run_id)
-        if stage not in {"parent", "commit"}:
+        if stage == "adjudicator":
+            pass
+        elif stage not in {"parent", "commit"}:
             attempt_lifecycles.setdefault(identity, []).append(
                 str(transition_outcome)
             )
+
         if transition_outcome == "dispatched":
             if identity in dispatched_identities:
                 return None
@@ -632,14 +828,30 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
             return None
         parent_decision_id = decision_id
         decision_ids.add(decision_id)
-        last_stage_index = stage_order[stage]
+        if stage != "adjudicator":
+            last_stage_index = (
+                stage_order.get("executor", 0) - 1
+                if transition_outcome == "repairing" else stage_order[stage]
+            )
         commit_completed = commit_completed or (
             stage == "commit" and transition_outcome == "completed"
         )
+        previous_item = item
 
+    if current_block is not None:
+        adjudication_blocks.append(current_block)
+    if not _validate_repair_boundaries(normalized_transitions, rule_id=rule_id):
+        return None
     if any(
-        not _valid_attempt_lifecycle(outcomes)
-        for outcomes in attempt_lifecycles.values()
+        not _valid_adjudication_block(block) for block in adjudication_blocks
+    ):
+        return None
+    if any(
+        not _valid_attempt_lifecycle(
+            outcomes,
+            adjudicated=identity in adjudicated_identities,
+        )
+        for identity, outcomes in attempt_lifecycles.items()
     ):
         return None
     normalized_events = [
@@ -654,6 +866,7 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
             ),
         )
         for transition in normalized_transitions
+        if str(transition["stage"]) != "adjudicator"
     ]
     if not _valid_global_lifecycle(
         normalized_events,
@@ -673,21 +886,7 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
         "timed_out": frozenset({"timed_out"}),
         "waiting_human": frozenset({"waiting_human"}),
     }
-    completed_stage_names = {
-        str(transition["stage"])
-        for transition in normalized_transitions
-        if transition["outcome"] == "completed"
-    }
-    if any(
-        sum(
-            transition["stage"] == stage
-            and transition["outcome"] == "completed"
-            for transition in normalized_transitions
-        )
-        > 1
-        for stage in completed_stage_names
-    ):
-        return None
+    completed_stage_names = _effective_completed_stages(normalized_transitions)
     required_completed_stages = set(_RULE_STAGE_ORDER[rule_id])
     commit_requested = any(
         transition["stage"] == "commit"

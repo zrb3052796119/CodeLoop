@@ -1,0 +1,196 @@
+{
+  "auditVersion": 1,
+  "auditedAtUtc": "2026-09-18T16:46:57.171546+00:00",
+  "runId": "run_a7aae85c367440fcbc2f4b0a1247a45d",
+  "result": "PASS_BOUNDED_TIMEOUT_RECOVERY_TASK_STILL_UNFINISHED",
+  "checks": {
+    "twoModelStarts": true,
+    "bothStartsHaveExactlyOneMatchingTerminal": true,
+    "bothTerminalsTimeout": true,
+    "oneRetryLogEntry": true,
+    "orderedFailedThenFreshStart": true,
+    "noThirdModelCall": true,
+    "zeroCurrentToolCalls": true,
+    "hostSummaryNoModel": true,
+    "finalPartialMarker": true,
+    "finalTextMatchesResponse": true,
+    "outcomeUnknownAndNotAchieved": true,
+    "noFalseToolOrVerificationFailure": true,
+    "timeoutEstimatesChargedAndNoReservationLeak": true,
+    "targetHashesUnchanged": true
+  },
+  "attribution": {
+    "currentPromptMessageIndex": 29,
+    "inheritedHistoryMessageCount": 29,
+    "historySource": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/continuation/review-retry/live-run/messages.json",
+    "currentToolCalls": 0,
+    "method": "Only messages after exact latest prompt and this runId journal. Inherited prior tools and checks are not counted. reasoningContent excluded."
+  },
+  "modelLifecycle": [
+    {
+      "sequence": 5,
+      "type": "model.started",
+      "step": 1,
+      "payload": {
+        "operationId": "modelop_5759526c0a2b4eeb903990394513bc8b"
+      }
+    },
+    {
+      "sequence": 6,
+      "type": "model.failed",
+      "step": 1,
+      "payload": {
+        "operationId": "modelop_5759526c0a2b4eeb903990394513bc8b",
+        "failureKind": "timeout",
+        "durationMs": 180003
+      }
+    },
+    {
+      "sequence": 7,
+      "type": "model.started",
+      "step": 2,
+      "payload": {
+        "operationId": "modelop_f4780aa485e64d1dad79e484f892986b"
+      }
+    },
+    {
+      "sequence": 8,
+      "type": "model.failed",
+      "step": 2,
+      "payload": {
+        "operationId": "modelop_f4780aa485e64d1dad79e484f892986b",
+        "failureKind": "timeout",
+        "durationMs": 180003
+      }
+    }
+  ],
+  "metrics": {
+    "modelAttempts": 2,
+    "modelCompleted": 0,
+    "modelFailed": 2,
+    "automaticRetriesObserved": 1,
+    "toolCalls": 0,
+    "subagents": 0,
+    "durationSeconds": 360.29,
+    "providerUsageReceipts": 0,
+    "inputTokensProviderReported": 0,
+    "outputTokensProviderReported": 0,
+    "actualProviderTokensKnown": false
+  },
+  "budget": {
+    "initial": {
+      "limitTotalTokens": 1000000,
+      "limitModelCalls": 40,
+      "limitCostUsd": "5",
+      "usedTotalTokens": 0,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 0,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 0,
+      "usedOutputTokens": 0
+    },
+    "final": {
+      "limitTotalTokens": 1000000,
+      "limitModelCalls": 40,
+      "limitCostUsd": "5",
+      "usedTotalTokens": 26046,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 2,
+      "usedCostUsd": "0.0",
+      "usedInputTokens": 26046,
+      "usedOutputTokens": 0
+    },
+    "remainingInternalAdmission": {
+      "modelCalls": 38,
+      "tokens": 973954
+    },
+    "interpretation": "Two admitted timeout attempts counted and charged 26046 estimated input tokens in aggregate; outstanding reservation is zero. No response supplied authoritative usage. usedCostUsd=0.0 is lack of a settled charge, not evidence of zero provider billing. The remaining 38 calls / 973954 tokens is internal admission accounting, not actual provider usage headroom."
+  },
+  "completionLimitedEvent": {
+    "schemaVersion": 1,
+    "eventId": "evt_9ca275834dc14ccd9837ae16774f3e71",
+    "sequence": 9,
+    "timestamp": "2026-09-18T14:36:30.730Z",
+    "workspaceId": "ws_cdc6e560439c1c65",
+    "sessionId": null,
+    "runId": "run_a7aae85c367440fcbc2f4b0a1247a45d",
+    "type": "execution.completion_limited",
+    "step": 2,
+    "payload": {
+      "reason": "model transport timeout; automatic retry unavailable or exhausted",
+      "partial": true,
+      "modelSummary": false
+    }
+  },
+  "taskOutcome": {
+    "outcomeVersion": 2,
+    "outcomeStatus": "unknown",
+    "completionSucceeded": false,
+    "verificationStatus": "unverified",
+    "verificationPassedCount": 0,
+    "verificationFailedCount": 0,
+    "goalAchieved": false,
+    "learningSuccess": null,
+    "hadToolErrors": false,
+    "errorsRecovered": false,
+    "toolErrorCount": 0
+  },
+  "finalPublicResponse": "Partial progress; stopped because model transport timeout; automatic retry unavailable or exhausted.\nNo file changes were confirmed by this turn's bounded observer.\nNo independent verification result was observed.\nOverall completion is unconfirmed; remaining work requires follow-up.",
+  "targetState": {
+    "workspace": "/private/tmp/codeloop-completion-recheck-20260918",
+    "head": "638b7dd1f07c56b7fa864832f70cdcafc0cb3b0b",
+    "status": [
+      " M minicode/tools/test_runner.py",
+      " M tests/test_tools.py",
+      "?? .minicode-memory-authority.lock"
+    ],
+    "files": [
+      {
+        "path": "minicode/tools/test_runner.py",
+        "sha256": "a87b98b17990487d38677d7c968c04f36de8bbaaf8051b3d6a5dcaa83726a28c",
+        "matchesPriorContinuation": true
+      },
+      {
+        "path": "tests/test_tools.py",
+        "sha256": "5cda3a97ea5d9031c446204b242e350773109bf56942fedca46bffea081c4c74",
+        "matchesPriorContinuation": true
+      }
+    ]
+  },
+  "limitations": [
+    "This live run proves the repeated-timeout branch performs one automatic retry and an honest host partial hand-back. It does not prove successful recovery when a later provider call succeeds; that branch has deterministic regression coverage.",
+    "The run executed no new task tools, edits, tests, Git delivery or PR. Existing target changes and prior test results belong to earlier runs.",
+    "The final summary is scoped to this turn; it does not inventory inherited earlier progress.",
+    "No third model.next invocation is recorded; the audit does not inspect provider-side internal processing or billing.",
+    "The proposed Qwen control was not executed by this auditor and is not part of this run. Parent reports its external call was blocked by automatic approval review pending user authorization."
+  ],
+  "harnessBoundary": {
+    "entryPoint": "create_agent_turn_runtime / runtime.execute",
+    "model": "glm-5.3-flash",
+    "provider": "custom",
+    "requestControls": {
+      "model": "glm-5.3-flash",
+      "provider": "custom",
+      "maxOutputTokens": 8192,
+      "modelTimeoutSeconds": 180,
+      "modelMaxRetries": 1,
+      "enableThinking": null,
+      "temperature": null
+    },
+    "noMockedProviderResponse": true,
+    "observerToolsDelegateToOriginal": true,
+    "finalSummarySource": "host TurnCompletionPolicy.summary; no provider completion received",
+    "rootDeadlineSeconds": 1200
+  },
+  "evidenceFiles": [
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/resume-2/live-run/summary.json",
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/resume-2/live-run/messages.json",
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/resume-2/live-run/response.md",
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/resume-2/live-run/prompt.txt",
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/resume-2/live-run/initial-budget.json",
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/resume-2/live-run/request-controls.json",
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/resume-2/live-run/journal/dashboard/workspaces/ws_cdc6e560439c1c65/runs/run_a7aae85c367440fcbc2f4b0a1247a45d/events.ndjson",
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/resume-2/live.log",
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/resume-2/timeout-regression-proof.json"
+  ]
+}

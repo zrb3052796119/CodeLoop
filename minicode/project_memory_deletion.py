@@ -18,8 +18,8 @@ from minicode.deletion_store import (
 )
 from minicode.memory import MemoryEntry, MemoryManager, MemoryScope, MemoryTier
 from minicode.memory_approval import (
-    MEMORY_ID_RE,
     _PUBLIC_CATEGORIES,
+    MEMORY_ID_RE,
     MemoryApprovalAuthority,
     MemoryApprovalError,
 )
@@ -29,20 +29,8 @@ from minicode.memory_store import (
     MemoryStoreUnavailable,
 )
 
-
 _APPROVAL_STATUSES = frozenset({"pending", "approved", "rejected"})
-_LIFECYCLE_STATUSES = frozenset(
-    {
-        "active",
-        "pending",
-        "rejected",
-        "held",
-        "archived",
-        "deprecated",
-        "invalid",
-        "archived_duplicate",
-    }
-)
+_LIFECYCLE_STATUSES = memory_module._VALID_LIFECYCLE_STATUSES
 
 
 class ProjectMemoryDeletionError(RuntimeError):
@@ -127,40 +115,20 @@ class ProjectMemoryDeletionAuthority:
         self,
         memory_id: str,
     ) -> tuple[list[MemoryEntry], list[dict[str, object]], dict[str, object] | None]:
-        self._reader._validate_candidate_paths()
-        root = self.workspace / ".mini-code-memory"
-        entries = self._reader._read_scope_entries(MemoryScope.PROJECT, root)
+        snapshot = self._reader.read_scope_snapshot(MemoryScope.PROJECT)
+        entries = list(snapshot.entries)
         if len(entries) > 1_000 or len({entry.id for entry in entries}) != len(entries):
             raise MemoryApprovalError("memory_approval_failed")
 
-        audit_raw = self._reader._read_regular_file(root, "approval_audit.json")
-        audit_records: list[dict[str, object]] = []
-        if audit_raw is not None:
-            decoded = json.loads(self._reader._decode_source(audit_raw))
-            records = decoded.get("records", []) if isinstance(decoded, dict) else None
-            if (
-                not isinstance(records, list)
-                or len(records) > 1_000
-                or not all(isinstance(record, dict) for record in records)
-            ):
-                raise MemoryApprovalError("memory_approval_failed")
-            audit_records = [dict(record) for record in records]
+        audit_records = [dict(record) for record in snapshot.approval_audit]
 
         raw_target: dict[str, object] | None = None
-        memory_raw = self._reader._read_regular_file(root, "memory.json")
-        if memory_raw is not None:
-            decoded = json.loads(self._reader._decode_source(memory_raw))
-            raw_entries = decoded.get("entries", []) if isinstance(decoded, dict) else None
-            if not isinstance(raw_entries, list) or len(raw_entries) > 1_000:
-                raise MemoryApprovalError("memory_approval_failed")
-            raw_by_id = [
-                item
-                for item in raw_entries
-                if isinstance(item, dict) and item.get("id") == memory_id
-            ]
-            if len(raw_by_id) > 1:
-                raise MemoryApprovalError("memory_approval_failed")
-            raw_target = dict(raw_by_id[0]) if raw_by_id else None
+        raw_by_id = [
+            item for item in snapshot.raw_entries if item.get("id") == memory_id
+        ]
+        if len(raw_by_id) > 1:
+            raise MemoryApprovalError("memory_approval_failed")
+        raw_target = dict(raw_by_id[0]) if raw_by_id else None
         return entries, audit_records, raw_target
 
     def _plan(
@@ -178,8 +146,16 @@ class ProjectMemoryDeletionAuthority:
         invalid_audit = any(
             not isinstance(record.get("entry_id"), str) for record in audit
         )
-        backlinks = [entry for entry in entries if memory_id in entry.related_to]
-        backlink_count = sum(entry.related_to.count(memory_id) for entry in backlinks)
+        backlinks = [
+            (entry, count)
+            for entry in entries
+            if (
+                count := memory_module._memory_entry_relationships(entry).count(
+                    memory_id
+                )
+            )
+        ]
+        backlink_count = sum(count for _, count in backlinks)
         if target is None and not audit_matches and not backlinks and fence is None:
             raise ProjectMemoryDeletionError("deletion_target_not_found")
 
@@ -223,10 +199,10 @@ class ProjectMemoryDeletionAuthority:
             "backlinks": sorted(
                 [
                     entry.id,
-                    entry.related_to.count(memory_id),
+                    count,
                     _hash_payload(entry.to_dict()),
                 ]
-                for entry in backlinks
+                for entry, count in backlinks
             ),
             "diagnostics": [item["code"] for item in diagnostics],
             "fence": ["absent"],
@@ -417,12 +393,12 @@ class ProjectMemoryDeletionAuthority:
                 deleted["approvalAuditRecords"] = len(records) - len(kept_records)
                 manager.approval_audit[MemoryScope.PROJECT] = kept_records
                 for entry in memory_file.entries:
-                    occurrences = entry.related_to.count(memory_id)
-                    if occurrences:
-                        deleted["backlinks"] += occurrences
-                        entry.related_to = [
-                            related for related in entry.related_to if related != memory_id
-                        ]
+                    deleted["backlinks"] += (
+                        memory_module._remove_memory_relationship_reference(
+                            entry,
+                            memory_id,
+                        )
+                    )
                 deleted["entries"] = int(memory_file.delete_entry(memory_id))
                 if any(int(value) for value in deleted.values()):
                     # memory.json is the single authority for entries and
@@ -451,7 +427,12 @@ class ProjectMemoryDeletionAuthority:
                     remaining={"entries": 0, "approvalAuditRecords": 0, "backlinks": 0},
                 )
 
-            return manager.coordinated_write((MemoryScope.PROJECT,), commit)
+            # Deletion can turn previously resolved same-scope edges into
+            # dangling references. Hold the complete ordered authority fence
+            # while validating and cleaning every relationship representation.
+            # This low-frequency management operation favors correctness over
+            # the ordinary single-scope write fast path.
+            return manager.coordinated_write(tuple(MemoryScope), commit)
         except ProjectMemoryDeletionError:
             raise
         except (DeletionStoreBusy, MemoryStoreBusy) as error:

@@ -81,6 +81,13 @@ def test_create_run_persists_versioned_record_and_initial_event(tmp_path: Path) 
     assert "hidden-value" not in persisted
 
 
+def test_run_retention_bound_cannot_exceed_safe_scan_horizon(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(RunJournalValidationError, match="max_runs"):
+        RunJournal(tmp_path, max_runs=10_001)
+
+
 def test_append_transition_and_terminal_idempotency_preserve_one_writer(
     tmp_path: Path,
 ) -> None:
@@ -1174,3 +1181,501 @@ def test_atomic_metadata_failure_never_returns_a_successful_create(
     with pytest.raises(OSError):
         journal.create_run(title="Must fail")
     assert journal.list_runs().items == ()
+
+
+def test_cli_curator_receipt_is_activated_replayed_and_acknowledged(
+    tmp_path: Path,
+) -> None:
+    from minicode.curator_schedule import curator_completion_id
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    record = journal.create_run(title="CLI task", source="headless")
+    completion_id = curator_completion_id(record.id)
+    assert completion_id is not None
+
+    journal.transition(record.id, "running")
+    assert journal.pending_curator_completions() == ()
+    assert journal.prepare_curator_completion(record.id, completion_id) is True
+    # prepare is the durable logical task-end marker, so kill -9 before the
+    # Run terminal event still leaves a replayable completion obligation.
+    assert journal.pending_curator_completions() == (
+        (record.id, completion_id),
+    )
+    journal.transition(record.id, "completed")
+
+    reopened = RunJournal(workspace, data_dir=data_dir)
+    assert reopened.pending_curator_completions() == (
+        (record.id, completion_id),
+    )
+    assert reopened.acknowledge_curator_completion(
+        record.id,
+        completion_id,
+    ) is False
+    assert reopened.begin_curator_completion_delivery(
+        record.id,
+        completion_id,
+    ) is True
+    assert reopened.acknowledge_curator_completion(
+        record.id,
+        completion_id,
+    ) is True
+    assert reopened.pending_curator_completions() == ()
+
+
+def test_non_cli_run_explicitly_abstains_from_curator_outbox(
+    tmp_path: Path,
+) -> None:
+    from minicode.curator_schedule import curator_completion_id
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    record = journal.create_run(title="Gateway task", source="gateway")
+    completion_id = curator_completion_id(record.id)
+    assert completion_id is not None
+    journal.transition(record.id, "running")
+
+    assert journal.prepare_curator_completion(record.id, completion_id) is None
+    assert not (
+        _runs_root(data_dir, record.workspace_id)
+        / record.id
+        / "curator_receipt.json"
+    ).exists()
+
+
+def test_corrupt_cli_receipt_isolated_without_delivering_forged_identity(
+    tmp_path: Path,
+) -> None:
+    from minicode.curator_schedule import curator_completion_id
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    records = []
+    for label in ("corrupt", "healthy"):
+        record = journal.create_run(title=label, source="headless")
+        completion_id = curator_completion_id(record.id)
+        assert completion_id is not None
+        journal.transition(record.id, "running")
+        assert journal.prepare_curator_completion(record.id, completion_id)
+        journal.transition(record.id, "completed")
+        records.append((record, completion_id))
+
+    bad_path = (
+        _runs_root(data_dir, records[0][0].workspace_id)
+        / records[0][0].id
+        / "curator_receipt.json"
+    )
+    bad_path.write_text(
+        json.dumps(
+            {
+                "schemaVersion": 1,
+                "completionId": "f" * 64,
+                "state": "pending",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    expected_healthy = ((records[1][0].id, records[1][1]),)
+    assert journal.pending_curator_completions() == expected_healthy
+    bad_path.write_text("{malformed", encoding="utf-8")
+    assert journal.pending_curator_completions() == expected_healthy
+
+    bad_path.write_text(
+        json.dumps(
+            {
+                "schemaVersion": True,
+                "completionId": records[0][1],
+                "state": "pending",
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert journal.pending_curator_completions() == expected_healthy
+    scan = journal.scan_pending_curator_completions()
+    assert scan.items == expected_healthy
+    assert scan.exhaustive is False
+    assert "curator_receipt_invalid" in scan.diagnostics
+
+
+def test_curator_outbox_scan_never_treats_run_scan_limit_as_empty(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from minicode.curator_schedule import curator_completion_id
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    pending: list[tuple[str, str]] = []
+    for label in ("first", "second"):
+        record = journal.create_run(title=label, source="headless")
+        completion_id = curator_completion_id(record.id)
+        assert completion_id is not None
+        journal.transition(record.id, "running")
+        assert journal.prepare_curator_completion(record.id, completion_id)
+        journal.transition(record.id, "completed")
+        pending.append((record.id, completion_id))
+
+    monkeypatch.setattr(run_journal_module, "_MAX_RUNS_SCANNED", 1)
+    first_scan = journal.scan_pending_curator_completions()
+    assert len(first_scan.items) == 1
+    assert first_scan.exhaustive is False
+    assert "run_scan_limited" in first_scan.diagnostics
+
+    delivered = first_scan.items[0]
+    assert journal.begin_curator_completion_delivery(*delivered)
+    assert journal.acknowledge_curator_completion(*delivered)
+    followup = journal.scan_pending_curator_completions(limit=1)
+    assert followup.items == ()
+    assert followup.exhaustive is False
+    hidden = next(item for item in pending if item != delivered)
+    hidden_receipt = json.loads(
+        (
+            _runs_root(data_dir, journal.workspace_id)
+            / hidden[0]
+            / "curator_receipt.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert hidden_receipt["completionId"] == hidden[1]
+    assert hidden_receipt["state"] == "pending"
+
+
+def test_delivering_receipt_dominates_newer_pending_receipts_after_clock_rollback(
+    tmp_path: Path,
+) -> None:
+    from minicode.curator_schedule import curator_completion_id
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    now = [datetime(2026, 7, 16, 12, 0, tzinfo=timezone.utc)]
+    journal = RunJournal(
+        workspace,
+        data_dir=data_dir,
+        clock=lambda: now[0],
+    )
+    old = journal.create_run(title="old blocker", source="headless")
+    old_id = curator_completion_id(old.id)
+    assert old_id is not None
+    journal.transition(old.id, "running")
+    assert journal.prepare_curator_completion(old.id, old_id)
+    journal.transition(old.id, "completed")
+    assert journal.begin_curator_completion_delivery(old.id, old_id)
+
+    # Even a severe wall-clock rollback cannot place newly pending work ahead
+    # of a write-ahead delivery barrier.
+    now[0] = datetime(2025, 7, 16, 12, 0, tzinfo=timezone.utc)
+    newer: list[tuple[str, str]] = []
+    for index in range(8):
+        record = journal.create_run(title=f"new {index}", source="headless")
+        completion_id = curator_completion_id(record.id)
+        assert completion_id is not None
+        journal.transition(record.id, "running")
+        assert journal.prepare_curator_completion(record.id, completion_id)
+        journal.transition(record.id, "completed")
+        newer.append((record.id, completion_id))
+
+    scan = journal.scan_pending_curator_completions()
+    assert scan.exhaustive is True
+    assert scan.items[0] == (old.id, old_id)
+    assert set(scan.items[1:]) == set(newer)
+
+
+def test_missing_current_cli_receipt_blocks_scan_and_retention(
+    tmp_path: Path,
+) -> None:
+    from minicode.curator_schedule import curator_completion_id
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    now = datetime(2026, 7, 16, 12, 0, tzinfo=timezone.utc)
+    journal = RunJournal(
+        workspace,
+        data_dir=data_dir,
+        clock=lambda: now,
+        terminal_max_age=timedelta(seconds=0),
+    )
+    record = journal.create_run(title="missing receipt", source="headless")
+    completion_id = curator_completion_id(record.id)
+    assert completion_id is not None
+    journal.transition(record.id, "running")
+    assert journal.prepare_curator_completion(record.id, completion_id)
+    journal.transition(record.id, "completed")
+    receipt_path = (
+        _runs_root(data_dir, record.workspace_id)
+        / record.id
+        / "curator_receipt.json"
+    )
+    receipt_path.unlink()
+
+    scan = journal.scan_pending_curator_completions()
+    assert scan.items == ()
+    assert scan.exhaustive is False
+    assert "curator_receipt_missing" in scan.diagnostics
+    retained = journal.enforce_retention(now=now + timedelta(seconds=1))
+    assert retained.deleted_count == 0
+    assert any(
+        item["code"] == "curator_receipt_missing"
+        for item in retained.diagnostics
+    )
+    assert journal.get_run(record.id) is not None
+
+
+def test_create_run_receipt_failure_does_not_publish_outbox_capability(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+
+    def fail_receipt(*_args, **_kwargs) -> None:
+        raise RunJournalStorageError("injected receipt failure")
+
+    monkeypatch.setattr(journal, "_write_curator_receipt", fail_receipt)
+    with pytest.raises(RunJournalStorageError, match="injected"):
+        journal.create_run(title="unpublished outbox", source="headless")
+
+    run_dirs = list(_runs_root(data_dir, journal.workspace_id).glob("run_*"))
+    assert len(run_dirs) == 1
+    metadata = json.loads(
+        (run_dirs[0] / "metadata.json").read_text(encoding="utf-8")
+    )
+    assert "curatorOutboxVersion" not in metadata
+    assert not (run_dirs[0] / "curator_receipt.json").exists()
+    scan = journal.scan_pending_curator_completions()
+    assert scan.items == ()
+    assert scan.release_items == ()
+    assert scan.exhaustive is True
+    assert scan.diagnostics == ()
+
+
+def test_create_run_marker_failure_leaves_safe_unpublished_inactive_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    real_write = journal._write_metadata
+
+    def fail_marker(run_dir: Path, record: RunRecord) -> None:
+        if record.curator_outbox_version == 3:
+            raise RunJournalStorageError("injected marker failure")
+        real_write(run_dir, record)
+
+    monkeypatch.setattr(journal, "_write_metadata", fail_marker)
+    with pytest.raises(RunJournalStorageError, match="injected"):
+        journal.create_run(title="unpublished marker", source="headless")
+
+    run_dirs = list(_runs_root(data_dir, journal.workspace_id).glob("run_*"))
+    assert len(run_dirs) == 1
+    metadata = json.loads(
+        (run_dirs[0] / "metadata.json").read_text(encoding="utf-8")
+    )
+    receipt = json.loads(
+        (run_dirs[0] / "curator_receipt.json").read_text(encoding="utf-8")
+    )
+    assert "curatorOutboxVersion" not in metadata
+    assert receipt["schemaVersion"] == 3
+    assert receipt["state"] == "inactive"
+    scan = journal.scan_pending_curator_completions()
+    assert scan.items == ()
+    assert scan.release_items == ()
+    assert scan.exhaustive is True
+    assert scan.diagnostics == ()
+
+
+def test_retention_preserves_only_activated_unacknowledged_cli_receipts(
+    tmp_path: Path,
+) -> None:
+    from minicode.curator_schedule import curator_completion_id
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    now = datetime(2026, 7, 16, 12, 0, tzinfo=timezone.utc)
+    journal = RunJournal(
+        workspace,
+        data_dir=data_dir,
+        clock=lambda: now,
+        terminal_max_age=timedelta(seconds=0),
+    )
+    pending = journal.create_run(title="pending", source="headless")
+    pending_id = curator_completion_id(pending.id)
+    assert pending_id is not None
+    journal.transition(pending.id, "running")
+    assert journal.prepare_curator_completion(pending.id, pending_id)
+    journal.transition(pending.id, "completed")
+    inactive = journal.create_run(title="inactive", source="headless")
+    journal.transition(inactive.id, "running")
+    journal.transition(inactive.id, "completed")
+
+    first = journal.enforce_retention(now=now + timedelta(seconds=1))
+    assert first.deleted_count == 1
+    assert journal.get_run(pending.id) is not None
+    assert journal.get_run(inactive.id) is None
+
+    assert journal.begin_curator_completion_delivery(pending.id, pending_id)
+    assert journal.acknowledge_curator_completion(pending.id, pending_id)
+    assert journal.settle_curator_completion(pending.id, pending_id)
+    second = journal.enforce_retention(now=now + timedelta(seconds=1))
+    assert second.deleted_count == 1
+    assert journal.get_run(pending.id) is None
+
+
+def test_v3_recorded_receipts_block_retention_and_explicit_deletion_until_settled(
+    tmp_path: Path,
+) -> None:
+    from minicode.curator_schedule import curator_completion_id
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    now = datetime(2026, 7, 16, 12, 0, tzinfo=timezone.utc)
+    journal = RunJournal(
+        workspace,
+        data_dir=data_dir,
+        clock=lambda: now,
+        terminal_max_age=timedelta(seconds=0),
+    )
+
+    def create_recorded(session_id: str) -> tuple[RunRecord, str]:
+        record = journal.create_run(
+            title=session_id,
+            source="headless",
+            session_id=session_id,
+        )
+        completion_id = curator_completion_id(record.id)
+        assert completion_id is not None
+        journal.transition(record.id, "running")
+        assert journal.prepare_curator_completion(record.id, completion_id)
+        journal.transition(record.id, "completed")
+        assert journal.begin_curator_completion_delivery(
+            record.id,
+            completion_id,
+        )
+        assert journal.acknowledge_curator_completion(
+            record.id,
+            completion_id,
+        )
+        return record, completion_id
+
+    retained, retained_completion = create_recorded("session_retention")
+    explicit, explicit_completion = create_recorded("session_explicit")
+    scan = journal.scan_pending_curator_completions()
+    assert set(scan.release_items) == {
+        (retained.id, retained_completion),
+        (explicit.id, explicit_completion),
+    }
+
+    blocked = journal.enforce_retention(now=now + timedelta(seconds=1))
+    assert blocked.deleted_count == 0
+    assert journal.get_run(retained.id) is not None
+    with pytest.raises(RunJournalStorageError):
+        journal.delete_terminal_for_session("session_explicit")
+    assert journal.get_run(explicit.id) is not None
+
+    assert journal.settle_curator_completion(
+        retained.id,
+        retained_completion,
+    )
+    allowed = journal.enforce_retention(now=now + timedelta(seconds=1))
+    assert allowed.deleted_count == 1
+    assert journal.get_run(retained.id) is None
+    assert journal.get_run(explicit.id) is not None
+
+    assert journal.settle_curator_completion(
+        explicit.id,
+        explicit_completion,
+    )
+    assert journal.delete_terminal_for_session("session_explicit") == 1
+    assert journal.get_run(explicit.id) is None
+
+
+def test_settled_curator_receipt_never_regresses_through_prepare_begin_or_ack(
+    tmp_path: Path,
+) -> None:
+    from minicode.curator_schedule import curator_completion_id
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    record = journal.create_run(title="monotonic", source="headless")
+    completion_id = curator_completion_id(record.id)
+    assert completion_id is not None
+    journal.transition(record.id, "running")
+    assert journal.prepare_curator_completion(record.id, completion_id)
+    assert journal.begin_curator_completion_delivery(record.id, completion_id)
+    assert journal.acknowledge_curator_completion(record.id, completion_id)
+    assert journal.settle_curator_completion(record.id, completion_id)
+    receipt_path = (
+        _runs_root(data_dir, record.workspace_id)
+        / record.id
+        / "curator_receipt.json"
+    )
+
+    def assert_settled() -> None:
+        payload = json.loads(receipt_path.read_text(encoding="utf-8"))
+        assert payload["schemaVersion"] == 3
+        assert payload["state"] == "settled"
+
+    assert_settled()
+    assert journal.prepare_curator_completion(
+        record.id,
+        completion_id,
+    ) == "settled"
+    assert_settled()
+    assert journal.begin_curator_completion_delivery(
+        record.id,
+        completion_id,
+    ) is False
+    assert_settled()
+    assert journal.acknowledge_curator_completion(
+        record.id,
+        completion_id,
+    ) is True
+    assert_settled()
+
+
+def test_terminal_run_with_raw_stale_writer_lock_can_resume_curator_delivery(
+    tmp_path: Path,
+) -> None:
+    from minicode.curator_schedule import curator_completion_id
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    journal = RunJournal(workspace, data_dir=data_dir)
+    record = journal.create_run(title="stale writer", source="headless")
+    completion_id = curator_completion_id(record.id)
+    assert completion_id is not None
+    journal.transition(record.id, "running")
+    assert journal.prepare_curator_completion(record.id, completion_id)
+    journal.transition(record.id, "completed")
+    run_dir = _runs_root(data_dir, record.workspace_id) / record.id
+    stale_writer = run_dir / ".writer.lock"
+    stale_writer.mkdir()
+
+    restarted = RunJournal(workspace, data_dir=data_dir)
+    assert restarted.begin_curator_completion_delivery(
+        record.id,
+        completion_id,
+    ) is True
+    receipt = json.loads(
+        (run_dir / "curator_receipt.json").read_text(encoding="utf-8")
+    )
+    assert receipt["state"] == "delivering"
+    assert stale_writer.is_dir()

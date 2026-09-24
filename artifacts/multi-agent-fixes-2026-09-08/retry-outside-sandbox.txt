@@ -1,0 +1,989 @@
+.FFF.................................................................... [ 25%]
+........................................................................ [ 51%]
+............................................F........................... [ 77%]
+......FFFFFFFFFFFFFFFF...............................FF........          [100%]
+=================================== FAILURES ===================================
+__________ test_checked_in_quality_baseline_matches_the_frozen_suite ___________
+tests/test_agent_quality_evaluator.py:439: in test_checked_in_quality_baseline_matches_the_frozen_suite
+    assert baseline["datasets"] == report["datasets"]
+E   AssertionError: assert {'compactionF...656f362', ...} == {'compactionF...656f362', ...}
+E     
+E     Omitting 6 identical items, use -vv to show
+E     Differing items:
+E     {'skillRoutingJoinedSha256': '5ef97de86a76bdfc30be9bfd6e74adc7fd7e5e2d5c664a99c8ba257dbd40f808'} != {'skillRoutingJoinedSha256': '77e0c658eee6065c3aafcd6277de5c0207b5d70a70c291be2890f3119a193b2f'}
+E     Use -v to get more diff
+_______ test_current_gate_accepts_crlf_checkout_of_frozen_quality_suite ________
+tests/test_agent_quality_evaluator.py:54: in test_current_gate_accepts_crlf_checkout_of_frozen_quality_suite
+    assert gate["passed"] is True
+E   assert False is True
+________________ test_quality_cli_passes_current_and_a_profiles ________________
+tests/test_agent_quality_evaluator.py:488: in test_quality_cli_passes_current_and_a_profiles
+    assert quality_cli_main(["--profile", "current"]) == 0
+E   AssertionError: assert 1 == 0
+E    +  where 1 = quality_cli_main(['--profile', 'current'])
+----------------------------- Captured stdout call -----------------------------
+{
+  "compactionFidelity": {
+    "caseCount": 12,
+    "evaluator": "compaction-fidelity",
+    "failedCaseIds": [],
+    "latestUserRetentionRate": 1.0,
+    "loadedSkillRetentionRate": 1.0,
+    "markerRecall": 1.0,
+    "nonNegativeSavingsRate": 1.0,
+    "schemaVersion": 1,
+    "summaryChainRate": 1.0,
+    "taskLedgerRetentionRate": 1.0,
+    "toolPairIntegrityRate": 1.0
+  },
+  "datasets": {
+    "compactionFidelitySha256": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1",
+    "multiAgentCostManifestSha256": "0f650589d72b2271467f7fc317cef3d31a3859b50bc3d3941c174e5c82c49ce5",
+    "multiAgentCostResultsSha256": "7d88efa8cc25bbcf1a630d0801b20d51d533b6dc73e241170d7ddc098f98ed08",
+    "northStarManifestSha256": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362",
+    "northStarResultsSha256": "8daf943a37c2f2ef202e744ffe5724f23ac9581ce7e857be24d43eafab33efb8",
+    "skillRoutingJoinedSha256": "77e0c658eee6065c3aafcd6277de5c0207b5d70a70c291be2890f3119a193b2f",
+    "skillRoutingSha256": "736698d6060b90bb632e7c4076290fab69147b07dcc9e64da81da5b80ae3ce31"
+  },
+  "gate": {
+    "checks": [
+      {
+        "actual": "736698d6060b90bb632e7c4076290fab69147b07dcc9e64da81da5b80ae3ce31",
+        "id": "datasets.skillRoutingSha256.equals",
+        "passed": true,
+        "threshold": "736698d6060b90bb632e7c4076290fab69147b07dcc9e64da81da5b80ae3ce31"
+      },
+      {
+        "actual": "77e0c658eee6065c3aafcd6277de5c0207b5d70a70c291be2890f3119a193b2f",
+        "id": "datasets.skillRoutingJoinedSha256.equals",
+        "passed": false,
+        "threshold": "5ef97de86a76bdfc30be9bfd6e74adc7fd7e5e2d5c664a99c8ba257dbd40f808"
+      },
+      {
+        "actual": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1",
+        "id": "datasets.compactionFidelitySha256.equals",
+        "passed": true,
+        "threshold": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1"
+      },
+      {
+        "actual": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362",
+        "id": "datasets.northStarManifestSha256.equals",
+        "passed": true,
+        "threshold": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362"
+      },
+      {
+        "actual": "8daf943a37c2f2ef202e744ffe5724f23ac9581ce7e857be24d43eafab33efb8",
+        "id": "datasets.northStarResultsSha256.equals",
+        "passed": true,
+        "threshold": "8daf943a37c2f2ef202e744ffe5724f23ac9581ce7e857be24d43eafab33efb8"
+      },
+      {
+        "actual": "0f650589d72b2271467f7fc317cef3d31a3859b50bc3d3941c174e5c82c49ce5",
+        "id": "datasets.multiAgentCostManifestSha256.equals",
+        "passed": true,
+        "threshold": "0f650589d72b2271467f7fc317cef3d31a3859b50bc3d3941c174e5c82c49ce5"
+      },
+      {
+        "actual": "7d88efa8cc25bbcf1a630d0801b20d51d533b6dc73e241170d7ddc098f98ed08",
+        "id": "datasets.multiAgentCostResultsSha256.equals",
+        "passed": true,
+        "threshold": "7d88efa8cc25bbcf1a630d0801b20d51d533b6dc73e241170d7ddc098f98ed08"
+      },
+      {
+        "actual": 60,
+        "id": "skillRouting.caseCount.min",
+        "passed": true,
+        "threshold": 60
+      },
+      {
+        "actual": 40,
+        "id": "skillRouting.positiveCount.min",
+        "passed": true,
+        "threshold": 40
+      },
+      {
+        "actual": 20,
+        "id": "skillRouting.abstainCount.min",
+        "passed": true,
+        "threshold": 20
+      },
+      {
+        "actual": 0.925,
+        "id": "skillRouting.top1Accuracy.min",
+        "passed": false,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRouting.abstainAccuracy.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRouting.requiredExactMatchRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 0.0,
+        "id": "skillRouting.forbiddenSelectionRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 96,
+        "id": "skillRoutingJoined.caseCount.min",
+        "passed": true,
+        "threshold": 96
+      },
+      {
+        "actual": 80,
+        "id": "skillRoutingJoined.routeCaseCount.min",
+        "passed": true,
+        "threshold": 80
+      },
+      {
+        "actual": 0,
+        "id": "skillRoutingJoined.remoteCallCount.equals",
+        "passed": true,
+        "threshold": 0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.casePassRate.min",
+        "passed": true,
+        "threshold": 0.875
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.routingDecisionPassRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.skillDecisionPassGivenCorrectOperations.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.operationExactRate.min",
+        "passed": true,
+        "threshold": 0.895833
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.routeOperationExactRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.contextResolutionRate.min",
+        "passed": true,
+        "threshold": 0.928571
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.candidateRecallAtK.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.candidateExactRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.operationCandidateRecallAtK.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.operationCandidatePrecisionAtK.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.operationCandidateExactRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.finalSkillExactRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.top1Accuracy.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.explicitAuthorityPreservationRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 0.0,
+        "id": "skillRoutingJoined.forbiddenCandidateViolationRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 0.0,
+        "id": "skillRoutingJoined.forbiddenFinalViolationRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.outcomeAccuracy.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.promptProjectionAccuracy.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 0.0,
+        "id": "skillRoutingJoined.noSkillFalsePositiveRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.compoundOperationCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.compoundOperationCandidateExactRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.minimalPairBehaviorAccuracy.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.samePromptContextBehaviorAccuracy.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.intentPermutationSensitivityRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 12,
+        "id": "compactionFidelity.caseCount.min",
+        "passed": true,
+        "threshold": 12
+      },
+      {
+        "actual": 1.0,
+        "id": "compactionFidelity.markerRecall.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "compactionFidelity.latestUserRetentionRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "compactionFidelity.loadedSkillRetentionRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "compactionFidelity.summaryChainRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "compactionFidelity.toolPairIntegrityRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "compactionFidelity.nonNegativeSavingsRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "compactionFidelity.taskLedgerRetentionRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 50,
+        "id": "northStar.caseCount.min",
+        "passed": true,
+        "threshold": 50
+      },
+      {
+        "actual": 10,
+        "id": "northStar.categoryCount.min",
+        "passed": true,
+        "threshold": 10
+      },
+      {
+        "actual": 30,
+        "id": "northStar.writeCaseCount.min",
+        "passed": true,
+        "threshold": 30
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.taskSuccessRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.verifiedSuccessRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.oraclePassRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.minCategorySuccessRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 0.0,
+        "id": "northStar.unsafeActionRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 0.0,
+        "id": "northStar.interventionRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 0.0,
+        "id": "northStar.inconclusiveRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.evidenceCompleteRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.durationTelemetryCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.modelCallTelemetryCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.tokenTelemetryCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 12,
+        "id": "multiAgentCost.caseCount.min",
+        "passed": true,
+        "threshold": 12
+      },
+      {
+        "actual": 12,
+        "id": "multiAgentCost.recordedCaseCount.min",
+        "passed": true,
+        "threshold": 12
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.recordedCaseCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 3,
+        "id": "multiAgentCost.categoryCount.min",
+        "passed": true,
+        "threshold": 3
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.taskSuccessRate.equals",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.verifiedSuccessRate.equals",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.oraclePassRate.equals",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 0.0,
+        "id": "multiAgentCost.unsafeActionRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 0.0,
+        "id": "multiAgentCost.interventionRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 0.0,
+        "id": "multiAgentCost.inconclusiveRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.durationTelemetryCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.modelCallTelemetryCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.tokenTelemetryCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.subagentTelemetryCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.subagentTokenTelemetryCoverageRate.equals",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.coordinationTelemetryCoverageRate.equals",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 0.0,
+        "id": "multiAgentCost.topologyViolationRate.equals",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 30,
+        "id": "multiAgentCost.subagentCount.equals",
+        "passed": true,
+        "threshold": 30
+      },
+      {
+        "actual": 0.866667,
+        "id": "multiAgentCost.subagentSuccessRate.equals",
+        "passed": true,
+        "threshold": 0.866667
+      },
+      {
+        "actual": 398686,
+        "id": "multiAgentCost.maxCaseTotalTokens.max",
+        "passed": true,
+        "threshold": 398686
+      },
+      {
+        "actual": 53,
+        "id": "multiAgentCost.maxCaseModelCalls.max",
+        "passed": true,
+        "threshold": 53
+      },
+      {
+        "actual": 384243,
+        "id": "multiAgentCost.maxCaseDurationMs.max",
+        "passed": true,
+        "threshold": 384243
+      },
+      {
+        "actual": 206445.583,
+        "id": "multiAgentCost.meanCaseTotalTokens.max",
+        "passed": true,
+        "threshold": 206445.583
+      },
+      {
+        "actual": 23.917,
+        "id": "multiAgentCost.meanCaseModelCalls.max",
+        "passed": true,
+        "threshold": 23.917
+      },
+      {
+        "actual": 187196.333,
+        "id": "multiAgentCost.meanCaseDurationMs.max",
+        "passed": true,
+        "threshold": 187196.333
+      }
+    ],
+    "failedChecks": [
+      "datasets.skillRoutingJoinedSha256.equals",
+      "skillRouting.top1Accuracy.min"
+    ],
+    "passed": false,
+    "profile": "current",
+    "schemaVersion": 1
+  },
+  "mode": "offline-deterministic",
+  "multiAgentCost": {
+    "caseCount": 12,
+    "categoryCount": 3,
+    "categoryStats": {
+      "direct-general-rejection": {
+        "maxTotalTokens": 42311,
+        "meanDurationMs": 56479.667,
+        "meanModelCalls": 5.333,
+        "meanTotalTokens": 30847.333,
+        "reportedCaseCount": 3,
+        "successRate": 1.0
+      },
+      "parallel-readonly-fanout": {
+        "maxTotalTokens": 328563,
+        "meanDurationMs": 300832.8,
+        "meanModelCalls": 23.6,
+        "meanTotalTokens": 261801.4,
+        "reportedCaseCount": 5,
+        "successRate": 1.0
+      },
+      "structured-workflow-chain": {
+        "maxTotalTokens": 398686,
+        "meanDurationMs": 143188.25,
+        "meanModelCalls": 38.25,
+        "meanTotalTokens": 268949.5,
+        "reportedCaseCount": 4,
+        "successRate": 1.0
+      }
+    },
+    "coordinationTelemetryCoverageRate": 1.0,
+    "durationTelemetryCoverageRate": 1.0,
+    "evaluator": "multi-agent-cost",
+    "failedCaseIds": [],
+    "inconclusiveRate": 0.0,
+    "interventionRate": 0.0,
+    "maxCaseDurationMs": 384243,
+    "maxCaseModelCalls": 53,
+    "maxCaseTotalTokens": 398686,
+    "maxSubagentsPerCase": 5,
+    "meanCaseDurationMs": 187196.333,
+    "meanCaseModelCalls": 23.917,
+    "meanCaseTotalTokens": 206445.583,
+    "meanCoordinationOverheadRatio": 0.542418,
+    "meanSubagentsPerCase": 2.5,
+    "modelCallTelemetryCoverageRate": 1.0,
+    "oraclePassRate": 1.0,
+    "p50CaseTotalTokens": 222071,
+    "p90CaseTotalTokens": 328563,
+    "pendingCaseCount": 0,
+    "recordedCaseCount": 12,
+    "recordedCaseCoverageRate": 1.0,
+    "reportedResultCount": 12,
+    "schemaVersion": 1,
+    "subagentCount": 30,
+    "subagentSuccessRate": 0.866667,
+    "subagentTelemetryCoverageRate": 1.0,
+    "subagentTokenTelemetryCoverageRate": 1.0,
+    "suiteId": "minicode-multi-agent-cost-v1",
+    "taskSuccessRate": 1.0,
+    "tokenTelemetryCoverageRate": 1.0,
+    "topologyViolationRate": 0.0,
+    "totalDurationMs": 2246356,
+    "totalModelCalls": 287,
+    "totalTokens": 2477347,
+    "unsafeActionRate": 0.0,
+    "verifiedSuccessRate": 1.0
+  },
+  "northStar": {
+    "averageDurationMs": 19523.86,
+    "caseCount": 50,
+    "categoryCount": 10,
+    "categorySuccessRates": {
+      "bug-fix": 1.0,
+      "code-understanding": 1.0,
+      "context-reliability": 1.0,
+      "documentation": 1.0,
+      "feature-implementation": 1.0,
+      "multi-agent": 1.0,
+      "persistent-memory": 1.0,
+      "refactor": 1.0,
+      "skill-routing": 1.0,
+      "testing": 1.0
+    },
+    "durationTelemetryCoverageRate": 1.0,
+    "evaluator": "north-star-recorded",
+    "evidenceCompleteRate": 1.0,
+    "failedCaseIds": [],
+    "inconclusiveRate": 0.0,
+    "interventionRate": 0.0,
+    "minCategorySuccessRate": 1.0,
+    "modelCallTelemetryCoverageRate": 1.0,
+    "oraclePassRate": 1.0,
+    "schemaVersion": 1,
+    "suiteId": "minicode-north-star-live-50-2026-08-20-v2",
+    "taskSuccessRate": 1.0,
+    "tokenTelemetryCoverageRate": 1.0,
+    "totalInputTokens": 4440759,
+    "totalModelCalls": 439,
+    "totalOutputTokens": 116471,
+    "unsafeActionRate": 0.0,
+    "verifiedSuccessRate": 1.0,
+    "writeCaseCount": 30
+  },
+  "payloadSha256": "fb4a48124bbc91a4cc88d1a5cf9a515e8ba13cc62589205f635d3b52317e9d25",
+  "remoteCallCount": 0,
+  "schemaVersion": 1,
+  "skillRouting": {
+    "abstainAccuracy": 1.0,
+    "abstainCount": 20,
+    "caseCount": 60,
+    "evaluator": "skill-routing",
+    "failedCaseIds": [
+      "positive-database-02",
+      "positive-deploy-01",
+      "positive-database-zh-02"
+    ],
+    "forbiddenSelectionRate": 0.0,
+    "positiveCount": 40,
+    "requiredExactMatchRate": 1.0,
+    "schemaVersion": 1,
+    "top1Accuracy": 0.925
+  },
+  "skillRoutingJoined": {
+    "abstainAccuracy": 1.0,
+    "abstainCaseCount": 1,
+    "candidateExactRate": 1.0,
+    "candidateRecallAtK": 1.0,
+    "capabilityCount": 9,
+    "caseCount": 96,
+    "casePassRate": 1.0,
+    "catalogSkillCount": 12,
+    "categoryStats": {
+      "authority-negation-correction": {
+        "caseCount": 16,
+        "passRate": 1.0
+      },
+      "compound-partial-semantic": {
+        "caseCount": 20,
+        "passRate": 1.0
+      },
+      "context-continuation-switch": {
+        "caseCount": 24,
+        "passRate": 1.0
+      },
+      "no-skill-clarify": {
+        "caseCount": 12,
+        "passRate": 1.0
+      },
+      "same-topic-intent": {
+        "caseCount": 24,
+        "passRate": 1.0
+      }
+    },
+    "clarifyAccuracy": 1.0,
+    "clarifyCaseCount": 3,
+    "compoundCaseCount": 21,
+    "compoundOperationCandidateExactRate": 1.0,
+    "compoundOperationCoverageRate": 1.0,
+    "contextAblationCaseCount": 28,
+    "contextAblationDegradationRate": 0.821429,
+    "contextCaseCount": 28,
+    "contextResolutionRate": 1.0,
+    "contrastPairCount": 23,
+    "evaluator": "skill-routing-joined",
+    "expectedOutcomeCounts": {
+      "abstain": 1,
+      "clarify": 3,
+      "no_skill": 12,
+      "route": 80
+    },
+    "explicitAuthorityPreservationRate": 1.0,
+    "failedCaseIds": [],
+    "finalSkillExactRate": 1.0,
+    "forbiddenCandidateViolationRate": 0.0,
+    "forbiddenFinalViolationRate": 0.0,
+    "intentPermutationSensitivityRate": 1.0,
+    "intentSensitivityCaseCount": 10,
+    "minimalPairBehaviorAccuracy": 1.0,
+    "minimalPairCount": 24,
+    "minimalPairRouteFlipRate": 1.0,
+    "mode": "offline-production-shaped",
+    "noSkillCaseCount": 12,
+    "noSkillFalsePositiveRate": 0.0,
+    "operationCandidateExactRate": 1.0,
+    "operationCandidatePrecisionAtK": 1.0,
+    "operationCandidateRecallAtK": 1.0,
+    "operationCorrectCaseCount": 96,
+    "operationExactRate": 1.0,
+    "outcomeAccuracy": 1.0,
+    "promptProjectionAccuracy": 1.0,
+    "remoteCallCount": 0,
+    "requiredSkillRecall": 1.0,
+    "routeCaseCount": 80,
+    "routeOperationExactRate": 1.0,
+    "routingDecisionPassRate": 1.0,
+    "samePromptContextBehaviorAccuracy": 1.0,
+    "samePromptContextContrastPairCount": 11,
+    "samePromptContextFlipRate": 1.0,
+    "samePromptContextPairCount": 12,
+    "schemaVersion": 1,
+    "skillDecisionPassGivenCorrectOperations": 1.0,
+    "top1Accuracy": 1.0,
+    "topK": 5
+  }
+}
+___ test_composition_root_reuses_model_and_turn_controls_for_semantic_intent ___
+tests/test_intent_runtime_integration.py:202: in test_composition_root_reuses_model_and_turn_controls_for_semantic_intent
+    assert intent_call_context == {
+E   AssertionError: assert {'agent_budge...4b2e8e0>, ...} == {'agent_budge... 0x104b2e8e0>}
+E     
+E     Omitting 4 identical items, use -vv to show
+E     Left contains 1 more item:
+E     {'skill_selection_mode': 'routed'}
+E     Use -v to get more diff
+__________ test_v40_candidate_is_the_exact_multi_track_release_delta ___________
+tests/test_memory_retrieval_production_baseline_v40.py:124: in test_v40_candidate_is_the_exact_multi_track_release_delta
+    v40 = build_v40_candidate()
+          ^^^^^^^^^^^^^^^^^^^^^
+scripts/memory_retrieval_production_baseline.py:2984: in build_v40_candidate
+    raise BaselineCertificationError(
+E   scripts.memory_retrieval_production_baseline.BaselineCertificationError: unexpected v39 source differences: changed=minicode/agent_loop.py, minicode/agent_reflection.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/conversation_turn_store.py, minicode/deletion_store.py, minicode/file_review.py, minicode/gateway.py, minicode/headless.py, minicode/main.py, minicode/memory.py, minicode/memory_approval.py, minicode/memory_candidate_consolidation.py, minicode/memory_curator_agent.py, minicode/memory_injector.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/memory_store.py, minicode/permission_approval.py, minicode/permissions.py, minicode/project_memory_deletion.py, minicode/run_events.py, minicode/run_journal.py, minicode/run_lifecycle.py, minicode/session.py, minicode/storage_health.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/search_providers.py, minicode/tools/task.py, minicode/tools/web_search.py, minicode/tui/input_handler.py, minicode/web/change_feed.py, minicode/web/chat_http.py, minicode/web/chat_stream.py, minicode/web/read_model.py, minicode/web/static/assets/app.js, minicode/web/static/assets/styles.css, minicode/web/static/index.html, minicode/workspace.py; added=minicode/advisory_lock.py, minicode/curator_schedule.py, minicode/memory_approval_interpretation.py, minicode/memory_audit_contract.py, minicode/memory_authority_io.py, minicode/memory_authority_publisher.py, minicode/memory_blob_store.py, minicode/memory_lexical_policy.py, minicode/memory_provenance.py, minicode/memory_write_contract.py, minicode/project_facts.py
+_______ test_v40_candidate_rejects_a_missing_added_authority_dependency ________
+tests/test_memory_retrieval_production_baseline_v40.py:263: in test_v40_candidate_rejects_a_missing_added_authority_dependency
+    build_v40_candidate(project_root=tmp_path)
+scripts/memory_retrieval_production_baseline.py:2984: in build_v40_candidate
+    raise BaselineCertificationError(
+E   scripts.memory_retrieval_production_baseline.BaselineCertificationError: unexpected v39 source differences: changed=minicode/agent_loop.py, minicode/agent_reflection.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/conversation_turn_store.py, minicode/deletion_store.py, minicode/file_review.py, minicode/gateway.py, minicode/headless.py, minicode/main.py, minicode/memory.py, minicode/memory_approval.py, minicode/memory_candidate_consolidation.py, minicode/memory_curator_agent.py, minicode/memory_injector.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/memory_store.py, minicode/permission_approval.py, minicode/permissions.py, minicode/project_memory_deletion.py, minicode/run_events.py, minicode/run_journal.py, minicode/run_lifecycle.py, minicode/session.py, minicode/storage_health.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/search_providers.py, minicode/tools/task.py, minicode/tools/web_search.py, minicode/tui/input_handler.py, minicode/web/change_feed.py, minicode/web/chat_http.py, minicode/web/chat_stream.py, minicode/web/read_model.py, minicode/web/static/assets/app.js, minicode/web/static/assets/styles.css, minicode/web/static/index.html, minicode/workspace.py; added=minicode/advisory_lock.py, minicode/curator_schedule.py, minicode/memory_approval_interpretation.py, minicode/memory_audit_contract.py, minicode/memory_authority_io.py, minicode/memory_authority_publisher.py, minicode/memory_blob_store.py, minicode/memory_lexical_policy.py, minicode/memory_provenance.py, minicode/memory_write_contract.py, minicode/project_facts.py
+
+During handling of the above exception, another exception occurred:
+tests/test_memory_retrieval_production_baseline_v40.py:259: in test_v40_candidate_rejects_a_missing_added_authority_dependency
+    with pytest.raises(
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'required v40 source files missing'
+E     Actual message: 'unexpected v39 source differences: changed=minicode/agent_loop.py, minicode/agent_reflection.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/conversation_turn_store.py, minicode/deletion_store.py, minicode/file_review.py, minicode/gateway.py, minicode/headless.py, minicode/main.py, minicode/memory.py, minicode/memory_approval.py, minicode/memory_candidate_consolidation.py, minicode/memory_curator_agent.py, minicode/memory_injector.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/memory_store.py, minicode/permission_approval.py, minicode/permissions.py, minicode/project_memory_deletion.py, minicode/run_events.py, minicode/run_journal.py, minicode/run_lifecycle.py, minicode/session.py, minicode/storage_health.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/search_providers.py, minicode/tools/task.py, minicode/tools/web_search.py, minicode/tui/input_handler.py, minicode/web/change_feed.py, minicode/web/chat_http.py, minicode/web/chat_stream.py, minicode/web/read_model.py, minicode/web/static/assets/app.js, minicode/web/static/assets/styles.css, minicode/web/static/index.html, minicode/workspace.py; added=minicode/advisory_lock.py, minicode/curator_schedule.py, minicode/memory_approval_interpretation.py, minicode/memory_audit_contract.py, minicode/memory_authority_io.py, minicode/memory_authority_publisher.py, minicode/memory_blob_store.py, minicode/memory_lexical_policy.py, minicode/memory_provenance.py, minicode/memory_write_contract.py, minicode/project_facts.py'
+____________ test_v40_preserves_every_unrelated_v39_production_hash ____________
+tests/test_memory_retrieval_production_baseline_v40.py:154: in test_v40_preserves_every_unrelated_v39_production_hash
+    v40 = build_v40_candidate()
+          ^^^^^^^^^^^^^^^^^^^^^
+scripts/memory_retrieval_production_baseline.py:2984: in build_v40_candidate
+    raise BaselineCertificationError(
+E   scripts.memory_retrieval_production_baseline.BaselineCertificationError: unexpected v39 source differences: changed=minicode/agent_loop.py, minicode/agent_reflection.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/conversation_turn_store.py, minicode/deletion_store.py, minicode/file_review.py, minicode/gateway.py, minicode/headless.py, minicode/main.py, minicode/memory.py, minicode/memory_approval.py, minicode/memory_candidate_consolidation.py, minicode/memory_curator_agent.py, minicode/memory_injector.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/memory_store.py, minicode/permission_approval.py, minicode/permissions.py, minicode/project_memory_deletion.py, minicode/run_events.py, minicode/run_journal.py, minicode/run_lifecycle.py, minicode/session.py, minicode/storage_health.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/search_providers.py, minicode/tools/task.py, minicode/tools/web_search.py, minicode/tui/input_handler.py, minicode/web/change_feed.py, minicode/web/chat_http.py, minicode/web/chat_stream.py, minicode/web/read_model.py, minicode/web/static/assets/app.js, minicode/web/static/assets/styles.css, minicode/web/static/index.html, minicode/workspace.py; added=minicode/advisory_lock.py, minicode/curator_schedule.py, minicode/memory_approval_interpretation.py, minicode/memory_audit_contract.py, minicode/memory_authority_io.py, minicode/memory_authority_publisher.py, minicode/memory_blob_store.py, minicode/memory_lexical_policy.py, minicode/memory_provenance.py, minicode/memory_write_contract.py, minicode/project_facts.py
+_____ test_release_join_writer_does_not_create_a_missing_receipt_after_pin _____
+tests/test_memory_retrieval_production_baseline_v41.py:534: in test_release_join_writer_does_not_create_a_missing_receipt_after_pin
+    manifest = write_v41_manifest(project_root=tmp_path)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/memory_retrieval_production_baseline.py:4664: in write_v41_manifest
+    build_v41_candidate(project_root=root)
+scripts/memory_retrieval_production_baseline.py:3068: in build_v41_candidate
+    raise BaselineCertificationError(
+E   scripts.memory_retrieval_production_baseline.BaselineCertificationError: unexpected v40 source differences: changed=minicode/agent_loop.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/file_review.py, minicode/main.py, minicode/mcp.py, minicode/memory.py, minicode/memory_injector.py, minicode/memory_lexical_policy.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/permissions.py, minicode/session.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/task.py, minicode/tui/input_handler.py; added=minicode/agent_budget.py, minicode/api_retry.py, minicode/config.py, minicode/context_manager.py, minicode/cost_tracker.py, minicode/cybernetic_orchestrator.py, minicode/domain_classifier.py, minicode/embeddings.py, minicode/env_file.py, minicode/evaluation_one_shot.py, minicode/memory_hybrid.py, minicode/memory_hybrid_freeze.py, minicode/memory_hybrid_promotion_contract.py, minicode/memory_hybrid_release.py, minicode/memory_hybrid_runtime.py, minicode/memory_path_identity.py, minicode/model_call_control.py, minicode/model_registry.py, minicode/openai_adapter.py, minicode/reflection_evidence.py, minicode/reflection_synthesis.py, minicode/state.py, minicode/tls.py, minicode/types.py, scripts/memory_hybrid_qwen_v2_evaluator.py, scripts/memory_hybrid_resolver_pressure_evaluator.py
+_________ test_staged_v41_candidate_is_read_only_and_v40_stays_active __________
+tests/test_memory_retrieval_production_baseline_v41.py:225: in test_staged_v41_candidate_is_read_only_and_v40_stays_active
+    candidate = build_v41_candidate(project_root=tmp_path)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/memory_retrieval_production_baseline.py:3068: in build_v41_candidate
+    raise BaselineCertificationError(
+E   scripts.memory_retrieval_production_baseline.BaselineCertificationError: unexpected v40 source differences: changed=minicode/agent_loop.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/file_review.py, minicode/main.py, minicode/mcp.py, minicode/memory.py, minicode/memory_injector.py, minicode/memory_lexical_policy.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/permissions.py, minicode/session.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/task.py, minicode/tui/input_handler.py; added=minicode/agent_budget.py, minicode/api_retry.py, minicode/config.py, minicode/context_manager.py, minicode/cost_tracker.py, minicode/cybernetic_orchestrator.py, minicode/domain_classifier.py, minicode/embeddings.py, minicode/env_file.py, minicode/evaluation_one_shot.py, minicode/memory_hybrid.py, minicode/memory_hybrid_freeze.py, minicode/memory_hybrid_promotion_contract.py, minicode/memory_hybrid_release.py, minicode/memory_hybrid_runtime.py, minicode/memory_path_identity.py, minicode/model_call_control.py, minicode/model_registry.py, minicode/openai_adapter.py, minicode/reflection_evidence.py, minicode/reflection_synthesis.py, minicode/state.py, minicode/tls.py, minicode/types.py, scripts/memory_hybrid_qwen_v2_evaluator.py, scripts/memory_hybrid_resolver_pressure_evaluator.py
+___________ test_v41_candidate_closes_the_exact_hybrid_runtime_delta ___________
+tests/test_memory_retrieval_production_baseline_v41.py:112: in test_v41_candidate_closes_the_exact_hybrid_runtime_delta
+    candidate = build_v41_candidate()
+                ^^^^^^^^^^^^^^^^^^^^^
+scripts/memory_retrieval_production_baseline.py:3068: in build_v41_candidate
+    raise BaselineCertificationError(
+E   scripts.memory_retrieval_production_baseline.BaselineCertificationError: unexpected v40 source differences: changed=minicode/agent_loop.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/file_review.py, minicode/main.py, minicode/mcp.py, minicode/memory.py, minicode/memory_injector.py, minicode/memory_lexical_policy.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/permissions.py, minicode/session.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/task.py, minicode/tui/input_handler.py; added=minicode/agent_budget.py, minicode/api_retry.py, minicode/config.py, minicode/context_manager.py, minicode/cost_tracker.py, minicode/cybernetic_orchestrator.py, minicode/domain_classifier.py, minicode/embeddings.py, minicode/env_file.py, minicode/evaluation_one_shot.py, minicode/memory_hybrid.py, minicode/memory_hybrid_freeze.py, minicode/memory_hybrid_promotion_contract.py, minicode/memory_hybrid_release.py, minicode/memory_hybrid_runtime.py, minicode/memory_path_identity.py, minicode/model_call_control.py, minicode/model_registry.py, minicode/openai_adapter.py, minicode/reflection_evidence.py, minicode/reflection_synthesis.py, minicode/state.py, minicode/tls.py, minicode/types.py, scripts/memory_hybrid_qwen_v2_evaluator.py, scripts/memory_hybrid_resolver_pressure_evaluator.py
+___________ test_v41_candidate_rejects_a_missing_runtime_dependency ____________
+tests/test_memory_retrieval_production_baseline_v41.py:266: in test_v41_candidate_rejects_a_missing_runtime_dependency
+    build_v41_candidate(project_root=tmp_path)
+scripts/memory_retrieval_production_baseline.py:3068: in build_v41_candidate
+    raise BaselineCertificationError(
+E   scripts.memory_retrieval_production_baseline.BaselineCertificationError: unexpected v40 source differences: changed=minicode/agent_loop.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/file_review.py, minicode/main.py, minicode/mcp.py, minicode/memory.py, minicode/memory_injector.py, minicode/memory_lexical_policy.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/permissions.py, minicode/session.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/task.py, minicode/tui/input_handler.py; added=minicode/agent_budget.py, minicode/api_retry.py, minicode/config.py, minicode/context_manager.py, minicode/cost_tracker.py, minicode/cybernetic_orchestrator.py, minicode/domain_classifier.py, minicode/embeddings.py, minicode/env_file.py, minicode/evaluation_one_shot.py, minicode/memory_hybrid.py, minicode/memory_hybrid_freeze.py, minicode/memory_hybrid_promotion_contract.py, minicode/memory_hybrid_release.py, minicode/memory_hybrid_runtime.py, minicode/memory_path_identity.py, minicode/model_call_control.py, minicode/model_registry.py, minicode/openai_adapter.py, minicode/reflection_evidence.py, minicode/reflection_synthesis.py, minicode/state.py, minicode/tls.py, minicode/types.py, scripts/memory_hybrid_qwen_v2_evaluator.py, scripts/memory_hybrid_resolver_pressure_evaluator.py
+
+During handling of the above exception, another exception occurred:
+tests/test_memory_retrieval_production_baseline_v41.py:262: in test_v41_candidate_rejects_a_missing_runtime_dependency
+    with pytest.raises(
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'required v41 source files missing'
+E     Actual message: 'unexpected v40 source differences: changed=minicode/agent_loop.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/file_review.py, minicode/main.py, minicode/mcp.py, minicode/memory.py, minicode/memory_injector.py, minicode/memory_lexical_policy.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/permissions.py, minicode/session.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/task.py, minicode/tui/input_handler.py; added=minicode/agent_budget.py, minicode/api_retry.py, minicode/config.py, minicode/context_manager.py, minicode/cost_tracker.py, minicode/cybernetic_orchestrator.py, minicode/domain_classifier.py, minicode/embeddings.py, minicode/env_file.py, minicode/evaluation_one_shot.py, minicode/memory_hybrid.py, minicode/memory_hybrid_freeze.py, minicode/memory_hybrid_promotion_contract.py, minicode/memory_hybrid_release.py, minicode/memory_hybrid_runtime.py, minicode/memory_path_identity.py, minicode/model_call_control.py, minicode/model_registry.py, minicode/openai_adapter.py, minicode/reflection_evidence.py, minicode/reflection_synthesis.py, minicode/state.py, minicode/tls.py, minicode/types.py, scripts/memory_hybrid_qwen_v2_evaluator.py, scripts/memory_hybrid_resolver_pressure_evaluator.py'
+___________ test_v41_print_is_deterministic_without_machine_metadata ___________
+tests/test_memory_retrieval_production_baseline_v41.py:276: in test_v41_print_is_deterministic_without_machine_metadata
+    completed = subprocess.run(
+../../../miniconda3/lib/python3.13/subprocess.py:577: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['/Users/zhourunbo/miniconda3/bin/python', '/Users/zhourunbo/code/coding agent/MiniCode-Python-main/scripts/generate_memory_retrieval_production_baseline.py', '--print-v41']' returned non-zero exit status 1.
+______ test_v41_release_join_fails_closed_after_bound_artifact_tampering _______
+tests/test_memory_retrieval_production_baseline_v41.py:570: in test_v41_release_join_fails_closed_after_bound_artifact_tampering
+    manifest = write_v41_manifest(project_root=tmp_path)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/memory_retrieval_production_baseline.py:4664: in write_v41_manifest
+    build_v41_candidate(project_root=root)
+scripts/memory_retrieval_production_baseline.py:3068: in build_v41_candidate
+    raise BaselineCertificationError(
+E   scripts.memory_retrieval_production_baseline.BaselineCertificationError: unexpected v40 source differences: changed=minicode/agent_loop.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/file_review.py, minicode/main.py, minicode/mcp.py, minicode/memory.py, minicode/memory_injector.py, minicode/memory_lexical_policy.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/permissions.py, minicode/session.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/task.py, minicode/tui/input_handler.py; added=minicode/agent_budget.py, minicode/api_retry.py, minicode/config.py, minicode/context_manager.py, minicode/cost_tracker.py, minicode/cybernetic_orchestrator.py, minicode/domain_classifier.py, minicode/embeddings.py, minicode/env_file.py, minicode/evaluation_one_shot.py, minicode/memory_hybrid.py, minicode/memory_hybrid_freeze.py, minicode/memory_hybrid_promotion_contract.py, minicode/memory_hybrid_release.py, minicode/memory_hybrid_runtime.py, minicode/memory_path_identity.py, minicode/model_call_control.py, minicode/model_registry.py, minicode/openai_adapter.py, minicode/reflection_evidence.py, minicode/reflection_synthesis.py, minicode/state.py, minicode/tls.py, minicode/types.py, scripts/memory_hybrid_qwen_v2_evaluator.py, scripts/memory_hybrid_resolver_pressure_evaluator.py
+________ test_v41_release_join_verifies_real_files_and_gates_selection _________
+tests/test_memory_retrieval_production_baseline_v41.py:504: in test_v41_release_join_verifies_real_files_and_gates_selection
+    manifest = write_v41_manifest(project_root=tmp_path)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/memory_retrieval_production_baseline.py:4664: in write_v41_manifest
+    build_v41_candidate(project_root=root)
+scripts/memory_retrieval_production_baseline.py:3068: in build_v41_candidate
+    raise BaselineCertificationError(
+E   scripts.memory_retrieval_production_baseline.BaselineCertificationError: unexpected v40 source differences: changed=minicode/agent_loop.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/file_review.py, minicode/main.py, minicode/mcp.py, minicode/memory.py, minicode/memory_injector.py, minicode/memory_lexical_policy.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/permissions.py, minicode/session.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/task.py, minicode/tui/input_handler.py; added=minicode/agent_budget.py, minicode/api_retry.py, minicode/config.py, minicode/context_manager.py, minicode/cost_tracker.py, minicode/cybernetic_orchestrator.py, minicode/domain_classifier.py, minicode/embeddings.py, minicode/env_file.py, minicode/evaluation_one_shot.py, minicode/memory_hybrid.py, minicode/memory_hybrid_freeze.py, minicode/memory_hybrid_promotion_contract.py, minicode/memory_hybrid_release.py, minicode/memory_hybrid_runtime.py, minicode/memory_path_identity.py, minicode/model_call_control.py, minicode/model_registry.py, minicode/openai_adapter.py, minicode/reflection_evidence.py, minicode/reflection_synthesis.py, minicode/state.py, minicode/tls.py, minicode/types.py, scripts/memory_hybrid_qwen_v2_evaluator.py, scripts/memory_hybrid_resolver_pressure_evaluator.py
+__________ test_v41_writer_exclusively_creates_one_unpinned_candidate __________
+tests/test_memory_retrieval_production_baseline_v41.py:300: in test_v41_writer_exclusively_creates_one_unpinned_candidate
+    returned = write_v41_manifest(project_root=tmp_path)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/memory_retrieval_production_baseline.py:4664: in write_v41_manifest
+    build_v41_candidate(project_root=root)
+scripts/memory_retrieval_production_baseline.py:3068: in build_v41_candidate
+    raise BaselineCertificationError(
+E   scripts.memory_retrieval_production_baseline.BaselineCertificationError: unexpected v40 source differences: changed=minicode/agent_loop.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/file_review.py, minicode/main.py, minicode/mcp.py, minicode/memory.py, minicode/memory_injector.py, minicode/memory_lexical_policy.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/permissions.py, minicode/session.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/task.py, minicode/tui/input_handler.py; added=minicode/agent_budget.py, minicode/api_retry.py, minicode/config.py, minicode/context_manager.py, minicode/cost_tracker.py, minicode/cybernetic_orchestrator.py, minicode/domain_classifier.py, minicode/embeddings.py, minicode/env_file.py, minicode/evaluation_one_shot.py, minicode/memory_hybrid.py, minicode/memory_hybrid_freeze.py, minicode/memory_hybrid_promotion_contract.py, minicode/memory_hybrid_release.py, minicode/memory_hybrid_runtime.py, minicode/memory_path_identity.py, minicode/model_call_control.py, minicode/model_registry.py, minicode/openai_adapter.py, minicode/reflection_evidence.py, minicode/reflection_synthesis.py, minicode/state.py, minicode/tls.py, minicode/types.py, scripts/memory_hybrid_qwen_v2_evaluator.py, scripts/memory_hybrid_resolver_pressure_evaluator.py
+__________ test_v41_writer_never_repairs_a_tampered_pinned_candidate ___________
+tests/test_memory_retrieval_production_baseline_v41.py:342: in test_v41_writer_never_repairs_a_tampered_pinned_candidate
+    target = write_v41_manifest(project_root=tmp_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/memory_retrieval_production_baseline.py:4664: in write_v41_manifest
+    build_v41_candidate(project_root=root)
+scripts/memory_retrieval_production_baseline.py:3068: in build_v41_candidate
+    raise BaselineCertificationError(
+E   scripts.memory_retrieval_production_baseline.BaselineCertificationError: unexpected v40 source differences: changed=minicode/agent_loop.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/file_review.py, minicode/main.py, minicode/mcp.py, minicode/memory.py, minicode/memory_injector.py, minicode/memory_lexical_policy.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/permissions.py, minicode/session.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/task.py, minicode/tui/input_handler.py; added=minicode/agent_budget.py, minicode/api_retry.py, minicode/config.py, minicode/context_manager.py, minicode/cost_tracker.py, minicode/cybernetic_orchestrator.py, minicode/domain_classifier.py, minicode/embeddings.py, minicode/env_file.py, minicode/evaluation_one_shot.py, minicode/memory_hybrid.py, minicode/memory_hybrid_freeze.py, minicode/memory_hybrid_promotion_contract.py, minicode/memory_hybrid_release.py, minicode/memory_hybrid_runtime.py, minicode/memory_path_identity.py, minicode/model_call_control.py, minicode/model_registry.py, minicode/openai_adapter.py, minicode/reflection_evidence.py, minicode/reflection_synthesis.py, minicode/state.py, minicode/tls.py, minicode/types.py, scripts/memory_hybrid_qwen_v2_evaluator.py, scripts/memory_hybrid_resolver_pressure_evaluator.py
+_______ test_v41_writer_removes_final_target_when_directory_fsync_fails ________
+tests/test_memory_retrieval_production_baseline_v41.py:393: in test_v41_writer_removes_final_target_when_directory_fsync_fails
+    write_v41_manifest(project_root=tmp_path)
+scripts/memory_retrieval_production_baseline.py:4664: in write_v41_manifest
+    build_v41_candidate(project_root=root)
+scripts/memory_retrieval_production_baseline.py:3068: in build_v41_candidate
+    raise BaselineCertificationError(
+E   scripts.memory_retrieval_production_baseline.BaselineCertificationError: unexpected v40 source differences: changed=minicode/agent_loop.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/file_review.py, minicode/main.py, minicode/mcp.py, minicode/memory.py, minicode/memory_injector.py, minicode/memory_lexical_policy.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/permissions.py, minicode/session.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/task.py, minicode/tui/input_handler.py; added=minicode/agent_budget.py, minicode/api_retry.py, minicode/config.py, minicode/context_manager.py, minicode/cost_tracker.py, minicode/cybernetic_orchestrator.py, minicode/domain_classifier.py, minicode/embeddings.py, minicode/env_file.py, minicode/evaluation_one_shot.py, minicode/memory_hybrid.py, minicode/memory_hybrid_freeze.py, minicode/memory_hybrid_promotion_contract.py, minicode/memory_hybrid_release.py, minicode/memory_hybrid_runtime.py, minicode/memory_path_identity.py, minicode/model_call_control.py, minicode/model_registry.py, minicode/openai_adapter.py, minicode/reflection_evidence.py, minicode/reflection_synthesis.py, minicode/state.py, minicode/tls.py, minicode/types.py, scripts/memory_hybrid_qwen_v2_evaluator.py, scripts/memory_hybrid_resolver_pressure_evaluator.py
+
+During handling of the above exception, another exception occurred:
+tests/test_memory_retrieval_production_baseline_v41.py:392: in test_v41_writer_removes_final_target_when_directory_fsync_fails
+    with pytest.raises(BaselineCertificationError, match="publication failed"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'publication failed'
+E     Actual message: 'unexpected v40 source differences: changed=minicode/agent_loop.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/file_review.py, minicode/main.py, minicode/mcp.py, minicode/memory.py, minicode/memory_injector.py, minicode/memory_lexical_policy.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/permissions.py, minicode/session.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/task.py, minicode/tui/input_handler.py; added=minicode/agent_budget.py, minicode/api_retry.py, minicode/config.py, minicode/context_manager.py, minicode/cost_tracker.py, minicode/cybernetic_orchestrator.py, minicode/domain_classifier.py, minicode/embeddings.py, minicode/env_file.py, minicode/evaluation_one_shot.py, minicode/memory_hybrid.py, minicode/memory_hybrid_freeze.py, minicode/memory_hybrid_promotion_contract.py, minicode/memory_hybrid_release.py, minicode/memory_hybrid_runtime.py, minicode/memory_path_identity.py, minicode/model_call_control.py, minicode/model_registry.py, minicode/openai_adapter.py, minicode/reflection_evidence.py, minicode/reflection_synthesis.py, minicode/state.py, minicode/tls.py, minicode/types.py, scripts/memory_hybrid_qwen_v2_evaluator.py, scripts/memory_hybrid_resolver_pressure_evaluator.py'
+_ test_v41_writer_returns_an_existing_candidate_only_after_full_pin_validation _
+tests/test_memory_retrieval_production_baseline_v41.py:320: in test_v41_writer_returns_an_existing_candidate_only_after_full_pin_validation
+    target = write_v41_manifest(project_root=tmp_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/memory_retrieval_production_baseline.py:4664: in write_v41_manifest
+    build_v41_candidate(project_root=root)
+scripts/memory_retrieval_production_baseline.py:3068: in build_v41_candidate
+    raise BaselineCertificationError(
+E   scripts.memory_retrieval_production_baseline.BaselineCertificationError: unexpected v40 source differences: changed=minicode/agent_loop.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/file_review.py, minicode/main.py, minicode/mcp.py, minicode/memory.py, minicode/memory_injector.py, minicode/memory_lexical_policy.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/permissions.py, minicode/session.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/task.py, minicode/tui/input_handler.py; added=minicode/agent_budget.py, minicode/api_retry.py, minicode/config.py, minicode/context_manager.py, minicode/cost_tracker.py, minicode/cybernetic_orchestrator.py, minicode/domain_classifier.py, minicode/embeddings.py, minicode/env_file.py, minicode/evaluation_one_shot.py, minicode/memory_hybrid.py, minicode/memory_hybrid_freeze.py, minicode/memory_hybrid_promotion_contract.py, minicode/memory_hybrid_release.py, minicode/memory_hybrid_runtime.py, minicode/memory_path_identity.py, minicode/model_call_control.py, minicode/model_registry.py, minicode/openai_adapter.py, minicode/reflection_evidence.py, minicode/reflection_synthesis.py, minicode/state.py, minicode/tls.py, minicode/types.py, scripts/memory_hybrid_qwen_v2_evaluator.py, scripts/memory_hybrid_resolver_pressure_evaluator.py
+_____ test_verify_active_v41_requires_release_join_even_after_manifest_pin _____
+tests/test_memory_retrieval_production_baseline_v41.py:600: in test_verify_active_v41_requires_release_join_even_after_manifest_pin
+    manifest = write_v41_manifest(project_root=tmp_path)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/memory_retrieval_production_baseline.py:4664: in write_v41_manifest
+    build_v41_candidate(project_root=root)
+scripts/memory_retrieval_production_baseline.py:3068: in build_v41_candidate
+    raise BaselineCertificationError(
+E   scripts.memory_retrieval_production_baseline.BaselineCertificationError: unexpected v40 source differences: changed=minicode/agent_loop.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/file_review.py, minicode/main.py, minicode/mcp.py, minicode/memory.py, minicode/memory_injector.py, minicode/memory_lexical_policy.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/permissions.py, minicode/session.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/task.py, minicode/tui/input_handler.py; added=minicode/agent_budget.py, minicode/api_retry.py, minicode/config.py, minicode/context_manager.py, minicode/cost_tracker.py, minicode/cybernetic_orchestrator.py, minicode/domain_classifier.py, minicode/embeddings.py, minicode/env_file.py, minicode/evaluation_one_shot.py, minicode/memory_hybrid.py, minicode/memory_hybrid_freeze.py, minicode/memory_hybrid_promotion_contract.py, minicode/memory_hybrid_release.py, minicode/memory_hybrid_runtime.py, minicode/memory_path_identity.py, minicode/model_call_control.py, minicode/model_registry.py, minicode/openai_adapter.py, minicode/reflection_evidence.py, minicode/reflection_synthesis.py, minicode/state.py, minicode/tls.py, minicode/types.py, scripts/memory_hybrid_qwen_v2_evaluator.py, scripts/memory_hybrid_resolver_pressure_evaluator.py
+______________ test_dashboard_assets_load_from_an_installed_wheel ______________
+tests/test_packaging.py:2675: in test_dashboard_assets_load_from_an_installed_wheel
+    assert completed.returncode == 0, completed.stderr
+E   AssertionError: Traceback (most recent call last):
+E       File "/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-871/test_dashboard_assets_load_fro0/installed-wheel-smoke.py", line 1613, in <module>
+E         assert installed_allow_writes == ["installed-absolute-safe\n"]
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     AssertionError
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['/Users/zhourunbo/miniconda3/bin/python', '/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000... ["installed-absolute-safe\\n"]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n').returncode
+____________ test_project_skills_declare_narrow_operation_contracts ____________
+tests/test_skill_catalog_contracts.py:309: in test_project_skills_declare_narrow_operation_contracts
+    assert actual == expected
+E   AssertionError: assert {'code-skills...reate']), ...} == {'code-skills...reate']), ...}
+E     
+E     Omitting 15 identical items, use -vv to show
+E     Differing items:
+E     {'quality/lint-and-static-cleanup': (['lint warning repair', 'static analysis cleanup'], ['code.update', 'debug.update'])} != {'quality/lint-and-static-cleanup': (['lint warning repair', 'static analysis cleanup'], ['code.update'])}
+E     Use -v to get more diff
+_______ test_all_project_skill_examples_route_back_to_their_source_skill _______
+tests/test_skill_frontmatter_example_acceptance.py:437: in test_all_project_skill_examples_route_back_to_their_source_skill
+    assert not failures, "\n\n".join(failures)
+E   AssertionError: uncovered supported_operations=[('quality/lint-and-static-cleanup', 'debug.update')]
+E   assert not ["uncovered supported_operations=[('quality/lint-and-static-cleanup', 'debug.update')]"]
+=========================== short test summary info ============================
+FAILED tests/test_agent_quality_evaluator.py::test_checked_in_quality_baseline_matches_the_frozen_suite
+FAILED tests/test_agent_quality_evaluator.py::test_current_gate_accepts_crlf_checkout_of_frozen_quality_suite
+FAILED tests/test_agent_quality_evaluator.py::test_quality_cli_passes_current_and_a_profiles
+FAILED tests/test_intent_runtime_integration.py::test_composition_root_reuses_model_and_turn_controls_for_semantic_intent
+FAILED tests/test_memory_retrieval_production_baseline_v40.py::test_v40_candidate_is_the_exact_multi_track_release_delta
+FAILED tests/test_memory_retrieval_production_baseline_v40.py::test_v40_candidate_rejects_a_missing_added_authority_dependency
+FAILED tests/test_memory_retrieval_production_baseline_v40.py::test_v40_preserves_every_unrelated_v39_production_hash
+FAILED tests/test_memory_retrieval_production_baseline_v41.py::test_release_join_writer_does_not_create_a_missing_receipt_after_pin
+FAILED tests/test_memory_retrieval_production_baseline_v41.py::test_staged_v41_candidate_is_read_only_and_v40_stays_active
+FAILED tests/test_memory_retrieval_production_baseline_v41.py::test_v41_candidate_closes_the_exact_hybrid_runtime_delta
+FAILED tests/test_memory_retrieval_production_baseline_v41.py::test_v41_candidate_rejects_a_missing_runtime_dependency
+FAILED tests/test_memory_retrieval_production_baseline_v41.py::test_v41_print_is_deterministic_without_machine_metadata
+FAILED tests/test_memory_retrieval_production_baseline_v41.py::test_v41_release_join_fails_closed_after_bound_artifact_tampering
+FAILED tests/test_memory_retrieval_production_baseline_v41.py::test_v41_release_join_verifies_real_files_and_gates_selection
+FAILED tests/test_memory_retrieval_production_baseline_v41.py::test_v41_writer_exclusively_creates_one_unpinned_candidate
+FAILED tests/test_memory_retrieval_production_baseline_v41.py::test_v41_writer_never_repairs_a_tampered_pinned_candidate
+FAILED tests/test_memory_retrieval_production_baseline_v41.py::test_v41_writer_removes_final_target_when_directory_fsync_fails
+FAILED tests/test_memory_retrieval_production_baseline_v41.py::test_v41_writer_returns_an_existing_candidate_only_after_full_pin_validation
+FAILED tests/test_memory_retrieval_production_baseline_v41.py::test_verify_active_v41_requires_release_join_even_after_manifest_pin
+FAILED tests/test_packaging.py::test_dashboard_assets_load_from_an_installed_wheel
+FAILED tests/test_skill_catalog_contracts.py::test_project_skills_declare_narrow_operation_contracts
+FAILED tests/test_skill_frontmatter_example_acceptance.py::test_all_project_skill_examples_route_back_to_their_source_skill
+22 failed, 257 passed in 195.90s (0:03:15)

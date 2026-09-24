@@ -1,0 +1,61 @@
+{
+  "baseline": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "-m",
+      "pytest",
+      "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-hw7z4qta/baseline/tests/test_tools.py",
+      "-k",
+      "runs_every_discovered_file_beyond_ten or reports_failure_in_file_beyond_ten or never_reports_pass_when_output_reports_failures",
+      "-q",
+      "--tb=short"
+    ],
+    "duration_seconds": 0.733,
+    "returncode": 1,
+    "stderr": "",
+    "stdout": "FFF                                                                      [100%]\n=================================== FAILURES ===================================\n____________ test_test_runner_runs_every_discovered_file_beyond_ten ____________\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-hw7z4qta/baseline/tests/test_tools.py:476: in test_test_runner_runs_every_discovered_file_beyond_ten\n    assert executed == discovered, \"every discovered test file must be executed\"\nE   AssertionError: every discovered test file must be executed\nE   assert ['test_mod_01...d_06.py', ...] == ['test_mod_01...d_06.py', ...]\nE     \nE     Right contains 2 more items, first extra item: 'test_mod_11.py'\nE     Use -v to get more diff\n_____________ test_test_runner_reports_failure_in_file_beyond_ten ______________\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-hw7z4qta/baseline/tests/test_tools.py:508: in test_test_runner_reports_failure_in_file_beyond_ten\n    assert result.ok is False\nE   AssertionError: assert True is False\nE    +  where True = ToolResult(ok=True, output='\ud83e\uddea Test Runner\\n============================================================\\n\\nFramework: ...waitUser=False, verification={'verificationVersion': 1, 'kind': 'tests', 'outcome': 'passed', 'source': 'test_runner'}).ok\n_______ test_test_runner_never_reports_pass_when_output_reports_failures _______\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-hw7z4qta/baseline/tests/test_tools.py:550: in test_test_runner_never_reports_pass_when_output_reports_failures\n    assert result.ok is False\nE   AssertionError: assert True is False\nE    +  where True = ToolResult(ok=True, output='\ud83e\uddea Test Runner\\n============================================================\\n\\nFramework: ...waitUser=False, verification={'verificationVersion': 1, 'kind': 'tests', 'outcome': 'passed', 'source': 'test_runner'}).ok\n=========================== short test summary info ============================\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-hw7z4qta/baseline/tests/test_tools.py::test_test_runner_runs_every_discovered_file_beyond_ten\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-hw7z4qta/baseline/tests/test_tools.py::test_test_runner_reports_failure_in_file_beyond_ten\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-hw7z4qta/baseline/tests/test_tools.py::test_test_runner_never_reports_pass_when_output_reports_failures\n3 failed, 33 deselected in 0.55s\n",
+    "timed_out": false
+  },
+  "baseline_kind": "git-ref",
+  "fixed": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "-m",
+      "pytest",
+      "/private/tmp/codeloop-completion-recheck-20260918/tests/test_tools.py",
+      "-k",
+      "runs_every_discovered_file_beyond_ten or reports_failure_in_file_beyond_ten or never_reports_pass_when_output_reports_failures",
+      "-q",
+      "--tb=short"
+    ],
+    "duration_seconds": 0.838,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "...                                                                      [100%]\n3 passed, 33 deselected in 0.34s\n",
+    "timed_out": false
+  },
+  "fixed_root": "/private/tmp/codeloop-completion-recheck-20260918",
+  "status": "PROVEN",
+  "test_files": [
+    {
+      "path": "tests/test_tools.py",
+      "sha256": "5cda3a97ea5d9031c446204b242e350773109bf56942fedca46bffea081c4c74"
+    }
+  ],
+  "baseline_source": {
+    "kind": "git-ref",
+    "repo": "/private/tmp/codeloop-completion-recheck-20260918",
+    "ref": "638b7dd1f07c56b7fa864832f70cdcafc0cb3b0b",
+    "production_file_sha256": "2a709671ff4398574709794b6b104ef5524ec149f6b0a8248d31b891f6ee80e0"
+  },
+  "environment_policy": {
+    "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
+    "interpreter_same_for_both_sides": true,
+    "test_bytes_identical": true
+  },
+  "failure_review": {
+    "runs_every_discovered_file_beyond_ten": "Old command omits test_mod_11.py and test_mod_12.py.",
+    "reports_failure_in_file_beyond_ten": "Old wrapper incorrectly returns ok=True for the real pytest subprocess workload with the late failure.",
+    "never_reports_pass_when_output_reports_failures": "Old wrapper accepts the mocked zero-exit output containing failures. This third test covers the additional output-verdict behavior, not the original file-limit defect."
+  }
+}

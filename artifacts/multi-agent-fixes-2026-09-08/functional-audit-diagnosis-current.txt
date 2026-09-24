@@ -1,0 +1,110 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_audit_closes_web_and_archive_findings __________________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-864/test_audit_closes_web_and_arch0')
+
+    def test_audit_closes_web_and_archive_findings(
+        tmp_path: Path,
+    ) -> None:
+        _, payload = _run_audit(tmp_path)
+    
+        issues = {issue["id"]: issue for issue in payload["issues"]}
+        assert "SEC-002" not in issues
+        assert "WEB-001" not in issues
+        assert "WEB-002" not in issues
+        assert "SEC-001" not in issues
+        assert "SEC-003" not in issues
+        assert "SEC-004" not in issues
+        # TOOL-001 (missing file reported as an empty file) and SEC-005 (tool
+        # crashes leaking absolute paths/traceback) are fixed; both verdicts are
+        # now driven by live probes rather than static issue entries, so they must
+        # no longer appear as findings.
+        assert "TOOL-001" not in issues
+        assert "SEC-005" not in issues
+        assert all(issue["recommendedBatch"].startswith("Reliability 1B-") for issue in issues.values())
+        http_request = next(
+            item
+            for item in payload["capabilities"]
+            if item["id"] == "tool.http_request"
+        )
+        assert http_request["status"] == "pass"
+        assert http_request["safety"] == "pass"
+        assert http_request["issues"] == []
+        assert "tests/test_bounded_resolver.py" in http_request["evidence"]
+        web_fetch = next(
+            item
+            for item in payload["capabilities"]
+            if item["id"] == "tool.web_fetch"
+        )
+        assert web_fetch["deterministicTest"] == "pass"
+        assert web_fetch["safety"] == "pass"
+        assert web_fetch["truthfulness"] == "pass"
+        assert web_fetch["status"] == "pass"
+        assert web_fetch["issues"] == []
+        assert "tests/test_web_fetch_safety.py" in web_fetch["evidence"]
+        web_search = next(
+            item
+            for item in payload["capabilities"]
+            if item["id"] == "tool.web_search"
+        )
+        assert web_search["deterministicTest"] == "pass"
+        assert web_search["safety"] == "pass"
+        assert web_search["truthfulness"] == "pass"
+        assert web_search["status"] == "pass"
+        assert web_search["issues"] == []
+        assert "tests/test_web_search.py" in web_search["evidence"]
+        assert "tests/test_search_providers.py" in web_search["evidence"]
+        assert payload["summary"]["capabilityCount"] == 191
+        # SEC-002 and SEC-004 are closed by containment and bounded extraction
+        # probes/tests; the remaining findings cover unrelated tool metadata/schema.
+        assert payload["summary"]["issueCount"] == 2
+        assert payload["deterministicProbes"]["memory"] == {
+            "ordinaryFactPersisted": True,
+            "singleErrorPatternSuppressed": True,
+            # A network failure retried inside one trace clears the recurrence
+            # escape hatch, so only the environment-scope rule stops it.
+            "environmentErrorSuppressed": True,
+            # The inverse: fail -> change a file -> the same command passes must
+            # reach `verified_solution`. No runtime event reports this loop, so it
+            # is derived from the trace; without that, the signal is unreachable.
+            "verifiedRecoveryPersisted": True,
+        }
+        assert payload["deterministicProbes"]["web"] == {
+            "normalParser": True,
+            "explicitEmptyRecognized": True,
+            "changedMarkupRecognized": True,
+            "challengeRecognized": True,
+            "statusTaxonomy": {
+                "403": "forbidden",
+                "404": "forbidden",
+                "429": "rate_limited",
+                "503": "server_error",
+            },
+            "fallbackOnce": True,
+            "privateDestinationBlocked": True,
+            "mixedDnsBlocked": True,
+            "unsafeTargetTransportCalls": 0,
+            "pinnedTransport": True,
+            "oversizedResponseBlocked": True,
+            "maxReadBytes": 65_536,
+            "contentFreeErrors": True,
+        }
+        security = payload["deterministicProbes"]["security"]
+        assert security["archiveWorkspaceEscape"] == {
+            "gzip_compress": True,
+            "tar_create": True,
+            "zip_create": True,
+        }
+        assert security["httpMutationWithoutPermission"] is False
+>       assert security["httpMutationFixtureStatus"].startswith(
+            "blocked:"
+        )
+E       AssertionError: assert False
+E        +  where False = <built-in method startswith of str object at 0x1065d21b0>('blocked:')
+E        +    where <built-in method startswith of str object at 0x1065d21b0> = 'PermissionError'.startswith
+
+tests/functional_audit/test_runner.py:195: AssertionError
+=========================== short test summary info ============================
+FAILED tests/functional_audit/test_runner.py::test_audit_closes_web_and_archive_findings
+1 failed in 2.30s

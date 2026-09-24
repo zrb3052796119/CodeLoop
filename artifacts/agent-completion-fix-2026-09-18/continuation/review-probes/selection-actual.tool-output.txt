@@ -1,0 +1,26 @@
+🧪 Test Runner
+============================================================
+
+Framework: pytest
+Test files discovered: 201
+Test selection: pytest directory collection
+Pattern: selected
+Coverage: disabled
+
+------------------------------------------------------------
+
+📊 Results:
+  ✓ Passed:  201
+  ✗ Failed:  1
+  ⚠ Errors:  0
+  ⊘ Skipped: 0
+
+❌ Failures:
+________________________ test_selected_outside_filename ________________________
+
+    def test_selected_outside_filename():
+>       assert False, 'this file is excluded by the requested filename filter'
+E       AssertionError: this file is excluded by the requested filename filter
+E       assert False
+
+test_other.py:2: AssertionError

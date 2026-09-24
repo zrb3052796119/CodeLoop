@@ -2,8 +2,10 @@ from __future__ import annotations
 
 
 def parse_local_tool_shortcut(user_input: str) -> dict | None:
-    if user_input.startswith("/ls"):
-        directory = user_input.replace("/ls", "", 1).strip()
+    # Exact match or whitespace-delimited argument only: a prefix test would
+    # also swallow unrelated commands like "/lsfoo".
+    if user_input == "/ls" or user_input.startswith("/ls "):
+        directory = user_input[3:].strip()
         return {"toolName": "list_files", "input": {"path": directory} if directory else {}}
 
     if user_input.startswith("/grep "):
@@ -35,8 +37,10 @@ def parse_local_tool_shortcut(user_input: str) -> dict | None:
         target_path, separator, content = payload.partition("::")
         if not separator:
             return None
+        # modify_file was removed as a duplicate of write_file; keep the
+        # shortcut working by routing to the identical tool.
         return {
-            "toolName": "modify_file",
+            "toolName": "write_file",
             "input": {"path": target_path.strip(), "content": content},
         }
 

@@ -47,9 +47,12 @@ fingerprint was derived from the untouched v5 holdout:
 - unsafe/lifecycle index leakage: 0;
 - provider fallbacks: 0.
 
-Remote Qwen evidence is
-`artifacts/memory-retrieval-hybrid-qwen-v1-production-evidence.json`, whose
-pinned fingerprint is
+The current Remote Qwen production-evidence path is
+`artifacts/memory-retrieval-hybrid-qwen-v2-production-evidence.json`. The
+runtime fails closed until that artifact exists and its fingerprint is
+allowlisted. The previous
+`artifacts/memory-retrieval-hybrid-qwen-v1-production-evidence.json` is retained
+as historical v7 evidence; its pinned fingerprint is
 `bd317c42adb2d9d21807add9030ef111a197b9817bb88df6f24651600397e61e`.
 It was derived from the independently frozen v7 holdout:
 
@@ -117,7 +120,7 @@ configuring a Skill embedding key does not grant that authority.
     "enabled": true,
     "embeddingProvider": "qwen",
     "allowRemoteEmbedding": true,
-    "evidencePath": "/absolute/path/to/CodeLoop/artifacts/memory-retrieval-hybrid-qwen-v1-production-evidence.json",
+    "evidencePath": "/absolute/path/to/CodeLoop/artifacts/memory-retrieval-hybrid-qwen-v2-production-evidence.json",
     "verifierModel": "deepseek-chat"
   }
 }

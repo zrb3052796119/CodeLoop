@@ -24,7 +24,7 @@ Architecture:
           ├── SmartRouter              (task → model)
           ├── ReflectionEngine         (post-task learning)
           ├── ModelSwitcher            (runtime hot-swap)
-          └── MemoryInjector           (memory → prompt)
+          └── MemoryPipeline           (canonical memory lifecycle)
 """
 from __future__ import annotations
 
@@ -48,7 +48,11 @@ from minicode.memory_injector import (
 )
 from minicode.model_registry import ModelSelectionController, ModelSelectionSignal
 from minicode.predictive_controller import PredictiveController
-from minicode.progress_controller import ProgressAction, ProgressController, ProgressSignal
+from minicode.progress_controller import (
+    ProgressAction,
+    ProgressController,
+    ProgressSignal,
+)
 from minicode.self_healing_engine import SelfHealingEngine
 from minicode.stability_monitor import MetricSnapshot, StabilityMonitor
 from minicode.state_observer import MeasurementVector, StateObserver
@@ -149,6 +153,7 @@ class CyberneticOrchestrator:
         )
         reflection_config = ReflectionLLMConfig.from_runtime(runtime)
         reflection_synthesizer = None
+        recovery_lesson_agent = None
         reflection_unavailable_reason = None
         shadow_metrics_recorder = None
         if reflection_config.mode != "rule":
@@ -163,6 +168,17 @@ class CyberneticOrchestrator:
                         client_result.client,
                         reflection_config,
                     )
+                    if (
+                        reflection_config.mode == "llm_shadow"
+                        and reflection_config.recovery_lesson_shadow_enabled
+                    ):
+                        from minicode.recovery_lesson import RecoveryLessonAgent
+
+                        recovery_lesson_agent = RecoveryLessonAgent(
+                            client_result.client,
+                            reflection_config,
+                            max_model_calls=reflection_config.recovery_lesson_max_calls,
+                        )
             except Exception:
                 reflection_unavailable_reason = "reflection_client_initialization_failed"
                 logger.warning(
@@ -206,6 +222,7 @@ class CyberneticOrchestrator:
             llm_synthesizer=reflection_synthesizer,
             llm_unavailable_reason=reflection_unavailable_reason,
             shadow_metrics_recorder=shadow_metrics_recorder,
+            recovery_lesson_agent=recovery_lesson_agent,
         )
         self.model_switcher = ModelSwitcher(
             current_model=getattr(model, 'model_id', ''),
@@ -222,8 +239,13 @@ class CyberneticOrchestrator:
     ) -> None:
         """Initialize unified memory pipeline."""
         from minicode.memory_pipeline import MemoryPipeline
+        from minicode.memory_retrieval import RetrievalDetailLevel
 
-        self.memory_pipeline = MemoryPipeline(memory_mgr)
+        self.memory_pipeline = MemoryPipeline(
+            memory_mgr,
+            injection_controller=self.memory_ctrl,
+            retrieval_detail_level=RetrievalDetailLevel.RUNTIME,
+        )
         model_for_pipeline = getattr(self, '_last_model', None)
         runtime = dict(getattr(self, "_runtime", {}) or {})
         hybrid_enabled = bool(runtime.get("memoryHybridEnabled", False))
@@ -330,10 +352,11 @@ class CyberneticOrchestrator:
         response_time_seconds: float | None = None,
         recent_tool_error_count: int | None = None,
         recent_tool_call_count: int | None = None,
-    ) -> None:
+    ) -> Any | None:
         """Called at the start of each step (before model call)."""
         if not self._initialized:
-            return
+            return None
+        predictive_action = None
         recent_errors = max(
             0,
             recent_tool_error_count
@@ -383,8 +406,10 @@ class CyberneticOrchestrator:
                 actions = self.predictive.generate_predictive_actions()
                 if actions and actions[0].urgency > 0.7:
                     action = actions[0]
+                    predictive_action = action
                     if action.recommended_action == "trigger_compaction" and self.context_cybernetics:
                         logger.info("Predictive: trigger_compaction urgency=%.2f", action.urgency)
+        return predictive_action
 
     def step_end(
         self,
@@ -550,6 +575,9 @@ class CyberneticOrchestrator:
     def task_end(
         self,
         *,
+        record_only: bool = False,
+        completion_id: str | None = None,
+        agent_depth: int = 0,
         agent_budget: Any = None,
         event_sink: Any = None,
         cancellation_token: Any = None,
@@ -561,14 +589,18 @@ class CyberneticOrchestrator:
         if all(
             value is None
             for value in (
+                completion_id,
                 agent_budget,
                 event_sink,
                 cancellation_token,
                 deadline_monotonic,
             )
-        ):
+        ) and agent_depth == 0:
             return self.memory_pipeline.maintain()
         return self.memory_pipeline.maintain(
+            record_only=record_only,
+            completion_id=completion_id,
+            agent_depth=agent_depth,
             agent_budget=agent_budget,
             event_sink=event_sink,
             cancellation_token=cancellation_token,
@@ -607,6 +639,7 @@ class CyberneticOrchestrator:
         self, task_description: str, step: int, tool_error_count: int,
         execution_trace: list[dict[str, Any]] | None = None,
         *,
+        operation_id: str | None = None,
         agent_budget: Any = None,
         event_sink: Any = None,
         cancellation_token: Any = None,
@@ -633,11 +666,42 @@ class CyberneticOrchestrator:
         return self.memory_pipeline.write(
             task_description,
             trace,
+            operation_id=operation_id,
             agent_budget=agent_budget,
             event_sink=event_sink,
             cancellation_token=cancellation_token,
             deadline_monotonic=deadline_monotonic,
             provenance=provenance,
+        )
+
+    def review_memory_contribution(
+        self, task_description: str,
+        execution_trace: list[dict[str, Any]] | None = None,
+        *,
+        operation_id: str | None = None,
+        observation_id: str | None = None,
+        agent_budget: Any = None,
+        event_sink: Any = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
+    ) -> Any:
+        """Post-task per-memory contribution review via unified pipeline.
+
+        Adjudicates the memories actually rendered this Turn against the
+        execution trace and records evidence-cited feedback. Returns the
+        review object, or ``None`` when there is nothing to review.
+        """
+        if not self.memory_pipeline:
+            return None
+        return self.memory_pipeline.review_injected_memories(
+            task_description,
+            execution_trace,
+            operation_id=operation_id,
+            observation_id=observation_id,
+            agent_budget=agent_budget,
+            event_sink=event_sink,
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
         )
 
     # ── MODEL ROUTING ───────────────────────────────────────────────

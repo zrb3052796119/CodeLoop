@@ -24,13 +24,14 @@ import hashlib
 import math
 import re
 import time
+import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-import unicodedata
 
 from minicode.agent_budget import AgentBudgetExceeded, record_budgeted_model_call
+from minicode.curator_schedule import MAX_CURATOR_INTERVAL_TASKS, CuratorClaimLost
 from minicode.logging_config import get_logger
 from minicode.model_call_control import (
     ModelCallDeadlineExceeded,
@@ -188,6 +189,14 @@ class MemoryCuratorAgent:
         self._min_sim_consolidate = min_similarity_consolidate
         self._min_sim_archive = min_similarity_archive
         self._max_insights = max_insights_per_cycle
+        if (
+            isinstance(run_interval_tasks, bool)
+            or not isinstance(run_interval_tasks, int)
+            or not 0 <= run_interval_tasks <= MAX_CURATOR_INTERVAL_TASKS
+        ):
+            raise ValueError(
+                "run_interval_tasks must fit the durable replay window"
+            )
         self._run_interval = run_interval_tasks
         self._max_candidate_pairs = max_candidate_pairs
         self._max_similarity_comparisons = max_similarity_comparisons
@@ -196,11 +205,29 @@ class MemoryCuratorAgent:
         self._last_run: float = 0.0
         self._report_history: list[CuratorReport] = []
         self._path_status_cache: dict[str, _PathStatus] = {}
+        self._cycle_cancellation_token: Any = None
+        self._cycle_deadline_monotonic: float | None = None
+        self._cycle_claim_checkpoint: Any = None
 
     @property
     def should_run(self) -> bool:
-        """Check if curator should run based on task count."""
+        """Legacy in-process scheduling hint for direct Curator users.
+
+        Production scheduling is owned by ``CuratorScheduleStore`` because a
+        new Curator instance is constructed for every top-level Agent Turn.
+        """
         return self._task_count >= self._run_interval
+
+    @property
+    def run_interval_tasks(self) -> int:
+        """Validated interval consumed by the durable Pipeline scheduler."""
+        if (
+            isinstance(self._run_interval, bool)
+            or not isinstance(self._run_interval, int)
+            or self._run_interval < 1
+        ):
+            return 1
+        return max(1, self._run_interval)
 
     def on_task_complete(self) -> None:
         """Notify curator that a task completed. Increments counter."""
@@ -214,6 +241,7 @@ class MemoryCuratorAgent:
         event_sink: Any = None,
         cancellation_token: Any = None,
         deadline_monotonic: float | None = None,
+        claim_checkpoint: Any = None,
     ) -> CuratorReport:
         """Execute a full curation cycle.
 
@@ -225,6 +253,11 @@ class MemoryCuratorAgent:
         """
         if not force and not self.should_run:
             return CuratorReport()
+
+        checkpoint_model_call(
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
+        )
 
         if self._memory is None:
             return CuratorReport()
@@ -243,8 +276,53 @@ class MemoryCuratorAgent:
                     event_sink=event_sink,
                     cancellation_token=cancellation_token,
                     deadline_monotonic=deadline_monotonic,
+                    claim_checkpoint=claim_checkpoint,
                 ),
             )
+
+        return self._run_cycle_controlled(
+            agent_budget=agent_budget,
+            event_sink=event_sink,
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
+            claim_checkpoint=claim_checkpoint,
+        )
+
+    def _run_cycle_controlled(
+        self,
+        *,
+        agent_budget: Any = None,
+        event_sink: Any = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
+        claim_checkpoint: Any = None,
+    ) -> CuratorReport:
+        previous_token = self._cycle_cancellation_token
+        previous_deadline = self._cycle_deadline_monotonic
+        previous_claim_checkpoint = self._cycle_claim_checkpoint
+        self._cycle_cancellation_token = cancellation_token
+        self._cycle_deadline_monotonic = deadline_monotonic
+        self._cycle_claim_checkpoint = claim_checkpoint
+        try:
+            return self._run_cycle_impl(
+                agent_budget=agent_budget,
+                event_sink=event_sink,
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+            )
+        finally:
+            self._cycle_cancellation_token = previous_token
+            self._cycle_deadline_monotonic = previous_deadline
+            self._cycle_claim_checkpoint = previous_claim_checkpoint
+
+    def _run_cycle_impl(
+        self,
+        *,
+        agent_budget: Any = None,
+        event_sink: Any = None,
+        cancellation_token: Any = None,
+        deadline_monotonic: float | None = None,
+    ) -> CuratorReport:
 
         start = time.time()
         report = CuratorReport()
@@ -292,7 +370,7 @@ class MemoryCuratorAgent:
             # detection; the legacy MemoryManager.link_memories path remains for
             # small direct calls but is too expensive for Curator cycles.
             self._timed_phase(report, "linking", self._link_memories_optimized, report)
-        except TurnCancellationRequested:
+        except (TurnCancellationRequested, CuratorClaimLost):
             raise
         except Exception as exc:
             if report.status != "failed":
@@ -317,10 +395,23 @@ class MemoryCuratorAgent:
         return report
 
     def _timed_phase(self, report: CuratorReport, name: str, func, *args):
+        self._cycle_checkpoint()
         start = time.perf_counter()
         result = func(*args)
         report.phase_timings_ms[name] = (time.perf_counter() - start) * 1000
+        self._cycle_checkpoint()
         return result
+
+    def _cycle_checkpoint(self, ordinal: int | None = None) -> None:
+        if ordinal is not None and ordinal % 128:
+            return
+        checkpoint_model_call(
+            cancellation_token=self._cycle_cancellation_token,
+            deadline_monotonic=self._cycle_deadline_monotonic,
+        )
+        claim_checkpoint = self._cycle_claim_checkpoint
+        if callable(claim_checkpoint):
+            claim_checkpoint()
 
     # ── Stats collection ───────────────────────────────────────
 
@@ -330,10 +421,13 @@ class MemoryCuratorAgent:
         tiers: Counter[str] = Counter()
         domains: Counter[str] = Counter()
 
+        scanned = 0
         for scope in MemoryScope:
             if scope not in self._memory.memories:
                 continue
             for entry in self._memory.memories[scope].entries:
+                self._cycle_checkpoint(scanned)
+                scanned += 1
                 total += 1
                 tiers[entry.tier.value] += 1
                 for d in entry.domains:
@@ -396,6 +490,7 @@ class MemoryCuratorAgent:
     def _build_duplicate_signatures(self, entries: list[Any]) -> list[_DuplicateSignature]:
         signatures: list[_DuplicateSignature] = []
         for index, entry in enumerate(entries):
+            self._cycle_checkpoint(index)
             normalized = self.normalize_duplicate_content(getattr(entry, "content", ""))
             if not normalized:
                 continue
@@ -422,7 +517,8 @@ class MemoryCuratorAgent:
             buckets.setdefault((signature.partition, signature.digest), []).append(signature)
 
         groups: list[list[Any]] = []
-        for bucket in buckets.values():
+        for bucket_index, bucket in enumerate(buckets.values()):
+            self._cycle_checkpoint(bucket_index)
             if len(bucket) < 2:
                 continue
             confirmed: dict[str, list[_DuplicateSignature]] = {}
@@ -472,15 +568,19 @@ class MemoryCuratorAgent:
 
         candidates: set[tuple[int, int]] = set()
         postings: dict[tuple[tuple[str, str, str, str], str], list[_DuplicateSignature]] = {}
-        for signature in sorted(
+        probe_count = 0
+        for signature_index, signature in enumerate(sorted(
             usable,
             key=lambda s: (s.token_count, getattr(s.entry, "created_at", 0.0), getattr(s.entry, "id", "")),
-        ):
+        )):
+            self._cycle_checkpoint(signature_index)
             prefix = ordered_tokens[signature.index][: self._prefix_length(signature.token_count, threshold)]
             seen_for_entry: set[int] = set()
             for token in prefix:
                 key = (signature.partition, token)
                 for other in postings.get(key, []):
+                    self._cycle_checkpoint(probe_count)
+                    probe_count += 1
                     if other.index in seen_for_entry:
                         continue
                     seen_for_entry.add(other.index)
@@ -526,7 +626,8 @@ class MemoryCuratorAgent:
                 parent[max(ra, rb)] = min(ra, rb)
 
         comparisons = 0
-        for i, j in sorted(candidates):
+        for candidate_index, (i, j) in enumerate(sorted(candidates)):
+            self._cycle_checkpoint(candidate_index)
             if comparisons >= max_comparisons:
                 return [], len(candidates), comparisons, True, (
                     f"similarity comparison budget exceeded ({max_comparisons})"
@@ -564,7 +665,8 @@ class MemoryCuratorAgent:
         by_index = {signature.index: signature for signature in signatures}
         pairs: list[tuple[Any, Any]] = []
         comparisons = 0
-        for i, j in sorted(candidates):
+        for candidate_index, (i, j) in enumerate(sorted(candidates)):
+            self._cycle_checkpoint(candidate_index)
             if comparisons >= max_comparisons:
                 return pairs, len(candidates), comparisons, True, (
                     f"similarity comparison budget exceeded ({max_comparisons})"
@@ -712,7 +814,8 @@ class MemoryCuratorAgent:
         archived = 0
         touched: set[MemoryScope] = set()
         snapshots: dict[MemoryScope, dict[str, dict[str, Any]]] = {}
-        for scope in MemoryScope:
+        for scope_index, scope in enumerate(MemoryScope):
+            self._cycle_checkpoint(scope_index)
             if scope not in self._memory.memories:
                 continue
             memory_file = self._memory.memories[scope]
@@ -729,9 +832,11 @@ class MemoryCuratorAgent:
                     report.duplicate_candidates_truncated = True
 
             archived_ids: set[str] = set()
-            for group in plan.groups:
+            for group_index, group in enumerate(plan.groups):
+                self._cycle_checkpoint(group_index)
                 canonical = self._choose_canonical(group)
-                for entry in group:
+                for entry_index, entry in enumerate(group):
+                    self._cycle_checkpoint(entry_index)
                     entry_id = str(getattr(entry, "id", ""))
                     if entry is canonical or entry_id in archived_ids:
                         continue
@@ -743,6 +848,7 @@ class MemoryCuratorAgent:
 
         try:
             for scope in touched:
+                self._cycle_checkpoint()
                 if hasattr(self._memory.memories[scope], "_rebuild_indices"):
                     self._memory.memories[scope]._rebuild_indices()
                 if hasattr(self._memory, "_save_approval_audit"):
@@ -825,11 +931,12 @@ class MemoryCuratorAgent:
 
     def _mark_stale_entry(self, scope: Any, entry: Any) -> bool:
         from minicode.memory import (
-            MemoryTier,
             _APPROVAL_PENDING,
             _APPROVAL_REJECTED,
             _SAFETY_UNSAFE,
+            MemoryTier,
             _approval_hash_for_entry,
+            _reset_version_scoped_observations,
             assess_memory_safety,
         )
 
@@ -844,6 +951,7 @@ class MemoryCuratorAgent:
 
         previous_approval = str(getattr(entry, "approval_status", ""))
         previous_lifecycle = str(getattr(entry, "lifecycle_status", ""))
+        previous_authority_digest = _approval_hash_for_entry(entry)
         entry.tier = MemoryTier.ARCHIVAL
         entry.lifecycle_status = "deprecated"
         entry.tier_reason = "stale_reference"
@@ -854,6 +962,8 @@ class MemoryCuratorAgent:
                 "[DEPRECATED: referenced files no longer exist] "
                 + str(getattr(entry, "content", ""))[:500]
             )
+        if _approval_hash_for_entry(entry) != previous_authority_digest:
+            _reset_version_scoped_observations(entry)
         safety = assess_memory_safety(getattr(entry, "content", ""), source="curator")
         entry.safety_status = safety.status
         entry.safety_reason = safety.reason
@@ -888,10 +998,13 @@ class MemoryCuratorAgent:
         changed = 0
         touched: set[MemoryScope] = set()
 
+        scanned = 0
         for scope in MemoryScope:
             if scope not in self._memory.memories:
                 continue
             for entry in self._memory.memories[scope].entries:
+                self._cycle_checkpoint(scanned)
+                scanned += 1
                 paths = self._extract_entry_paths(getattr(entry, "content", ""))
                 if not paths:
                     continue
@@ -916,6 +1029,7 @@ class MemoryCuratorAgent:
                     stale += 1
 
         for scope in touched:
+            self._cycle_checkpoint()
             if hasattr(self._memory.memories[scope], "_rebuild_indices"):
                 self._memory.memories[scope]._rebuild_indices()
             if hasattr(self._memory, "_save_approval_audit"):
@@ -940,7 +1054,8 @@ class MemoryCuratorAgent:
         max_link_candidates = min(50_000, max(1_000, self._max_candidate_pairs // 6))
         max_link_comparisons = min(50_000, max(1_000, self._max_similarity_comparisons // 6))
         max_links_per_entry = 8
-        for scope in MemoryScope:
+        for scope_index, scope in enumerate(MemoryScope):
+            self._cycle_checkpoint(scope_index)
             if scope not in self._memory.memories:
                 continue
             entries = [
@@ -964,7 +1079,8 @@ class MemoryCuratorAgent:
                 for signature in signatures
             })
             pairs: list[tuple[Any, Any]] = []
-            for i, j in sorted(candidates):
+            for candidate_index, (i, j) in enumerate(sorted(candidates)):
+                self._cycle_checkpoint(candidate_index)
                 if comparisons >= max_link_comparisons:
                     truncated = True
                     stop_reason = f"link comparison budget exceeded ({max_link_comparisons})"
@@ -989,7 +1105,8 @@ class MemoryCuratorAgent:
                     report.recommendations.append(
                         f"Curator linking capped for {scope.value}: {stop_reason}"
                     )
-            for a, b in pairs:
+            for pair_index, (a, b) in enumerate(pairs):
+                self._cycle_checkpoint(pair_index)
                 changed = False
                 a_id = str(getattr(a, "id", ""))
                 b_id = str(getattr(b, "id", ""))
@@ -1009,8 +1126,13 @@ class MemoryCuratorAgent:
                         a.invalidate_tokens()
                     if hasattr(b, "invalidate_tokens"):
                         b.invalidate_tokens()
+                    if hasattr(a, "_seal_authority_state"):
+                        a._seal_authority_state()
+                    if hasattr(b, "_seal_authority_state"):
+                        b._seal_authority_state()
 
         for scope in touched:
+            self._cycle_checkpoint()
             if hasattr(self._memory.memories[scope], "_rebuild_indices"):
                 self._memory.memories[scope]._rebuild_indices()
             if hasattr(self._memory, "_save_scope"):
@@ -1035,7 +1157,8 @@ class MemoryCuratorAgent:
         from minicode.memory import MemoryScope
 
         created = 0
-        for scope in MemoryScope:
+        for scope_index, scope in enumerate(MemoryScope):
+            self._cycle_checkpoint(scope_index)
             if scope not in self._memory.memories or created >= self._max_insights:
                 break
             entries = [
@@ -1043,7 +1166,10 @@ class MemoryCuratorAgent:
                 if getattr(e, "is_active", True)
             ]
             clusters = self._find_clusters(entries, report=report)
-            for cluster in clusters[:self._max_insights - created]:
+            for cluster_index, cluster in enumerate(
+                clusters[:self._max_insights - created]
+            ):
+                self._cycle_checkpoint(cluster_index)
                 before_ids = {e.id for e in self._memory.memories[scope].entries}
                 insight = self._synthesize_insight(
                     cluster,
@@ -1052,6 +1178,7 @@ class MemoryCuratorAgent:
                     cancellation_token=cancellation_token,
                     deadline_monotonic=deadline_monotonic,
                 )
+                self._cycle_checkpoint()
                 if insight:
                     from minicode.memory import MemoryApprovalPolicy, MemoryTier
                     entry = self._memory.add_entry(
@@ -1071,7 +1198,10 @@ class MemoryCuratorAgent:
                     if entry:
                         was_existing = entry.id in before_ids
                         entry.related_to = list(dict.fromkeys(entry.related_to + [e.id for e in cluster]))
+                        if hasattr(entry, "_seal_authority_state"):
+                            entry._seal_authority_state()
                         if not was_existing and hasattr(self._memory, "_save_scope"):
+                            self._cycle_checkpoint()
                             self._memory._save_scope(scope)
                             if report is not None:
                                 report.scopes_saved += 1
@@ -1090,6 +1220,7 @@ class MemoryCuratorAgent:
         id_to_index = {e.id: i for i, e in enumerate(entries)}
 
         for i, entry in enumerate(entries):
+            self._cycle_checkpoint(i)
             if i in seen or not entry.related_to:
                 continue
             cluster: set[int] = {i}
@@ -1134,7 +1265,8 @@ class MemoryCuratorAgent:
             if ra != rb:
                 parent[max(ra, rb)] = min(ra, rb)
 
-        for a, b in pairs:
+        for pair_index, (a, b) in enumerate(pairs):
+            self._cycle_checkpoint(pair_index)
             union(a.id, b.id)
         by_root: dict[str, set[int]] = {}
         for entry in remaining:
@@ -1173,14 +1305,12 @@ class MemoryCuratorAgent:
         request_started = False
         model_identity = self._model_identity()
         try:
-            checkpoint_model_call(
-                cancellation_token=cancellation_token,
-                deadline_monotonic=deadline_monotonic,
-            )
+            self._cycle_checkpoint()
             if agent_budget is not None:
                 try:
                     budget_reservation = agent_budget.reserve_model_call(
-                        max(1, len(prompt) // 4)
+                        max(1, len(prompt) // 4),
+                        preserve_model_calls=1,
                     )
                 except AgentBudgetExceeded:
                     logger.info(
@@ -1199,10 +1329,7 @@ class MemoryCuratorAgent:
             if self._model and hasattr(self._model, 'generate'):
                 request_started = True
                 raw = self._model.generate(prompt)
-                checkpoint_model_call(
-                    cancellation_token=cancellation_token,
-                    deadline_monotonic=deadline_monotonic,
-                )
+                self._cycle_checkpoint()
                 if isinstance(raw, dict):
                     result = raw.get("content", "") or raw.get("text", "")
                 else:
@@ -1271,7 +1398,7 @@ class MemoryCuratorAgent:
                 "Curator insight synthesis skipped: shared Agent turn "
                 "budget exhausted"
             )
-        except TurnCancellationRequested:
+        except (TurnCancellationRequested, CuratorClaimLost):
             self._fail_model_call(
                 agent_budget,
                 budget_reservation,

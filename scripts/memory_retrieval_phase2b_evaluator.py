@@ -48,9 +48,9 @@ PHASE2A_FROZEN_HASHES = {
     "docs/memory-retrieval-phase2a-comparison.md": "4c148cbe54f4e3d39ed5f2e1726f8ba7ee465b93d9329d7f39d884c0fa66e3fe",
     "docs/memory-retrieval-phase2a.md": "7414300118d678bbf7d1e1c9eba91c473d11044b83fc19d4ebc7f705d702b09b",
     "scripts/evaluate_memory_retrieval_phase2a.py": "24caf504c1b7965cb4ad69e539091a7d741eb4f0a00b9903d1d6a289a48185b5",
-    "scripts/memory_retrieval_evaluator.py": "34eca33ed576f27b6faa2456a9cb348088d488b920c6eed7a5d68209b81e98ff",
+    "scripts/memory_retrieval_evaluator.py": "740cbc741d61d240af8c92f5de5b22e9fc905a654a19eef0d103ef26f5134cfe",
     "scripts/memory_retrieval_phase2a_evaluator.py": "e65b6ecb59804d7ff5aa04113f6028b64d546c2abf75436175dc40bf39c4a404",
-    "tests/test_memory_retrieval_phase2a.py": "f179a288f1482d8216dfb9eeacc699caab7885ab0128078805ec75d58e912268",
+    "tests/test_memory_retrieval_phase2a.py": "b9bfdba0eab5a89a0534029a81c4abed40c59617842abf603e4f10b6bd8db5c4",
     "tests/test_memory_retrieval_phase2a_evaluator.py": "8330a17ef01bf1b01832e44a02edea2fab132de12e592c600508adc4d94b86fa",
 }
 
@@ -243,17 +243,25 @@ class _InstrumentedManagerMixin:
         self,
         retrieved_entry_ids: list[str],
         injected_entry_ids: list[str],
+        *,
+        observation_id: str | None = None,
     ) -> None:
         self.retrieval_calls.append(list(retrieved_entry_ids))
         self.injection_calls.append(list(injected_entry_ids))
         super().record_retrievals_and_injections(
             retrieved_entry_ids,
             injected_entry_ids,
+            observation_id=observation_id,
         )
 
-    def record_feedback(self, entry_ids: list[str], success: bool) -> None:
+    def record_feedback(
+        self,
+        entry_ids: list[str],
+        success: bool,
+        **kwargs: Any,
+    ) -> None:
         self.feedback_calls.append({"entry_ids": list(entry_ids), "success": success})
-        super().record_feedback(entry_ids, success)
+        super().record_feedback(entry_ids, success, **kwargs)
 
 
 @contextmanager
@@ -302,8 +310,6 @@ def _isolated_pipeline(case: dict[str, Any]) -> Iterator[tuple[Any, Any]]:
             enable_reranker=False,
             enable_vector=False,
         )
-        if pipeline._injector is not None:
-            pipeline._injector._injection_cooldown = 0.0
         yield manager, pipeline
 
 

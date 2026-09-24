@@ -13,6 +13,7 @@ from minicode.config import (
     validate_provider_runtime,
 )
 from minicode.memory_hybrid import HybridActivation
+from minicode.model_registry import build_dedicated_model_runtime
 
 
 _PRIMARY_ENV_NAMES = (
@@ -31,6 +32,25 @@ _PRIMARY_ENV_NAMES = (
     "CUSTOM_API_BASE_URL",
     "DEEPSEEK_BASE_URL",
     "DEEPSEEK_API_KEY",
+    "MINI_CODE_INTENT_SEMANTIC_ENABLED",
+    "MINI_CODE_INTENT_SEMANTIC_TIMEOUT_SECONDS",
+    "MINI_CODE_INTENT_SEMANTIC_MIN_CONFIDENCE",
+    "MINI_CODE_INTENT_SEMANTIC_MAX_INPUT_CHARS",
+    "MINI_CODE_INTENT_SEMANTIC_MAX_OUTPUT_BYTES",
+    "MINI_CODE_INTENT_SEMANTIC_MAX_OUTPUT_TOKENS",
+    "MINI_CODE_INTENT_SEMANTIC_JSON_MODE",
+    "MINI_CODE_INTENT_SEMANTIC_REASONING_EFFORT",
+    "MINI_CODE_INTENT_SEMANTIC_RESERVE_MODEL_CALLS",
+    "MINI_CODE_INTENT_SEMANTIC_CALIBRATION_PATH",
+    "MINI_CODE_INTENT_SEMANTIC_ALLOW_UNREVIEWED_CALIBRATION",
+    "MINI_CODE_SKILL_RERANKER_ENABLED",
+    "MINI_CODE_SKILL_RERANKER_TIMEOUT_SECONDS",
+    "MINI_CODE_SKILL_RERANKER_MIN_CONFIDENCE",
+    "MINI_CODE_SKILL_RERANKER_MAX_CANDIDATES",
+    "MINI_CODE_SKILL_RERANKER_MAX_INPUT_CHARS",
+    "MINI_CODE_SKILL_RERANKER_MAX_OUTPUT_BYTES",
+    "MINI_CODE_SKILL_RERANKER_MAX_OUTPUT_TOKENS",
+    "MINI_CODE_SKILL_RERANKER_RESERVE_MODEL_CALLS",
 )
 
 
@@ -58,6 +78,30 @@ def _isolated_config_paths(tmp_path: Path, monkeypatch) -> Path:
 def _write_private_env(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
     os.chmod(path, 0o600)
+
+
+def test_recovery_shadow_settings_load_from_private_user_env(tmp_path, monkeypatch) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    monkeypatch.delenv("MINI_CODE_RECOVERY_LESSON_SHADOW_ENABLED", raising=False)
+    monkeypatch.delenv("MINI_CODE_RECOVERY_LESSON_MAX_CALLS", raising=False)
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=claude-test\n"
+        "ANTHROPIC_API_KEY=test-only-not-a-real-key\n"
+        "MINI_CODE_RECOVERY_LESSON_SHADOW_ENABLED=true\n"
+        "MINI_CODE_RECOVERY_LESSON_MAX_CALLS=4\n",
+    )
+
+    runtime = load_runtime_config(tmp_path / "workspace")
+
+    assert runtime["recoveryLessonShadowEnabled"] is True
+    assert runtime["recoveryLessonMaxCalls"] == 4
+    assert "MINI_CODE_RECOVERY_LESSON_SHADOW_ENABLED" not in os.environ
+    monkeypatch.setenv("MINI_CODE_RECOVERY_LESSON_SHADOW_ENABLED", "false")
+    monkeypatch.setenv("MINI_CODE_RECOVERY_LESSON_MAX_CALLS", "99")
+    override = load_runtime_config(tmp_path / "workspace")
+    assert override["recoveryLessonShadowEnabled"] is False
+    assert override["recoveryLessonMaxCalls"] == 10
 
 
 def test_global_env_is_complete_primary_model_source(tmp_path, monkeypatch) -> None:
@@ -94,6 +138,421 @@ def test_global_env_is_complete_primary_model_source(tmp_path, monkeypatch) -> N
     assert "Base URL: https://api.deepseek.com" in diagnostic
     assert "user-env-key" not in diagnostic
     assert "Unknown model" not in diagnostic
+
+
+def test_semantic_intent_classifier_is_opt_in_and_bounded(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    calibration_path = tmp_path / "calibration-v2.json"
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=deepseek-chat\n"
+        "MINI_CODE_PROVIDER=custom\n"
+        "CUSTOM_API_BASE_URL=https://api.deepseek.com\n"
+        "CUSTOM_API_KEY=synthetic-key\n"
+        "MINI_CODE_INTENT_SEMANTIC_ENABLED=true\n"
+        "MINI_CODE_INTENT_SEMANTIC_TIMEOUT_SECONDS=2.25\n"
+        "MINI_CODE_INTENT_SEMANTIC_MIN_CONFIDENCE=0.78\n"
+        "MINI_CODE_INTENT_SEMANTIC_MAX_INPUT_CHARS=3500\n"
+        "MINI_CODE_INTENT_SEMANTIC_MAX_OUTPUT_BYTES=2048\n"
+        "MINI_CODE_INTENT_SEMANTIC_MAX_OUTPUT_TOKENS=192\n"
+        "MINI_CODE_INTENT_SEMANTIC_RESERVE_MODEL_CALLS=2\n"
+        f"MINI_CODE_INTENT_SEMANTIC_CALIBRATION_PATH={calibration_path}\n"
+        "MINI_CODE_INTENT_SEMANTIC_ALLOW_UNREVIEWED_CALIBRATION=true\n",
+    )
+
+    runtime = load_runtime_config(tmp_path / "workspace")
+
+    assert runtime["intentSemanticClassifier"] == {
+        "enabled": True,
+        "timeoutSeconds": 2.25,
+        "minConfidence": 0.78,
+        "maxInputChars": 3500,
+        "maxOutputBytes": 2048,
+        "maxOutputTokens": 192,
+        "jsonMode": True,
+        "reasoningEffort": "low",
+        "reserveModelCalls": 2,
+        "calibrationPath": str(calibration_path),
+        "allowUnreviewedCalibration": True,
+    }
+    summary = config_module.safe_runtime_summary(runtime)
+    assert summary["intentSemanticClassifier"] == {
+        "enabled": True,
+        "calibrationConfigured": True,
+        "allowsUnreviewedCalibration": True,
+    }
+    assert str(calibration_path) not in str(summary)
+
+
+def test_semantic_intent_classifier_invalid_bounds_fall_back_conservatively(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=deepseek-chat\n"
+        "MINI_CODE_PROVIDER=custom\n"
+        "CUSTOM_API_BASE_URL=https://api.deepseek.com\n"
+        "CUSTOM_API_KEY=synthetic-key\n"
+        "MINI_CODE_INTENT_SEMANTIC_ENABLED=not-a-bool\n"
+        "MINI_CODE_INTENT_SEMANTIC_TIMEOUT_SECONDS=nan\n"
+        "MINI_CODE_INTENT_SEMANTIC_MIN_CONFIDENCE=0.99\n"
+        "MINI_CODE_INTENT_SEMANTIC_MAX_INPUT_CHARS=1\n"
+        "MINI_CODE_INTENT_SEMANTIC_MAX_OUTPUT_BYTES=999999\n"
+        "MINI_CODE_INTENT_SEMANTIC_MAX_OUTPUT_TOKENS=0\n"
+        "MINI_CODE_INTENT_SEMANTIC_RESERVE_MODEL_CALLS=0\n",
+    )
+
+    runtime = load_runtime_config(tmp_path / "workspace")
+
+    assert runtime["intentSemanticClassifier"] == {
+        "enabled": False,
+        "timeoutSeconds": 5.0,
+        "minConfidence": 0.72,
+        "maxInputChars": 4000,
+        "maxOutputBytes": 4096,
+        "maxOutputTokens": 512,
+        "jsonMode": True,
+        "reasoningEffort": "low",
+        "reserveModelCalls": 1,
+        "calibrationPath": "",
+        "allowUnreviewedCalibration": False,
+    }
+
+
+def test_semantic_delivery_settings_use_private_env_and_process_precedence(
+    tmp_path, monkeypatch,
+) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=glm-5.3-flash\n"
+        "MINI_CODE_PROVIDER=custom\n"
+        "CUSTOM_API_BASE_URL=https://example.invalid\n"
+        "CUSTOM_API_KEY=synthetic-key\n"
+        "MINI_CODE_INTENT_SEMANTIC_JSON_MODE=false\n"
+        "MINI_CODE_INTENT_SEMANTIC_REASONING_EFFORT=high\n",
+    )
+    private = load_runtime_config(tmp_path / "workspace")["intentSemanticClassifier"]
+    assert private["jsonMode"] is False
+    assert private["reasoningEffort"] == "high"
+    monkeypatch.setenv("MINI_CODE_INTENT_SEMANTIC_JSON_MODE", "true")
+    monkeypatch.setenv("MINI_CODE_INTENT_SEMANTIC_REASONING_EFFORT", "default")
+    override = load_runtime_config(tmp_path / "workspace")["intentSemanticClassifier"]
+    assert override["jsonMode"] is True
+    assert override["reasoningEffort"] == "default"
+
+
+def test_skill_candidate_reranker_is_opt_in_and_bounded(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=gpt-4o-mini\n"
+        "MINI_CODE_PROVIDER=openai\n"
+        "OPENAI_API_KEY=synthetic-key\n"
+        "MINI_CODE_SKILL_RERANKER_ENABLED=true\n"
+        "MINI_CODE_SKILL_RERANKER_TIMEOUT_SECONDS=2.0\n"
+        "MINI_CODE_SKILL_RERANKER_MIN_CONFIDENCE=0.84\n"
+        "MINI_CODE_SKILL_RERANKER_MAX_CANDIDATES=12\n"
+        "MINI_CODE_SKILL_RERANKER_MAX_INPUT_CHARS=5000\n"
+        "MINI_CODE_SKILL_RERANKER_MAX_OUTPUT_BYTES=1024\n"
+        "MINI_CODE_SKILL_RERANKER_MAX_OUTPUT_TOKENS=96\n"
+        "MINI_CODE_SKILL_RERANKER_RESERVE_MODEL_CALLS=2\n",
+    )
+
+    runtime = load_runtime_config(tmp_path / "workspace")
+
+    assert runtime["skillCandidateReranker"] == {
+        "enabled": True,
+        "timeoutSeconds": 2.0,
+        "minConfidence": 0.84,
+        "maxCandidates": 12,
+        "maxInputChars": 5000,
+        "maxOutputBytes": 1024,
+        "maxOutputTokens": 96,
+        "reserveModelCalls": 2,
+    }
+    assert config_module.safe_runtime_summary(runtime)[
+        "skillCandidateReranker"
+    ] == {
+        "enabled": True,
+        "nativeJsonSchemaRequired": True,
+    }
+
+
+def test_skill_candidate_reranker_invalid_bounds_fall_back_conservatively(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=gpt-4o-mini\n"
+        "MINI_CODE_PROVIDER=openai\n"
+        "OPENAI_API_KEY=synthetic-key\n"
+        "MINI_CODE_SKILL_RERANKER_ENABLED=not-a-bool\n"
+        "MINI_CODE_SKILL_RERANKER_TIMEOUT_SECONDS=nan\n"
+        "MINI_CODE_SKILL_RERANKER_MIN_CONFIDENCE=0.1\n"
+        "MINI_CODE_SKILL_RERANKER_MAX_CANDIDATES=1\n"
+        "MINI_CODE_SKILL_RERANKER_MAX_INPUT_CHARS=10\n"
+        "MINI_CODE_SKILL_RERANKER_MAX_OUTPUT_BYTES=999999\n"
+        "MINI_CODE_SKILL_RERANKER_MAX_OUTPUT_TOKENS=0\n"
+        "MINI_CODE_SKILL_RERANKER_RESERVE_MODEL_CALLS=0\n",
+    )
+
+    runtime = load_runtime_config(tmp_path / "workspace")
+
+    assert runtime["skillCandidateReranker"] == {
+        "enabled": False,
+        "timeoutSeconds": 1.5,
+        "minConfidence": 0.80,
+        "maxCandidates": 8,
+        "maxInputChars": 6000,
+        "maxOutputBytes": 2048,
+        "maxOutputTokens": 128,
+        "reserveModelCalls": 1,
+    }
+
+
+def test_skill_selection_mode_defaults_to_model(tmp_path, monkeypatch) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    monkeypatch.delenv("MINI_CODE_SKILL_SELECTION_MODE", raising=False)
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=gpt-4o-mini\n"
+        "MINI_CODE_PROVIDER=openai\n"
+        "OPENAI_API_KEY=synthetic-key\n",
+    )
+
+    runtime = load_runtime_config(tmp_path / "workspace")
+
+    assert runtime["skillSelection"] == {
+        "mode": "model",
+        "flatCatalogCharBudget": 8000,
+        "skillPageCharBudget": 4000,
+        "intentHints": False,
+        "intentPrefetch": False,
+    }
+    assert config_module.safe_runtime_summary(runtime)["skillSelection"] == {
+        "mode": "model",
+        "flatCatalogCharBudget": 8000,
+        "skillPageCharBudget": 4000,
+        "intentHints": False,
+        "intentPrefetch": False,
+    }
+
+
+def test_skill_selection_budget_env_overrides_and_clamps(
+    tmp_path, monkeypatch
+) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    monkeypatch.delenv("MINI_CODE_SKILL_FLAT_CATALOG_CHARS", raising=False)
+    monkeypatch.delenv("MINI_CODE_SKILL_PAGE_CHARS", raising=False)
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=gpt-4o-mini\n"
+        "MINI_CODE_PROVIDER=openai\n"
+        "OPENAI_API_KEY=synthetic-key\n"
+        "MINI_CODE_SKILL_FLAT_CATALOG_CHARS=12000\n"
+        "MINI_CODE_SKILL_PAGE_CHARS=10\n",
+    )
+
+    runtime = load_runtime_config(tmp_path / "workspace")
+
+    # In-range env wins; out-of-range falls back to the default.
+    assert runtime["skillSelection"]["flatCatalogCharBudget"] == 12000
+    assert runtime["skillSelection"]["skillPageCharBudget"] == 4000
+    summary = config_module.safe_runtime_summary(runtime)["skillSelection"]
+    assert summary["flatCatalogCharBudget"] == 12000
+    assert summary["skillPageCharBudget"] == 4000
+
+
+def test_skill_selection_budgets_fall_back_to_settings_file(
+    tmp_path, monkeypatch
+) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    monkeypatch.delenv("MINI_CODE_SKILL_FLAT_CATALOG_CHARS", raising=False)
+    monkeypatch.delenv("MINI_CODE_SKILL_PAGE_CHARS", raising=False)
+    (mini_dir / "settings.json").write_text(
+        json.dumps(
+            {
+                "skillSelection": {
+                    "mode": "model",
+                    "flatCatalogCharBudget": 16000,
+                    "skillPageCharBudget": 2500,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=gpt-4o-mini\n"
+        "MINI_CODE_PROVIDER=openai\n"
+        "OPENAI_API_KEY=synthetic-key\n",
+    )
+
+    selection = load_runtime_config(tmp_path / "workspace")["skillSelection"]
+    assert selection == {
+        "mode": "model",
+        "flatCatalogCharBudget": 16000,
+        "skillPageCharBudget": 2500,
+        "intentHints": False,
+        "intentPrefetch": False,
+    }
+
+
+def test_skill_selection_mode_env_overrides_settings_file(
+    tmp_path, monkeypatch
+) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    monkeypatch.delenv("MINI_CODE_SKILL_SELECTION_MODE", raising=False)
+    (mini_dir / "settings.json").write_text(
+        json.dumps({"skillSelection": {"mode": "routed"}}),
+        encoding="utf-8",
+    )
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=gpt-4o-mini\n"
+        "MINI_CODE_PROVIDER=openai\n"
+        "OPENAI_API_KEY=synthetic-key\n"
+        "MINI_CODE_SKILL_SELECTION_MODE=model\n",
+    )
+
+    runtime = load_runtime_config(tmp_path / "workspace")
+
+    assert runtime["skillSelection"]["mode"] == "model"
+    assert config_module.safe_runtime_summary(runtime)["skillSelection"][
+        "mode"
+    ] == "model"
+
+
+def test_skill_selection_mode_falls_back_to_settings_file(
+    tmp_path, monkeypatch
+) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    monkeypatch.delenv("MINI_CODE_SKILL_SELECTION_MODE", raising=False)
+    (mini_dir / "settings.json").write_text(
+        json.dumps({"skillSelection": {"mode": "model"}}),
+        encoding="utf-8",
+    )
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=gpt-4o-mini\n"
+        "MINI_CODE_PROVIDER=openai\n"
+        "OPENAI_API_KEY=synthetic-key\n",
+    )
+
+    private = load_runtime_config(tmp_path / "workspace")["skillSelection"]
+    assert private["mode"] == "model"
+    monkeypatch.setenv("MINI_CODE_SKILL_SELECTION_MODE", "routed")
+    override = load_runtime_config(tmp_path / "workspace")["skillSelection"]
+    assert override["mode"] == "routed"
+
+
+def test_skill_selection_mode_invalid_value_warns_and_falls_back(
+    tmp_path, monkeypatch
+) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    monkeypatch.delenv("MINI_CODE_SKILL_SELECTION_MODE", raising=False)
+    (mini_dir / "settings.json").write_text(
+        json.dumps({"skillSelection": {"mode": "bogus"}}),
+        encoding="utf-8",
+    )
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=gpt-4o-mini\n"
+        "MINI_CODE_PROVIDER=openai\n"
+        "OPENAI_API_KEY=synthetic-key\n",
+    )
+
+    with pytest.warns(UserWarning, match="Invalid skillSelection.mode"):
+        runtime = load_runtime_config(tmp_path / "workspace")
+
+    assert runtime["skillSelection"]["mode"] == "model"
+    assert config_module.safe_runtime_summary(runtime)["skillSelection"][
+        "mode"
+    ] == "model"
+
+
+def test_skill_intent_hints_default_off_and_env_override(
+    tmp_path, monkeypatch
+) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    monkeypatch.delenv("MINI_CODE_SKILL_INTENT_HINTS", raising=False)
+    monkeypatch.delenv("MINI_CODE_SKILL_INTENT_PREFETCH", raising=False)
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=gpt-4o-mini\n"
+        "MINI_CODE_PROVIDER=openai\n"
+        "OPENAI_API_KEY=synthetic-key\n"
+        "MINI_CODE_SKILL_INTENT_HINTS=1\n",
+    )
+
+    runtime = load_runtime_config(tmp_path / "workspace")
+
+    assert runtime["skillSelection"]["intentHints"] is True
+    assert runtime["skillSelection"]["intentPrefetch"] is False
+    summary = config_module.safe_runtime_summary(runtime)["skillSelection"]
+    assert summary["intentHints"] is True
+    assert summary["intentPrefetch"] is False
+    monkeypatch.setenv("MINI_CODE_SKILL_INTENT_HINTS", "0")
+    override = load_runtime_config(tmp_path / "workspace")["skillSelection"]
+    assert override["intentHints"] is False
+
+
+def test_skill_intent_prefetch_implies_hints(tmp_path, monkeypatch) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    monkeypatch.delenv("MINI_CODE_SKILL_INTENT_HINTS", raising=False)
+    monkeypatch.delenv("MINI_CODE_SKILL_INTENT_PREFETCH", raising=False)
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=gpt-4o-mini\n"
+        "MINI_CODE_PROVIDER=openai\n"
+        "OPENAI_API_KEY=synthetic-key\n"
+        "MINI_CODE_SKILL_INTENT_PREFETCH=true\n",
+    )
+
+    runtime = load_runtime_config(tmp_path / "workspace")
+
+    # Prefetch renders the hint block's top directory page, so it forces the
+    # hint flag on even when intentHints itself stays unset.
+    assert runtime["skillSelection"]["intentPrefetch"] is True
+    assert runtime["skillSelection"]["intentHints"] is True
+    assert config_module.safe_runtime_summary(runtime)["skillSelection"][
+        "intentHints"
+    ] is True
+
+
+def test_skill_intent_hints_fall_back_to_settings_file(
+    tmp_path, monkeypatch
+) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    monkeypatch.delenv("MINI_CODE_SKILL_INTENT_HINTS", raising=False)
+    monkeypatch.delenv("MINI_CODE_SKILL_INTENT_PREFETCH", raising=False)
+    (mini_dir / "settings.json").write_text(
+        json.dumps(
+            {"skillSelection": {"intentHints": True, "intentPrefetch": True}}
+        ),
+        encoding="utf-8",
+    )
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=gpt-4o-mini\n"
+        "MINI_CODE_PROVIDER=openai\n"
+        "OPENAI_API_KEY=synthetic-key\n",
+    )
+
+    selection = load_runtime_config(tmp_path / "workspace")["skillSelection"]
+    assert selection["intentHints"] is True
+    assert selection["intentPrefetch"] is True
 
 
 def test_runtime_keeps_dedicated_deepseek_route_when_main_provider_is_qwen(
@@ -611,6 +1070,62 @@ def test_hybrid_config_rejects_main_qwen_credential_as_deepseek_verifier_route(
     ]
 
 
+def test_dedicated_verifier_can_use_an_exact_subagent_model_route() -> None:
+    runtime = build_dedicated_model_runtime(
+        "qwen3.6-flash",
+        {
+            "provider": "anthropic",
+            "apiKey": "main-key-must-not-leak",
+            "subagentRoutingEnabled": True,
+            "subagentProvider": "custom",
+            "subagentBaseUrl": "https://dashscope.example.invalid/compatible/v1",
+            "subagentApiKey": "dedicated-qwen-key",
+            "subagentModels": {
+                "default": "qwen3.6-flash",
+                "explore": "qwen3.6-flash",
+            },
+        },
+    )
+
+    assert runtime["model"] == "qwen3.6-flash"
+    assert runtime["provider"] == "custom"
+    assert runtime["customBaseUrl"] == (
+        "https://dashscope.example.invalid/compatible/v1"
+    )
+    assert runtime["customApiKey"] == "dedicated-qwen-key"
+    assert "apiKey" not in runtime
+
+
+def test_dedicated_verifier_accepts_configured_openai_compatible_subagent_route() -> None:
+    runtime = build_dedicated_model_runtime(
+        "qwen3.7-plus",
+        {
+            "subagentRoutingEnabled": True,
+            "subagentProvider": "openai-compatible",
+            "subagentBaseUrl": "https://dashscope.example.invalid/compatible/v1",
+            "subagentApiKey": "dedicated-qwen-key",
+            "subagentModels": {"default": "qwen3.7-plus"},
+        },
+    )
+
+    assert runtime["provider"] == "custom"
+    assert runtime["customApiKey"] == "dedicated-qwen-key"
+
+
+def test_dedicated_verifier_cannot_borrow_subagent_route_for_unknown_model() -> None:
+    with pytest.raises(RuntimeError, match="dedicated_model_route_unavailable"):
+        build_dedicated_model_runtime(
+            "unreviewed-qwen-model",
+            {
+                "subagentProvider": "custom",
+                "subagentRoutingEnabled": True,
+                "subagentBaseUrl": "https://dashscope.example.invalid/compatible/v1",
+                "subagentApiKey": "dedicated-qwen-key",
+                "subagentModels": {"default": "qwen3.6-flash"},
+            },
+        )
+
+
 def test_hybrid_config_rejects_wrong_transport_even_when_model_label_matches(
     monkeypatch,
 ) -> None:
@@ -693,7 +1208,7 @@ def test_qwen_hybrid_uses_qwen_evidence_default(tmp_path, monkeypatch) -> None:
     evidence = (
         tmp_path
         / "artifacts"
-        / "memory-retrieval-hybrid-qwen-v1-production-evidence.json"
+        / "memory-retrieval-hybrid-qwen-v2-production-evidence.json"
     )
     evidence.parent.mkdir()
     evidence.write_text("{}", encoding="utf-8")

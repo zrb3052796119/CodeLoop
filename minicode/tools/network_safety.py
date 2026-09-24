@@ -324,6 +324,19 @@ def _public_address(value: str) -> str:
     except ValueError as error:
         raise NetworkSafetyError("dns_error") from error
     mapped = getattr(address, "ipv4_mapped", None)
+    # NAT64 wells (64:ff9b::/96, plus the local-use 64:ff9b:1::/48 variant)
+    # count as global to ipaddress but translate to an arbitrary IPv4
+    # literal — including private ranges — at the network edge. Extract the
+    # embedded IPv4 and apply the full policy to it, like ipv4_mapped.
+    embedded = mapped
+    if embedded is None and address.version == 6:
+        for network in (
+            ipaddress.ip_network("64:ff9b::/96"),
+            ipaddress.ip_network("64:ff9b:1::/48"),
+        ):
+            if address in network:
+                embedded = ipaddress.ip_address(int(address) & 0xFFFFFFFF)
+                break
     if (
         not address.is_global
         or address.is_loopback
@@ -332,15 +345,15 @@ def _public_address(value: str) -> str:
         or address.is_multicast
         or address.is_reserved
         or address.is_unspecified
-        or mapped is not None
+        or embedded is not None
         and (
-            not mapped.is_global
-            or mapped.is_loopback
-            or mapped.is_private
-            or mapped.is_link_local
-            or mapped.is_multicast
-            or mapped.is_reserved
-            or mapped.is_unspecified
+            not embedded.is_global
+            or embedded.is_loopback
+            or embedded.is_private
+            or embedded.is_link_local
+            or embedded.is_multicast
+            or embedded.is_reserved
+            or embedded.is_unspecified
         )
     ):
         raise NetworkSafetyError("destination_blocked")

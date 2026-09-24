@@ -88,8 +88,18 @@ class FakeRuntime:
         self.skill_routing = None
         self._replies = replies
         self.received: list[list[dict[str, object]]] = []
+        self.maintenance_calls: list[tuple[str, str | None]] = []
+        self.maintenance_recorded_flags: list[bool] = []
+        self.defer_curator_flags: list[bool] = []
 
-    def execute(self, messages, observation):
+    def execute(
+        self,
+        messages,
+        observation,
+        *,
+        defer_curator_maintenance: bool = False,
+    ):
+        self.defer_curator_flags.append(defer_curator_maintenance)
         snapshot = [dict(message) for message in messages]
         self.received.append(snapshot)
         reply = self._replies.pop(0)
@@ -101,6 +111,17 @@ class FakeRuntime:
 
     def dispose(self) -> None:
         self.tools.dispose()
+
+    def maintain_committed_turn(
+        self,
+        _observation,
+        *,
+        current_turn_id: str,
+        current_run_id: str | None,
+        completion_already_recorded: bool = False,
+    ) -> None:
+        self.maintenance_calls.append((current_turn_id, current_run_id))
+        self.maintenance_recorded_flags.append(completion_already_recorded)
 
 
 class FakeRuntimeFactory:
@@ -173,6 +194,14 @@ def test_new_and_continued_turn_commit_one_session_and_one_linked_run_each(
     assert all(runtime.permissions.begin_calls == 1 for runtime in factory.instances)
     assert all(runtime.permissions.end_calls == 1 for runtime in factory.instances)
     assert all(runtime.tools.dispose_calls == 1 for runtime in factory.instances)
+    assert all(len(runtime.maintenance_calls) == 1 for runtime in factory.instances)
+    assert all(
+        runtime.maintenance_recorded_flags == [True]
+        for runtime in factory.instances
+    )
+    assert all(
+        runtime.defer_curator_flags == [True] for runtime in factory.instances
+    )
 
     runs = RunJournal(workspace, data_dir=data_dir).list_runs(limit=100).items
     assert len(runs) == 2
@@ -187,6 +216,503 @@ def test_new_and_continued_turn_commit_one_session_and_one_linked_run_each(
             "assistant.completed",
             "run.completed",
         ]
+
+
+def test_recovery_reconstructs_curator_receipt_after_post_commit_power_loss(
+    isolated_sessions,
+) -> None:
+    from minicode.conversation_turn_store import ConversationTurnStore
+    from minicode.curator_schedule import CuratorScheduleStore
+
+    class SimulatedPowerLoss(BaseException):
+        pass
+
+    workspace, data_dir = isolated_sessions
+    turn_id = "turn_" + "a" * 32
+    message = "commit before curator receipt"
+    first_factory = FakeRuntimeFactory(["durably committed reply"])
+    first_store = ConversationTurnStore(workspace, data_dir=data_dir)
+    first_service = ConversationTurnService(
+        workspace,
+        runtime_factory=first_factory,
+        journal_factory=lambda resolved: RunJournal(
+            resolved,
+            data_dir=data_dir,
+        ),
+        turn_store=first_store,
+    )
+
+    def lose_power_before_receipt(**_kwargs) -> None:
+        raise SimulatedPowerLoss()
+
+    first_service._record_committed_curator_completion = (
+        lose_power_before_receipt
+    )
+    with pytest.raises(SimulatedPowerLoss):
+        first_service.turn(
+            message=message,
+            session_id=None,
+            turn_id=turn_id,
+        )
+    first_store.release_claim(turn_id)
+    assert first_factory.instances[0].maintenance_calls == []
+    assert not (
+        workspace / ".mini-code-memory" / "curator_schedule.json"
+    ).exists()
+
+    replay_factory = FakeRuntimeFactory([])
+    replay_service = ConversationTurnService(
+        workspace,
+        runtime_factory=replay_factory,
+        journal_factory=lambda resolved: RunJournal(
+            resolved,
+            data_dir=data_dir,
+        ),
+        turn_store=ConversationTurnStore(workspace, data_dir=data_dir),
+    )
+    recovered = replay_service.turn(
+        message=message,
+        session_id=None,
+        turn_id=turn_id,
+    )
+
+    assert recovered.assistant == "durably committed reply"
+    assert replay_factory.instances == []
+    schedule = CuratorScheduleStore(workspace)
+    assert schedule.snapshot().pending_task_count == 1
+    before = schedule.path.read_bytes()
+
+    def reject_terminal_redelivery(**_kwargs) -> None:
+        raise AssertionError("terminal Turn must not redeliver curator receipt")
+
+    replay_service._record_committed_curator_completion = (
+        reject_terminal_redelivery
+    )
+    replayed = replay_service.turn(
+        message=message,
+        session_id=None,
+        turn_id=turn_id,
+    )
+    assert replayed == recovered
+    assert schedule.snapshot().pending_task_count == 1
+    assert schedule.path.read_bytes() == before
+
+
+def test_new_turn_recovers_older_post_commit_curator_gap(
+    isolated_sessions,
+) -> None:
+    """Recovery must not depend on retrying the original Turn ID."""
+
+    from minicode.conversation_turn_store import ConversationTurnStore
+    from minicode.curator_schedule import CuratorScheduleStore
+
+    class SimulatedPowerLoss(BaseException):
+        pass
+
+    workspace, data_dir = isolated_sessions
+    first_turn_id = "turn_" + "8" * 32
+    first_store = ConversationTurnStore(workspace, data_dir=data_dir)
+    first_service = ConversationTurnService(
+        workspace,
+        runtime_factory=FakeRuntimeFactory(["first committed reply"]),
+        journal_factory=lambda resolved: RunJournal(
+            resolved,
+            data_dir=data_dir,
+        ),
+        turn_store=first_store,
+    )
+
+    def lose_power_before_receipt(**_kwargs) -> None:
+        raise SimulatedPowerLoss()
+
+    first_service._record_committed_curator_completion = (
+        lose_power_before_receipt
+    )
+    with pytest.raises(SimulatedPowerLoss):
+        first_service.turn(
+            message="first committed task",
+            session_id=None,
+            turn_id=first_turn_id,
+        )
+    first_record = first_store.get(first_turn_id)
+    assert first_record is not None
+    assert first_record.status == "committing"
+    assert first_record.session_id is not None
+    first_store.release_claim(first_turn_id)
+
+    second_turn_id = "turn_" + "9" * 32
+    second_store = ConversationTurnStore(workspace, data_dir=data_dir)
+    second_service = ConversationTurnService(
+        workspace,
+        runtime_factory=FakeRuntimeFactory(["second reply"]),
+        journal_factory=lambda resolved: RunJournal(
+            resolved,
+            data_dir=data_dir,
+        ),
+        turn_store=second_store,
+    )
+    result = second_service.turn(
+        message="different later task",
+        session_id=first_record.session_id,
+        turn_id=second_turn_id,
+    )
+
+    assert result.assistant == "second reply"
+    state = CuratorScheduleStore(workspace).snapshot()
+    assert state.pending_task_count == 2
+    assert state.pinned_completion_ids == ()
+    for turn_id in (first_turn_id, second_turn_id):
+        record = second_store.get(turn_id)
+        assert record is not None
+        assert record.status == "completed"
+        assert record.curator_receipt_recorded is True
+        assert record.curator_receipt_settled is True
+
+
+def test_curator_maintenance_waits_for_current_turn_receipt_settlement(
+    isolated_sessions,
+) -> None:
+    """A failed Dashboard delivery must not fall back to an unpinned write."""
+
+    from minicode.conversation_turn_store import ConversationTurnStore
+
+    workspace, data_dir = isolated_sessions
+    turn_id = "turn_" + "7" * 32
+    store = ConversationTurnStore(workspace, data_dir=data_dir)
+    factory = FakeRuntimeFactory(["committed while scheduler is unavailable"])
+    service = ConversationTurnService(
+        workspace,
+        runtime_factory=factory,
+        journal_factory=lambda resolved: RunJournal(
+            resolved,
+            data_dir=data_dir,
+        ),
+        turn_store=store,
+    )
+    service._record_committed_curator_completion = lambda **_kwargs: False
+
+    result = service.turn(
+        message="scheduler delivery fails once",
+        session_id=None,
+        turn_id=turn_id,
+    )
+
+    assert result.assistant == "committed while scheduler is unavailable"
+    assert factory.instances[0].maintenance_calls == []
+    record = store.get(turn_id)
+    assert record is not None
+    assert record.status == "completed"
+    assert record.curator_receipt_recorded is False
+    assert record.curator_receipt_settled is False
+    assert not (
+        workspace / ".mini-code-memory" / "curator_schedule.json"
+    ).exists()
+
+
+def test_default_journal_factory_settles_dashboard_curator_receipt(
+    isolated_sessions,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from minicode.conversation_turn_store import ConversationTurnStore
+    from minicode.curator_schedule import CuratorScheduleStore
+
+    workspace, data_dir = isolated_sessions
+    monkeypatch.setattr("minicode.run_journal.MINI_CODE_DIR", data_dir)
+    store = ConversationTurnStore(workspace, data_dir=data_dir)
+    factory = FakeRuntimeFactory(["default journal reply"])
+    service = ConversationTurnService(
+        workspace,
+        runtime_factory=factory,
+        turn_store=store,
+    )
+    turn_id = "turn_" + "4" * 32
+
+    result = service.turn(
+        message="use the default journal factory",
+        session_id=None,
+        turn_id=turn_id,
+    )
+
+    assert result.assistant == "default journal reply"
+    record = store.get(turn_id)
+    assert record is not None
+    assert record.curator_receipt_recorded is True
+    assert record.curator_receipt_settled is True
+    assert CuratorScheduleStore(workspace).snapshot().pending_task_count == 1
+    assert factory.instances[0].maintenance_recorded_flags == [True]
+
+
+def test_unverifiable_recorded_turn_releases_pin_without_session_content(
+    isolated_sessions,
+) -> None:
+    """A recorded receipt can release its pin without reading Session text."""
+
+    from minicode.conversation_turn_store import ConversationTurnStore
+    from minicode.curator_schedule import (
+        CuratorScheduleStore,
+        curator_completion_id,
+    )
+
+    class SimulatedPowerLoss(BaseException):
+        pass
+
+    workspace, data_dir = isolated_sessions
+    old_turn_id = "turn_" + "6" * 32
+    old_store = ConversationTurnStore(workspace, data_dir=data_dir)
+    old_service = ConversationTurnService(
+        workspace,
+        runtime_factory=FakeRuntimeFactory(["committed old reply"]),
+        journal_factory=lambda resolved: RunJournal(
+            resolved,
+            data_dir=data_dir,
+        ),
+        turn_store=old_store,
+    )
+
+    def lose_power_after_producer_ack(record) -> None:
+        completion_id = curator_completion_id(record.run_id, record.turn_id)
+        assert completion_id is not None
+        schedule = CuratorScheduleStore(workspace)
+        with schedule.delivery_fence():
+            schedule.record_completion(completion_id, pin=True)
+            old_store.mark_curator_receipt_recorded(record.turn_id)
+        raise SimulatedPowerLoss()
+
+    old_service._ensure_committed_curator_completion = (
+        lose_power_after_producer_ack
+    )
+    with pytest.raises(SimulatedPowerLoss):
+        old_service.turn(
+            message="commit before the Session becomes unavailable",
+            session_id=None,
+            turn_id=old_turn_id,
+        )
+    # The exception models process loss; close its OS-backed execution lease
+    # before constructing the restarted Gateway in this same test process.
+    old_store.release_claim(old_turn_id)
+
+    old_record = old_store.get(old_turn_id)
+    assert old_record is not None
+    assert old_record.status == "committing"
+    assert old_record.curator_receipt_recorded is True
+    schedule = CuratorScheduleStore(workspace)
+    before = schedule.snapshot()
+    assert before.pending_task_count == 1
+    assert len(before.pinned_completion_ids) == 1
+
+    restarted_store = ConversationTurnStore(workspace, data_dir=data_dir)
+    restarted_factory = FakeRuntimeFactory(["new reply still commits"])
+    restarted = ConversationTurnService(
+        workspace,
+        runtime_factory=restarted_factory,
+        journal_factory=lambda resolved: RunJournal(
+            resolved,
+            data_dir=data_dir,
+        ),
+        turn_store=restarted_store,
+        session_loader=lambda _session_id: None,
+    )
+    assert restarted._reconcile_curator_receipts() is True
+    released = schedule.snapshot()
+    assert released.pending_task_count == before.pending_task_count
+    assert released.pinned_completion_ids == ()
+    result = restarted.turn(
+        message="independent new task",
+        session_id=None,
+        turn_id="turn_" + "5" * 32,
+    )
+
+    assert result.assistant == "new reply still commits"
+    assert len(restarted_factory.instances[0].maintenance_calls) == 1
+    after = schedule.snapshot()
+    assert after.pending_task_count == before.pending_task_count + 1
+    assert after.pinned_completion_ids == ()
+
+
+def test_delayed_turn_recovery_does_not_double_count_an_old_receipt(
+    isolated_sessions,
+) -> None:
+    from minicode.conversation_turn_store import ConversationTurnStore
+    from minicode.curator_schedule import CuratorScheduleStore
+
+    class SimulatedPowerLoss(BaseException):
+        pass
+
+    workspace, data_dir = isolated_sessions
+    turn_id = "turn_" + "d" * 32
+    message = "commit and deliver before receipt acknowledgement"
+    first_store = ConversationTurnStore(workspace, data_dir=data_dir)
+    first_service = ConversationTurnService(
+        workspace,
+        runtime_factory=FakeRuntimeFactory(["durably committed reply"]),
+        journal_factory=lambda resolved: RunJournal(resolved, data_dir=data_dir),
+        turn_store=first_store,
+    )
+    real_record = first_service._record_committed_curator_completion
+
+    def lose_power_after_delivery(record) -> None:
+        assert real_record(turn_id=record.turn_id, run_id=record.run_id)
+        raise SimulatedPowerLoss()
+
+    first_service._ensure_committed_curator_completion = lose_power_after_delivery
+    with pytest.raises(SimulatedPowerLoss):
+        first_service.turn(
+            message=message,
+            session_id=None,
+            turn_id=turn_id,
+        )
+    first_store.release_claim(turn_id)
+
+    delivered = first_store.get(turn_id)
+    assert delivered is not None
+    assert delivered.status == "committing"
+    assert delivered.curator_receipt_recorded is False
+    schedule = CuratorScheduleStore(workspace)
+    assert schedule.snapshot().pending_task_count == 1
+
+    # The scheduling interval is only 128, but durable producer replay can be
+    # delayed beyond one interval.  Its dedup horizon must therefore be wider.
+    for index in range(128):
+        schedule.record_completion(f"{index + 1:064x}")
+    assert schedule.snapshot().pending_task_count == 129
+
+    restarted_store = ConversationTurnStore(workspace, data_dir=data_dir)
+    restarted_service = ConversationTurnService(
+        workspace,
+        runtime_factory=FakeRuntimeFactory([]),
+        journal_factory=lambda resolved: RunJournal(resolved, data_dir=data_dir),
+        turn_store=restarted_store,
+    )
+    recovered = restarted_service.turn(
+        message=message,
+        session_id=None,
+        turn_id=turn_id,
+    )
+
+    assert recovered.assistant == "durably committed reply"
+    assert schedule.snapshot().pending_task_count == 129
+    acknowledged = restarted_store.get(turn_id)
+    assert acknowledged is not None
+    assert acknowledged.status == "completed"
+    assert acknowledged.curator_receipt_recorded is True
+
+
+def test_content_recovery_is_bounded_by_scan_horizon_not_twelve_pages(
+    isolated_sessions,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Stable committing Turns finish in one invocation across 13 pages."""
+
+    from minicode.conversation_turn_store import (
+        ConversationTurnStore,
+        request_fingerprint,
+    )
+
+    workspace, data_dir = isolated_sessions
+    store = ConversationTurnStore(
+        workspace,
+        data_dir=data_dir,
+        max_records=13,
+        scan_limit=13,
+    )
+    turn_ids: list[str] = []
+    for index in range(13):
+        suffix = f"{index + 1:032x}"
+        turn_id = "turn_" + suffix
+        turn_ids.append(turn_id)
+        fingerprint = request_fingerprint(
+            workspace_id=store.workspace_id,
+            session_id=None,
+            message=f"stable orphan {index}",
+        )
+        assert store.claim(
+            turn_id=turn_id,
+            fingerprint=fingerprint,
+        ).disposition == "claimed"
+        assert store.mark_running(turn_id).execution_started is True
+        store.attach_session(
+            turn_id,
+            session_id=f"session_orphan_{index}",
+            created_session=True,
+        )
+        store.attach_run(turn_id, run_id="run_" + suffix)
+        assert store.begin_commit(turn_id).commit_allowed is True
+        store.mark_curator_receipt_recorded(turn_id)
+        store.mark_curator_receipt_settled(turn_id)
+        # These records model work abandoned by a previous Gateway.
+        store.release_claim(turn_id)
+
+    real_scan = store.curator_receipt_recovery_records
+    content_scan_calls = 0
+
+    def one_item_pages(
+        *,
+        limit: int = 1_000,
+        include_settled_committing: bool = False,
+    ):
+        nonlocal content_scan_calls
+        assert 1 <= limit <= 1_000
+        if include_settled_committing:
+            content_scan_calls += 1
+        return real_scan(
+            limit=1,
+            include_settled_committing=include_settled_committing,
+        )
+
+    monkeypatch.setattr(
+        store,
+        "curator_receipt_recovery_records",
+        one_item_pages,
+    )
+    service = ConversationTurnService(
+        workspace,
+        runtime_factory=FakeRuntimeFactory([]),
+        journal_factory=lambda resolved: RunJournal(
+            resolved,
+            data_dir=data_dir,
+        ),
+        turn_store=store,
+        session_loader=lambda _session_id: None,
+    )
+
+    assert service._reconcile_curator_receipts() is True
+    assert content_scan_calls == 14
+    for turn_id in turn_ids:
+        record = store.get(turn_id)
+        assert record is not None
+        assert record.status == "interrupted"
+        assert record.curator_receipt_recorded is True
+        assert record.curator_receipt_settled is True
+
+
+def test_continued_turn_passes_bounded_history_to_intent_runtime(
+    isolated_sessions,
+) -> None:
+    workspace, data_dir = isolated_sessions
+    contexts = []
+    replies = ["first reply", "second reply"]
+
+    def factory(*, workspace: Path, prompt: str, intent_context=None, **_kwargs):
+        assert workspace.is_absolute()
+        assert prompt
+        contexts.append(intent_context)
+        return FakeRuntime(replies)
+
+    service = ConversationTurnService(
+        workspace,
+        runtime_factory=factory,
+        journal_factory=lambda resolved: RunJournal(resolved, data_dir=data_dir),
+    )
+
+    first = service.turn(message="审查 skill_router.py", session_id=None)
+    service.turn(message="修复一下吧", session_id=first.session_id)
+
+    assert contexts[0] is not None
+    assert contexts[0].recent_turns == ()
+    assert [(turn.role, turn.content) for turn in contexts[1].recent_turns] == [
+        ("user", "审查 skill_router.py"),
+        ("assistant", "first reply"),
+    ]
 
 
 def test_existing_legacy_messages_get_a_safe_system_prompt_without_assuming_index_zero(
@@ -339,6 +865,8 @@ def test_commit_conflict_and_busy_are_fixed_and_never_rerun_agent(
 
     assert len(factory.instances) == 1
     assert len(factory.instances[0].received) == 1
+    assert factory.instances[0].defer_curator_flags == [True]
+    assert factory.instances[0].maintenance_calls == []
     assert factory.instances[0].tools.dispose_calls == 1
 
 

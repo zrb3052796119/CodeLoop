@@ -41,6 +41,11 @@ _PROJECTED_FIELDS = frozenset(
         "verification",
     }
 )
+# Optional marker present only on soft-landed runs: the sub-agent exhausted
+# its model-turn limit and its summary is a partial hand-back, not a complete
+# result. Absent on every projection written before the marker existed, so
+# readers treat a missing key as False.
+_PARTIAL_FIELD = "partial"
 _MAX_JSON_CHARS = 20_000
 _MAX_SUMMARY_CHARS = 4_000
 _MAX_FILES = 40
@@ -141,11 +146,14 @@ def project_subagent_result(
     agent_type: str,
     outcome: str,
     fallback_summary: str,
+    partial: bool = False,
 ) -> dict[str, object]:
     """Validate a model report and bind parent-owned correlation fields.
 
     Missing or malformed reports degrade to an explicit, evidence-free
     fallback. They never invent files, risks or verification claims.
+    ``partial`` marks a soft-landed run whose summary was produced after the
+    model-turn limit fired; the key is emitted only when True.
     """
     if _SUBAGENT_ID_RE.fullmatch(subagent_id) is None:
         raise ValueError("sub-agent id is invalid")
@@ -169,7 +177,7 @@ def project_subagent_result(
                 "checks": [],
             },
         }
-    return {
+    projected = {
         "resultVersion": SUBAGENT_RESULT_VERSION,
         "subagentId": subagent_id,
         "agentType": agent_type,
@@ -180,21 +188,31 @@ def project_subagent_result(
         "risks": report["risks"],
         "verification": report["verification"],
     }
+    if partial:
+        projected[_PARTIAL_FIELD] = True
+    return projected
 
 
 def _normalize_projected_result(value: object) -> dict[str, object] | None:
-    if not isinstance(value, Mapping) or set(value) != _PROJECTED_FIELDS:
+    if not isinstance(value, Mapping):
+        return None
+    field_set = set(value)
+    if field_set != _PROJECTED_FIELDS and field_set != (
+        _PROJECTED_FIELDS | {_PARTIAL_FIELD}
+    ):
         return None
     identity = value.get("subagentId")
     agent_type = value.get("agentType")
     outcome = value.get("outcome")
     contract_status = value.get("contractStatus")
+    partial = value.get(_PARTIAL_FIELD, False)
     if (
         not isinstance(identity, str)
         or _SUBAGENT_ID_RE.fullmatch(identity) is None
         or agent_type not in _AGENT_TYPES
         or outcome not in _OUTCOMES
         or contract_status not in {"reported", "fallback", "derived"}
+        or not isinstance(partial, bool)
     ):
         return None
     report = {key: value[key] for key in _REPORT_FIELDS}
@@ -203,7 +221,7 @@ def _normalize_projected_result(value: object) -> dict[str, object] | None:
     )
     if normalized_report is None:
         return None
-    return {
+    normalized = {
         "resultVersion": SUBAGENT_RESULT_VERSION,
         "subagentId": identity,
         "agentType": agent_type,
@@ -214,6 +232,11 @@ def _normalize_projected_result(value: object) -> dict[str, object] | None:
         "risks": normalized_report["risks"],
         "verification": normalized_report["verification"],
     }
+    # Preserve the producer's shape: the marker round-trips exactly when it
+    # was present, so pre-partial projections keep their canonical form.
+    if _PARTIAL_FIELD in value:
+        normalized[_PARTIAL_FIELD] = partial
+    return normalized
 
 
 def render_subagent_result(result: Mapping[str, object]) -> str:

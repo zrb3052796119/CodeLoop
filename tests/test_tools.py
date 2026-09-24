@@ -1,6 +1,8 @@
 from pathlib import Path
+import gzip
 import io
 from types import SimpleNamespace
+import stat
 import sys
 import tarfile
 import threading
@@ -9,10 +11,13 @@ import zipfile
 
 import pytest
 
+import minicode.tools.archive_utils as archive_utils_module
 import minicode.tools.test_runner as test_runner_module
 import minicode.tools.run_command as run_command_module
+import minicode.tools.todo_write as todo_write_module
+from minicode.auto_mode import PermissionMode
 from minicode.permissions import PermissionManager
-from minicode.tools.batch_ops import batch_copy_tool, batch_move_tool
+from minicode.tools.batch_ops import batch_copy_tool, batch_delete_tool, batch_move_tool
 from minicode.tools.code_nav import find_references_tool, find_symbols_tool, get_ast_info_tool
 from minicode.tools.code_review import code_review_tool
 from minicode.tools.file_tree import file_tree_tool
@@ -20,11 +25,19 @@ from minicode.tools.list_files import list_files_tool
 from minicode.tools.read_file import read_file_tool
 from minicode.tools.run_command import _build_execution_command, split_command_line
 from minicode.tools.patch_file import patch_file_tool
-from minicode.tools.archive_utils import tar_extract_tool, zip_extract_tool
+from minicode.tools.archive_utils import (
+    gzip_compress_tool,
+    gzip_decompress_tool,
+    tar_create_tool,
+    tar_extract_tool,
+    zip_create_tool,
+    zip_extract_tool,
+)
+from minicode.tools.diff_viewer import diff_viewer_tool
 from minicode.tools.run_command import run_command_tool
 from minicode.permission_approval import PermissionApprovalBroker
 from minicode.tools.test_runner import test_runner_tool
-from minicode.turn_cancellation import TurnCancellationToken
+from minicode.turn_cancellation import TurnCancellationRequested, TurnCancellationToken
 from minicode.tools.write_file import write_file_tool
 from minicode.tooling import ToolContext
 from minicode.tools import create_default_tool_registry
@@ -536,6 +549,576 @@ def test_code_analysis_tools_reject_paths_that_escape_workspace(
     assert result.ok is False
     assert "escapes workspace" in result.output
     assert "return 42" not in result.output
+
+
+def test_archive_and_diff_security_guards(tmp_path: Path) -> None:
+    """Anchor for targeted archive/diff tests in this module."""
+    assert archive_utils_module.ARCHIVE_READ_CHUNK_BYTES <= 64 * 1024
+
+
+@pytest.mark.parametrize("reference", ["../outside.txt", "/absolute/outside.txt"])
+def test_diff_viewer_file_reference_rejects_non_relative_paths(
+    tmp_path: Path,
+    reference: str,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+
+    result = diff_viewer_tool.run(
+        diff_viewer_tool.validator(
+            {"files": [{"path": reference, "before": "__file__", "after": "safe"}]}
+        ),
+        ToolContext(cwd=str(workspace), permissions=None),
+    )
+
+    assert result.ok is False
+    assert "permission_denied" in result.output
+
+
+def test_diff_viewer_file_reference_rejects_external_symlink(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    outside = tmp_path / "outside"
+    workspace.mkdir()
+    outside.mkdir()
+    (outside / "secret.txt").write_text("external secret", encoding="utf-8")
+    (workspace / "linked").symlink_to(outside, target_is_directory=True)
+
+    result = diff_viewer_tool.run(
+        diff_viewer_tool.validator(
+            {
+                "files": [
+                    {"path": "linked/secret.txt", "before": "__file__", "after": "safe"}
+                ]
+            }
+        ),
+        ToolContext(cwd=str(workspace), permissions=None),
+    )
+
+    assert result.ok is False
+    assert "external secret" not in result.output
+    assert "escapes workspace" in result.output
+
+
+def test_diff_viewer_display_only_path_remains_inert(tmp_path: Path) -> None:
+    result = diff_viewer_tool.run(
+        diff_viewer_tool.validator(
+            {
+                "files": [
+                    {"path": "../display-only.txt", "before": "old\n", "after": "new\n"}
+                ]
+            }
+        ),
+        ToolContext(cwd=str(tmp_path), permissions=None),
+    )
+
+    assert result.ok is True
+    assert "display-only.txt" in result.output
+
+
+@pytest.mark.parametrize(
+    ("tool", "input_data", "outside_name"),
+    [
+        (
+            gzip_compress_tool,
+            {"source": "source.txt", "destination": "../outside.gz"},
+            "outside.gz",
+        ),
+        (
+            gzip_decompress_tool,
+            {"source": "source.gz", "destination": "../outside.txt"},
+            "outside.txt",
+        ),
+        (
+            tar_create_tool,
+            {"source": "source.txt", "destination": "../outside", "mode": "none"},
+            "outside.tar",
+        ),
+        (
+            tar_extract_tool,
+            {"source": "source.tar", "destination": "../outside"},
+            "outside",
+        ),
+        (
+            zip_create_tool,
+            {"source": "source.txt", "destination": "../outside"},
+            "outside.zip",
+        ),
+        (
+            zip_extract_tool,
+            {"source": "source.zip", "destination": "../outside"},
+            "outside",
+        ),
+    ],
+)
+def test_archive_tools_reject_traversal_destinations_before_io(
+    tmp_path: Path,
+    tool,
+    input_data: dict,
+    outside_name: str,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "source.txt").write_text("payload", encoding="utf-8")
+    with gzip.open(workspace / "source.gz", "wb") as archive:
+        archive.write(b"payload")
+    with tarfile.open(workspace / "source.tar", "w") as archive:
+        archive.add(workspace / "source.txt", arcname="source.txt")
+    with zipfile.ZipFile(workspace / "source.zip", "w") as archive:
+        archive.writestr("source.txt", "payload")
+
+    result = tool.run(
+        tool.validator(input_data),
+        ToolContext(cwd=str(workspace), permissions=None),
+    )
+
+    assert result.ok is False
+    assert "escapes workspace" in result.output
+    assert not (tmp_path / outside_name).exists()
+
+
+@pytest.mark.parametrize(
+    ("tool", "input_data"),
+    [
+        (gzip_compress_tool, {"source": "linked", "destination": "out.gz"}),
+        (gzip_decompress_tool, {"source": "linked", "destination": "out.txt"}),
+        (
+            tar_create_tool,
+            {"source": "linked", "destination": "out", "mode": "none"},
+        ),
+        (tar_extract_tool, {"source": "linked", "destination": "out"}),
+        (zip_create_tool, {"source": "linked", "destination": "out"}),
+        (zip_extract_tool, {"source": "linked", "destination": "out"}),
+    ],
+)
+def test_archive_tools_reject_external_source_symlinks(
+    tmp_path: Path,
+    tool,
+    input_data: dict,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    outside = tmp_path / "outside.bin"
+    outside.write_bytes(b"outside")
+    (workspace / "linked").symlink_to(outside)
+
+    result = tool.run(
+        tool.validator(input_data),
+        ToolContext(cwd=str(workspace), permissions=None),
+    )
+
+    assert result.ok is False
+    assert "escapes workspace" in result.output
+    assert not any(workspace.glob("out*"))
+
+
+@pytest.mark.parametrize(
+    ("tool", "source_name"),
+    [
+        (tar_extract_tool, "bundle.tar"),
+        (zip_extract_tool, "bundle.zip"),
+    ],
+)
+def test_archive_default_destination_rejects_external_symlink(
+    tmp_path: Path,
+    tool,
+    source_name: str,
+) -> None:
+    workspace = tmp_path / "workspace"
+    outside = tmp_path / "outside"
+    workspace.mkdir()
+    outside.mkdir()
+    source = workspace / source_name
+    if source.suffix == ".tar":
+        with tarfile.open(source, "w") as archive:
+            payload = b"safe"
+            info = tarfile.TarInfo("member.txt")
+            info.size = len(payload)
+            archive.addfile(info, io.BytesIO(payload))
+    else:
+        with zipfile.ZipFile(source, "w") as archive:
+            archive.writestr("member.txt", "safe")
+    (workspace / "bundle").symlink_to(outside, target_is_directory=True)
+
+    result = tool.run(
+        tool.validator({"source": source_name}),
+        ToolContext(cwd=str(workspace), permissions=None),
+    )
+
+    assert result.ok is False
+    assert "escapes workspace" in result.output
+    assert list(outside.iterdir()) == []
+
+
+@pytest.mark.parametrize(
+    ("tool", "input_data", "final_name"),
+    [
+        (
+            tar_create_tool,
+            {"source": "source.txt", "destination": "archive", "mode": "none"},
+            "archive.tar",
+        ),
+        (
+            zip_create_tool,
+            {"source": "source.txt", "destination": "archive"},
+            "archive.zip",
+        ),
+    ],
+)
+def test_archive_creation_reresolves_suffix_appended_destination(
+    tmp_path: Path,
+    tool,
+    input_data: dict,
+    final_name: str,
+) -> None:
+    workspace = tmp_path / "workspace"
+    outside = tmp_path / "outside.bin"
+    workspace.mkdir()
+    (workspace / "source.txt").write_text("safe", encoding="utf-8")
+    outside.write_text("unchanged", encoding="utf-8")
+    (workspace / final_name).symlink_to(outside)
+
+    result = tool.run(
+        tool.validator(input_data),
+        ToolContext(cwd=str(workspace), permissions=None),
+    )
+
+    assert result.ok is False
+    assert "escapes workspace" in result.output
+    assert outside.read_text(encoding="utf-8") == "unchanged"
+
+
+@pytest.mark.parametrize("archive_kind", ["tar", "zip"])
+def test_archive_extract_member_limit_preserves_existing_destination(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    archive_kind: str,
+) -> None:
+    monkeypatch.setattr(archive_utils_module, "MAX_ARCHIVE_MEMBERS", 1)
+    destination = tmp_path / "out"
+    destination.mkdir()
+    (destination / "sentinel.txt").write_text("keep", encoding="utf-8")
+    if archive_kind == "tar":
+        source = tmp_path / "many.tar"
+        with tarfile.open(source, "w") as archive:
+            for name in ("one.txt", "two.txt"):
+                info = tarfile.TarInfo(name)
+                info.size = 1
+                archive.addfile(info, io.BytesIO(b"x"))
+        tool = tar_extract_tool
+    else:
+        source = tmp_path / "many.zip"
+        with zipfile.ZipFile(source, "w") as archive:
+            archive.writestr("one.txt", "x")
+            archive.writestr("two.txt", "x")
+        tool = zip_extract_tool
+
+    result = tool.run(
+        tool.validator({"source": source.name, "destination": "out"}),
+        ToolContext(cwd=str(tmp_path), permissions=None),
+    )
+
+    assert result.ok is False
+    assert "member limit" in result.output
+    assert (destination / "sentinel.txt").read_text(encoding="utf-8") == "keep"
+    assert sorted(item.name for item in destination.iterdir()) == ["sentinel.txt"]
+
+
+@pytest.mark.parametrize("archive_kind", ["gzip", "tar", "zip"])
+def test_archive_extract_aggregate_limit_leaves_no_partial_output(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    archive_kind: str,
+) -> None:
+    monkeypatch.setattr(archive_utils_module, "MAX_ARCHIVE_UNCOMPRESSED_BYTES", 3)
+    if archive_kind == "gzip":
+        source = tmp_path / "large.gz"
+        with gzip.open(source, "wb") as archive:
+            archive.write(b"four")
+        tool = gzip_decompress_tool
+        payload = {"source": source.name, "destination": "output.txt"}
+        output = tmp_path / "output.txt"
+    elif archive_kind == "tar":
+        source = tmp_path / "large.tar"
+        with tarfile.open(source, "w") as archive:
+            info = tarfile.TarInfo("large.txt")
+            info.size = 4
+            archive.addfile(info, io.BytesIO(b"four"))
+        tool = tar_extract_tool
+        payload = {"source": source.name, "destination": "output"}
+        output = tmp_path / "output"
+    else:
+        source = tmp_path / "large.zip"
+        with zipfile.ZipFile(source, "w") as archive:
+            archive.writestr("large.txt", "four")
+        tool = zip_extract_tool
+        payload = {"source": source.name, "destination": "output"}
+        output = tmp_path / "output"
+
+    result = tool.run(
+        tool.validator(payload),
+        ToolContext(cwd=str(tmp_path), permissions=None),
+    )
+
+    assert result.ok is False
+    assert "aggregate uncompressed byte limit" in result.output
+    assert not output.exists()
+    assert list(tmp_path.glob(".minicode-archive-*")) == []
+
+
+@pytest.mark.parametrize("archive_kind", ["tar", "zip"])
+def test_archive_extract_cancellation_cleans_partial_output(
+    tmp_path: Path,
+    archive_kind: str,
+) -> None:
+    payload_bytes = b"x" * (archive_utils_module.ARCHIVE_READ_CHUNK_BYTES + 1)
+    if archive_kind == "tar":
+        source = tmp_path / "large.tar"
+        with tarfile.open(source, "w") as archive:
+            info = tarfile.TarInfo("large.txt")
+            info.size = len(payload_bytes)
+            archive.addfile(info, io.BytesIO(payload_bytes))
+        tool = tar_extract_tool
+    else:
+        source = tmp_path / "large.zip"
+        with zipfile.ZipFile(source, "w", zipfile.ZIP_STORED) as archive:
+            archive.writestr("large.txt", payload_bytes)
+        tool = zip_extract_tool
+
+    turn_id = "turn_" + "a" * 32
+    checks = 0
+
+    def cancel_during_second_read() -> None:
+        nonlocal checks
+        checks += 1
+        if checks == 7:
+            raise TurnCancellationRequested(turn_id)
+
+    permissions = PermissionManager(
+        str(tmp_path),
+        auto_mode=PermissionMode.BYPASS,
+        operation_checkpoint=cancel_during_second_read,
+    )
+    with pytest.raises(TurnCancellationRequested):
+        tool.run(
+            tool.validator({"source": source.name, "destination": "out"}),
+            ToolContext(cwd=str(tmp_path), permissions=permissions),
+        )
+
+    assert checks == 7
+    assert not (tmp_path / "out").exists()
+    assert list(tmp_path.glob(".minicode-archive-*")) == []
+
+
+@pytest.mark.parametrize("archive_kind", ["tar", "zip"])
+def test_archive_extract_deadline_cleans_staging(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    archive_kind: str,
+) -> None:
+    if archive_kind == "tar":
+        source = tmp_path / "deadline.tar"
+        with tarfile.open(source, "w") as archive:
+            info = tarfile.TarInfo("file.txt")
+            info.size = 1
+            archive.addfile(info, io.BytesIO(b"x"))
+        tool = tar_extract_tool
+    else:
+        source = tmp_path / "deadline.zip"
+        with zipfile.ZipFile(source, "w") as archive:
+            archive.writestr("file.txt", "x")
+        tool = zip_extract_tool
+
+    timestamps = iter([0.0, 0.0, 31.0])
+    monkeypatch.setattr(
+        archive_utils_module.time,
+        "monotonic",
+        lambda: next(timestamps, 31.0),
+    )
+    result = tool.run(
+        tool.validator({"source": source.name, "destination": "out"}),
+        ToolContext(cwd=str(tmp_path), permissions=None),
+    )
+
+    assert result.ok is False
+    assert "deadline exceeded" in result.output
+    assert not (tmp_path / "out").exists()
+    assert list(tmp_path.glob(".minicode-archive-*")) == []
+
+
+@pytest.mark.parametrize("archive_kind", ["tar", "zip"])
+def test_archive_extract_rejects_link_members(
+    tmp_path: Path,
+    archive_kind: str,
+) -> None:
+    if archive_kind == "tar":
+        source = tmp_path / "link.tar"
+        with tarfile.open(source, "w") as archive:
+            info = tarfile.TarInfo("link")
+            info.type = tarfile.SYMTYPE
+            info.linkname = "target"
+            archive.addfile(info)
+        tool = tar_extract_tool
+    else:
+        source = tmp_path / "link.zip"
+        with zipfile.ZipFile(source, "w") as archive:
+            info = zipfile.ZipInfo("link")
+            info.create_system = 3
+            info.external_attr = (stat.S_IFLNK | 0o777) << 16
+            archive.writestr(info, "target")
+        tool = zip_extract_tool
+
+    result = tool.run(
+        tool.validator({"source": source.name, "destination": "out"}),
+        ToolContext(cwd=str(tmp_path), permissions=None),
+    )
+
+    assert result.ok is False
+    assert "unsupported link" in result.output
+    assert not (tmp_path / "out").exists()
+
+
+def test_batch_copy_overwrite_deny_once_has_zero_side_effect(tmp_path: Path) -> None:
+    source = tmp_path / "source.txt"
+    destination = tmp_path / "destination.txt"
+    source.write_text("new", encoding="utf-8")
+    destination.write_text("old", encoding="utf-8")
+    prompts: list[dict] = []
+    permissions = PermissionManager(
+        str(tmp_path),
+        prompt=lambda request: prompts.append(request) or {"decision": "deny_once"},
+        auto_mode=PermissionMode.DEFAULT,
+    )
+
+    result = batch_copy_tool.run(
+        batch_copy_tool.validator(
+            {"source": source.name, "destination": destination.name}
+        ),
+        ToolContext(cwd=str(tmp_path), permissions=permissions),
+    )
+
+    assert result.ok is False
+    assert destination.read_text(encoding="utf-8") == "old"
+    assert source.read_text(encoding="utf-8") == "new"
+    assert prompts[0]["kind"] == "edit"
+    assert prompts[0]["review"]["diffPreview"].startswith(
+        "--- a/destination.txt\n+++ b/destination.txt"
+    )
+
+
+def test_todo_write_preserves_identity_across_complete_list_updates(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(todo_write_module, "_tasks", [])
+    monkeypatch.setattr(todo_write_module, "_task_id_counter", 0)
+    timestamps = iter((10.0, 20.0, 30.0))
+    monkeypatch.setattr(todo_write_module.time, "time", lambda: next(timestamps))
+    context = ToolContext(cwd=str(tmp_path), permissions=None)
+
+    first = todo_write_module.todo_write_tool.run(
+        {"todos": [{"content": "keep identity", "status": "pending"}]},
+        context,
+    )
+    first_task = dict(todo_write_module._tasks[0])
+    second = todo_write_module.todo_write_tool.run(
+        {"todos": [{"content": "keep identity", "status": "completed"}]},
+        context,
+    )
+
+    assert "[1] keep identity" in first.output
+    assert "[1] keep identity" in second.output
+    assert todo_write_module._tasks == [
+        {
+            **first_task,
+            "status": "completed",
+            "completed_at": 20.0,
+        }
+    ]
+
+
+def test_batch_recursive_delete_deny_once_has_zero_side_effect(tmp_path: Path) -> None:
+    target = tmp_path / "tree"
+    target.mkdir()
+    (target / "kept.txt").write_text("keep", encoding="utf-8")
+    prompts: list[dict] = []
+    permissions = PermissionManager(
+        str(tmp_path),
+        prompt=lambda request: prompts.append(request) or {"decision": "deny_once"},
+        auto_mode=PermissionMode.DEFAULT,
+    )
+
+    result = batch_delete_tool.run(
+        batch_delete_tool.validator({"path": "tree", "recursive": True}),
+        ToolContext(cwd=str(tmp_path), permissions=permissions),
+    )
+
+    assert result.ok is False
+    assert (target / "kept.txt").read_text(encoding="utf-8") == "keep"
+    assert prompts[0]["review"]["targetPath"] == str(target.resolve())
+    assert "kept.txt" in prompts[0]["review"]["diffPreview"]
+
+
+def test_batch_move_reviews_destination_and_source_before_mutation(tmp_path: Path) -> None:
+    source = tmp_path / "source.txt"
+    destination = tmp_path / "destination.txt"
+    source.write_text("new", encoding="utf-8")
+    destination.write_text("old", encoding="utf-8")
+    prompts: list[dict] = []
+
+    def decide(request: dict) -> dict:
+        prompts.append(request)
+        return {"decision": "allow_once" if len(prompts) == 1 else "deny_once"}
+
+    permissions = PermissionManager(
+        str(tmp_path),
+        prompt=decide,
+        auto_mode=PermissionMode.DEFAULT,
+    )
+    result = batch_move_tool.run(
+        batch_move_tool.validator(
+            {"source": source.name, "destination": destination.name}
+        ),
+        ToolContext(cwd=str(tmp_path), permissions=permissions),
+    )
+
+    assert result.ok is False
+    assert source.read_text(encoding="utf-8") == "new"
+    assert destination.read_text(encoding="utf-8") == "old"
+    assert [request["review"]["targetPath"] for request in prompts] == [
+        str(destination.resolve()),
+        str(source.resolve()),
+    ]
+    assert prompts[1]["review"]["diffPreview"].startswith(
+        "--- a/source.txt\n+++ b/source.txt"
+    )
+
+
+@pytest.mark.parametrize(
+    ("tool", "payload"),
+    [
+        (batch_copy_tool, {"source": "source.txt", "destination": "copy.txt"}),
+        (batch_move_tool, {"source": "source.txt", "destination": "moved.txt"}),
+        (batch_delete_tool, {"path": "source.txt", "recursive": False}),
+    ],
+)
+def test_batch_mutations_are_blocked_in_plan_mode(
+    tmp_path: Path,
+    tool,
+    payload: dict,
+) -> None:
+    source = tmp_path / "source.txt"
+    source.write_text("keep", encoding="utf-8")
+    permissions = PermissionManager(str(tmp_path), auto_mode=PermissionMode.PLAN)
+
+    result = tool.run(
+        tool.validator(payload),
+        ToolContext(cwd=str(tmp_path), permissions=permissions),
+    )
+
+    assert result.ok is False
+    assert source.read_text(encoding="utf-8") == "keep"
+    assert not (tmp_path / "copy.txt").exists()
+    assert not (tmp_path / "moved.txt").exists()
 
 
 def test_core_tool_registry_does_not_import_utility_modules(tmp_path: Path) -> None:

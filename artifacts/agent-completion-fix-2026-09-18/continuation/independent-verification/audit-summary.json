@@ -1,0 +1,37 @@
+{
+  "run_id": "run_b3bc7136802f466f99680ea79000d9ff",
+  "independent_audit_only": true,
+  "production_fix_original_contract": "passed",
+  "oracle": {
+    "accepted": true,
+    "command": [
+      "python3",
+      "artifacts/login-concurrency-live-2026-09-18/oracle/test_suite_completeness.py",
+      "--repo",
+      "/private/tmp/codeloop-completion-recheck-20260918",
+      "--expect",
+      "fixed",
+      "--output",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/continuation/independent-verification/oracle-after.json"
+    ],
+    "checks": {
+      "direct_pytest_witness_is_valid": true,
+      "single_file_does_not_expand_scope": true,
+      "detects_failure_in_twelfth_file": true,
+      "executes_all_twelve_passing_test_files": true
+    }
+  },
+  "same_test_proof": {
+    "status": "PROVEN",
+    "fixed": "3 passed, 33 deselected",
+    "baseline": "3 failed, 33 deselected",
+    "baseline_ref": "638b7dd1f07c56b7fa864832f70cdcafc0cb3b0b",
+    "test_sha256": "5cda3a97ea5d9031c446204b242e350773109bf56942fedca46bffea081c4c74"
+  },
+  "target_module": "36 passed",
+  "lint": "passed existing project CI E,F rules with E501 excluded",
+  "diff_check": "passed",
+  "target_files_unchanged_by_audit": true,
+  "full_task_completion": "not established; actual run ended with cost-budget partial fallback",
+  "broader_new_branch_regressions": "separately assigned to tools_delivery_capability; this audit certifies only the original 12-file and single-file contract"
+}

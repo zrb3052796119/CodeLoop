@@ -1,0 +1,33 @@
+{
+  "interpreter": "/Users/zhourunbo/miniconda3/bin/python",
+  "current": "3 failed",
+  "preFixProductionWithCurrentCatalog": "2 failed, 1 passed",
+  "testFilesIdenticalToFrozen": true,
+  "findings": [
+    {
+      "test": "tests/test_intent_runtime_integration.py::test_composition_root_reuses_model_and_turn_controls_for_semantic_intent",
+      "current": "failed",
+      "frozenProduction": "passed",
+      "origin": "minicode/agent_runtime.py:477 adds skill_selection_mode=routed to routing_controls; tests/test_intent_runtime_integration.py:202 expects exactly the four previous context keys",
+      "classification": "concurrent-change/test-contract mismatch; observed parallel Skill task owns this field; not pre-existing and not this multi-agent fix scope"
+    },
+    {
+      "test": "tests/test_skill_catalog_contracts.py::test_project_skills_declare_narrow_operation_contracts",
+      "current": "failed",
+      "preFixProductionWithCurrentCatalog": "failed identically",
+      "origin": ".mini-code/skills/quality/lint-and-static-cleanup/SKILL.md:8 declares code.update and debug.update, while tests/test_skill_catalog_contracts.py:309 expects only code.update",
+      "classification": "current catalog/test-contract mismatch; appearance time unknown because baseline omitted .mini-code"
+    },
+    {
+      "test": "tests/test_skill_frontmatter_example_acceptance.py::test_all_project_skill_examples_route_back_to_their_source_skill",
+      "current": "failed",
+      "preFixProductionWithCurrentCatalog": "failed identically",
+      "origin": "tests/test_skill_frontmatter_example_acceptance.py:437 reports uncovered quality/lint-and-static-cleanup debug.update; both declared examples route as code.update",
+      "classification": "same current catalog/test-contract mismatch; appearance time unknown because baseline omitted .mini-code"
+    }
+  ],
+  "limitations": [
+    "Frozen original contained minicode and tests, not .mini-code skills. Copying current catalog into isolated pre-fix production controls production differences only; it is not proof the original catalog failed."
+  ],
+  "modifications": "Only diagnostic artifacts and isolated temporary baseline copy; no current source, tests, or catalog edited; original frozen snapshot unchanged"
+}

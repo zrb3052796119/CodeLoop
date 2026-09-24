@@ -18,6 +18,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixture", type=Path, required=True)
     parser.add_argument("--env-file", type=Path, default=ROOT / ".env")
+    parser.add_argument("--verifier-model", default="qwen3.7-plus")
+    parser.add_argument("--case-id", action="append", default=[])
     args = parser.parse_args()
     dataset = json.loads((args.fixture / "holdout.json").read_text(encoding="utf-8"))
 
@@ -29,7 +31,7 @@ def main() -> None:
         pass
     from minicode.config import load_runtime_config
     from minicode.env_file import apply_env_file
-    from minicode.model_registry import create_model_adapter
+    from minicode.model_registry import create_dedicated_model_adapter
 
     apply_env_file([args.env_file])
     runtime = dict(
@@ -39,7 +41,17 @@ def main() -> None:
         modelMaxRetries=1,
         modelTimeoutSeconds=90,
     )
-    model = create_model_adapter(runtime["model"], None, runtime)
+    model = create_dedicated_model_adapter(args.verifier_model, None, runtime)
+    selected_ids = set(args.case_id)
+    selected_cases = [
+        case
+        for case in dataset["cases"]
+        if not selected_ids or case["case_id"] in selected_ids
+    ]
+    if selected_ids and selected_ids != {
+        case["case_id"] for case in selected_cases
+    }:
+        raise SystemExit("unknown development case ID")
     pairs = [
         {
             "id": case["case_id"],
@@ -48,7 +60,7 @@ def main() -> None:
             "activeDomains": case["active_domains"],
             "memory": case["entry"],
         }
-        for case in dataset["cases"]
+        for case in selected_cases
     ]
     audits = []
     for start in range(0, len(pairs), 20):
@@ -68,7 +80,7 @@ def main() -> None:
             "relation": case["relation"],
             **by_id[case["case_id"]],
         }
-        for case in dataset["cases"]
+        for case in selected_cases
     ]
     print(json.dumps(rows, ensure_ascii=False, indent=2))
 

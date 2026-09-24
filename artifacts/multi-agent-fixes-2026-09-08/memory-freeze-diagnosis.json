@@ -1,0 +1,1179 @@
+{
+  "snapshot": "/private/tmp/minicode-multi-agent-buggy-ahhcgrxd",
+  "oldComparisonRoot": "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-memory-freeze-old-1bgki1tv",
+  "python": "/Users/zhourunbo/miniconda3/bin/python",
+  "snapshotProductionFilesVerified": 258,
+  "snapshotIntegrityFailures": [],
+  "testHarnessSha256": {
+    "tests/test_memory_retrieval_production_baseline_v40.py": "8a3cbc043bd0b79d6e644d7c929327da96c2490222a60230138c5e21f7dbcb1a",
+    "tests/test_memory_retrieval_production_baseline_v41.py": "3c555f1b4488f0e4ae3369bd53a24e5bed929411e5935f5cf4f43b2eef9096e3"
+  },
+  "commonUnsnapshottedHarness": {
+    "scripts/memory_retrieval_production_baseline.py": "6e2bcd89cff16cec5741381d81e5eb631e1c4c6cb58f5459b2df3053d760d4db",
+    "scripts/generate_memory_retrieval_production_baseline.py": "85427a009104e7bad4d9edaaf588504252325ef17164bd6d7e8d0a8456d9ea32",
+    "scripts/memory_hybrid_qwen_v2_evaluator.py": "5beee954a364e0bd3db28025c2e199d745aad6d7b5df3fc4d5dd3e2a04e5b818",
+    "scripts/memory_hybrid_resolver_pressure_evaluator.py": "22c3528c7da608496a984ee2dd0737c3f2ae5b724c6187631507cf950eccaf77"
+  },
+  "manifestVersionsVerifiedUnchanged": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40
+  ],
+  "sourceRows": [
+    {
+      "path": "minicode/advisory_lock.py",
+      "oldSha256": "61918bab1c9519709ebddfe52db270c0fa13015f0b2fb729c3f400c2b75e7202",
+      "currentSha256": "61918bab1c9519709ebddfe52db270c0fa13015f0b2fb729c3f400c2b75e7202",
+      "v39Sha256": null,
+      "v40Sha256": "61918bab1c9519709ebddfe52db270c0fa13015f0b2fb729c3f400c2b75e7202",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/agent_budget.py",
+      "oldSha256": "656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05",
+      "currentSha256": "656bb0bf12693cf365fc197e6db662953d2234ae57e86e6f40d8c59980851e05",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/agent_loop.py",
+      "oldSha256": "0be9b2c318efd4ed6be7ee16f3b4d65b76f219e4fe5caac8132be87d731fc2da",
+      "currentSha256": "c995a1b3463f57ff2f52a45f98a3f736cf1c26f8d7f794aaed729fc2f8ea0173",
+      "v39Sha256": "6f8ac7a63fd528d02cfa985b3e917ace59687a43c913de6df970baa36911d8f1",
+      "v40Sha256": "76a0110dca82712585259692dc1578649443ad3a8f1e1bf9605f58faa749e1ad",
+      "changedAfterSnapshot": true,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/agent_reflection.py",
+      "oldSha256": "3154869b7e819334d6d3b04ddab7923f56a101ab3386a7691c70eb9d521b7ccc",
+      "currentSha256": "3154869b7e819334d6d3b04ddab7923f56a101ab3386a7691c70eb9d521b7ccc",
+      "v39Sha256": "a67caa83a4579a7231b8fa3711ddc7813b6a42fe04f792d09ac95da502a11a9b",
+      "v40Sha256": "3154869b7e819334d6d3b04ddab7923f56a101ab3386a7691c70eb9d521b7ccc",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/agent_runtime.py",
+      "oldSha256": "be0ef725379ed0f54481017004687604a51300fc298959838ed5766996d7c952",
+      "currentSha256": "b5826f45de4251d6d4e4ede44526a5d8f2eb6413164e321805845d06ced8ccd0",
+      "v39Sha256": "174d2b0de970b39a01dd780af2c7e351583a9b8695ef7c7fdc2fbf03ad2cde28",
+      "v40Sha256": "0c543e6ba5f0752310c4d172b8a9b79732aa8c7e7e3c353cc339f08fa8789971",
+      "changedAfterSnapshot": true,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/api_retry.py",
+      "oldSha256": "a7565959f44ce3d2185a8211f86226e85fcfdcaa53e337fbbf891695272cd9a4",
+      "currentSha256": "a7565959f44ce3d2185a8211f86226e85fcfdcaa53e337fbbf891695272cd9a4",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/config.py",
+      "oldSha256": "216acbe01c589429de4bce23095b041acbc861158c252804cd8b084a7c1f6711",
+      "currentSha256": "9ecb7db41398253d80da4e0c78ded623c257ac1123fff0aaa87ab1e74a48daa4",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": true,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/context_compactor.py",
+      "oldSha256": "7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7",
+      "currentSha256": "7cfee2ba01a709e30786f1c9eaa41a06c284dd4b71e241e1c72a3bb5f5a41cc7",
+      "v39Sha256": "f05bd72a46be720bfa9b50e42e4824825b5e532c1b8885ae6db1ab7a316b4bec",
+      "v40Sha256": "c21711b0d5a90cb22504f4db2d593f485dbca06b138ffe68884199344226834c",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/context_manager.py",
+      "oldSha256": "9abca65d2994ba4dcf63edde5f67686827b324fa7a7d3bdf236f81aef382c02a",
+      "currentSha256": "9abca65d2994ba4dcf63edde5f67686827b324fa7a7d3bdf236f81aef382c02a",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/conversation.py",
+      "oldSha256": "2dacb251752fa5803ac0121d981f73e816888bfdf2ccc4e259fbae05175ec2bd",
+      "currentSha256": "2dacb251752fa5803ac0121d981f73e816888bfdf2ccc4e259fbae05175ec2bd",
+      "v39Sha256": "4fa64b90a387d4fa2e170698cfe20ddf8d76f4518a80b234793d2b1ea74a9438",
+      "v40Sha256": "936088facca46a1479a0c7a63602916c967acb0ef8055e6e5df38d9fedee3100",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/conversation_deletion.py",
+      "oldSha256": "6ce8f1abdb4464f7749d87e3d25b089270207d74c78a265168fa6652a6a3ec6f",
+      "currentSha256": "6ce8f1abdb4464f7749d87e3d25b089270207d74c78a265168fa6652a6a3ec6f",
+      "v39Sha256": "6ce8f1abdb4464f7749d87e3d25b089270207d74c78a265168fa6652a6a3ec6f",
+      "v40Sha256": "6ce8f1abdb4464f7749d87e3d25b089270207d74c78a265168fa6652a6a3ec6f",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/conversation_presentation.py",
+      "oldSha256": "54be4609427fb704545c910a06a30af8d8814b312253fc822050f8a8d6e40838",
+      "currentSha256": "54be4609427fb704545c910a06a30af8d8814b312253fc822050f8a8d6e40838",
+      "v39Sha256": "54be4609427fb704545c910a06a30af8d8814b312253fc822050f8a8d6e40838",
+      "v40Sha256": "54be4609427fb704545c910a06a30af8d8814b312253fc822050f8a8d6e40838",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/conversation_turn_store.py",
+      "oldSha256": "baa88c3e198059da7a74dc7045e7309b4668c00aa178e9e00025e06234696bca",
+      "currentSha256": "baa88c3e198059da7a74dc7045e7309b4668c00aa178e9e00025e06234696bca",
+      "v39Sha256": "8d507c7ee51cb116cc843d2e1e289b330bef6a61c719a6f15f9a565679cc739c",
+      "v40Sha256": "baa88c3e198059da7a74dc7045e7309b4668c00aa178e9e00025e06234696bca",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/cost_tracker.py",
+      "oldSha256": "e612aac0d2a9163297791276ce40a2e9cf1af7d8260a776630c8709e588c7da9",
+      "currentSha256": "e612aac0d2a9163297791276ce40a2e9cf1af7d8260a776630c8709e588c7da9",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/curator_schedule.py",
+      "oldSha256": "4cfd49e6de518e9b361fbff4ebbf9201af5c3a58aeb49998564a8d4bd02cac89",
+      "currentSha256": "4cfd49e6de518e9b361fbff4ebbf9201af5c3a58aeb49998564a8d4bd02cac89",
+      "v39Sha256": null,
+      "v40Sha256": "4cfd49e6de518e9b361fbff4ebbf9201af5c3a58aeb49998564a8d4bd02cac89",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/cybernetic_orchestrator.py",
+      "oldSha256": "904c18b3bef739c98e2f31ac879027b697428f8515563721308b145cb0193ce8",
+      "currentSha256": "904c18b3bef739c98e2f31ac879027b697428f8515563721308b145cb0193ce8",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/deletion_store.py",
+      "oldSha256": "09bc0c9d4ec5ac942b966058e27338b696d39f98c718365e40336e8e36e5612e",
+      "currentSha256": "09bc0c9d4ec5ac942b966058e27338b696d39f98c718365e40336e8e36e5612e",
+      "v39Sha256": "62bc9eca59afdb84ba243d979709657cc99f711d2f32402a6bd04312b6042e6e",
+      "v40Sha256": "09bc0c9d4ec5ac942b966058e27338b696d39f98c718365e40336e8e36e5612e",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/domain_classifier.py",
+      "oldSha256": "be5aba8aa475c3152457667466ec9514199d97553dc2c3e05f5d572c0a50bfd4",
+      "currentSha256": "be5aba8aa475c3152457667466ec9514199d97553dc2c3e05f5d572c0a50bfd4",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/embeddings.py",
+      "oldSha256": "5824f2680ca7f683c36f397a49835512b87164d4dba80622a95732301ac2905a",
+      "currentSha256": "5824f2680ca7f683c36f397a49835512b87164d4dba80622a95732301ac2905a",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/env_file.py",
+      "oldSha256": "2d0893a152243c20f0494610bade547b690b02b956ee8c7cf412d967ba21306a",
+      "currentSha256": "2d0893a152243c20f0494610bade547b690b02b956ee8c7cf412d967ba21306a",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/evaluation_one_shot.py",
+      "oldSha256": "2ac08139c4d5724bdcd01bb724a67a3039bbf4e4fb68da48e26831170ed018fd",
+      "currentSha256": "2ac08139c4d5724bdcd01bb724a67a3039bbf4e4fb68da48e26831170ed018fd",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/file_review.py",
+      "oldSha256": "6f65cf8250c4bb02a32b258aa215b5c6d34184ebb0f1a3c4b764f88566b6c324",
+      "currentSha256": "6f65cf8250c4bb02a32b258aa215b5c6d34184ebb0f1a3c4b764f88566b6c324",
+      "v39Sha256": "9ae0db16cc51731863fcd6f32ffcf93164e5ac6fa57b0c2071198485e9ced389",
+      "v40Sha256": "9ae0db16cc51731863fcd6f32ffcf93164e5ac6fa57b0c2071198485e9ced389",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/gateway.py",
+      "oldSha256": "afe88bb63cfff6b3caa91c9e9bfe52127f62b43c73506c7aaec7f55028286314",
+      "currentSha256": "afe88bb63cfff6b3caa91c9e9bfe52127f62b43c73506c7aaec7f55028286314",
+      "v39Sha256": "a2c2e8dd9d4a6e334d8a02801f60d328477fc7686df1f62c5e2e87e7fb9c2a78",
+      "v40Sha256": "afe88bb63cfff6b3caa91c9e9bfe52127f62b43c73506c7aaec7f55028286314",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/headless.py",
+      "oldSha256": "134b492b31397a995cbeb062ed9fd255baa0c146b550e88befa0f78de36950a6",
+      "currentSha256": "134b492b31397a995cbeb062ed9fd255baa0c146b550e88befa0f78de36950a6",
+      "v39Sha256": "91bd8ef030a5bdd05f5d80c618596b4f600e31de5c39fffe242d108fc9899688",
+      "v40Sha256": "134b492b31397a995cbeb062ed9fd255baa0c146b550e88befa0f78de36950a6",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/main.py",
+      "oldSha256": "d81d27ec69ec907e3dbb3a66ad208e131eeae106243fc7c989901bfb10483514",
+      "currentSha256": "64957abf7bf01e53793c01272c34f0500daf4738c8d5ffa26075a536e3b44052",
+      "v39Sha256": "678dec824b3ddc05ace5af45db9743c20baa13fdf3eedcf7e7fcadc1756a7bc4",
+      "v40Sha256": "9d71519cbdd5afddbfc3ef91337ff4fa6e775445aeed5d31fb4bb5998ff2a533",
+      "changedAfterSnapshot": true,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/mcp.py",
+      "oldSha256": "32a1ed3e589104a7afefe5f8718c9521715c4791fae6b36d462021cd7f0be9ec",
+      "currentSha256": "32a1ed3e589104a7afefe5f8718c9521715c4791fae6b36d462021cd7f0be9ec",
+      "v39Sha256": "e39f2e44d2a4c06f2e53114f5664df4d9bf2b10435cc3917cb95c2f50f35d077",
+      "v40Sha256": "e39f2e44d2a4c06f2e53114f5664df4d9bf2b10435cc3917cb95c2f50f35d077",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/mcp_current_state.py",
+      "oldSha256": "063fed4b7e4a8ed117be46482fa1aeb876cb3fcffc24fb69073ce3a96553cbcc",
+      "currentSha256": "063fed4b7e4a8ed117be46482fa1aeb876cb3fcffc24fb69073ce3a96553cbcc",
+      "v39Sha256": "063fed4b7e4a8ed117be46482fa1aeb876cb3fcffc24fb69073ce3a96553cbcc",
+      "v40Sha256": "063fed4b7e4a8ed117be46482fa1aeb876cb3fcffc24fb69073ce3a96553cbcc",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/mcp_event_contract.py",
+      "oldSha256": "583dc481a8e2d1ff30b9b3d6cf091a7c06bed91e14d7580f4399967745a25daa",
+      "currentSha256": "583dc481a8e2d1ff30b9b3d6cf091a7c06bed91e14d7580f4399967745a25daa",
+      "v39Sha256": "583dc481a8e2d1ff30b9b3d6cf091a7c06bed91e14d7580f4399967745a25daa",
+      "v40Sha256": "583dc481a8e2d1ff30b9b3d6cf091a7c06bed91e14d7580f4399967745a25daa",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/mcp_observation.py",
+      "oldSha256": "d822098ee1f4f61a127f740806cdaa6f8d1a7cbeeb6e3f8cbe227948142fd0b8",
+      "currentSha256": "d822098ee1f4f61a127f740806cdaa6f8d1a7cbeeb6e3f8cbe227948142fd0b8",
+      "v39Sha256": "d822098ee1f4f61a127f740806cdaa6f8d1a7cbeeb6e3f8cbe227948142fd0b8",
+      "v40Sha256": "d822098ee1f4f61a127f740806cdaa6f8d1a7cbeeb6e3f8cbe227948142fd0b8",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory.py",
+      "oldSha256": "2d09cc03b46e7c3dd01c20625220ed6f53c62d758b18dcadd89f28214f5cfb4d",
+      "currentSha256": "2d09cc03b46e7c3dd01c20625220ed6f53c62d758b18dcadd89f28214f5cfb4d",
+      "v39Sha256": "d88d1492a1c3824ef3f0d24df149631563941c72a8e517f2dead4a96624f45e7",
+      "v40Sha256": "e8dac517909e26841635fef2547fff08a20a649888bdff426b93e79da130581e",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory_approval.py",
+      "oldSha256": "69a2a88baebaf2ea585909bc3d387cfea4023502e23485f9734daf829bb4102c",
+      "currentSha256": "69a2a88baebaf2ea585909bc3d387cfea4023502e23485f9734daf829bb4102c",
+      "v39Sha256": "38a499f1b1d345dbc4fa89466027a0e4be518124affeddfc539bae1117125477",
+      "v40Sha256": "69a2a88baebaf2ea585909bc3d387cfea4023502e23485f9734daf829bb4102c",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory_approval_interpretation.py",
+      "oldSha256": "683eb7c51560480d7d3ae70ff6a285817a150b0026cb25876e6adbec5335a8c4",
+      "currentSha256": "683eb7c51560480d7d3ae70ff6a285817a150b0026cb25876e6adbec5335a8c4",
+      "v39Sha256": null,
+      "v40Sha256": "683eb7c51560480d7d3ae70ff6a285817a150b0026cb25876e6adbec5335a8c4",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory_audit_contract.py",
+      "oldSha256": "654857642c349b03f4365bca9e3736023b990ea570e0dd1fa724aff33d168e09",
+      "currentSha256": "654857642c349b03f4365bca9e3736023b990ea570e0dd1fa724aff33d168e09",
+      "v39Sha256": null,
+      "v40Sha256": "654857642c349b03f4365bca9e3736023b990ea570e0dd1fa724aff33d168e09",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory_authority_io.py",
+      "oldSha256": "6ae3e1ac663edfcd1f367d6b61a60ab36146fb16604308eca7a17887c8fd435f",
+      "currentSha256": "6ae3e1ac663edfcd1f367d6b61a60ab36146fb16604308eca7a17887c8fd435f",
+      "v39Sha256": null,
+      "v40Sha256": "6ae3e1ac663edfcd1f367d6b61a60ab36146fb16604308eca7a17887c8fd435f",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory_authority_publisher.py",
+      "oldSha256": "3ae33616aa46b60cccbef75662be7e4f1210a7d2d02abe4f46610619da25b77a",
+      "currentSha256": "3ae33616aa46b60cccbef75662be7e4f1210a7d2d02abe4f46610619da25b77a",
+      "v39Sha256": null,
+      "v40Sha256": "3ae33616aa46b60cccbef75662be7e4f1210a7d2d02abe4f46610619da25b77a",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory_blob_store.py",
+      "oldSha256": "7e6f72a6294bd377bf9d7f01a57b30c7d128cdf30907aada68232d9d67089e86",
+      "currentSha256": "7e6f72a6294bd377bf9d7f01a57b30c7d128cdf30907aada68232d9d67089e86",
+      "v39Sha256": null,
+      "v40Sha256": "7e6f72a6294bd377bf9d7f01a57b30c7d128cdf30907aada68232d9d67089e86",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory_candidate_consolidation.py",
+      "oldSha256": "4780f873dcf59add9da7838cc583dcd23e0ac753e047e22e95859b1c36e70260",
+      "currentSha256": "4780f873dcf59add9da7838cc583dcd23e0ac753e047e22e95859b1c36e70260",
+      "v39Sha256": "a2f44bd09a8594819f740f001c819458962fb00181206cf16a5f529b3169c6e4",
+      "v40Sha256": "4780f873dcf59add9da7838cc583dcd23e0ac753e047e22e95859b1c36e70260",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory_curator_agent.py",
+      "oldSha256": "7daee651c2ebe9a9fdb7fc6bf1db1d278b4cdaabbc53710829e53467c350a03f",
+      "currentSha256": "7daee651c2ebe9a9fdb7fc6bf1db1d278b4cdaabbc53710829e53467c350a03f",
+      "v39Sha256": "5ad47695faed2e4a2c7c10df2cf35c1ea9421b01e7d5af756fb834064ffbe5fc",
+      "v40Sha256": "7daee651c2ebe9a9fdb7fc6bf1db1d278b4cdaabbc53710829e53467c350a03f",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory_hybrid.py",
+      "oldSha256": "e317fd67ae7186bd581eb1c8defdc326079cd61ba3d53e0af832406bbfc38fde",
+      "currentSha256": "e317fd67ae7186bd581eb1c8defdc326079cd61ba3d53e0af832406bbfc38fde",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/memory_hybrid_freeze.py",
+      "oldSha256": "627a6d8ad8eaca80629b3a8fa0cbe64597fcda60abc7e04f7b298cfb2df752a5",
+      "currentSha256": "627a6d8ad8eaca80629b3a8fa0cbe64597fcda60abc7e04f7b298cfb2df752a5",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/memory_hybrid_promotion_contract.py",
+      "oldSha256": "9f6080871fb4ca07438cd33fb7b1fb04c6fb5aaa44c25c3c7a9055db05c966a0",
+      "currentSha256": "9f6080871fb4ca07438cd33fb7b1fb04c6fb5aaa44c25c3c7a9055db05c966a0",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/memory_hybrid_release.py",
+      "oldSha256": "eaad5f66c431a39ba79894062321c84a65258abd09562aefa34b134d7818fdb3",
+      "currentSha256": "eaad5f66c431a39ba79894062321c84a65258abd09562aefa34b134d7818fdb3",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/memory_hybrid_runtime.py",
+      "oldSha256": "206d1ff2e13e40e582113914e66f1c4b54c72399e7697158e5e22e7b1183f83b",
+      "currentSha256": "206d1ff2e13e40e582113914e66f1c4b54c72399e7697158e5e22e7b1183f83b",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/memory_injector.py",
+      "oldSha256": "ec1717ce7988d357993b51ca6c94e8813771260ac387fdeb45a4614f2ea6b534",
+      "currentSha256": "ec1717ce7988d357993b51ca6c94e8813771260ac387fdeb45a4614f2ea6b534",
+      "v39Sha256": "059d2812f0fa92e2d4db2ee3463b5843c6c84194b83ed11da1de0ebd921721ee",
+      "v40Sha256": "bcb4fadb85082016c4b2ffcbba67454f7fbdec1039d3c4295e2e77cedab917b7",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory_lexical_policy.py",
+      "oldSha256": "513af65d7981987bd48e62f03f05198a6eee84096fef2967fe4b110a6c2d99e1",
+      "currentSha256": "513af65d7981987bd48e62f03f05198a6eee84096fef2967fe4b110a6c2d99e1",
+      "v39Sha256": null,
+      "v40Sha256": "1c634a186d44cf113199b159b6797367d0cf327da21f9503cafcbda528aad9ef",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory_path_identity.py",
+      "oldSha256": "6922c933334bd1c5842a54f043dae495f9e22877fbeb81e38ad9c9123a1bc732",
+      "currentSha256": "6922c933334bd1c5842a54f043dae495f9e22877fbeb81e38ad9c9123a1bc732",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/memory_pipeline.py",
+      "oldSha256": "0df1c284c5055ad52e943d7229150fb8916449723fe2592663f08be0df8c2d28",
+      "currentSha256": "0df1c284c5055ad52e943d7229150fb8916449723fe2592663f08be0df8c2d28",
+      "v39Sha256": "3f425ebedb12c5b925badb67263f233382bd718c0050007b82e841f31f364323",
+      "v40Sha256": "1f3c3d20c7445ab68f14eb2635db894b1519dc82c86a1269511cc15a81e07f80",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory_provenance.py",
+      "oldSha256": "6ed5bf0856b0c343c99d91daf88c2a8e5ca1c7df2d592ed0e4ecde589ae8aaf4",
+      "currentSha256": "6ed5bf0856b0c343c99d91daf88c2a8e5ca1c7df2d592ed0e4ecde589ae8aaf4",
+      "v39Sha256": null,
+      "v40Sha256": "6ed5bf0856b0c343c99d91daf88c2a8e5ca1c7df2d592ed0e4ecde589ae8aaf4",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory_retrieval.py",
+      "oldSha256": "8aa6dd59f0536d27e96b817fe184cd354510d84015d7c22ec8198bd9570d9b03",
+      "currentSha256": "8aa6dd59f0536d27e96b817fe184cd354510d84015d7c22ec8198bd9570d9b03",
+      "v39Sha256": "33b27c4e5ea32321d6ba776918da374b91ea04b7358649fc8e0167b56c576376",
+      "v40Sha256": "861ab6e766b4b869ee03853421dc3b4b5a21303db9d26c314317d75c0a8af1a1",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory_store.py",
+      "oldSha256": "0c56546e95b176864b2fcabdb4b38619c3068ac68c7b12c4ef38e0ae38b46783",
+      "currentSha256": "0c56546e95b176864b2fcabdb4b38619c3068ac68c7b12c4ef38e0ae38b46783",
+      "v39Sha256": "da7a7c7316fd048d4bed80e6a72e8cbe2f378709a456363e6e8c2f31d16c0b1f",
+      "v40Sha256": "0c56546e95b176864b2fcabdb4b38619c3068ac68c7b12c4ef38e0ae38b46783",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/memory_write_contract.py",
+      "oldSha256": "1486c98c733d9df4d9c43bcfa2fb92ce4d95620d9b3453f30f76f6862c9e4405",
+      "currentSha256": "1486c98c733d9df4d9c43bcfa2fb92ce4d95620d9b3453f30f76f6862c9e4405",
+      "v39Sha256": null,
+      "v40Sha256": "1486c98c733d9df4d9c43bcfa2fb92ce4d95620d9b3453f30f76f6862c9e4405",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/model_call_control.py",
+      "oldSha256": "70a55003f88e3e67831a2f178982414ef09b4fa6c7d84233681ecbaa783c29dc",
+      "currentSha256": "70a55003f88e3e67831a2f178982414ef09b4fa6c7d84233681ecbaa783c29dc",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/model_registry.py",
+      "oldSha256": "faebdcefe62429ae4712b643ee570b2aa8b51d1b715812e88c6ae33daa6478a1",
+      "currentSha256": "faebdcefe62429ae4712b643ee570b2aa8b51d1b715812e88c6ae33daa6478a1",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/openai_adapter.py",
+      "oldSha256": "a828d8415aac1093ec1c7004aa9dd44b8c7edaf02fa9dda258a91f5222b890be",
+      "currentSha256": "a828d8415aac1093ec1c7004aa9dd44b8c7edaf02fa9dda258a91f5222b890be",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/permission_approval.py",
+      "oldSha256": "a8666024b8c342d713697dd346cd0b2b916f08b3c6654e0a6214cf8469594141",
+      "currentSha256": "a8666024b8c342d713697dd346cd0b2b916f08b3c6654e0a6214cf8469594141",
+      "v39Sha256": "7ee1d38747457fa7066efb80ac34035f9fae060c45533b97d5fca8a13dba6f74",
+      "v40Sha256": "a8666024b8c342d713697dd346cd0b2b916f08b3c6654e0a6214cf8469594141",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/permission_event_contract.py",
+      "oldSha256": "bbf89c726f1e83f874f4d8164f1f9273ebd295d822adbe39b2fc20e88617b684",
+      "currentSha256": "bbf89c726f1e83f874f4d8164f1f9273ebd295d822adbe39b2fc20e88617b684",
+      "v39Sha256": "bbf89c726f1e83f874f4d8164f1f9273ebd295d822adbe39b2fc20e88617b684",
+      "v40Sha256": "bbf89c726f1e83f874f4d8164f1f9273ebd295d822adbe39b2fc20e88617b684",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/permissions.py",
+      "oldSha256": "b447453f68999ea2698a377fefa4788354762d95531f89fbb025e790118299eb",
+      "currentSha256": "b447453f68999ea2698a377fefa4788354762d95531f89fbb025e790118299eb",
+      "v39Sha256": "ad23530c3d34334ae76c4a748852d2778127bd9ecde524f3272c55b88dfe71d1",
+      "v40Sha256": "2775be4d47e220af8176a36a308daa59b6232c3d4b29a783febca434038f453b",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/pricing.py",
+      "oldSha256": "ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0",
+      "currentSha256": "ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0",
+      "v39Sha256": "ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0",
+      "v40Sha256": "ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/project_facts.py",
+      "oldSha256": "0c4ea763c5759e71538f8ef91e17fbf6d6db3a6f9209fcbdfba25ac2c1fadf99",
+      "currentSha256": "0c4ea763c5759e71538f8ef91e17fbf6d6db3a6f9209fcbdfba25ac2c1fadf99",
+      "v39Sha256": null,
+      "v40Sha256": "0c4ea763c5759e71538f8ef91e17fbf6d6db3a6f9209fcbdfba25ac2c1fadf99",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/project_memory_deletion.py",
+      "oldSha256": "475e84310f56a27cdf83410c9d285868f5f805f10db88838f3bc80e57efd0b6a",
+      "currentSha256": "475e84310f56a27cdf83410c9d285868f5f805f10db88838f3bc80e57efd0b6a",
+      "v39Sha256": "ce060148a2af7ef0fbe8525194956ed2cbb0c0d377013501533bdb2fb59be745",
+      "v40Sha256": "475e84310f56a27cdf83410c9d285868f5f805f10db88838f3bc80e57efd0b6a",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/reflection_evidence.py",
+      "oldSha256": "20a218d11fe8422ff91040a740eeb54a8d8438c8980275bd4605d259d5d60ddf",
+      "currentSha256": "20a218d11fe8422ff91040a740eeb54a8d8438c8980275bd4605d259d5d60ddf",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/reflection_synthesis.py",
+      "oldSha256": "18d4754e2670c08c777f85507c77c852757338c04788797914959bc47e17dcce",
+      "currentSha256": "18d4754e2670c08c777f85507c77c852757338c04788797914959bc47e17dcce",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/run_events.py",
+      "oldSha256": "d97dcb909e176183ce1461f342e35e13524a34290937fa95b6b10c11fc314f67",
+      "currentSha256": "d97dcb909e176183ce1461f342e35e13524a34290937fa95b6b10c11fc314f67",
+      "v39Sha256": "ba356751ac152115779260284272b36274c92cf73923aed0bfa104bde1c471c4",
+      "v40Sha256": "d97dcb909e176183ce1461f342e35e13524a34290937fa95b6b10c11fc314f67",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/run_journal.py",
+      "oldSha256": "ff4f21c8817b6f53c4f43e7834ecc1c9cd2da0406ffbd80f67257e31d56a056a",
+      "currentSha256": "ff4f21c8817b6f53c4f43e7834ecc1c9cd2da0406ffbd80f67257e31d56a056a",
+      "v39Sha256": "64437e6415a4878951e24d4862330349789e2aef285b30850b64063c4d81ccfd",
+      "v40Sha256": "ff4f21c8817b6f53c4f43e7834ecc1c9cd2da0406ffbd80f67257e31d56a056a",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/run_lifecycle.py",
+      "oldSha256": "a5f3c1f390a4fc8bb29b5f8cc198829ec0d2a85ea1413bc06ee2e458bc15da0a",
+      "currentSha256": "a5f3c1f390a4fc8bb29b5f8cc198829ec0d2a85ea1413bc06ee2e458bc15da0a",
+      "v39Sha256": "a6f6ea2416fbd848829df6d8ee4fe4ce2e8b4026e3104d2debd9c019ed27391e",
+      "v40Sha256": "a5f3c1f390a4fc8bb29b5f8cc198829ec0d2a85ea1413bc06ee2e458bc15da0a",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/session.py",
+      "oldSha256": "b469a47c544b468700dcc9007dc55abc0515cc2892c06d0e2672c3d9b618a0b7",
+      "currentSha256": "b469a47c544b468700dcc9007dc55abc0515cc2892c06d0e2672c3d9b618a0b7",
+      "v39Sha256": "13d615d7894621b5481841b0cf6676d4067f7fe6a62dc1e2ee3960bed6fb7977",
+      "v40Sha256": "83b337afb3fa8efa7a5c7ed686de267f948a261d8cefa85f02a802de630849b2",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/state.py",
+      "oldSha256": "9bc1305696b1e3b6d6046125863dd118a5d945a8fe9b15f592828fa121433d4e",
+      "currentSha256": "9bc1305696b1e3b6d6046125863dd118a5d945a8fe9b15f592828fa121433d4e",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/storage_health.py",
+      "oldSha256": "21b9e50dc0211491f89ca907a744e0db08ced379ad65b3ba093c42c79a4d0ea6",
+      "currentSha256": "21b9e50dc0211491f89ca907a744e0db08ced379ad65b3ba093c42c79a4d0ea6",
+      "v39Sha256": "835dfc134bbb00ec7c24f1daeffdc5adece45c14d6aa198c1114025bfb6b7117",
+      "v40Sha256": "21b9e50dc0211491f89ca907a744e0db08ced379ad65b3ba093c42c79a4d0ea6",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/tls.py",
+      "oldSha256": "36585e6557859af0c1d228163d1656af240fcf968035df9e826c54034532554d",
+      "currentSha256": "36585e6557859af0c1d228163d1656af240fcf968035df9e826c54034532554d",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/tooling.py",
+      "oldSha256": "f05490381ddf143773d14c662df36662682d443b3090a7e4989e46c833ae76ae",
+      "currentSha256": "14a96c35afce59923f19229e2c6dca089cf6d06534f020c2ce0da6c3bb84fa87",
+      "v39Sha256": "5c3f0ff6f94c0dbff24caf145748412aa1e0a13fbea2f092ca23dadd6a9120a5",
+      "v40Sha256": "208703e59f1143c4b83c08248738069e3f35ac6ce1d16dbe09f3f92acf89ebdb",
+      "changedAfterSnapshot": true,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/tools/__init__.py",
+      "oldSha256": "f15edace81b45c736cf8bdeae99129c797e2844f7665f974ca3c598b2f36ef90",
+      "currentSha256": "f15edace81b45c736cf8bdeae99129c797e2844f7665f974ca3c598b2f36ef90",
+      "v39Sha256": "7ae5a05d64801ac5faee5f1d2547a7c6d3f8cdbe9c6f6a041a64351bb9a1ae0d",
+      "v40Sha256": "feee855ada5b015e33a8ade1faf1f48216d56f85c4012ee8cc32e5a5639b3a2d",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/tools/bounded_resolver.py",
+      "oldSha256": "55275c0acb527036f6691646bd689d9be54e1877774c371daf28d59ee89f5523",
+      "currentSha256": "55275c0acb527036f6691646bd689d9be54e1877774c371daf28d59ee89f5523",
+      "v39Sha256": "55275c0acb527036f6691646bd689d9be54e1877774c371daf28d59ee89f5523",
+      "v40Sha256": "55275c0acb527036f6691646bd689d9be54e1877774c371daf28d59ee89f5523",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/tools/http_utils.py",
+      "oldSha256": "121d3a5cd30b1c2fec92563a54a9fb0ad676bcc9baa281f1722f38526ccfb206",
+      "currentSha256": "121d3a5cd30b1c2fec92563a54a9fb0ad676bcc9baa281f1722f38526ccfb206",
+      "v39Sha256": "d677707fe69f25147fe98ad51f6bd733276191ff05988c3b32d6734db6d1bd84",
+      "v40Sha256": "d677707fe69f25147fe98ad51f6bd733276191ff05988c3b32d6734db6d1bd84",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/tools/network_safety.py",
+      "oldSha256": "63592d4bd565b2de17f71b1d42c5342a10555a10c60fc392172644db91e7a079",
+      "currentSha256": "63592d4bd565b2de17f71b1d42c5342a10555a10c60fc392172644db91e7a079",
+      "v39Sha256": "43a2a82b31f10456178a50ed6eb25028061eacf783bd8c81e815eaf598d3b312",
+      "v40Sha256": "a0d79db7b0effb5400ae50bf720e9192c8dbcbf2787d63484ac1921635df781c",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/tools/run_command.py",
+      "oldSha256": "1468b1979be8df4556ac63231f122f5ca0075d92fb563a6669b5f6ae74245b91",
+      "currentSha256": "1468b1979be8df4556ac63231f122f5ca0075d92fb563a6669b5f6ae74245b91",
+      "v39Sha256": "12ebf232262d1ef47727f1390a8e7fcb295ed9657fce8a719cce6fa1674ae122",
+      "v40Sha256": "8bc4d1e5b6b7bb76ce8a78b5b5d5646ca1915aafd6df7eac6468ebc7ad9876ce",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/tools/search_providers.py",
+      "oldSha256": "a5e03a850ea3dd54d130f07816b4368ce177c640596b18f32bbd822c27402df8",
+      "currentSha256": "a5e03a850ea3dd54d130f07816b4368ce177c640596b18f32bbd822c27402df8",
+      "v39Sha256": "e0baa6e1924feb90d422c2d6fb211c69213a8d9d0a18da49543009ffdc4643d5",
+      "v40Sha256": "a5e03a850ea3dd54d130f07816b4368ce177c640596b18f32bbd822c27402df8",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/tools/task.py",
+      "oldSha256": "3efb1522dddc690fe3361888b84f6a46b46176a45f21ff78f72e7025712e35cd",
+      "currentSha256": "81433748454e1e18315ad444a18a4f055861567b83132955e23a3cdf828e0a1c",
+      "v39Sha256": "65ee3fd9f60b0c18fa31d2062d9e1e08c949f9ca2a5ea4b1d402d80ad0095ef7",
+      "v40Sha256": "4ca336a6fad019c85b2639fc63281edf18177ad7967137651b487eb07bd07a3c",
+      "changedAfterSnapshot": true,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/tools/web_fetch.py",
+      "oldSha256": "7ee2c130b96dbc6b9fe3f874204c9be6035ec3c9d97ea815b3e7614dc3f11ef0",
+      "currentSha256": "7ee2c130b96dbc6b9fe3f874204c9be6035ec3c9d97ea815b3e7614dc3f11ef0",
+      "v39Sha256": "7ee2c130b96dbc6b9fe3f874204c9be6035ec3c9d97ea815b3e7614dc3f11ef0",
+      "v40Sha256": "7ee2c130b96dbc6b9fe3f874204c9be6035ec3c9d97ea815b3e7614dc3f11ef0",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/tools/web_search.py",
+      "oldSha256": "6cf95bf1d2c5b685ea5df83d1a6ebbf226dc7aab28ba131dabdece86c4951e0e",
+      "currentSha256": "6cf95bf1d2c5b685ea5df83d1a6ebbf226dc7aab28ba131dabdece86c4951e0e",
+      "v39Sha256": "c2c2912914ef76024dd4e768bba73ea41fce6dbbc758943d6ed310e07ebbb187",
+      "v40Sha256": "6cf95bf1d2c5b685ea5df83d1a6ebbf226dc7aab28ba131dabdece86c4951e0e",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/tui/input_handler.py",
+      "oldSha256": "8e9d3386fb64b75a55dba164292e5e81b974c473c4dbb067006239a71e48bbe4",
+      "currentSha256": "397c1a952a809c66173133385a9cc08168721e23219cd7e2012313ea81abe7d9",
+      "v39Sha256": "f826956da80bc6d3e0f0b04f6af519fd9a9876fa4224bfcbf497e9d94590069b",
+      "v40Sha256": "28783be0fc8e918c194af941e3071f067052e16dbf9b85ff3655fb4011a0a37d",
+      "changedAfterSnapshot": true,
+      "declaredV41Changed": true,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/turn_cancellation.py",
+      "oldSha256": "1423a75023c835b211a0f2dd0e85c1e98d5fcec6910c2435c2f48b2d74daf37f",
+      "currentSha256": "1423a75023c835b211a0f2dd0e85c1e98d5fcec6910c2435c2f48b2d74daf37f",
+      "v39Sha256": "1423a75023c835b211a0f2dd0e85c1e98d5fcec6910c2435c2f48b2d74daf37f",
+      "v40Sha256": "1423a75023c835b211a0f2dd0e85c1e98d5fcec6910c2435c2f48b2d74daf37f",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/types.py",
+      "oldSha256": "4afd4da75922437aa9a04a7c1cf1a0f11dd72190eed00a0eca1de82236726eeb",
+      "currentSha256": "4afd4da75922437aa9a04a7c1cf1a0f11dd72190eed00a0eca1de82236726eeb",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "minicode/web/change_feed.py",
+      "oldSha256": "cc26b60c2812ec8bbd2619ae4dc58e4d6493dafb3ff1610955b92455e0468e49",
+      "currentSha256": "cc26b60c2812ec8bbd2619ae4dc58e4d6493dafb3ff1610955b92455e0468e49",
+      "v39Sha256": "303ad086d654cdad0ece1ffb51e942dadaf5da35e04e4e3d5fd1cee432bca902",
+      "v40Sha256": "cc26b60c2812ec8bbd2619ae4dc58e4d6493dafb3ff1610955b92455e0468e49",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/web/chat_http.py",
+      "oldSha256": "4d1b7623d6f05ba2e3caa113846dbe63b3ee525a79fab56613f1dac827ddfcd2",
+      "currentSha256": "4d1b7623d6f05ba2e3caa113846dbe63b3ee525a79fab56613f1dac827ddfcd2",
+      "v39Sha256": "4f7a8e2cea644516944281dca43539ca43347024187cfa28ed12203dfd6c58ac",
+      "v40Sha256": "4d1b7623d6f05ba2e3caa113846dbe63b3ee525a79fab56613f1dac827ddfcd2",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/web/chat_stream.py",
+      "oldSha256": "b067232d3de9169f64b8ab3801c75d1bbe4f1c80580a366001a9b2b94c60fa57",
+      "currentSha256": "b067232d3de9169f64b8ab3801c75d1bbe4f1c80580a366001a9b2b94c60fa57",
+      "v39Sha256": "ecd790c6f3a02358ddb6c279230e65a1935e598af477cabda490a34b71d0b927",
+      "v40Sha256": "b067232d3de9169f64b8ab3801c75d1bbe4f1c80580a366001a9b2b94c60fa57",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/web/data_management_http.py",
+      "oldSha256": "6a2d478157fa02fe0c9f7548d8bb795f90fbe7bfc218e976a0fb56e3f55757d4",
+      "currentSha256": "6a2d478157fa02fe0c9f7548d8bb795f90fbe7bfc218e976a0fb56e3f55757d4",
+      "v39Sha256": "6a2d478157fa02fe0c9f7548d8bb795f90fbe7bfc218e976a0fb56e3f55757d4",
+      "v40Sha256": "6a2d478157fa02fe0c9f7548d8bb795f90fbe7bfc218e976a0fb56e3f55757d4",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/web/event_stream.py",
+      "oldSha256": "f6d70d13e04b0746811301d11bfacd681613e199518fa34b9b8763dacb30d728",
+      "currentSha256": "f6d70d13e04b0746811301d11bfacd681613e199518fa34b9b8763dacb30d728",
+      "v39Sha256": "f6d70d13e04b0746811301d11bfacd681613e199518fa34b9b8763dacb30d728",
+      "v40Sha256": "f6d70d13e04b0746811301d11bfacd681613e199518fa34b9b8763dacb30d728",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/web/http.py",
+      "oldSha256": "4b000f6d77a517fca7ade094cda54a1a7efdbc2aeb1c8b04b98f54dab1c0519a",
+      "currentSha256": "4b000f6d77a517fca7ade094cda54a1a7efdbc2aeb1c8b04b98f54dab1c0519a",
+      "v39Sha256": "4b000f6d77a517fca7ade094cda54a1a7efdbc2aeb1c8b04b98f54dab1c0519a",
+      "v40Sha256": "4b000f6d77a517fca7ade094cda54a1a7efdbc2aeb1c8b04b98f54dab1c0519a",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/web/memory_approval_http.py",
+      "oldSha256": "f3e8a047d6dff7fce4142eba5226bf698693b1f3f6bd301137c5978bf9f30ded",
+      "currentSha256": "f3e8a047d6dff7fce4142eba5226bf698693b1f3f6bd301137c5978bf9f30ded",
+      "v39Sha256": "f3e8a047d6dff7fce4142eba5226bf698693b1f3f6bd301137c5978bf9f30ded",
+      "v40Sha256": "f3e8a047d6dff7fce4142eba5226bf698693b1f3f6bd301137c5978bf9f30ded",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/web/permission_http.py",
+      "oldSha256": "bfa2f062135a77652b7911d80db547f39db6e7237c840906e2f1dc30533944dc",
+      "currentSha256": "bfa2f062135a77652b7911d80db547f39db6e7237c840906e2f1dc30533944dc",
+      "v39Sha256": "bfa2f062135a77652b7911d80db547f39db6e7237c840906e2f1dc30533944dc",
+      "v40Sha256": "bfa2f062135a77652b7911d80db547f39db6e7237c840906e2f1dc30533944dc",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/web/read_model.py",
+      "oldSha256": "67b5e472a1dbec3a87808d150e1fa7252bb86e00b86f370968be960914d8f8a5",
+      "currentSha256": "67b5e472a1dbec3a87808d150e1fa7252bb86e00b86f370968be960914d8f8a5",
+      "v39Sha256": "2ea92f1b08f230ef64e814c6091f6eadc7a6a8783087d5f98198582a2ace2786",
+      "v40Sha256": "67b5e472a1dbec3a87808d150e1fa7252bb86e00b86f370968be960914d8f8a5",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/web/static/assets/app.js",
+      "oldSha256": "861626a2f4352c30c4ecc05359fc0316fe8a51cfaa78d119d7601fdada258695",
+      "currentSha256": "861626a2f4352c30c4ecc05359fc0316fe8a51cfaa78d119d7601fdada258695",
+      "v39Sha256": "ff727de649fe14314d5a1ce3d681a4b0ffece0282e6ab5ec77f88174548c94b8",
+      "v40Sha256": "861626a2f4352c30c4ecc05359fc0316fe8a51cfaa78d119d7601fdada258695",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/web/static/assets/styles.css",
+      "oldSha256": "9ac1ad5047c20a162ae58ba88a8cbf4a2dddb9d370152dfa951b23b61bb7d003",
+      "currentSha256": "9ac1ad5047c20a162ae58ba88a8cbf4a2dddb9d370152dfa951b23b61bb7d003",
+      "v39Sha256": "bc9b13b94354650ad549c8c96f8285984ba4d6d48f914de7c737f04d19686255",
+      "v40Sha256": "9ac1ad5047c20a162ae58ba88a8cbf4a2dddb9d370152dfa951b23b61bb7d003",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/web/static/index.html",
+      "oldSha256": "35019b94aa6b96860367dc3a8b21fb3749759bfe4908fa3e27000962b3f62682",
+      "currentSha256": "35019b94aa6b96860367dc3a8b21fb3749759bfe4908fa3e27000962b3f62682",
+      "v39Sha256": "49c991efa9b10344a7272113a2177f9b64929d1b73fbf84b595153dd0d44a38b",
+      "v40Sha256": "35019b94aa6b96860367dc3a8b21fb3749759bfe4908fa3e27000962b3f62682",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/web/storage_health_http.py",
+      "oldSha256": "14ec6f907ed16c41fb2f550a2c99557135079e2ec99d7bf139ca7fdc2773a8ff",
+      "currentSha256": "14ec6f907ed16c41fb2f550a2c99557135079e2ec99d7bf139ca7fdc2773a8ff",
+      "v39Sha256": "14ec6f907ed16c41fb2f550a2c99557135079e2ec99d7bf139ca7fdc2773a8ff",
+      "v40Sha256": "14ec6f907ed16c41fb2f550a2c99557135079e2ec99d7bf139ca7fdc2773a8ff",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/working_memory.py",
+      "oldSha256": "a3a44415ec418116c14300746cbb4cae3a14a181bc634c87a2600753ecc256e5",
+      "currentSha256": "a3a44415ec418116c14300746cbb4cae3a14a181bc634c87a2600753ecc256e5",
+      "v39Sha256": "a3a44415ec418116c14300746cbb4cae3a14a181bc634c87a2600753ecc256e5",
+      "v40Sha256": "a3a44415ec418116c14300746cbb4cae3a14a181bc634c87a2600753ecc256e5",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "minicode/workspace.py",
+      "oldSha256": "f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4",
+      "currentSha256": "f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4",
+      "v39Sha256": "8e163fab604fa17309f2741c4eed202ec9c8b919e5179db39168a0e468ff17f4",
+      "v40Sha256": "f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4",
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": false
+    },
+    {
+      "path": "scripts/memory_hybrid_qwen_v2_evaluator.py",
+      "oldSha256": "5beee954a364e0bd3db28025c2e199d745aad6d7b5df3fc4d5dd3e2a04e5b818",
+      "currentSha256": "5beee954a364e0bd3db28025c2e199d745aad6d7b5df3fc4d5dd3e2a04e5b818",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    },
+    {
+      "path": "scripts/memory_hybrid_resolver_pressure_evaluator.py",
+      "oldSha256": "22c3528c7da608496a984ee2dd0737c3f2ae5b724c6187631507cf950eccaf77",
+      "currentSha256": "22c3528c7da608496a984ee2dd0737c3f2ae5b724c6187631507cf950eccaf77",
+      "v39Sha256": null,
+      "v40Sha256": null,
+      "changedAfterSnapshot": false,
+      "declaredV41Changed": false,
+      "declaredV41Added": true
+    }
+  ],
+  "gates": {
+    "old-v40": {
+      "expectedChangedCount": 42,
+      "actualChangedCount": 44,
+      "extraChanged": [
+        "minicode/file_review.py",
+        "minicode/tools/http_utils.py"
+      ],
+      "missingExpectedChanged": [],
+      "result": {
+        "type": "BaselineCertificationError",
+        "message": "unexpected v39 source differences: changed=minicode/agent_loop.py, minicode/agent_reflection.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/conversation_turn_store.py, minicode/deletion_store.py, minicode/file_review.py, minicode/gateway.py, minicode/headless.py, minicode/main.py, minicode/memory.py, minicode/memory_approval.py, minicode/memory_candidate_consolidation.py, minicode/memory_curator_agent.py, minicode/memory_injector.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/memory_store.py, minicode/permission_approval.py, minicode/permissions.py, minicode/project_memory_deletion.py, minicode/run_events.py, minicode/run_journal.py, minicode/run_lifecycle.py, minicode/session.py, minicode/storage_health.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/search_providers.py, minicode/tools/task.py, minicode/tools/web_search.py, minicode/tui/input_handler.py, minicode/web/change_feed.py, minicode/web/chat_http.py, minicode/web/chat_stream.py, minicode/web/read_model.py, minicode/web/static/assets/app.js, minicode/web/static/assets/styles.css, minicode/web/static/index.html, minicode/workspace.py; added=minicode/advisory_lock.py, minicode/curator_schedule.py, minicode/memory_approval_interpretation.py, minicode/memory_audit_contract.py, minicode/memory_authority_io.py, minicode/memory_authority_publisher.py, minicode/memory_blob_store.py, minicode/memory_lexical_policy.py, minicode/memory_provenance.py, minicode/memory_write_contract.py, minicode/project_facts.py"
+      }
+    },
+    "old-v41": {
+      "expectedChangedCount": 16,
+      "actualChangedCount": 21,
+      "extraChanged": [
+        "minicode/context_compactor.py",
+        "minicode/file_review.py",
+        "minicode/memory.py",
+        "minicode/tools/http_utils.py",
+        "minicode/tools/network_safety.py"
+      ],
+      "missingExpectedChanged": [],
+      "result": {
+        "type": "BaselineCertificationError",
+        "message": "unexpected v40 source differences: changed=minicode/agent_loop.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/file_review.py, minicode/main.py, minicode/mcp.py, minicode/memory.py, minicode/memory_injector.py, minicode/memory_lexical_policy.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/permissions.py, minicode/session.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/task.py, minicode/tui/input_handler.py; added=minicode/agent_budget.py, minicode/api_retry.py, minicode/config.py, minicode/context_manager.py, minicode/cost_tracker.py, minicode/cybernetic_orchestrator.py, minicode/domain_classifier.py, minicode/embeddings.py, minicode/env_file.py, minicode/evaluation_one_shot.py, minicode/memory_hybrid.py, minicode/memory_hybrid_freeze.py, minicode/memory_hybrid_promotion_contract.py, minicode/memory_hybrid_release.py, minicode/memory_hybrid_runtime.py, minicode/memory_path_identity.py, minicode/model_call_control.py, minicode/model_registry.py, minicode/openai_adapter.py, minicode/reflection_evidence.py, minicode/reflection_synthesis.py, minicode/state.py, minicode/tls.py, minicode/types.py, scripts/memory_hybrid_qwen_v2_evaluator.py, scripts/memory_hybrid_resolver_pressure_evaluator.py"
+      }
+    },
+    "current-v40": {
+      "expectedChangedCount": 42,
+      "actualChangedCount": 44,
+      "extraChanged": [
+        "minicode/file_review.py",
+        "minicode/tools/http_utils.py"
+      ],
+      "missingExpectedChanged": [],
+      "result": {
+        "type": "BaselineCertificationError",
+        "message": "unexpected v39 source differences: changed=minicode/agent_loop.py, minicode/agent_reflection.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/conversation_turn_store.py, minicode/deletion_store.py, minicode/file_review.py, minicode/gateway.py, minicode/headless.py, minicode/main.py, minicode/memory.py, minicode/memory_approval.py, minicode/memory_candidate_consolidation.py, minicode/memory_curator_agent.py, minicode/memory_injector.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/memory_store.py, minicode/permission_approval.py, minicode/permissions.py, minicode/project_memory_deletion.py, minicode/run_events.py, minicode/run_journal.py, minicode/run_lifecycle.py, minicode/session.py, minicode/storage_health.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/search_providers.py, minicode/tools/task.py, minicode/tools/web_search.py, minicode/tui/input_handler.py, minicode/web/change_feed.py, minicode/web/chat_http.py, minicode/web/chat_stream.py, minicode/web/read_model.py, minicode/web/static/assets/app.js, minicode/web/static/assets/styles.css, minicode/web/static/index.html, minicode/workspace.py; added=minicode/advisory_lock.py, minicode/curator_schedule.py, minicode/memory_approval_interpretation.py, minicode/memory_audit_contract.py, minicode/memory_authority_io.py, minicode/memory_authority_publisher.py, minicode/memory_blob_store.py, minicode/memory_lexical_policy.py, minicode/memory_provenance.py, minicode/memory_write_contract.py, minicode/project_facts.py"
+      }
+    },
+    "current-v41": {
+      "expectedChangedCount": 16,
+      "actualChangedCount": 21,
+      "extraChanged": [
+        "minicode/context_compactor.py",
+        "minicode/file_review.py",
+        "minicode/memory.py",
+        "minicode/tools/http_utils.py",
+        "minicode/tools/network_safety.py"
+      ],
+      "missingExpectedChanged": [],
+      "result": {
+        "type": "BaselineCertificationError",
+        "message": "unexpected v40 source differences: changed=minicode/agent_loop.py, minicode/agent_runtime.py, minicode/context_compactor.py, minicode/conversation.py, minicode/file_review.py, minicode/main.py, minicode/mcp.py, minicode/memory.py, minicode/memory_injector.py, minicode/memory_lexical_policy.py, minicode/memory_pipeline.py, minicode/memory_retrieval.py, minicode/permissions.py, minicode/session.py, minicode/tooling.py, minicode/tools/__init__.py, minicode/tools/http_utils.py, minicode/tools/network_safety.py, minicode/tools/run_command.py, minicode/tools/task.py, minicode/tui/input_handler.py; added=minicode/agent_budget.py, minicode/api_retry.py, minicode/config.py, minicode/context_manager.py, minicode/cost_tracker.py, minicode/cybernetic_orchestrator.py, minicode/domain_classifier.py, minicode/embeddings.py, minicode/env_file.py, minicode/evaluation_one_shot.py, minicode/memory_hybrid.py, minicode/memory_hybrid_freeze.py, minicode/memory_hybrid_promotion_contract.py, minicode/memory_hybrid_release.py, minicode/memory_hybrid_runtime.py, minicode/memory_path_identity.py, minicode/model_call_control.py, minicode/model_registry.py, minicode/openai_adapter.py, minicode/reflection_evidence.py, minicode/reflection_synthesis.py, minicode/state.py, minicode/tls.py, minicode/types.py, scripts/memory_hybrid_qwen_v2_evaluator.py, scripts/memory_hybrid_resolver_pressure_evaluator.py"
+      }
+    }
+  },
+  "testRuns": {
+    "old": {
+      "command": [
+        "/Users/zhourunbo/miniconda3/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_memory_retrieval_production_baseline_v40.py",
+        "tests/test_memory_retrieval_production_baseline_v41.py",
+        "-q",
+        "--tb=short"
+      ],
+      "cwd": "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-memory-freeze-old-1bgki1tv",
+      "exitCode": 1,
+      "failedNodeIds": [
+        "tests/test_memory_retrieval_production_baseline_v40.py::test_v40_candidate_is_the_exact_multi_track_release_delta",
+        "tests/test_memory_retrieval_production_baseline_v40.py::test_v40_preserves_every_unrelated_v39_production_hash",
+        "tests/test_memory_retrieval_production_baseline_v40.py::test_v40_candidate_rejects_a_missing_added_authority_dependency",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_candidate_closes_the_exact_hybrid_runtime_delta",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_staged_v41_candidate_is_read_only_and_v40_stays_active",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_candidate_rejects_a_missing_runtime_dependency",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_print_is_deterministic_without_machine_metadata",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_writer_exclusively_creates_one_unpinned_candidate",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_writer_returns_an_existing_candidate_only_after_full_pin_validation",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_writer_never_repairs_a_tampered_pinned_candidate",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_writer_removes_final_target_when_directory_fsync_fails",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_release_join_verifies_real_files_and_gates_selection",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_release_join_writer_does_not_create_a_missing_receipt_after_pin",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_release_join_fails_closed_after_bound_artifact_tampering",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_verify_active_v41_requires_release_join_even_after_manifest_pin"
+      ],
+      "log": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/multi-agent-fixes-2026-09-08/memory-freeze-old-pytest.txt",
+      "summary": "15 failed, 18 passed in 1.51s"
+    },
+    "current": {
+      "command": [
+        "/Users/zhourunbo/miniconda3/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_memory_retrieval_production_baseline_v40.py",
+        "tests/test_memory_retrieval_production_baseline_v41.py",
+        "-q",
+        "--tb=short"
+      ],
+      "cwd": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main",
+      "exitCode": 1,
+      "failedNodeIds": [
+        "tests/test_memory_retrieval_production_baseline_v40.py::test_v40_candidate_is_the_exact_multi_track_release_delta",
+        "tests/test_memory_retrieval_production_baseline_v40.py::test_v40_preserves_every_unrelated_v39_production_hash",
+        "tests/test_memory_retrieval_production_baseline_v40.py::test_v40_candidate_rejects_a_missing_added_authority_dependency",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_candidate_closes_the_exact_hybrid_runtime_delta",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_staged_v41_candidate_is_read_only_and_v40_stays_active",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_candidate_rejects_a_missing_runtime_dependency",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_print_is_deterministic_without_machine_metadata",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_writer_exclusively_creates_one_unpinned_candidate",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_writer_returns_an_existing_candidate_only_after_full_pin_validation",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_writer_never_repairs_a_tampered_pinned_candidate",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_writer_removes_final_target_when_directory_fsync_fails",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_release_join_verifies_real_files_and_gates_selection",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_release_join_writer_does_not_create_a_missing_receipt_after_pin",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_v41_release_join_fails_closed_after_bound_artifact_tampering",
+        "tests/test_memory_retrieval_production_baseline_v41.py::test_verify_active_v41_requires_release_join_even_after_manifest_pin"
+      ],
+      "log": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/multi-agent-fixes-2026-09-08/memory-freeze-current-pytest.txt",
+      "summary": "15 failed, 18 passed in 1.59s"
+    }
+  },
+  "sameFailureSet": true,
+  "sameFailureSetAsFullSuite": true
+}

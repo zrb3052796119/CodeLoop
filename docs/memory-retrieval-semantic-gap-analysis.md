@@ -4,11 +4,11 @@
 
 ## Strict Attribution
 
-- Confirmed: `37`.
-- Analysis / sealed: `19` / `18`.
+- Confirmed: `36`.
+- Analysis / sealed: `18` / `18`.
 - Confirmed categories: `11`.
 - Non-semantic candidate misses: `1`.
-- Downstream or successful non-gap cases: `34`.
+- Downstream or successful non-gap cases: `35`.
 
 ## Confirmed Gaps
 
@@ -154,19 +154,6 @@
 - Not metadata/scope/lifecycle/budget: Primary is approved/active/safe, globally visible in its declared scope, has complete structured labels, and fails before Gate, Consolidator, Controller, and budget.
 - Hard-negative controls: `sg-neg-library-03`.
 - Future retrieval value: 轮换瞬间会中断正在处理的请求。
-
-### sg-pos-correction-03
-
-- Category / primary: `correction_supersession_rephrasing` / `sg-mem-correction-03`.
-- Split / scope: `analysis` / `user`.
-- Language / overlap: `zh->en` / `zero` (`0.0`).
-- First failure / rank: `candidate_generation_top20` / `33`.
-- Synthetic query: 按我后来确认的方式展示测试结果。
-- Semantic value: “后来确认”指向 active correction，测试结果应同时显示成功和失败计数。
-- Lexical failure mechanism: 中文请求没有英文 counts、failures-only 或 replacing。
-- Not metadata/scope/lifecycle/budget: Primary is approved/active/safe, globally visible in its declared scope, has complete structured labels, and fails before Gate, Consolidator, Controller, and budget.
-- Hard-negative controls: `sg-neg-negation-02`.
-- Future retrieval value: 报告会缺少总体通过情况。
 
 ### sg-pos-correction-06
 
@@ -499,13 +486,13 @@
 
 ## Downstream Or Successful Non-Gaps
 
-- `sg-pos-alias-01`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `7`).
+- `sg-pos-alias-01`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `4`).
 - `sg-pos-alias-02`: `primary_entered_diagnostic_top20, first_loss_is_rendered` (stage `rendered`, rank `8`).
 - `sg-pos-config-01`: `primary_entered_diagnostic_top20, first_loss_is_rendered` (stage `rendered`, rank `3`).
-- `sg-pos-config-02`: `primary_entered_diagnostic_top20, first_loss_is_rendered` (stage `rendered`, rank `8`).
-- `sg-pos-config-04`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `1`).
+- `sg-pos-config-02`: `primary_entered_diagnostic_top20, first_loss_is_rendered` (stage `rendered`, rank `5`).
+- `sg-pos-config-04`: `primary_entered_diagnostic_top20, first_loss_is_rendered` (stage `rendered`, rank `1`).
 - `sg-pos-constraint-01`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `2`).
-- `sg-pos-constraint-02`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `13`).
+- `sg-pos-constraint-02`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `4`).
 - `sg-pos-constraint-04`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `1`).
 - `sg-pos-context-01`: `primary_entered_diagnostic_top20, first_loss_is_rendered` (stage `rendered`, rank `1`).
 - `sg-pos-context-02`: `primary_entered_diagnostic_top20, first_loss_is_rendered` (stage `rendered`, rank `2`).
@@ -513,12 +500,13 @@
 - `sg-pos-context-04`: `primary_entered_diagnostic_top20, first_loss_is_rendered` (stage `rendered`, rank `1`).
 - `sg-pos-context-06`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `1`).
 - `sg-pos-correction-01`: `primary_entered_diagnostic_top20, first_loss_is_rendered` (stage `rendered`, rank `2`).
-- `sg-pos-correction-02`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `7`).
-- `sg-pos-correction-04`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `1`).
+- `sg-pos-correction-02`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `4`).
+- `sg-pos-correction-03`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `1`).
+- `sg-pos-correction-04`: `primary_entered_diagnostic_top20, first_loss_is_rendered` (stage `rendered`, rank `1`).
 - `sg-pos-correction-05`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `15`).
 - `sg-pos-preference-01`: `primary_entered_diagnostic_top20, first_loss_is_rendered` (stage `rendered`, rank `5`).
 - `sg-pos-recovery-01`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `12`).
-- `sg-pos-recovery-02`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `18`).
+- `sg-pos-recovery-02`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `10`).
 - `sg-pos-recovery-04`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `1`).
 - `sg-pos-recovery-06`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `1`).
 - `sg-pos-rename-01`: `primary_entered_diagnostic_top20, structured_rename_relation_is_primary_evidence, first_loss_is_rendered` (stage `rendered`, rank `1`).
@@ -530,7 +518,7 @@
 - `sg-pos-root-02`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `15`).
 - `sg-pos-root-04`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `1`).
 - `sg-pos-zero-01`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `14`).
-- `sg-pos-zero-02`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `11`).
+- `sg-pos-zero-02`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `10`).
 - `sg-pos-zero-04`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `1`).
 - `sg-pos-zero-05`: `primary_entered_diagnostic_top20, first_loss_is_relevance_gate` (stage `relevance_gate`, rank `12`).
 

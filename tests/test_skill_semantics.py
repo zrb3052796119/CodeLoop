@@ -80,6 +80,24 @@ class TestAliasMatcher:
         assert "数据库" in matcher.related_terms("database")
         assert "database" in matcher.related_terms("数据库")
 
+    @pytest.mark.parametrize(
+        ("query", "skill_text"),
+        [
+            ("trace the call flow", "梳理调用链和执行路径"),
+            ("version control workflow", "管理 Git 分支和提交"),
+            ("multi-agent delegation", "工作单元并行分工与汇总"),
+        ],
+    )
+    def test_multiword_and_hyphenated_aliases_are_reachable(
+        self,
+        query: str,
+        skill_text: str,
+    ) -> None:
+        matcher = AliasSemanticMatcher()
+
+        assert matcher.matched_concepts(query, skill_text)
+        assert matcher.matched_group_ids(query, skill_text)
+
 
 class TestAliasRouting:
     def test_unknown_intent_chinese_task_routes(self) -> None:

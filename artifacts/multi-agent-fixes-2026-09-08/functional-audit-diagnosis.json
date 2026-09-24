@@ -1,0 +1,28 @@
+{
+  "test": "tests/functional_audit/test_runner.py::test_audit_closes_web_and_archive_findings",
+  "interpreter": "/Users/zhourunbo/miniconda3/bin/python",
+  "currentResult": "failed",
+  "preFixResult": "failed",
+  "sameFailure": {
+    "file": "tests/functional_audit/test_runner.py",
+    "line": 195,
+    "expected": "httpMutationFixtureStatus begins blocked:",
+    "actual": "PermissionError"
+  },
+  "failureOrigin": {
+    "file": "scripts/run_functional_audit.py",
+    "line": 462,
+    "operation": "ThreadingHTTPServer -> socket.bind(127.0.0.1, 0)",
+    "errno": 1,
+    "exception": "PermissionError: Operation not permitted"
+  },
+  "classification": "environment limitation: local TCP bind denied before production HTTP validator runs; reproduced unchanged on real pre-fix production",
+  "baselineSourceVerification": {
+    "matched": 258,
+    "total": 258,
+    "mismatches": []
+  },
+  "baselineCopy": "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-audit-baseline-qmjcp9io",
+  "originalFrozenSnapshotModified": false,
+  "currentProductionModified": false
+}

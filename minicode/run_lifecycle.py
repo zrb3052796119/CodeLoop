@@ -15,12 +15,12 @@ from collections import defaultdict, deque
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 from minicode.logging_config import get_logger
+from minicode.memory_provenance import MemoryProvenanceBatch
 from minicode.run_journal import RunJournal
 from minicode.turn_cancellation import TurnCancellationRequested
-
 
 _MAX_TASK_TITLE_CHARS = 160
 _MAX_TOOL_NAME_CHARS = 128
@@ -50,6 +50,7 @@ class _Journal(Protocol):
         status: str,
         *,
         reason: str | None = None,
+        memory_provenance_gaps: tuple[str, ...] = (),
     ) -> object: ...
 
     def append_event(
@@ -65,6 +66,33 @@ class _Journal(Protocol):
         self,
         run_id: str,
         entry_ids: list[str],
+    ) -> None: ...
+
+    def record_rendered_memory_versions(
+        self,
+        run_id: str,
+        versions: list[tuple[str, str]],
+    ) -> None: ...
+
+    def record_written_memory_ids(
+        self,
+        run_id: str,
+        entry_ids: list[str],
+    ) -> None: ...
+
+    def record_written_memory_versions(
+        self,
+        run_id: str,
+        versions: list[tuple[str, str]],
+    ) -> None: ...
+
+    def record_memory_provenance(
+        self,
+        run_id: str,
+        batch: MemoryProvenanceBatch,
+        *,
+        actor_kind: str = "run_root",
+        subagent_id: str | None = None,
     ) -> None: ...
 
 
@@ -147,11 +175,39 @@ class _BestEffortLifecycle:
             self._running = False
             _safe_observation_warning("start")
 
-    def finish(self, status: str, *, reason: str | None = None) -> None:
+    def finish(
+        self,
+        status: str,
+        *,
+        reason: str | None = None,
+        memory_provenance_gaps: tuple[str, ...] = (),
+    ) -> None:
         if not self._running or self._journal is None or self._run_id is None:
             return
         try:
-            self._journal.transition(self._run_id, status, reason=reason)
+            if memory_provenance_gaps:
+                self._journal.transition(
+                    self._run_id,
+                    status,
+                    reason=reason,
+                    memory_provenance_gaps=memory_provenance_gaps,
+                )
+            else:
+                self._journal.transition(
+                    self._run_id,
+                    status,
+                    reason=reason,
+                )
+            enforce_retention = getattr(
+                self._journal,
+                "enforce_retention_if_due",
+                None,
+            )
+            if callable(enforce_retention):
+                try:
+                    enforce_retention()
+                except Exception:  # noqa: BLE001 - lifecycle remains primary
+                    _safe_observation_warning("retention")
         except Exception:  # noqa: BLE001 - never replace business outcome
             _safe_observation_warning("terminal")
         finally:
@@ -191,6 +247,27 @@ class _BestEffortLifecycle:
             return False
         return True
 
+    def record_rendered_memory_versions(
+        self,
+        versions: list[tuple[str, str]],
+    ) -> bool:
+        """Persist version-bound prompt materializations, best-effort."""
+        if not self._running or self._journal is None or self._run_id is None:
+            return False
+        recorder = getattr(
+            self._journal,
+            "record_rendered_memory_versions",
+            None,
+        )
+        if not callable(recorder):
+            return False
+        try:
+            recorder(self._run_id, versions)
+        except Exception:  # noqa: BLE001 - observation is optional
+            _safe_observation_warning("memory_rendered_versions")
+            return False
+        return True
+
     def record_written_memory_ids(self, entry_ids: list[str]) -> bool:
         """Persist the Memory IDs this turn produced, under the same
         strictly-optional observation contract as the rendered IDs."""
@@ -200,6 +277,52 @@ class _BestEffortLifecycle:
             self._journal.record_written_memory_ids(self._run_id, entry_ids)
         except Exception:  # noqa: BLE001 - trace failures never alter execution
             _safe_observation_warning("memory_written_ids")
+            return False
+        return True
+
+    def record_written_memory_versions(
+        self,
+        versions: list[tuple[str, str]],
+    ) -> bool:
+        """Persist exact versions produced by the Run, best-effort."""
+        if not self._running or self._journal is None or self._run_id is None:
+            return False
+        recorder = getattr(
+            self._journal,
+            "record_written_memory_versions",
+            None,
+        )
+        if not callable(recorder):
+            return False
+        try:
+            recorder(self._run_id, versions)
+        except Exception:  # noqa: BLE001 - observation is optional
+            _safe_observation_warning("memory_written_versions")
+            return False
+        return True
+
+    def record_memory_provenance(
+        self,
+        batch: MemoryProvenanceBatch,
+        *,
+        actor_kind: str = "run_root",
+        subagent_id: str | None = None,
+    ) -> bool:
+        """Persist one exact Memory effect with its trusted Run actor."""
+        if not self._running or self._journal is None or self._run_id is None:
+            return False
+        recorder = getattr(self._journal, "record_memory_provenance", None)
+        if not callable(recorder):
+            return False
+        try:
+            recorder(
+                self._run_id,
+                batch,
+                actor_kind=actor_kind,
+                subagent_id=subagent_id,
+            )
+        except Exception:  # noqa: BLE001 - observation is optional
+            _safe_observation_warning("memory_provenance")
             return False
         return True
 
@@ -247,6 +370,275 @@ class _BestEffortLifecycle:
             _safe_observation_warning("subagent_journal")
             return None
 
+    def reconcile_dashboard_curator_completions(self, schedule: object) -> bool:
+        """Drain Dashboard-owned receipts before advancing a CLI producer."""
+
+        if not self._running or self._journal is None:
+            return True
+        workspace = getattr(self._journal, "workspace", None)
+        data_dir = getattr(self._journal, "data_dir", None)
+        if workspace is None or data_dir is None:
+            # Compatibility journals do not own the production durable stores.
+            return True
+        try:
+            from minicode.conversation_turn_store import ConversationTurnStore
+            from minicode.curator_outbox import reconcile_turn_curator_outbox
+
+            store = ConversationTurnStore(workspace, data_dir=data_dir)
+            return reconcile_turn_curator_outbox(store, schedule)
+        except Exception:
+            _safe_observation_warning("dashboard_curator_receipt_replay")
+            return False
+
+    def replay_pending_curator_completions(
+        self,
+        deliver: Callable[[str], object],
+        *,
+        defer_completion_id: str | None = None,
+        release: Callable[[str], object] | None = None,
+    ) -> bool:
+        """Drain the bounded CLI Run outbox through one delivery seam.
+
+        ``False`` is a fail-closed signal: the caller may durably enqueue its
+        current receipt first, but must not deliver it in the same turn. This
+        prevents an acknowledged scheduler write whose Run-side
+        acknowledgement failed from being silently pushed toward the
+        scheduler's bounded dedup horizon by later work.
+        """
+
+        if not self._running or self._journal is None or self._run_id is None:
+            return True
+        if defer_completion_id is not None and (
+            not isinstance(defer_completion_id, str)
+            or re.fullmatch(r"[0-9a-f]{64}", defer_completion_id) is None
+        ):
+            return False
+        scanner = getattr(
+            self._journal,
+            "scan_pending_curator_completions",
+            None,
+        )
+        getter = getattr(self._journal, "pending_curator_completions", None)
+        acknowledger = getattr(
+            self._journal,
+            "acknowledge_curator_completion",
+            None,
+        )
+        beginner = getattr(
+            self._journal,
+            "begin_curator_completion_delivery",
+            None,
+        )
+        settler = getattr(
+            self._journal,
+            "settle_curator_completion",
+            None,
+        )
+        if (
+            not callable(scanner)
+            and not callable(getter)
+        ) or not callable(acknowledger):
+            return True
+        try:
+            initial_scan = scanner(limit=1_000) if callable(scanner) else None
+            pending = (
+                initial_scan.items
+                if initial_scan is not None
+                else getter(limit=1_000)
+            )
+        except Exception:  # noqa: BLE001 - maintenance remains best effort
+            _safe_observation_warning("curator_receipt_replay_read")
+            return False
+        release_items = (
+            getattr(initial_scan, "release_items", ())
+            if initial_scan is not None
+            else ()
+        )
+        released_ids: set[str] = set()
+        if release is not None:
+            if not callable(settler):
+                _safe_observation_warning("curator_receipt_replay_settle")
+                return False
+            for run_id, completion_id in release_items:
+                try:
+                    release(completion_id)
+                except Exception:
+                    _safe_observation_warning("curator_receipt_replay_release")
+                    return False
+                try:
+                    if not settler(run_id, completion_id):
+                        _safe_observation_warning("curator_receipt_replay_settle")
+                        return False
+                except Exception:
+                    _safe_observation_warning("curator_receipt_replay_settle")
+                    return False
+                released_ids.add(completion_id)
+        for run_id, completion_id in pending:
+            if completion_id == defer_completion_id:
+                continue
+            if callable(beginner):
+                try:
+                    if not beginner(run_id, completion_id):
+                        _safe_observation_warning(
+                            "curator_receipt_replay_begin"
+                        )
+                        return False
+                except Exception:
+                    _safe_observation_warning(
+                        "curator_receipt_replay_begin"
+                    )
+                    return False
+            try:
+                deliver(completion_id)
+            except Exception:  # the durable item remains pending for next Run
+                _safe_observation_warning("curator_receipt_replay_delivery")
+                return False
+            try:
+                if not acknowledger(run_id, completion_id):
+                    _safe_observation_warning("curator_receipt_replay_ack")
+                    return False
+            except Exception:  # scheduler dedup makes later redelivery safe
+                _safe_observation_warning("curator_receipt_replay_ack")
+                return False
+            if release is not None:
+                try:
+                    release(completion_id)
+                except Exception:
+                    _safe_observation_warning("curator_receipt_replay_release")
+                    return False
+                try:
+                    if not settler(run_id, completion_id):
+                        _safe_observation_warning("curator_receipt_replay_settle")
+                        return False
+                except Exception:
+                    _safe_observation_warning("curator_receipt_replay_settle")
+                    return False
+
+        # The journal intentionally bounds each scan.  Do not mistake a full
+        # page for a completely drained outbox and advance the current Run.
+        try:
+            if callable(scanner):
+                remaining = scanner(limit=1)
+                blocking_items = tuple(
+                    item
+                    for item in remaining.items
+                    if item[1] != defer_completion_id
+                )
+                backlog_drained = bool(
+                    remaining.exhaustive
+                    and not blocking_items
+                    and not getattr(remaining, "release_items", ())
+                )
+            else:
+                remaining = getter(limit=1)
+                backlog_drained = not any(
+                    item[1] != defer_completion_id
+                    for item in remaining
+                )
+        except Exception:  # noqa: BLE001 - unknown backlog is not safe to skip
+            _safe_observation_warning("curator_receipt_replay_read")
+            return False
+        if not backlog_drained:
+            return False
+        if defer_completion_id is None:
+            return True
+        if defer_completion_id in released_ids:
+            return True
+
+        # Keep the current delivery inside the same durable protocol. The
+        # ``delivering`` state is a write-ahead barrier: a crash or failed ack
+        # makes every later replay retry this receipt before pending newcomers.
+        if callable(beginner):
+            try:
+                if not beginner(self._run_id, defer_completion_id):
+                    _safe_observation_warning("curator_receipt_replay_begin")
+                    return False
+            except Exception:
+                _safe_observation_warning("curator_receipt_replay_begin")
+                return False
+        try:
+            deliver(defer_completion_id)
+        except Exception:
+            _safe_observation_warning("curator_receipt_replay_delivery")
+            return False
+        try:
+            if not acknowledger(self._run_id, defer_completion_id):
+                _safe_observation_warning("curator_receipt_replay_ack")
+                return False
+        except Exception:
+            _safe_observation_warning("curator_receipt_replay_ack")
+            return False
+        if release is not None:
+            try:
+                release(defer_completion_id)
+            except Exception:
+                _safe_observation_warning("curator_receipt_replay_release")
+                return False
+            try:
+                if not settler(self._run_id, defer_completion_id):
+                    _safe_observation_warning("curator_receipt_replay_settle")
+                    return False
+            except Exception:
+                _safe_observation_warning("curator_receipt_replay_settle")
+                return False
+        return True
+
+    def acknowledge_curator_completion(self, completion_id: str) -> bool:
+        """Acknowledge delivery for this currently running CLI Run."""
+
+        if not self._running or self._journal is None or self._run_id is None:
+            return False
+        acknowledger = getattr(
+            self._journal,
+            "acknowledge_curator_completion",
+            None,
+        )
+        if not callable(acknowledger):
+            return False
+        try:
+            return bool(acknowledger(self._run_id, completion_id))
+        except Exception:  # noqa: BLE001 - durable pending outbox remains
+            _safe_observation_warning("curator_receipt_ack")
+            return False
+
+    def settle_curator_completion(self, completion_id: str) -> bool:
+        """Mark this Run's producer receipt settled after scheduler release."""
+
+        if not self._running or self._journal is None or self._run_id is None:
+            return False
+        settler = getattr(self._journal, "settle_curator_completion", None)
+        if not callable(settler):
+            return False
+        try:
+            return bool(settler(self._run_id, completion_id))
+        except Exception:
+            _safe_observation_warning("curator_receipt_settle")
+            return False
+
+    def prepare_curator_completion(
+        self,
+        completion_id: str,
+    ) -> bool | Literal["settled"] | None:
+        """Activate this Run's durable outbox before scheduler delivery."""
+
+        if not self._running or self._journal is None or self._run_id is None:
+            return None
+        preparer = getattr(
+            self._journal,
+            "prepare_curator_completion",
+            None,
+        )
+        if not callable(preparer):
+            return None
+        try:
+            result = preparer(self._run_id, completion_id)
+            if result == "settled":
+                return "settled"
+            return None if result is None else bool(result)
+        except Exception:  # noqa: BLE001 - observation is optional
+            _safe_observation_warning("curator_receipt_prepare")
+            return False
+
 
 class RunObservation:
     """Small, no-throw handle for callback-derived execution trace metadata."""
@@ -259,11 +651,43 @@ class RunObservation:
         # of same-named tools pair to the wrong operation IDs.
         self._pending_tools_lock = threading.Lock()
         self._assistant_attempted = False
+        # Provenance names real prompt/write effects.  Unlike presentation
+        # telemetry, a transient Journal failure must not be mistaken for a
+        # durable acknowledgement: retain the strict content-free batch and
+        # retry it before the Run becomes terminal.
+        self._memory_provenance_lock = threading.Lock()
+        self._pending_memory_provenance: list[
+            tuple[str, str | None, MemoryProvenanceBatch]
+        ] = []
+        self._acknowledged_memory_provenance: set[
+            tuple[str, str | None, MemoryProvenanceBatch]
+        ] = set()
 
     @property
     def run_id(self) -> str | None:
         """Return this observation's opaque Run ID, if Journal start succeeded."""
         return self._lifecycle._run_id if self._lifecycle._running else None
+
+    @property
+    def curator_completion_id(self) -> str | None:
+        """Return the Run-bound identity used by the CLI curator outbox."""
+
+        run_id = self.run_id
+        if run_id is None:
+            return None
+        from minicode.curator_schedule import curator_completion_id
+
+        return curator_completion_id(run_id)
+
+    @property
+    def observation_active(self) -> bool:
+        """Whether model lifecycle events can currently reach durable storage."""
+
+        return (
+            self._lifecycle._running
+            and self._lifecycle._journal is not None
+            and self._lifecycle._run_id is not None
+        )
 
     def emit(
         self,
@@ -279,9 +703,133 @@ class RunObservation:
         """Persist this turn's rendered Memory entry IDs against this Run."""
         self._lifecycle.record_rendered_memory_ids(entry_ids)
 
+    def record_rendered_memory_versions(
+        self,
+        versions: list[tuple[str, str]],
+    ) -> None:
+        """Persist exact rendered Memory versions against this Run."""
+        self._lifecycle.record_rendered_memory_versions(versions)
+
     def record_written_memory_ids(self, entry_ids: list[str]) -> None:
         """Persist the Memory entry IDs this turn produced against this Run."""
         self._lifecycle.record_written_memory_ids(entry_ids)
+
+    def record_written_memory_versions(
+        self,
+        versions: list[tuple[str, str]],
+    ) -> None:
+        """Persist exact written Memory versions against this Run."""
+        self._lifecycle.record_written_memory_versions(versions)
+
+    def record_memory_provenance(
+        self,
+        batch: MemoryProvenanceBatch,
+    ) -> bool:
+        """Bind one root-agent Memory effect to this Run."""
+        return self._queue_memory_provenance(
+            "run_root",
+            None,
+            batch,
+        )
+
+    def record_subagent_memory_provenance(
+        self,
+        subagent_id: str,
+        batch: MemoryProvenanceBatch,
+    ) -> bool:
+        """Bind one Memory effect to a parent-assigned sub-agent identity."""
+        return self._queue_memory_provenance(
+            "subagent",
+            subagent_id,
+            batch,
+        )
+
+    def _queue_memory_provenance(
+        self,
+        actor_kind: str,
+        subagent_id: str | None,
+        batch: MemoryProvenanceBatch,
+    ) -> bool:
+        if not isinstance(batch, MemoryProvenanceBatch):
+            return False
+        item = (actor_kind, subagent_id, batch)
+        with self._memory_provenance_lock:
+            if item in self._acknowledged_memory_provenance:
+                return True
+            if item not in self._pending_memory_provenance:
+                self._pending_memory_provenance.append(item)
+        self.flush_memory_provenance()
+        with self._memory_provenance_lock:
+            return item in self._acknowledged_memory_provenance
+
+    def flush_memory_provenance(self, *, final: bool = False) -> bool:
+        """Retry unacknowledged batches and close gaps before terminal state.
+
+        When a final exact retry still fails, an effect-scoped ``unknown``
+        batch is attempted.  If another exact batch was already recorded this
+        makes the Run aggregate ``partial`` instead of falsely ``complete``.
+        """
+        with self._memory_provenance_lock:
+            pending = tuple(self._pending_memory_provenance)
+        for item in pending:
+            actor_kind, subagent_id, batch = item
+            if self._lifecycle.record_memory_provenance(
+                batch,
+                actor_kind=actor_kind,
+                subagent_id=subagent_id,
+            ):
+                with self._memory_provenance_lock:
+                    if item in self._pending_memory_provenance:
+                        self._pending_memory_provenance.remove(item)
+                    self._acknowledged_memory_provenance.add(item)
+
+        if final:
+            with self._memory_provenance_lock:
+                unresolved = tuple(self._pending_memory_provenance)
+            degraded: set[tuple[str, str | None, str, str]] = set()
+            for actor_kind, subagent_id, batch in unresolved:
+                degradation_key = (
+                    actor_kind,
+                    subagent_id,
+                    batch.effect,
+                    batch.origin,
+                )
+                if degradation_key in degraded:
+                    continue
+                degraded.add(degradation_key)
+                unknown = MemoryProvenanceBatch(
+                    effect=batch.effect,
+                    origin=batch.origin,
+                    authority_versions=(),
+                    coverage="unknown",
+                )
+                if self._lifecycle.record_memory_provenance(
+                    unknown,
+                    actor_kind=actor_kind,
+                    subagent_id=subagent_id,
+                ):
+                    with self._memory_provenance_lock:
+                        self._pending_memory_provenance = [
+                            item
+                            for item in self._pending_memory_provenance
+                            if not (
+                                item[0] == actor_kind
+                                and item[1] == subagent_id
+                                and item[2].effect == batch.effect
+                                and item[2].origin == batch.origin
+                            )
+                        ]
+
+        with self._memory_provenance_lock:
+            return not self._pending_memory_provenance
+
+    @property
+    def unresolved_memory_provenance_effects(self) -> tuple[str, ...]:
+        """Effects whose exact and fallback provenance remain unacknowledged."""
+        with self._memory_provenance_lock:
+            return tuple(
+                sorted({item[2].effect for item in self._pending_memory_provenance})
+            )
 
     def record_scheduler_commit_ready(self, ready: object) -> bool:
         """Persist COMMIT_READY through the narrow Run lifecycle seam."""
@@ -294,6 +842,44 @@ class RunObservation:
     def open_subagent_journal(self):
         """Open the parent Run's sub-agent sidecar journal, if available."""
         return self._lifecycle.open_subagent_journal()
+
+    def replay_pending_curator_completions(
+        self,
+        deliver: Callable[[str], object],
+        *,
+        defer_completion_id: str | None = None,
+        release: Callable[[str], object] | None = None,
+    ) -> bool:
+        """Drain older CLI Run receipts before current maintenance."""
+
+        return self._lifecycle.replay_pending_curator_completions(
+            deliver,
+            defer_completion_id=defer_completion_id,
+            release=release,
+        )
+
+    def reconcile_dashboard_curator_completions(self, schedule: object) -> bool:
+        """Release or recover Turn-owned pins through the current workspace."""
+
+        return self._lifecycle.reconcile_dashboard_curator_completions(schedule)
+
+    def acknowledge_curator_completion(self, completion_id: str) -> bool:
+        """Acknowledge this Run after its scheduler receipt is durable."""
+
+        return self._lifecycle.acknowledge_curator_completion(completion_id)
+
+    def settle_curator_completion(self, completion_id: str) -> bool:
+        """Mark this Run receipt settled after its scheduler pin is released."""
+
+        return self._lifecycle.settle_curator_completion(completion_id)
+
+    def prepare_curator_completion(
+        self,
+        completion_id: str,
+    ) -> bool | Literal["settled"] | None:
+        """Activate this Run's durable scheduler outbox."""
+
+        return self._lifecycle.prepare_curator_completion(completion_id)
 
     def tool_started(self, tool_name: str) -> None:
         safe_name = _safe_tool_name(tool_name)
@@ -378,16 +964,43 @@ def observe_run(
     try:
         yield observation
     except TurnCancellationRequested:
-        lifecycle.finish("interrupted", reason="execution_cancelled")
+        observation.flush_memory_provenance(final=True)
+        lifecycle.finish(
+            "interrupted",
+            reason="execution_cancelled",
+            memory_provenance_gaps=(
+                observation.unresolved_memory_provenance_effects
+            ),
+        )
         raise
     except (KeyboardInterrupt, SystemExit):
-        lifecycle.finish("interrupted", reason="execution_interrupted")
+        observation.flush_memory_provenance(final=True)
+        lifecycle.finish(
+            "interrupted",
+            reason="execution_interrupted",
+            memory_provenance_gaps=(
+                observation.unresolved_memory_provenance_effects
+            ),
+        )
         raise
     except Exception:
-        lifecycle.finish("failed", reason="execution_failed")
+        observation.flush_memory_provenance(final=True)
+        lifecycle.finish(
+            "failed",
+            reason="execution_failed",
+            memory_provenance_gaps=(
+                observation.unresolved_memory_provenance_effects
+            ),
+        )
         raise
     else:
-        lifecycle.finish("completed")
+        observation.flush_memory_provenance(final=True)
+        lifecycle.finish(
+            "completed",
+            memory_provenance_gaps=(
+                observation.unresolved_memory_provenance_effects
+            ),
+        )
 
 
 __all__ = ["JournalFactory", "RunObservation", "observe_run"]

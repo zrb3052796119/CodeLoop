@@ -1,0 +1,8 @@
+{
+  "parent_model_calls": 1,
+  "parent_returned_role": "tool_result",
+  "parent_returned_text": "first workflow committed; changesCommitted=true",
+  "async_barrier_ready_at_parent_return": false,
+  "pending_subagent_count": 1,
+  "multi_turn_final_response_projection": "Previous turn answer."
+}

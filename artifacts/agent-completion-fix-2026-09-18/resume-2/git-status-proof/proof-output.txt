@@ -1,0 +1,46 @@
+Status: PROVEN
+{
+  "baseline": {
+    "command": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+      "-m",
+      "pytest",
+      "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-r_ic1cc_/baseline/tests/test_git_status_regressions.py",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "--import-mode=importlib"
+    ],
+    "duration_seconds": 1.255,
+    "returncode": 1,
+    "stderr": "",
+    "stdout": "FFFFF..                                                                  [100%]\n=================================== FAILURES ===================================\n____________ test_first_unstaged_file_keeps_path_and_is_not_staged _____________\n\nrepo = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-67/test_first_unstaged_file_keeps0')\n\n    def test_first_unstaged_file_keeps_path_and_is_not_staged(repo: Path) -> None:\n        (repo / \"alpha.py\").write_text(\"changed\\n\", encoding=\"utf-8\")\n    \n        output = _status(repo)\n    \n>       assert \"Staged changes: 0\" in output\nE       AssertionError: assert 'Staged changes: 0' in 'Git Status:\\n  Staged changes: 1\\n  Unstaged changes: 0\\n\\nFiles:\\n  [M] lpha.py'\n\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-r_ic1cc_/baseline/tests/test_git_status_regressions.py:58: AssertionError\n_________________ test_untracked_file_does_not_count_as_staged _________________\n\nrepo = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-67/test_untracked_file_does_not_c0')\n\n    def test_untracked_file_does_not_count_as_staged(repo: Path) -> None:\n        (repo / \"new.py\").write_text(\"new\\n\", encoding=\"utf-8\")\n    \n        output = _status(repo)\n    \n>       assert \"Staged changes: 0\" in output\nE       AssertionError: assert 'Staged changes: 0' in 'Git Status:\\n  Staged changes: 1\\n  Unstaged changes: 0\\n\\nFiles:\\n  [??] new.py'\n\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-r_ic1cc_/baseline/tests/test_git_status_regressions.py:68: AssertionError\n______________ test_mixed_file_counts_index_and_worktree_changes _______________\n\nrepo = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-67/test_mixed_file_counts_index_a0')\n\n    def test_mixed_file_counts_index_and_worktree_changes(repo: Path) -> None:\n        (repo / \"alpha.py\").write_text(\"staged\\n\", encoding=\"utf-8\")\n        _git(repo, \"add\", \"alpha.py\")\n        (repo / \"alpha.py\").write_text(\"staged plus unstaged\\n\", encoding=\"utf-8\")\n    \n        output = _status(repo)\n    \n        assert \"Staged changes: 1\" in output\n>       assert \"Unstaged changes: 1\" in output\nE       AssertionError: assert 'Unstaged changes: 1' in 'Git Status:\\n  Staged changes: 1\\n  Unstaged changes: 0\\n\\nFiles:\\n  [MM] alpha.py'\n\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-r_ic1cc_/baseline/tests/test_git_status_regressions.py:82: AssertionError\n_______ test_combined_status_counts_each_column_and_untracked_separately _______\n\nrepo = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-67/test_combined_status_counts_ea0')\n\n    def test_combined_status_counts_each_column_and_untracked_separately(repo: Path) -> None:\n        (repo / \"alpha.py\").write_text(\"unstaged\\n\", encoding=\"utf-8\")\n        (repo / \"bravo.py\").write_text(\"staged\\n\", encoding=\"utf-8\")\n        (repo / \"charlie.py\").write_text(\"staged\\n\", encoding=\"utf-8\")\n        _git(repo, \"add\", \"bravo.py\", \"charlie.py\")\n        (repo / \"charlie.py\").write_text(\"staged plus unstaged\\n\", encoding=\"utf-8\")\n        (repo / \"delta.py\").write_text(\"untracked\\n\", encoding=\"utf-8\")\n    \n        output = _status(repo)\n    \n>       assert \"Staged changes: 2\" in output\nE       AssertionError: assert 'Staged changes: 2' in 'Git Status:\\n  Staged changes: 4\\n  Unstaged changes: 0\\n\\nFiles:\\n  [M] lpha.py\\n  [M] bravo.py\\n  [MM] charlie.py\\n  [??] delta.py'\n\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-r_ic1cc_/baseline/tests/test_git_status_regressions.py:96: AssertionError\n__________ test_staged_rename_with_unstaged_edit_counts_both_columns ___________\n\nrepo = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-67/test_staged_rename_with_unstag0')\n\n    def test_staged_rename_with_unstaged_edit_counts_both_columns(repo: Path) -> None:\n        _git(repo, \"mv\", \"alpha.py\", \"renamed.py\")\n        (repo / \"renamed.py\").write_text(\"original\\nnew line\\n\", encoding=\"utf-8\")\n    \n        output = _status(repo)\n    \n        assert \"Staged changes: 1\" in output\n>       assert \"Unstaged changes: 1\" in output\nE       AssertionError: assert 'Unstaged changes: 1' in 'Git Status:\\n  Staged changes: 1\\n  Unstaged changes: 0\\n\\nFiles:\\n  [RM] alpha.py -> renamed.py'\n\n/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-r_ic1cc_/baseline/tests/test_git_status_regressions.py:112: AssertionError\n=========================== short test summary info ============================\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-r_ic1cc_/baseline/tests/test_git_status_regressions.py::test_first_unstaged_file_keeps_path_and_is_not_staged\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-r_ic1cc_/baseline/tests/test_git_status_regressions.py::test_untracked_file_does_not_count_as_staged\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-r_ic1cc_/baseline/tests/test_git_status_regressions.py::test_mixed_file_counts_index_and_worktree_changes\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-r_ic1cc_/baseline/tests/test_git_status_regressions.py::test_combined_status_counts_each_column_and_untracked_separately\nFAILED ../../../../../../../../var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/test-counterexample-r_ic1cc_/baseline/tests/test_git_status_regressions.py::test_staged_rename_with_unstaged_edit_counts_both_columns\n5 failed, 2 passed in 1.13s\n",
+    "timed_out": false
+  },
+  "baseline_kind": "directory",
+  "fixed": {
+    "command": [
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+      "-m",
+      "pytest",
+      "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/tests/test_git_status_regressions.py",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "--import-mode=importlib"
+    ],
+    "duration_seconds": 1.062,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": ".......                                                                  [100%]\n7 passed in 0.87s\n",
+    "timed_out": false
+  },
+  "fixed_root": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main",
+  "status": "PROVEN",
+  "test_files": [
+    {
+      "path": "tests/test_git_status_regressions.py",
+      "sha256": "e0712d447130ac6e01f13c5ee0fc5ea4ffddf64210e820bc5a11dcbcfe954bf3"
+    }
+  ]
+}

@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import http.client
+import inspect
 import json
+import math
 import os
+import queue
+import socket
+import threading
 import time
 import urllib.error
 import urllib.request
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from minicode.api_retry import (
     RETRYABLE_STATUS,
@@ -16,11 +23,33 @@ from minicode.model_call_control import (
     checkpoint_model_call,
     controlled_retry_sleep,
 )
-from minicode.state import AppState, Store, add_cost, record_api_error, update_context_usage
+from minicode.state import (
+    AppState,
+    Store,
+    add_cost,
+    record_api_error,
+    update_context_usage,
+)
 from minicode.tls import open_verified_url
 from minicode.types import AgentStep, ModelUsage, StepDiagnostics
 
 DEFAULT_MAX_RETRIES = 4
+DEFAULT_MAX_RESPONSE_BYTES = 16 * 1024 * 1024
+_RESPONSE_READ_CHUNK_BYTES = 64 * 1024
+_RESPONSE_CONTROL_POLL_SECONDS = 0.01
+_MAX_BACKGROUND_IO_WORKERS = 4
+_BACKGROUND_IO_WORKER_SLOTS = threading.BoundedSemaphore(_MAX_BACKGROUND_IO_WORKERS)
+_MAX_ASYNC_RESPONSE_CLEANUPS = 4
+_ASYNC_RESPONSE_CLEANUP_SLOTS = threading.BoundedSemaphore(
+    _MAX_ASYNC_RESPONSE_CLEANUPS
+)
+_RESPONSE_SOCKET_PATHS = (
+    ("fp", "raw", "_sock"),
+    ("fp", "fp", "raw", "_sock"),
+    ("file", "fp", "raw", "_sock"),
+    ("raw", "_sock"),
+    ("_sock",),
+)
 
 
 def _get_retry_limit() -> int:
@@ -49,8 +78,507 @@ def _parse_retry_after_seconds(retry_after: str | None) -> float | None:
     return None
 
 
-def _read_json_body(response) -> Any:
-    text = response.read().decode("utf-8")
+def _close_response_safely(response: object) -> None:
+    close = getattr(response, "close", None)
+    if callable(close):
+        try:
+            close()
+        except Exception:  # noqa: BLE001 - cleanup must not mask the real failure
+            return
+
+
+def _reader_accepts_amount(reader: object) -> bool:
+    try:
+        parameters = inspect.signature(reader).parameters.values()
+    except (TypeError, ValueError):
+        return True
+    return any(
+        parameter.kind
+        in {
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            inspect.Parameter.VAR_POSITIONAL,
+        }
+        for parameter in parameters
+    )
+
+
+def _response_reader(response: object) -> tuple[Callable[..., object], bool]:
+    read_one = getattr(response, "read1", None)
+    if callable(read_one):
+        return read_one, True
+    read = getattr(response, "read", None)
+    if not callable(read):
+        try:
+            iterator = iter(response)
+        except TypeError as error:
+            raise TypeError("model response does not provide a readable body") from error
+
+        # Compatibility for lightweight streaming test shims. Production
+        # urllib responses take the read1/read(amount) branches above.
+        def read_from_iterator(_amount: int) -> object:
+            return next(iterator, b"")
+
+        return read_from_iterator, True
+    accepts_amount = _reader_accepts_amount(read)
+    if not accepts_amount and isinstance(
+        response, (http.client.HTTPResponse, urllib.error.HTTPError)
+    ):
+        raise TypeError("model response does not provide a bounded reader")
+    # Non-sized reads exist only on lightweight compatibility/test shims.
+    # urllib production responses must take the bounded branches above.
+    return read, accepts_amount
+
+
+def _response_socket(response: object) -> object | None:
+    for path in _RESPONSE_SOCKET_PATHS:
+        candidate = response
+        try:
+            for attribute in path:
+                candidate = getattr(candidate, attribute)
+        except Exception:  # noqa: BLE001, S112 - optional wrapper path
+            continue
+        settimeout = getattr(candidate, "settimeout", None)
+        if callable(settimeout):
+            return candidate
+    return None
+
+
+def _set_response_socket_timeout(response: object, timeout: float) -> None:
+    """Best-effort reset for the known urllib/http.client socket layouts."""
+
+    candidate = _response_socket(response)
+    settimeout = getattr(candidate, "settimeout", None)
+    if not callable(settimeout):
+        return
+    try:
+        settimeout(timeout)
+    except (OSError, TypeError, ValueError):
+        return
+
+
+def _schedule_async_response_close(response: object) -> None:
+    if not _ASYNC_RESPONSE_CLEANUP_SLOTS.acquire(blocking=False):
+        return
+
+    def cleanup() -> None:
+        try:
+            _close_response_safely(response)
+        finally:
+            _ASYNC_RESPONSE_CLEANUP_SLOTS.release()
+
+    try:
+        threading.Thread(
+            target=cleanup,
+            name="minicode-model-response-cleanup",
+            daemon=True,
+        ).start()
+    except BaseException:  # noqa: BLE001 - best-effort cleanup only
+        _ASYNC_RESPONSE_CLEANUP_SLOTS.release()
+        return
+
+
+def _interrupt_response_read(response: object) -> None:
+    """Interrupt a reader without synchronously taking HTTPResponse's lock."""
+
+    candidate = _response_socket(response)
+    if candidate is None:
+        _schedule_async_response_close(response)
+        return
+    shutdown = getattr(candidate, "shutdown", None)
+    if callable(shutdown):
+        try:
+            shutdown(socket.SHUT_RDWR)
+        except (OSError, TypeError, ValueError):
+            pass
+    close = getattr(candidate, "close", None)
+    if callable(close):
+        try:
+            close()
+        except OSError:
+            pass
+
+
+def _check_io_controls(
+    *,
+    cancellation_token: Any,
+    deadline_monotonic: float | None,
+    local_deadline_monotonic: float,
+    timeout_message: str,
+) -> None:
+    checkpoint_model_call(
+        cancellation_token=cancellation_token,
+        deadline_monotonic=deadline_monotonic,
+    )
+    if time.monotonic() >= local_deadline_monotonic:
+        checkpoint_model_call(
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
+        )
+        raise TimeoutError(timeout_message)
+
+
+def _join_io_worker_controlled(
+    worker: threading.Thread,
+    *,
+    cancellation_token: Any,
+    deadline_monotonic: float | None,
+    local_deadline_monotonic: float,
+) -> None:
+    """Wait for reader cleanup without weakening the response deadline."""
+
+    while worker.is_alive():
+        _check_io_controls(
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
+            local_deadline_monotonic=local_deadline_monotonic,
+            timeout_message="model response read timed out",
+        )
+        remaining = max(0.0, local_deadline_monotonic - time.monotonic())
+        worker.join(timeout=min(_RESPONSE_CONTROL_POLL_SECONDS, remaining))
+
+
+def _acquire_io_worker_slot(
+    *,
+    cancellation_token: Any,
+    deadline_monotonic: float | None,
+    local_deadline_monotonic: float,
+    timeout_message: str,
+) -> None:
+    while True:
+        _check_io_controls(
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
+            local_deadline_monotonic=local_deadline_monotonic,
+            timeout_message=timeout_message,
+        )
+        remaining = max(0.0, local_deadline_monotonic - time.monotonic())
+        if _BACKGROUND_IO_WORKER_SLOTS.acquire(
+            timeout=min(_RESPONSE_CONTROL_POLL_SECONDS, remaining)
+        ):
+            return
+
+
+def _open_verified_url_controlled(
+    request: urllib.request.Request,
+    *,
+    timeout: float,
+    cancellation_token: Any = None,
+    deadline_monotonic: float | None = None,
+) -> object:
+    """Open transport behind a bounded worker so wall-clock controls stay hard."""
+
+    # ``timeout`` was already bounded against the caller's absolute deadline
+    # by ``bounded_request_timeout``. Deriving the local watchdog from that
+    # duration also keeps this transport clock independent from callers that
+    # provide a test/facade monotonic clock to model-call control.
+    local_deadline = time.monotonic() + timeout
+    _acquire_io_worker_slot(
+        cancellation_token=cancellation_token,
+        deadline_monotonic=deadline_monotonic,
+        local_deadline_monotonic=local_deadline,
+        timeout_message="model transport open timed out",
+    )
+    outcomes: queue.Queue[tuple[bool, object]] = queue.Queue(maxsize=1)
+    state_lock = threading.Lock()
+    state = {"abandoned": False}
+
+    def open_worker() -> None:
+        try:
+            try:
+                outcome: object = open_verified_url(request, timeout=timeout)
+                succeeded = True
+            except BaseException as error:  # noqa: BLE001 - propagate across worker
+                outcome = error
+                succeeded = False
+            with state_lock:
+                if state["abandoned"]:
+                    if succeeded or isinstance(outcome, urllib.error.HTTPError):
+                        _close_response_safely(outcome)
+                    return
+                outcomes.put_nowait((succeeded, outcome))
+        finally:
+            _BACKGROUND_IO_WORKER_SLOTS.release()
+
+    try:
+        worker = threading.Thread(
+            target=open_worker,
+            name="minicode-model-transport-open",
+            daemon=True,
+        )
+        worker.start()
+    except BaseException:
+        _BACKGROUND_IO_WORKER_SLOTS.release()
+        raise
+
+    received_outcome: tuple[bool, object] | None = None
+    try:
+        while True:
+            _check_io_controls(
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+                local_deadline_monotonic=local_deadline,
+                timeout_message="model transport open timed out",
+            )
+            remaining = max(0.0, local_deadline - time.monotonic())
+            try:
+                received_outcome = outcomes.get(
+                    timeout=min(_RESPONSE_CONTROL_POLL_SECONDS, remaining)
+                )
+            except queue.Empty:
+                continue
+            _check_io_controls(
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+                local_deadline_monotonic=local_deadline,
+                timeout_message="model transport open timed out",
+            )
+            break
+    except BaseException:
+        late_outcome = received_outcome
+        with state_lock:
+            state["abandoned"] = True
+            if late_outcome is None:
+                try:
+                    late_outcome = outcomes.get_nowait()
+                except queue.Empty:
+                    pass
+        if late_outcome is not None and (
+            late_outcome[0]
+            or isinstance(late_outcome[1], urllib.error.HTTPError)
+        ):
+            _close_response_safely(late_outcome[1])
+        raise
+    worker.join()
+    if received_outcome is None:
+        raise RuntimeError("model transport open completed without an outcome")
+    succeeded, outcome = received_outcome
+    if succeeded:
+        return outcome
+    if isinstance(outcome, BaseException):
+        raise outcome.with_traceback(None)
+    raise RuntimeError("model transport open failed")
+
+
+def _read_response_bytes(
+    response: object,
+    *,
+    maximum_bytes: int,
+    read_timeout_seconds: float,
+    cancellation_token: Any = None,
+    deadline_monotonic: float | None = None,
+    chunk_consumer: Callable[[bytes], bool | None] | None = None,
+    retain_body: bool = True,
+) -> bytes:
+    """Read a bounded body while keeping cancellation/deadlines interruptible."""
+
+    chunks: list[bytes] = []
+    chunk = b""
+    total = 0
+    stop_reader = threading.Event()
+    read_requests: queue.Queue[int | None] = queue.Queue(maxsize=1)
+    read_results: queue.Queue[tuple[bool, object]] = queue.Queue(maxsize=1)
+    reader_started = False
+    try:
+        checkpoint_model_call(
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
+        )
+        read_deadline = time.monotonic() + read_timeout_seconds
+        reader, accepts_amount = _response_reader(response)
+        _acquire_io_worker_slot(
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
+            local_deadline_monotonic=read_deadline,
+            timeout_message="model response read timed out",
+        )
+
+        def read_worker() -> None:
+            try:
+                while not stop_reader.is_set():
+                    requested = read_requests.get()
+                    if requested is None or stop_reader.is_set():
+                        return
+                    remaining = read_deadline - time.monotonic()
+                    if remaining <= 0:
+                        read_results.put((False, TimeoutError("response read timeout")))
+                        return
+                    _set_response_socket_timeout(response, remaining)
+                    try:
+                        value = reader(requested) if accepts_amount else reader()
+                    except BaseException as error:  # noqa: BLE001 - worker boundary
+                        read_results.put((False, error))
+                        return
+                    read_results.put((True, value))
+                    if not value or not accepts_amount:
+                        return
+            finally:
+                try:
+                    _close_response_safely(response)
+                finally:
+                    _BACKGROUND_IO_WORKER_SLOTS.release()
+
+        worker: threading.Thread | None = None
+        try:
+            worker = threading.Thread(
+                target=read_worker,
+                name="minicode-model-response-reader",
+                daemon=True,
+            )
+            reader_started = True
+            worker.start()
+        except BaseException:
+            if worker is None or worker.ident is None:
+                reader_started = False
+                _BACKGROUND_IO_WORKER_SLOTS.release()
+            raise
+        assert worker is not None
+
+        while True:
+            _check_io_controls(
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+                local_deadline_monotonic=read_deadline,
+                timeout_message="model response read timed out",
+            )
+            requested = min(_RESPONSE_READ_CHUNK_BYTES, maximum_bytes - total + 1)
+            read_requests.put(requested)
+            while True:
+                _check_io_controls(
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                    local_deadline_monotonic=read_deadline,
+                    timeout_message="model response read timed out",
+                )
+                remaining = max(0.0, read_deadline - time.monotonic())
+                try:
+                    succeeded, outcome = read_results.get(
+                        timeout=min(_RESPONSE_CONTROL_POLL_SECONDS, remaining)
+                    )
+                except queue.Empty:
+                    continue
+                break
+            _check_io_controls(
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+                local_deadline_monotonic=read_deadline,
+                timeout_message="model response read timed out",
+            )
+            if not succeeded:
+                if isinstance(outcome, BaseException):
+                    raise outcome.with_traceback(None)
+                raise RuntimeError("model response read failed")
+            chunk = outcome
+            if not isinstance(chunk, bytes):
+                raise TypeError("model response body must be bytes")
+            if not chunk:
+                stop_reader.set()
+                _join_io_worker_controlled(
+                    worker,
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                    local_deadline_monotonic=read_deadline,
+                )
+                return b"".join(chunks)
+            total += len(chunk)
+            if total > maximum_bytes:
+                chunks.clear()
+                chunk = b""
+                raise RuntimeError("Model response exceeded the configured byte limit")
+            keep_reading = chunk_consumer(chunk) if chunk_consumer is not None else None
+            if retain_body:
+                chunks.append(chunk)
+            if keep_reading is False:
+                stop_reader.set()
+                try:
+                    read_requests.put_nowait(None)
+                except queue.Full:
+                    pass
+                _join_io_worker_controlled(
+                    worker,
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                    local_deadline_monotonic=read_deadline,
+                )
+                return b"".join(chunks)
+            if not accepts_amount:
+                stop_reader.set()
+                _join_io_worker_controlled(
+                    worker,
+                    cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic,
+                    local_deadline_monotonic=read_deadline,
+                )
+                return b"".join(chunks)
+    except BaseException:
+        chunks.clear()
+        chunk = b""
+        stop_reader.set()
+        try:
+            read_requests.put_nowait(None)
+        except queue.Full:
+            pass
+        if reader_started:
+            _interrupt_response_read(response)
+        else:
+            _close_response_safely(response)
+        raise
+
+
+def _consume_response_lines(
+    response: object,
+    *,
+    maximum_bytes: int,
+    read_timeout_seconds: float,
+    line_consumer: Callable[[bytes], bool | None],
+    cancellation_token: Any = None,
+    deadline_monotonic: float | None = None,
+) -> None:
+    pending = bytearray()
+
+    stopped = False
+
+    def consume_chunk(chunk: bytes) -> bool | None:
+        nonlocal stopped
+        pending.extend(chunk)
+        while True:
+            newline = pending.find(b"\n")
+            if newline < 0:
+                return
+            line = bytes(pending[:newline]).rstrip(b"\r")
+            del pending[: newline + 1]
+            if line_consumer(line) is False:
+                stopped = True
+                return False
+
+    _read_response_bytes(
+        response,
+        maximum_bytes=maximum_bytes,
+        read_timeout_seconds=read_timeout_seconds,
+        cancellation_token=cancellation_token,
+        deadline_monotonic=deadline_monotonic,
+        chunk_consumer=consume_chunk,
+        retain_body=False,
+    )
+    if pending and not stopped:
+        line_consumer(bytes(pending).rstrip(b"\r"))
+
+
+def _read_json_body(
+    response: object,
+    *,
+    maximum_bytes: int,
+    read_timeout_seconds: float,
+    cancellation_token: Any = None,
+    deadline_monotonic: float | None = None,
+) -> Any:
+    text = _read_response_bytes(
+        response,
+        maximum_bytes=maximum_bytes,
+        read_timeout_seconds=read_timeout_seconds,
+        cancellation_token=cancellation_token,
+        deadline_monotonic=deadline_monotonic,
+    ).decode("utf-8")
     if not text.strip():
         return {}
     try:
@@ -208,12 +736,46 @@ class AnthropicModelAdapter:
         store: Store[AppState] | None = None,
         cancellation_token: Any = None,
         deadline_monotonic: float | None = None,
+        disable_tools: bool = False,
+        max_output_tokens_override: int | None = None,
+        max_response_bytes_override: int | None = None,
+        temperature_override: float | None = None,
+        max_retries_override: int | None = None,
+        isolated_reasoning_state: bool = False,
     ) -> AgentStep:
+        if max_output_tokens_override is not None and (
+            isinstance(max_output_tokens_override, bool)
+            or not isinstance(max_output_tokens_override, int)
+            or max_output_tokens_override <= 0
+        ):
+            raise ValueError("max_output_tokens_override must be a positive integer")
+        if max_response_bytes_override is not None and (
+            isinstance(max_response_bytes_override, bool)
+            or not isinstance(max_response_bytes_override, int)
+            or max_response_bytes_override <= 0
+            or max_response_bytes_override > DEFAULT_MAX_RESPONSE_BYTES
+        ):
+            raise ValueError(
+                "max_response_bytes_override must be between 1 and the global limit"
+            )
+        if temperature_override is not None and (
+            isinstance(temperature_override, bool)
+            or not isinstance(temperature_override, (int, float))
+            or not math.isfinite(float(temperature_override))
+        ):
+            raise ValueError("temperature_override must be finite")
+        if max_retries_override is not None and (
+            isinstance(max_retries_override, bool)
+            or not isinstance(max_retries_override, int)
+            or max_retries_override < 0
+        ):
+            raise ValueError("max_retries_override must be a non-negative integer")
+
         system_message, converted_messages = _to_anthropic_messages(messages)
 
         # Replay stored thinking blocks into the first assistant message
         # with text content (DeepSeek extended thinking round-trip)
-        if self._thinking_blocks:
+        if self._thinking_blocks and not isolated_reasoning_state:
             for i in range(len(converted_messages)):
                 msg = converted_messages[i]
                 if msg.get("role") == "assistant":
@@ -229,9 +791,10 @@ class AnthropicModelAdapter:
             "system": system_message,
             "messages": converted_messages,
         }
-        serialized_tools = self._get_serialized_tools()
-        if serialized_tools:
-            request_body["tools"] = serialized_tools
+        if not disable_tools:
+            serialized_tools = self._get_serialized_tools()
+            if serialized_tools:
+                request_body["tools"] = serialized_tools
         # Disable extended thinking for non-Anthropic models that support it
         # but require round-trip preservation our message format can't provide
         if self.runtime.get("disableThinking"):
@@ -240,6 +803,10 @@ class AnthropicModelAdapter:
             request_body["max_tokens"] = self.runtime["maxOutputTokens"]
         if self.runtime.get("temperature") is not None:
             request_body["temperature"] = self.runtime["temperature"]
+        if max_output_tokens_override is not None:
+            request_body["max_tokens"] = max_output_tokens_override
+        if temperature_override is not None:
+            request_body["temperature"] = float(temperature_override)
         if on_stream_chunk:
             request_body["stream"] = True
 
@@ -258,10 +825,13 @@ class AnthropicModelAdapter:
             method="POST",
         )
 
-        max_retries = int(
-            self.runtime.get("modelMaxRetries", _get_retry_limit())
+        max_retries = (
+            max_retries_override
+            if max_retries_override is not None
+            else int(self.runtime.get("modelMaxRetries", _get_retry_limit()))
         )
         response = None
+        response_read_timeout = 0.0
         for attempt in range(max_retries + 1):
             try:
                 timeout = bounded_request_timeout(
@@ -272,11 +842,22 @@ class AnthropicModelAdapter:
                     cancellation_token=cancellation_token,
                     deadline_monotonic=deadline_monotonic,
                 )
-                response = open_verified_url(request, timeout=timeout)
-                checkpoint_model_call(
+                response_read_timeout = timeout
+                response = _open_verified_url_controlled(
+                    request,
+                    timeout=timeout,
                     cancellation_token=cancellation_token,
                     deadline_monotonic=deadline_monotonic,
                 )
+                try:
+                    checkpoint_model_call(
+                        cancellation_token=cancellation_token,
+                        deadline_monotonic=deadline_monotonic,
+                    )
+                except BaseException:
+                    _close_response_safely(response)
+                    response = None
+                    raise
                 break
             except urllib.error.HTTPError as error:
                 response = error
@@ -284,8 +865,20 @@ class AnthropicModelAdapter:
                     break
                 # Use semantic error classification for adaptive backoff
                 from minicode.api_retry import classify_error
+                try:
+                    retry_after_value = None
+                    headers = getattr(error, "headers", None)
+                    get_header = getattr(headers, "get", None)
+                    if callable(get_header):
+                        try:
+                            retry_after_value = get_header("retry-after")
+                        except Exception:  # noqa: BLE001 - malformed header shim
+                            retry_after_value = None
+                finally:
+                    _close_response_safely(error)
+                    response = None
                 category = classify_error(error)
-                retry_after = _parse_retry_after_seconds(error.headers.get("retry-after"))
+                retry_after = _parse_retry_after_seconds(retry_after_value)
                 wait = calculate_backoff(attempt, retry_after=retry_after,
                                         category=category)
                 controlled_retry_sleep(
@@ -306,8 +899,14 @@ class AnthropicModelAdapter:
             raise RuntimeError("Model request failed before receiving a response")
 
         if not on_stream_chunk:
-            data = _read_json_body(response)
-            checkpoint_model_call(
+            data = _read_json_body(
+                response,
+                maximum_bytes=(
+                    max_response_bytes_override
+                    if max_response_bytes_override is not None
+                    else DEFAULT_MAX_RESPONSE_BYTES
+                ),
+                read_timeout_seconds=response_read_timeout,
                 cancellation_token=cancellation_token,
                 deadline_monotonic=deadline_monotonic,
             )
@@ -381,7 +980,7 @@ class AnthropicModelAdapter:
                     text_parts.append(block["text"])
                 elif block_type == "tool_use" and isinstance(block.get("id"), str) and isinstance(block.get("name"), str):
                     tool_calls.append({"id": block["id"], "toolName": block["name"], "input": block.get("input")})
-                elif block_type == "thinking":
+                elif block_type == "thinking" and not isolated_reasoning_state:
                     self._thinking_blocks.append(block)  # Preserve for round-trip
                 else:
                     ignored_block_types.append(str(block_type))
@@ -426,21 +1025,26 @@ class AnthropicModelAdapter:
         stream_cache_creation_tokens = 0
         stream_usage_seen = False
         
-        for line in response:
-            checkpoint_model_call(
-                cancellation_token=cancellation_token,
-                deadline_monotonic=deadline_monotonic,
-            )
+        def consume_stream_line(line: bytes) -> bool | None:
+            nonlocal active_thinking_block
+            nonlocal active_tool_call
+            nonlocal stop_reason
+            nonlocal stream_cache_creation_tokens
+            nonlocal stream_cache_read_tokens
+            nonlocal stream_input_tokens
+            nonlocal stream_output_tokens
+            nonlocal stream_usage_seen
+
             line_str = line.decode("utf-8").strip()
             if not line_str.startswith("data: "):
-                continue
+                return
             data_str = line_str[6:]
             if data_str == "[DONE]":
-                continue
+                return False
             try:
                 event = json.loads(data_str)
             except json.JSONDecodeError:
-                continue
+                return
                 
             etype = event.get("type")
             if etype == "message_start":
@@ -486,7 +1090,7 @@ class AnthropicModelAdapter:
                 if active_tool_call:
                     try:
                         parsed_input = json.loads(active_tool_call["input_json"])
-                    except Exception:
+                    except (json.JSONDecodeError, TypeError):
                         parsed_input = {}
                     tool_calls.append({
                         "id": active_tool_call["id"],
@@ -494,9 +1098,9 @@ class AnthropicModelAdapter:
                         "input": parsed_input
                     })
                     active_tool_call = None
-                if active_thinking_block:
+                if active_thinking_block and not isolated_reasoning_state:
                     self._thinking_blocks.append(active_thinking_block)
-                    active_thinking_block = None
+                active_thinking_block = None
             elif etype == "message_delta":
                 delta = event.get("delta", {})
                 if "stop_reason" in delta:
@@ -506,9 +1110,24 @@ class AnthropicModelAdapter:
                 if usage.get("output_tokens"):
                     stream_usage_seen = True
                     stream_output_tokens = usage["output_tokens"]
+            elif etype == "message_stop":
+                return False
             elif etype == "error":
                 err = event.get("error", {})
                 raise RuntimeError(f"Streaming error: {err.get('message', 'Unknown')}")
+
+        _consume_response_lines(
+            response,
+            maximum_bytes=(
+                max_response_bytes_override
+                if max_response_bytes_override is not None
+                else DEFAULT_MAX_RESPONSE_BYTES
+            ),
+            read_timeout_seconds=response_read_timeout,
+            line_consumer=consume_stream_line,
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
+        )
         
         if stream_usage_seen:
             model_usage = ModelUsage(

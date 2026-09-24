@@ -210,7 +210,16 @@ def _run(input_data: dict, context) -> ToolResult:
         start_offset, end_offset = matches[0]
         next_content = content[:start_offset] + input_data["replace"] + content[end_offset:]
     
-    return apply_reviewed_file_change(context, input_data["path"], target, next_content)
+    # Pass the content this edit was computed from so a concurrent writer
+    # that changed the file in between surfaces as an edit_conflict instead
+    # of being silently overwritten.
+    return apply_reviewed_file_change(
+        context,
+        input_data["path"],
+        target,
+        next_content,
+        expected_previous=content,
+    )
 
 
 edit_file_tool = ToolDefinition(

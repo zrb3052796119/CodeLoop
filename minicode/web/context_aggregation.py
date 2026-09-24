@@ -96,6 +96,7 @@ class _CompactionEvent:
     messages_removed: int
     tokens_freed: int | None
     run_source: str
+    partial_effective: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -283,6 +284,80 @@ def _parse_compaction(
     )
 
 
+def _parse_partial_compaction_failure(
+    payload: object,
+    *,
+    sequence: int,
+    timestamp: str | None,
+    run_source: str,
+) -> _CompactionEvent | None:
+    """Project an installed safe prefix from a rejected larger candidate."""
+    if not isinstance(payload, Mapping):
+        return None
+    operation_id = _operation_id(payload, version_key="contextVersion")
+    path = payload.get("path")
+    trigger = payload.get("trigger")
+    failed_strategy = payload.get("strategy")
+    partial_strategy = payload.get("partialStrategy")
+    attempted = payload.get("attempted")
+    reason = payload.get("reason")
+    failures = _bounded_count(
+        payload.get("consecutiveFailures"),
+        maximum=_MAX_CONTEXT_MESSAGES,
+    )
+    before = _bounded_count(
+        payload.get("messagesBefore"),
+        maximum=_MAX_CONTEXT_MESSAGES,
+    )
+    after = _bounded_count(
+        payload.get("messagesAfter"),
+        maximum=_MAX_CONTEXT_MESSAGES,
+    )
+    removed = _bounded_count(
+        payload.get("messagesRemoved"),
+        maximum=_MAX_CONTEXT_MESSAGES,
+    )
+    tokens_freed = _bounded_count(
+        payload.get("tokensFreed"),
+        maximum=_MAX_CONTEXT_TOKENS,
+    )
+    if (
+        operation_id is None
+        or path not in _CONTEXT_PATHS
+        or trigger not in _CONTEXT_TRIGGERS
+        or failed_strategy not in _CONTEXT_STRATEGIES
+        or partial_strategy not in _CONTEXT_STRATEGIES
+        or payload.get("effective") is not False
+        or payload.get("partialEffective") is not True
+        or not isinstance(attempted, bool)
+        or reason not in _CONTEXT_FAILURE_REASONS
+        or failures is None
+        or before is None
+        or after is None
+        or removed is None
+        or tokens_freed is None
+        or tokens_freed == 0
+        or after > before
+        or removed != before - after
+        or not isinstance(payload.get("circuitBreakerTripped"), bool)
+    ):
+        return None
+    return _CompactionEvent(
+        operation_id=operation_id,
+        sequence=sequence,
+        timestamp=timestamp,
+        path=str(path),
+        trigger=str(trigger),
+        strategy=str(partial_strategy),
+        messages_before=before,
+        messages_after=after,
+        messages_removed=removed,
+        tokens_freed=tokens_freed,
+        run_source=_safe_source(run_source),
+        partial_effective=True,
+    )
+
+
 def _parse_recovery_started(payload: object, *, sequence: int) -> _RecoveryStartedEvent | None:
     if not isinstance(payload, Mapping):
         return None
@@ -379,6 +454,7 @@ def _identity_key(item: object) -> tuple[object, ...]:
             item.messages_after,
             item.messages_removed,
             item.tokens_freed,
+            item.partial_effective,
         )
     if isinstance(item, _RecoveryStartedEvent):
         return (item.operation_id, item.kind)
@@ -555,6 +631,46 @@ def aggregate_run_context(
             sequence = scanned
         if isinstance(run_id, str) and _RUN_ID_RE.fullmatch(run_id):
             run_id_for_wm = run_id
+        if event_type == "context.compaction.failed":
+            is_partial = (
+                isinstance(raw_payload, Mapping)
+                and raw_payload.get("partialEffective") is True
+            )
+            if not is_partial:
+                continue
+            parsed = _parse_partial_compaction_failure(
+                raw_payload,
+                sequence=sequence,
+                timestamp=timestamp,
+                run_source=source,
+            )
+            if parsed is None:
+                invalid_events += 1
+                diagnostics.add(
+                    "context",
+                    "context_event_invalid",
+                    "A malformed partial Context compaction event was ignored.",
+                )
+                continue
+            operation = operations.setdefault(parsed.operation_id, _Operation())
+            current, duplicate, conflict = _dedupe_or_conflict(
+                operation.compacted,
+                parsed,
+                diagnostics=diagnostics,
+                source="context",
+                duplicate_code="context_operation_duplicate",
+                conflict_code="context_operation_conflict",
+                duplicate_message=(
+                    "A duplicate Context compaction event was counted at most once."
+                ),
+                conflict_message=(
+                    "Conflicting Context compaction events were excluded."
+                ),
+            )
+            duplicate_events += duplicate
+            operation.conflict = operation.conflict or conflict
+            operation.compacted = current  # type: ignore[assignment]
+            continue
         if event_type == "context.compacted":
             parsed = _parse_compaction(raw_payload, sequence=sequence, timestamp=timestamp, run_source=source)
             if parsed is None:
@@ -983,7 +1099,7 @@ def project_context_event_detail(event_type: str, payload: Mapping[str, Any]) ->
             or not isinstance(tripped, bool)
         ):
             return {}
-        return {
+        details: dict[str, object] = {
             "contextVersion": 1,
             "path": path,
             "trigger": trigger,
@@ -994,6 +1110,26 @@ def project_context_event_detail(event_type: str, payload: Mapping[str, Any]) ->
             "consecutiveFailures": failures,
             "circuitBreakerTripped": tripped,
         }
+        if payload.get("partialEffective") is True:
+            partial = _parse_partial_compaction_failure(
+                payload,
+                sequence=0,
+                timestamp=None,
+                run_source="unknown",
+            )
+            if partial is None:
+                return {}
+            details.update(
+                {
+                    "partialEffective": True,
+                    "partialStrategy": partial.strategy,
+                    "tokensFreed": partial.tokens_freed,
+                    "messagesBefore": partial.messages_before,
+                    "messagesAfter": partial.messages_after,
+                    "messagesRemoved": partial.messages_removed,
+                }
+            )
+        return details
     if event_type == "context.compacted":
         parsed = _parse_compaction(payload, sequence=0, timestamp=None, run_source="unknown")
         if parsed is None:

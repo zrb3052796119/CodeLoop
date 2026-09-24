@@ -23,6 +23,7 @@ _SKILL_NAME_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_./-]{0,255}$")
 _SKILL_DIRECTORY_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,63}$")
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _MODEL_OPERATION_ID_RE = re.compile(r"^modelop_[0-9a-f]{32}$")
+_MODEL_PURPOSE_RE = re.compile(r"^[a-z][a-z0-9_.:-]{0,79}$")
 _CATALOG_ID_RE = re.compile(
     r"^minicode-pricing-[a-z0-9][a-z0-9._-]{0,63}$"
 )
@@ -33,7 +34,7 @@ _SKILL_SOURCES = frozenset(
 _INTENT_TYPES = frozenset(item.value for item in IntentType)
 _ACTION_TYPES = frozenset(item.value for item in ActionType)
 
-SkillIdentity = tuple[str, str, str, str]
+SkillIdentity = tuple[str, str, str, str, str]
 TaskProfile = tuple[str, str]
 
 
@@ -458,6 +459,8 @@ def _skill_identity(payload: dict[str, object]) -> SkillIdentity | None:
     source = payload.get("source")
     directory = payload.get("directory")
     content_digest = payload.get("contentDigest")
+    supplied_routing_digest = payload.get("routingIdentityDigest")
+    routing_digest = supplied_routing_digest or content_digest
     if (
         not isinstance(qualified_name, str)
         or _SKILL_NAME_RE.fullmatch(qualified_name) is None
@@ -469,18 +472,27 @@ def _skill_identity(payload: dict[str, object]) -> SkillIdentity | None:
         )
         or not isinstance(content_digest, str)
         or _SHA256_RE.fullmatch(content_digest) is None
+        or not isinstance(routing_digest, str)
+        or _SHA256_RE.fullmatch(routing_digest) is None
+        or (
+            supplied_routing_digest is not None
+            and not isinstance(supplied_routing_digest, str)
+        )
     ):
         return None
-    return qualified_name, source, directory, content_digest
+    return qualified_name, source, directory, routing_digest, content_digest
 
 
 def _skill_dict(identity: SkillIdentity) -> dict[str, str]:
-    return {
+    projected = {
         "qualifiedName": identity[0],
         "source": identity[1],
         "directory": identity[2],
-        "contentDigest": identity[3],
+        "contentDigest": identity[4],
     }
+    if identity[3] != identity[4]:
+        projected["routingIdentityDigest"] = identity[3]
+    return projected
 
 
 def _run_economics(events: list[RunEvent]) -> tuple[int | None, int | None]:
@@ -500,6 +512,12 @@ def _run_economics(events: list[RunEvent]) -> tuple[int | None, int | None]:
         }:
             continue
         payload = event.payload
+        if not _has_valid_optional_model_purpose(payload):
+            if event.type == "model.costed":
+                cost_invalid = True
+            else:
+                model_invalid = True
+            continue
         operation_id = payload.get("operationId")
         if (
             not isinstance(operation_id, str)
@@ -631,21 +649,24 @@ def _priced_cost(
         "cacheReadNanoUsd",
         "cacheCreationNanoUsd",
     }
+    expected_fields = {
+        "costVersion",
+        "operationId",
+        "status",
+        "quality",
+        "currency",
+        "catalogId",
+        "catalogModelKey",
+        "amountNanoUsd",
+        "components",
+    }
+    if "purpose" in payload:
+        expected_fields.add("purpose")
     if (
         terminal_fact is None
         or terminal_fact[0] != "model.completed"
-        or set(payload)
-        != {
-            "costVersion",
-            "operationId",
-            "status",
-            "quality",
-            "currency",
-            "catalogId",
-            "catalogModelKey",
-            "amountNanoUsd",
-            "components",
-        }
+        or set(payload) != expected_fields
+        or not _has_valid_optional_model_purpose(payload)
         or payload.get("costVersion") != 1
         or payload.get("status") != "priced"
         or quality != expected_quality
@@ -676,19 +697,22 @@ def _unavailable_cost(
     payload: Mapping[str, object],
     terminal_fact: tuple[str, int | None, str | None] | None,
 ) -> bool:
+    expected_fields = {
+        "costVersion",
+        "operationId",
+        "status",
+        "quality",
+        "currency",
+        "catalogId",
+        "reason",
+    }
+    if "purpose" in payload:
+        expected_fields.add("purpose")
     return (
         terminal_fact is not None
         and terminal_fact[0] == "model.completed"
-        and set(payload)
-        == {
-            "costVersion",
-            "operationId",
-            "status",
-            "quality",
-            "currency",
-            "catalogId",
-            "reason",
-        }
+        and set(payload) == expected_fields
+        and _has_valid_optional_model_purpose(payload)
         and payload.get("costVersion") == 1
         and payload.get("status") == "unavailable"
         and payload.get("quality") == "unavailable"
@@ -704,6 +728,13 @@ def _unavailable_cost(
             "invalid_usage",
             "pricing_failed",
         }
+    )
+
+
+def _has_valid_optional_model_purpose(payload: Mapping[str, object]) -> bool:
+    purpose = payload.get("purpose")
+    return "purpose" not in payload or (
+        isinstance(purpose, str) and _MODEL_PURPOSE_RE.fullmatch(purpose) is not None
     )
 
 

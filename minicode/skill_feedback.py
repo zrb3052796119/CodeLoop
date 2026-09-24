@@ -70,15 +70,17 @@ class SkillRoutingFeedback:
         source: str,
         directory: str,
         content_digest: str,
+        routing_identity_digest: str = "",
         intent_type: str,
         action_type: str,
     ) -> SkillFeedbackDecision | None:
+        preferred_digest = routing_identity_digest or content_digest
         return self._decisions.get(
             (
                 qualified_name,
                 source,
                 directory,
-                content_digest,
+                preferred_digest,
                 intent_type,
                 action_type,
             )
@@ -290,7 +292,13 @@ def _identity(value: object) -> tuple[str, str, str, str] | None:
     qualified_name = value.get("qualifiedName")
     source = value.get("source")
     directory = value.get("directory")
-    digest = value.get("contentDigest")
+    content_digest = value.get("contentDigest")
+    supplied_routing_digest = value.get("routingIdentityDigest")
+    routing_digest = (
+        supplied_routing_digest
+        if isinstance(supplied_routing_digest, str)
+        else content_digest
+    )
     if (
         not isinstance(qualified_name, str)
         or _SKILL_NAME_RE.fullmatch(qualified_name) is None
@@ -300,11 +308,20 @@ def _identity(value: object) -> tuple[str, str, str, str] | None:
             directory
             and _SKILL_DIRECTORY_RE.fullmatch(directory) is None
         )
-        or not isinstance(digest, str)
-        or _SHA256_RE.fullmatch(digest) is None
+        or not isinstance(content_digest, str)
+        or _SHA256_RE.fullmatch(content_digest) is None
+        or not isinstance(routing_digest, str)
+        or _SHA256_RE.fullmatch(routing_digest) is None
+        or (
+            supplied_routing_digest is not None
+            and (
+                not isinstance(supplied_routing_digest, str)
+                or _SHA256_RE.fullmatch(supplied_routing_digest) is None
+            )
+        )
     ):
         return None
-    return qualified_name, str(source), directory, digest
+    return qualified_name, str(source), directory, routing_digest
 
 
 def _profile(value: object) -> tuple[str, str] | None:

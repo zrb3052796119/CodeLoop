@@ -1,0 +1,9 @@
+{
+  "count": 279,
+  "superseded_test": {
+    "original": "tests/test_scheduler_repair_audit.py::test_superseded_failed_diff_may_be_truncated_when_final_diff_is_complete",
+    "final": "tests/test_scheduler_repair_audit.py::test_truncated_failed_diff_stops_before_repair_and_retains_failed_audit",
+    "reason": "The exploratory oversized-diff test was finalized during full-suite execution. The current policy conservatively rejects repair on truncated evidence; final integrated suite already passes the replacement."
+  },
+  "purpose": "Repeat failed nodes outside sandbox to allow local loopback fixtures; no other test changes or exclusions."
+}

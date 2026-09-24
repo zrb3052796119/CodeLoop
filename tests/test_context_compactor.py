@@ -13,30 +13,29 @@ Tests all 7 phases:
 from __future__ import annotations
 
 import time
-
-import pytest
 from pathlib import Path
 
+import pytest
 
 from minicode.agent_budget import AgentTurnBudget
-from minicode.types import AgentStep, ModelUsage
 from minicode.context_compactor import (
     AutoCompactConfig,
     AutoCompactDispatcher,
     CompactBoundary,
+    CompactionResult,
     CompactStrategy,
     CompactTrigger,
-    CompactionResult,
     ContextCompactor,
     MicrocompactEngine,
     MicrocompactState,
-    ReadDedupManager,
     ReactiveCompactEngine,
+    ReadDedupManager,
     SessionMemoryCompactEngine,
     ToolResultBudgetManager,
     _adjust_tail_cut_for_tool_pairs,
     _loaded_skill_context_indices,
 )
+from minicode.types import AgentStep, ModelUsage
 
 
 class RecordingSummarizer:
@@ -355,7 +354,7 @@ class TestToolResultBudgetManager:
         messages = [
             {"role": "tool_result", "toolName": "big", "content": big_content, "toolUseId": "1"},
         ]
-        _, saved = mgr.check_and_replace(messages)
+        mgr.check_and_replace(messages)
         assert mgr.get_total_saved_bytes() >= 4500  # Preview is shorter
 
     def test_non_tool_result_messages_untouched(self, tmp_path):
@@ -828,6 +827,58 @@ class TestAutoCompactDispatcher:
             for message in call
         )
         assert "MIDDLE_SENTINEL" in summarized
+
+    def test_critical_state_anchors_survive_lossy_summary_and_next_compaction(self):
+        summarizer = RecordingSummarizer(
+            "Generic summary that omits every exact project identifier."
+        )
+        dispatcher = AutoCompactDispatcher(
+            context_window=100000,
+            config=AutoCompactConfig(min_keep_tokens=0, min_keep_messages=5),
+            summary_generator=summarizer,
+        )
+        messages = [
+            {
+                "role": "user" if index % 2 == 0 else "assistant",
+                "content": (
+                    "The accepted delivery goal is RELEASE_NOVA_31."
+                    if index == 0
+                    else "The non-negotiable constraint is KEEP_API_STABLE_42."
+                    if index == 20
+                    else "The team rejected global caching under REJECT_CACHE_58."
+                    if index == 40
+                    else f"background-{index} " + "x" * 1200
+                ),
+            }
+            for index in range(60)
+        ]
+
+        first = dispatcher.dispatch(messages, force_full=True)
+        assert first.effective
+        first_rendered = "\n".join(
+            str(message.get("content", "")) for message in first.messages
+        )
+        assert "Deterministic Critical-State Anchors" in first_rendered
+        assert "RELEASE_NOVA_31" in first_rendered
+        assert "KEEP_API_STABLE_42" in first_rendered
+        assert "REJECT_CACHE_58" in first_rendered
+
+        continued = list(first.messages)
+        continued.extend(
+            {
+                "role": "user" if index % 2 == 0 else "assistant",
+                "content": f"later-{index} " + "y" * 1200,
+            }
+            for index in range(60)
+        )
+        second = dispatcher.dispatch(continued, force_full=True)
+        assert second.effective
+        second_rendered = "\n".join(
+            str(message.get("content", "")) for message in second.messages
+        )
+        assert "RELEASE_NOVA_31" in second_rendered
+        assert "KEEP_API_STABLE_42" in second_rendered
+        assert "REJECT_CACHE_58" in second_rendered
 
     def test_full_compact_pins_loaded_skill_pair_outside_summary(self):
         summarizer = RecordingSummarizer("bounded summary")
@@ -1384,3 +1435,515 @@ class TestLLMSummaryBudget:
 
         assert summary is None
         assert model.calls == 0
+
+    def test_summary_preserves_the_final_agent_model_call(self) -> None:
+        from minicode.context_compactor import LLMSummaryGenerator
+
+        budget = AgentTurnBudget(max_model_calls=1, max_total_tokens=10_000)
+
+        class FakeModel:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def next(self, messages):
+                self.calls += 1
+                return AgentStep(type="assistant", content="x" * 60)
+
+        model = FakeModel()
+        summary = LLMSummaryGenerator(model, agent_budget=budget).summarize(
+            [
+                {"role": "user", "content": "task one"},
+                {"role": "assistant", "content": "answer one"},
+                {"role": "user", "content": "task two"},
+                {"role": "assistant", "content": "answer two"},
+            ]
+        )
+
+        assert summary is None
+        assert model.calls == 0
+        assert budget.snapshot().used_model_calls == 0
+
+
+# ---------------------------------------------------------------------------
+# Session Memory block structural single-instance guarantee
+# ---------------------------------------------------------------------------
+
+
+def test_fully_rerendered_memory_block_replaces_the_prior_block() -> None:
+    """A second session compact must not stack a second Memory block when
+    every prior entry is re-rendered fresh in the new receipt."""
+    from minicode.memory_pipeline import (
+        MemoryPromptReceipt,
+        _memory_render_digest,
+    )
+
+    def _receipt(entries: tuple[tuple[str, str], ...]) -> MemoryPromptReceipt:
+        prompt_text = "\n".join(f"[{eid}] {frag}" for eid, frag in entries)
+        ids = tuple(eid for eid, _ in entries)
+        return MemoryPromptReceipt(
+            prompt_text=prompt_text,
+            selected_ids=ids,
+            rendered_ids=ids,
+            rendered_versions=tuple((eid, "1" * 64) for eid, _ in entries),
+            authority_revision="rev-1",
+            receipt_id="r" + "0" * 31,
+            rendered_proofs=tuple(
+                (eid, _memory_render_digest(eid, frag))
+                for eid, frag in entries
+            ),
+            rendered_fragments=tuple(
+                (eid, _memory_render_digest(eid, frag), frag)
+                for eid, frag in entries
+            ),
+        )
+
+    class ReceiptMemory:
+        def __init__(self, receipt: MemoryPromptReceipt) -> None:
+            self._receipt = receipt
+
+        def prepare_compaction_context(self, _query, **_kwargs):
+            return self._receipt
+
+    config = AutoCompactConfig(max_expand_tokens=2_000, min_keep_messages=5)
+    entry = ("entry-1", "alpha checkout guidance")
+    engine = SessionMemoryCompactEngine(
+        memory_manager=ReceiptMemory(_receipt((entry,)))
+    )
+    first_input = [
+        {"role": "user" if i % 2 == 0 else "assistant", "content": f"turn {i} " + "x" * 400}
+        for i in range(40)
+    ]
+    first = engine.try_session_memory_compact(
+        first_input,
+        context_window=100_000,
+        config=config,
+        transcript_summarizer=RecordingSummarizer(),
+    )
+    assert first is not None and first.effective
+    assert (
+        sum(
+            bool(m.get("_session_memory_context"))
+            for m in first.messages
+        )
+        == 1
+    )
+
+    # Grow the conversation again so the second compact really drops content,
+    # then render the same entry fresh (not reused).
+    second_input = list(first.messages) + [
+        {"role": "user" if i % 2 == 0 else "assistant", "content": f"more {i} " + "y" * 400}
+        for i in range(30)
+    ]
+    engine = SessionMemoryCompactEngine(
+        memory_manager=ReceiptMemory(_receipt((entry,)))
+    )
+    second = engine.try_session_memory_compact(
+        second_input,
+        context_window=100_000,
+        config=config,
+        transcript_summarizer=RecordingSummarizer(),
+    )
+    assert second is not None and second.effective
+    memory_blocks = [
+        m for m in second.messages if m.get("_session_memory_context")
+    ]
+    assert len(memory_blocks) == 1
+    assert "[entry-1]" in str(memory_blocks[0]["content"])
+
+
+def test_partially_reused_prior_memory_block_is_retained() -> None:
+    """A prior block whose entries are not re-rendered (their text survives
+    only in that block via reuse suppression) must never be dropped."""
+    from minicode.memory_pipeline import (
+        MemoryPromptReceipt,
+        _memory_render_digest,
+    )
+
+    def _receipt(
+        entries: tuple[tuple[str, str], ...], receipt_id: str
+    ) -> MemoryPromptReceipt:
+        prompt_text = "\n".join(f"[{eid}] {frag}" for eid, frag in entries)
+        ids = tuple(eid for eid, _ in entries)
+        return MemoryPromptReceipt(
+            prompt_text=prompt_text,
+            selected_ids=ids,
+            rendered_ids=ids,
+            rendered_versions=tuple((eid, "1" * 64) for eid, _ in entries),
+            authority_revision="rev-1",
+            receipt_id=receipt_id,
+            rendered_proofs=tuple(
+                (eid, _memory_render_digest(eid, frag))
+                for eid, frag in entries
+            ),
+            rendered_fragments=tuple(
+                (eid, _memory_render_digest(eid, frag), frag)
+                for eid, frag in entries
+            ),
+        )
+
+    class ReceiptMemory:
+        def __init__(self, receipt: MemoryPromptReceipt) -> None:
+            self._receipt = receipt
+
+        def prepare_compaction_context(self, _query, **_kwargs):
+            return self._receipt
+
+    config = AutoCompactConfig(max_expand_tokens=2_000, min_keep_messages=5)
+    first_entry = ("entry-1", "alpha checkout guidance")
+    engine = SessionMemoryCompactEngine(
+        memory_manager=ReceiptMemory(_receipt((first_entry,), "a" * 32))
+    )
+    first_input = [
+        {"role": "user" if i % 2 == 0 else "assistant", "content": f"turn {i} " + "x" * 400}
+        for i in range(40)
+    ]
+    first = engine.try_session_memory_compact(
+        first_input,
+        context_window=100_000,
+        config=config,
+        transcript_summarizer=RecordingSummarizer(),
+    )
+    assert first is not None and first.effective
+
+    # Second receipt renders only a NEW entry; entry-1's text lives solely in
+    # the prior block, so that block must survive.
+    second_entry = ("entry-2", "beta retry guidance")
+    second_input = list(first.messages) + [
+        {"role": "user" if i % 2 == 0 else "assistant", "content": f"more {i} " + "y" * 400}
+        for i in range(30)
+    ]
+    engine = SessionMemoryCompactEngine(
+        memory_manager=ReceiptMemory(_receipt((second_entry,), "b" * 32))
+    )
+    second = engine.try_session_memory_compact(
+        second_input,
+        context_window=100_000,
+        config=config,
+        transcript_summarizer=RecordingSummarizer(),
+    )
+    assert second is not None and second.effective
+    memory_blocks = [
+        m for m in second.messages if m.get("_session_memory_context")
+    ]
+    assert len(memory_blocks) == 2
+    visible = "\n".join(str(m["content"]) for m in memory_blocks)
+    assert "[entry-1]" in visible
+    assert "[entry-2]" in visible
+
+
+# ---------------------------------------------------------------------------
+# Tool-result aggregate budget enforcement (live knob)
+# ---------------------------------------------------------------------------
+
+
+def test_run_budget_persists_oldest_results_when_block_exceeds_budget(
+    tmp_path,
+):
+    """Each-under-threshold results in one run must jointly respect the
+    budget: the oldest (non-protected) results are persisted largest-first."""
+    manager = ToolResultBudgetManager(workspace=tmp_path)
+    messages = [
+        {
+            "role": "tool_result",
+            "toolName": "run_command",
+            "toolUseId": f"call-{index}",
+            "content": f"output {index} " + "z" * 3_000,
+        }
+        for index in range(9)
+    ]
+
+    modified, bytes_saved = manager.check_and_replace(messages)
+
+    persisted = [
+        message for message in modified if "_persisted_path" in message
+    ]
+    # 9 results × 3000 = 27000 chars > 8000 budget; the newest 5 are
+    # protected, so the 4 oldest are candidates and 2 are persisted.
+    assert len(persisted) == 2
+    assert bytes_saved > 0
+    assert all(
+        "[Tool result persisted" in str(message["content"])
+        for message in persisted
+    )
+    # Protected recent results stay verbatim.
+    assert modified[-1]["content"] == messages[-1]["content"]
+
+
+def test_run_budget_knob_changes_persistence_behavior(tmp_path):
+    """Raising budget_per_message must relax aggregate persistence."""
+    manager = ToolResultBudgetManager(workspace=tmp_path)
+    manager.budget_per_message = 30_000
+    messages = [
+        {
+            "role": "tool_result",
+            "toolName": "run_command",
+            "toolUseId": f"call-{index}",
+            "content": f"output {index} " + "z" * 3_000,
+        }
+        for index in range(9)
+    ]
+
+    modified, bytes_saved = manager.check_and_replace(messages)
+
+    assert bytes_saved == 0
+    assert all("_persisted_path" not in message for message in modified)
+
+
+# ---------------------------------------------------------------------------
+# Persisted tool-result TTL cleanup
+# ---------------------------------------------------------------------------
+
+
+def test_cleanup_expired_removes_only_old_files(tmp_path):
+    manager = ToolResultBudgetManager(workspace=tmp_path)
+    messages = [
+        {
+            "role": "tool_result",
+            "toolName": "run_command",
+            "toolUseId": "call-old",
+            "content": "old output " + "o" * 5_000,
+        },
+        {
+            "role": "tool_result",
+            "toolName": "run_command",
+            "toolUseId": "call-new",
+            "content": "new output " + "n" * 5_000,
+        },
+    ]
+    modified, _ = manager.check_and_replace(messages)
+    files = sorted(
+        path
+        for path in (tmp_path / ".mini-code-tool-results").iterdir()
+        if path.is_file() and not path.name.startswith(".")
+    )
+    assert len(files) == 2
+
+    # Age the first persisted file past the TTL, keep the second fresh.
+    import os as _os
+
+    old_time = time.time() - 8 * 24 * 3600
+    _os.utime(files[0], (old_time, old_time))
+
+    removed = manager.cleanup_expired(7 * 24 * 3600.0)
+
+    assert removed == 1
+    assert not files[0].exists()
+    assert files[1].exists()
+    # The in-memory ledger drops entries whose file is gone.
+    assert manager.get_persisted_count() == 1
+
+
+def test_cleanup_interval_gates_repeated_sweeps(tmp_path):
+    manager = ToolResultBudgetManager(workspace=tmp_path)
+    manager._last_cleanup_at = time.time()
+    assert manager.maybe_cleanup_expired() is None  # gated, no error
+    fresh = manager.cleanup_expired(0.0)
+    assert fresh == 0  # nothing persisted yet
+
+
+def test_step_budget_groups_interleaved_results_by_assistant_turn(tmp_path):
+    """Parallel results interleaved with their assistant_tool_call messages
+    form one budget group via assistantTurnId, so an oversized parallel step
+    is persisted even though no two results are adjacent."""
+    manager = ToolResultBudgetManager(workspace=tmp_path)
+    messages: list[dict] = []
+    for index in range(8):
+        messages.append(
+            {
+                "role": "assistant_tool_call",
+                "toolUseId": f"call-{index}",
+                "toolName": "run_command",
+                "assistantTurnId": "turn-42",
+            }
+        )
+        messages.append(
+            {
+                "role": "tool_result",
+                "toolUseId": f"call-{index}",
+                "toolName": "run_command",
+                "content": f"output {index} " + "z" * 3_000,
+            }
+        )
+
+    modified, bytes_saved = manager.check_and_replace(messages)
+
+    persisted = [
+        message for message in modified if "_persisted_path" in message
+    ]
+    # 8 × 3000 = 24000 > 8000; newest 5 protected → 3 candidates (9000),
+    # one largest persist brings the step to 6500 ≤ 8000.
+    assert len(persisted) == 1
+    assert bytes_saved > 0
+
+
+def test_step_budget_keeps_separate_turns_independent(tmp_path):
+    """Results of different assistant turns are budgeted independently."""
+    manager = ToolResultBudgetManager(workspace=tmp_path)
+    messages: list[dict] = []
+    for turn_index in range(3):
+        for call_index in range(3):
+            messages.append(
+                {
+                    "role": "assistant_tool_call",
+                    "toolUseId": f"call-{turn_index}-{call_index}",
+                    "toolName": "run_command",
+                    "assistantTurnId": f"turn-{turn_index}",
+                }
+            )
+            messages.append(
+                {
+                    "role": "tool_result",
+                    "toolUseId": f"call-{turn_index}-{call_index}",
+                    "toolName": "run_command",
+                    "content": "out " + "z" * 3_000,
+                }
+            )
+
+    modified, bytes_saved = manager.check_and_replace(messages)
+
+    # Each turn: 3 × 3000 = 9000 ≤ protection window (5) → nothing persisted.
+    assert bytes_saved == 0
+    assert all("_persisted_path" not in message for message in modified)
+
+
+# ---------------------------------------------------------------------------
+# LLM summary bounded provider-error retry
+# ---------------------------------------------------------------------------
+
+
+class _FlakyModel:
+    """Raises a provider-style error on the first call, succeeds after."""
+
+    model_id = "flaky-summary-model"
+
+    def __init__(self, failures: int = 1) -> None:
+        self.failures = failures
+        self.calls = 0
+
+    def next(self, messages):
+        self.calls += 1
+        if self.calls <= self.failures:
+            raise ConnectionError("simulated incomplete read")
+        return AgentStep(type="assistant", content="Recovered summary " + "s" * 60)
+
+
+def _summary_input() -> list[dict]:
+    return [
+        {"role": "user", "content": "task one"},
+        {"role": "assistant", "content": "answer one"},
+        {"role": "user", "content": "task two"},
+        {"role": "assistant", "content": "answer two"},
+    ]
+
+
+def test_summary_retries_once_after_transient_provider_error() -> None:
+    from minicode.context_compactor import LLMSummaryGenerator
+
+    budget = AgentTurnBudget(max_model_calls=5, max_total_tokens=100_000)
+    model = _FlakyModel(failures=1)
+    summary = LLMSummaryGenerator(model, agent_budget=budget).summarize(
+        _summary_input()
+    )
+
+    assert summary is not None and summary.startswith("Recovered summary")
+    assert model.calls == 2
+    # Admission consumes one model-call slot per attempt, including the
+    # failed one — that is the budget's documented semantics.
+    assert budget.snapshot().used_model_calls == 2
+
+
+def test_summary_falls_back_after_two_provider_errors() -> None:
+    from minicode.context_compactor import LLMSummaryGenerator
+
+    budget = AgentTurnBudget(max_model_calls=5, max_total_tokens=100_000)
+    model = _FlakyModel(failures=2)
+    summary = LLMSummaryGenerator(model, agent_budget=budget).summarize(
+        _summary_input()
+    )
+
+    assert summary is None
+    assert model.calls == 2
+
+
+def test_summary_does_not_retry_when_deadline_is_exhausted() -> None:
+    from minicode.context_compactor import LLMSummaryGenerator
+
+    model = _FlakyModel(failures=1)
+    generator = LLMSummaryGenerator(
+        model,
+        deadline_monotonic=time.monotonic() + 0.5,
+    )
+    # Squeeze the per-call deadline so the retry floor blocks attempt two.
+    summary = generator.summarize(_summary_input())
+
+    assert summary is None
+    assert model.calls == 1
+
+
+# ---------------------------------------------------------------------------
+# Provider-usage / local-estimate reconciliation
+# ---------------------------------------------------------------------------
+
+
+def test_record_usage_observation_tracks_calibration_ewma():
+    compactor = ContextCompactor(context_window=100_000)
+    for _ in range(6):
+        compactor.record_usage_observation(2_000, 1_000)
+
+    stats = compactor.get_stats()
+    assert stats["token_calibration_samples"] == 6
+    # EWMA with alpha=0.2 converges toward 2.0 from 1.0.
+    assert 1.5 < stats["token_calibration_ratio"] < 2.0
+    assert stats["token_calibration_min_ratio"] == 2.0
+    assert stats["token_calibration_max_ratio"] == 2.0
+
+
+def test_record_usage_observation_ignores_noise_samples():
+    compactor = ContextCompactor(context_window=100_000)
+    compactor.record_usage_observation(99_999_999, 1_000)  # outside bounds
+    compactor.record_usage_observation(1_500, 100)  # estimate below floor
+    compactor.record_usage_observation(0, 5_000)  # non-positive report
+    compactor.record_usage_observation(-5, 5_000)  # negative report
+
+    stats = compactor.get_stats()
+    assert stats["token_calibration_samples"] == 0
+    assert stats["token_calibration_ratio"] == 1.0
+
+
+def test_record_usage_observation_warns_once_on_sustained_drift(caplog):
+    compactor = ContextCompactor(context_window=100_000)
+    with caplog.at_level("WARNING", logger="minicode.context_compactor"):
+        for _ in range(8):
+            compactor.record_usage_observation(2_600, 1_000)
+
+    drift_warnings = [
+        record
+        for record in caplog.records
+        if "drifts from provider usage" in record.message
+    ]
+    assert len(drift_warnings) == 1
+
+
+def test_concurrent_managers_never_collide_on_persisted_filenames(tmp_path):
+    """Two compactor instances sharing one workspace (concurrent
+    sub-agents) must produce distinct files even for the same tool name,
+    message index, and millisecond."""
+    first = ToolResultBudgetManager(workspace=tmp_path)
+    second = ToolResultBudgetManager(workspace=tmp_path)
+    message = {
+        "role": "tool_result",
+        "toolName": "run_command",
+        "toolUseId": "call-1",
+        "content": "shared output " + "c" * 5_000,
+    }
+
+    first.check_and_replace([dict(message)])
+    second.check_and_replace([dict(message)])
+
+    files = sorted(
+        path
+        for path in (tmp_path / ".mini-code-tool-results").iterdir()
+        if path.is_file() and not path.name.startswith(".")
+    )
+    assert len(files) == 2
+    assert files[0].name != files[1].name

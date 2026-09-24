@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 from typing import Any
+
 from minicode.memory import MemoryEntry, MemoryManager, MemoryScope
 
 
@@ -63,7 +64,7 @@ def create_corrupted_memory_file(path: Path) -> dict:
         "scope": "project",
         "entries": [
             {"id": "valid-1", "scope": "project", "category": "test", "content": "Valid entry"},
-            {"id": "invalid-2", "scope": "invalid_scope", "category": "test", "content": "Bad scope"},
+            {"id": "invalid-2", "scope": "project", "category": 42, "content": "Bad category"},
             {"id": "valid-3", "scope": "project", "category": "", "content": ""},
             "not_a_dict_entry",
         ],

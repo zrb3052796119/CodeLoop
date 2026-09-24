@@ -1,0 +1,20 @@
+{
+  "newUserAuthorization": "继续呗",
+  "maxModelCalls": 40,
+  "maxTokens": 1000000,
+  "maxCostUsd": 5,
+  "deadlineSeconds": 1200,
+  "modelTimeoutSeconds": 180,
+  "maxOutputTokens": 8192,
+  "changedControls": "per-run overrides only; no persistent provider changes; prices unchanged",
+  "historySource": "actual full prior review-retry messages; no fabricated results",
+  "target": "/private/tmp/codeloop-completion-recheck-20260918",
+  "actorBoundary": "CodeLoop edits target code/tests; host fixes runtime tools and performs independent acceptance",
+  "endpoints": [
+    "open.bigmodel.cn",
+    "token-plan.cn-beijing.maas.aliyuncs.com"
+  ],
+  "credentialCopy": false,
+  "modelMaxRetries": 1,
+  "limitsCaveat": "40 adapter admissions; HTTPError/URLError may retry once within each admission. 180s bounds open and read phases separately, while1200s is the whole-turn deadline."
+}

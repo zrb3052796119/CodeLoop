@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from minicode.permissions import PermissionDeniedError
 from minicode.tooling import ToolDefinition, ToolResult
 from minicode.workspace import is_internal_workspace_path, resolve_tool_path
 
@@ -20,17 +19,15 @@ def _run(input_data: dict, context) -> ToolResult:
     if target.is_file():
         return ToolResult(ok=True, output=f"file {Path(input_data['path']).name}")
 
-    entries = []
-    for item in Path(target).iterdir():
-        if is_internal_workspace_path(item, context.cwd):
-            continue
-        permissions = getattr(context, "permissions", None)
-        try:
-            if permissions is not None:
-                permissions.ensure_path_access(str(item), "list")
-        except (PermissionError, PermissionDeniedError):
-            continue
-        entries.append(item)
+    # The directory-level approval in resolve_tool_path covers this listing;
+    # it reads names only and never opens the children. Per-item
+    # ensure_path_access here used to fire one approval prompt per entry
+    # whenever the user picked "allow once" for the directory.
+    entries = [
+        item
+        for item in Path(target).iterdir()
+        if not is_internal_workspace_path(item, context.cwd)
+    ]
     entries.sort(key=lambda item: item.name.lower())
     lines = []
     for entry in entries:

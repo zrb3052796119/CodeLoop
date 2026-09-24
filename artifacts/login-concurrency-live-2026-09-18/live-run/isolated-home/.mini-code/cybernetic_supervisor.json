@@ -1,0 +1,121 @@
+{
+  "overall_health": 0.65,
+  "risk_level": "critical",
+  "snapshots": [
+    {
+      "name": "context",
+      "health": 0.982,
+      "risk": 0.018,
+      "action": "monitor",
+      "reasons": [
+        "usage=0.02",
+        "urgency=0.00"
+      ],
+      "raw": {
+        "orchestrator_enabled": true,
+        "cycles_executed": 1,
+        "sensor": {
+          "current_usage": 0.0176,
+          "growth_rate": 0.0,
+          "anomaly": null,
+          "readings_collected": 1
+        },
+        "pid": {
+          "setpoint": 0.7,
+          "kp": 1.0,
+          "ki": 0.10500000000000001,
+          "kd": 0.0475,
+          "last_output": 0,
+          "is_saturated": false,
+          "integral": 0.0
+        },
+        "predictor": {
+          "turns_until_overflow": null,
+          "urgency": 0.0,
+          "trend": "stable",
+          "confidence": 0.2
+        },
+        "threshold": {
+          "base_threshold": 0.85,
+          "effective_threshold": 0.81,
+          "coupling_context_error": 0.0028,
+          "coupling_context_latency": 0.3979,
+          "intent_type": "debug",
+          "adaptations_recorded": 0
+        },
+        "feedback": {
+          "total_compactions": 0,
+          "effective_compactions": 0,
+          "effectiveness_rate": 1.0,
+          "oscillation_detected": false,
+          "direction_changes": 0,
+          "history_entries": 0
+        },
+        "last_action": {
+          "intensity": 0.0,
+          "strategy": "microcompact",
+          "force": false,
+          "reason": "pid_intensity(0.00)"
+        }
+      }
+    },
+    {
+      "name": "cost",
+      "health": 0.966,
+      "risk": 0.034,
+      "action": "monitor",
+      "reasons": [
+        "cost_per_min=0.034",
+        "budget_mult=1.00"
+      ],
+      "raw": {
+        "control_enabled": true,
+        "cycles_executed": 1,
+        "sensor": {
+          "cost_per_min": 0.0337,
+          "tokens_per_call": 2249.0,
+          "cost_per_1k_tokens": 0.015,
+          "trend": "STABLE",
+          "acceleration": 0.01012
+        },
+        "pid": {
+          "setpoint": 0.5,
+          "kp": 1.5,
+          "ki": 0.08,
+          "kd": 0.2,
+          "last_output": 1.0,
+          "integral": 0.0
+        },
+        "adjustment": {
+          "budget_mult": 1.0,
+          "threshold_mult": 1.0,
+          "reason": "neutral(pid=1.00)"
+        }
+      }
+    },
+    {
+      "name": "tool_scheduling",
+      "health": 0.0,
+      "risk": 1.0,
+      "action": "increase_retry_backoff",
+      "reasons": [
+        "elevated tool error rate",
+        "recent tool failures"
+      ],
+      "raw": {
+        "max_workers": 1,
+        "concurrency_multiplier": 0.26,
+        "cooldown_seconds": 2.0,
+        "retry_backoff_multiplier": 3.575,
+        "reasons": [
+          "elevated tool error rate",
+          "recent tool failures"
+        ]
+      }
+    }
+  ],
+  "recommended_actions": [
+    "tool_scheduling: increase_retry_backoff",
+    "summarize state before further expansion"
+  ]
+}

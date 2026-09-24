@@ -1,0 +1,802 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__________ test_checked_in_quality_baseline_matches_the_frozen_suite ___________
+
+    def test_checked_in_quality_baseline_matches_the_frozen_suite() -> None:
+        report = evaluate_quality_suite("tests/fixtures/agent_quality")
+        baseline = json.loads(
+            Path("artifacts/agent-quality-baseline.json").read_text(encoding="utf-8")
+        )
+    
+>       assert baseline["datasets"] == report["datasets"]
+E       AssertionError: assert {'compactionF...656f362', ...} == {'compactionF...656f362', ...}
+E         
+E         Omitting 6 identical items, use -vv to show
+E         Differing items:
+E         {'skillRoutingJoinedSha256': '5ef97de86a76bdfc30be9bfd6e74adc7fd7e5e2d5c664a99c8ba257dbd40f808'} != {'skillRoutingJoinedSha256': '77e0c658eee6065c3aafcd6277de5c0207b5d70a70c291be2890f3119a193b2f'}
+E         Use -v to get more diff
+
+tests/test_agent_quality_evaluator.py:439: AssertionError
+________________ test_quality_cli_passes_current_and_a_profiles ________________
+
+capsys = <_pytest.capture.CaptureFixture object at 0x107e43cb0>
+
+    def test_quality_cli_passes_current_and_a_profiles(capsys) -> None:
+>       assert quality_cli_main(["--profile", "current"]) == 0
+E       AssertionError: assert 1 == 0
+E        +  where 1 = quality_cli_main(['--profile', 'current'])
+
+tests/test_agent_quality_evaluator.py:488: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{
+  "compactionFidelity": {
+    "caseCount": 12,
+    "evaluator": "compaction-fidelity",
+    "failedCaseIds": [],
+    "latestUserRetentionRate": 1.0,
+    "loadedSkillRetentionRate": 1.0,
+    "markerRecall": 1.0,
+    "nonNegativeSavingsRate": 1.0,
+    "schemaVersion": 1,
+    "summaryChainRate": 1.0,
+    "taskLedgerRetentionRate": 1.0,
+    "toolPairIntegrityRate": 1.0
+  },
+  "datasets": {
+    "compactionFidelitySha256": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1",
+    "multiAgentCostManifestSha256": "0f650589d72b2271467f7fc317cef3d31a3859b50bc3d3941c174e5c82c49ce5",
+    "multiAgentCostResultsSha256": "7d88efa8cc25bbcf1a630d0801b20d51d533b6dc73e241170d7ddc098f98ed08",
+    "northStarManifestSha256": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362",
+    "northStarResultsSha256": "8daf943a37c2f2ef202e744ffe5724f23ac9581ce7e857be24d43eafab33efb8",
+    "skillRoutingJoinedSha256": "77e0c658eee6065c3aafcd6277de5c0207b5d70a70c291be2890f3119a193b2f",
+    "skillRoutingSha256": "736698d6060b90bb632e7c4076290fab69147b07dcc9e64da81da5b80ae3ce31"
+  },
+  "gate": {
+    "checks": [
+      {
+        "actual": "736698d6060b90bb632e7c4076290fab69147b07dcc9e64da81da5b80ae3ce31",
+        "id": "datasets.skillRoutingSha256.equals",
+        "passed": true,
+        "threshold": "736698d6060b90bb632e7c4076290fab69147b07dcc9e64da81da5b80ae3ce31"
+      },
+      {
+        "actual": "77e0c658eee6065c3aafcd6277de5c0207b5d70a70c291be2890f3119a193b2f",
+        "id": "datasets.skillRoutingJoinedSha256.equals",
+        "passed": false,
+        "threshold": "5ef97de86a76bdfc30be9bfd6e74adc7fd7e5e2d5c664a99c8ba257dbd40f808"
+      },
+      {
+        "actual": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1",
+        "id": "datasets.compactionFidelitySha256.equals",
+        "passed": true,
+        "threshold": "52bb23296f98061d2e004836b7fa167b2b46a2cae52ffaa270b0cdc60096f8a1"
+      },
+      {
+        "actual": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362",
+        "id": "datasets.northStarManifestSha256.equals",
+        "passed": true,
+        "threshold": "55441eb2457f5e5339eca00144adee057bcea4e893484995f36fa340e656f362"
+      },
+      {
+        "actual": "8daf943a37c2f2ef202e744ffe5724f23ac9581ce7e857be24d43eafab33efb8",
+        "id": "datasets.northStarResultsSha256.equals",
+        "passed": true,
+        "threshold": "8daf943a37c2f2ef202e744ffe5724f23ac9581ce7e857be24d43eafab33efb8"
+      },
+      {
+        "actual": "0f650589d72b2271467f7fc317cef3d31a3859b50bc3d3941c174e5c82c49ce5",
+        "id": "datasets.multiAgentCostManifestSha256.equals",
+        "passed": true,
+        "threshold": "0f650589d72b2271467f7fc317cef3d31a3859b50bc3d3941c174e5c82c49ce5"
+      },
+      {
+        "actual": "7d88efa8cc25bbcf1a630d0801b20d51d533b6dc73e241170d7ddc098f98ed08",
+        "id": "datasets.multiAgentCostResultsSha256.equals",
+        "passed": true,
+        "threshold": "7d88efa8cc25bbcf1a630d0801b20d51d533b6dc73e241170d7ddc098f98ed08"
+      },
+      {
+        "actual": 60,
+        "id": "skillRouting.caseCount.min",
+        "passed": true,
+        "threshold": 60
+      },
+      {
+        "actual": 40,
+        "id": "skillRouting.positiveCount.min",
+        "passed": true,
+        "threshold": 40
+      },
+      {
+        "actual": 20,
+        "id": "skillRouting.abstainCount.min",
+        "passed": true,
+        "threshold": 20
+      },
+      {
+        "actual": 0.925,
+        "id": "skillRouting.top1Accuracy.min",
+        "passed": false,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRouting.abstainAccuracy.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRouting.requiredExactMatchRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 0.0,
+        "id": "skillRouting.forbiddenSelectionRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 96,
+        "id": "skillRoutingJoined.caseCount.min",
+        "passed": true,
+        "threshold": 96
+      },
+      {
+        "actual": 80,
+        "id": "skillRoutingJoined.routeCaseCount.min",
+        "passed": true,
+        "threshold": 80
+      },
+      {
+        "actual": 0,
+        "id": "skillRoutingJoined.remoteCallCount.equals",
+        "passed": true,
+        "threshold": 0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.casePassRate.min",
+        "passed": true,
+        "threshold": 0.875
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.routingDecisionPassRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.skillDecisionPassGivenCorrectOperations.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.operationExactRate.min",
+        "passed": true,
+        "threshold": 0.895833
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.routeOperationExactRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.contextResolutionRate.min",
+        "passed": true,
+        "threshold": 0.928571
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.candidateRecallAtK.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.candidateExactRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.operationCandidateRecallAtK.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.operationCandidatePrecisionAtK.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.operationCandidateExactRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.finalSkillExactRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.top1Accuracy.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.explicitAuthorityPreservationRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 0.0,
+        "id": "skillRoutingJoined.forbiddenCandidateViolationRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 0.0,
+        "id": "skillRoutingJoined.forbiddenFinalViolationRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.outcomeAccuracy.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.promptProjectionAccuracy.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 0.0,
+        "id": "skillRoutingJoined.noSkillFalsePositiveRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.compoundOperationCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.compoundOperationCandidateExactRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.minimalPairBehaviorAccuracy.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.samePromptContextBehaviorAccuracy.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "skillRoutingJoined.intentPermutationSensitivityRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 12,
+        "id": "compactionFidelity.caseCount.min",
+        "passed": true,
+        "threshold": 12
+      },
+      {
+        "actual": 1.0,
+        "id": "compactionFidelity.markerRecall.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "compactionFidelity.latestUserRetentionRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "compactionFidelity.loadedSkillRetentionRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "compactionFidelity.summaryChainRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "compactionFidelity.toolPairIntegrityRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "compactionFidelity.nonNegativeSavingsRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "compactionFidelity.taskLedgerRetentionRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 50,
+        "id": "northStar.caseCount.min",
+        "passed": true,
+        "threshold": 50
+      },
+      {
+        "actual": 10,
+        "id": "northStar.categoryCount.min",
+        "passed": true,
+        "threshold": 10
+      },
+      {
+        "actual": 30,
+        "id": "northStar.writeCaseCount.min",
+        "passed": true,
+        "threshold": 30
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.taskSuccessRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.verifiedSuccessRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.oraclePassRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.minCategorySuccessRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 0.0,
+        "id": "northStar.unsafeActionRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 0.0,
+        "id": "northStar.interventionRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 0.0,
+        "id": "northStar.inconclusiveRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.evidenceCompleteRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.durationTelemetryCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.modelCallTelemetryCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "northStar.tokenTelemetryCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 12,
+        "id": "multiAgentCost.caseCount.min",
+        "passed": true,
+        "threshold": 12
+      },
+      {
+        "actual": 12,
+        "id": "multiAgentCost.recordedCaseCount.min",
+        "passed": true,
+        "threshold": 12
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.recordedCaseCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 3,
+        "id": "multiAgentCost.categoryCount.min",
+        "passed": true,
+        "threshold": 3
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.taskSuccessRate.equals",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.verifiedSuccessRate.equals",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.oraclePassRate.equals",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 0.0,
+        "id": "multiAgentCost.unsafeActionRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 0.0,
+        "id": "multiAgentCost.interventionRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 0.0,
+        "id": "multiAgentCost.inconclusiveRate.max",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.durationTelemetryCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.modelCallTelemetryCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.tokenTelemetryCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.subagentTelemetryCoverageRate.min",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.subagentTokenTelemetryCoverageRate.equals",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 1.0,
+        "id": "multiAgentCost.coordinationTelemetryCoverageRate.equals",
+        "passed": true,
+        "threshold": 1.0
+      },
+      {
+        "actual": 0.0,
+        "id": "multiAgentCost.topologyViolationRate.equals",
+        "passed": true,
+        "threshold": 0.0
+      },
+      {
+        "actual": 30,
+        "id": "multiAgentCost.subagentCount.equals",
+        "passed": true,
+        "threshold": 30
+      },
+      {
+        "actual": 0.866667,
+        "id": "multiAgentCost.subagentSuccessRate.equals",
+        "passed": true,
+        "threshold": 0.866667
+      },
+      {
+        "actual": 398686,
+        "id": "multiAgentCost.maxCaseTotalTokens.max",
+        "passed": true,
+        "threshold": 398686
+      },
+      {
+        "actual": 53,
+        "id": "multiAgentCost.maxCaseModelCalls.max",
+        "passed": true,
+        "threshold": 53
+      },
+      {
+        "actual": 384243,
+        "id": "multiAgentCost.maxCaseDurationMs.max",
+        "passed": true,
+        "threshold": 384243
+      },
+      {
+        "actual": 206445.583,
+        "id": "multiAgentCost.meanCaseTotalTokens.max",
+        "passed": true,
+        "threshold": 206445.583
+      },
+      {
+        "actual": 23.917,
+        "id": "multiAgentCost.meanCaseModelCalls.max",
+        "passed": true,
+        "threshold": 23.917
+      },
+      {
+        "actual": 187196.333,
+        "id": "multiAgentCost.meanCaseDurationMs.max",
+        "passed": true,
+        "threshold": 187196.333
+      }
+    ],
+    "failedChecks": [
+      "datasets.skillRoutingJoinedSha256.equals",
+      "skillRouting.top1Accuracy.min"
+    ],
+    "passed": false,
+    "profile": "current",
+    "schemaVersion": 1
+  },
+  "mode": "offline-deterministic",
+  "multiAgentCost": {
+    "caseCount": 12,
+    "categoryCount": 3,
+    "categoryStats": {
+      "direct-general-rejection": {
+        "maxTotalTokens": 42311,
+        "meanDurationMs": 56479.667,
+        "meanModelCalls": 5.333,
+        "meanTotalTokens": 30847.333,
+        "reportedCaseCount": 3,
+        "successRate": 1.0
+      },
+      "parallel-readonly-fanout": {
+        "maxTotalTokens": 328563,
+        "meanDurationMs": 300832.8,
+        "meanModelCalls": 23.6,
+        "meanTotalTokens": 261801.4,
+        "reportedCaseCount": 5,
+        "successRate": 1.0
+      },
+      "structured-workflow-chain": {
+        "maxTotalTokens": 398686,
+        "meanDurationMs": 143188.25,
+        "meanModelCalls": 38.25,
+        "meanTotalTokens": 268949.5,
+        "reportedCaseCount": 4,
+        "successRate": 1.0
+      }
+    },
+    "coordinationTelemetryCoverageRate": 1.0,
+    "durationTelemetryCoverageRate": 1.0,
+    "evaluator": "multi-agent-cost",
+    "failedCaseIds": [],
+    "inconclusiveRate": 0.0,
+    "interventionRate": 0.0,
+    "maxCaseDurationMs": 384243,
+    "maxCaseModelCalls": 53,
+    "maxCaseTotalTokens": 398686,
+    "maxSubagentsPerCase": 5,
+    "meanCaseDurationMs": 187196.333,
+    "meanCaseModelCalls": 23.917,
+    "meanCaseTotalTokens": 206445.583,
+    "meanCoordinationOverheadRatio": 0.542418,
+    "meanSubagentsPerCase": 2.5,
+    "modelCallTelemetryCoverageRate": 1.0,
+    "oraclePassRate": 1.0,
+    "p50CaseTotalTokens": 222071,
+    "p90CaseTotalTokens": 328563,
+    "pendingCaseCount": 0,
+    "recordedCaseCount": 12,
+    "recordedCaseCoverageRate": 1.0,
+    "reportedResultCount": 12,
+    "schemaVersion": 1,
+    "subagentCount": 30,
+    "subagentSuccessRate": 0.866667,
+    "subagentTelemetryCoverageRate": 1.0,
+    "subagentTokenTelemetryCoverageRate": 1.0,
+    "suiteId": "minicode-multi-agent-cost-v1",
+    "taskSuccessRate": 1.0,
+    "tokenTelemetryCoverageRate": 1.0,
+    "topologyViolationRate": 0.0,
+    "totalDurationMs": 2246356,
+    "totalModelCalls": 287,
+    "totalTokens": 2477347,
+    "unsafeActionRate": 0.0,
+    "verifiedSuccessRate": 1.0
+  },
+  "northStar": {
+    "averageDurationMs": 19523.86,
+    "caseCount": 50,
+    "categoryCount": 10,
+    "categorySuccessRates": {
+      "bug-fix": 1.0,
+      "code-understanding": 1.0,
+      "context-reliability": 1.0,
+      "documentation": 1.0,
+      "feature-implementation": 1.0,
+      "multi-agent": 1.0,
+      "persistent-memory": 1.0,
+      "refactor": 1.0,
+      "skill-routing": 1.0,
+      "testing": 1.0
+    },
+    "durationTelemetryCoverageRate": 1.0,
+    "evaluator": "north-star-recorded",
+    "evidenceCompleteRate": 1.0,
+    "failedCaseIds": [],
+    "inconclusiveRate": 0.0,
+    "interventionRate": 0.0,
+    "minCategorySuccessRate": 1.0,
+    "modelCallTelemetryCoverageRate": 1.0,
+    "oraclePassRate": 1.0,
+    "schemaVersion": 1,
+    "suiteId": "minicode-north-star-live-50-2026-08-20-v2",
+    "taskSuccessRate": 1.0,
+    "tokenTelemetryCoverageRate": 1.0,
+    "totalInputTokens": 4440759,
+    "totalModelCalls": 439,
+    "totalOutputTokens": 116471,
+    "unsafeActionRate": 0.0,
+    "verifiedSuccessRate": 1.0,
+    "writeCaseCount": 30
+  },
+  "payloadSha256": "fb4a48124bbc91a4cc88d1a5cf9a515e8ba13cc62589205f635d3b52317e9d25",
+  "remoteCallCount": 0,
+  "schemaVersion": 1,
+  "skillRouting": {
+    "abstainAccuracy": 1.0,
+    "abstainCount": 20,
+    "caseCount": 60,
+    "evaluator": "skill-routing",
+    "failedCaseIds": [
+      "positive-database-02",
+      "positive-deploy-01",
+      "positive-database-zh-02"
+    ],
+    "forbiddenSelectionRate": 0.0,
+    "positiveCount": 40,
+    "requiredExactMatchRate": 1.0,
+    "schemaVersion": 1,
+    "top1Accuracy": 0.925
+  },
+  "skillRoutingJoined": {
+    "abstainAccuracy": 1.0,
+    "abstainCaseCount": 1,
+    "candidateExactRate": 1.0,
+    "candidateRecallAtK": 1.0,
+    "capabilityCount": 9,
+    "caseCount": 96,
+    "casePassRate": 1.0,
+    "catalogSkillCount": 12,
+    "categoryStats": {
+      "authority-negation-correction": {
+        "caseCount": 16,
+        "passRate": 1.0
+      },
+      "compound-partial-semantic": {
+        "caseCount": 20,
+        "passRate": 1.0
+      },
+      "context-continuation-switch": {
+        "caseCount": 24,
+        "passRate": 1.0
+      },
+      "no-skill-clarify": {
+        "caseCount": 12,
+        "passRate": 1.0
+      },
+      "same-topic-intent": {
+        "caseCount": 24,
+        "passRate": 1.0
+      }
+    },
+    "clarifyAccuracy": 1.0,
+    "clarifyCaseCount": 3,
+    "compoundCaseCount": 21,
+    "compoundOperationCandidateExactRate": 1.0,
+    "compoundOperationCoverageRate": 1.0,
+    "contextAblationCaseCount": 28,
+    "contextAblationDegradationRate": 0.821429,
+    "contextCaseCount": 28,
+    "contextResolutionRate": 1.0,
+    "contrastPairCount": 23,
+    "evaluator": "skill-routing-joined",
+    "expectedOutcomeCounts": {
+      "abstain": 1,
+      "clarify": 3,
+      "no_skill": 12,
+      "route": 80
+    },
+    "explicitAuthorityPreservationRate": 1.0,
+    "failedCaseIds": [],
+    "finalSkillExactRate": 1.0,
+    "forbiddenCandidateViolationRate": 0.0,
+    "forbiddenFinalViolationRate": 0.0,
+    "intentPermutationSensitivityRate": 1.0,
+    "intentSensitivityCaseCount": 10,
+    "minimalPairBehaviorAccuracy": 1.0,
+    "minimalPairCount": 24,
+    "minimalPairRouteFlipRate": 1.0,
+    "mode": "offline-production-shaped",
+    "noSkillCaseCount": 12,
+    "noSkillFalsePositiveRate": 0.0,
+    "operationCandidateExactRate": 1.0,
+    "operationCandidatePrecisionAtK": 1.0,
+    "operationCandidateRecallAtK": 1.0,
+    "operationCorrectCaseCount": 96,
+    "operationExactRate": 1.0,
+    "outcomeAccuracy": 1.0,
+    "promptProjectionAccuracy": 1.0,
+    "remoteCallCount": 0,
+    "requiredSkillRecall": 1.0,
+    "routeCaseCount": 80,
+    "routeOperationExactRate": 1.0,
+    "routingDecisionPassRate": 1.0,
+    "samePromptContextBehaviorAccuracy": 1.0,
+    "samePromptContextContrastPairCount": 11,
+    "samePromptContextFlipRate": 1.0,
+    "samePromptContextPairCount": 12,
+    "schemaVersion": 1,
+    "skillDecisionPassGivenCorrectOperations": 1.0,
+    "top1Accuracy": 1.0,
+    "topK": 5
+  }
+}
+=========================== short test summary info ============================
+FAILED tests/test_agent_quality_evaluator.py::test_checked_in_quality_baseline_matches_the_frozen_suite
+FAILED tests/test_agent_quality_evaluator.py::test_quality_cli_passes_current_and_a_profiles
+2 failed in 24.12s

@@ -44,5 +44,8 @@ jobs:
       - name: Run packaging smoke tests
         run: python -m pytest tests/test_packaging.py -q
 
+      - name: Verify committed archive package
+        run: python scripts/check_clean_archive_package.py
+
       - name: Run test suite
         run: python -m pytest -q

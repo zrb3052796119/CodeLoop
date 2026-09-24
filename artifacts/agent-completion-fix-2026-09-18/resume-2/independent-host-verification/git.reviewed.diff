@@ -1,0 +1,58 @@
+--- before/minicode/tools/git.py
++++ minicode/tools/git.py
+@@ -105,37 +105,42 @@
+         timeout=30,
+         env=_subprocess_environment(),
+     )
+-    return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
++    # Leading spaces are significant in status's XY columns and path offsets.
++    return proc.returncode, proc.stdout.rstrip("\r\n"), proc.stderr.strip()
+ 
+ 
+ def _run_status(cwd: str) -> ToolResult:
+-    rc, stdout, stderr = _run_git(["status", "--short"], cwd)
++    rc, stdout, stderr = _run_git(["status", "--porcelain=v1"], cwd)
+     if rc != 0:
+         return ToolResult(ok=False, output=f"Git status failed: {stderr}")
+ 
+     if not stdout:
+         return ToolResult(ok=True, output="Working tree clean. Nothing to commit.")
+ 
+-    # Count changes
+-    staged = sum(1 for line in stdout.split("\n") if line and line[0] != " ")
+-    unstaged = sum(1 for line in stdout.split("\n") if line and line[0] == " ")
++    entries = stdout.splitlines()
++    # X describes the index and Y the worktree; both may be changed at once.
++    # Untracked/ignored markers are not index or tracked-worktree changes.
++    tracked = [line for line in entries if line[:2] not in ("??", "!!")]
++    staged = sum(1 for line in tracked if line[0] != " ")
++    unstaged = sum(1 for line in tracked if line[1] != " ")
++    untracked = sum(1 for line in entries if line[:2] == "??")
+ 
+     lines = [
+         "Git Status:",
+         f"  Staged changes: {staged}",
+         f"  Unstaged changes: {unstaged}",
++        f"  Untracked files: {untracked}",
+         "",
+         "Files:",
+     ]
+ 
+-    for line in stdout.split("\n")[:30]:
+-        if line:
+-            status = line[:2].strip()
+-            file = line[3:]
+-            lines.append(f"  [{status}] {file}")
+-
+-    if stdout.count("\n") >= 30:
+-        lines.append(f"\n... and {stdout.count(chr(10)) - 29} more files")
++    for line in entries[:30]:
++        status = line[:2].strip()
++        file = line[3:]
++        lines.append(f"  [{status}] {file}")
++
++    if len(entries) > 30:
++        lines.append(f"\n... and {len(entries) - 30} more files")
+ 
+     return ToolResult(ok=True, output="\n".join(lines))
+ 

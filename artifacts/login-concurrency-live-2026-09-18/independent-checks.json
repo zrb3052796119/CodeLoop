@@ -1,0 +1,14 @@
+{
+  "focused-tests": {
+    "exitCode": 0,
+    "output": "...................................                                      [100%]\n35 passed in 0.50s\n"
+  },
+  "lint": {
+    "exitCode": 0,
+    "output": "All checks passed!\n"
+  },
+  "diff-check": {
+    "exitCode": 0,
+    "output": ""
+  }
+}

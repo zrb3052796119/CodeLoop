@@ -12,42 +12,71 @@ import hmac
 import json
 import os
 import re
-import stat
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Literal
 
 import minicode.memory as memory_module
+from minicode.memory_audit_contract import (
+    MemoryAuditSegment,
+    decode_legacy_memory_audit_records,
+    decode_memory_audit_head,
+    decode_memory_audit_records,
+    validate_memory_audit_segment_chain,
+)
 from minicode.memory import (
-    MemoryEntry,
-    MemoryManager,
-    MemoryScope,
-    MemoryTier,
     _APPROVAL_APPROVED,
     _APPROVAL_PENDING,
     _APPROVAL_REJECTED,
     _SAFETY_UNSAFE,
+    MemoryEntry,
+    MemoryFile,
+    MemoryManager,
+    MemoryScope,
+    MemoryTier,
+    _apply_approval_authority_state,
     _approval_hash_for_entry,
+    _interpret_loaded_entry_approval,
     assess_memory_safety,
 )
-from minicode.memory_store import MemoryStoreBusy, MemoryStoreConflict
-
+from minicode.memory_approval_interpretation import (
+    ApprovalInterpretationFailure,
+    ApprovalInterpretationMode,
+)
+from minicode.memory_blob_store import MemoryBlobStore
+from minicode.memory_authority_io import (
+    MAX_AUTHORITY_AUDIT_RECORDS,
+    MAX_AUTHORITY_ENTRIES,
+    MAX_CURRENT_AUTHORITY_CONTENT_BYTES,
+    MAX_CURRENT_AUTHORITY_ENTRIES,
+    MAX_MEMORY_ENTRY_ID_BYTES,
+    MEMORY_ENTRY_ID_RE,
+    MemoryAuthoritySourceError,
+    is_memory_entry_id,
+    parse_memory_authority_json,
+    read_memory_authority_file,
+)
+from minicode.memory_store import (
+    MemoryStoreBusy,
+    MemoryStoreConflict,
+    MemoryStoreUnavailable,
+    MemoryStoreUnsafePath,
+)
 
 MemoryDecision = Literal["approve", "reject"]
 
-MEMORY_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$")
+MEMORY_ID_RE = MEMORY_ENTRY_ID_RE
 MEMORY_REVIEW_REVISION_RE = re.compile(r"^memoryreviewrev_[0-9a-f]{64}$")
 MEMORY_APPROVAL_REVISION_RE = re.compile(r"^memoryapprovalrev_[0-9a-f]{64}$")
 
-MAX_MEMORY_ID_BYTES = 160
+MAX_MEMORY_ID_BYTES = MAX_MEMORY_ENTRY_ID_BYTES
 MAX_REVIEW_PREVIEW_BYTES = 8 * 1024
 MAX_REVIEW_ITEM_BYTES = 12 * 1024
 MAX_PENDING_ITEMS = 20
 MAX_SNAPSHOT_BYTES = 128 * 1024
-REVIEW_PROJECTION_VERSION = 1
-_MAX_SOURCE_FILE_BYTES = 2 * 1024 * 1024
-_MAX_SOURCE_ENTRIES = 1_000
+REVIEW_PROJECTION_VERSION = 2
+_MAX_SOURCE_ENTRIES = MAX_AUTHORITY_ENTRIES
 
 _BEARER_RE = re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]+")
 _KEY_RE = re.compile(r"(?i)\bsk-[A-Za-z0-9][A-Za-z0-9_-]{2,}")
@@ -167,6 +196,22 @@ class MemoryApprovalDecision:
     updated_at: str
 
 
+@dataclass(frozen=True, slots=True)
+class ScopeAuthoritySnapshot:
+    """One bounded, read-only view of a Memory scope's persisted sources.
+
+    ``memory.json`` is the entry authority.  Its embedded ``approval_audit``
+    is authoritative when present; the standalone audit file is then only a
+    validated projection.  Legacy stores without an embedded audit fall back
+    to that projection.
+    """
+
+    scope: MemoryScope
+    entries: tuple[MemoryEntry, ...] = ()
+    raw_entries: tuple[dict[str, object], ...] = ()
+    approval_audit: tuple[dict[str, object], ...] = ()
+
+
 class MemoryApprovalAuthority:
     """Deep persistent approval boundary used by TUI-compatible core and HTTP."""
 
@@ -186,6 +231,10 @@ class MemoryApprovalAuthority:
         manager = MemoryManager(
             project_root=self._workspace,
             store_timeout=self._store_timeout,
+            readonly_load=True,
+            approval_interpretation_mode=(
+                ApprovalInterpretationMode.STRICT_FAIL_CLOSED
+            ),
         )
         self._validate_scope_roots(manager)
         return manager
@@ -201,96 +250,14 @@ class MemoryApprovalAuthority:
     def _read_regular_file(root: Path, filename: str) -> bytes | None:
         """Read one bounded regular file without creating or following anything."""
         try:
-            root_stat = root.lstat()
-        except FileNotFoundError:
-            return None
-        except OSError as error:
+            source = read_memory_authority_file(
+                root,
+                filename,
+                platform_name=_platform_name(),
+            )
+        except MemoryAuthoritySourceError as error:
             raise MemoryApprovalError("memory_approval_unavailable") from error
-        if not stat.S_ISDIR(root_stat.st_mode):
-            raise MemoryApprovalError("memory_approval_unavailable")
-
-        root_fd: int | None = None
-        file_fd: int | None = None
-        try:
-            flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
-            flags |= getattr(os, "O_NOFOLLOW", 0)
-            flags |= getattr(os, "O_NONBLOCK", 0)
-            if _platform_name() == "posix":
-                root_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
-                root_flags |= getattr(os, "O_CLOEXEC", 0)
-                root_flags |= getattr(os, "O_NOFOLLOW", 0)
-                root_fd = os.open(root, root_flags)
-                root_fd_stat = os.fstat(root_fd)
-                if (
-                    not stat.S_ISDIR(root_fd_stat.st_mode)
-                    or root_fd_stat.st_dev != root_stat.st_dev
-                    or root_fd_stat.st_ino != root_stat.st_ino
-                ):
-                    raise MemoryApprovalError("memory_approval_unavailable")
-                try:
-                    file_fd = os.open(filename, flags, dir_fd=root_fd)
-                except FileNotFoundError:
-                    return None
-            else:
-                if os.path.normcase(os.path.realpath(root)) != os.path.normcase(
-                    os.path.abspath(root)
-                ):
-                    raise MemoryApprovalError("memory_approval_unavailable")
-                path = root / filename
-                try:
-                    path_stat = os.lstat(path)
-                except FileNotFoundError:
-                    return None
-                if (
-                    not stat.S_ISREG(path_stat.st_mode)
-                    or path_stat.st_size > _MAX_SOURCE_FILE_BYTES
-                ):
-                    raise MemoryApprovalError("memory_approval_unavailable")
-                try:
-                    file_fd = os.open(path, flags)
-                except FileNotFoundError:
-                    return None
-                current_root_stat = os.lstat(root)
-                current_path_stat = os.lstat(path)
-                opened_path_stat = os.fstat(file_fd)
-                if (
-                    not stat.S_ISDIR(current_root_stat.st_mode)
-                    or current_root_stat.st_dev != root_stat.st_dev
-                    or current_root_stat.st_ino != root_stat.st_ino
-                    or not stat.S_ISREG(current_path_stat.st_mode)
-                    or current_path_stat.st_dev != path_stat.st_dev
-                    or current_path_stat.st_ino != path_stat.st_ino
-                    or opened_path_stat.st_dev != path_stat.st_dev
-                    or opened_path_stat.st_ino != path_stat.st_ino
-                ):
-                    raise MemoryApprovalError("memory_approval_unavailable")
-            file_stat = os.fstat(file_fd)
-            if (
-                not stat.S_ISREG(file_stat.st_mode)
-                or file_stat.st_size > _MAX_SOURCE_FILE_BYTES
-            ):
-                raise MemoryApprovalError("memory_approval_unavailable")
-            chunks: list[bytes] = []
-            remaining = _MAX_SOURCE_FILE_BYTES + 1
-            while remaining:
-                chunk = os.read(file_fd, min(64 * 1024, remaining))
-                if not chunk:
-                    break
-                chunks.append(chunk)
-                remaining -= len(chunk)
-            content = b"".join(chunks)
-            if len(content) > _MAX_SOURCE_FILE_BYTES:
-                raise MemoryApprovalError("memory_approval_unavailable")
-            return content
-        except MemoryApprovalError:
-            raise
-        except OSError as error:
-            raise MemoryApprovalError("memory_approval_unavailable") from error
-        finally:
-            if file_fd is not None:
-                os.close(file_fd)
-            if root_fd is not None:
-                os.close(root_fd)
+        return source.data if source is not None else None
 
     @staticmethod
     def _decode_source(content: bytes) -> str:
@@ -303,68 +270,173 @@ class MemoryApprovalAuthority:
     def _interpret_loaded_entry(
         entry: MemoryEntry,
         raw_data: dict[str, object],
+        *,
+        requires_complete_authority: bool = False,
     ) -> MemoryEntry:
         """Apply the write loader's compatibility rules in memory only."""
         safety = assess_memory_safety(entry.content, source=entry.source or "load")
-        raw_has_approval = "approval_status" in raw_data
-        raw_has_hash = "approval_content_hash" in raw_data
-        previous_hash = entry.approval_content_hash
-        current_hash = _approval_hash_for_entry(entry)
-
-        entry.safety_status = safety.status
-        entry.safety_reason = safety.reason
-        if raw_has_hash and previous_hash and previous_hash != current_hash:
-            raise MemoryApprovalError("memory_approval_failed")
-        if not raw_has_approval:
-            if safety.status == "safe":
-                entry.approval_status = (
-                    _APPROVAL_APPROVED
-                    if entry.lifecycle_status == "active"
-                    else _APPROVAL_PENDING
-                )
-            elif safety.status == "unsafe":
-                entry.approval_status = _APPROVAL_REJECTED
-            else:
-                entry.approval_status = _APPROVAL_PENDING
-            entry.approval_reason = safety.reason or "legacy migration"
-            entry.approval_actor = "migration"
-        elif safety.status == "unsafe":
-            entry.approval_status = _APPROVAL_REJECTED
-            entry.approval_reason = safety.reason
-            entry.approval_actor = "safety_gate"
-        elif not raw_has_hash and (
-            safety.status == "suspicious"
-            and entry.approval_status != _APPROVAL_REJECTED
+        interpretation = _interpret_loaded_entry_approval(
+            entry,
+            raw_data,
+            safety,
+            mode=ApprovalInterpretationMode.STRICT_FAIL_CLOSED,
+            transition_time=entry.approval_decided_at,
+            requires_complete_authority=requires_complete_authority,
+        )
+        if (
+            interpretation.failure
+            is ApprovalInterpretationFailure.STALE_APPROVAL_HASH
         ):
-            entry.approval_status = _APPROVAL_PENDING
-            entry.approval_reason = safety.reason
-            entry.approval_actor = "migration"
-
-        if entry.approval_status == _APPROVAL_REJECTED:
-            entry.lifecycle_status = "rejected"
-            entry.curator_locked = False
-        if entry.safety_status == "unsafe":
-            entry.lifecycle_status = "rejected"
-            entry.tier_reason = "safety_gate"
-        entry.approval_content_hash = current_hash
-        if not entry.approval_actor:
-            entry.approval_actor = "migration"
+            raise MemoryApprovalError("memory_approval_failed")
+        if interpretation.state is None or interpretation.failure is not None:
+            raise MemoryApprovalError("memory_approval_failed")
+        _apply_approval_authority_state(entry, interpretation.state)
         return entry
 
-    def _read_json_entries(
+    @staticmethod
+    def _validate_audit_records(
+        value: object,
+        *,
+        scope: MemoryScope,
+        versioned: bool,
+    ) -> tuple[dict[str, object], ...]:
+        try:
+            if versioned:
+                records = decode_memory_audit_records(
+                    value,
+                    expected_scope=scope.value,
+                    maximum_records=MAX_AUTHORITY_AUDIT_RECORDS,
+                )
+                return tuple(record.to_dict() for record in records)
+            return tuple(
+                dict(record)
+                for record in decode_legacy_memory_audit_records(
+                    value,
+                    expected_scope=scope.value,
+                )
+            )
+        except (TypeError, ValueError) as error:
+            raise MemoryApprovalError("memory_approval_failed") from error
+
+    def _read_audit_projection(
+        self,
+        content: bytes | None,
+        *,
+        scope: MemoryScope,
+    ) -> tuple[dict[str, object], ...]:
+        if content is None:
+            return ()
+        try:
+            parsed = parse_memory_authority_json(self._decode_source(content))
+        except (
+            json.JSONDecodeError,
+            RecursionError,
+            TypeError,
+            ValueError,
+        ) as error:
+            raise MemoryApprovalError("memory_approval_failed") from error
+        if not isinstance(parsed, dict):
+            raise MemoryApprovalError("memory_approval_failed")
+        return self._validate_audit_records(
+            parsed.get("records", []),
+            scope=scope,
+            versioned=False,
+        )
+
+    @staticmethod
+    def _read_versioned_audit(
+        scope: MemoryScope,
+        parsed: dict[str, object],
+        root: Path,
+    ) -> tuple[dict[str, object], ...]:
+        """Resolve the current audit chain without mutating its store."""
+
+        try:
+            hot = decode_memory_audit_records(
+                parsed.get("approval_audit"),
+                expected_scope=scope.value,
+                maximum_records=MAX_AUTHORITY_AUDIT_RECORDS,
+            )
+            if (
+                parsed.get("schemaVersion")
+                != memory_module.CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION
+            ):
+                return tuple(record.to_dict() for record in hot)
+            head = decode_memory_audit_head(parsed.get("approval_audit_head"))
+            segments: list[MemoryAuditSegment] = []
+            if head is not None:
+                reference = head.blob
+                store = MemoryBlobStore(root)
+                for _ in range(head.segment_count):
+                    segment = MemoryAuditSegment.from_dict(
+                        store.read_json(reference),
+                        expected_scope=scope.value,
+                    )
+                    segments.append(segment)
+                    if segment.previous is None:
+                        break
+                    reference = segment.previous
+            validate_memory_audit_segment_chain(
+                head,
+                segments,
+                expected_scope=scope.value,
+                hot_records=hot,
+            )
+        except Exception as error:  # noqa: BLE001 - fixed external failure code
+            raise MemoryApprovalError("memory_approval_failed") from error
+        return tuple(
+            record.to_dict()
+            for segment in reversed(segments)
+            for record in segment.records
+        ) + tuple(record.to_dict() for record in hot)
+
+    @staticmethod
+    def _validate_runtime_capacity(
+        scope: MemoryScope,
+        entries: list[MemoryEntry],
+    ) -> None:
+        """Apply the canonical current-store capacity to every read format."""
+        runtime_file = MemoryFile(scope=scope, entries=list(entries))
+        if (
+            len(runtime_file.entries) > MAX_CURRENT_AUTHORITY_ENTRIES
+            or runtime_file.size_bytes > MAX_CURRENT_AUTHORITY_CONTENT_BYTES
+        ):
+            raise MemoryApprovalError("memory_approval_failed")
+
+    def _read_json_snapshot(
         self,
         scope: MemoryScope,
         content: bytes,
-    ) -> list[MemoryEntry]:
+        root: Path,
+    ) -> ScopeAuthoritySnapshot:
         try:
-            parsed = json.loads(self._decode_source(content))
-        except json.JSONDecodeError as error:
+            parsed = parse_memory_authority_json(self._decode_source(content))
+        except (
+            json.JSONDecodeError,
+            RecursionError,
+            TypeError,
+            ValueError,
+        ) as error:
             raise MemoryApprovalError("memory_approval_failed") from error
+        if (
+            isinstance(parsed, dict)
+            and "schemaVersion" in parsed
+            and parsed.get("schemaVersion")
+            != memory_module.CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION
+        ):
+            raise MemoryApprovalError("memory_approval_failed")
+        parsed, scope_errors = memory_module._bind_memory_authority_scope(
+            parsed,
+            scope.value,
+        )
+        if scope_errors:
+            raise MemoryApprovalError("memory_approval_failed")
         is_valid, _ = memory_module._validate_memory_data(parsed)
         if not is_valid or len(parsed["entries"]) > _MAX_SOURCE_ENTRIES:
             raise MemoryApprovalError("memory_approval_failed")
 
         entries: list[MemoryEntry] = []
+        raw_entries: list[dict[str, object]] = []
         for raw_entry in parsed["entries"]:
             if not isinstance(raw_entry, dict):
                 raise MemoryApprovalError("memory_approval_failed")
@@ -377,12 +449,55 @@ class MemoryApprovalAuthority:
             normalized.setdefault("last_accessed", 0.0)
             try:
                 entry = MemoryEntry.from_dict(normalized)
-            except (KeyError, TypeError, ValueError, OverflowError) as error:
+            except (
+                KeyError,
+                TypeError,
+                ValueError,
+                OverflowError,
+                RecursionError,
+            ) as error:
                 raise MemoryApprovalError("memory_approval_failed") from error
             if not self._valid_memory_id(entry.id) or not entry.content:
                 raise MemoryApprovalError("memory_approval_failed")
-            entries.append(self._interpret_loaded_entry(entry, raw_entry))
-        return entries
+            entries.append(
+                self._interpret_loaded_entry(
+                    entry,
+                    raw_entry,
+                    requires_complete_authority=(
+                        parsed.get("schemaVersion")
+                        == memory_module.CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION
+                    ),
+                )
+            )
+            raw_entries.append(dict(raw_entry))
+
+        self._validate_runtime_capacity(scope, entries)
+
+        schema_version = parsed.get("schemaVersion")
+        is_versioned = schema_version in (
+            {memory_module.CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION}
+            | set(memory_module.MIGRATABLE_MEMORY_AUTHORITY_SCHEMA_VERSIONS)
+        )
+        approval_audit = (
+            self._read_versioned_audit(scope, parsed, root)
+            if is_versioned
+            else self._validate_audit_records(
+                parsed["approval_audit"],
+                scope=scope,
+                versioned=False,
+            )
+            if "approval_audit" in parsed
+            else self._read_audit_projection(
+                self._read_regular_file(root, "approval_audit.json"),
+                scope=scope,
+            )
+        )
+        return ScopeAuthoritySnapshot(
+            scope=scope,
+            entries=tuple(entries),
+            raw_entries=tuple(raw_entries),
+            approval_audit=approval_audit,
+        )
 
     def _read_markdown_entries(
         self,
@@ -420,45 +535,66 @@ class MemoryApprovalAuthority:
             if not entry.content:
                 raise MemoryApprovalError("memory_approval_failed")
             entries.append(self._interpret_loaded_entry(entry, {}))
+        self._validate_runtime_capacity(scope, entries)
         return entries
 
-    def _read_scope_entries(self, scope: MemoryScope, root: Path) -> list[MemoryEntry]:
-        audit = self._read_regular_file(root, "approval_audit.json")
-        if audit is not None:
-            try:
-                audit_data = json.loads(self._decode_source(audit))
-            except json.JSONDecodeError as error:
-                raise MemoryApprovalError("memory_approval_failed") from error
-            if (
-                not isinstance(audit_data, dict)
-                or not isinstance(audit_data.get("records", []), list)
-                or not all(
-                    isinstance(record, dict)
-                    for record in audit_data.get("records", [])
-                )
-            ):
-                raise MemoryApprovalError("memory_approval_failed")
-
+    def _read_scope_snapshot_from_root(
+        self,
+        scope: MemoryScope,
+        root: Path,
+    ) -> ScopeAuthoritySnapshot:
         memory_json = self._read_regular_file(root, "memory.json")
         if memory_json is not None:
-            return self._read_json_entries(scope, memory_json)
+            return self._read_json_snapshot(
+                scope,
+                memory_json,
+                root,
+            )
+        audit_projection = self._read_audit_projection(
+            self._read_regular_file(root, "approval_audit.json"),
+            scope=scope,
+        )
         memory_md = self._read_regular_file(root, "MEMORY.md")
-        if memory_md is not None:
-            return self._read_markdown_entries(scope, memory_md)
-        return []
+        entries = (
+            tuple(self._read_markdown_entries(scope, memory_md))
+            if memory_md is not None
+            else ()
+        )
+        return ScopeAuthoritySnapshot(
+            scope=scope,
+            entries=entries,
+            approval_audit=audit_projection,
+        )
 
-    def _read_pending_entries(self) -> list[MemoryEntry]:
-        """Load pending entries through a bounded, strictly no-write seam."""
+    def read_scope_snapshot(self, scope: MemoryScope) -> ScopeAuthoritySnapshot:
+        """Read and parse each persisted source for one scope at most once."""
+        if not isinstance(scope, MemoryScope):
+            raise TypeError("scope must be a MemoryScope")
+        self._validate_candidate_paths()
+        root_by_scope = dict(self._scope_roots())
+        return self._read_scope_snapshot_from_root(scope, root_by_scope[scope])
+
+    def _read_strict_entries(self) -> list[MemoryEntry]:
+        """Load every entry through the strict, bounded no-write seam."""
         self._validate_candidate_paths()
         entries: list[MemoryEntry] = []
         seen_ids: set[str] = set()
         for scope, root in self._scope_roots():
-            for entry in self._read_scope_entries(scope, root):
+            scope_snapshot = self._read_scope_snapshot_from_root(scope, root)
+            for entry in scope_snapshot.entries:
                 if entry.id in seen_ids:
                     raise MemoryApprovalError("memory_approval_failed")
                 seen_ids.add(entry.id)
-                if entry.approval_status == _APPROVAL_PENDING:
-                    entries.append(entry)
+                entries.append(entry)
+        return entries
+
+    def _read_pending_entries(self) -> list[MemoryEntry]:
+        """Load pending entries through a bounded, strictly no-write seam."""
+        entries = [
+            entry
+            for entry in self._read_strict_entries()
+            if entry.approval_status == _APPROVAL_PENDING
+        ]
         return sorted(entries, key=lambda entry: (entry.created_at, entry.scope.value, entry.id))
 
     def _validate_candidate_paths(self) -> None:
@@ -501,11 +637,7 @@ class MemoryApprovalAuthority:
 
     @staticmethod
     def _valid_memory_id(memory_id: object) -> bool:
-        return (
-            isinstance(memory_id, str)
-            and len(memory_id.encode("utf-8")) <= MAX_MEMORY_ID_BYTES
-            and MEMORY_ID_RE.fullmatch(memory_id) is not None
-        )
+        return is_memory_entry_id(memory_id)
 
     @staticmethod
     def _review_revision(entry: MemoryEntry) -> str:
@@ -519,6 +651,8 @@ class MemoryApprovalAuthority:
                 "approvalStatus": entry.approval_status,
                 "lifecycleStatus": entry.lifecycle_status,
                 "safetyStatus": entry.safety_status,
+                "tier": entry.tier.value,
+                "curatorLocked": entry.curator_locked,
                 "approvalContentHash": entry.approval_content_hash,
                 "contentHash": content_hash,
             },
@@ -703,9 +837,31 @@ class MemoryApprovalAuthority:
 
             def commit() -> MemoryApprovalDecision:
                 self._validate_scope_roots(manager)
+                # MemoryManager's read-only compatibility loader may normalize
+                # legacy fields in memory.  Approval decisions instead bind to
+                # a fresh STRICT_FAIL_CLOSED view while holding the store lock,
+                # so a stale persisted hash can never be rebound and approved.
+                strict_by_id = {
+                    strict_entry.id: strict_entry
+                    for strict_entry in self._read_strict_entries()
+                }
+                strict_entry = strict_by_id.get(memory_id)
                 scope, entry = manager._find_entry_by_id(memory_id)
-                if scope is None or entry is None or entry.scope != scope:
+                if (
+                    scope is None
+                    or entry is None
+                    or entry.scope != scope
+                    or strict_entry is None
+                ):
                     raise MemoryApprovalError("memory_approval_not_found")
+                if (
+                    strict_entry.scope != scope
+                    or not hmac.compare_digest(
+                        self._review_revision(strict_entry),
+                        self._review_revision(entry),
+                    )
+                ):
+                    raise MemoryApprovalError("memory_write_conflict")
                 if entry.approval_status != _APPROVAL_PENDING:
                     same = (
                         entry.approval_actor == "dashboard_user"
@@ -732,7 +888,7 @@ class MemoryApprovalAuthority:
                         )
                     raise MemoryApprovalError("memory_already_decided")
 
-                item = self._public_item(entry)
+                item = self._public_item(strict_entry)
                 current_revision = str(item["reviewRevision"])
                 if not hmac.compare_digest(current_revision, review_revision):
                     raise MemoryApprovalError("memory_review_stale")
@@ -772,6 +928,8 @@ class MemoryApprovalAuthority:
             raise MemoryApprovalError("memory_store_busy") from error
         except MemoryStoreConflict as error:
             raise MemoryApprovalError("memory_write_conflict") from error
+        except (MemoryStoreUnavailable, MemoryStoreUnsafePath) as error:
+            raise MemoryApprovalError("memory_approval_unavailable") from error
         except BaseException as error:  # noqa: BLE001 - safe fixed authority error
             raise MemoryApprovalError("memory_approval_failed") from error
 
@@ -787,4 +945,5 @@ __all__ = [
     "MemoryApprovalAuthority",
     "MemoryApprovalDecision",
     "MemoryApprovalError",
+    "ScopeAuthoritySnapshot",
 ]

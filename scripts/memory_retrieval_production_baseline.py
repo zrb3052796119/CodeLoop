@@ -1,15 +1,26 @@
-"""Versioned Memory Retrieval production-source baseline contracts through v39."""
+"""Versioned Memory Retrieval production-source baseline contracts through v41.
+
+v40 remains the active pinned baseline.  v41 is a staged, additive source
+candidate until its manifest and independent promotion evidence are finalized.
+"""
 
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
+from minicode.memory_hybrid_promotion_contract import (
+    QWEN_PROMOTION_DATASET_ID,
+    QWEN_PROMOTION_EVIDENCE_ARTIFACT,
+    QWEN_PROMOTION_REPORT_ARTIFACT,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BASELINE_ROOT = Path("tests/fixtures/memory_retrieval_production_freeze")
@@ -52,6 +63,26 @@ BASELINE_V36_ID = "memory-retrieval-production-v36"
 BASELINE_V37_ID = "memory-retrieval-production-v37"
 BASELINE_V38_ID = "memory-retrieval-production-v38"
 BASELINE_V39_ID = "memory-retrieval-production-v39"
+BASELINE_V40_ID = "memory-retrieval-production-v40"
+BASELINE_V41_ID = "memory-retrieval-production-v41"
+RELEASE_JOIN_SCHEMA_VERSION = "memory-retrieval-release-join-v2"
+ACTIVE_BASELINE_VERSION = "v40"
+V41_RELEASE_JOIN_RECEIPT_PATH = Path(
+    "artifacts/memory-retrieval-production-v41-release-join.json"
+)
+V41_RELEASE_JOIN_COMPONENT_PATHS = {
+    "manifest": BASELINE_ROOT / "v41.json",
+    "productionEvidence": Path(QWEN_PROMOTION_EVIDENCE_ARTIFACT),
+    "promotionReport": Path(QWEN_PROMOTION_REPORT_ARTIFACT),
+    "holdout": (
+        Path(".repair-work/memory-retrieval-quality-2026-09-03")
+        / QWEN_PROMOTION_DATASET_ID
+        / "holdout.json"
+    ),
+}
+# Deliberately empty until the independently reviewed v41 receipt is cut.
+# A manifest pin alone therefore cannot activate v41.
+PINNED_RELEASE_JOIN_SHA256: dict[str, str] = {}
 PINNED_MANIFEST_SHA256 = {
     "v1": "b5434d98b3ac3bbd6c98a6b643983bb58d0e4325b83882d2be13954a1263b417",
     "v2": "15df83efbbce1d2e684b27c6ccf63a4cc3d6cb5d12a61a78103a775e9eb51bab",
@@ -92,6 +123,7 @@ PINNED_MANIFEST_SHA256 = {
     "v37": "27dda6944d88016ceabcd08960b3b2ef230df7460590d1165b3195ed23adb67b",
     "v38": "49f3319b06289ef23ab8c2f40bc3da0deaf443cb365f654cd2d1683a42b727f3",
     "v39": "9bcf038d20aa7c044f4db613626b484e2fa89819929be20b46390bca00a99d6e",
+    "v40": "52d7131db710ef61674e776f931426e6efa8e91764df95eaa86612295f79e4f7",
 }
 ALLOWED_REASON_CODES = frozenset(
     {
@@ -141,6 +173,17 @@ ALLOWED_REASON_CODES = frozenset(
         "bounded_dns_resolver_capacity",
         "web_fetch_safe_transport_boundary",
         "web_search_provider_chain",
+        "persistent_memory_lifecycle_authority",
+        "persistent_memory_retrieval_semantics",
+        "context_compaction_fidelity_authority",
+        "skill_routing_semantic_authority",
+        "multi_agent_workflow_authority",
+        "client_surface_runtime_integration",
+        "hybrid_memory_behavior_closure",
+        "hybrid_memory_runtime_transport_closure",
+        "hybrid_memory_promotion_evaluator",
+        "hybrid_memory_release_trust_anchor",
+        "production_source_state_reconciliation",
     }
 )
 EXPECTED_CHANGED_FILES = frozenset(
@@ -484,6 +527,191 @@ EXPECTED_V39_ADDED_FILES = frozenset(
     }
 )
 
+# v40 reconciles the inherited v39 protected state and records a bounded
+# multi-track source checkpoint. Fourteen paths have no worktree diff from
+# HEAD and therefore use the explicit reconciliation code; the remaining
+# changed paths keep their reviewed track identity.
+V40_CHANGED_FILE_REASONS = {
+    "minicode/agent_loop.py": "persistent_memory_lifecycle_authority",
+    "minicode/agent_reflection.py": "persistent_memory_lifecycle_authority",
+    "minicode/agent_runtime.py": "skill_routing_semantic_authority",
+    "minicode/context_compactor.py": "context_compaction_fidelity_authority",
+    "minicode/conversation.py": "persistent_memory_lifecycle_authority",
+    "minicode/conversation_turn_store.py": "persistent_memory_lifecycle_authority",
+    "minicode/deletion_store.py": "production_source_state_reconciliation",
+    "minicode/gateway.py": "production_source_state_reconciliation",
+    "minicode/headless.py": "multi_agent_workflow_authority",
+    "minicode/main.py": "skill_routing_semantic_authority",
+    "minicode/memory.py": "persistent_memory_lifecycle_authority",
+    "minicode/memory_approval.py": "persistent_memory_lifecycle_authority",
+    "minicode/memory_candidate_consolidation.py": "persistent_memory_retrieval_semantics",
+    "minicode/memory_curator_agent.py": "persistent_memory_lifecycle_authority",
+    "minicode/memory_injector.py": "persistent_memory_retrieval_semantics",
+    "minicode/memory_pipeline.py": "persistent_memory_lifecycle_authority",
+    "minicode/memory_retrieval.py": "persistent_memory_retrieval_semantics",
+    "minicode/memory_store.py": "persistent_memory_lifecycle_authority",
+    "minicode/permission_approval.py": "production_source_state_reconciliation",
+    "minicode/permissions.py": "multi_agent_workflow_authority",
+    "minicode/project_memory_deletion.py": "persistent_memory_lifecycle_authority",
+    "minicode/run_events.py": "persistent_memory_lifecycle_authority",
+    "minicode/run_journal.py": "persistent_memory_lifecycle_authority",
+    "minicode/run_lifecycle.py": "persistent_memory_lifecycle_authority",
+    "minicode/session.py": "persistent_memory_lifecycle_authority",
+    "minicode/storage_health.py": "persistent_memory_lifecycle_authority",
+    "minicode/tooling.py": "multi_agent_workflow_authority",
+    "minicode/tools/__init__.py": "production_source_state_reconciliation",
+    "minicode/tools/network_safety.py": "production_source_state_reconciliation",
+    "minicode/tools/run_command.py": "production_source_state_reconciliation",
+    "minicode/tools/search_providers.py": "production_source_state_reconciliation",
+    "minicode/tools/task.py": "multi_agent_workflow_authority",
+    "minicode/tools/web_search.py": "production_source_state_reconciliation",
+    "minicode/tui/input_handler.py": "skill_routing_semantic_authority",
+    "minicode/web/change_feed.py": "production_source_state_reconciliation",
+    "minicode/web/chat_http.py": "production_source_state_reconciliation",
+    "minicode/web/chat_stream.py": "production_source_state_reconciliation",
+    "minicode/web/read_model.py": "persistent_memory_lifecycle_authority",
+    "minicode/web/static/assets/app.js": "client_surface_runtime_integration",
+    "minicode/web/static/assets/styles.css": "production_source_state_reconciliation",
+    "minicode/web/static/index.html": "production_source_state_reconciliation",
+    "minicode/workspace.py": "production_source_state_reconciliation",
+}
+V40_ADDED_FILE_REASONS = {
+    "minicode/advisory_lock.py": "persistent_memory_lifecycle_authority",
+    "minicode/curator_schedule.py": "persistent_memory_lifecycle_authority",
+    "minicode/memory_approval_interpretation.py": "persistent_memory_lifecycle_authority",
+    "minicode/memory_audit_contract.py": "persistent_memory_lifecycle_authority",
+    "minicode/memory_authority_io.py": "persistent_memory_lifecycle_authority",
+    "minicode/memory_authority_publisher.py": "persistent_memory_lifecycle_authority",
+    "minicode/memory_blob_store.py": "persistent_memory_lifecycle_authority",
+    "minicode/memory_lexical_policy.py": "persistent_memory_retrieval_semantics",
+    "minicode/memory_provenance.py": "persistent_memory_lifecycle_authority",
+    "minicode/memory_write_contract.py": "persistent_memory_lifecycle_authority",
+    "minicode/project_facts.py": "persistent_memory_lifecycle_authority",
+}
+EXPECTED_V40_CHANGED_FILES = frozenset(V40_CHANGED_FILE_REASONS)
+EXPECTED_V40_ADDED_FILES = frozenset(V40_ADDED_FILE_REASONS)
+
+# v41 closes the production Hybrid Memory execution graph without changing the
+# active v40 verifier. Existing v40 files remain protected by inheritance; the
+# declared delta below is the exact staged source change set since that checkpoint.
+V41_CHANGED_FILE_REASONS = {
+    "minicode/agent_loop.py": "multi_agent_workflow_authority",
+    "minicode/agent_reflection.py": "hybrid_memory_behavior_closure",
+    "minicode/agent_runtime.py": "skill_routing_semantic_authority",
+    "minicode/context_compactor.py": "production_source_state_reconciliation",
+    "minicode/conversation.py": "persistent_memory_lifecycle_authority",
+    "minicode/file_review.py": "production_source_state_reconciliation",
+    "minicode/main.py": "skill_routing_semantic_authority",
+    "minicode/mcp.py": "skill_routing_semantic_authority",
+    "minicode/memory.py": "hybrid_memory_behavior_closure",
+    "minicode/memory_injector.py": "hybrid_memory_behavior_closure",
+    "minicode/memory_lexical_policy.py": "hybrid_memory_behavior_closure",
+    "minicode/memory_pipeline.py": "hybrid_memory_behavior_closure",
+    "minicode/memory_retrieval.py": "hybrid_memory_behavior_closure",
+    "minicode/permissions.py": "multi_agent_workflow_authority",
+    "minicode/run_journal.py": "persistent_memory_lifecycle_authority",
+    "minicode/session.py": "persistent_memory_lifecycle_authority",
+    "minicode/tooling.py": "multi_agent_workflow_authority",
+    "minicode/tools/__init__.py": "production_source_state_reconciliation",
+    "minicode/tools/http_utils.py": "production_source_state_reconciliation",
+    "minicode/tools/network_safety.py": "production_source_state_reconciliation",
+    "minicode/tools/run_command.py": "production_source_state_reconciliation",
+    "minicode/tools/task.py": "multi_agent_workflow_authority",
+    "minicode/tui/input_handler.py": "skill_routing_semantic_authority",
+}
+V41_ADDED_FILE_REASONS = {
+    "minicode/agent_budget.py": "hybrid_memory_runtime_transport_closure",
+    "minicode/api_retry.py": "hybrid_memory_runtime_transport_closure",
+    "minicode/config.py": "hybrid_memory_runtime_transport_closure",
+    "minicode/context_manager.py": "hybrid_memory_runtime_transport_closure",
+    "minicode/cost_tracker.py": "hybrid_memory_runtime_transport_closure",
+    "minicode/cybernetic_orchestrator.py": "hybrid_memory_runtime_transport_closure",
+    "minicode/domain_classifier.py": "hybrid_memory_behavior_closure",
+    "minicode/embeddings.py": "hybrid_memory_behavior_closure",
+    "minicode/env_file.py": "hybrid_memory_runtime_transport_closure",
+    "minicode/evaluation_one_shot.py": "hybrid_memory_promotion_evaluator",
+    "minicode/memory_hybrid.py": "hybrid_memory_behavior_closure",
+    "minicode/memory_hybrid_freeze.py": "hybrid_memory_release_trust_anchor",
+    "minicode/memory_hybrid_promotion_contract.py": "hybrid_memory_release_trust_anchor",
+    "minicode/memory_hybrid_release.py": "hybrid_memory_release_trust_anchor",
+    "minicode/memory_hybrid_runtime.py": "hybrid_memory_behavior_closure",
+    "minicode/memory_path_identity.py": "hybrid_memory_behavior_closure",
+    "minicode/model_call_control.py": "hybrid_memory_runtime_transport_closure",
+    "minicode/model_registry.py": "hybrid_memory_runtime_transport_closure",
+    "minicode/openai_adapter.py": "hybrid_memory_runtime_transport_closure",
+    "minicode/reflection_evidence.py": "hybrid_memory_behavior_closure",
+    "minicode/reflection_synthesis.py": "hybrid_memory_behavior_closure",
+    "minicode/state.py": "hybrid_memory_runtime_transport_closure",
+    "minicode/tls.py": "hybrid_memory_runtime_transport_closure",
+    "minicode/types.py": "hybrid_memory_runtime_transport_closure",
+    "scripts/memory_hybrid_qwen_v2_evaluator.py": "hybrid_memory_promotion_evaluator",
+    "scripts/memory_hybrid_resolver_pressure_evaluator.py": "hybrid_memory_promotion_evaluator",
+}
+# v41 is a staged candidate only.  Its exact changed-file count is intentionally
+# checked by the candidate tests, while the active v40 manifest remains the
+# production authority until independent evidence and a release join are cut.
+V41_CHANGED_FILE_COUNT = len(V41_CHANGED_FILE_REASONS)
+EXPECTED_V41_CHANGED_FILES = frozenset(V41_CHANGED_FILE_REASONS)
+EXPECTED_V41_ADDED_FILES = frozenset(V41_ADDED_FILE_REASONS)
+
+# This is deliberately independent of the reason maps above.  It prevents a
+# future edit from shrinking both a map and its derived EXPECTED_* set while
+# still producing a superficially valid manifest.  Inherited dependencies are
+# checked against the v40 file set by ``_validate_v41_closure`` below.
+V41_REQUIRED_HYBRID_CLOSURE_FILES = frozenset(
+    {
+        "minicode/agent_budget.py",
+        "minicode/api_retry.py",
+        "minicode/agent_loop.py",
+        "minicode/agent_runtime.py",
+        "minicode/conversation.py",
+        "minicode/main.py",
+        "minicode/mcp.py",
+        "minicode/agent_reflection.py",
+        "minicode/context_compactor.py",
+        "minicode/file_review.py",
+        "minicode/memory.py",
+        "minicode/run_journal.py",
+        "minicode/tools/http_utils.py",
+        "minicode/tools/network_safety.py",
+        "minicode/config.py",
+        "minicode/context_manager.py",
+        "minicode/cost_tracker.py",
+        "minicode/cybernetic_orchestrator.py",
+        "minicode/domain_classifier.py",
+        "minicode/embeddings.py",
+        "minicode/env_file.py",
+        "minicode/evaluation_one_shot.py",
+        "minicode/memory_hybrid.py",
+        "minicode/memory_hybrid_freeze.py",
+        "minicode/memory_hybrid_promotion_contract.py",
+        "minicode/memory_hybrid_release.py",
+        "minicode/memory_hybrid_runtime.py",
+        "minicode/memory_path_identity.py",
+        "minicode/permissions.py",
+        "minicode/reflection_evidence.py",
+        "minicode/reflection_synthesis.py",
+        "minicode/session.py",
+        "minicode/tooling.py",
+        "minicode/tools/__init__.py",
+        "minicode/tools/run_command.py",
+        "minicode/tools/task.py",
+        "minicode/tui/input_handler.py",
+        "minicode/memory_injector.py",
+        "minicode/memory_lexical_policy.py",
+        "minicode/memory_pipeline.py",
+        "minicode/memory_retrieval.py",
+        "minicode/model_call_control.py",
+        "minicode/model_registry.py",
+        "minicode/openai_adapter.py",
+        "minicode/state.py",
+        "minicode/tls.py",
+        "minicode/types.py",
+        "scripts/memory_hybrid_qwen_v2_evaluator.py",
+        "scripts/memory_hybrid_resolver_pressure_evaluator.py",
+    }
+)
+
 EXPECTED_V1_FILES = {
     "minicode/agent_loop.py": "a9980e6df7e9f3bb9858ea3b1907e6e6eb02e5fe7a90d533bf8096a741981d5e",
     "minicode/context_compactor.py": "f05bd72a46be720bfa9b50e42e4824825b5e532c1b8885ae6db1ab7a316b4bec",
@@ -561,6 +789,8 @@ def _manifest_path(version: str, project_root: Path) -> Path:
         "v37",
         "v38",
         "v39",
+        "v40",
+        "v41",
     }:
         raise ValueError("unsupported production baseline version")
     return Path(project_root) / BASELINE_ROOT / f"{version}.json"
@@ -578,7 +808,12 @@ def _validate_relative_path(value: str) -> None:
         raise BaselineCertificationError("baseline contains an invalid source path")
 
 
-def validate_manifest(manifest: dict[str, Any], *, version: str) -> None:
+def validate_manifest(
+    manifest: dict[str, Any],
+    *,
+    version: str,
+    project_root: Path = PROJECT_ROOT,
+) -> None:
     """Validate the closed manifest schema and the version-specific contract."""
     required = {
         "schemaVersion",
@@ -1632,6 +1867,48 @@ def validate_manifest(manifest: dict[str, Any], *, version: str) -> None:
             )
         ):
             raise BaselineCertificationError("active v39 contract is invalid")
+    elif version == "v40":
+        v39 = load_baseline_manifest("v39", project_root=project_root)
+        expected_files = set(v39["files"]) | EXPECTED_V40_ADDED_FILES
+        if (
+            manifest["baselineId"] != BASELINE_V40_ID
+            or manifest["parentBaselineId"] != BASELINE_V39_ID
+            or set(allowed) != EXPECTED_V40_CHANGED_FILES
+            or set(added) != EXPECTED_V40_ADDED_FILES
+            or set(files) != expected_files
+            or any(
+                allowed[path].get("reasonCode") != reason
+                for path, reason in V40_CHANGED_FILE_REASONS.items()
+            )
+            or any(
+                added[path].get("reasonCode") != reason
+                for path, reason in V40_ADDED_FILE_REASONS.items()
+            )
+        ):
+            raise BaselineCertificationError("active v40 contract is invalid")
+    elif version == "v41":
+        v40 = load_baseline_manifest("v40", project_root=project_root)
+        expected_files = set(v40["files"]) | EXPECTED_V41_ADDED_FILES
+        _validate_v41_closure(
+            parent_files=set(v40["files"]),
+            candidate_files=set(files),
+        )
+        if (
+            manifest["baselineId"] != BASELINE_V41_ID
+            or manifest["parentBaselineId"] != BASELINE_V40_ID
+            or set(allowed) != EXPECTED_V41_CHANGED_FILES
+            or set(added) != EXPECTED_V41_ADDED_FILES
+            or set(files) != expected_files
+            or any(
+                allowed[path].get("reasonCode") != reason
+                for path, reason in V41_CHANGED_FILE_REASONS.items()
+            )
+            or any(
+                added[path].get("reasonCode") != reason
+                for path, reason in V41_ADDED_FILE_REASONS.items()
+            )
+        ):
+            raise BaselineCertificationError("staged v41 contract is invalid")
     else:
         raise ValueError("unsupported production baseline version")
 
@@ -1644,7 +1921,7 @@ def load_baseline_manifest(
     """Load one fixed-version manifest from a project root."""
     path = _manifest_path(version, project_root)
     manifest = json.loads(path.read_text(encoding="utf-8"))
-    validate_manifest(manifest, version=version)
+    validate_manifest(manifest, version=version, project_root=project_root)
     return manifest
 
 
@@ -2691,6 +2968,325 @@ def build_v39_candidate(*, project_root: Path = PROJECT_ROOT) -> dict[str, Any]:
     }
 
 
+def build_v40_candidate(*, project_root: Path = PROJECT_ROOT) -> dict[str, Any]:
+    """Rebuild the pinned v40 view around an explicitly staged v41 delta."""
+    root = Path(project_root).resolve()
+    for number in range(1, 41):
+        version = f"v{number}"
+        if (
+            sha256_file(_manifest_path(version, root))
+            != PINNED_MANIFEST_SHA256[version]
+        ):
+            raise BaselineCertificationError("historical baseline integrity changed")
+    v39 = load_baseline_manifest("v39", project_root=root)
+    historical_v40 = load_baseline_manifest("v40", project_root=root)
+    protected_paths = set(v39["files"]) | set(EXPECTED_V40_ADDED_FILES)
+    current_files = _hash_files(root, protected_paths)
+    # Reconstruct the exact historical checkpoint around the reviewed staged
+    # v41 delta. Missing files remain visible and fail below; only explicitly
+    # declared v41 changes are projected back to their pinned v40 digest.
+    for path in EXPECTED_V41_CHANGED_FILES:
+        if path in current_files and current_files[path] != "missing":
+            current_files[path] = historical_v40["files"][path]
+    changed = {
+        path
+        for path, expected in v39["files"].items()
+        if current_files[path] != expected
+    }
+    added = set(current_files) - set(v39["files"])
+    if changed != EXPECTED_V40_CHANGED_FILES or added != EXPECTED_V40_ADDED_FILES:
+        raise BaselineCertificationError(
+            "unexpected v39 source differences: "
+            f"changed={', '.join(sorted(changed)) or 'none'}; "
+            f"added={', '.join(sorted(added)) or 'none'}"
+        )
+    missing = sorted(
+        path for path, digest in current_files.items() if digest == "missing"
+    )
+    if missing:
+        raise BaselineCertificationError(
+            f"required v40 source files missing: {', '.join(missing)}"
+        )
+    if current_files != historical_v40["files"]:
+        raise BaselineCertificationError(
+            "current source cannot reconstruct the pinned v40 checkpoint"
+        )
+    return {
+        "addedFiles": {
+            path: {"reasonCode": V40_ADDED_FILE_REASONS[path]}
+            for path in sorted(EXPECTED_V40_ADDED_FILES)
+        },
+        "allowedChangesFromParent": {
+            path: {"reasonCode": V40_CHANGED_FILE_REASONS[path]}
+            for path in sorted(EXPECTED_V40_CHANGED_FILES)
+        },
+        "baselineId": BASELINE_V40_ID,
+        "files": dict(sorted(current_files.items())),
+        "parentBaselineId": BASELINE_V39_ID,
+        "reason": (
+            "Source-state reconciliation plus bounded persistent Memory, retrieval, "
+            "context, Skill routing, workflow and client integration changes"
+        ),
+        "schemaVersion": 1,
+    }
+
+
+def _validate_v41_closure(
+    *,
+    parent_files: set[str],
+    candidate_files: set[str],
+) -> None:
+    """Require the complete staged Hybrid Memory delta and inherited closure."""
+    declared_delta = EXPECTED_V41_CHANGED_FILES | EXPECTED_V41_ADDED_FILES
+    if (
+        len(EXPECTED_V41_CHANGED_FILES) != V41_CHANGED_FILE_COUNT
+        or len(EXPECTED_V41_ADDED_FILES) != len(V41_ADDED_FILE_REASONS)
+        or EXPECTED_V41_CHANGED_FILES & EXPECTED_V41_ADDED_FILES
+        or declared_delta != V41_REQUIRED_HYBRID_CLOSURE_FILES
+        or not EXPECTED_V41_CHANGED_FILES <= parent_files
+        or EXPECTED_V41_ADDED_FILES & parent_files
+        or candidate_files != parent_files | EXPECTED_V41_ADDED_FILES
+        or not V41_REQUIRED_HYBRID_CLOSURE_FILES <= candidate_files
+    ):
+        raise BaselineCertificationError("v41 Hybrid Memory source closure is invalid")
+
+
+def build_v41_candidate(*, project_root: Path = PROJECT_ROOT) -> dict[str, Any]:
+    """Build the staged Hybrid Memory source-closure candidate.
+
+    This function deliberately does not write or pin a v41 manifest.  It may be
+    used to review the exact delta while v40 remains the production authority.
+    """
+    root = Path(project_root).resolve()
+    for number in range(1, 41):
+        version = f"v{number}"
+        if (
+            sha256_file(_manifest_path(version, root))
+            != PINNED_MANIFEST_SHA256[version]
+        ):
+            raise BaselineCertificationError("historical baseline integrity changed")
+    v40 = load_baseline_manifest("v40", project_root=root)
+    protected_paths = set(v40["files"]) | set(EXPECTED_V41_ADDED_FILES)
+    current_files = _hash_files(root, protected_paths)
+    _validate_v41_closure(
+        parent_files=set(v40["files"]),
+        candidate_files=set(current_files),
+    )
+    changed = {
+        path
+        for path, expected in v40["files"].items()
+        if current_files[path] != expected
+    }
+    added = set(current_files) - set(v40["files"])
+    if changed != EXPECTED_V41_CHANGED_FILES or added != EXPECTED_V41_ADDED_FILES:
+        raise BaselineCertificationError(
+            "unexpected v40 source differences: "
+            f"changed={', '.join(sorted(changed)) or 'none'}; "
+            f"added={', '.join(sorted(added)) or 'none'}"
+        )
+    missing = sorted(
+        path for path, digest in current_files.items() if digest == "missing"
+    )
+    if missing:
+        raise BaselineCertificationError(
+            f"required v41 source files missing: {', '.join(missing)}"
+        )
+    candidate = {
+        "addedFiles": {
+            path: {"reasonCode": V41_ADDED_FILE_REASONS[path]}
+            for path in sorted(EXPECTED_V41_ADDED_FILES)
+        },
+        "allowedChangesFromParent": {
+            path: {"reasonCode": V41_CHANGED_FILE_REASONS[path]}
+            for path in sorted(EXPECTED_V41_CHANGED_FILES)
+        },
+        "baselineId": BASELINE_V41_ID,
+        "files": dict(sorted(current_files.items())),
+        "parentBaselineId": BASELINE_V40_ID,
+        "reason": (
+            "Staged Hybrid Memory candidate recall, relevance gating, runtime "
+            "transport and one-shot promotion evaluator source closure"
+        ),
+        "schemaVersion": 1,
+    }
+    validate_manifest(candidate, version="v41", project_root=root)
+    return candidate
+
+
+def _validate_sha256(value: object, *, field: str) -> str:
+    if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value):
+        raise BaselineCertificationError(f"{field} must be a lowercase SHA-256")
+    return value
+
+
+def _release_component_path(
+    component: str,
+    *,
+    project_root: Path,
+) -> Path:
+    """Resolve one fixed release component without following it outside the root."""
+    relative = V41_RELEASE_JOIN_COMPONENT_PATHS[component]
+    root = Path(project_root).resolve()
+    candidate = root / relative
+    try:
+        resolved = candidate.resolve(strict=True)
+        resolved.relative_to(root)
+    except (FileNotFoundError, OSError, RuntimeError, ValueError) as exc:
+        raise BaselineCertificationError(
+            f"v41 release component is unavailable: {component}"
+        ) from exc
+    if candidate.is_symlink() or not resolved.is_file():
+        raise BaselineCertificationError(
+            f"v41 release component must be a regular file: {component}"
+        )
+    return resolved
+
+
+def validate_v41_release_join(payload: dict[str, Any]) -> None:
+    """Validate the closed, path-bound four-evidence join for a future v41 cut."""
+    required = {"schemaVersion", "baselineId", "artifacts"}
+    if not isinstance(payload, dict) or set(payload) != required:
+        raise BaselineCertificationError("v41 release join schema is invalid")
+    if (
+        payload.get("schemaVersion") != RELEASE_JOIN_SCHEMA_VERSION
+        or payload.get("baselineId") != BASELINE_V41_ID
+    ):
+        raise BaselineCertificationError("v41 release join identity is invalid")
+    artifacts = payload.get("artifacts")
+    if not isinstance(artifacts, dict) or set(artifacts) != set(
+        V41_RELEASE_JOIN_COMPONENT_PATHS
+    ):
+        raise BaselineCertificationError("v41 release join artifacts are invalid")
+    for component, expected_path in V41_RELEASE_JOIN_COMPONENT_PATHS.items():
+        binding = artifacts.get(component)
+        if not isinstance(binding, dict) or set(binding) != {"path", "sha256"}:
+            raise BaselineCertificationError(
+                f"v41 release join binding is invalid: {component}"
+            )
+        if binding.get("path") != expected_path.as_posix():
+            raise BaselineCertificationError(
+                f"v41 release join path is invalid: {component}"
+            )
+        _validate_sha256(binding.get("sha256"), field=f"{component}.sha256")
+
+
+def build_v41_release_join(
+    *,
+    manifest_sha256: str,
+    production_evidence_sha256: str,
+    promotion_report_sha256: str,
+    holdout_sha256: str,
+) -> dict[str, Any]:
+    """Bind source, evidence, report and holdout to their fixed artifact paths."""
+    payload = {
+        "schemaVersion": RELEASE_JOIN_SCHEMA_VERSION,
+        "baselineId": BASELINE_V41_ID,
+        "artifacts": {
+            "manifest": {
+                "path": V41_RELEASE_JOIN_COMPONENT_PATHS["manifest"].as_posix(),
+                "sha256": manifest_sha256,
+            },
+            "productionEvidence": {
+                "path": V41_RELEASE_JOIN_COMPONENT_PATHS[
+                    "productionEvidence"
+                ].as_posix(),
+                "sha256": production_evidence_sha256,
+            },
+            "promotionReport": {
+                "path": V41_RELEASE_JOIN_COMPONENT_PATHS[
+                    "promotionReport"
+                ].as_posix(),
+                "sha256": promotion_report_sha256,
+            },
+            "holdout": {
+                "path": V41_RELEASE_JOIN_COMPONENT_PATHS["holdout"].as_posix(),
+                "sha256": holdout_sha256,
+            },
+        },
+    }
+    validate_v41_release_join(payload)
+    return payload
+
+
+def build_v41_release_join_from_files(
+    *,
+    project_root: Path = PROJECT_ROOT,
+) -> dict[str, Any]:
+    """Hash the four canonical v41 artifacts and build their release receipt."""
+    root = Path(project_root).resolve()
+    digests = {
+        component: sha256_file(
+            _release_component_path(component, project_root=root)
+        )
+        for component in V41_RELEASE_JOIN_COMPONENT_PATHS
+    }
+    return build_v41_release_join(
+        manifest_sha256=digests["manifest"],
+        production_evidence_sha256=digests["productionEvidence"],
+        promotion_report_sha256=digests["promotionReport"],
+        holdout_sha256=digests["holdout"],
+    )
+
+
+def verify_v41_release_join_receipt(
+    *,
+    project_root: Path = PROJECT_ROOT,
+) -> dict[str, Any]:
+    """Verify the pinned receipt and every artifact it binds, fail closed."""
+    root = Path(project_root).resolve()
+    receipt_path = root / V41_RELEASE_JOIN_RECEIPT_PATH
+    expected_receipt_pin = PINNED_RELEASE_JOIN_SHA256.get("v41")
+    result: dict[str, Any] = {
+        "required": True,
+        "receiptPath": V41_RELEASE_JOIN_RECEIPT_PATH.as_posix(),
+        "receiptPinned": isinstance(expected_receipt_pin, str),
+        "receiptIntegrity": False,
+        "manifestPinMatches": False,
+        "artifactIntegrity": {
+            component: False for component in V41_RELEASE_JOIN_COMPONENT_PATHS
+        },
+        "matches": False,
+    }
+    if not isinstance(expected_receipt_pin, str):
+        return result
+    try:
+        _validate_sha256(expected_receipt_pin, field="v41ReleaseJoinPin")
+        if receipt_path.is_symlink() or not receipt_path.is_file():
+            return result
+        if sha256_file(receipt_path) != expected_receipt_pin:
+            return result
+        result["receiptIntegrity"] = True
+        payload = json.loads(receipt_path.read_text(encoding="utf-8"))
+        validate_v41_release_join(payload)
+        artifacts = payload["artifacts"]
+        integrity: dict[str, bool] = {}
+        for component in V41_RELEASE_JOIN_COMPONENT_PATHS:
+            path = _release_component_path(component, project_root=root)
+            integrity[component] = (
+                sha256_file(path) == artifacts[component]["sha256"]
+            )
+        result["artifactIntegrity"] = integrity
+        manifest_pin = PINNED_MANIFEST_SHA256.get("v41")
+        result["manifestPinMatches"] = (
+            isinstance(manifest_pin, str)
+            and artifacts["manifest"]["sha256"] == manifest_pin
+        )
+        result["matches"] = (
+            result["receiptIntegrity"]
+            and result["manifestPinMatches"]
+            and all(integrity.values())
+        )
+    except (
+        BaselineCertificationError,
+        FileNotFoundError,
+        json.JSONDecodeError,
+        OSError,
+        UnicodeError,
+    ):
+        return result
+    return result
+
+
 def _verify_expected_files(
     project_root: Path,
     expected: dict[str, str],
@@ -2752,11 +3348,21 @@ def verify_manifest_version(
         "v37",
         "v38",
         "v39",
+        "v40",
+        "v41",
     }:
         raise ValueError("unsupported production baseline version")
     root = Path(project_root).resolve()
-    manifest = load_baseline_manifest(version, project_root=root)
     expected_pin = PINNED_MANIFEST_SHA256.get(version)
+    if version == "v41" and not isinstance(expected_pin, str):
+        return {
+            "version": version,
+            "baselineId": BASELINE_V41_ID,
+            "manifestIntegrity": False,
+            "lineageMatches": False,
+            "matches": False,
+        }
+    manifest = load_baseline_manifest(version, project_root=root)
     integrity = (
         isinstance(expected_pin, str)
         and sha256_file(_manifest_path(version, root)) == expected_pin
@@ -2768,6 +3374,22 @@ def verify_manifest_version(
         ) == {
             "changedFiles": sorted(EXPECTED_CHANGED_FILES),
             "addedFiles": sorted(EXPECTED_ADDED_FILES),
+            "removedFiles": [],
+        }
+    elif version == "v41":
+        lineage_matches = compare_baselines(
+            load_baseline_manifest("v40", project_root=root), manifest
+        ) == {
+            "changedFiles": sorted(EXPECTED_V41_CHANGED_FILES),
+            "addedFiles": sorted(EXPECTED_V41_ADDED_FILES),
+            "removedFiles": [],
+        }
+    elif version == "v40":
+        lineage_matches = compare_baselines(
+            load_baseline_manifest("v39", project_root=root), manifest
+        ) == {
+            "changedFiles": sorted(EXPECTED_V40_CHANGED_FILES),
+            "addedFiles": sorted(EXPECTED_V40_ADDED_FILES),
             "removedFiles": [],
         }
     elif version == "v39":
@@ -3076,7 +3698,7 @@ def verify_manifest_version(
 
 
 def verify_active_baseline(*, project_root: Path = PROJECT_ROOT) -> dict[str, Any]:
-    """Verify pinned v1-v39 evidence, all lineage, and active source files."""
+    """Verify pinned v1-v40 evidence, all lineage, and active source files."""
     root = Path(project_root).resolve()
     manifest_integrity = {
         version: sha256_file(_manifest_path(version, root))
@@ -3121,6 +3743,7 @@ def verify_active_baseline(*, project_root: Path = PROJECT_ROOT) -> dict[str, An
             "v37",
             "v38",
             "v39",
+            "v40",
         )
     }
     v1 = load_baseline_manifest("v1", project_root=root)
@@ -3162,6 +3785,7 @@ def verify_active_baseline(*, project_root: Path = PROJECT_ROOT) -> dict[str, An
     v37 = load_baseline_manifest("v37", project_root=root)
     v38 = load_baseline_manifest("v38", project_root=root)
     v39 = load_baseline_manifest("v39", project_root=root)
+    v40 = load_baseline_manifest("v40", project_root=root)
     historical_lineage = compare_baselines(v1, v2)
     expected_historical_lineage = {
         "changedFiles": sorted(EXPECTED_CHANGED_FILES),
@@ -3384,20 +4008,22 @@ def verify_active_baseline(*, project_root: Path = PROJECT_ROOT) -> dict[str, An
         "addedFiles": sorted(EXPECTED_V38_ADDED_FILES),
         "removedFiles": [],
     }
-    lineage = compare_baselines(v38, v39)
-    expected_lineage = {
+    web_search_provider_lineage = compare_baselines(v38, v39)
+    expected_web_search_provider_lineage = {
         "changedFiles": sorted(EXPECTED_V39_CHANGED_FILES),
         "addedFiles": sorted(EXPECTED_V39_ADDED_FILES),
         "removedFiles": [],
     }
-    current = _verify_expected_files(root, v39["files"])
-    try:
-        candidate_matches = build_v39_candidate(project_root=root) == v39
-    except (BaselineCertificationError, FileNotFoundError):
-        candidate_matches = False
-    matches = (
+    lineage = compare_baselines(v39, v40)
+    expected_lineage = {
+        "changedFiles": sorted(EXPECTED_V40_CHANGED_FILES),
+        "addedFiles": sorted(EXPECTED_V40_ADDED_FILES),
+        "removedFiles": [],
+    }
+    history_matches = (
         all(manifest_integrity.values())
         and lineage == expected_lineage
+        and web_search_provider_lineage == expected_web_search_provider_lineage
         and web_fetch_safety_lineage == expected_web_fetch_safety_lineage
         and bounded_dns_resolver_lineage
         == expected_bounded_dns_resolver_lineage
@@ -3438,15 +4064,77 @@ def verify_active_baseline(*, project_root: Path = PROJECT_ROOT) -> dict[str, An
         and model_lineage == expected_model_lineage
         and prior_lineage == expected_prior_lineage
         and historical_lineage == expected_historical_lineage
-        and current["matches"]
-        and candidate_matches
     )
+    release_join: dict[str, Any] = {"required": False, "matches": True}
+    active_lineage = lineage
+    if ACTIVE_BASELINE_VERSION == "v40":
+        active_baseline_id = BASELINE_V40_ID
+        current = _verify_expected_files(root, v40["files"])
+        try:
+            candidate_matches = build_v40_candidate(project_root=root) == v40
+        except (BaselineCertificationError, FileNotFoundError):
+            candidate_matches = False
+        active_matches = current["matches"] and candidate_matches
+    elif ACTIVE_BASELINE_VERSION == "v41":
+        active_baseline_id = BASELINE_V41_ID
+        release_join = verify_v41_release_join_receipt(project_root=root)
+        expected_v41_lineage = {
+            "changedFiles": sorted(EXPECTED_V41_CHANGED_FILES),
+            "addedFiles": sorted(EXPECTED_V41_ADDED_FILES),
+            "removedFiles": [],
+        }
+        v41: dict[str, Any] | None = None
+        v41_pin = PINNED_MANIFEST_SHA256.get("v41")
+        try:
+            v41_path = _manifest_path("v41", root)
+            v41_integrity = (
+                isinstance(v41_pin, str)
+                and not v41_path.is_symlink()
+                and v41_path.is_file()
+                and sha256_file(v41_path) == v41_pin
+            )
+            v41 = load_baseline_manifest("v41", project_root=root)
+            active_lineage = compare_baselines(v40, v41)
+            current = _verify_expected_files(root, v41["files"])
+            candidate_matches = build_v41_candidate(project_root=root) == v41
+        except (
+            BaselineCertificationError,
+            FileNotFoundError,
+            json.JSONDecodeError,
+            OSError,
+            UnicodeError,
+        ):
+            v41_integrity = False
+            active_lineage = {
+                "changedFiles": [],
+                "addedFiles": [],
+                "removedFiles": [],
+            }
+            current = {"fileCount": 0, "matches": False, "mismatches": {}}
+            candidate_matches = False
+        manifest_integrity["v41"] = v41_integrity
+        active_matches = (
+            v41 is not None
+            and v41_integrity
+            and active_lineage == expected_v41_lineage
+            and current["matches"]
+            and candidate_matches
+            and release_join["matches"]
+        )
+    else:
+        active_baseline_id = f"unsupported:{ACTIVE_BASELINE_VERSION}"
+        current = {"fileCount": 0, "matches": False, "mismatches": {}}
+        candidate_matches = False
+        active_matches = False
+    matches = history_matches and active_matches
     return {
-        "activeBaselineId": BASELINE_V39_ID,
+        "activeBaselineId": active_baseline_id,
         "matches": matches,
         "manifestIntegrity": manifest_integrity,
-        "lineage": lineage,
-        "webSearchProviderLineage": lineage,
+        "lineage": active_lineage,
+        "releaseCheckpointLineage": lineage,
+        "releaseJoin": release_join,
+        "webSearchProviderLineage": web_search_provider_lineage,
         "webFetchSafetyLineage": web_fetch_safety_lineage,
         "boundedDnsResolverLineage": bounded_dns_resolver_lineage,
         "httpRequestSafetyLineage": http_request_safety_lineage,
@@ -3502,12 +4190,119 @@ def canonical_manifest_text(manifest: dict[str, Any]) -> str:
     )
 
 
+def _fsync_directory(directory: Path) -> None:
+    """Durably publish a directory-entry update."""
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    flags |= getattr(os, "O_CLOEXEC", 0)
+    descriptor = os.open(directory, flags)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def _publish_bytes_exclusively(
+    target: Path,
+    payload: bytes,
+    *,
+    label: str,
+) -> None:
+    """Stage durable bytes, then publish them atomically without replacement."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{target.name}.",
+        suffix=".tmp",
+        dir=target.parent,
+    )
+    temporary = Path(temporary_name)
+    published = False
+    staged_identity: tuple[int, int] | None = None
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fchmod(handle.fileno(), 0o644)
+            os.fsync(handle.fileno())
+        staged = temporary.stat(follow_symlinks=False)
+        staged_identity = (staged.st_dev, staged.st_ino)
+        os.link(temporary, target, follow_symlinks=False)
+        published = True
+        temporary.unlink()
+        _fsync_directory(target.parent)
+    except FileExistsError as exc:
+        raise BaselineCertificationError(f"{label} already exists") from exc
+    except (OSError, ValueError) as exc:
+        if published and staged_identity is not None:
+            try:
+                current = target.stat(follow_symlinks=False)
+                if (current.st_dev, current.st_ino) == staged_identity:
+                    target.unlink()
+                    try:
+                        _fsync_directory(target.parent)
+                    except OSError:
+                        pass
+            except FileNotFoundError:
+                pass
+        raise BaselineCertificationError(f"{label} publication failed") from exc
+    finally:
+        try:
+            temporary.unlink()
+        except FileNotFoundError:
+            pass
+
+
 def _write_canonical_manifest_stdout(manifest: dict[str, Any]) -> None:
     """Write canonical UTF-8 bytes without platform newline translation."""
     payload = canonical_manifest_text(manifest).encode("utf-8")
     binary_stdout = getattr(sys.stdout, "buffer", None)
     if binary_stdout is None:
         # StringIO-style test doubles do not translate newlines.
+        sys.stdout.write(payload.decode("utf-8"))
+        return
+    binary_stdout.write(payload)
+
+
+def _verified_immutable_manifest_path(
+    version: str,
+    *,
+    project_root: Path = PROJECT_ROOT,
+) -> Path:
+    """Return an existing pinned manifest only after full history verification."""
+    root = Path(project_root).resolve()
+    match = re.fullmatch(r"v([1-9][0-9]*)", version)
+    if match is None:
+        raise ValueError("unsupported production baseline version")
+    try:
+        for number in range(1, int(match.group(1)) + 1):
+            historical_version = f"v{number}"
+            if not verify_manifest_version(
+                historical_version,
+                project_root=root,
+            )["matches"]:
+                raise BaselineCertificationError(
+                    f"historical {historical_version} baseline is not valid"
+                )
+    except BaselineCertificationError:
+        raise
+    except (FileNotFoundError, json.JSONDecodeError, OSError, UnicodeError) as exc:
+        raise BaselineCertificationError(
+            f"immutable {version} baseline history is unavailable"
+        ) from exc
+    return _manifest_path(version, root)
+
+
+def _write_verified_manifest_stdout(
+    version: str,
+    *,
+    project_root: Path = PROJECT_ROOT,
+) -> None:
+    """Write the exact bytes of an existing, fully verified pinned manifest."""
+    payload = _verified_immutable_manifest_path(
+        version,
+        project_root=project_root,
+    ).read_bytes()
+    binary_stdout = getattr(sys.stdout, "buffer", None)
+    if binary_stdout is None:
         sys.stdout.write(payload.decode("utf-8"))
         return
     binary_stdout.write(payload)
@@ -3559,29 +4354,13 @@ def write_v6_manifest(*, project_root: Path = PROJECT_ROOT) -> Path:
 
 
 def write_v7_manifest(*, project_root: Path = PROJECT_ROOT) -> Path:
-    """Write only the fixed v7 target after strict historical validation."""
-    root = Path(project_root).resolve()
-    target = _manifest_path("v7", root)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    temporary = target.with_suffix(".json.tmp")
-    temporary.write_bytes(
-        canonical_manifest_text(build_v7_candidate(project_root=root)).encode("utf-8")
-    )
-    temporary.replace(target)
-    return target
+    """Return the immutable pinned v7 target without rewriting history."""
+    return _verified_immutable_manifest_path("v7", project_root=project_root)
 
 
 def write_v8_manifest(*, project_root: Path = PROJECT_ROOT) -> Path:
-    """Write only the fixed v8 target after strict historical validation."""
-    root = Path(project_root).resolve()
-    target = _manifest_path("v8", root)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    temporary = target.with_suffix(".json.tmp")
-    temporary.write_bytes(
-        canonical_manifest_text(build_v8_candidate(project_root=root)).encode("utf-8")
-    )
-    temporary.replace(target)
-    return target
+    """Return the immutable pinned v8 target without rewriting history."""
+    return _verified_immutable_manifest_path("v8", project_root=project_root)
 
 
 def write_v9_manifest(*, project_root: Path = PROJECT_ROOT) -> Path:
@@ -3855,15 +4634,93 @@ def write_v38_manifest(*, project_root: Path = PROJECT_ROOT) -> Path:
 
 
 def write_v39_manifest(*, project_root: Path = PROJECT_ROOT) -> Path:
-    """Write only the fixed v39 target after strict historical validation."""
+    """Return the immutable pinned v39 target without rewriting history."""
+    return _verified_immutable_manifest_path("v39", project_root=project_root)
+
+
+def write_v40_manifest(*, project_root: Path = PROJECT_ROOT) -> Path:
+    """Return the immutable pinned v40 target without rewriting history."""
+    return _verified_immutable_manifest_path("v40", project_root=project_root)
+
+
+def write_v41_manifest(*, project_root: Path = PROJECT_ROOT) -> Path:
+    """Create the staged v41 candidate once, never overwrite an existing file.
+
+    Before v41 has a reviewed manifest pin, any pre-existing target is
+    ambiguous and is rejected.  After a future pin is added, this entry point
+    becomes read-only and returns the target only after complete lineage and
+    pin validation.
+    """
     root = Path(project_root).resolve()
-    target = _manifest_path("v39", root)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    temporary = target.with_suffix(".json.tmp")
-    temporary.write_bytes(
-        canonical_manifest_text(build_v39_candidate(project_root=root)).encode("utf-8")
-    )
-    temporary.replace(target)
+    target = _manifest_path("v41", root)
+    if "v41" in PINNED_MANIFEST_SHA256:
+        try:
+            if target.is_symlink():
+                raise BaselineCertificationError(
+                    "existing pinned v41 manifest must not be a symlink"
+                )
+            return _verified_immutable_manifest_path("v41", project_root=root)
+        except (
+            BaselineCertificationError,
+            FileNotFoundError,
+            json.JSONDecodeError,
+            OSError,
+            UnicodeError,
+        ) as exc:
+            raise BaselineCertificationError(
+                "historical v41 baseline is not valid"
+            ) from exc
+    if os.path.lexists(target):
+        raise BaselineCertificationError(
+            "existing v41 manifest is unpinned; refusing to overwrite it"
+        )
+    payload = canonical_manifest_text(
+        build_v41_candidate(project_root=root)
+    ).encode("utf-8")
+    try:
+        _publish_bytes_exclusively(target, payload, label="v41 manifest")
+    except BaselineCertificationError as exc:
+        if os.path.lexists(target):
+            raise BaselineCertificationError(
+                "existing v41 manifest is unpinned; refusing to overwrite it"
+            ) from exc
+        raise
+    return target
+
+
+def write_v41_release_join_receipt(
+    *,
+    project_root: Path = PROJECT_ROOT,
+) -> Path:
+    """Stage one path-bound receipt; pinned receipts are strictly read-only."""
+    root = Path(project_root).resolve()
+    target = root / V41_RELEASE_JOIN_RECEIPT_PATH
+    if "v41" in PINNED_RELEASE_JOIN_SHA256:
+        if verify_v41_release_join_receipt(project_root=root)["matches"]:
+            return target
+        raise BaselineCertificationError(
+            "pinned v41 release join receipt is unavailable or invalid"
+        )
+    if os.path.lexists(target):
+        raise BaselineCertificationError(
+            "existing v41 release join receipt is unpinned; refusing to overwrite it"
+        )
+    try:
+        _verified_immutable_manifest_path("v41", project_root=root)
+    except (
+        BaselineCertificationError,
+        FileNotFoundError,
+        json.JSONDecodeError,
+        OSError,
+        UnicodeError,
+    ) as exc:
+        raise BaselineCertificationError(
+            "v41 manifest must be pinned before staging its release join"
+        ) from exc
+    payload = canonical_manifest_text(
+        build_v41_release_join_from_files(project_root=root)
+    ).encode("utf-8")
+    _publish_bytes_exclusively(target, payload, label="v41 release join receipt")
     return target
 
 
@@ -4245,12 +5102,32 @@ def main(argv: list[str] | None = None) -> int:
     action.add_argument(
         "--print-v39",
         action="store_true",
-        help="Print the deterministic v39 candidate without writing it.",
+        help="Print the exact verified immutable v39 manifest bytes.",
     )
     action.add_argument(
         "--write-v39",
         action="store_true",
-        help="Write only the fixed v39 manifest target.",
+        help="Validate the fixed immutable v39 manifest without writing it.",
+    )
+    action.add_argument(
+        "--print-v40",
+        action="store_true",
+        help="Print the exact verified immutable v40 manifest bytes.",
+    )
+    action.add_argument(
+        "--write-v40",
+        action="store_true",
+        help="Validate the fixed immutable v40 manifest without writing it.",
+    )
+    action.add_argument(
+        "--print-v41",
+        action="store_true",
+        help="Print the staged deterministic v41 candidate without writing it.",
+    )
+    action.add_argument(
+        "--write-v41",
+        action="store_true",
+        help="Exclusively create the staged v41 candidate, or verify it once pinned.",
     )
     args = parser.parse_args(argv)
     try:
@@ -4474,10 +5351,22 @@ def main(argv: list[str] | None = None) -> int:
             write_v38_manifest()
             return 0
         if args.print_v39:
-            _write_canonical_manifest_stdout(build_v39_candidate())
+            _write_verified_manifest_stdout("v39")
             return 0
         if args.write_v39:
             write_v39_manifest()
+            return 0
+        if args.print_v40:
+            _write_verified_manifest_stdout("v40")
+            return 0
+        if args.write_v40:
+            write_v40_manifest()
+            return 0
+        if args.print_v41:
+            _write_canonical_manifest_stdout(build_v41_candidate())
+            return 0
+        if args.write_v41:
+            write_v41_manifest()
             return 0
         result = verify_active_baseline()
     except (
@@ -4743,10 +5632,51 @@ except FileNotFoundError:
         PRODUCTION_RETRIEVAL_HASHES_V39 = dict(build_v39_candidate()["files"])
     except (BaselineCertificationError, FileNotFoundError):
         PRODUCTION_RETRIEVAL_HASHES_V39 = dict(PRODUCTION_RETRIEVAL_HASHES_V38)
-ACTIVE_PRODUCTION_RETRIEVAL_HASHES = PRODUCTION_RETRIEVAL_HASHES_V39
+def _load_verified_production_hashes(
+    version: str,
+    *,
+    project_root: Path = PROJECT_ROOT,
+) -> dict[str, str]:
+    """Load production hashes only from a fully pinned immutable authority."""
+    if version not in {"v40", "v41"}:
+        raise ValueError("unsupported active production baseline version")
+    root = Path(project_root).resolve()
+    try:
+        _verified_immutable_manifest_path(version, project_root=root)
+        if version == "v41" and not verify_v41_release_join_receipt(
+            project_root=root
+        )["matches"]:
+            return {}
+        return dict(load_baseline_manifest(version, project_root=root)["files"])
+    except (
+        BaselineCertificationError,
+        FileNotFoundError,
+        json.JSONDecodeError,
+        OSError,
+        UnicodeError,
+    ):
+        return {}
+
+
+def select_active_production_hashes(
+    version: str,
+    *,
+    project_root: Path = PROJECT_ROOT,
+) -> dict[str, str]:
+    """Select a release authority; v41 always requires its pinned receipt."""
+    return _load_verified_production_hashes(version, project_root=project_root)
+
+
+PRODUCTION_RETRIEVAL_HASHES_V40 = _load_verified_production_hashes("v40")
+PRODUCTION_RETRIEVAL_HASHES_V41 = _load_verified_production_hashes("v41")
+ACTIVE_PRODUCTION_RETRIEVAL_HASHES = select_active_production_hashes(
+    ACTIVE_BASELINE_VERSION
+)
 
 
 __all__ = [
+    "ACTIVE_BASELINE_VERSION",
+    "ACTIVE_PRODUCTION_RETRIEVAL_HASHES",
     "BASELINE_V1_ID",
     "BASELINE_V2_ID",
     "BASELINE_V3_ID",
@@ -4757,20 +5687,6 @@ __all__ = [
     "BASELINE_V8_ID",
     "BASELINE_V9_ID",
     "BASELINE_V10_ID",
-    "BASELINE_V26_ID",
-    "BASELINE_V27_ID",
-    "BASELINE_V28_ID",
-    "BASELINE_V29_ID",
-    "BASELINE_V30_ID",
-    "BASELINE_V31_ID",
-    "BASELINE_V32_ID",
-    "BASELINE_V33_ID",
-    "BASELINE_V34_ID",
-    "BASELINE_V35_ID",
-    "BASELINE_V36_ID",
-    "BASELINE_V37_ID",
-    "BASELINE_V38_ID",
-    "BASELINE_V39_ID",
     "BASELINE_V11_ID",
     "BASELINE_V12_ID",
     "BASELINE_V13_ID",
@@ -4786,12 +5702,24 @@ __all__ = [
     "BASELINE_V23_ID",
     "BASELINE_V24_ID",
     "BASELINE_V25_ID",
-    "ACTIVE_PRODUCTION_RETRIEVAL_HASHES",
-    "BaselineCertificationError",
+    "BASELINE_V26_ID",
+    "BASELINE_V27_ID",
+    "BASELINE_V28_ID",
+    "BASELINE_V29_ID",
+    "BASELINE_V30_ID",
+    "BASELINE_V31_ID",
+    "BASELINE_V32_ID",
+    "BASELINE_V33_ID",
+    "BASELINE_V34_ID",
+    "BASELINE_V35_ID",
+    "BASELINE_V36_ID",
+    "BASELINE_V37_ID",
+    "BASELINE_V38_ID",
+    "BASELINE_V39_ID",
+    "BASELINE_V40_ID",
+    "BASELINE_V41_ID",
     "EXPECTED_ADDED_FILES",
     "EXPECTED_CHANGED_FILES",
-    "EXPECTED_V39_ADDED_FILES",
-    "EXPECTED_V39_CHANGED_FILES",
     "EXPECTED_V1_FILES",
     "EXPECTED_V3_CHANGED_FILES",
     "EXPECTED_V4_ADDED_FILES",
@@ -4857,7 +5785,14 @@ __all__ = [
     "EXPECTED_V37_CHANGED_FILES",
     "EXPECTED_V38_ADDED_FILES",
     "EXPECTED_V38_CHANGED_FILES",
+    "EXPECTED_V39_ADDED_FILES",
+    "EXPECTED_V39_CHANGED_FILES",
+    "EXPECTED_V40_ADDED_FILES",
+    "EXPECTED_V40_CHANGED_FILES",
+    "EXPECTED_V41_ADDED_FILES",
+    "EXPECTED_V41_CHANGED_FILES",
     "PINNED_MANIFEST_SHA256",
+    "PINNED_RELEASE_JOIN_SHA256",
     "PRODUCTION_RETRIEVAL_HASHES_V1",
     "PRODUCTION_RETRIEVAL_HASHES_V2",
     "PRODUCTION_RETRIEVAL_HASHES_V3",
@@ -4897,6 +5832,17 @@ __all__ = [
     "PRODUCTION_RETRIEVAL_HASHES_V37",
     "PRODUCTION_RETRIEVAL_HASHES_V38",
     "PRODUCTION_RETRIEVAL_HASHES_V39",
+    "PRODUCTION_RETRIEVAL_HASHES_V40",
+    "PRODUCTION_RETRIEVAL_HASHES_V41",
+    "RELEASE_JOIN_SCHEMA_VERSION",
+    "V40_ADDED_FILE_REASONS",
+    "V40_CHANGED_FILE_REASONS",
+    "V41_ADDED_FILE_REASONS",
+    "V41_CHANGED_FILE_REASONS",
+    "V41_RELEASE_JOIN_COMPONENT_PATHS",
+    "V41_RELEASE_JOIN_RECEIPT_PATH",
+    "V41_REQUIRED_HYBRID_CLOSURE_FILES",
+    "BaselineCertificationError",
     "build_v2_candidate",
     "build_v3_candidate",
     "build_v4_candidate",
@@ -4935,13 +5881,20 @@ __all__ = [
     "build_v37_candidate",
     "build_v38_candidate",
     "build_v39_candidate",
+    "build_v40_candidate",
+    "build_v41_candidate",
+    "build_v41_release_join",
+    "build_v41_release_join_from_files",
     "canonical_manifest_text",
     "compare_baselines",
     "load_baseline_manifest",
+    "select_active_production_hashes",
     "sha256_file",
     "validate_manifest",
+    "validate_v41_release_join",
     "verify_active_baseline",
     "verify_manifest_version",
+    "verify_v41_release_join_receipt",
     "write_v2_manifest",
     "write_v3_manifest",
     "write_v4_manifest",
@@ -4980,6 +5933,9 @@ __all__ = [
     "write_v37_manifest",
     "write_v38_manifest",
     "write_v39_manifest",
+    "write_v40_manifest",
+    "write_v41_manifest",
+    "write_v41_release_join_receipt",
 ]
 
 

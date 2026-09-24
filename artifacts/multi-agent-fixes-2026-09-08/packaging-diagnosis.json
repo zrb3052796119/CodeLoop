@@ -1,0 +1,123 @@
+{
+  "conclusion": "Pre-existing smoke instrumentation defect; unrelated to this multi-agent change.",
+  "failed_test": "tests/test_packaging.py::test_dashboard_assets_load_from_an_installed_wheel",
+  "failure_site": "tests/test_packaging.py:1786 / generated installed-wheel-smoke.py:1613",
+  "original_target": "/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-871/test_dashboard_assets_load_fro0/workspace/installed-absolute-allow.txt",
+  "original_target_content": "installed-absolute-safe\n",
+  "original_target_size": 24,
+  "cause": "Counter patches Path.write_text, while actual production writer uses os.fdopen.write + os.fsync + os.replace. Approved content is present and counter misses the write.",
+  "path_alias_excluded": "Probe normalized both paths and observed os.replace destination equal to counter target in all three production roots.",
+  "scope": "No production/test/fixture/baseline edits. No rerun of HTTP smoke. Same small real tool execution reproduced counter miss against installed/current/pre-fix production packages.",
+  "source_sha256": {
+    "minicode/file_review.py": {
+      "current": "6f65cf8250c4bb02a32b258aa215b5c6d34184ebb0f1a3c4b764f88566b6c324",
+      "old": "6f65cf8250c4bb02a32b258aa215b5c6d34184ebb0f1a3c4b764f88566b6c324",
+      "installed": "6f65cf8250c4bb02a32b258aa215b5c6d34184ebb0f1a3c4b764f88566b6c324",
+      "pre_fix_manifest": "6f65cf8250c4bb02a32b258aa215b5c6d34184ebb0f1a3c4b764f88566b6c324"
+    },
+    "minicode/tools/write_file.py": {
+      "current": "f4f810fa21f39377a209327cc40b5396a08b183f2aae6492a35fc0168638adbf",
+      "old": "f4f810fa21f39377a209327cc40b5396a08b183f2aae6492a35fc0168638adbf",
+      "installed": "f4f810fa21f39377a209327cc40b5396a08b183f2aae6492a35fc0168638adbf",
+      "pre_fix_manifest": "f4f810fa21f39377a209327cc40b5396a08b183f2aae6492a35fc0168638adbf"
+    },
+    "minicode/permissions.py": {
+      "current": "b447453f68999ea2698a377fefa4788354762d95531f89fbb025e790118299eb",
+      "old": "b447453f68999ea2698a377fefa4788354762d95531f89fbb025e790118299eb",
+      "installed": "b447453f68999ea2698a377fefa4788354762d95531f89fbb025e790118299eb",
+      "pre_fix_manifest": "b447453f68999ea2698a377fefa4788354762d95531f89fbb025e790118299eb"
+    },
+    "minicode/workspace.py": {
+      "current": "f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4",
+      "old": "f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4",
+      "installed": "f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4",
+      "pre_fix_manifest": "f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4"
+    },
+    "minicode/tooling.py": {
+      "current": "14a96c35afce59923f19229e2c6dca089cf6d06534f020c2ce0da6c3bb84fa87",
+      "old": "f05490381ddf143773d14c662df36662682d443b3090a7e4989e46c833ae76ae",
+      "installed": "14a96c35afce59923f19229e2c6dca089cf6d06534f020c2ce0da6c3bb84fa87",
+      "pre_fix_manifest": "f05490381ddf143773d14c662df36662682d443b3090a7e4989e46c833ae76ae"
+    }
+  },
+  "probes": {
+    "current": {
+      "production_root": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main",
+      "loaded_modules": {
+        "file_review": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/minicode/file_review.py",
+        "tooling": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/minicode/tooling.py",
+        "permissions": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/minicode/permissions.py"
+      },
+      "file_review_sha256": "6f65cf8250c4bb02a32b258aa215b5c6d34184ebb0f1a3c4b764f88566b6c324",
+      "ok": true,
+      "output": "Applied reviewed changes to installed-absolute-allow.txt",
+      "prompt_count": 1,
+      "prompt_kinds": [
+        "edit"
+      ],
+      "target_content": "installed-absolute-safe\n",
+      "target_content_correct": true,
+      "path_write_text_calls": [],
+      "smoke_counter_assertion_would_pass": false,
+      "atomic_replacements": [
+        {
+          "source_is_same_directory_temp": true,
+          "source_content": "installed-absolute-safe\n",
+          "destination_exactly_matches_counter_target": true
+        }
+      ]
+    },
+    "old": {
+      "production_root": "/private/tmp/minicode-multi-agent-buggy-ahhcgrxd",
+      "loaded_modules": {
+        "file_review": "/private/tmp/minicode-multi-agent-buggy-ahhcgrxd/minicode/file_review.py",
+        "tooling": "/private/tmp/minicode-multi-agent-buggy-ahhcgrxd/minicode/tooling.py",
+        "permissions": "/private/tmp/minicode-multi-agent-buggy-ahhcgrxd/minicode/permissions.py"
+      },
+      "file_review_sha256": "6f65cf8250c4bb02a32b258aa215b5c6d34184ebb0f1a3c4b764f88566b6c324",
+      "ok": true,
+      "output": "Applied reviewed changes to installed-absolute-allow.txt",
+      "prompt_count": 1,
+      "prompt_kinds": [
+        "edit"
+      ],
+      "target_content": "installed-absolute-safe\n",
+      "target_content_correct": true,
+      "path_write_text_calls": [],
+      "smoke_counter_assertion_would_pass": false,
+      "atomic_replacements": [
+        {
+          "source_is_same_directory_temp": true,
+          "source_content": "installed-absolute-safe\n",
+          "destination_exactly_matches_counter_target": true
+        }
+      ]
+    },
+    "installed": {
+      "production_root": "/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-871/test_dashboard_assets_load_fro0/installed",
+      "loaded_modules": {
+        "file_review": "/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-871/test_dashboard_assets_load_fro0/installed/minicode/file_review.py",
+        "tooling": "/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-871/test_dashboard_assets_load_fro0/installed/minicode/tooling.py",
+        "permissions": "/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-871/test_dashboard_assets_load_fro0/installed/minicode/permissions.py"
+      },
+      "file_review_sha256": "6f65cf8250c4bb02a32b258aa215b5c6d34184ebb0f1a3c4b764f88566b6c324",
+      "ok": true,
+      "output": "Applied reviewed changes to installed-absolute-allow.txt",
+      "prompt_count": 1,
+      "prompt_kinds": [
+        "edit"
+      ],
+      "target_content": "installed-absolute-safe\n",
+      "target_content_correct": true,
+      "path_write_text_calls": [],
+      "smoke_counter_assertion_would_pass": false,
+      "atomic_replacements": [
+        {
+          "source_is_same_directory_temp": true,
+          "source_content": "installed-absolute-safe\n",
+          "destination_exactly_matches_counter_target": true
+        }
+      ]
+    }
+  }
+}

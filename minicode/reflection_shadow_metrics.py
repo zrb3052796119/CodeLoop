@@ -12,6 +12,7 @@ import tempfile
 import threading
 from collections import Counter
 from contextlib import contextmanager
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
@@ -25,6 +26,109 @@ _SECRET_VALUE_RE = re.compile(
 )
 _PATH_LOCKS: dict[str, threading.RLock] = {}
 _PATH_LOCKS_GUARD = threading.Lock()
+
+
+@dataclass(frozen=True)
+class RecoveryLessonShadowSummary:
+    """Content-free observations; never a candidate for memory persistence."""
+
+    task_identifier: str
+    eligible: bool = False
+    sampled: bool = False
+    sampled_out: bool = False
+    fallback_reason: str | None = None
+    episode_count: int = 0
+    verified_episode_count: int = 0
+    candidate_episode_count: int = 0
+    attempted_episode_count: int = 0
+    llm_called: int = 0
+    claim_count: int = 0
+    valid_claim_count: int = 0
+    persistable_claim_count: int = 0
+    observation_count: int = 0
+    failure_code_counts: dict[str, int] = field(default_factory=dict)
+    validator_issue_code_counts: dict[str, int] = field(default_factory=dict)
+    latency_ms: float | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    cache_read_tokens: int | None = None
+    cache_creation_tokens: int | None = None
+    usage_source_counts: dict[str, int] = field(default_factory=dict)
+    estimated_cost_usd: float | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+def _reason_code(value: Any) -> str:
+    code = str(value or "unknown")
+    return code if re.fullmatch(r"[a-z][a-z0-9_]{0,79}", code) else "unknown"
+
+
+def _nullable_sum(values: list[Any]) -> int | float | None:
+    """An unknown component makes the total unknown; zero calls cost zero."""
+    if any(
+        not isinstance(value, (int, float))
+        or isinstance(value, bool)
+        or not math.isfinite(value)
+        or value < 0
+        for value in values
+    ):
+        return None
+    return sum(values)
+
+
+def build_recovery_shadow_summary(
+    task_description: str,
+    episodes: list[Any],
+    result: Any | None = None,
+    *,
+    eligible: bool,
+    sampled: bool = False,
+    fallback_reason: str | None = None,
+) -> RecoveryLessonShadowSummary:
+    """Project only counts/codes/usage, never invocations, excerpts, or prose."""
+    outcomes = list(result.outcomes) if result is not None else []
+    called = [outcome for outcome in outcomes if outcome.model_called]
+    lessons = list(result.lessons) if result is not None else []
+    observations = list(result.observations) if result is not None else []
+    failures = Counter(
+        _reason_code(outcome.failure_code)
+        for outcome in outcomes if outcome.failure_code
+    )
+    issues = Counter(
+        _reason_code(code)
+        for outcome in outcomes for code in outcome.validation_issues
+    )
+    return RecoveryLessonShadowSummary(
+        task_identifier=reflection_task_identifier(task_description),
+        eligible=eligible,
+        sampled=sampled,
+        sampled_out=fallback_reason == "sampled_out",
+        fallback_reason=_reason_code(fallback_reason) if fallback_reason else None,
+        episode_count=len(episodes),
+        verified_episode_count=sum(item.causal_status == "verified" for item in episodes),
+        candidate_episode_count=sum(item.causal_status == "candidate" for item in episodes),
+        attempted_episode_count=sum(bool(item.attempted) for item in outcomes),
+        llm_called=len(called),
+        claim_count=sum(item.claim_count for item in outcomes),
+        valid_claim_count=len(lessons) + len(observations),
+        persistable_claim_count=len(lessons),
+        observation_count=len(observations),
+        failure_code_counts=dict(sorted(failures.items())),
+        validator_issue_code_counts=dict(sorted(issues.items())),
+        latency_ms=_nullable_sum([
+            getattr(item, "latency_ms", None) for item in outcomes if item.attempted
+        ]),
+        input_tokens=_nullable_sum([getattr(item, "input_tokens", None) for item in called]),
+        output_tokens=_nullable_sum([getattr(item, "output_tokens", None) for item in called]),
+        cache_read_tokens=_nullable_sum([getattr(item, "cache_read_tokens", None) for item in called]),
+        cache_creation_tokens=_nullable_sum([getattr(item, "cache_creation_tokens", None) for item in called]),
+        usage_source_counts=dict(Counter(
+            _reason_code(getattr(item, "usage_source", "unavailable")) for item in called
+        )),
+        estimated_cost_usd=_nullable_sum([getattr(item, "estimated_cost_usd", None) for item in called]),
+    )
 
 
 def reflection_task_identifier(task_description: str) -> str:
@@ -111,6 +215,50 @@ class ReflectionShadowMetricsRecorder:
         """Record one comparison; all I/O and validation failures are isolated."""
         try:
             record = self._build_record(comparison)
+        except Exception:
+            return False
+        return self._record_payload(record)
+
+    def record_recovery(self, summary: RecoveryLessonShadowSummary) -> bool:
+        """Record the independent episode branch through its own allowlist."""
+        try:
+            record = {
+                "schema_version": SCHEMA_VERSION,
+                "record_type": "recovery_lesson_shadow",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "task_identifier": _safe_task_hash(summary.task_identifier),
+                "model": self.model,
+                "provider": self.provider,
+                "mode": "llm_shadow",
+                "eligible": bool(summary.eligible),
+                "sampled": bool(summary.sampled),
+                "sampled_out": bool(summary.sampled_out),
+                "fallback_reason": _reason_code(summary.fallback_reason) if summary.fallback_reason else None,
+                **{
+                    key: max(0, int(getattr(summary, key)))
+                    for key in (
+                        "episode_count", "verified_episode_count", "candidate_episode_count",
+                        "attempted_episode_count", "llm_called", "claim_count",
+                        "valid_claim_count", "persistable_claim_count", "observation_count",
+                    )
+                },
+                **{
+                    key: {_reason_code(code): max(0, int(count)) for code, count in sorted(getattr(summary, key).items())[:32]}
+                    for key in ("failure_code_counts", "validator_issue_code_counts", "usage_source_counts")
+                },
+                "latency_ms": _optional_nonnegative_float(summary.latency_ms),
+                "input_tokens": _optional_nonnegative(summary.input_tokens),
+                "output_tokens": _optional_nonnegative(summary.output_tokens),
+                "cache_read_tokens": _optional_nonnegative(summary.cache_read_tokens),
+                "cache_creation_tokens": _optional_nonnegative(summary.cache_creation_tokens),
+                "estimated_cost_usd": _optional_nonnegative_float(summary.estimated_cost_usd),
+            }
+        except Exception:
+            return False
+        return self._record_payload(record)
+
+    def _record_payload(self, record: dict[str, Any]) -> bool:
+        try:
             encoded = json.dumps(
                 record,
                 ensure_ascii=True,
@@ -300,6 +448,8 @@ def load_shadow_metric_records(path: str | Path) -> list[dict[str, Any]]:
 
 
 def summarize_shadow_metrics(records: list[dict[str, Any]]) -> dict[str, Any]:
+    recovery_records = [item for item in records if item.get("record_type") == "recovery_lesson_shadow"]
+    records = [item for item in records if item.get("record_type") != "recovery_lesson_shadow"]
     count = len(records)
     eligible = sum(bool(item.get("eligible")) for item in records)
     sampled = sum(bool(item.get("sampled")) for item in records)
@@ -326,7 +476,7 @@ def summarize_shadow_metrics(records: list[dict[str, Any]]) -> dict[str, Any]:
             item.get("suppression_reason_code_counts") or {}
         ).items():
             suppression_reasons[str(code)] += int(reason_count)
-    return {
+    summary = {
         "record_count": count,
         "eligible_count": eligible,
         "sampled_count": sampled,
@@ -360,6 +510,18 @@ def summarize_shadow_metrics(records: list[dict[str, Any]]) -> dict[str, Any]:
         "usage_sources": dict(sorted(usage_sources.items())),
         "estimated_cost_usd": total_cost,
     }
+    if recovery_records:
+        summary["recovery_lesson_shadow"] = {
+            "record_count": len(recovery_records),
+            "call_count": sum(int(item.get("llm_called") or 0) for item in recovery_records),
+            "episode_count": sum(int(item.get("episode_count") or 0) for item in recovery_records),
+            "persistable_claim_count": sum(int(item.get("persistable_claim_count") or 0) for item in recovery_records),
+            "observation_count": sum(int(item.get("observation_count") or 0) for item in recovery_records),
+            "input_tokens": _nullable_sum([item.get("input_tokens") for item in recovery_records]),
+            "output_tokens": _nullable_sum([item.get("output_tokens") for item in recovery_records]),
+            "estimated_cost_usd": _nullable_sum([item.get("estimated_cost_usd") for item in recovery_records]),
+        }
+    return summary
 
 
 def _boolean_rate(records: list[dict[str, Any]], key: str) -> float:
@@ -375,6 +537,8 @@ def _percentile_nearest_rank(values: list[float], percentile: float) -> float:
 
 
 __all__ = [
+    "RecoveryLessonShadowSummary",
+    "build_recovery_shadow_summary",
     "ReflectionShadowMetricsRecorder",
     "deterministic_shadow_sample",
     "load_shadow_metric_records",

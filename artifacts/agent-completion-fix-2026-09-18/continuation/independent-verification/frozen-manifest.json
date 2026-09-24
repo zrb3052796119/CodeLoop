@@ -1,0 +1,21 @@
+{
+  "run_id": "run_b3bc7136802f466f99680ea79000d9ff",
+  "target": "/private/tmp/codeloop-completion-recheck-20260918",
+  "head": "638b7dd1f07c56b7fa864832f70cdcafc0cb3b0b",
+  "changed_files": {
+    "minicode/tools/test_runner.py": {
+      "sha256": "a87b98b17990487d38677d7c968c04f36de8bbaaf8051b3d6a5dcaa83726a28c",
+      "size": 14422
+    },
+    "tests/test_tools.py": {
+      "sha256": "5cda3a97ea5d9031c446204b242e350773109bf56942fedca46bffea081c4c74",
+      "size": 24067
+    }
+  },
+  "new_test_nodes": [
+    "tests/test_tools.py::test_test_runner_runs_every_discovered_file_beyond_ten",
+    "tests/test_tools.py::test_test_runner_reports_failure_in_file_beyond_ten",
+    "tests/test_tools.py::test_test_runner_never_reports_pass_when_output_reports_failures"
+  ],
+  "status_before": " M minicode/tools/test_runner.py\n M tests/test_tools.py\n?? .minicode-memory-authority.lock\n"
+}

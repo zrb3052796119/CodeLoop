@@ -1,0 +1,568 @@
+--- a/minicode/agent_loop.py
++++ b/minicode/agent_loop.py
+@@ -1976,6 +1976,8 @@
+     saw_tool_result = False
+     empty_response_retry_count = 0
+     recoverable_thinking_retry_count = 0
++    model_timeout_retry_count = 0
++    model_timeout_retry_pending = False
+     unfinished_action_retry_count = 0
+     tool_error_count = 0
+     recovery_guard = RecoveryGuard()
+@@ -2950,13 +2952,19 @@
+         })
+         return True
+ 
+-    def finish_bounded_completion(reason: str, closing_step_index: int) -> None:
++    def finish_bounded_completion(
++        reason: str,
++        closing_step_index: int,
++        *,
++        allow_model_summary: bool = True,
++    ) -> None:
+         nonlocal turn_outcome, authority_delivery_ready
+         assert completion_policy is not None
+         raise_if_cancelled(cancellation_token)
+         raise_if_deadline_exceeded()
+         landed = (
+-            closing_step_index <= completion_hard_limit
++            allow_model_summary
++            and closing_step_index <= completion_hard_limit
+             and _attempt_max_steps_soft_landing(
+                 prompt=completion_policy.closing_prompt(reason),
+                 closing_step_index=closing_step_index,
+@@ -3265,6 +3273,7 @@
+                 )
+                 raise_if_cancelled(cancellation_token)
+                 raise_if_deadline_exceeded()
++                model_timeout_retry_pending = False
+                 if abandoned_event is not None and abandoned_event.is_set():
+                     turn_outcome = "failed"
+                     tool_abandoned = True
+@@ -3290,7 +3299,8 @@
+                     if metrics_collector:
+                         metrics_collector.end_turn(total_tokens=0)
+                     finish_bounded_completion(
+-                        f"turn_budget_exceeded: {error.reason}", step
++                        f"turn_budget_exceeded: {error.reason}", step,
++                        allow_model_summary=not model_timeout_retry_pending,
+                     )
+                     return current_messages
+                 fallback = (
+@@ -3377,7 +3387,6 @@
+                     model_budget_reservation,
+                     charge_estimate=True,
+                 )
+-                raise_if_cancelled(cancellation_token)
+                 model_duration_ms = (
+                     _finish_model_observation_clock(model_started_at)
+                     if event_sink is not None
+@@ -3396,6 +3405,33 @@
+                             model_duration_ms,
+                         ),
+                     )
++                raise_if_cancelled(cancellation_token)
++                raise_if_deadline_exceeded()
++                if completion_policy is not None:
++                    model_timeout_retry_pending = True
++                    if metrics_collector:
++                        metrics_collector.end_turn(total_tokens=0)
++                    if (
++                        model_timeout_retry_count == 0
++                        and step < max_steps
++                        and recovery_guard.stop_decision() is None
++                    ):
++                        model_timeout_retry_count += 1
++                        logger.warning(
++                            "Model transport timed out; retrying once within turn limits"
++                        )
++                        # The failed response produced no tool batch. Re-enter
++                        # normal admission with the completed tools' messages
++                        # intact; never replay those tools or reset this quota.
++                        continue
++                    finish_bounded_completion(
++                        "model transport timeout; automatic retry unavailable or exhausted",
++                        step,
++                        # A failing provider must not receive a third request
++                        # merely to describe its second timeout.
++                        allow_model_summary=False,
++                    )
++                    return current_messages
+                 turn_outcome = "failed"
+                 fallback = f"Model API timeout: {error}"
+                 logger.error("Model API timeout: %s", error)
+@@ -5005,7 +5041,10 @@
+         # convert the partial survey into a marked partial summary instead of
+         # a discarded hard failure.
+         if completion_policy is not None:
+-            finish_bounded_completion("execution step limit reached", step + 1)
++            finish_bounded_completion(
++                "execution step limit reached", step + 1,
++                allow_model_summary=not model_timeout_retry_pending,
++            )
+             return current_messages
+         if max_steps_soft_landing and max_steps is not None:
+             if _attempt_max_steps_soft_landing():
+--- a/minicode/tools/git.py
++++ b/minicode/tools/git.py
+@@ -105,37 +105,42 @@
+         timeout=30,
+         env=_subprocess_environment(),
+     )
+-    return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
++    # Leading spaces are significant in status's XY columns and path offsets.
++    return proc.returncode, proc.stdout.rstrip("\r\n"), proc.stderr.strip()
+ 
+ 
+ def _run_status(cwd: str) -> ToolResult:
+-    rc, stdout, stderr = _run_git(["status", "--short"], cwd)
++    rc, stdout, stderr = _run_git(["status", "--porcelain=v1"], cwd)
+     if rc != 0:
+         return ToolResult(ok=False, output=f"Git status failed: {stderr}")
+ 
+     if not stdout:
+         return ToolResult(ok=True, output="Working tree clean. Nothing to commit.")
+ 
+-    # Count changes
+-    staged = sum(1 for line in stdout.split("\n") if line and line[0] != " ")
+-    unstaged = sum(1 for line in stdout.split("\n") if line and line[0] == " ")
++    entries = stdout.splitlines()
++    # X describes the index and Y the worktree; both may be changed at once.
++    # Untracked/ignored markers are not index or tracked-worktree changes.
++    tracked = [line for line in entries if line[:2] not in ("??", "!!")]
++    staged = sum(1 for line in tracked if line[0] != " ")
++    unstaged = sum(1 for line in tracked if line[1] != " ")
++    untracked = sum(1 for line in entries if line[:2] == "??")
+ 
+     lines = [
+         "Git Status:",
+         f"  Staged changes: {staged}",
+         f"  Unstaged changes: {unstaged}",
++        f"  Untracked files: {untracked}",
+         "",
+         "Files:",
+     ]
+ 
+-    for line in stdout.split("\n")[:30]:
+-        if line:
+-            status = line[:2].strip()
+-            file = line[3:]
+-            lines.append(f"  [{status}] {file}")
+-
+-    if stdout.count("\n") >= 30:
+-        lines.append(f"\n... and {stdout.count(chr(10)) - 29} more files")
++    for line in entries[:30]:
++        status = line[:2].strip()
++        file = line[3:]
++        lines.append(f"  [{status}] {file}")
++
++    if len(entries) > 30:
++        lines.append(f"\n... and {len(entries) - 30} more files")
+ 
+     return ToolResult(ok=True, output="\n".join(lines))
+ 
+--- /dev/null
++++ b/tests/test_primary_model_timeout_recovery.py
+@@ -0,0 +1,271 @@
++"""Primary-loop transport recovery preserves budgets, tools and evidence."""
++from __future__ import annotations
++
++import copy
++import time
++from types import SimpleNamespace
++
++import pytest
++
++import minicode.agent_loop as loop
++from minicode.agent_budget import AgentTurnBudget
++from minicode.agent_metrics import AgentMetricsCollector
++from minicode.model_call_control import ModelCallDeadlineExceeded
++from minicode.task_outcome import AgentOutcomeCapture
++from minicode.tooling import ToolDefinition, ToolRegistry, ToolResult
++from minicode.tools.write_file import write_file_tool
++from minicode.turn_cancellation import TurnCancellationRequested, TurnCancellationToken
++from minicode.types import AgentStep, ModelUsage
++from minicode.verification_observation import project_verification
++
++
++class RecordingSink:
++    def __init__(self):
++        self.events = []
++
++    def emit(self, event_type, *, step=None, payload=None):
++        self.events.append((event_type, step, payload))
++
++
++class Model:
++    def __init__(self, results, before_call=None):
++        self.results = results
++        self.calls = 0
++        self.inputs = []
++        self.controls = []
++        self.before_call = before_call
++
++    def next(self, messages, on_stream_chunk=None, cancellation_token=None, deadline_monotonic=None):
++        self.inputs.append(copy.deepcopy(messages))
++        self.controls.append((cancellation_token, deadline_monotonic))
++        self.calls += 1
++        if self.before_call:
++            self.before_call(self.calls, on_stream_chunk)
++        result = self.results[self.calls - 1]
++        if isinstance(result, BaseException):
++            raise result
++        return result
++
++
++def call(name, **inputs):
++    return AgentStep(type="tool_calls", calls=[{
++        "id": f"call-{name}", "toolName": name, "input": inputs,
++    }])
++
++
++def run(tmp_path, model, tools=None, **options):
++    return loop.run_agent_turn(
++        model=model, tools=tools or ToolRegistry([]), cwd=str(tmp_path),
++        messages=[{"role": "user", "content": "Fix the bug and report actual checks."}],
++        enable_work_chain=False,
++        enable_bounded_completion=options.pop("enable_bounded_completion", True),
++        max_steps=options.pop("max_steps", 20), **options,
++    )
++
++
++def test_transient_timeout_retries_with_fresh_budget_and_paired_events(tmp_path):
++    budget = AgentTurnBudget(max_total_tokens=100_000, max_model_calls=5)
++    snapshots = []
++    model = Model([
++        TimeoutError("transport open timed out"),
++        AgentStep(type="assistant", content="Here are the findings.", usage=ModelUsage(
++            input_tokens=20, output_tokens=4, source="provider",
++        )),
++    ], before_call=lambda *_: snapshots.append(budget.snapshot()))
++    sink = RecordingSink()
++    metrics = AgentMetricsCollector()
++    token = TurnCancellationToken("turn_" + "b" * 32)
++    deadline = time.monotonic() + 60
++    messages = run(tmp_path, model, agent_budget=budget, event_sink=sink,
++                   metrics_collector=metrics, cancellation_token=token,
++                   deadline_monotonic=deadline)
++
++    assert model.calls == 2
++    assert messages[-1]["content"] == "Here are the findings."
++    assert not messages[-1].get("_partial")
++    assert model.inputs[0] == model.inputs[1]
++    assert model.controls == [(token, deadline), (token, deadline)]
++    assert len(metrics._turns) == 2
++    assert metrics._current_turn is None
++    first_estimate = snapshots[0].reserved_total_tokens
++    assert first_estimate > 0
++    assert snapshots[1].used_total_tokens == first_estimate
++    assert snapshots[1].reserved_total_tokens == first_estimate
++    assert [s.used_model_calls for s in snapshots] == [1, 2]
++    assert budget.snapshot().used_total_tokens == first_estimate + 24
++    assert budget.snapshot().reserved_total_tokens == 0
++    lifecycle = [(name, step, payload) for name, step, payload in sink.events
++                 if name in {"model.started", "model.failed", "model.completed"}]
++    assert [item[0] for item in lifecycle] == [
++        "model.started", "model.failed", "model.started", "model.completed",
++    ]
++    assert lifecycle[0][2]["operationId"] == lifecycle[1][2]["operationId"]
++    assert lifecycle[2][2]["operationId"] == lifecycle[3][2]["operationId"]
++    assert lifecycle[0][2]["operationId"] != lifecycle[2][2]["operationId"]
++
++
++def test_repeated_timeout_retains_real_changes_and_checks_without_third_call(tmp_path):
++    checks = []
++
++    def verify(inputs, _context):
++        checks.append(inputs)
++        return ToolResult(ok=True, output="1 passed", verification=project_verification(
++            kind="tests", passed=True, source="run_command_exit",
++        ))
++
++    tools = ToolRegistry([write_file_tool, ToolDefinition(
++        name="run_command", description="verify", input_schema={"type": "object"},
++        validator=lambda value: value, run=verify,
++    )])
++    model = Model([
++        call("write_file", path="fixed.py", content="fixed = True\n"),
++        call("run_command", command="pytest", args=["tests/test_fix.py", "-q"]),
++        TimeoutError("private transport payload"), TimeoutError("private transport payload"),
++        AgentStep(type="assistant", content="This third provider call must not happen."),
++    ])
++    capture = AgentOutcomeCapture()
++    budget = AgentTurnBudget(max_model_calls=10, max_total_tokens=100_000)
++    sink = RecordingSink()
++    messages = run(tmp_path, model, tools, agent_budget=budget,
++                   outcome_capture=capture, event_sink=sink)
++
++    assert model.calls == 4
++    assert budget.snapshot().used_model_calls == 4
++    assert (tmp_path / "fixed.py").read_text() == "fixed = True\n"
++    assert len(checks) == 1
++    assert len([m for m in messages if m.get("role") == "tool_result"]) == 2
++    assert model.inputs[2] == model.inputs[3]
++    final = messages[-1]
++    assert final["_partial"] is True
++    assert "fixed.py" in final["content"]
++    assert "pytest tests/test_fix.py -q" in final["content"]
++    assert "passed" in final["content"]
++    assert "timeout" in final["content"].lower()
++    assert "private transport payload" not in final["content"]
++    assert capture.outcome.status == "unknown"
++    assert capture.outcome.goal_achieved is False
++    assert capture.outcome.verification_status == "verified"
++    limited = [payload for name, _, payload in sink.events
++               if name == "execution.completion_limited"]
++    assert limited[-1]["modelSummary"] is False
++
++
++def test_retry_allowance_is_not_reset_after_a_successful_model_step(tmp_path):
++    model = Model([
++        TimeoutError("first timeout"),
++        call("write_file", path="fixed.py", content="fixed\n"),
++        TimeoutError("later timeout"),
++        AgentStep(type="assistant", content="Must not retry twice."),
++    ])
++    messages = run(tmp_path, model, ToolRegistry([write_file_tool]))
++    assert model.calls == 3
++    assert messages[-1]["_partial"] is True
++    assert "fixed.py" in messages[-1]["content"]
++    assert len([m for m in messages if m.get("role") == "tool_result"]) == 1
++
++
++@pytest.mark.parametrize("limit_kind", ["calls", "tokens"])
++def test_retry_budget_refusal_uses_host_summary_without_spending_closing_call(tmp_path, limit_kind):
++    budget = AgentTurnBudget(max_total_tokens=100_000, max_model_calls=2 if limit_kind == "calls" else 5)
++
++    def constrain_tokens(*_args):
++        if limit_kind == "tokens":
++            budget.max_total_tokens = budget.snapshot().reserved_total_tokens
++
++    model = Model([TimeoutError("transport timeout")], before_call=constrain_tokens)
++    messages = run(tmp_path, model, agent_budget=budget)
++    assert model.calls == 1
++    assert budget.snapshot().used_model_calls == 1
++    assert budget.snapshot().used_total_tokens > 0
++    assert budget.snapshot().reserved_total_tokens == 0
++    assert messages[-1]["_partial"] is True
++    assert "budget" in messages[-1]["content"]
++
++
++def test_timeout_at_work_cap_uses_host_summary_without_a_closing_request(tmp_path):
++    model = Model([TimeoutError("transport timeout")])
++    messages = run(tmp_path, model, max_steps=2)
++    assert model.calls == 1
++    assert messages[-1]["_partial"] is True
++    assert "timeout" in messages[-1]["content"].lower()
++
++
++def test_cancellation_during_timeout_forbids_retry_and_keeps_terminal_event(tmp_path):
++    token = TurnCancellationToken("turn_" + "a" * 32)
++    sink = RecordingSink()
++    model = Model([TimeoutError("transport timeout")], before_call=lambda *_: token.request())
++    with pytest.raises(TurnCancellationRequested):
++        run(tmp_path, model, cancellation_token=token, event_sink=sink)
++    assert model.calls == 1
++    assert len([e for e in sink.events if e[0] == "model.started"]) == 1
++    assert len([e for e in sink.events if e[0] == "model.failed"]) == 1
++
++
++def test_deadline_expiring_during_timeout_forbids_retry_and_closing(tmp_path, monkeypatch):
++    now = time.monotonic()
++    logical_clock = [now]
++    monkeypatch.setattr(loop, "time", SimpleNamespace(
++        monotonic=lambda: logical_clock[0], perf_counter=time.perf_counter, time=time.time,
++    ))
++    model = Model([TimeoutError("transport timeout")], before_call=lambda *_: logical_clock.__setitem__(0, now + 61))
++    with pytest.raises(loop.AgentTurnDeadlineExceeded):
++        run(tmp_path, model, deadline_monotonic=now + 60)
++    assert model.calls == 1
++
++
++def test_caller_deadline_exception_is_not_a_retryable_transport_timeout(tmp_path):
++    model = Model([ModelCallDeadlineExceeded("caller deadline")])
++    with pytest.raises(loop.AgentTurnDeadlineExceeded):
++        run(tmp_path, model)
++    assert model.calls == 1
++
++
++def test_committed_receipt_is_preserved_without_reexecuting_its_tool(tmp_path):
++    executed = []
++    receipt = "immutable committed receipt"
++
++    def commit(inputs, _context):
++        executed.append(inputs)
++        return ToolResult(ok=True, output=receipt, _must_deliver=True, _continue_parent=True)
++
++    tools = ToolRegistry([ToolDefinition(
++        name="commit", description="committed workflow", input_schema={"type": "object"},
++        validator=lambda value: value, run=commit,
++    )])
++    model = Model([call("commit"), TimeoutError("transport timeout"), TimeoutError("transport timeout")])
++    messages = run(tmp_path, model, tools)
++    assert model.calls == 3
++    assert len(executed) == 1
++    assert any(m.get("role") == "tool_result" and m.get("content") == receipt for m in messages)
++    assert messages[-1]["_partial"] is True
++    assert "already committed" in messages[-1]["content"]
++    assert "incomplete" in messages[-1]["content"]
++
++
++def test_partial_stream_before_timeout_does_not_become_a_successful_final(tmp_path):
++    streamed = []
++
++    def stream_then_fail(_call, stream):
++        stream("Starting analysis")
++
++    model = Model([TimeoutError("transport timeout"), TimeoutError("transport timeout")], before_call=stream_then_fail)
++    capture = AgentOutcomeCapture()
++    messages = run(tmp_path, model, on_assistant_stream_chunk=streamed.append, outcome_capture=capture)
++    assert model.calls == 2
++    assert streamed == ["Starting analysis", "Starting analysis"]
++    assert messages[-1]["_partial"] is True
++    assert "Starting analysis" not in messages[-1]["content"]
++    assert capture.outcome.goal_achieved is False
++
++
++@pytest.mark.parametrize("options", [
++    {"enable_bounded_completion": False},
++    {"agent_depth": 1, "max_steps_soft_landing": True},
++])
++def test_legacy_and_subagent_timeout_behavior_is_unchanged(tmp_path, options):
++    model = Model([TimeoutError("transport timeout")])
++    capture = AgentOutcomeCapture()
++    messages = run(tmp_path, model, outcome_capture=capture, **options)
++    assert model.calls == 1
++    assert "Model API timeout" in messages[-1]["content"]
++    assert capture.outcome.status == "failed"
+--- /dev/null
++++ b/tests/test_git_status_regressions.py
+@@ -0,0 +1,128 @@
++"""Git status must report the real index/worktree state without losing paths."""
++
++from __future__ import annotations
++
++import os
++import subprocess
++from pathlib import Path
++
++import pytest
++
++from minicode.tooling import ToolContext
++from minicode.tools.git import git_tool
++
++
++def _git(repo: Path, *args: str) -> str:
++    return subprocess.run(
++        ["git", *args], cwd=repo, check=True, capture_output=True, text=True, timeout=10,
++    ).stdout
++
++
++@pytest.fixture
++def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
++    # Ensure fixture operations cannot inherit a caller's repository or index.
++    for name in tuple(os.environ):
++        if name.startswith("GIT_"):
++            monkeypatch.delenv(name)
++    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
++    monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
++    _git(tmp_path, "init", "-q", "--template=", "--initial-branch=main")
++    for name, value in {
++        "user.name": "Status regression fixture",
++        "user.email": "fixture@example.invalid",
++        "core.hooksPath": os.devnull,
++        "commit.gpgsign": "false",
++    }.items():
++        _git(tmp_path, "config", "--local", name, value)
++    for name in ("alpha.py", "bravo.py", "charlie.py"):
++        (tmp_path / name).write_text("original\n", encoding="utf-8")
++    _git(tmp_path, "add", ".")
++    _git(tmp_path, "commit", "-qm", "Create local test fixture")
++    return tmp_path
++
++
++def _status(repo: Path) -> str:
++    result = git_tool.run(
++        {"action": "status", "max_lines": 50},
++        ToolContext(cwd=str(repo), permissions=None),
++    )
++    assert result.ok, result.output
++    return result.output
++
++
++def test_first_unstaged_file_keeps_path_and_is_not_staged(repo: Path) -> None:
++    (repo / "alpha.py").write_text("changed\n", encoding="utf-8")
++
++    output = _status(repo)
++
++    assert "Staged changes: 0" in output
++    assert "Unstaged changes: 1" in output
++    assert "  [M] alpha.py" in output
++
++
++def test_untracked_file_does_not_count_as_staged(repo: Path) -> None:
++    (repo / "new.py").write_text("new\n", encoding="utf-8")
++
++    output = _status(repo)
++
++    assert "Staged changes: 0" in output
++    assert "Unstaged changes: 0" in output
++    assert "Untracked files: 1" in output
++    assert "  [??] new.py" in output
++
++
++def test_mixed_file_counts_index_and_worktree_changes(repo: Path) -> None:
++    (repo / "alpha.py").write_text("staged\n", encoding="utf-8")
++    _git(repo, "add", "alpha.py")
++    (repo / "alpha.py").write_text("staged plus unstaged\n", encoding="utf-8")
++
++    output = _status(repo)
++
++    assert "Staged changes: 1" in output
++    assert "Unstaged changes: 1" in output
++    assert "  [MM] alpha.py" in output
++
++
++def test_combined_status_counts_each_column_and_untracked_separately(repo: Path) -> None:
++    (repo / "alpha.py").write_text("unstaged\n", encoding="utf-8")
++    (repo / "bravo.py").write_text("staged\n", encoding="utf-8")
++    (repo / "charlie.py").write_text("staged\n", encoding="utf-8")
++    _git(repo, "add", "bravo.py", "charlie.py")
++    (repo / "charlie.py").write_text("staged plus unstaged\n", encoding="utf-8")
++    (repo / "delta.py").write_text("untracked\n", encoding="utf-8")
++
++    output = _status(repo)
++
++    assert "Staged changes: 2" in output
++    assert "Unstaged changes: 2" in output
++    assert "Untracked files: 1" in output
++    assert "  [M] alpha.py" in output
++    assert "  [M] bravo.py" in output
++    assert "  [MM] charlie.py" in output
++    assert "  [??] delta.py" in output
++
++
++def test_staged_rename_with_unstaged_edit_counts_both_columns(repo: Path) -> None:
++    _git(repo, "mv", "alpha.py", "renamed.py")
++    (repo / "renamed.py").write_text("original\nnew line\n", encoding="utf-8")
++
++    output = _status(repo)
++
++    assert "Staged changes: 1" in output
++    assert "Unstaged changes: 1" in output
++    assert "  [RM] alpha.py -> renamed.py" in output
++
++
++def test_staged_only_file_has_no_unstaged_changes(repo: Path) -> None:
++    (repo / "alpha.py").write_text("staged\n", encoding="utf-8")
++    _git(repo, "add", "alpha.py")
++
++    output = _status(repo)
++
++    assert "Staged changes: 1" in output
++    assert "Unstaged changes: 0" in output
++    assert "  [M] alpha.py" in output
++
++
++def test_clean_repository_remains_clean(repo: Path) -> None:
++    assert _status(repo) == "Working tree clean. Nothing to commit."

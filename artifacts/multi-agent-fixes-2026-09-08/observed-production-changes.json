@@ -1,0 +1,18 @@
+[
+  "minicode/subagent_worker.py",
+  "minicode/config.py",
+  "minicode/agent_runtime.py",
+  "minicode/agent_loop.py",
+  "minicode/skill_routing_turn.py",
+  "minicode/skill_router.py",
+  "minicode/workflow_scope_registry.py",
+  "minicode/workflow_workspace.py",
+  "minicode/tooling.py",
+  "minicode/workflow_runner.py",
+  "minicode/prompt.py",
+  "minicode/main.py",
+  "minicode/scheduler_trace.py",
+  "minicode/workflow_finalization.py",
+  "minicode/tools/task.py",
+  "minicode/tui/input_handler.py"
+]

@@ -4,8 +4,11 @@
     {
       "name": "minicode-dashboard",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "minicode.gateway"],
-      "port": 8080
+      "runtimeArgs": [
+        "-c",
+        "import os, runpy; os.environ['MINI_CODE_GATEWAY_PORT'] = '8092'; runpy.run_module('minicode.gateway', run_name='__main__')"
+      ],
+      "port": 8092
     }
   ]
 }

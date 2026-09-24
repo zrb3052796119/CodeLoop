@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from minicode.capability_registry import get_registry
+from collections.abc import Callable
+
+from minicode.capability_registry import CapabilityRegistry
 from minicode.skill_authoring import format_skill_proposal, propose_skill
 from minicode.tooling import ToolCapability, ToolDefinition, ToolMetadata, ToolResult
 
@@ -42,9 +44,17 @@ def _optional_string_list(input_data: dict, key: str) -> list[str]:
     return result
 
 
-def create_propose_skill_tool(cwd: str) -> ToolDefinition:
+def create_propose_skill_tool(
+    cwd: str,
+    *,
+    capability_registry_provider: Callable[[], CapabilityRegistry],
+) -> ToolDefinition:
+    if not callable(capability_registry_provider):
+        raise TypeError("capability_registry_provider must be callable")
+
     def _run(input_data: dict, _context) -> ToolResult:
-        proposal = propose_skill(cwd, input_data, get_registry())
+        registry = capability_registry_provider()
+        proposal = propose_skill(cwd, input_data, registry)
         return ToolResult(ok=True, output=format_skill_proposal(proposal))
 
     return ToolDefinition(

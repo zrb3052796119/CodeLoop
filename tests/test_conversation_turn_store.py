@@ -44,17 +44,59 @@ def _fingerprint(store: ConversationTurnStore, message: str = "safe request") ->
     )
 
 
+def _complete_turn(
+    store: ConversationTurnStore,
+    turn_id: str,
+    *,
+    session_id: str = "session_01",
+    run_id: str = "run_" + "b" * 32,
+) -> None:
+    store.claim(turn_id=turn_id, fingerprint=_fingerprint(store, turn_id))
+    store.mark_running(turn_id)
+    store.attach_session(
+        turn_id,
+        session_id=session_id,
+        created_session=True,
+    )
+    store.attach_run(turn_id, run_id=run_id)
+    store.begin_commit(turn_id)
+    store.mark_completed(
+        turn_id,
+        commit_marker={
+            "schemaVersion": 1,
+            "userMessageIndex": 1,
+            "assistantMessageIndex": 2,
+        },
+    )
+
+
 def test_windows_turn_write_does_not_require_fchmod(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store = _store(tmp_path)
+    temporary_descriptors: set[int] = set()
+    real_mkstemp = turn_store_module.tempfile.mkstemp
+    real_fchmod = turn_store_module.os.fchmod
 
-    def fail_fchmod(*_args) -> None:
-        raise AssertionError("fchmod called")
+    def tracked_mkstemp(*args, **kwargs):
+        descriptor, path = real_mkstemp(*args, **kwargs)
+        temporary_descriptors.add(descriptor)
+        return descriptor, path
+
+    def reject_turn_temporary_fchmod(descriptor: int, mode: int) -> None:
+        if descriptor in temporary_descriptors:
+            raise AssertionError("Turn temporary descriptor used fchmod")
+        real_fchmod(descriptor, mode)
 
     monkeypatch.setattr(turn_store_module, "_platform_name", lambda: "nt")
-    monkeypatch.setattr(turn_store_module.os, "fchmod", fail_fchmod, raising=False)
+    monkeypatch.setattr(turn_store_module.tempfile, "mkstemp", tracked_mkstemp)
+    monkeypatch.setattr(
+        turn_store_module.os,
+        "fchmod",
+        reject_turn_temporary_fchmod,
+        raising=False,
+    )
 
     claim = store.claim(turn_id=TURN_ID, fingerprint=_fingerprint(store))
 
@@ -152,7 +194,57 @@ def test_claim_transition_and_record_never_persist_content_or_paths(tmp_path: Pa
         "errorCode",
         "commitMarker",
         "ownerId",
+        "curatorOutboxVersion",
+        "curatorReceiptRecorded",
+        "curatorReceiptSettled",
     }
+
+
+def test_committed_curator_receipt_ack_is_durable_idempotent_and_legacy_safe(
+    tmp_path: Path,
+) -> None:
+    store = _store(tmp_path)
+    fingerprint = _fingerprint(store)
+    store.claim(turn_id=TURN_ID, fingerprint=fingerprint)
+    store.mark_running(TURN_ID)
+    store.attach_session(TURN_ID, session_id="session_01", created_session=True)
+    store.attach_run(TURN_ID, run_id="run_" + "b" * 32)
+    store.begin_commit(TURN_ID)
+
+    acknowledged = store.mark_curator_receipt_recorded(TURN_ID)
+    assert acknowledged.curator_receipt_recorded is True
+    assert acknowledged.curator_receipt_settled is False
+    assert store.mark_curator_receipt_recorded(TURN_ID) == acknowledged
+    settled = store.mark_curator_receipt_settled(TURN_ID)
+    assert settled.curator_receipt_settled is True
+    completed = store.mark_completed(
+        TURN_ID,
+        commit_marker={
+            "schemaVersion": 1,
+            "userMessageIndex": 1,
+            "assistantMessageIndex": 2,
+        },
+    )
+    assert completed.curator_receipt_recorded is True
+
+    path = store.record_path(TURN_ID)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload.pop("curatorOutboxVersion")
+    payload.pop("curatorReceiptSettled")
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    legacy = store.get(TURN_ID)
+    assert legacy is not None
+    assert legacy.curator_outbox_version == 1
+    assert legacy.curator_receipt_recorded is True
+    assert legacy.curator_receipt_settled is True
+
+    payload["curatorReceiptRecorded"] = False
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    restarted = _store(tmp_path, owner="2" * 32)
+    replay_ack = restarted.mark_curator_receipt_recorded(TURN_ID)
+    assert replay_ack.curator_receipt_recorded is True
+    assert replay_ack.curator_receipt_settled is False
+    assert replay_ack.owner_id == "2" * 32
 
 
 def test_duplicate_claim_distinguishes_same_live_stale_terminal_and_conflict(
@@ -170,10 +262,32 @@ def test_duplicate_claim_distinguishes_same_live_stale_terminal_and_conflict(
     ).disposition == "conflict"
 
     restarted = _store(tmp_path, owner="2" * 32)
+    assert restarted.claim(turn_id=TURN_ID, fingerprint=fingerprint).disposition == "in_progress"
+
+    # Releasing the execution lease models the old Gateway process exiting.
+    store.release_claim(TURN_ID)
     assert restarted.claim(turn_id=TURN_ID, fingerprint=fingerprint).disposition == "recover"
     interrupted = restarted.mark_interrupted(TURN_ID)
     assert interrupted.status == "interrupted"
     assert restarted.claim(turn_id=TURN_ID, fingerprint=fingerprint).disposition == "terminal"
+
+
+def test_reused_owner_id_cannot_transition_without_the_execution_lease(
+    tmp_path: Path,
+) -> None:
+    owner = "1" * 32
+    first = _store(tmp_path, owner=owner)
+    assert first.claim(
+        turn_id=TURN_ID,
+        fingerprint=_fingerprint(first),
+    ).disposition == "claimed"
+    impostor = _store(tmp_path, owner=owner)
+
+    with pytest.raises(TurnStoreError, match="turn store unavailable"):
+        impostor.mark_running(TURN_ID)
+
+    assert first.mark_running(TURN_ID).execution_started is True
+    first.release_claim(TURN_ID)
 
 
 @pytest.mark.parametrize(
@@ -241,6 +355,39 @@ def test_state_machine_forbids_terminal_to_running(tmp_path: Path) -> None:
 
     with pytest.raises(TurnStoreError):
         store.mark_running(TURN_ID)
+
+
+@pytest.mark.parametrize("transition", ["failed", "interrupted"])
+def test_unsettled_recorded_commit_rejects_terminalization_without_mutation(
+    tmp_path: Path,
+    transition: str,
+) -> None:
+    """A scheduler pin must be released before leaving committing."""
+
+    store = _store(tmp_path)
+    store.claim(turn_id=TURN_ID, fingerprint=_fingerprint(store))
+    store.mark_running(TURN_ID)
+    store.attach_session(
+        TURN_ID,
+        session_id="session_pinned",
+        created_session=True,
+    )
+    store.attach_run(TURN_ID, run_id="run_" + "c" * 32)
+    store.begin_commit(TURN_ID)
+    before_record = store.mark_curator_receipt_recorded(TURN_ID)
+    before_bytes = store.record_path(TURN_ID).read_bytes()
+
+    with pytest.raises(TurnStoreError, match="invalid turn transition"):
+        if transition == "failed":
+            store.mark_failed(TURN_ID, error_code="turn_failed")
+        else:
+            store.mark_interrupted(TURN_ID)
+
+    assert store.record_path(TURN_ID).read_bytes() == before_bytes
+    assert store.get(TURN_ID) == before_record
+    assert before_record.status == "committing"
+    assert before_record.curator_receipt_recorded is True
+    assert before_record.curator_receipt_settled is False
 
 
 def test_running_cancel_wins_before_commit_and_is_idempotent(tmp_path: Path) -> None:
@@ -367,6 +514,56 @@ def test_retention_removes_only_old_terminal_records_and_stale_temps(
     assert not stale_temp.exists()
 
 
+def test_retention_preserves_deliverable_unacked_turn_but_not_missing_run_identity(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    current = [datetime(2026, 7, 1, tzinfo=timezone.utc)]
+    store = ConversationTurnStore(
+        workspace,
+        data_dir=tmp_path / "home" / ".mini-code",
+        owner_id="1" * 32,
+        clock=lambda: current[0],
+        max_records=1,
+        scan_limit=20,
+        terminal_max_age=timedelta(days=1),
+    )
+
+    def complete(turn_id: str, *, run_id: str | None) -> None:
+        store.claim(turn_id=turn_id, fingerprint=_fingerprint(store, turn_id))
+        store.mark_running(turn_id)
+        store.attach_session(turn_id, session_id="session_01", created_session=True)
+        store.attach_run(turn_id, run_id=run_id)
+        store.begin_commit(turn_id)
+        store.mark_completed(
+            turn_id,
+            commit_marker={
+                "schemaVersion": 1,
+                "userMessageIndex": 1,
+                "assistantMessageIndex": 2,
+            },
+        )
+
+    pending_id = "turn_" + "1" * 32
+    no_run_id = "turn_" + "2" * 32
+    complete(pending_id, run_id="run_" + "a" * 32)
+    complete(no_run_id, run_id=None)
+    current[0] += timedelta(days=2)
+    current_id = "turn_" + "3" * 32
+    store.claim(turn_id=current_id, fingerprint=_fingerprint(store, current_id))
+
+    assert store.get(pending_id) is not None
+    assert store.get(no_run_id) is None
+    assert store.get(current_id) is not None
+
+    store.mark_curator_receipt_recorded(pending_id)
+    store.mark_curator_receipt_settled(pending_id)
+    another_id = "turn_" + "4" * 32
+    store.claim(turn_id=another_id, fingerprint=_fingerprint(store, another_id))
+    assert store.get(pending_id) is None
+
+
 def test_symlinked_turn_root_is_rejected_without_writing_outside(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
@@ -385,3 +582,138 @@ def test_symlinked_turn_root_is_rejected_without_writing_outside(tmp_path: Path)
     with pytest.raises(TurnStoreError):
         store.claim(turn_id=TURN_ID, fingerprint=_fingerprint(store))
     assert list(outside.iterdir()) == []
+
+
+def test_legacy_completed_turn_without_outbox_capability_is_not_recovered(
+    tmp_path: Path,
+) -> None:
+    store = _store(tmp_path)
+    _complete_turn(store, TURN_ID)
+    path = store.record_path(TURN_ID)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload.pop("curatorOutboxVersion")
+    payload.pop("curatorReceiptRecorded")
+    payload.pop("curatorReceiptSettled")
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    restarted = _store(tmp_path, owner="2" * 32)
+    legacy = restarted.get(TURN_ID)
+    assert legacy is not None
+    assert legacy.curator_outbox_version is None
+    scan = restarted.curator_receipt_recovery_records()
+    assert scan.items == ()
+    assert scan.exhaustive is True
+    assert scan.diagnostics == ()
+
+
+def test_corrupt_turn_does_not_block_recovery_of_a_healthy_receipt(
+    tmp_path: Path,
+) -> None:
+    store = _store(tmp_path)
+    healthy_id = "turn_" + "1" * 32
+    corrupt_id = "turn_" + "2" * 32
+    _complete_turn(store, healthy_id, run_id="run_" + "1" * 32)
+    store.record_path(corrupt_id).write_text("{malformed", encoding="utf-8")
+
+    scan = store.curator_receipt_recovery_records()
+    assert tuple(record.turn_id for record in scan.items) == (healthy_id,)
+    assert scan.exhaustive is False
+    assert scan.diagnostics == ("turn_record_invalid",)
+
+
+def test_recorded_release_receipts_sort_before_undelivered_receipts(
+    tmp_path: Path,
+) -> None:
+    store = _store(tmp_path)
+    pending_id = "turn_" + "0" * 32
+    release_id = "turn_" + "f" * 32
+    _complete_turn(store, pending_id, run_id="run_" + "0" * 32)
+    _complete_turn(store, release_id, run_id="run_" + "f" * 32)
+    store.mark_curator_receipt_recorded(release_id)
+
+    scan = store.curator_receipt_recovery_records()
+    assert tuple(record.turn_id for record in scan.items) == (
+        release_id,
+        pending_id,
+    )
+    assert scan.items[0].curator_receipt_recorded is True
+    assert scan.items[1].curator_receipt_recorded is False
+
+
+def test_settled_committing_turn_remains_available_for_session_recovery(
+    tmp_path: Path,
+) -> None:
+    store = _store(tmp_path)
+    run_id = "run_" + "c" * 32
+    store.claim(turn_id=TURN_ID, fingerprint=_fingerprint(store))
+    store.mark_running(TURN_ID)
+    store.attach_session(
+        TURN_ID,
+        session_id="session_committed",
+        created_session=True,
+    )
+    store.attach_run(TURN_ID, run_id=run_id)
+    store.begin_commit(TURN_ID)
+    store.mark_curator_receipt_recorded(TURN_ID)
+    store.mark_curator_receipt_settled(TURN_ID)
+    store.release_claim(TURN_ID)
+
+    # The shared outbox reconciler has no more work, but Conversation still
+    # needs the record to project an authoritative Session commit to the Turn.
+    assert store.curator_receipt_recovery_records().items == ()
+    content_scan = store.curator_receipt_recovery_records(
+        include_settled_committing=True,
+    )
+    assert tuple(record.turn_id for record in content_scan.items) == (TURN_ID,)
+    assert content_scan.items[0].status == "committing"
+    assert content_scan.items[0].curator_receipt_settled is True
+
+
+def test_live_lease_artifacts_do_not_consume_turn_scan_budget(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    store = ConversationTurnStore(
+        workspace,
+        data_dir=tmp_path / "home" / ".mini-code",
+        owner_id="1" * 32,
+        clock=_clock,
+        max_records=2,
+        scan_limit=2,
+    )
+    live_id = "turn_" + "1" * 32
+    completed_id = "turn_" + "2" * 32
+    assert store.claim(
+        turn_id=live_id,
+        fingerprint=_fingerprint(store, "live"),
+    ).disposition == "claimed"
+    store.mark_running(live_id)
+    _complete_turn(store, completed_id, run_id="run_" + "2" * 32)
+
+    scan = store.curator_receipt_recovery_records()
+
+    assert tuple(record.turn_id for record in scan.items) == (completed_id,)
+    assert scan.exhaustive is True
+    store.release_claim(live_id)
+
+
+def test_unsettled_completed_turn_blocks_explicit_session_deletion(
+    tmp_path: Path,
+) -> None:
+    store = _store(tmp_path)
+    _complete_turn(store, TURN_ID, session_id="session_delete")
+
+    with pytest.raises(TurnStoreError, match="deletion unavailable"):
+        store.delete_terminal_for_session("session_delete")
+    assert store.get(TURN_ID) is not None
+
+    recorded = store.mark_curator_receipt_recorded(TURN_ID)
+    assert recorded.curator_receipt_settled is False
+    with pytest.raises(TurnStoreError, match="deletion unavailable"):
+        store.delete_terminal_for_session("session_delete")
+    assert store.get(TURN_ID) is not None
+
+    store.mark_curator_receipt_settled(TURN_ID)
+    assert store.delete_terminal_for_session("session_delete") == 1
+    assert store.get(TURN_ID) is None

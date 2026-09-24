@@ -719,12 +719,15 @@ def test_sensitive_real_command_never_starts_subprocess(
     manager = PermissionManager(str(workspace), prompt=session.prompt)
     calls: list[object] = []
 
-    def fake_run(*args, **kwargs):
+    def fake_run_with_pipes(*args, **kwargs):
         calls.append((args, kwargs))
-        return SimpleNamespace(stdout="ok", stderr="", returncode=0)
+        return 0, "ok"
 
     monkeypatch.setattr("minicode.tools.run_command.sys.platform", "win32")
-    monkeypatch.setattr("minicode.tools.run_command.subprocess.run", fake_run)
+    monkeypatch.setattr(
+        "minicode.tools.run_command._run_with_pipes",
+        fake_run_with_pipes,
+    )
     marker = f"sensitive-{terminal}-marker"
     outcome: dict[str, object] = {}
 
@@ -1064,12 +1067,15 @@ def test_real_dangerous_command_starts_only_after_allow(
     manager = PermissionManager(str(workspace), prompt=session.prompt)
     calls: list[object] = []
 
-    def fake_run(*args, **kwargs):
+    def fake_run_with_pipes(*args, **kwargs):
         calls.append((args, kwargs))
-        return SimpleNamespace(stdout="ok", stderr="", returncode=0)
+        return 0, "ok"
 
     monkeypatch.setattr("minicode.tools.run_command.sys.platform", "win32")
-    monkeypatch.setattr("minicode.tools.run_command.subprocess.run", fake_run)
+    monkeypatch.setattr(
+        "minicode.tools.run_command._run_with_pipes",
+        fake_run_with_pipes,
+    )
     outcome: dict[str, object] = {}
 
     def run() -> None:

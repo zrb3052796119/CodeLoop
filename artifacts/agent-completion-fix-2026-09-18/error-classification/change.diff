@@ -1,0 +1,202 @@
+--- a/minicode/agent_intelligence.py
++++ b/minicode/agent_intelligence.py
+@@ -1,6 +1,7 @@
++import re
++from dataclasses import dataclass
+ from enum import Enum
+-from dataclasses import dataclass
+-from typing import TYPE_CHECKING, Any
++from typing import TYPE_CHECKING, Any, ClassVar
+ 
+ if TYPE_CHECKING:
+     from minicode.agent_metrics import AgentMetricsCollector
+@@ -12,6 +13,8 @@
+     RESOURCE = "resource"
+     LOGIC = "logic"
+     TIMEOUT = "timeout"
++    DEPENDENCY = "dependency"
++    TEST_FAILURE = "test_failure"
+     UNKNOWN = "unknown"
+ 
+ 
+@@ -141,56 +144,127 @@
+ class ErrorClassifier:
+     """Classifies errors and recommends recovery strategies."""
+ 
+-    # Keyword patterns for each error category
+-    PATTERNS = {
+-        ErrorCategory.NETWORK: [
+-            "connection", "timeout", "network", "refused", "unreachable",
+-            "reset", "closed", "dns", "ssl", "certificate",
+-        ],
++    # Match diagnostic phrases, not incidental words in paths or source excerpts.
++    PATTERNS: ClassVar[dict[ErrorCategory, list[str]]] = {
++        ErrorCategory.DEPENDENCY: [r"\bno module named\b", r"\bcannot import name\b"],
+         ErrorCategory.PERMISSION: [
+-            "permission", "access denied", "unauthorized", "forbidden",
+-            "privilege", "not allowed", "restricted", "admin",
++            r"\bpermission (?:denied|required|error)\b", r"\baccess denied\b",
++            r"\b(?:unauthorized|forbidden)\b", r"\bcommand (?:denied|not allowed)\b",
++            r"\brequires approval\b", r"error\[permission_[a-z_]+\]",
+         ],
+         ErrorCategory.RESOURCE: [
+-            "memory", "disk", "space", "resource", "quota", "limit",
+-            "exceeded", "out of", "no space", "too large",
++            r"\bout of memory\b", r"\bcannot allocate memory\b",
++            r"\bno space left on device\b", r"\b(?:disk )?quota exceeded\b",
++            r"\btoo many open files\b", r"\bresource (?:exhausted|unavailable|limit)\b",
++            r"\b(?:memory|disk|rate) limit (?:reached|exceeded)\b",
+         ],
+         ErrorCategory.TIMEOUT: [
+-            "timeout", "timed out", "deadline", "expired", "took too long",
++            r"(?<![\w./\\])timeout(?![\w./\\])", r"\btimed out\b",
++            r"\bdeadline (?:exceeded|expired)\b",
++            r"error\[task_deadline_exceeded\]", r"\boperation took too long\b",
++        ],
++        ErrorCategory.NETWORK: [
++            r"\bconnection (?:refused|reset|closed|aborted|failed)\b",
++            r"\b(?:network|host) (?:is )?unreachable\b", r"\bnetwork (?:error|unavailable)\b",
++            r"\b(?:could not resolve host|name or service not known)\b",
++            r"\btemporary failure in name resolution\b", r"\bdns (?:lookup |resolution )?failed\b",
++            r"\b(?:ssl|certificate) (?:verification )?(?:error|failed)\b",
++            r"\bcertificate verify failed\b",
+         ],
+         ErrorCategory.LOGIC: [
+-            "invalid", "not found", "does not exist", "already exists",
+-            "bad request", "syntax", "parse", "format", "type error",
++            r"\binvalid (?:input|argument|parameter|request|format)\b",
++            r"\b(?:not found|does not exist|already exists|bad request)\b",
++            r"\b(?:syntax|parse|type) error\b",
+         ],
+     }
++    _ANSI_ESCAPE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
++    _EXCEPTION = re.compile(
++        r"^(?:[\w.]+\.)?(?P<name>[A-Za-z_]\w*(?:Error|Exception))(?::.*)?$"
++    )
++    _TEST_SUMMARY = re.compile(
++        r"^(?:=+\s*)?(?:\d+ (?:passed|skipped|warnings?|xfailed|xpassed|deselected),\s*)*"
++        r"[1-9]\d* (?:failed|errors?)\b|"
++        r"^(?:FAILED|ERROR)\s+\S+::|^(?:✗\s*)?Failed:\s*[1-9]\d*\b"
++    )
++
++    @classmethod
++    def _diagnostics(cls, error_message: str) -> tuple[list[str], bool]:
++        """Separate terminal exceptions/test receipts from displayed source."""
++        exceptions: list[str] = []
++        messages: list[str] = []
++        test_failed = False
++        for raw in cls._ANSI_ESCAPE.sub("", error_message).splitlines():
++            line = raw.strip()
++            test_failed |= bool(cls._TEST_SUMMARY.search(line))
++            # Pytest prefixes actual exception diagnostics with E; its source
++            # excerpts use indentation or > and must not steer recovery.
++            diagnostic = re.sub(r"^E\s+", "", line)
++            if line.startswith(("FAILED ", "ERROR ")) and " - " in line:
++                diagnostic = line.split(" - ", 1)[1]
++            if cls._EXCEPTION.fullmatch(diagnostic):
++                exceptions.append(diagnostic)
++            elif line.startswith("E ") and diagnostic.startswith("assert "):
++                test_failed = True
++            elif raw == raw.lstrip() and line and not line.startswith((">", "=", "_")):
++                messages.append(line)
++        # A terminal exception is authoritative even when previous chained
++        # exceptions or the displayed source mention a different failure type.
++        return exceptions[-1:] if exceptions else messages, test_failed
++
++    @classmethod
++    def _diagnostic_category(cls, diagnostic: str) -> ErrorCategory | None:
++        match = cls._EXCEPTION.fullmatch(diagnostic)
++        if match:
++            name = match.group("name")
++            if name in {"ModuleNotFoundError", "ImportError"}:
++                return ErrorCategory.DEPENDENCY
++            if name == "AssertionError":
++                return ErrorCategory.TEST_FAILURE
++            if name == "MemoryError":
++                return ErrorCategory.RESOURCE
++            if name == "PermissionError":
++                return ErrorCategory.PERMISSION
++            if name.endswith(("TimeoutError", "TimeoutException")):
++                return ErrorCategory.TIMEOUT
++            if name in {"ConnectionError", "ConnectionRefusedError", "ConnectionResetError",
++                        "ConnectionAbortedError", "SSLError", "SSLCertVerificationError"}:
++                return ErrorCategory.NETWORK
++            if name in {"ValueError", "TypeError", "SyntaxError", "KeyError",
++                        "IndexError", "FileNotFoundError", "FileExistsError"}:
++                return ErrorCategory.LOGIC
++            diagnostic = diagnostic.partition(":")[2]
++        for category, patterns in cls.PATTERNS.items():
++            if any(re.search(pattern, diagnostic, re.IGNORECASE) for pattern in patterns):
++                return category
++        return None
+ 
+     # Strategy mapping based on category
+-    STRATEGY_MAP = {
++    STRATEGY_MAP: ClassVar[dict[ErrorCategory, RecoveryStrategy]] = {
+         ErrorCategory.NETWORK: RecoveryStrategy.RETRY_EXPONENTIAL_BACKOFF,
+         ErrorCategory.TIMEOUT: RecoveryStrategy.WAIT_AND_RETRY,
+         ErrorCategory.PERMISSION: RecoveryStrategy.REQUEST_PERMISSION,
+         ErrorCategory.RESOURCE: RecoveryStrategy.WAIT_AND_RETRY,
+         ErrorCategory.LOGIC: RecoveryStrategy.FALLBACK_ALTERNATIVE,
++        ErrorCategory.DEPENDENCY: RecoveryStrategy.FALLBACK_ALTERNATIVE,
++        ErrorCategory.TEST_FAILURE: RecoveryStrategy.FALLBACK_ALTERNATIVE,
+         ErrorCategory.UNKNOWN: RecoveryStrategy.RETRY_IMMEDIATE,
+     }
+ 
+     @classmethod
+     def classify(cls, error_message: str, tool_name: str = "") -> ClassifiedError:
+         """Classify an error message and recommend a strategy."""
+-        error_lower = error_message.lower()
+-
+-        scores: dict[ErrorCategory, int] = {}
+-        for category, patterns in cls.PATTERNS.items():
+-            score = sum(1 for p in patterns if p in error_lower)
+-            if score > 0:
+-                scores[category] = score
+-
+-        if scores:
+-            best_category = max(scores, key=scores.get)
+-            confidence = min(0.95, 0.5 + max(scores.values()) * 0.15)
+-        else:
+-            best_category = ErrorCategory.UNKNOWN
+-            confidence = 0.3
++        diagnostics, test_failed = cls._diagnostics(error_message)
++        best_category = ErrorCategory.TEST_FAILURE if test_failed else ErrorCategory.UNKNOWN
++        confidence = 0.85 if test_failed else 0.3
++        for diagnostic in reversed(diagnostics):
++            category = cls._diagnostic_category(diagnostic)
++            if category is not None:
++                # A pytest summary without a terminal exception is still
++                # stronger evidence than arbitrary captured stdout prose.
++                if not test_failed or cls._EXCEPTION.fullmatch(diagnostic):
++                    best_category = category
++                    confidence = 0.65 if diagnostic.casefold() == "timeout" else 0.85
++                break
+ 
+         strategy = cls.STRATEGY_MAP.get(best_category, RecoveryStrategy.RETRY_IMMEDIATE)
+ 
+@@ -209,7 +283,23 @@
+ class NudgeGenerator:
+     """Generates intelligent nudge messages based on failure context."""
+ 
+-    TEMPLATES = {
++    TEMPLATES: ClassVar[dict[ErrorCategory, dict[RecoveryStrategy, str]]] = {
++        ErrorCategory.DEPENDENCY: {
++            RecoveryStrategy.FALLBACK_ALTERNATIVE: (
++                "A required dependency could not be imported. Check the selected interpreter, "
++                "virtual environment, and declared project dependencies. Resolve the missing "
++                "or incompatible dependency using the authorized setup workflow, then rerun "
++                "the affected command; an unchanged retry will not resolve the import failure."
++            ),
++        },
++        ErrorCategory.TEST_FAILURE: {
++            RecoveryStrategy.FALLBACK_ALTERNATIVE: (
++                "Test verification failed. Inspect the failing assertion and traceback, "
++                "correct the implementation or test setup while preserving the expected "
++                "behavior, then rerun the affected tests. An unchanged retry will not "
++                "resolve a deterministic test failure."
++            ),
++        },
+         ErrorCategory.NETWORK: {
+             RecoveryStrategy.RETRY_EXPONENTIAL_BACKOFF: (
+                 "Network error detected. The previous attempt failed due to connectivity issues. "

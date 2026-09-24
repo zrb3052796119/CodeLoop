@@ -300,6 +300,55 @@ class TestAgentFlowCybernetics:
 class TestAgentMemoryPipeline:
     """Memory pipeline runs end-to-end within agent loop."""
 
+    def test_memory_injection_observes_hydrated_session_pressure(
+        self,
+        monkeypatch,
+        mock_model,
+        tools,
+        workspace,
+        permissions,
+    ):
+        from minicode.cybernetic_orchestrator import CyberneticOrchestrator
+
+        observed_pressure: list[float] = []
+
+        def capture_injection(
+            self,
+            _task_description,
+            messages,
+            *,
+            context_usage,
+            **_kwargs,
+        ):
+            observed_pressure.append(context_usage)
+            return messages
+
+        monkeypatch.setattr(
+            CyberneticOrchestrator,
+            "inject_memories",
+            capture_injection,
+        )
+        long_session = [
+            {"role": "system", "content": "system"},
+            {"role": "user", "content": "x" * 3_200},
+        ]
+        manager = ContextManager(model="default", context_window=1_000)
+
+        run_agent_turn(
+            model=mock_model,
+            tools=tools,
+            messages=long_session,
+            cwd=str(workspace),
+            permissions=permissions,
+            context_manager=manager,
+            enable_work_chain=True,
+            max_steps=1,
+            memory_manager=MemoryManager(project_root=workspace),
+        )
+
+        assert observed_pressure
+        assert observed_pressure[0] > 0.75
+
     def test_memory_pipeline_in_agent_loop(
         self, mock_model, tools, messages, workspace, permissions
     ):

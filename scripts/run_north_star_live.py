@@ -18,6 +18,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -58,6 +59,7 @@ _ORACLE_KINDS = frozenset(
         "file_not_contains",
         "memory_attributed",
         "memory_injected",
+        "memory_lesson_covers",
         "memory_rendered",
         "memory_written",
         "no_source_edits",
@@ -84,6 +86,10 @@ _IGNORED_RUNTIME_FILES = frozenset(
         ".mini-code/.skill_evidence.lock",
         ".mini-code/skill_evidence.json",
         ".mini-code/skill-embeddings.json",
+        # Cross-process Memory authority advisory lock: a runtime artifact the
+        # MemoryStoreCoordinator creates beside the workspace authority, not
+        # an agent edit.
+        ".minicode-memory-authority.lock",
     }
 )
 _MAX_RESPONSE_CHARS = 200_000
@@ -106,6 +112,13 @@ _VERIFICATION_KINDS = frozenset({"tests", "build", "lint", "typecheck", "review"
 _VERIFICATION_SOURCES = frozenset(
     {"test_runner", "run_command_exit", "workflow_review"}
 )
+# Case-level environment overrides are a study ablation surface, not a
+# general escape hatch: only the memory contribution review mode is
+# admissible, and only with its documented values.
+_CASE_ENV_WHITELIST: dict[str, frozenset[str]] = {
+    "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": frozenset({"off", "rule", "llm"})
+}
+_MEMORY_POOL_MAX_ENTRIES = 64
 
 
 @dataclass(frozen=True, slots=True)
@@ -351,6 +364,7 @@ def _validate_private_case_evidence(
         "id",
         "inputTokens",
         "manifestSha256",
+        "memoryPool",
         "modelCalls",
         "oracleFailures",
         "outputTokens",
@@ -443,6 +457,44 @@ def _validate_private_case_evidence(
     )
     if write_authorization != expected_authorization:
         raise ValueError("case evidence write authorization is invalid")
+    memory_pool = value.get("memoryPool")
+    if memory_pool is not None:
+        memory_pool_entry_fields = {
+            "id",
+            "category",
+            "tier",
+            "approval_status",
+            "lifecycle_status",
+            "safety_status",
+            "success_count",
+            "failure_count",
+            "corroborated_success_count",
+            "corroborated_failure_count",
+            "injection_count",
+            "usage_count",
+            "content_sha256",
+        }
+        entries = memory_pool.get("entries") if isinstance(memory_pool, dict) else None
+        rendered = (
+            memory_pool.get("renderedByTurn") if isinstance(memory_pool, dict) else None
+        )
+        if (
+            not isinstance(memory_pool, dict)
+            or set(memory_pool) != {"entries", "renderedByTurn"}
+            or not isinstance(entries, list)
+            or any(
+                not isinstance(item, dict) or set(item) != memory_pool_entry_fields
+                for item in entries
+            )
+            or not isinstance(rendered, dict)
+            or any(
+                not isinstance(turn_key, str)
+                or not isinstance(turn_ids, list)
+                or any(not isinstance(entry_id, str) for entry_id in turn_ids)
+                for turn_key, turn_ids in rendered.items()
+            )
+        ):
+            raise ValueError("case evidence memory pool is invalid")
     return dict(value)
 
 
@@ -484,6 +536,25 @@ def _project_public_case_result(
     }
     if len(run_ids) > 1:
         result["relatedRunIds"] = run_ids[:-1]
+    memory_pool = evidence.get("memoryPool")
+    if isinstance(memory_pool, dict):
+        entries = memory_pool.get("entries")
+        entry_list = entries if isinstance(entries, list) else []
+        result["memoryPool"] = {
+            "entryCount": len(entry_list) if isinstance(entries, list) else None,
+            "quarantinedCount": (
+                sum(
+                    1
+                    for item in entry_list
+                    if isinstance(item, dict)
+                    and item.get("lifecycle_status") == "rejected"
+                )
+                if isinstance(entries, list)
+                else None
+            ),
+        }
+    else:
+        result["memoryPool"] = {"entryCount": None, "quarantinedCount": None}
     if runtime_profile_sha256 is not None:
         profiles = evidence["runtimeProfileSha256ByRun"]
         assert isinstance(profiles, list)
@@ -791,6 +862,7 @@ def _build_case_evidence(
         "unsafeActionCount": result.get("unsafeActionCount"),
         "userInterventionCount": result.get("userInterventionCount"),
         "writeAuthorization": write_authorization,
+        "memoryPool": private.get("memoryPool"),
     }
 
 
@@ -1001,6 +1073,15 @@ def _validate_manifest(document: Mapping[str, object]) -> list[dict[str, Any]]:
                 raise TypeError(f"fixture content must be text for case {case_id}")
         for authorized_path in authorized_paths:
             _safe_relative(authorized_path)
+        if "env" in raw:
+            case_env = raw.get("env")
+            if not isinstance(case_env, dict) or not case_env or any(
+                key not in _CASE_ENV_WHITELIST
+                or not isinstance(value, str)
+                or value not in _CASE_ENV_WHITELIST[key]
+                for key, value in case_env.items()
+            ):
+                raise ValueError(f"invalid env for case {case_id}")
         projected_oracle_ids: list[str] = []
         for oracle in oracles:
             if (
@@ -1045,6 +1126,24 @@ def _validate_manifest(document: Mapping[str, object]) -> list[dict[str, Any]]:
                         len(memory_entries) if isinstance(memory_entries, list) else 0
                     ),
                 )
+            if oracle["kind"] == "memory_lesson_covers":
+                text = oracle.get("text")
+                claim_type = oracle.get("claimType")
+                if (
+                    not isinstance(text, str)
+                    or not text.strip()
+                    or len(text) > 200
+                    or (
+                        claim_type is not None
+                        and (
+                            not isinstance(claim_type, str)
+                            or claim_type not in _MEMORY_CLAIM_TYPES
+                        )
+                    )
+                ):
+                    raise ValueError(
+                        f"memory_lesson_covers contract is invalid for case {case_id}"
+                    )
             projected_oracle_ids.append(str(oracle["id"]))
         if projected_oracle_ids != oracle_ids or len(set(oracle_ids)) != len(
             oracle_ids
@@ -1094,6 +1193,25 @@ def _working_directory(path: Path) -> Iterator[None]:
         yield
     finally:
         os.chdir(previous)
+
+
+def _case_workspace(suite_root: Path, case_id: str) -> Path:
+    """Per-case scratch workspace, placed outside the project repository.
+
+    A workspace inside this checkout makes the workflow workspace
+    transaction discover the outer git root and snapshot the entire
+    repository, which fails on escaping symlinks (e.g. .venv-acceptance).
+    The path is deterministic per suite root so a fresh attempt can clear
+    leftovers from a killed child, while journals and evidence stay under
+    the suite root.
+    """
+    digest = hashlib.sha256(str(suite_root).encode("utf-8")).hexdigest()[:16]
+    return (
+        Path(tempfile.gettempdir())
+        / f"minicode-live-{digest}"
+        / case_id
+        / "workspace"
+    )
 
 
 def _usage_from_events(
@@ -1274,6 +1392,7 @@ def _run_turn(
     seed_entries: object,
     authorized_paths: tuple[Path, ...],
     runtime_profile_contract: Mapping[str, str] | None,
+    workflow_human_approval: object | None = None,
 ) -> tuple[TurnEvidence, list[dict[str, Any]]]:
     journal = RunJournal(workspace, data_dir=journal_root)
 
@@ -1282,11 +1401,14 @@ def _run_turn(
 
     # Acceptance cases exercise MiniCode itself, not user-installed external
     # MCP servers. Keeping them out makes the suite isolated and reproducible.
+    from minicode.intent_parser import IntentContext
+
     runtime = create_agent_turn_runtime(
         workspace=workspace,
         prompt=prompt,
         include_mcp=False,
         allow_user_interaction=False,
+        intent_context=IntentContext.from_messages(history),
     )
     try:
         runtime_profile = _runtime_profile_from_adapter(
@@ -1307,6 +1429,41 @@ def _run_turn(
         request,
         authorized_paths,
     )
+    if workflow_human_approval is not None:
+        # Harness-owned approval authority (acceptance suites only). Production
+        # keeps the UI-held provider; here the runner injects a bounded one
+        # through the same embedder channel the runtime already supports, and
+        # observes task-tool delegations so the provider can check the
+        # workflow's declared write scope before deciding.
+        capture = getattr(workflow_human_approval, "capture_task_call", None)
+        capture_result = getattr(
+            workflow_human_approval, "capture_task_result", None
+        )
+        if callable(capture) or callable(capture_result):
+            task_definition = runtime.tools.find("task")
+            if task_definition is not None and not getattr(
+                task_definition.run, "_acceptance_observed", False
+            ):
+                original_run = task_definition.run
+
+                def _observed_run(
+                    call_input: Any,
+                    tool_context: Any,
+                    *,
+                    _run: Any = original_run,
+                    _capture: Any = capture,
+                    _capture_result: Any = capture_result,
+                ):
+                    if callable(_capture):
+                        _capture(call_input)
+                    result = _run(call_input, tool_context)
+                    if callable(_capture_result):
+                        _capture_result(result)
+                    return result
+
+                _observed_run._acceptance_observed = True  # type: ignore[attr-defined]
+                task_definition.run = _observed_run
+        runtime.runtime["_workflowHumanApprovalProvider"] = workflow_human_approval
     runtime.memory_manager = MemoryManager(
         project_root=workspace,
         data_root=state_root,
@@ -1559,6 +1716,43 @@ def _evaluate_oracle(
         )
     if kind == "memory_written":
         return any(journal.get_written_memory_ids(turn.run_id) for turn in turns)
+    if kind == "memory_lesson_covers":
+        # Content-level precipitation check for the lesson-benefit study:
+        # some non-quarantined PROJECT entry must cover the exact correct
+        # target. Only the boolean leaves this branch; lesson text stays
+        # private to the evaluation.
+        target = str(oracle.get("text", "")).strip().casefold()
+        claim_type = oracle.get("claimType")
+        from minicode.memory import MemoryManager, MemoryScope
+
+        manager = MemoryManager(project_root=workspace, readonly_load=True)
+        project_store = manager.memories.get(MemoryScope.PROJECT)
+        entries = (
+            list(getattr(project_store, "entries", None) or [])
+            if project_store is not None
+            else []
+        )
+        for entry in entries:
+            if str(getattr(entry, "lifecycle_status", "")) == "rejected":
+                continue
+            content = str(getattr(entry, "content", "") or "").casefold()
+            if target not in content:
+                continue
+            if claim_type is not None:
+                claims = (
+                    (getattr(entry, "metadata", {}) or {}).get(
+                        "structured_reflection", {}
+                    )
+                ).get("claims", [])
+                if not any(
+                    isinstance(claim, dict)
+                    and str(claim.get("claim_type", "")) == str(claim_type)
+                    for claim in claims
+                    if isinstance(claims, list)
+                ):
+                    continue
+            return True
+        return False
     if kind == "no_source_edits":
         return _tree_digest(workspace) == before_digest
     if kind == "response_contains":
@@ -1610,6 +1804,78 @@ def _evaluate_oracle(
     raise ValueError(f"unsupported oracle kind: {kind}")
 
 
+def _memory_pool_snapshot(
+    workspace: Path,
+    *,
+    rendered_ids_by_turn: Mapping[int, object],
+    data_root: Path | None = None,
+) -> dict[str, object] | None:
+    """Read-only final state of the workspace PROJECT memory authority.
+
+    Records per-entry lifecycle/counters plus which entry IDs were rendered
+    in each turn.  Entries carry a content hash, never the text itself, so
+    the snapshot can live in private evidence without leaking lesson bodies
+    into public results.  Returns ``None`` when the authority cannot be read.
+    """
+    try:
+        from minicode.memory import MemoryManager, MemoryScope
+
+        kwargs: dict[str, object] = {"readonly_load": True}
+        if data_root is not None:
+            kwargs["data_root"] = data_root
+        manager = MemoryManager(project_root=workspace, **kwargs)
+        project_store = manager.memories.get(MemoryScope.PROJECT)
+        raw_entries = (
+            list(getattr(project_store, "entries", None) or [])
+            if project_store is not None
+            else []
+        )
+        entries: list[dict[str, object]] = []
+        for entry in sorted(
+            raw_entries, key=lambda item: str(getattr(item, "id", ""))
+        )[:_MEMORY_POOL_MAX_ENTRIES]:
+            entries.append(
+                {
+                    "id": str(entry.id),
+                    "category": str(getattr(entry, "category", "")),
+                    "tier": str(getattr(entry, "tier", "")),
+                    "approval_status": str(getattr(entry, "approval_status", "")),
+                    "lifecycle_status": str(
+                        getattr(entry, "lifecycle_status", "")
+                    ),
+                    "safety_status": str(getattr(entry, "safety_status", "")),
+                    "success_count": int(getattr(entry, "success_count", 0) or 0),
+                    "failure_count": int(getattr(entry, "failure_count", 0) or 0),
+                    "corroborated_success_count": int(
+                        getattr(entry, "corroborated_success_count", 0) or 0
+                    ),
+                    "corroborated_failure_count": int(
+                        getattr(entry, "corroborated_failure_count", 0) or 0
+                    ),
+                    "injection_count": int(
+                        getattr(entry, "injection_count", 0) or 0
+                    ),
+                    "usage_count": int(getattr(entry, "usage_count", 0) or 0),
+                    "content_sha256": hashlib.sha256(
+                        str(getattr(entry, "content", "")).encode("utf-8")
+                    ).hexdigest(),
+                }
+            )
+        rendered_by_turn: dict[str, list[str]] = {}
+        for index in sorted(rendered_ids_by_turn):
+            ids = rendered_ids_by_turn[index]
+            if ids is None:
+                continue
+            rendered = [
+                str(entry_id) for entry_id in ids if str(entry_id).strip()
+            ]
+            if rendered:
+                rendered_by_turn[str(int(index))] = rendered
+        return {"entries": entries, "renderedByTurn": rendered_by_turn}
+    except Exception:  # noqa: BLE001 - snapshot is diagnostic, never fatal
+        return None
+
+
 def _execute_case(
     case: Mapping[str, Any],
     *,
@@ -1621,7 +1887,9 @@ def _execute_case(
     case_root = suite_root / "cases" / case_id
     if case_root.exists():
         shutil.rmtree(case_root)
-    workspace = case_root / "workspace"
+    workspace = _case_workspace(suite_root, case_id)
+    if workspace.parent.exists():
+        shutil.rmtree(workspace.parent)
     state_root = case_root / "state"
     journal_root = case_root / "journal"
     _write_fixture(workspace, case.get("files", {}))
@@ -1632,6 +1900,11 @@ def _execute_case(
     failure: str | None = None
     previous_python = os.environ.get("NORTH_STAR_PYTHON")
     os.environ["NORTH_STAR_PYTHON"] = python_executable
+    case_env = case.get("env")
+    case_env = dict(case_env) if isinstance(case_env, dict) else {}
+    previous_case_env = {key: os.environ.get(key) for key in case_env}
+    for env_key, env_value in case_env.items():
+        os.environ[env_key] = str(env_value)
     try:
         with _working_directory(workspace):
             for index, turn in enumerate(case["turns"]):
@@ -1671,6 +1944,11 @@ def _execute_case(
             os.environ.pop("NORTH_STAR_PYTHON", None)
         else:
             os.environ["NORTH_STAR_PYTHON"] = previous_python
+        for env_key, previous_value in previous_case_env.items():
+            if previous_value is None:
+                os.environ.pop(env_key, None)
+            else:
+                os.environ[env_key] = previous_value
     duration_ms = max(0, int((time.monotonic() - started) * 1000))
     journal = RunJournal(workspace, data_dir=journal_root)
     passed_oracles: list[str] = []
@@ -1735,11 +2013,25 @@ def _execute_case(
         )
     if len(run_ids) > 1:
         result["relatedRunIds"] = run_ids[:-1]
+    rendered_ids_by_turn: dict[int, object] = {}
+    for turn_index, turn_evidence in enumerate(turns):
+        try:
+            rendered_ids_by_turn[turn_index] = journal.get_rendered_memory_ids(
+                turn_evidence.run_id
+            )
+        except Exception:  # noqa: BLE001 - snapshot stays diagnostic
+            rendered_ids_by_turn[turn_index] = None
+    memory_pool = _memory_pool_snapshot(
+        workspace,
+        rendered_ids_by_turn=rendered_ids_by_turn,
+        data_root=state_root,
+    )
     private_evidence: dict[str, object] = {
         "id": case_id,
         "failure": failure,
         "oracleFailures": oracle_failures,
         "runIds": run_ids,
+        "memoryPool": memory_pool,
         "runtimeProfileSha256ByRun": [
             turn.runtime_profile_sha256 for turn in turns
         ],
@@ -1755,6 +2047,7 @@ def _execute_case(
             }
         ),
     }
+    shutil.rmtree(workspace.parent, ignore_errors=True)
     return result, private_evidence
 
 

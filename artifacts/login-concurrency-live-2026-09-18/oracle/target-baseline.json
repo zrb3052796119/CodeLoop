@@ -1,0 +1,109 @@
+{
+  "repo": "/private/tmp/codeloop-live-pr-20260918",
+  "production_module": "/private/tmp/codeloop-live-pr-20260918/minicode/tools/test_runner.py",
+  "python": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+  "expectation": "baseline",
+  "mocked_execution": false,
+  "direct_pytest_witness": {
+    "returncode": 1,
+    "executed": [
+      "test_001",
+      "test_002",
+      "test_003",
+      "test_004",
+      "test_005",
+      "test_006",
+      "test_007",
+      "test_008",
+      "test_009",
+      "test_010",
+      "test_011",
+      "test_012"
+    ],
+    "output": "...........F                                                             [100%]\n=================================== FAILURES ===================================\n________________________________ test_case_012 _________________________________\n\n    def test_case_012():\n        Path(__file__).with_suffix('.ran').write_text('executed')\n>       assert False, 'late failure sentinel'\nE       AssertionError: late failure sentinel\nE       assert False\n\nlate_failure/test_012.py:5: AssertionError\n=========================== short test summary info ============================\nFAILED late_failure/test_012.py::test_case_012 - AssertionError: late failure...\n1 failed, 11 passed in 0.02s\n"
+  },
+  "cases": {
+    "late_failure": {
+      "ok": true,
+      "verification": {
+        "verificationVersion": 1,
+        "kind": "tests",
+        "outcome": "passed",
+        "source": "test_runner"
+      },
+      "counts": {
+        "passed": 10,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "executed": [
+        "test_001",
+        "test_002",
+        "test_003",
+        "test_004",
+        "test_005",
+        "test_006",
+        "test_007",
+        "test_008",
+        "test_009",
+        "test_010"
+      ],
+      "output": "\ud83e\uddea Test Runner\n============================================================\n\nFramework: pytest\nTest files: 12\nPattern: all\nCoverage: disabled\n\n------------------------------------------------------------\n\n\ud83d\udcca Results:\n  \u2713 Passed:  10\n  \u2717 Failed:  0\n  \u26a0 Errors:  0\n  \u2298 Skipped: 0\n\n\ud83d\udcdd All Tests:\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n\n------------------------------------------------------------\n\nFull Output:\n============================= test session starts ==============================\nplatform darwin -- Python 3.12.8, pytest-9.1.1, pluggy-1.6.0 -- /Library/Frameworks/Python.framework/Versions/3.12/bin/python3\ncachedir: .pytest_cache\nrootdir: /private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/codeloop-suite-oracle-kmb27ag4/late_failure\nconfigfile: pytest.ini\ncollecting ... collected 10 items\n\nlate_failure/test_001.py::test_case_001 PASSED                           [ 10%]\nlate_failure/test_002.py::test_case_002 PASSED                           [ 20%]\nlate_failure/test_003.py::test_case_003 PASSED                           [ 30%]\nlate_failure/test_004.py::test_case_004 PASSED                           [ 40%]\nlate_failure/test_005.py::test_case_005 PASSED                           [ 50%]\nlate_failure/test_006.py::test_case_006 PASSED                           [ 60%]\nlate_failure/test_007.py::test_case_007 PASSED                           [ 70%]\nlate_failure/test_008.py::test_case_008 PASSED                           [ 80%]\nlate_failure/test_009.py::test_case_009 PASSED                           [ 90%]\nlate_failure/test_010.py::test_case_010 PASSED                           [100%]\n\n============================== 10 passed in 0.01s ==============================\n\n"
+    },
+    "all_passing": {
+      "ok": true,
+      "verification": {
+        "verificationVersion": 1,
+        "kind": "tests",
+        "outcome": "passed",
+        "source": "test_runner"
+      },
+      "counts": {
+        "passed": 10,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "executed": [
+        "test_001",
+        "test_002",
+        "test_003",
+        "test_004",
+        "test_005",
+        "test_006",
+        "test_007",
+        "test_008",
+        "test_009",
+        "test_010"
+      ],
+      "output": "\ud83e\uddea Test Runner\n============================================================\n\nFramework: pytest\nTest files: 12\nPattern: all\nCoverage: disabled\n\n------------------------------------------------------------\n\n\ud83d\udcca Results:\n  \u2713 Passed:  10\n  \u2717 Failed:  0\n  \u26a0 Errors:  0\n  \u2298 Skipped: 0\n\n\ud83d\udcdd All Tests:\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n  \u2713 [::unknown\n\n------------------------------------------------------------\n\nFull Output:\n============================= test session starts ==============================\nplatform darwin -- Python 3.12.8, pytest-9.1.1, pluggy-1.6.0 -- /Library/Frameworks/Python.framework/Versions/3.12/bin/python3\ncachedir: .pytest_cache\nrootdir: /private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/codeloop-suite-oracle-kmb27ag4/all_passing\nconfigfile: pytest.ini\ncollecting ... collected 10 items\n\nall_passing/test_001.py::test_case_001 PASSED                            [ 10%]\nall_passing/test_002.py::test_case_002 PASSED                            [ 20%]\nall_passing/test_003.py::test_case_003 PASSED                            [ 30%]\nall_passing/test_004.py::test_case_004 PASSED                            [ 40%]\nall_passing/test_005.py::test_case_005 PASSED                            [ 50%]\nall_passing/test_006.py::test_case_006 PASSED                            [ 60%]\nall_passing/test_007.py::test_case_007 PASSED                            [ 70%]\nall_passing/test_008.py::test_case_008 PASSED                            [ 80%]\nall_passing/test_009.py::test_case_009 PASSED                            [ 90%]\nall_passing/test_010.py::test_case_010 PASSED                            [100%]\n\n============================== 10 passed in 0.01s ==============================\n\n"
+    },
+    "single_file_scope": {
+      "ok": true,
+      "verification": {
+        "verificationVersion": 1,
+        "kind": "tests",
+        "outcome": "passed",
+        "source": "test_runner"
+      },
+      "counts": {
+        "passed": 1,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "executed": [
+        "test_001"
+      ],
+      "output": "\ud83e\uddea Test Runner\n============================================================\n\nFramework: pytest\nTest files: 1\nPattern: all\nCoverage: disabled\n\n------------------------------------------------------------\n\n\ud83d\udcca Results:\n  \u2713 Passed:  1\n  \u2717 Failed:  0\n  \u26a0 Errors:  0\n  \u2298 Skipped: 0\n\n\ud83d\udcdd All Tests:\n  \u2713 [::unknown\n\n------------------------------------------------------------\n\nFull Output:\n============================= test session starts ==============================\nplatform darwin -- Python 3.12.8, pytest-9.1.1, pluggy-1.6.0 -- /Library/Frameworks/Python.framework/Versions/3.12/bin/python3\ncachedir: .pytest_cache\nrootdir: /private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/codeloop-suite-oracle-kmb27ag4/late_failure\nconfigfile: pytest.ini\ncollecting ... collected 1 item\n\nlate_failure/test_001.py::test_case_001 PASSED                           [100%]\n\n============================== 1 passed in 0.00s ===============================\n\n"
+    }
+  },
+  "checks": {
+    "direct_pytest_witness_is_valid": true,
+    "single_file_does_not_expand_scope": true,
+    "baseline_falsely_reports_late_failure_as_success": true,
+    "baseline_omits_two_passing_test_files": true
+  },
+  "accepted": true
+}

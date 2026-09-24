@@ -1,0 +1,117 @@
+.......FFF                                                               [100%]
+=================================== FAILURES ===================================
+__ test_failure_in_remaining_work_reports_committed_partial_progress[network] __
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-823/test_failure_in_remaining_work0')
+committed_result = ToolResult(ok=True, output='[Workflow structured workflow route completed]\n  Phases: Executor -> Verifier\n\n=== DETE...': None}, 'purposes': [], 'supported_operations': [], 'evidence': ['legacy-name-compatibility', 'effects-unverified']})
+failure = 'network'
+
+    @pytest.mark.parametrize("failure", ["network", "budget"])
+    def test_failure_in_remaining_work_reports_committed_partial_progress(
+        tmp_path, committed_result, failure,
+    ):
+        from minicode.agent_budget import AgentBudgetExceeded, AgentTurnBudget
+    
+        def fail(_messages):
+            if failure == "budget":
+                raise AgentBudgetExceeded("model_calls", AgentTurnBudget.from_runtime({}).snapshot())
+            raise ConnectionError("provider unavailable")
+    
+        model = ScriptedModel([_call("workflow", "first"), fail])
+        messages = run_agent_turn(
+            model=model, tools=_registry(committed_result),
+            messages=[{"role": "user", "content": "Apply change and complete follow-up."}],
+            cwd=str(tmp_path), enable_work_chain=False, budget_exhausted_policy="raise",
+        )
+        assert any(m.get("content") == committed_result.output for m in messages)
+        response = final_response_text(messages)
+>       assert "already committed" in response
+E       AssertionError: assert 'already committed' in 'Network error (connection failed or dropped): provider unavailable'
+
+tests/test_workflow_parent_continuation.py:207: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:3194 Model API connection error: provider unavailable
+__ test_failure_in_remaining_work_reports_committed_partial_progress[budget] ___
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-823/test_failure_in_remaining_work1')
+committed_result = ToolResult(ok=True, output='[Workflow structured workflow route completed]\n  Phases: Executor -> Verifier\n\n=== DETE...': None}, 'purposes': [], 'supported_operations': [], 'evidence': ['legacy-name-compatibility', 'effects-unverified']})
+failure = 'budget'
+
+    @pytest.mark.parametrize("failure", ["network", "budget"])
+    def test_failure_in_remaining_work_reports_committed_partial_progress(
+        tmp_path, committed_result, failure,
+    ):
+        from minicode.agent_budget import AgentBudgetExceeded, AgentTurnBudget
+    
+        def fail(_messages):
+            if failure == "budget":
+                raise AgentBudgetExceeded("model_calls", AgentTurnBudget.from_runtime({}).snapshot())
+            raise ConnectionError("provider unavailable")
+    
+        model = ScriptedModel([_call("workflow", "first"), fail])
+>       messages = run_agent_turn(
+            model=model, tools=_registry(committed_result),
+            messages=[{"role": "user", "content": "Apply change and complete follow-up."}],
+            cwd=str(tmp_path), enable_work_chain=False, budget_exhausted_policy="raise",
+        )
+
+tests/test_workflow_parent_continuation.py:200: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+minicode/agent_loop.py:3091: in run_agent_turn
+    next_step = _model_next(
+minicode/agent_loop.py:1087: in _model_next
+    return call_model_next(
+minicode/model_call_control.py:124: in call_model_next
+    result = model.next(messages, **accepted)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_workflow_parent_continuation.py:52: in next
+    return value(messages) if callable(value) else value
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_messages = [{'role': 'system', 'content': '[Task Ledger v1 — parent-owned, compaction-immune]\nRevision: 1\n\n## Goal (verbatim, ...er-requested tasks, collect owned sub-agent results, and then summarize. Any calls marked skipped have not executed.'}]
+
+    def fail(_messages):
+        if failure == "budget":
+>           raise AgentBudgetExceeded("model_calls", AgentTurnBudget.from_runtime({}).snapshot())
+E           minicode.agent_budget.AgentBudgetExceeded: model_calls
+
+tests/test_workflow_parent_continuation.py:196: AgentBudgetExceeded
+_______ test_final_observer_failure_cannot_hide_committed_child_receipt ________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-823/test_final_observer_failure_ca0')
+committed_result = ToolResult(ok=True, output='[Workflow structured workflow route completed]\n  Phases: Executor -> Verifier\n\n=== DETE...': None}, 'purposes': [], 'supported_operations': [], 'evidence': ['legacy-name-compatibility', 'effects-unverified']})
+
+    def test_final_observer_failure_cannot_hide_committed_child_receipt(tmp_path, committed_result):
+        class BrokenOutcomeCapture:
+            def record(self, _outcome):
+                raise RuntimeError("observer unavailable")
+    
+        model = ScriptedModel([
+            _call("workflow", "first"), AgentStep(type="assistant", content="All requested work complete."),
+        ])
+>       messages = run_agent_turn(
+            model=model, tools=_registry(committed_result),
+            messages=[{"role": "user", "content": "Apply and summarize."}],
+            cwd=str(tmp_path), enable_work_chain=False, outcome_capture=BrokenOutcomeCapture(),
+        )
+
+tests/test_workflow_parent_continuation.py:220: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+minicode/agent_loop.py:4975: in run_agent_turn
+    outcome_capture.record(canonical_outcome)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_workflow_parent_continuation.test_final_observer_failure_cannot_hide_committed_child_receipt.<locals>.BrokenOutcomeCapture object at 0x107428cb0>
+_outcome = CanonicalTaskOutcome(status='success', completion_succeeded=True, verification_status='unverified', verification_passe...count=0, goal_achieved=False, learning_success=None, tool_error_count=0, had_tool_errors=False, errors_recovered=False)
+
+    def record(self, _outcome):
+>       raise RuntimeError("observer unavailable")
+E       RuntimeError: observer unavailable
+
+tests/test_workflow_parent_continuation.py:215: RuntimeError
+=========================== short test summary info ============================
+FAILED tests/test_workflow_parent_continuation.py::test_failure_in_remaining_work_reports_committed_partial_progress[network]
+FAILED tests/test_workflow_parent_continuation.py::test_failure_in_remaining_work_reports_committed_partial_progress[budget]
+FAILED tests/test_workflow_parent_continuation.py::test_final_observer_failure_cannot_hide_committed_child_receipt
+3 failed, 7 passed in 1.74s

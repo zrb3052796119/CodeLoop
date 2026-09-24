@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from minicode.user_evidence import durable_project_constraints
 from minicode.verification_observation import normalize_verification_payload
 
 
@@ -54,6 +55,16 @@ class TaskLedger:
     verified_facts: list[str] = field(default_factory=list)
     rejected_attempts: list[str] = field(default_factory=list)
     revision: int = 1
+
+    @property
+    def durable_constraints(self) -> tuple[str, ...]:
+        """Project-stable constraints eligible for trusted reflection.
+
+        ``constraints`` remains the broader current-task control surface.  A
+        one-shot instruction must stay useful during the Turn without silently
+        becoming a durable project rule.
+        """
+        return durable_project_constraints(self.goal)
 
     @classmethod
     def from_messages(

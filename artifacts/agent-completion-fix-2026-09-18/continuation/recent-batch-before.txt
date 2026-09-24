@@ -1,0 +1,30 @@
+...F                                                                     [100%]
+=================================== FAILURES ===================================
+______________ test_large_batch_keeps_late_changes_in_call_order _______________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-59/test_large_batch_keeps_late_ch0')
+
+    def test_large_batch_keeps_late_changes_in_call_order(tmp_path: Path):
+        policy = TurnCompletionPolicy(50, 35, str(tmp_path))
+        paths = [f"repro/test_{index:03d}.py" for index in range(70)]
+        paths += ["app/login.py", "app/test_login.py"]
+        calls = [
+            {"toolName": "write_file", "input": {"path": path, "content": "changed"}}
+            for path in paths
+        ]
+        before = policy.capture_before(calls)
+        for path in paths:
+            target = tmp_path / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("changed")
+        policy.observe_results(
+            [(call, ToolResult(ok=True, output="written")) for call in calls], before, 1
+        )
+        summary = policy.summary("cost budget exhausted")
+>       assert "app/login.py" in summary
+E       AssertionError: assert 'app/login.py' in 'Partial progress; stopped because cost budget exhausted.\nObserved file changes (most recent): repro/test_058.py, rep...o independent verification result was observed.\nOverall completion is unconfirmed; remaining work requires follow-up.'
+
+tests/test_completion_recent_changes.py:61: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_completion_recent_changes.py::test_large_batch_keeps_late_changes_in_call_order
+1 failed, 3 passed in 0.20s

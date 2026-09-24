@@ -1,0 +1,81 @@
+{
+  "role_permissions": {
+    "analyst": {
+      "permission_class": "SchedulerWorkerReadPermissions",
+      "tools": [
+        "file_line_count",
+        "get_ast_info",
+        "list_files",
+        "read_file",
+        "subagent_note_read",
+        "subagent_note_write"
+      ],
+      "memory_is_none": true,
+      "path_checks": {
+        "allowed": "allowed",
+        "outside.txt": "path_assignment_scope_denied",
+        ".env": "path_scheduler_mandatory_forbidden"
+      },
+      "tool_result_ok": true
+    },
+    "reviewer": {
+      "permission_class": "SchedulerWorkerReadPermissions",
+      "tools": [
+        "file_line_count",
+        "get_ast_info",
+        "list_files",
+        "read_file",
+        "subagent_note_read",
+        "subagent_note_write"
+      ],
+      "memory_is_none": true,
+      "path_checks": {
+        "allowed": "allowed",
+        "outside.txt": "path_assignment_scope_denied",
+        ".env": "path_scheduler_mandatory_forbidden"
+      },
+      "tool_result_ok": true
+    },
+    "adjudicator": {
+      "ordinary_plan_prompt_builder_called": true,
+      "permission_class": "PermissionManager",
+      "tools": [
+        "code_review",
+        "file_tree",
+        "find_references",
+        "find_symbols",
+        "get_ast_info",
+        "grep_files",
+        "list_files",
+        "load_skill",
+        "read_file",
+        "subagent_note_list",
+        "subagent_note_read",
+        "subagent_note_write"
+      ],
+      "memory_is_none": true,
+      "path_checks": {
+        "allowed": "allowed",
+        "outside.txt": "allowed",
+        ".env": "allowed"
+      },
+      "tool_result_ok": true
+    }
+  },
+  "adjudicator_evidence": {
+    "evidence_reads": [
+      {
+        "claim": "claim_analyst_risk",
+        "ref": "artifact_evidence_5302738f0144812cf2b7ac215149c4f2",
+        "outcome": "SchedulerArtifactError: Artifact key is not readable"
+      },
+      {
+        "claim": "claim_locked_profile",
+        "ref": "artifact_request_bec138969bfc57b1ac3c7e142eef4cd6",
+        "outcome": "SchedulerArtifactError: Artifact key is not readable"
+      }
+    ],
+    "workflow_ok": false,
+    "workspace_unchanged": true
+  }
+}

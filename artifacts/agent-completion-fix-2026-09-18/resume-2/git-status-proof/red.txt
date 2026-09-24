@@ -1,0 +1,84 @@
+FFFFF..                                                                  [100%]
+=================================== FAILURES ===================================
+____________ test_first_unstaged_file_keeps_path_and_is_not_staged _____________
+
+repo = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-62/test_first_unstaged_file_keeps0')
+
+    def test_first_unstaged_file_keeps_path_and_is_not_staged(repo: Path) -> None:
+        (repo / "alpha.py").write_text("changed\n", encoding="utf-8")
+    
+        output = _status(repo)
+    
+>       assert "Staged changes: 0" in output
+E       AssertionError: assert 'Staged changes: 0' in 'Git Status:\n  Staged changes: 1\n  Unstaged changes: 0\n\nFiles:\n  [M] lpha.py'
+
+tests/test_git_status_regressions.py:58: AssertionError
+_________________ test_untracked_file_does_not_count_as_staged _________________
+
+repo = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-62/test_untracked_file_does_not_c0')
+
+    def test_untracked_file_does_not_count_as_staged(repo: Path) -> None:
+        (repo / "new.py").write_text("new\n", encoding="utf-8")
+    
+        output = _status(repo)
+    
+>       assert "Staged changes: 0" in output
+E       AssertionError: assert 'Staged changes: 0' in 'Git Status:\n  Staged changes: 1\n  Unstaged changes: 0\n\nFiles:\n  [??] new.py'
+
+tests/test_git_status_regressions.py:68: AssertionError
+______________ test_mixed_file_counts_index_and_worktree_changes _______________
+
+repo = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-62/test_mixed_file_counts_index_a0')
+
+    def test_mixed_file_counts_index_and_worktree_changes(repo: Path) -> None:
+        (repo / "alpha.py").write_text("staged\n", encoding="utf-8")
+        _git(repo, "add", "alpha.py")
+        (repo / "alpha.py").write_text("staged plus unstaged\n", encoding="utf-8")
+    
+        output = _status(repo)
+    
+        assert "Staged changes: 1" in output
+>       assert "Unstaged changes: 1" in output
+E       AssertionError: assert 'Unstaged changes: 1' in 'Git Status:\n  Staged changes: 1\n  Unstaged changes: 0\n\nFiles:\n  [MM] alpha.py'
+
+tests/test_git_status_regressions.py:82: AssertionError
+_______ test_combined_status_counts_each_column_and_untracked_separately _______
+
+repo = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-62/test_combined_status_counts_ea0')
+
+    def test_combined_status_counts_each_column_and_untracked_separately(repo: Path) -> None:
+        (repo / "alpha.py").write_text("unstaged\n", encoding="utf-8")
+        (repo / "bravo.py").write_text("staged\n", encoding="utf-8")
+        (repo / "charlie.py").write_text("staged\n", encoding="utf-8")
+        _git(repo, "add", "bravo.py", "charlie.py")
+        (repo / "charlie.py").write_text("staged plus unstaged\n", encoding="utf-8")
+        (repo / "delta.py").write_text("untracked\n", encoding="utf-8")
+    
+        output = _status(repo)
+    
+>       assert "Staged changes: 2" in output
+E       AssertionError: assert 'Staged changes: 2' in 'Git Status:\n  Staged changes: 4\n  Unstaged changes: 0\n\nFiles:\n  [M] lpha.py\n  [M] bravo.py\n  [MM] charlie.py\n  [??] delta.py'
+
+tests/test_git_status_regressions.py:96: AssertionError
+__________ test_staged_rename_with_unstaged_edit_counts_both_columns ___________
+
+repo = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-62/test_staged_rename_with_unstag0')
+
+    def test_staged_rename_with_unstaged_edit_counts_both_columns(repo: Path) -> None:
+        _git(repo, "mv", "alpha.py", "renamed.py")
+        (repo / "renamed.py").write_text("original\nnew line\n", encoding="utf-8")
+    
+        output = _status(repo)
+    
+        assert "Staged changes: 1" in output
+>       assert "Unstaged changes: 1" in output
+E       AssertionError: assert 'Unstaged changes: 1' in 'Git Status:\n  Staged changes: 1\n  Unstaged changes: 0\n\nFiles:\n  [RM] alpha.py -> renamed.py'
+
+tests/test_git_status_regressions.py:112: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_git_status_regressions.py::test_first_unstaged_file_keeps_path_and_is_not_staged
+FAILED tests/test_git_status_regressions.py::test_untracked_file_does_not_count_as_staged
+FAILED tests/test_git_status_regressions.py::test_mixed_file_counts_index_and_worktree_changes
+FAILED tests/test_git_status_regressions.py::test_combined_status_counts_each_column_and_untracked_separately
+FAILED tests/test_git_status_regressions.py::test_staged_rename_with_unstaged_edit_counts_both_columns
+5 failed, 2 passed in 0.93s

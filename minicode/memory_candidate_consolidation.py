@@ -5,17 +5,17 @@ from __future__ import annotations
 import hashlib
 import itertools
 import re
-import unicodedata
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable
 
+from minicode.memory_lexical_policy import CONSOLIDATION_LEXICAL_V1
+
 if TYPE_CHECKING:
     from minicode.memory_retrieval import MemoryRetrievalRequest, RetrievedMemory
 
 
-_TOKEN_RE = re.compile(r"[a-z0-9][a-z0-9_.:/-]*|[\u3400-\u9fff]+", re.I)
 _FILE_RE = re.compile(
     r"(?:^|[\s`'\"(])([a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)+|"
     r"[a-zA-Z0-9_.-]+\.(?:py|pyi|js|jsx|ts|tsx|java|go|rs|rb|php|sql|"
@@ -197,35 +197,18 @@ class _Features:
 
 
 def _normalize(value: object) -> str:
-    return unicodedata.normalize("NFKC", str(value or "")).strip().lower()
+    """Compatibility wrapper for consolidation V1 scalar normalization."""
+    return CONSOLIDATION_LEXICAL_V1.normalize_scalar(value)
 
 
 def _stem(term: str) -> str:
-    if not term.isascii() or len(term) < 4:
-        return term
-    if term.endswith("ies") and len(term) > 4:
-        return term[:-3] + "y"
-    if term.endswith("ing") and len(term) > 5:
-        return term[:-3]
-    if term.endswith("ed") and len(term) > 4:
-        return term[:-2]
-    if term.endswith("es") and len(term) > 4:
-        return term[:-2]
-    if term.endswith("s") and len(term) > 3:
-        return term[:-1]
-    return term
+    """Compatibility wrapper for consolidation V1 stemming."""
+    return CONSOLIDATION_LEXICAL_V1.stem(term)
 
 
 def _tokens(value: object, *, limit: int = 256) -> tuple[str, ...]:
-    result: list[str] = []
-    seen: set[str] = set()
-    for raw in _TOKEN_RE.findall(_normalize(value))[:limit]:
-        for part in re.split(r"[._:/-]+", raw):
-            term = _stem(part)
-            if term and term not in seen:
-                seen.add(term)
-                result.append(term)
-    return tuple(result)
+    """Compatibility wrapper for consolidation V1 unique tokens."""
+    return CONSOLIDATION_LEXICAL_V1.unique_tokens(value, limit=limit)
 
 
 def _bounded_targets(value: object, *, limit: int = 16) -> tuple[str, ...]:

@@ -276,6 +276,7 @@ def test_restart_recovers_running_without_marker_as_interrupted_and_never_runs(
     )
     first_store.claim(turn_id=TURN_ID, fingerprint=fingerprint)
     first_store.mark_running(TURN_ID)
+    first_store.release_claim(TURN_ID)
     runtime = Runtime("must not execute")
     restarted = ConversationTurnService(
         workspace,

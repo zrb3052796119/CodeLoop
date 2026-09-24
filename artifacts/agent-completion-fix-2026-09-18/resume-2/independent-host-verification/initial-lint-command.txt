@@ -1,0 +1,1 @@
+'/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python' -m ruff check --select=E,F --ignore=E501 minicode/agent_loop.py minicode/tools/git.py tests/test_primary_model_timeout_recovery.py tests/test_git_status_regressions.py

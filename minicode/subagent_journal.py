@@ -180,9 +180,15 @@ class SubagentRunSummary:
     result_truncated: bool
     budget_snapshot: dict[str, object]
     event_count: int
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    # True when the run soft-landed: it exhausted its model-turn limit and
+    # its result is a partial summary produced by one tool-free closing turn.
+    # Absent on journals written before the marker existed (reads as False).
+    partial: bool = False
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        summary = {
             "subagentId": self.subagent_id,
             "parentRunId": self.parent_run_id,
             "agentType": self.agent_type,
@@ -198,6 +204,14 @@ class SubagentRunSummary:
             "budget": dict(self.budget_snapshot),
             "eventCount": self.event_count,
         }
+        # Optional attributed-token telemetry: absent on journals written
+        # before per-sub-agent attribution existed.
+        if self.input_tokens is not None and self.output_tokens is not None:
+            summary["inputTokens"] = self.input_tokens
+            summary["outputTokens"] = self.output_tokens
+        if self.partial:
+            summary["partial"] = True
+        return summary
 
 
 class SubagentRunJournal:
@@ -463,9 +477,24 @@ class SubagentRunJournal:
         max_turns: int,
         result_truncated: bool,
         budget: AgentBudgetSnapshot | None,
+        input_tokens: int | None = None,
+        output_tokens: int | None = None,
+        partial: bool = False,
     ) -> None:
-        if outcome not in {"completed", "failed", "budget_exceeded"}:
+        if outcome not in {
+            "completed",
+            "failed",
+            "budget_exceeded",
+            "timed_out",
+            "cancelled",
+        }:
             raise SubagentJournalError("outcome is invalid")
+        if not isinstance(partial, bool):
+            raise SubagentJournalError("partial is invalid")
+        # A soft-landed run is a completion with partial results; any other
+        # outcome claiming the marker is a projection bug, not a partial run.
+        if partial and outcome != "completed":
+            raise SubagentJournalError("partial requires a completed outcome")
         for name, value in (
             ("model_turns", model_turns),
             ("tool_calls", tool_calls),
@@ -474,21 +503,36 @@ class SubagentRunJournal:
         ):
             if isinstance(value, bool) or not isinstance(value, int) or value < 0:
                 raise SubagentJournalError(f"{name} is invalid")
-        self._append_line(
-            subagent_id,
-            {
-                "recordType": "finish",
-                "journalVersion": JOURNAL_VERSION,
-                "outcome": outcome,
-                "modelTurns": model_turns,
-                "toolCalls": tool_calls,
-                "durationMs": duration_ms,
-                "maxTurns": max_turns,
-                "resultTruncated": bool(result_truncated),
-                "completedAt": self._clock(),
-                "budgetAtFinish": budget.to_dict() if budget else {},
-            },
-        )
+        # Attributed token deltas are optional (older writers never recorded
+        # them) but must arrive as a pair of non-negative ints when present.
+        if (input_tokens is None) != (output_tokens is None):
+            raise SubagentJournalError("attributed tokens must come as a pair")
+        for name, value in (
+            ("input_tokens", input_tokens),
+            ("output_tokens", output_tokens),
+        ):
+            if value is not None and (
+                isinstance(value, bool) or not isinstance(value, int) or value < 0
+            ):
+                raise SubagentJournalError(f"{name} is invalid")
+        record: dict[str, object] = {
+            "recordType": "finish",
+            "journalVersion": JOURNAL_VERSION,
+            "outcome": outcome,
+            "modelTurns": model_turns,
+            "toolCalls": tool_calls,
+            "durationMs": duration_ms,
+            "maxTurns": max_turns,
+            "resultTruncated": bool(result_truncated),
+            "completedAt": self._clock(),
+            "budgetAtFinish": budget.to_dict() if budget else {},
+        }
+        if input_tokens is not None and output_tokens is not None:
+            record["inputTokens"] = input_tokens
+            record["outputTokens"] = output_tokens
+        if partial:
+            record["partial"] = True
+        self._append_line(subagent_id, record)
 
     def list_runs(self) -> tuple[SubagentRunSummary, ...]:
         if not self._root.exists():
@@ -641,7 +685,18 @@ class SubagentRunJournal:
         ):
             return None
         outcome = finish.get("outcome")
-        if outcome not in {"completed", "failed", "budget_exceeded"}:
+        if outcome not in {
+            "completed",
+            "failed",
+            "budget_exceeded",
+            "timed_out",
+            "cancelled",
+        }:
+            return None
+        # Optional soft-landing marker, absent on pre-partial journals; an
+        # invalid value fails the read rather than silently downgrading.
+        partial = finish.get("partial", False)
+        if not isinstance(partial, bool) or (partial and outcome != "completed"):
             return None
         counts = {
             key: finish.get(key)
@@ -655,6 +710,18 @@ class SubagentRunJournal:
         budget = finish.get("budgetAtFinish")
         if not isinstance(budget, dict):
             budget = {}
+        # Optional attributed-token telemetry, absent on pre-attribution
+        # journals; an invalid or unpaired value degrades to "not recorded"
+        # rather than failing the whole summary read.
+        token_counts = {
+            key: finish.get(key)
+            for key in ("inputTokens", "outputTokens")
+        }
+        if any(value is None for value in token_counts.values()) or any(
+            isinstance(value, bool) or not isinstance(value, int) or value < 0
+            for value in token_counts.values()
+        ):
+            token_counts = {"inputTokens": None, "outputTokens": None}
         return SubagentRunSummary(
             subagent_id=subagent_id,
             parent_run_id=parent_run_id,
@@ -670,6 +737,9 @@ class SubagentRunJournal:
             result_truncated=bool(finish.get("resultTruncated", False)),
             budget_snapshot=budget,
             event_count=event_count,
+            input_tokens=token_counts["inputTokens"],
+            output_tokens=token_counts["outputTokens"],
+            partial=partial,
         )
 
 

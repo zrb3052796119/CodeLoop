@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 import subprocess
+from collections.abc import Mapping
+
+from minicode.capability_contracts import (
+    CapabilityDomain,
+    CapabilityEffects,
+    CapabilityProfile,
+    CapabilityScope,
+    CapabilitySource,
+)
 from minicode.tooling import ToolDefinition, ToolResult
+from minicode.tools.run_command import _subprocess_environment
 
 
 def _validate(input_data: dict) -> dict:
@@ -14,11 +24,39 @@ def _validate(input_data: dict) -> dict:
         message = input_data.get("message")
         if not isinstance(message, str) or not message.strip():
             raise ValueError("message is required for commit action")
+    try:
+        max_lines = int(input_data.get("max_lines", 50))
+    except (TypeError, ValueError):
+        raise ValueError("max_lines must be an integer") from None
+    if not 1 <= max_lines <= 500:
+        raise ValueError("max_lines must be between 1 and 500")
     return {
         "action": action,
         "message": input_data.get("message", ""),
-        "max_lines": int(input_data.get("max_lines", 50)),
+        "max_lines": max_lines,
     }
+
+
+def _capability_for(call_input: Mapping[str, object]) -> CapabilityProfile:
+    """Describe the validated wrapper action without authorizing Git execution."""
+    action = _validate(dict(call_input))["action"]
+    read_only = action != "commit"
+    return CapabilityProfile(
+        domain=CapabilityDomain.CODE,
+        scope=CapabilityScope.READONLY if read_only else CapabilityScope.WRITE,
+        source=CapabilitySource.BUILTIN,
+        effects=CapabilityEffects(
+            read_only=read_only,
+            destructive=False if read_only else None,
+            external=None,
+            executes_code=True,
+            delegates=False,
+        ),
+        evidence=(
+            f"Validated git wrapper action: {action}; unsupported argv is not forwarded.",
+            "Git subprocess configuration and hooks do not establish absence of external effects.",
+        ),
+    )
 
 
 def _run(input_data: dict, context) -> ToolResult:
@@ -56,44 +94,53 @@ def _run(input_data: dict, context) -> ToolResult:
 
 
 def _run_git(args: list[str], cwd: str) -> tuple[int, str, str]:
+    # git commit executes repository-owned .git/hooks scripts; those must
+    # not see the host's credentials. Strip the environment exactly like
+    # run_command does so this wrapper is not a leakier side door.
     proc = subprocess.run(
         ["git"] + args,
         cwd=cwd,
         capture_output=True,
         text=True,
         timeout=30,
+        env=_subprocess_environment(),
     )
-    return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
+    # Leading spaces are significant in status's XY columns and path offsets.
+    return proc.returncode, proc.stdout.rstrip("\r\n"), proc.stderr.strip()
 
 
 def _run_status(cwd: str) -> ToolResult:
-    rc, stdout, stderr = _run_git(["status", "--short"], cwd)
+    rc, stdout, stderr = _run_git(["status", "--porcelain=v1"], cwd)
     if rc != 0:
         return ToolResult(ok=False, output=f"Git status failed: {stderr}")
 
     if not stdout:
         return ToolResult(ok=True, output="Working tree clean. Nothing to commit.")
 
-    # Count changes
-    staged = sum(1 for line in stdout.split("\n") if line and line[0] != " ")
-    unstaged = sum(1 for line in stdout.split("\n") if line and line[0] == " ")
+    entries = stdout.splitlines()
+    # X describes the index and Y the worktree; both may be changed at once.
+    # Untracked/ignored markers are not index or tracked-worktree changes.
+    tracked = [line for line in entries if line[:2] not in ("??", "!!")]
+    staged = sum(1 for line in tracked if line[0] != " ")
+    unstaged = sum(1 for line in tracked if line[1] != " ")
+    untracked = sum(1 for line in entries if line[:2] == "??")
 
     lines = [
         "Git Status:",
         f"  Staged changes: {staged}",
         f"  Unstaged changes: {unstaged}",
+        f"  Untracked files: {untracked}",
         "",
         "Files:",
     ]
 
-    for line in stdout.split("\n")[:30]:
-        if line:
-            status = line[:2].strip()
-            file = line[3:]
-            lines.append(f"  [{status}] {file}")
+    for line in entries[:30]:
+        status = line[:2].strip()
+        file = line[3:]
+        lines.append(f"  [{status}] {file}")
 
-    if stdout.count("\n") >= 30:
-        lines.append(f"\n... and {stdout.count(chr(10)) - 29} more files")
+    if len(entries) > 30:
+        lines.append(f"\n... and {len(entries) - 30} more files")
 
     return ToolResult(ok=True, output="\n".join(lines))
 
@@ -133,8 +180,12 @@ def _run_log(cwd: str, max_lines: int) -> ToolResult:
 
 
 def _run_commit(cwd: str, message: str) -> ToolResult:
-    # First check what will be committed
-    rc, staged, _ = _run_git(["diff", "--cached", "--stat"], cwd)
+    # First check what will be committed. A non-zero rc here usually means
+    # "not a git repository" — report that instead of pretending nothing
+    # is staged.
+    rc, staged, stderr = _run_git(["diff", "--cached", "--stat"], cwd)
+    if rc != 0:
+        return ToolResult(ok=False, output=f"Git commit check failed: {stderr or 'git exited with ' + str(rc)}")
 
     if not staged:
         return ToolResult(
@@ -215,4 +266,5 @@ git_tool = ToolDefinition(
     },
     validator=_validate,
     run=_run,
+    capability_for=_capability_for,
 )

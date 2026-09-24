@@ -1,0 +1,31 @@
+{
+  "priorGlmBudgetSnapshot": {
+    "limitTotalTokens": 1000000,
+    "limitModelCalls": 40,
+    "limitCostUsd": "5",
+    "usedTotalTokens": 26046,
+    "reservedTotalTokens": 0,
+    "usedModelCalls": 2,
+    "usedCostUsd": "0.0",
+    "usedInputTokens": 26046,
+    "usedOutputTokens": 0
+  },
+  "priorFailedUsageUnknown": true,
+  "allocation": {
+    "maxModelCalls": 38,
+    "maxTokens": 950000,
+    "maxCostUsd": 4,
+    "deadlineSeconds": 900
+  },
+  "conservativeHeadroom": {
+    "tokensAfterChargedEstimate": 23954,
+    "costEstimateGuardUsd": 1
+  },
+  "timing": "new explicitly disclosed comparison window because original 1200-second window has elapsed; not the same deadline",
+  "maxOutputTokens": 8192,
+  "modelTimeoutSeconds": 180,
+  "modelMaxRetries": 1,
+  "history": "actual prior messages with private reasoning fields removed for cross-provider compatibility; not a controlled A/B test",
+  "actor": "same production CodeLoop runtime, host-selected configured general-role model, not a spawned subagent or production automatic fallback",
+  "persistentConfigurationChanged": false
+}

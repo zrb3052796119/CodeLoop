@@ -1,0 +1,17 @@
+{
+  "minicode/agent_loop.py": "c5abbbe5d15a7a4057f6c202ac883d9ce62a272fdef5e9a980a26fe7c1b44546",
+  "minicode/agent_runtime.py": "e578f43a352750556b15963404a48653dde6d59a951a68077fa6f22a4555c59a",
+  "minicode/main.py": "c04d7ffbfe017a01d5068280133b45827a5fd7c6946f4195f6ed949b8e72d7a5",
+  "minicode/tui/input_handler.py": "256e23a13c8a9e1697751bba1e1d1dab5644eab10258c28c9184d6fa44b06e04",
+  "minicode/agent_intelligence.py": "fd67856865fb8fc8371be3ba2ffd5a8796696c1c06e58831b4f8978858657dd8",
+  "minicode/prompt.py": "15498f081f0c892a11a5fdf7177c0fe3d85ddd0edb5eb894c992b526d8ebda3d",
+  "minicode/turn_completion.py": "215bf4f5845df2c9696db8eb1253e2719f3c25e8443df9292c3c11a3be4936bf",
+  "minicode/run_journal.py": "7cdb46816b44549f3c8bca3331fa5c4073d4694b5f86d2be628ec7d2d1d53fe2",
+  "tests/test_primary_agent_completion.py": "0ca723b29f031731a86169120f62640487ffd1c12dd9e067a973cb87dec9a015",
+  "tests/test_turn_completion_policy.py": "597aee0e9b4cb35a19c4efe274aba46ffea0e475eb59100101fbbbe525a3b17a",
+  "tests/test_bounded_completion_entrypoints.py": "c1a42c066beb13efccfb346ae6206b713953d9a46aacc51de2bf9b04544e7640",
+  "tests/test_error_classification_regressions.py": "061eb463d824a9d419b902f07f0b0fbd4b2b206c44fa73ce13b4e5cb020f29c2",
+  "tests/test_verification_prompt_guidance.py": "2c83df4c851003158f4486643c8f3093ce478040931daafc903610f1db80aff3",
+  "tests/test_completion_journal_events.py": "f81d6e20d0785064e2b0fb0bff3342ec1e057c217cbb81be464ea4000d1e532b",
+  "tests/test_completion_recent_changes.py": "2f832077b5025289dbaa198864b442477c1417fcbfdd49d4cafe90b6ab58127a"
+}

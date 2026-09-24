@@ -1,0 +1,24 @@
+{
+  "loaded_skill_router": "/private/tmp/minicode-multi-agent-buggy-ahhcgrxd/minicode/skill_router.py",
+  "loaded_skill_routing_turn": "/private/tmp/minicode-multi-agent-buggy-ahhcgrxd/minicode/skill_routing_turn.py",
+  "payloadSha256": "fb4a48124bbc91a4cc88d1a5cf9a515e8ba13cc62589205f635d3b52317e9d25",
+  "failed_checks": {
+    "current": [
+      "datasets.skillRoutingJoinedSha256.equals",
+      "skillRouting.top1Accuracy.min"
+    ],
+    "a": []
+  },
+  "failed_skill_cases": [
+    "positive-database-02",
+    "positive-deploy-01",
+    "positive-database-zh-02"
+  ],
+  "skill_top1_accuracy": 0.925,
+  "dataset_mismatches": {
+    "skillRoutingJoinedSha256": {
+      "baseline": "5ef97de86a76bdfc30be9bfd6e74adc7fd7e5e2d5c664a99c8ba257dbd40f808",
+      "current": "77e0c658eee6065c3aafcd6277de5c0207b5d70a70c291be2890f3119a193b2f"
+    }
+  }
+}

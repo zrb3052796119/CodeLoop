@@ -1,0 +1,8 @@
+{
+  "stage": "/private/tmp/codeloop-delivery-validation-kqrn7gzx",
+  "python": "/private/tmp/codeloop-delivery-validation-kqrn7gzx/venv/bin/python",
+  "wheel": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/dist/classmate-delivery-2026-09-18/minicode_py-0.1.0-py3-none-any.whl",
+  "report": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/delivery-work/self-check.json",
+  "self_check_exit": 0,
+  "certifi_offline_dependency_version": "2026.7.22"
+}

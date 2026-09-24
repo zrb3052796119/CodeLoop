@@ -1,0 +1,19 @@
+{
+  "minicode/agent_loop.py": "ff5cb8fabc57fd6e435ace77e0ee3a924d039f480dad3522d7b4d1cc8c1fcded",
+  "minicode/tools/git.py": "5cd7642374433c9908f085188c695a9c86915effd66b241a45f0764442702fa6",
+  "tests/test_primary_agent_completion.py": "0ca723b29f031731a86169120f62640487ffd1c12dd9e067a973cb87dec9a015",
+  "tests/test_turn_completion_policy.py": "597aee0e9b4cb35a19c4efe274aba46ffea0e475eb59100101fbbbe525a3b17a",
+  "tests/test_bounded_completion_entrypoints.py": "c1a42c066beb13efccfb346ae6206b713953d9a46aacc51de2bf9b04544e7640",
+  "tests/test_error_classification_regressions.py": "061eb463d824a9d419b902f07f0b0fbd4b2b206c44fa73ce13b4e5cb020f29c2",
+  "tests/test_verification_prompt_guidance.py": "2c83df4c851003158f4486643c8f3093ce478040931daafc903610f1db80aff3",
+  "tests/test_completion_journal_events.py": "f81d6e20d0785064e2b0fb0bff3342ec1e057c217cbb81be464ea4000d1e532b",
+  "tests/test_completion_recent_changes.py": "2f832077b5025289dbaa198864b442477c1417fcbfdd49d4cafe90b6ab58127a",
+  "tests/test_agent_flow.py": "b41bf79ac4523947fc99ebe21f41fdc159a9f33ba80b28c509be5bb7cdfc8362",
+  "tests/test_subagent_soft_landing.py": "69a43fd5cf1cd01091f6337da4a46906bf8f0b8dd9d30e4ae3a3cc4c99b68610",
+  "tests/test_run_journal.py": "bc3aaf0eb6eacf10b171c0908f5363a7735f643884abd6a3fcd23bd3b18ca0a6",
+  "tests/test_run_lifecycle.py": "c62f1d5d97d4999e308de42c532a9bf0d0642208916a840f36b4ff6301d1842c",
+  "tests/test_prompt.py": "49415268accb007974a092f970a905ee13771d4af7ee28f76bcf6587a1965f75",
+  "tests/test_primary_model_timeout_recovery.py": "d37984380bca503c874bc0fd14fb558a6ca12e8a99b9fb2890ad1d8e39fda3eb",
+  "tests/test_git_status_regressions.py": "e0712d447130ac6e01f13c5ee0fc5ea4ffddf64210e820bc5a11dcbcfe954bf3",
+  "tests/test_model_adapter_call_controls.py": "2972143640da42f2c787b8ff1daa8db86c25088e6f37325b65eeeec8a8013d72"
+}

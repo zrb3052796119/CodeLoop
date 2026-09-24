@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import hashlib
 import time
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from minicode.memory import MemoryManager
 from minicode.logging_config import get_logger
+from minicode.memory import MemoryManager
 
 logger = get_logger("memory_injector")
 
@@ -98,13 +97,11 @@ class MemoryInjectionController:
         elif signal.retrieval_quality >= 0.75 and signal.context_usage < 0.65:
             mode = MemoryInjectionMode.STRONG
             max_memories = min(base_max_memories + 2, max_memories + 2)
-            min_relevance = max(0.15, min_relevance - 0.10)
             reasons.append("high retrieval quality")
 
         if signal.recent_failure:
             mode = MemoryInjectionMode.STRONG if signal.context_usage < 0.75 else mode
             max_memories = min(base_max_memories + 1, max_memories + 1)
-            min_relevance = max(0.15, min_relevance - 0.10)
             reasons.append("recent failure recovery")
 
         if signal.user_correction_count > 0:
@@ -133,7 +130,14 @@ class MemoryInjectionController:
 
 
 class MemoryInjector:
-    """Injects relevant memories into agent context based on task content."""
+    """Compatibility selector/formatter for canonical retrieval results.
+
+    This class does not own prompt mutation or injection accounting. Production
+    prompt installation flows through ``MemoryPipeline``, whose receipt fence
+    can prove which exact IDs reached the model.  Keeping this facade
+    retrieval-only prevents formatting a candidate from being mistaken for an
+    actual injection.
+    """
 
     def __init__(
         self,
@@ -150,14 +154,13 @@ class MemoryInjector:
         self._min_relevance = min_relevance
         self._max_tokens = max_tokens_per_memory
         self._controller = controller or MemoryInjectionController()
-        self._reranker = reranker
+        # Kept only for source compatibility. Canonical retrieval deliberately
+        # has no free-text reranker side channel.
+        del reranker
         self._last_decision: MemoryInjectionDecision | None = None
         self._last_query: str = ""
         self._last_injection_time: float = 0.0
         self._injection_cooldown: float = injection_cooldown if injection_cooldown is not None else 30.0
-        self._task_hash: str = ""
-        self._cached_result: list[InjectedMemory] = []
-        self._last_rerank_result: Any = None
         from minicode.memory_retrieval import CanonicalMemoryRetriever
 
         self._retriever = (
@@ -168,21 +171,11 @@ class MemoryInjector:
             if memory_manager is not None
             else None
         )
-        self._last_result: Any = None
 
     @property
     def retriever(self):
         """Canonical retriever used by this compatibility facade."""
         return self._retriever
-
-    @staticmethod
-    def _hash_task(task_description: str, current_files: tuple[str, ...] | None) -> str:
-        """Compute a fast hash for cache key."""
-        h = hashlib.md5(task_description.encode(), usedforsecurity=False)
-        if current_files:
-            for f in current_files:
-                h.update(f.encode())
-        return h.hexdigest()
 
     def inject_for_task(
         self,
@@ -211,17 +204,13 @@ class MemoryInjector:
         )
         self._last_decision = decision
         if decision.mode == MemoryInjectionMode.NONE or self._retriever is None:
-            self._last_result = None
             return []
 
-        task_hash = self._hash_task(task_description, tuple(current_files) if current_files else None)
-        if time.time() - self._last_injection_time < self._injection_cooldown:
-            if task_description == self._last_query:
-                self._last_result = None
-                return []
-
-        if task_hash == self._task_hash and self._cached_result:
-            return self._cached_result.copy()
+        if (
+            time.time() - self._last_injection_time < self._injection_cooldown
+            and task_description == self._last_query
+        ):
+            return []
 
         self._last_query = task_description
         self._last_injection_time = time.time()
@@ -240,9 +229,11 @@ class MemoryInjector:
                 min_relevance=self._min_relevance,
                 source_entrypoint=RetrievalSource.INJECTOR,
                 recent_failure=control_signal.recent_failure,
+                retrieval_quality=control_signal.retrieval_quality,
+                user_correction_count=control_signal.user_correction_count,
+                task_repetition=control_signal.task_repetition,
             )
         )
-        self._last_result = result
         injected = [
             InjectedMemory(
                 content=memory.content,
@@ -261,8 +252,6 @@ class MemoryInjector:
             task_description[:50],
         )
 
-        self._task_hash = task_hash
-        self._cached_result = injected.copy()
         return injected
 
     def inject_on_failure(
@@ -291,7 +280,6 @@ class MemoryInjector:
             base_max_tokens=self._max_tokens,
         )
         if self._last_decision.mode == MemoryInjectionMode.NONE:
-            self._last_result = None
             return []
         from minicode.memory_retrieval import MemoryRetrievalRequest, RetrievalSource
 
@@ -306,9 +294,11 @@ class MemoryInjector:
                 min_relevance=min(0.2, self._min_relevance),
                 source_entrypoint=RetrievalSource.FAILURE_RECOVERY,
                 recent_failure=True,
+                retrieval_quality=control_signal.retrieval_quality,
+                user_correction_count=control_signal.user_correction_count,
+                task_repetition=control_signal.task_repetition,
             )
         )
-        self._last_result = result
         return [
             InjectedMemory(
                 content=memory.content,
@@ -321,23 +311,16 @@ class MemoryInjector:
             for memory in result.rendered
         ]
 
-    def _record_injected(self, memories: list[InjectedMemory]) -> None:
-        """Persist that these concrete memory entries were actually injected."""
-        if self._memory is None or not hasattr(self._memory, "record_injections"):
-            return
-        entry_ids = [m.entry_id for m in memories if m.entry_id]
-        if entry_ids:
-            self._memory.record_injections(entry_ids)
-
     @property
     def last_decision(self) -> MemoryInjectionDecision | None:
         return self._last_decision
 
     def format_for_prompt(self, memories: list[InjectedMemory]) -> str:
-        """Format injected memories for inclusion in system prompt.
+        """Format retrieval candidates without claiming prompt installation.
 
         Args:
-            memories: List of memories to format
+            memories: Candidate memories to format. Production callers must
+                install through ``MemoryPipeline`` instead of this facade.
 
         Returns:
             Formatted string for prompt injection

@@ -12,7 +12,7 @@ from typing import Any, Callable, Literal
 from minicode.config import MINI_CODE_PERMISSIONS_PATH
 
 # Auto mode integration
-from minicode.auto_mode import AutoModeChecker, PermissionMode, get_mode_state
+from minicode.auto_mode import AutoModeChecker, PermissionMode, get_checker, get_mode_state
 
 # 权限决策类型 — 对齐 TS 版 PermissionDecision
 PermissionDecision = Literal[
@@ -60,10 +60,20 @@ class PermissionDeniedError(RuntimeError):
                 "Use a workspace-relative target or an already-authorized path; "
                 "do not retry the denied outside-workspace target."
             )
+        elif self.code.startswith("mcp_tool"):
+            guidance = (
+                "Do not retry the denied MCP tool. It needs an interactive "
+                "approval or a read-only declaration in local toolCapabilities "
+                "config; continue with built-in tools instead."
+            )
         else:
             guidance = (
-                "Use an already-authorized target or stop and report the blocker; "
-                "do not retry the denied edit through another tool."
+                "Do not retry the same denied edit through another direct "
+                "tool. If the change is still required, delegate it to the "
+                'central scheduler instead: call task with agent_type="workflow" '
+                "and write_paths/verification_commands (or an explicit "
+                "workflow_request). Otherwise use an already-authorized "
+                "target or report the blocker."
             )
         safe_tool = re.sub(r"[^a-zA-Z0-9_.-]", "", str(tool_name))[:64] or "tool"
         return (
@@ -220,6 +230,77 @@ def _matches_directory_prefix(target_path: str, directories: set[str]) -> bool:
     return False
 
 
+# --- Parent small-diff direct-edit fast path -------------------------------
+#
+# Production keeps the central-scheduler workflow for state-changing work,
+# but a bounded low-risk diff (typo fix, small function repair) costs 2-4x
+# more through the full pipeline.  The parent may edit directly while the
+# request stays inside these bounds; exceeding any bound denies with an
+# escalation message pointing back at the workflow route.  MINI_CODE_
+# PARENT_FAST_EDIT=0 restores approval-only edits.
+
+_FAST_EDIT_ENV = "MINI_CODE_PARENT_FAST_EDIT"
+_FAST_EDIT_MAX_FILES_PER_TURN = 4
+_FAST_EDIT_MAX_LINES_PER_DIFF = 200
+_FAST_EDIT_MAX_LINES_PER_TURN = 400
+
+
+def _parent_fast_edit_enabled() -> bool:
+    raw = os.environ.get(_FAST_EDIT_ENV)
+    if raw is None or not raw.strip():
+        return True
+    return raw.strip().lower() not in {"0", "false", "no", "off"}
+
+
+def _fast_edit_changed_lines(diff_preview: object) -> int:
+    """Bound one diff by its added/removed line count."""
+
+    if not isinstance(diff_preview, str) or not diff_preview.strip():
+        return 1
+    changed = [
+        line
+        for line in diff_preview.splitlines()
+        if (line.startswith("+") or line.startswith("-"))
+        and not line.startswith(("+++", "---"))
+    ]
+    if changed:
+        return len(changed)
+    # A raw-content preview (new file) counts as all its lines.
+    return len(diff_preview.splitlines())
+
+
+def _fast_edit_path_is_sensitive(
+    normalized_target: str,
+    workspace_root: str,
+) -> bool:
+    """Sensitive when the workspace-relative target touches protected bytes.
+
+    Sensitivity is judged relative to the workspace so a parent directory
+    named ``auth-service`` does not lock the whole project out of the fast
+    path.  Dot components (.git, .env, dotfiles) are always sensitive; other
+    components reuse the workflow contract's sensitive-term vocabulary so
+    both write routes share one notion of sensitivity.
+    """
+
+    from minicode.multi_agent_contracts import _SENSITIVE_PATH_TERMS
+
+    target = Path(normalized_target)
+    try:
+        relative = target.relative_to(Path(workspace_root))
+    except ValueError:
+        return True
+    components = [str(part) for part in relative.parts]
+    if any(part.startswith(".") for part in components):
+        return True
+    terms = {
+        term.casefold()
+        for component in components
+        for term in re.split(r"[^A-Za-z0-9]+", component)
+        if term
+    }
+    return bool(terms & _SENSITIVE_PATH_TERMS)
+
+
 def _format_command_signature(command: str, args: list[str]) -> str:
     return " ".join([command, *args]).strip()
 
@@ -356,7 +437,14 @@ class PermissionManager:
         self.workspace_root = _normalize_path(workspace_root)
         self.prompt = prompt
         self.operation_checkpoint = operation_checkpoint
-        self.auto_checker = AutoModeChecker(mode=auto_mode or PermissionMode.DEFAULT)
+        # Without an explicit mode, share the process-wide checker so the
+        # MINI_CODE_PERMISSION_MODE env var and the /mode command apply to
+        # this manager too. An explicit mode gets a dedicated checker.
+        self.auto_checker = (
+            AutoModeChecker(mode=auto_mode)
+            if auto_mode is not None
+            else get_checker()
+        )
         self.allowed_directory_prefixes: set[str] = set()
         self.denied_directory_prefixes: set[str] = set()
         self.session_allowed_paths: set[str] = set()
@@ -365,12 +453,21 @@ class PermissionManager:
         self.denied_command_patterns: set[str] = set()
         self.session_allowed_commands: set[str] = set()
         self.session_denied_commands: set[str] = set()
+        # MCP tool identities ("mcp__server__tool") the user has ruled on.
+        # MCP servers are external processes outside the built-in path/
+        # command/edit categories, so they carry their own allow/deny sets.
+        self.allowed_mcp_tool_patterns: set[str] = set()
+        self.denied_mcp_tool_patterns: set[str] = set()
+        self.session_allowed_mcp_tools: set[str] = set()
+        self.session_denied_mcp_tools: set[str] = set()
         self.allowed_edit_patterns: set[str] = set()
         self.denied_edit_patterns: set[str] = set()
         self.session_allowed_edits: set[str] = set()
         self.session_denied_edits: set[str] = set()
         self.turn_allowed_edits: set[str] = set()
         self.turn_allow_all_edits = False
+        self._fast_edit_files: dict[str, int] = {}
+        self._fast_edit_total_lines = 0
         self._initialize()
 
     def _initialize(self) -> None:
@@ -379,12 +476,16 @@ class PermissionManager:
         self.denied_directory_prefixes |= {_normalize_path(item) for item in store.get("deniedDirectoryPrefixes", [])}
         self.allowed_command_patterns |= set(store.get("allowedCommandPatterns", []))
         self.denied_command_patterns |= set(store.get("deniedCommandPatterns", []))
+        self.allowed_mcp_tool_patterns |= set(store.get("allowedMcpToolPatterns", []))
+        self.denied_mcp_tool_patterns |= set(store.get("deniedMcpToolPatterns", []))
         self.allowed_edit_patterns |= {_normalize_path(item) for item in store.get("allowedEditPatterns", [])}
         self.denied_edit_patterns |= {_normalize_path(item) for item in store.get("deniedEditPatterns", [])}
 
     def begin_turn(self) -> None:
         self.turn_allowed_edits.clear()
         self.turn_allow_all_edits = False
+        self._fast_edit_files: dict[str, int] = {}
+        self._fast_edit_total_lines = 0
 
     def end_turn(self) -> None:
         self.begin_turn()
@@ -437,6 +538,98 @@ class PermissionManager:
         )
         raise NetworkPermissionError(code)
 
+    def ensure_mcp_tool(
+        self,
+        tool_id: str,
+        *,
+        server_name: str,
+        tool_name: str,
+        declared_read_only: bool,
+    ) -> None:
+        """Authorize one MCP tool call before it reaches the external server.
+
+        MCP servers are external processes the built-in path/command/edit
+        categories cannot describe, and their ToolAnnotations are explicitly
+        untrusted hints. Only a host-authored local capability declaration
+        of read-only scope skips the human decision; everything else
+        (unknown or mutating) needs an explicit approval, and plan mode —
+        a read-only promise — blocks it outright.
+        """
+        if self.auto_checker.mode == PermissionMode.BYPASS:
+            get_mode_state().record_decision("approve")
+            return
+        if declared_read_only:
+            return
+        if self.auto_checker.mode == PermissionMode.PLAN:
+            get_mode_state().record_decision("block")
+            raise PermissionDeniedError(
+                f"MCP tool {tool_id} is not declared read-only; plan mode "
+                "forbids calling it.",
+                code="mcp_tool_plan_mode",
+            )
+        if (
+            tool_id in self.session_denied_mcp_tools
+            or tool_id in self.denied_mcp_tool_patterns
+        ):
+            raise PermissionDeniedError(
+                f"MCP tool {tool_id} was denied.",
+                code="mcp_tool_denied",
+            )
+        if (
+            tool_id in self.session_allowed_mcp_tools
+            or tool_id in self.allowed_mcp_tool_patterns
+        ):
+            return
+        if self.prompt is None:
+            raise PermissionDeniedError(
+                f"MCP tool {tool_id} requires approval. Start minicode in TTY "
+                "mode to approve it or declare it read-only in local config.",
+                code="mcp_tool_requires_approval",
+            )
+        result = self.prompt(
+            {
+                "schemaVersion": 1,
+                "kind": "mcp_tool",
+                "summary": (
+                    f"mini-code wants to call MCP tool {tool_name} "
+                    f"on server {server_name}"
+                ),
+                "details": [
+                    f"server: {server_name}",
+                    f"tool: {tool_name}",
+                    "capability: not declared read-only by local config; "
+                    "the server is an external process",
+                ],
+                "scope": tool_id,
+                "review": {"serverName": server_name, "toolName": tool_name},
+                "choices": [
+                    {"key": "y", "label": "allow once", "decision": "allow_once"},
+                    {"key": "a", "label": "always allow this tool", "decision": "allow_always"},
+                    {"key": "n", "label": "deny once", "decision": "deny_once"},
+                    {"key": "d", "label": "always deny this tool", "decision": "deny_always"},
+                ],
+            }
+        )
+        decision = result.get("decision")
+        if decision == "allow_operation":
+            return
+        if decision == "allow_once":
+            self.session_allowed_mcp_tools.add(tool_id)
+            return
+        if decision == "allow_always":
+            self.allowed_mcp_tool_patterns.add(tool_id)
+            self._persist()
+            return
+        if decision == "deny_always":
+            self.denied_mcp_tool_patterns.add(tool_id)
+            self._persist()
+        else:
+            self.session_denied_mcp_tools.add(tool_id)
+        raise PermissionDeniedError(
+            f"MCP tool {tool_id} was denied.",
+            code="mcp_tool_denied",
+        )
+
     def get_summary(self) -> list[str]:
         summary = [f"cwd: {self.workspace_root}"]
         summary.append(
@@ -458,6 +651,8 @@ class PermissionManager:
                 "deniedDirectoryPrefixes": sorted(self.denied_directory_prefixes),
                 "allowedCommandPatterns": sorted(self.allowed_command_patterns),
                 "deniedCommandPatterns": sorted(self.denied_command_patterns),
+                "allowedMcpToolPatterns": sorted(self.allowed_mcp_tool_patterns),
+                "deniedMcpToolPatterns": sorted(self.denied_mcp_tool_patterns),
                 "allowedEditPatterns": sorted(self.allowed_edit_patterns),
                 "deniedEditPatterns": sorted(self.denied_edit_patterns),
             }
@@ -545,6 +740,45 @@ class PermissionManager:
             code="path_outside_workspace",
         )
 
+    def _try_fast_edit(self, normalized_target: str, diff_preview: str) -> str | None:
+        """Approve one bounded parent edit, or name why it cannot pass.
+
+        Returns ``None`` when the edit is approved through the fast path and
+        ``"exhausted"`` when the turn budget is spent.  Any other ineligibility
+        returns a truthy marker so the caller falls back to the approval flow.
+        """
+
+        if not _parent_fast_edit_enabled():
+            return "disabled"
+        if self.auto_checker.mode == PermissionMode.PLAN:
+            # Plan mode is a read-only promise; no edit may bypass it.
+            return "plan_mode"
+        if self.prompt is not None:
+            # An interactive approval channel exists: the human decides,
+            # exactly as before.  The fast path exists so headless turns
+            # (prompt=None) are not deadlocked on small low-risk diffs.
+            return "interactive"
+        if not _is_within_directory(self.workspace_root, normalized_target):
+            return "outside_workspace"
+        if _fast_edit_path_is_sensitive(normalized_target, self.workspace_root):
+            return "sensitive"
+        changed = _fast_edit_changed_lines(diff_preview)
+        if changed > _FAST_EDIT_MAX_LINES_PER_DIFF:
+            return "oversized"
+        new_total = self._fast_edit_total_lines + changed
+        exceeds_lines = new_total > _FAST_EDIT_MAX_LINES_PER_TURN
+        exceeds_files = (
+            normalized_target not in self._fast_edit_files
+            and len(self._fast_edit_files) >= _FAST_EDIT_MAX_FILES_PER_TURN
+        )
+        if exceeds_lines or exceeds_files:
+            return "exhausted"
+        self._fast_edit_total_lines = new_total
+        self._fast_edit_files[normalized_target] = (
+            self._fast_edit_files.get(normalized_target, 0) + changed
+        )
+        return None
+
     def ensure_command(
         self,
         command: str,
@@ -579,8 +813,26 @@ class PermissionManager:
         if signature in self.session_allowed_commands or signature in self.allowed_command_patterns:
             return
 
-        if classified_reason:
-            # Auto mode risk assessment for dangerous commands
+        if force_prompt_reason:
+            # A caller that proved argv has write/delete/code-execution or
+            # out-of-workspace reach must not have that proof erased by auto
+            # mode's generic command classifier. Explicit bypass remains the
+            # only mode that can skip this host-owned review boundary.
+            assessment = self.auto_checker.assess_risk(
+                "run_command", {"command": [command] + args}
+            )
+            if self.auto_checker.mode is PermissionMode.BYPASS:
+                get_mode_state().record_decision("approve")
+                return
+            if assessment.action == "block":
+                get_mode_state().record_decision("block")
+                raise PermissionDeniedError(
+                    f"Command blocked by auto mode: {assessment.reason}",
+                    code="command_blocked",
+                )
+        elif classified_reason:
+            # Auto mode risk assessment for dangerous commands discovered by
+            # the PermissionManager's own classifier.
             assessment = self.auto_checker.assess_risk("run_command", {"command": [command] + args})
             if assessment.action == "approve":
                 get_mode_state().record_decision("approve")
@@ -667,7 +919,21 @@ class PermissionManager:
             or normalized_target in self.allowed_edit_patterns
         ):
             return
-        
+        fast_edit_error = self._try_fast_edit(normalized_target, diff_preview)
+        if fast_edit_error is None:
+            return
+        if fast_edit_error == "exhausted":
+            raise PermissionDeniedError(
+                "edit_fast_path_exhausted: the small-diff direct-edit budget "
+                f"for this turn is used up ({_FAST_EDIT_MAX_FILES_PER_TURN} "
+                f"files / {_FAST_EDIT_MAX_LINES_PER_TURN} changed lines). "
+                "Delegate the remaining change through the task tool with "
+                'agent_type="workflow" and declared write_paths.',
+                code="edit_fast_path_exhausted",
+            )
+        # An ineligible target (sensitive, outside workspace, oversized diff)
+        # keeps the normal approval flow below.
+
         # Auto mode risk assessment for file edits
         assessment = self.auto_checker.assess_risk("edit_file", {"path": normalized_target})
         if assessment.action == "approve":

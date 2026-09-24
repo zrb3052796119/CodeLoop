@@ -1,15 +1,17 @@
 from pathlib import Path
 
+import pytest
+
 from minicode.capability_registry import (
     CapabilityDomain,
     CapabilityMetadata,
     CapabilityRegistry,
     CapabilityScope,
-    register_tool_capabilities,
 )
 from minicode.skill_authoring import propose_skill
 from minicode.tooling import ToolContext
 from minicode.tools import create_default_tool_registry
+from minicode.tools.propose_skill import create_propose_skill_tool
 
 
 def _registry(*capabilities: tuple[str, CapabilityDomain, CapabilityScope]) -> CapabilityRegistry:
@@ -253,7 +255,6 @@ def test_propose_skill_suggests_new_directory_when_no_strong_match(tmp_path: Pat
 def test_propose_skill_tool_is_registered_and_does_not_create_files(tmp_path: Path, monkeypatch) -> None:
     _seed_skill_tree(tmp_path, monkeypatch)
     tools = create_default_tool_registry(str(tmp_path), runtime={})
-    register_tool_capabilities(tools)
     tool = tools.find("propose_skill")
     assert tool is not None
     assert tool.is_read_only
@@ -277,3 +278,140 @@ def test_propose_skill_tool_is_registered_and_does_not_create_files(tmp_path: Pa
     assert "PROPOSE_SKILL_RESULT" in result.output
     assert "target_path: .mini-code/skills/code-understanding/trace-agent-loop/SKILL.md" in result.output
     assert before == after
+
+
+def test_default_registries_bind_propose_skill_to_their_own_capability_snapshot(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _seed_skill_tree(tmp_path, monkeypatch)
+    interactive = create_default_tool_registry(
+        str(tmp_path),
+        runtime={"toolProfile": "core"},
+        include_mcp=False,
+        include_user_interaction=True,
+    )
+    non_interactive = create_default_tool_registry(
+        str(tmp_path),
+        runtime={"toolProfile": "core"},
+        include_mcp=False,
+        include_user_interaction=False,
+    )
+    proposal = {
+        "name": "user-clarification",
+        "description": "Ask the user to clarify an ambiguous request.",
+        "domains": ["communication"],
+        "scopes": ["external"],
+        "tools": ["ask_user"],
+    }
+
+    try:
+        non_interactive_result = non_interactive.execute(
+            "propose_skill",
+            proposal,
+            ToolContext(cwd=str(tmp_path)),
+        )
+        interactive_result = interactive.execute(
+            "propose_skill",
+            proposal,
+            ToolContext(cwd=str(tmp_path)),
+        )
+        non_interactive_again = non_interactive.execute(
+            "propose_skill",
+            proposal,
+            ToolContext(cwd=str(tmp_path)),
+        )
+    finally:
+        interactive.dispose()
+        non_interactive.dispose()
+
+    assert non_interactive_result.ok
+    assert interactive_result.ok
+    assert non_interactive_again.ok
+    assert "- ask_user: unknown" in non_interactive_result.output
+    assert "- ask_user: known (communication/external)" in interactive_result.output
+    assert "- ask_user: unknown" in non_interactive_again.output
+
+
+def test_filtered_registry_rebinds_propose_skill_to_the_filtered_tool_surface(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _seed_skill_tree(tmp_path, monkeypatch)
+    full = create_default_tool_registry(
+        str(tmp_path),
+        runtime={"toolProfile": "core"},
+        include_mcp=False,
+        include_user_interaction=False,
+    )
+    filtered = full.filtered(lambda tool: tool.name != "task")
+    proposal = {
+        "name": "delegating-skill",
+        "description": "Delegate a bounded coding task to a sub-agent.",
+        "domains": ["execution"],
+        "scopes": ["external"],
+        "tools": ["task"],
+    }
+
+    try:
+        full_result = full.execute(
+            "propose_skill",
+            proposal,
+            ToolContext(cwd=str(tmp_path)),
+        )
+        filtered_result = filtered.execute(
+            "propose_skill",
+            proposal,
+            ToolContext(cwd=str(tmp_path)),
+        )
+    finally:
+        filtered.dispose()
+        full.dispose()
+
+    assert full.find("task") is not None
+    assert filtered.find("task") is None
+    assert full_result.ok
+    assert filtered_result.ok
+    assert "- task: known (execution/external)" in full_result.output
+    assert "- task: unknown" in filtered_result.output
+
+
+def test_propose_skill_requires_an_explicit_capability_registry(
+    tmp_path: Path,
+) -> None:
+    spec = {"name": "explicit-registry", "description": "Require explicit tools."}
+
+    with pytest.raises(TypeError):
+        propose_skill(tmp_path, spec)
+    with pytest.raises(TypeError):
+        create_propose_skill_tool(str(tmp_path))
+
+
+def test_registry_binding_failure_disposes_started_resources(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _seed_skill_tree(tmp_path, monkeypatch)
+    disposed: list[bool] = []
+
+    monkeypatch.setattr(
+        "minicode.tools.create_mcp_backed_tools",
+        lambda **_kwargs: {
+            "tools": [],
+            "servers": [],
+            "dispose": lambda: disposed.append(True),
+        },
+    )
+
+    def fail_snapshot(_tools) -> CapabilityRegistry:
+        raise RuntimeError("snapshot failed")
+
+    monkeypatch.setattr(
+        "minicode.capability_registry.build_tool_capability_snapshot",
+        fail_snapshot,
+    )
+
+    with pytest.raises(RuntimeError, match="snapshot failed"):
+        create_default_tool_registry(str(tmp_path), runtime={"mcpServers": {}})
+
+    assert disposed == [True]

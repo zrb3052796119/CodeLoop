@@ -12,7 +12,7 @@ from minicode.central_scheduler import (
     TaskProfile,
     TaskRisk,
 )
-from minicode.tooling import ToolContext
+from minicode.tooling import ToolContext, ToolResult
 from minicode.tools import task as task_module
 
 
@@ -307,17 +307,8 @@ def test_scheduler_does_not_swallow_cancellation_from_commit() -> None:
         )
 
 
-@pytest.mark.parametrize(
-    ("agent_type", "expected_error"),
-    [
-        ("workflow", "workflow_request_required"),
-        ("general", "central_scheduler_required"),
-    ],
-)
 def test_production_context_cannot_bypass_central_v2_entrypoint(
     monkeypatch: pytest.MonkeyPatch,
-    agent_type: str,
-    expected_error: str,
 ) -> None:
     monkeypatch.setattr(
         task_module,
@@ -328,7 +319,7 @@ def test_production_context_cannot_bypass_central_v2_entrypoint(
         {
             "description": "central gate probe",
             "prompt": "Attempt a direct state-changing sub-agent.",
-            "agent_type": agent_type,
+            "agent_type": "general",
         }
     )
 
@@ -338,4 +329,36 @@ def test_production_context_cannot_bypass_central_v2_entrypoint(
     )
 
     assert result.ok is False
-    assert f"error[{expected_error}]" in result.output
+    assert "error[central_scheduler_required]" in result.output
+
+
+def test_production_workflow_without_request_uses_the_simplified_entry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A bare workflow call is no longer refused: with no declared write
+    paths the simplified entry keeps the fail-closed legacy route and marks
+    the dispatch as auto-constructed."""
+    captured: dict[str, object] = {}
+
+    def _recording_run(input_data, context):
+        captured.update(input_data)
+        return ToolResult(ok=True, output="recorded")
+
+    monkeypatch.setattr(task_module, "_SYNC_RUN", _recording_run)
+    validated = task_module.task_tool.validator(
+        {
+            "description": "central gate probe",
+            "prompt": "Attempt a direct state-changing sub-agent.",
+            "agent_type": "workflow",
+        }
+    )
+
+    result = task_module.task_tool.run(
+        validated,
+        ToolContext(_central_workflow_v2_enforced=True),
+    )
+
+    assert result.ok is True
+    assert captured["_workflow_auto_constructed"] is True
+    assert captured["_workflow_auto_constructed_mode"] == "legacy"
+    assert captured.get("workflow_request") is None

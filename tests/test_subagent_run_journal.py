@@ -16,7 +16,9 @@ from minicode.agent_budget import (
 from minicode.concurrent_tool_terminal import (
     project_concurrent_tool_terminal,
 )
+from minicode.memory_provenance import MemoryProvenanceBatch
 from minicode.run_journal import RunJournal
+from minicode.run_lifecycle import observe_run
 from minicode.subagent_journal import (
     SubagentJournalError,
     SubagentRunJournal,
@@ -24,6 +26,46 @@ from minicode.subagent_journal import (
 )
 from minicode.task_outcome import canonicalize_task_outcome
 from minicode.tools.task import _SubagentJournalSink
+
+
+def test_subagent_sink_binds_constructor_identity_through_real_run_journal(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    journal = RunJournal(workspace, data_dir=tmp_path / "home" / ".mini-code")
+    subagent_id = new_subagent_id()
+    batch = MemoryProvenanceBatch(
+        effect="rendered",
+        origin="task_start",
+        authority_versions=(
+            ("project-1785082406796413000-b6ecf281", "a" * 64),
+        ),
+        receipt_id="b" * 32,
+    )
+
+    with observe_run(
+        workspace=workspace,
+        source="headless",
+        title="Sub-agent provenance bridge",
+        journal_factory=lambda _workspace: journal,
+    ) as observation:
+        run_id = observation.run_id
+        sink = _SubagentJournalSink(
+            None,
+            subagent_id,
+            parent_memory_provenance_sink=observation,
+        )
+        sink.record_memory_provenance(batch)
+
+    assert run_id is not None
+    snapshot = journal.get_memory_provenance(run_id, "rendered")
+    assert snapshot.materializations == batch.authority_versions
+    assert len(snapshot.records) == 1
+    record = snapshot.records[0]
+    assert record.batch == batch
+    assert record.actor.kind == "subagent"
+    assert record.actor.subagent_id == subagent_id
 
 
 def test_subagent_journal_records_bounded_events(tmp_path: Path) -> None:
@@ -504,6 +546,17 @@ def test_task_tool_writes_subagent_journal_and_passes_shared_budget(
             return None
 
     captured: dict = {}
+    original_prompt_builder = task_module._build_sub_agent_system_prompt
+
+    def capture_prompt_builder(**kwargs):
+        captured["routing_context"] = kwargs.get("routing_call_context")
+        return original_prompt_builder(**kwargs)
+
+    monkeypatch.setattr(
+        task_module,
+        "_build_sub_agent_system_prompt",
+        capture_prompt_builder,
+    )
 
     def fake_run_agent_turn(**kwargs):
         captured.update(kwargs)
@@ -545,13 +598,32 @@ def test_task_tool_writes_subagent_journal_and_passes_shared_budget(
     )
 
     assert result.ok is True
-    assert captured["agent_budget"] is shared_budget
+    # The sub-agent loop now receives a per-sub-agent attribution view over
+    # the shared budget (per-subagent token attribution); the view still
+    # delegates every limit and counter to the shared object.
+    captured_budget = captured["agent_budget"]
+    assert captured_budget.attributed_tokens() == (0, 0)
+    captured_budget.record_model_call(input_tokens=30, output_tokens=12)
+    assert shared_budget.snapshot().used_total_tokens == 42
+    assert captured_budget.attributed_tokens() == (30, 12)
     assert captured["budget_exhausted_policy"] == "raise"
+    routing_context = captured["routing_context"]
+    assert isinstance(routing_context, dict)
+    assert routing_context["agent_budget"] is captured_budget
+    assert routing_context["event_sink"] is captured["event_sink"]
+    assert routing_context["deadline_monotonic"] is captured[
+        "deadline_monotonic"
+    ]
+    assert routing_context["preserve_model_calls"] == 1
 
     summaries = journal.list_subagent_runs(record.id)
     assert len(summaries) == 1
     assert summaries[0].outcome == "completed"
     assert summaries[0].model_turns == 1
+    # The fake loop recorded no usage before finish, so this sub-agent's
+    # attributed token delta is exactly zero.
+    assert summaries[0].input_tokens == 0
+    assert summaries[0].output_tokens == 0
     events = journal.list_subagent_events(record.id, summaries[0].subagent_id)
     assert [event.type for event in events] == ["skill.routed", "task.outcome"]
 

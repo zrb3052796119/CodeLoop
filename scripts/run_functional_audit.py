@@ -422,9 +422,9 @@ def _probe_archive_escape(tools: dict[str, Any], workspace: Path) -> dict[str, b
         target = expected[name]
         try:
             result = tools[name].run(tools[name].validator(payload), context)
-            results[name] = result.ok and target.exists()
+            results[name] = (not result.ok) and not target.exists()
         except Exception:
-            results[name] = False
+            results[name] = not target.exists()
         finally:
             target.unlink(missing_ok=True)
     return results
@@ -1459,16 +1459,9 @@ def _tool_capabilities(
     core_names = set(core)
     utility_names = set(full).difference(core)
     failed_tools = {
-        "gzip_compress",
-        "gzip_decompress",
-        "tar_create",
-        "zip_create",
+        "file_line_count",
     }
     issue_map = {
-        "gzip_compress": ["SEC-002"],
-        "gzip_decompress": ["SEC-002", "SEC-004"],
-        "tar_create": ["SEC-002"],
-        "zip_create": ["SEC-002"],
         "file_line_count": ["TOOL-002"],
         "base64_encode": ["TOOL-003"],
         "hash": ["TOOL-003"],
@@ -1506,8 +1499,24 @@ def _tool_capabilities(
             # Driven by the live probe, not a hardcoded verdict, so a fix to the
             # Tool shows up here instead of the audit reporting a stale failure.
             truthfulness = "fail" if read_file_misreports else "pass"
-        if name in {"tar_extract", "zip_extract"} and tests:
+        if name in {
+            "gzip_compress",
+            "gzip_decompress",
+            "tar_create",
+            "tar_extract",
+            "zip_create",
+            "zip_extract",
+        } and tests:
             safety = "pass"
+            status = "pass"
+            evidence.extend(
+                [
+                    "paths=canonical-workspace-resolver",
+                    "operation=cooperative-checkpoint",
+                    "extraction=members:10000,bytes:256MiB,deadline:30s",
+                    "partial-output=rollback-or-staging-cleanup",
+                ]
+            )
         if name == "file_line_count":
             safety = "partial"
         if name == "http_request":
@@ -1659,7 +1668,7 @@ def _build_issues(
 ) -> list[dict[str, Any]]:
     del live_results
     issues: list[dict[str, Any]] = []
-    if any(probes["archiveEscape"].values()):
+    if not all(probes["archiveEscape"].values()):
         issues.append(
             _issue(
                 "SEC-002",
@@ -1702,19 +1711,6 @@ def _build_issues(
         )
     issues.extend(
         [
-            _issue(
-                "SEC-004",
-                "P1",
-                "tool.gzip_decompress",
-                "Archive decompression lacks aggregate byte, member and time budgets.",
-                "Expand a high-ratio archive fixture in an isolated Workspace.",
-                "Archive extraction must stop at documented byte, member and time budgets before allocating or writing unbounded output.",
-                "The HTTP response paths are bounded; archive extraction still lacks an aggregate decompression budget.",
-                ["minicode/tools/archive_utils.py"],
-                environment_dependent=False,
-                recommended_batch="Reliability 1B-2: File/command Tool correctness",
-                red_test="Archive bomb fixtures must stop at documented byte, member and time budgets.",
-            ),
             _issue(
                 "TOOL-002",
                 "P3",

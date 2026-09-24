@@ -22,6 +22,7 @@ from minicode.task_deadline import (
     DEFAULT_TASK_TIMEOUT_SECONDS,
     TaskDeadlineExceeded,
 )
+from minicode.workspace_digest_cache import shared_workspace_digest_cache
 
 
 class WorkflowIsolationError(RuntimeError):
@@ -160,6 +161,10 @@ class WorkflowWorkspaceTransaction:
     on the host during snapshotting.  Git indexing happens only in the
     scheduler-created standalone repository.  An approved delta is applied to
     the parent only after ``git apply --check``.
+
+    A declared write scope bounds every patch-touched path. It does not prove
+    which files influenced the change or its verification, so promotion still
+    re-validates the complete parent snapshot under the cross-process lock.
     """
 
     def __init__(
@@ -169,6 +174,8 @@ class WorkflowWorkspaceTransaction:
         deadline_monotonic: float | None = None,
         timeout_seconds: float = DEFAULT_TASK_TIMEOUT_SECONDS,
         operation_checkpoint: object | None = None,
+        baseline_scope_paths: tuple[str, ...] | None = None,
+        baseline_scope_relative_to_cwd: bool = False,
     ) -> None:
         self._deadline_monotonic: float | None = None
         self._timeout_seconds: float = DEFAULT_TASK_TIMEOUT_SECONDS
@@ -227,6 +234,28 @@ class WorkflowWorkspaceTransaction:
                 "workflow cwd escaped its source root"
             ) from exc
         self.relative_cwd = relative_cwd
+        if not isinstance(baseline_scope_relative_to_cwd, bool):
+            self.close()
+            raise TypeError("workflow baseline scope flag must be boolean")
+        if baseline_scope_paths is not None and (
+            not isinstance(baseline_scope_paths, tuple) or not baseline_scope_paths
+        ):
+            self.close()
+            raise WorkflowIsolationError(
+                "workflow baseline scope must be a non-empty tuple or null"
+            )
+        try:
+            self._baseline_scope_roots = (
+                self._root_relative_scope(
+                    baseline_scope_paths,
+                    paths_relative_to_cwd=baseline_scope_relative_to_cwd,
+                )
+                if baseline_scope_paths is not None
+                else None
+            )
+        except BaseException:
+            self.close()
+            raise
         self.workspace_root = self._temp_root / "workspace"
         try:
             self._snapshot_directory()
@@ -605,6 +634,33 @@ class WorkflowWorkspaceTransaction:
             ignored_root_entries=frozenset(),
         )
 
+    def _scoped_filesystem_state_digest(
+        self,
+        root: Path,
+        guard_roots: tuple[str, ...],
+        *,
+        include_directories: bool = True,
+        use_operation_guard: bool = True,
+    ) -> str:
+        """Hash only the subtrees this workflow may promote into.
+
+        Roots are workspace-root-relative and matched case-sensitively like
+        ``_path_is_allowed``.  A scope root's ancestor chain is hashed as
+        directory entries so an ancestor swapped for a symlink or file still
+        flips the digest; unreadable in-scope entries keep raising, so an
+        undecidable scope stays fail-closed.  A "." root degenerates to the
+        full-tree digest.  ``include_directories=False`` selects the same
+        promotable-state projection as ``_promotion_state_digest``.
+        """
+        return self._workspace_state_digest(
+            root,
+            include_directories=include_directories,
+            use_operation_guard=use_operation_guard,
+            ignored_names=_WORKSPACE_IGNORED_ENTRY_NAMES,
+            ignored_root_entries=frozenset(),
+            guard_roots=guard_roots,
+        )
+
     def _git_control_state_digest(self, root: Path) -> str:
         """Hash repo-local oracle semantics, excluding staged data/objects."""
         return self._filesystem_state_digest(
@@ -621,12 +677,26 @@ class WorkflowWorkspaceTransaction:
         use_operation_guard: bool,
         ignored_names: frozenset[str],
         ignored_root_entries: frozenset[str],
+        guard_roots: tuple[str, ...] | None = None,
     ) -> str:
         digest = hashlib.sha256()
+        shared_cache = shared_workspace_digest_cache()
+        digest_cache = shared_cache if shared_cache.enabled else None
 
         def checkpoint() -> None:
             if use_operation_guard:
                 self._commit_checkpoint()
+
+        def guarded(relative: str) -> bool:
+            if guard_roots is None:
+                return True
+            return any(
+                guard_root == "."
+                or relative == guard_root
+                or relative.startswith(guard_root.rstrip("/") + "/")
+                or guard_root.startswith(relative + "/")
+                for guard_root in guard_roots
+            )
 
         def visit(directory: Path, relative_parent: Path) -> None:
             checkpoint()
@@ -648,6 +718,11 @@ class WorkflowWorkspaceTransaction:
                     continue
                 path = Path(entry.path)
                 relative_path = relative_parent / entry.name
+                if not guarded(relative_path.as_posix()):
+                    # Outside the declared scope nothing below can be guarded:
+                    # an unguarded directory contains no scope root, and no
+                    # scope root contains it.
+                    continue
                 relative = os.fsencode(relative_path.as_posix())
                 try:
                     metadata = entry.stat(follow_symlinks=False)
@@ -682,19 +757,43 @@ class WorkflowWorkspaceTransaction:
                     stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
                 )
                 digest.update(b"X" if executable else b"-")
-                with path.open("rb") as handle:
-                    while chunk := handle.read(1024 * 1024):
-                        checkpoint()
-                        digest.update(chunk)
+                if digest_cache is not None:
+                    # Cached trees fold each file's content digest (b"H" plus
+                    # 32 bytes) instead of streaming raw bytes, so repeated
+                    # walks skip re-reading unchanged files.  The legacy
+                    # byte stream applies whenever the cache is disabled.
+                    digest.update(b"H")
+                    digest.update(
+                        digest_cache.content_digest(
+                            path,
+                            relative_posix=relative_path.as_posix(),
+                            size=metadata.st_size,
+                            mtime_ns=metadata.st_mtime_ns,
+                            checkpoint=checkpoint,
+                        )
+                    )
+                else:
+                    with path.open("rb") as handle:
+                        while chunk := handle.read(1024 * 1024):
+                            checkpoint()
+                            digest.update(chunk)
 
         visit(root, Path())
         return "sha256:" + digest.hexdigest()
 
     def _validate_parent_baseline(self) -> None:
+        """Re-check that the parent still matches the snapshot baseline.
+
+        Workers and verification may depend on any snapshotted file, including
+        paths outside the declared write scope. Disjoint writes therefore do
+        not establish independent changes. Until read dependencies are proven,
+        any parent drift invalidates the frozen verification result.
+        """
         current = self._filesystem_state_digest(self.source_root)
         if current != self._source_state_digest:
             raise WorkflowIsolationError(
-                "parent workspace changed after workflow snapshot; rerun required"
+                "parent workspace changed after workflow snapshot; "
+                "rerun required"
             )
 
     def _validate_snapshot_symlinks(self, root: Path | None = None) -> None:
@@ -1103,6 +1202,26 @@ class WorkflowWorkspaceTransaction:
             changed.append({"path": path, "action": action})
         return changed
 
+    def resume_for_repair(self, frozen: FrozenWorkflowChange) -> None:
+        """Revoke one unpromoted frozen capability before a bounded host repair.
+
+        The original snapshot baseline and write bounds remain unchanged.
+        Previously published evidence stays immutable; this only reopens the
+        isolated working copy, and the old capability can never promote again.
+        """
+        with self._transaction_lock:
+            if (
+                self._temporary is None
+                or self._frozen_change is not frozen
+                or self._parent_promotion_completed
+                or self._parent_promotion_unknown
+            ):
+                raise WorkflowIsolationError("workflow change cannot be reopened for repair")
+            if self._filesystem_state_digest(self.workspace_root) != frozen._frozen_state_digest:
+                raise WorkflowIsolationError("workflow frozen workspace changed before repair")
+            self._commit_checkpoint()
+            self._frozen_change = None
+
     def freeze(
         self,
         *,
@@ -1153,6 +1272,15 @@ class WorkflowWorkspaceTransaction:
                     raise WorkflowIsolationError(
                         "workflow workspace changed while freezing"
                     )
+                scoped_target_state_digest = (
+                    self._scoped_filesystem_state_digest(
+                        frozen_workspace_root,
+                        self._baseline_scope_roots,
+                        include_directories=False,
+                    )
+                    if self._baseline_scope_roots is not None
+                    else None
+                )
                 patch = self._staged_patch(frozen_workspace_root)
                 changed = self._changed_files(frozen_workspace_root)
                 if (
@@ -1181,6 +1309,20 @@ class WorkflowWorkspaceTransaction:
                         "workflow changed paths are outside allowed paths: "
                         + ", ".join(outside[:10])
                     )
+                if self._baseline_scope_roots is not None:
+                    unguarded = [
+                        item["path"]
+                        for item in changed
+                        if not self._path_is_allowed(
+                            item["path"],
+                            self._baseline_scope_roots,
+                        )
+                    ]
+                    if unguarded:
+                        raise WorkflowIsolationError(
+                            "workflow changed paths exceed the promotion "
+                            "baseline scope: " + ", ".join(unguarded[:10])
+                        )
                 scoped_files = self._scope_relative_files(
                     changed,
                     paths_relative_to_cwd=paths_relative_to_cwd,
@@ -1201,6 +1343,7 @@ class WorkflowWorkspaceTransaction:
                 patch_digest=patch_digest,
                 base_digest=self.base_digest,
                 target_state_digest=target_state_digest,
+                scoped_target_state_digest=scoped_target_state_digest,
                 paths_relative_to_cwd=paths_relative_to_cwd,
                 files=tuple(
                     (item["path"], item["action"])
@@ -1273,6 +1416,7 @@ class FrozenWorkflowChange:
     _patch_digest: str
     _base_digest: str
     _target_state_digest: str
+    _scoped_target_state_digest: str | None
     _paths_relative_to_cwd: bool
     _files: tuple[tuple[str, str], ...]
     _frozen_state_digest: str
@@ -1294,6 +1438,7 @@ class FrozenWorkflowChange:
         patch_digest: str,
         base_digest: str,
         target_state_digest: str,
+        scoped_target_state_digest: str | None,
         paths_relative_to_cwd: bool,
         files: tuple[tuple[str, str], ...],
         frozen_state_digest: str,
@@ -1307,6 +1452,7 @@ class FrozenWorkflowChange:
             "_patch_digest": patch_digest,
             "_base_digest": base_digest,
             "_target_state_digest": target_state_digest,
+            "_scoped_target_state_digest": scoped_target_state_digest,
             "_paths_relative_to_cwd": paths_relative_to_cwd,
             "_files": files,
             "_frozen_state_digest": frozen_state_digest,
@@ -1451,8 +1597,16 @@ class FrozenWorkflowChange:
                 )
             patch = self._patch
         if not patch:
-            owner._commit_checkpoint()
-            owner._parent_promotion_completed = True
+            # A no-op still carries verification claims about its snapshot.
+            # Validate those dependencies under the same locks as a write.
+            owner._acquire_parent_commit_lock()
+            try:
+                with owner._cross_process_commit_lock():
+                    owner._validate_parent_baseline()
+                    owner._commit_checkpoint()
+                    owner._parent_promotion_completed = True
+            finally:
+                _WORKFLOW_PARENT_COMMIT_LOCK.release()
             return
         apply_args = owner._git_args(
             "apply",
@@ -1488,6 +1642,29 @@ class FrozenWorkflowChange:
             )
             owner._acquire_parent_commit_lock()
             try:
+
+                def parent_matches_target() -> bool:
+                    # Reconcile the bytes this promotion actually writes.
+                    # This cannot authorize a stale snapshot: the complete
+                    # parent baseline is checked below before applying.
+                    if self._scoped_target_state_digest is not None:
+                        return (
+                            owner._scoped_filesystem_state_digest(
+                                owner.source_root,
+                                owner._baseline_scope_roots,
+                                include_directories=False,
+                                use_operation_guard=False,
+                            )
+                            == self._scoped_target_state_digest
+                        )
+                    return (
+                        owner._promotion_state_digest(
+                            owner.source_root,
+                            use_operation_guard=False,
+                        )
+                        == self._target_state_digest
+                    )
+
                 with owner._cross_process_commit_lock():
                     owner._validate_parent_baseline()
                     remaining = owner._commit_checkpoint()
@@ -1515,13 +1692,7 @@ class FrozenWorkflowChange:
                             input_bytes=patch,
                             use_operation_guard=False,
                         )
-                        if (
-                            owner._promotion_state_digest(
-                                owner.source_root,
-                                use_operation_guard=False,
-                            )
-                            != self._target_state_digest
-                        ):
+                        if not parent_matches_target():
                             raise WorkflowIsolationError(
                                 "workflow parent state differs after promotion"
                             )
@@ -1529,14 +1700,11 @@ class FrozenWorkflowChange:
                         owner._parent_promotion_unknown = False
                     except BaseException:
                         try:
-                            parent_state = owner._promotion_state_digest(
-                                owner.source_root,
-                                use_operation_guard=False,
-                            )
+                            target_reached = parent_matches_target()
                         except Exception:  # noqa: BLE001 - conservatively unknown
                             owner._parent_promotion_unknown = True
                         else:
-                            if parent_state == self._target_state_digest:
+                            if target_reached:
                                 owner._parent_promotion_completed = True
                                 owner._parent_promotion_unknown = False
                             else:

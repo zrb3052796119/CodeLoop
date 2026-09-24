@@ -1,0 +1,131 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+__ test_completion_events_persist_through_production_observation[step_limit] ___
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-47/test_completion_events_persist0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x105c451c0>
+mode = 'step_limit'
+
+    @pytest.mark.parametrize("mode", ["step_limit", "model_budget", "extension"])
+    def test_completion_events_persist_through_production_observation(tmp_path, monkeypatch, mode):
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        data_dir = tmp_path / "journal"
+        journal = RunJournal(workspace, data_dir=data_dir)
+        options = {"max_steps": 3}
+        model = Model()
+        if mode == "model_budget":
+            options = {"max_steps": 50, "agent_budget": AgentTurnBudget(max_model_calls=3)}
+        elif mode == "extension":
+            policy = loop.TurnCompletionPolicy
+            monkeypatch.setattr(loop, "TurnCompletionPolicy", lambda **kwargs: policy(
+                **{**kwargs, "soft_limit": 3},
+            ))
+            options = {"max_steps": 15}
+            model = Model([call(), call(), call("write_file", path="fixed.py", content="fixed\n")] + [call()] * 10)
+    
+        with observe_run(
+            workspace=workspace, source="headless", title="Completion journal regression",
+            journal_factory=lambda _workspace: journal, enabled=True,
+        ) as observation:
+            messages = run(workspace, model, registry([]), event_sink=observation, **options)
+            run_id = observation.run_id
+    
+        # Reopen from disk: an in-memory event callback alone missed the live bug.
+        events = RunJournal(workspace, data_dir=data_dir).list_events(run_id, limit=100).items
+        limited = [event for event in events if event.type == "execution.completion_limited"]
+>       assert len(limited) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/test_completion_journal_events.py:41: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  minicode.run_lifecycle:run_lifecycle.py:117 Run lifecycle observation unavailable during event.
+_ test_completion_events_persist_through_production_observation[model_budget] __
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-47/test_completion_events_persist1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x105c7daf0>
+mode = 'model_budget'
+
+    @pytest.mark.parametrize("mode", ["step_limit", "model_budget", "extension"])
+    def test_completion_events_persist_through_production_observation(tmp_path, monkeypatch, mode):
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        data_dir = tmp_path / "journal"
+        journal = RunJournal(workspace, data_dir=data_dir)
+        options = {"max_steps": 3}
+        model = Model()
+        if mode == "model_budget":
+            options = {"max_steps": 50, "agent_budget": AgentTurnBudget(max_model_calls=3)}
+        elif mode == "extension":
+            policy = loop.TurnCompletionPolicy
+            monkeypatch.setattr(loop, "TurnCompletionPolicy", lambda **kwargs: policy(
+                **{**kwargs, "soft_limit": 3},
+            ))
+            options = {"max_steps": 15}
+            model = Model([call(), call(), call("write_file", path="fixed.py", content="fixed\n")] + [call()] * 10)
+    
+        with observe_run(
+            workspace=workspace, source="headless", title="Completion journal regression",
+            journal_factory=lambda _workspace: journal, enabled=True,
+        ) as observation:
+            messages = run(workspace, model, registry([]), event_sink=observation, **options)
+            run_id = observation.run_id
+    
+        # Reopen from disk: an in-memory event callback alone missed the live bug.
+        events = RunJournal(workspace, data_dir=data_dir).list_events(run_id, limit=100).items
+        limited = [event for event in events if event.type == "execution.completion_limited"]
+>       assert len(limited) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/test_completion_journal_events.py:41: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  minicode.run_lifecycle:run_lifecycle.py:117 Run lifecycle observation unavailable during event.
+___ test_completion_events_persist_through_production_observation[extension] ___
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-47/test_completion_events_persist2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x105c7e720>
+mode = 'extension'
+
+    @pytest.mark.parametrize("mode", ["step_limit", "model_budget", "extension"])
+    def test_completion_events_persist_through_production_observation(tmp_path, monkeypatch, mode):
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        data_dir = tmp_path / "journal"
+        journal = RunJournal(workspace, data_dir=data_dir)
+        options = {"max_steps": 3}
+        model = Model()
+        if mode == "model_budget":
+            options = {"max_steps": 50, "agent_budget": AgentTurnBudget(max_model_calls=3)}
+        elif mode == "extension":
+            policy = loop.TurnCompletionPolicy
+            monkeypatch.setattr(loop, "TurnCompletionPolicy", lambda **kwargs: policy(
+                **{**kwargs, "soft_limit": 3},
+            ))
+            options = {"max_steps": 15}
+            model = Model([call(), call(), call("write_file", path="fixed.py", content="fixed\n")] + [call()] * 10)
+    
+        with observe_run(
+            workspace=workspace, source="headless", title="Completion journal regression",
+            journal_factory=lambda _workspace: journal, enabled=True,
+        ) as observation:
+            messages = run(workspace, model, registry([]), event_sink=observation, **options)
+            run_id = observation.run_id
+    
+        # Reopen from disk: an in-memory event callback alone missed the live bug.
+        events = RunJournal(workspace, data_dir=data_dir).list_events(run_id, limit=100).items
+        limited = [event for event in events if event.type == "execution.completion_limited"]
+>       assert len(limited) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/test_completion_journal_events.py:41: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  minicode.run_lifecycle:run_lifecycle.py:117 Run lifecycle observation unavailable during event.
+WARNING  minicode.run_lifecycle:run_lifecycle.py:117 Run lifecycle observation unavailable during event.
+=========================== short test summary info ============================
+FAILED tests/test_completion_journal_events.py::test_completion_events_persist_through_production_observation[step_limit]
+FAILED tests/test_completion_journal_events.py::test_completion_events_persist_through_production_observation[model_budget]
+FAILED tests/test_completion_journal_events.py::test_completion_events_persist_through_production_observation[extension]
+3 failed in 0.41s

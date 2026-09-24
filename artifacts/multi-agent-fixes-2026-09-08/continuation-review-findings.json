@@ -1,0 +1,18 @@
+[
+  {
+    "case": "provider_error",
+    "returned_receipt": true,
+    "final_text": "Network error (connection failed or dropped): fixture dropped",
+    "calls": 2
+  },
+  {
+    "case": "budget_raise",
+    "exception": "AgentBudgetExceeded: fixture_budget",
+    "calls": 2
+  },
+  {
+    "case": "outcome_callback_after_final",
+    "exception": "RuntimeError: fixture telemetry failure",
+    "calls": 2
+  }
+]

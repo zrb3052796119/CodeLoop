@@ -66,7 +66,7 @@ def test_default_audit_is_offline_isolated_and_exhaustive(tmp_path: Path) -> Non
     assert payload["audit"]["liveNetwork"] is False
     assert payload["audit"]["isolation"]["home"] == "<isolated-home>"
     assert payload["audit"]["isolation"]["workspace"] == "<isolated-workspace>"
-    assert payload["summary"]["registeredToolCount"] == 56
+    assert payload["summary"]["registeredToolCount"] == 58
 
     capabilities = payload["capabilities"]
     capability_ids = [capability["id"] for capability in capabilities]
@@ -99,23 +99,18 @@ def test_default_audit_is_offline_isolated_and_exhaustive(tmp_path: Path) -> Non
     assert not (home / ".mini-code").exists()
 
 
-def test_audit_closes_web_findings_but_retains_archive_remainder(
+def test_audit_closes_web_and_archive_findings(
     tmp_path: Path,
 ) -> None:
     _, payload = _run_audit(tmp_path)
 
     issues = {issue["id"]: issue for issue in payload["issues"]}
-    assert payload["issues"][0]["id"] == "SEC-002"
+    assert "SEC-002" not in issues
     assert "WEB-001" not in issues
     assert "WEB-002" not in issues
     assert "SEC-001" not in issues
-    assert issues["SEC-002"]["severity"] == "P0"
     assert "SEC-003" not in issues
-    assert issues["SEC-004"]["capabilityId"] == "tool.gzip_decompress"
-    assert issues["SEC-004"]["recommendedBatch"].startswith("Reliability 1B-2")
-    assert issues["SEC-004"]["evidence"] == [
-        "minicode/tools/archive_utils.py",
-    ]
+    assert "SEC-004" not in issues
     # TOOL-001 (missing file reported as an empty file) and SEC-005 (tool
     # crashes leaking absolute paths/traceback) are fixed; both verdicts are
     # now driven by live probes rather than static issue entries, so they must
@@ -155,9 +150,10 @@ def test_audit_closes_web_findings_but_retains_archive_remainder(
     assert web_search["issues"] == []
     assert "tests/test_web_search.py" in web_search["evidence"]
     assert "tests/test_search_providers.py" in web_search["evidence"]
-    assert payload["summary"]["capabilityCount"] == 189
-    # 7 -> 5: TOOL-001 and SEC-005 are fixed and probe-verified.
-    assert payload["summary"]["issueCount"] == 4
+    assert payload["summary"]["capabilityCount"] == 193
+    # SEC-002 and SEC-004 are closed by containment and bounded extraction
+    # probes/tests; the remaining findings cover unrelated tool metadata/schema.
+    assert payload["summary"]["issueCount"] == 2
     assert payload["deterministicProbes"]["memory"] == {
         "ordinaryFactPersisted": True,
         "singleErrorPatternSuppressed": True,
@@ -190,6 +186,11 @@ def test_audit_closes_web_findings_but_retains_archive_remainder(
         "contentFreeErrors": True,
     }
     security = payload["deterministicProbes"]["security"]
+    assert security["archiveWorkspaceEscape"] == {
+        "gzip_compress": True,
+        "tar_create": True,
+        "zip_create": True,
+    }
     assert security["httpMutationWithoutPermission"] is False
     assert security["httpMutationFixtureStatus"].startswith(
         "blocked:"

@@ -41,6 +41,7 @@ from minicode.scheduler_artifacts import (
 from minicode.multi_agent_contracts import (
     Assignment,
     ContractValidationError,
+    ImplementationOrder,
     analyst_report_requires_reclassification,
     parse_assignment,
     parse_implementation_order,
@@ -51,6 +52,12 @@ from minicode.multi_agent_contracts import (
 from minicode.scheduler_trace import (
     extract_scheduler_trace,
     render_scheduler_trace,
+)
+from minicode.workflow_repair import (
+    implementation_repair_input_refs,
+    parse_implementation_repair_request,
+    review_supports_implementation_repair,
+    verification_supports_implementation_repair,
 )
 
 
@@ -105,6 +112,8 @@ _V2_TERMINAL_CAUSES: dict[tuple[str, str], frozenset[str | None]] = {
             "executor_declaration_invalid",
             "executor_failed",
             "implementation_order_invalid",
+            "implementation_repair_unavailable",
+            "implementation_repair_no_change",
             "stage_port_failed",
             "workflow_transaction_missing",
         }
@@ -168,6 +177,24 @@ _V2_TERMINAL_CAUSES: dict[tuple[str, str], frozenset[str | None]] = {
         }
     ),
     ("analyst", "rejected"): frozenset({"stage_result_invalid"}),
+    ("adjudicator", "rejected"): frozenset(
+        {
+            "adjudicated_reclassification_required",
+            "adjudication_decision_invalid",
+            "adjudication_decision_not_binding",
+            "adjudication_human_required",
+            "adjudication_inconclusive",
+            "stage_result_invalid",
+        }
+    ),
+    ("adjudicator", "failed"): frozenset(
+        {
+            "adjudication_conflict_missing",
+            "adjudication_result_invalid",
+            "adjudication_worker_failed",
+            "stage_port_failed",
+        }
+    ),
 }
 _V2_RETRYABLE_CAUSES: dict[str, frozenset[str]] = {
     "analyst": frozenset(
@@ -179,6 +206,7 @@ _V2_RETRYABLE_CAUSES: dict[str, frozenset[str]] = {
         }
     ),
     "reviewer": frozenset({"review_phase_failed", "review_result_invalid"}),
+    "adjudicator": frozenset({"adjudication_result_invalid"}),
 }
 _V2_RECEIPT_CAUSES: dict[str, frozenset[str]] = {
     "analyst": frozenset(
@@ -197,6 +225,8 @@ _V2_RECEIPT_CAUSES: dict[str, frozenset[str]] = {
             "execution_result_invalid",
             "executor_declaration_invalid",
             "implementation_order_invalid",
+            "implementation_repair_unavailable",
+            "implementation_repair_no_change",
             "workflow_transaction_missing",
         }
     ),
@@ -214,6 +244,13 @@ _V2_RECEIPT_CAUSES: dict[str, frozenset[str]] = {
     ),
     "human": frozenset(
         {"human_approval_context_missing", "human_approval_request_invalid"}
+    ),
+    "adjudicator": frozenset(
+        {
+            "adjudication_conflict_missing",
+            "adjudication_result_invalid",
+            "adjudication_worker_failed",
+        }
     ),
 }
 _V2_ALL_RECEIPT_CAUSES = frozenset(
@@ -701,6 +738,11 @@ def _validate_v2_transition_causes(
     transitions = trace.get("transitions")
     if not isinstance(transitions, list):  # guarded by trace normalization
         raise SchedulerAuditValidationError("scheduler V2 transitions are invalid")
+    repair_assignments = {
+        transitions[index + 1]["assignmentId"]
+        for index, item in enumerate(transitions[:-1])
+        if item.get("outcome") == "repairing"
+    }
     previous: Mapping[str, object] | None = None
     for transition in transitions:
         if not isinstance(transition, Mapping):  # guarded by normalization
@@ -711,6 +753,10 @@ def _validate_v2_transition_causes(
         outcome = str(transition.get("outcome"))
         error_code = transition.get("errorCode")
         artifact_id = transition.get("artifactId")
+        if error_code in {
+            "implementation_repair_unavailable", "implementation_repair_no_change"
+        } and transition.get("assignmentId") not in repair_assignments:
+            raise SchedulerAuditValidationError("scheduler repair failure lacks its repair assignment")
 
         if outcome in {"completed", "dispatched", "commit_requested"}:
             if error_code is not None:
@@ -725,6 +771,18 @@ def _validate_v2_transition_causes(
                 raise SchedulerAuditValidationError(
                     "scheduler V2 timeout cause is inconsistent"
                 )
+        elif outcome == "repairing":
+            if (
+                stage not in {"verifier", "reviewer"}
+                or error_code != "implementation_repair_requested"
+                or previous is None
+                or previous.get("outcome") not in {"failed", "inconclusive", "rejected"}
+                or artifact_id is None
+                or any(previous.get(key) != transition.get(key) for key in (
+                    "stage", "assignmentId", "attemptId", "agentRunId", "artifactId"
+                ))
+            ):
+                raise SchedulerAuditValidationError("scheduler V2 repair cause is inconsistent")
         elif outcome == "retrying":
             allowed = _V2_RETRYABLE_CAUSES.get(stage, frozenset())
             if (
@@ -767,7 +825,7 @@ def _validate_v2_transition_causes(
             raise SchedulerAuditValidationError(
                 "scheduler V2 scheduler-owned failure cannot cite role evidence"
             )
-        if outcome != "retrying":
+        if outcome not in {"retrying", "repairing"}:
             is_receipt = artifact_id in receipt_artifact_ids
             receipt_causes = _V2_RECEIPT_CAUSES.get(stage, frozenset())
             cause_requires_receipt = error_code in receipt_causes
@@ -819,6 +877,24 @@ def _path_is_within_requested_scope(
         or path == root
         or path.startswith(root.rstrip("/") + "/")
         for root in roots
+    )
+
+
+def _order_scope_within_assignment(
+    order: ImplementationOrder,
+    assignment: Assignment,
+) -> bool:
+    """An Executor order may narrow — never widen — the Assignment write scope.
+
+    The order contract parser already rejects order paths outside the
+    Assignment scope; this audit check keeps that fail-closed direction but
+    accepts a strict subset, since an order that writes less than the
+    Assignment allows is a legitimate narrowing by the Analyst.  An empty
+    ``allowed_paths`` is legal: the order writes nothing at all.
+    """
+    return all(
+        _path_is_within_requested_scope(path, assignment.scope.write_paths)
+        for path in order.allowed_paths
     )
 
 
@@ -911,6 +987,96 @@ def _validate_analyst_completion(
                 "scheduler Analyst evidence is invalid"
             )
     return parsed_report
+
+
+def _adjudicated_continuation_attempts(
+    normalized_trace: Mapping[str, object],
+    assignments_by_attempt: Mapping[tuple[str, str], Assignment],
+    artifact_documents: Mapping[str, object],
+) -> set[tuple[str, str]]:
+    """Attempts resumed by a binding adjudication that selected continuation.
+
+    An escalated blocked Worker attempt may legally reach ``completed`` when
+    the following ADJUDICATOR block's validated verdict chose ``select_b`` —
+    the continuation claim ordered second in its frozen ConflictPackage.
+    """
+
+    transitions = normalized_trace.get("transitions")
+    if not isinstance(transitions, list):
+        return set()
+    resumed: set[tuple[str, str]] = set()
+    index = 0
+    while index < len(transitions):
+        item = transitions[index]
+        if not isinstance(item, Mapping) or (
+            item.get("stage") != "adjudicator"
+            or item.get("outcome") != "dispatched"
+        ):
+            index += 1
+            continue
+        blocked = (
+            transitions[index - 1]
+            if index > 0 and isinstance(transitions[index - 1], Mapping)
+            else None
+        )
+        if blocked is None or blocked.get("outcome") != "blocked":
+            index += 1
+            continue
+        verdict_document = None
+        cursor = index
+        while cursor < len(transitions):
+            step = transitions[cursor]
+            if not isinstance(step, Mapping) or step.get("stage") != "adjudicator":
+                break
+            if step.get("outcome") == "completed":
+                verdict_document = artifact_documents.get(
+                    str(step.get("artifactId"))
+                )
+            cursor += 1
+        if isinstance(verdict_document, dict):
+            verdict = _role_payload(verdict_document)
+            assignment = assignments_by_attempt.get(
+                (
+                    str(
+                        transitions[index].get("assignmentId")
+                    ),
+                    str(transitions[index].get("attemptId")),
+                )
+            )
+            if assignment is not None:
+                conflict_id = verdict.get("conflictId") if isinstance(
+                    verdict, Mapping
+                ) else None
+                package = next(
+                    (
+                        document
+                        for document in artifact_documents.values()
+                        if isinstance(document, dict)
+                        and document.get("resultType") == "ConflictPackage.v1"
+                        and document.get("conflictId") == conflict_id
+                    ),
+                    None,
+                )
+                try:
+                    parsed = parse_role_result(
+                        assignment,
+                        verdict,
+                        conflict_package=package,
+                    )
+                except (ContractValidationError, TypeError, ValueError):
+                    parsed = None
+                if (
+                    isinstance(parsed, dict)
+                    and parsed.get("decision") == "select_b"
+                ):
+                    resumed.add(
+                        (
+                            str(blocked.get("assignmentId")),
+                            str(blocked.get("attemptId")),
+                        )
+                    )
+        index = cursor
+    return resumed
 
 
 def _expected_analyst_transition(
@@ -1125,6 +1291,97 @@ def _validate_frozen_diff(
         )
 
 
+def _validated_repair_inputs(
+    trace: Mapping[str, object],
+    documents: Mapping[str, object],
+    *,
+    request_artifact_id: str,
+) -> dict[str, tuple[str, ...]]:
+    """Rejoin each repair's new Assignment to its exact failed revision."""
+    repair_documents = {
+        artifact_id: document for artifact_id, document in documents.items()
+        if isinstance(document, dict)
+        and document.get("resultType") == "ImplementationRepairRequest.v1"
+    }
+    observed: set[str] = set()
+    inputs: dict[str, tuple[str, ...]] = {}
+    execution = verification = None
+    repair_index = 0
+    transitions = trace["transitions"]
+    for index, transition in enumerate(transitions):
+        stage, outcome = transition["stage"], transition["outcome"]
+        if stage == "executor" and outcome == "completed":
+            execution = transition
+            verification = None
+        elif stage == "verifier" and outcome not in {"dispatched", "retrying", "repairing"}:
+            verification = transition
+        if outcome != "repairing":
+            continue
+        repair_index += 1
+        following = transitions[index + 1]
+        assignment_id = str(following["assignmentId"])
+        repair_id = f"artifact_repair_{assignment_id}"
+        execution_document = documents.get(str(execution["artifactId"])) if execution else None
+        verification_document = documents.get(str(verification["artifactId"])) if verification else None
+        if not isinstance(execution_document, dict) or not isinstance(verification_document, dict):
+            raise SchedulerAuditValidationError("scheduler repair lacks its previous execution evidence")
+        checks = verification_document.get("checks")
+        change_set = execution_document.get("changeSet")
+        if not isinstance(checks, list) or not isinstance(change_set, dict):
+            raise SchedulerAuditValidationError("scheduler repair previous evidence is invalid")
+        evidence_refs = [check.get("artifactRef") for check in checks if isinstance(check, dict)]
+        expected = {
+            "repairVersion": 1,
+            "resultType": "ImplementationRepairRequest.v1",
+            "workflowId": trace["workflowId"],
+            "taskId": trace["taskId"],
+            "assignmentId": assignment_id,
+            "repairIndex": repair_index,
+            "sourceStage": stage,
+            "sourceArtifactRef": transition["artifactId"],
+            "requestArtifactRef": request_artifact_id,
+            "previousExecutionArtifactRef": execution["artifactId"],
+            "previousOrderRef": execution_document.get("orderId"),
+            "previousDiffArtifactRef": f"artifact_{execution['assignmentId']}_{execution['attemptId']}_frozen_diff",
+            "previousPatchDigest": change_set.get("patchDigest"),
+            "previousVerificationArtifactRef": verification["artifactId"],
+            "evidenceRefs": evidence_refs,
+        }
+        source = documents.get(str(transition["artifactId"]))
+        supported = (
+            verification_supports_implementation_repair(
+                source, [documents.get(str(ref)) for ref in evidence_refs]
+            )
+            if stage == "verifier"
+            else review_supports_implementation_repair(source)
+        )
+        if not supported:
+            raise SchedulerAuditValidationError("scheduler repair is not bound to repairable failed evidence")
+        preparation_failed = any(
+            item["assignmentId"] == assignment_id
+            and item["attemptId"] == following["attemptId"]
+            and item["stage"] == "executor"
+            and item["outcome"] == "failed"
+            and item["errorCode"] == "implementation_repair_unavailable"
+            for item in transitions[index + 1:]
+        )
+        if repair_id not in repair_documents and (
+            following["outcome"] == "timed_out" or preparation_failed
+        ):
+            continue
+        try:
+            repair = parse_implementation_repair_request(repair_documents.get(repair_id))
+        except (TypeError, ValueError) as exc:
+            raise SchedulerAuditValidationError("scheduler repair request is invalid") from exc
+        if repair != expected:
+            raise SchedulerAuditValidationError("scheduler repair is not bound to its failed revision")
+        observed.add(repair_id)
+        inputs[assignment_id] = implementation_repair_input_refs(repair_id, repair)
+    if observed != set(repair_documents):
+        raise SchedulerAuditValidationError("scheduler repair request has no authorized transition")
+    return inputs
+
+
 def project_scheduler_audit(
     *,
     profile: TaskProfile,
@@ -1155,6 +1412,10 @@ def project_scheduler_audit(
             "dispatch plan does not match the effective profile"
         )
     normalized_trace = _normalize_trace(trace)
+    if contract_mode != "v2" and any(
+        transition["outcome"] == "repairing" for transition in normalized_trace["transitions"]
+    ):
+        raise SchedulerAuditValidationError("implementation repair requires structured audit authority")
     if (
         normalized_trace.get("taskId") != profile.task_id
         or normalized_trace.get("ruleId") != plan.rule_id
@@ -1495,9 +1756,22 @@ def project_scheduler_audit(
         )
         for item in normalized_trace["transitions"]
         if item["outcome"] == "dispatched"
-        and item["stage"] in {"analyst", "executor", "reviewer"}
+        and item["stage"]
+        in {"analyst", "executor", "reviewer", "adjudicator"}
         and (str(item["assignmentId"]), str(item["attemptId"]))
         not in human_preflight_blocked_attempts
+        and not (
+            (str(item["assignmentId"]), str(item["attemptId"])) not in assignment_artifacts
+            and any(
+                terminal["stage"] == "executor"
+                and terminal["outcome"] == "failed"
+                and terminal["errorCode"] == "implementation_repair_unavailable"
+                and terminal["artifactId"] in receipt_artifacts
+                and terminal["assignmentId"] == item["assignmentId"]
+                and terminal["attemptId"] == item["attemptId"]
+                for terminal in normalized_trace["transitions"]
+            )
+        )
     }
     if (
         (contract_mode == "v2" or assignment_artifacts)
@@ -1512,6 +1786,9 @@ def project_scheduler_audit(
         )
     if contract_mode == "v2":
         request_artifact_id, request = next(iter(workflow_requests.items()))
+        repair_inputs = _validated_repair_inputs(
+            normalized_trace, artifact_documents, request_artifact_id=request_artifact_id
+        )
         objective_digest = workflow_objective_digests[request_artifact_id]
         expected_profile = request.task_profile
         stable_profile_fields = (
@@ -1615,36 +1892,70 @@ def project_scheduler_audit(
                     ) from exc
                 if (
                     order.order_id != order_documents[0][0]
-                    or order.allowed_paths != assignment.scope.write_paths
+                    or not _order_scope_within_assignment(order, assignment)
                 ):
                     raise SchedulerAuditValidationError(
                         "scheduler Executor order scope is inconsistent"
                     )
+                repair_document = artifact_documents.get(
+                    f"artifact_repair_{assignment.assignment_id}"
+                )
+                if assignment.assignment_id in repair_inputs:
+                    previous_order = artifact_documents.get(
+                        str(repair_document["previousOrderRef"])
+                    )
+                    if not isinstance(previous_order, dict) or any(
+                        order_documents[0][1].get(field) != previous_order.get(field)
+                        for field in (
+                            "baseDigest", "allowedPaths", "steps",
+                            "criterionIds", "verificationRequests",
+                        )
+                    ):
+                        raise SchedulerAuditValidationError(
+                            "scheduler repair changed its locked implementation order"
+                        )
                 analyst_handoffs = [
                     (artifact_id, document)
                     for artifact_id, document in artifact_documents.items()
                     if isinstance(document, dict)
                     and document.get("resultType") == "AnalystHandoff.v1"
                 ]
-                if len(analyst_handoffs) != 1:
+                if len(analyst_handoffs) > 1:
                     raise SchedulerAuditValidationError(
                         "scheduler Executor lacks one Analyst handoff"
-                )
-                handoff_id, handoff = analyst_handoffs[0]
-                handoff_evidence_refs = handoff.get("evidenceSnapshotRefs")
-                if not isinstance(handoff_evidence_refs, list):
-                    raise SchedulerAuditValidationError(
-                        "scheduler Executor Analyst handoff is invalid"
+                    )
+                if analyst_handoffs:
+                    handoff_id, handoff = analyst_handoffs[0]
+                    handoff_evidence_refs = handoff.get("evidenceSnapshotRefs")
+                    if not isinstance(handoff_evidence_refs, list):
+                        raise SchedulerAuditValidationError(
+                            "scheduler Executor Analyst handoff is invalid"
+                        )
+                    expected_executor_refs = (
+                        handoff_id,
+                        request_artifact_id,
+                        *(str(ref) for ref in handoff_evidence_refs),
+                        *(
+                            f"artifact_{approval_id}"
+                            for approval_id in approvals
+                        ),
+                        order.order_id,
+                    )
+                else:
+                    # Scoped route: no Analyst ran, so the executor binds
+                    # directly to the frozen WorkflowRequest and its order.
+                    expected_executor_refs = (
+                        request_artifact_id,
+                        *(
+                            f"artifact_{approval_id}"
+                            for approval_id in approvals
+                        ),
+                        order.order_id,
                     )
                 expected_executor_refs = (
-                    handoff_id,
-                    request_artifact_id,
-                    *(str(ref) for ref in handoff_evidence_refs),
-                    *(
-                        f"artifact_{approval_id}"
-                        for approval_id in approvals
-                    ),
-                    order.order_id,
+                    *expected_executor_refs[:-1],
+                    *repair_inputs.get(assignment.assignment_id, ()),
+                    expected_executor_refs[-1],
                 )
                 if assignment.input_refs != expected_executor_refs:
                     raise SchedulerAuditValidationError(
@@ -1652,6 +1963,13 @@ def project_scheduler_audit(
                     )
     if contract_mode == "v2" and any(
         ref not in artifact_ids
+        and ref
+        not in {
+            str(document.get("conflictId"))
+            for document in artifact_documents.values()
+            if isinstance(document, dict)
+            and document.get("resultType") == "ConflictPackage.v1"
+        }
         for assignment in assignments_by_attempt.values()
         for ref in assignment.input_refs
     ):
@@ -1659,9 +1977,8 @@ def project_scheduler_audit(
             "scheduler Assignment has an unavailable input artifact"
         )
 
-    completed_execution_assignment: Assignment | None = None
-    completed_execution_attempt_id: str | None = None
     completed_execution_document: dict[str, object] | None = None
+    execution_records: list[tuple[Mapping[str, object], Assignment, dict[str, object]]] = []
     completed_review_results: list[dict[str, object]] = []
     completed_review_assignments: list[Assignment] = []
     completed_review_records: list[
@@ -1674,7 +1991,7 @@ def project_scheduler_audit(
         for transition in normalized_trace["transitions"]:
             stage = str(transition["stage"])
             if (
-                transition["outcome"] in {"dispatched", "retrying", "completed"}
+                transition["outcome"] in {"dispatched", "retrying", "repairing", "completed"}
                 or stage not in {"analyst", "executor", "reviewer"}
                 or transition["artifactId"] is None
                 or transition["artifactId"] in receipt_artifacts
@@ -1752,7 +2069,7 @@ def project_scheduler_audit(
                     ) from exc
                 if (
                     order_id not in assignment.input_refs
-                    or order.allowed_paths != assignment.scope.write_paths
+                    or not _order_scope_within_assignment(order, assignment)
                     or parsed_execution != document
                     or parsed_execution.get("status")
                     != transition["outcome"]
@@ -1785,6 +2102,9 @@ def project_scheduler_audit(
                 (transition, parsed_review, assignment)
             )
 
+        adjudicated_continuations = _adjudicated_continuation_attempts(
+            normalized_trace, assignments_by_attempt, artifact_documents
+        )
         for transition in normalized_trace["transitions"]:
             stage = str(transition["stage"])
             if (
@@ -1811,12 +2131,14 @@ def project_scheduler_audit(
                     document=document,
                     artifact_documents=artifact_documents,
                 )
-                if _expected_analyst_transition(
+                expected_analyst = _expected_analyst_transition(
                     assignment,
                     parsed_analyst,
-                ) != (
-                    "completed",
-                    None,
+                )
+                if expected_analyst != ("completed", None) and not (
+                    expected_analyst
+                    == ("blocked", "analyst_risk_requires_reclassification")
+                    and assignment_key in adjudicated_continuations
                 ):
                     raise SchedulerAuditValidationError(
                         "scheduler completed Analyst did not pass its gates"
@@ -1853,16 +2175,15 @@ def project_scheduler_audit(
                     ) from exc
                 if (
                     order.order_id != order_id
-                    or order.allowed_paths != assignment.scope.write_paths
+                    or not _order_scope_within_assignment(order, assignment)
                     or parsed_execution != document
                     or parsed_execution.get("status") != "completed"
                 ):
                     raise SchedulerAuditValidationError(
                         "scheduler ExecutionResult is not canonical"
                     )
-                completed_execution_assignment = assignment
-                completed_execution_attempt_id = str(transition["attemptId"])
                 completed_execution_document = parsed_execution
+                execution_records.append((transition, assignment, parsed_execution))
                 continue
             try:
                 parsed_review = parse_role_result(
@@ -1888,9 +2209,10 @@ def project_scheduler_audit(
                 (transition, parsed_review, assignment)
             )
 
-        if completed_execution_document is not None:
-            execution_change_set = completed_execution_document["changeSet"]
-            execution_base_digest = execution_change_set["baseDigest"]
+        for _execution_transition, _execution_assignment, execution_document in execution_records:
+            execution_base_digest = execution_document["changeSet"]["baseDigest"]
+            if execution_base_digest != execution_records[0][2]["changeSet"]["baseDigest"]:
+                raise SchedulerAuditValidationError("scheduler repair execution changed its original baseline")
             for transition in normalized_trace["transitions"]:
                 if not (
                     transition["stage"] == "analyst"
@@ -1945,25 +2267,30 @@ def project_scheduler_audit(
             normalized_trace,
             receipt_artifact_ids=frozenset(receipt_artifacts),
         )
+    def execution_before(transition):
+        return next((
+            record for record in reversed(execution_records)
+            if record[0]["sequence"] < transition["sequence"]
+        ), None)
+
     validated_verification_documents: dict[str, dict[str, object]] = {}
     if contract_mode == "v2":
         request = next(iter(workflow_requests.values()))
         request_checks_by_id = {
             check.check_id: check for check in request.verification_checks
         }
-        execution_change_set = (
-            completed_execution_document.get("changeSet")
-            if completed_execution_document is not None
-            else None
-        )
         for transition in normalized_trace["transitions"]:
             if (
                 transition["stage"] != "verifier"
-                or transition["outcome"] in {"dispatched", "retrying"}
+                or transition["outcome"] in {"dispatched", "retrying", "repairing"}
                 or transition["artifactId"] is None
             ):
                 continue
             artifact_id = str(transition["artifactId"])
+            execution_record = execution_before(transition)
+            verification_execution_assignment = execution_record[1] if execution_record else None
+            verification_execution_attempt_id = execution_record[0]["attemptId"] if execution_record else None
+            execution_change_set = execution_record[2].get("changeSet") if execution_record else None
             document = artifact_documents.get(artifact_id)
             expected_artifact_id = (
                 f"artifact_{transition['assignmentId']}_"
@@ -1992,7 +2319,7 @@ def project_scheduler_audit(
             if (
                 artifact_id != expected_artifact_id
                 or result_type != "VerificationResult.v1"
-                or completed_execution_assignment is None
+                or verification_execution_assignment is None
                 or not isinstance(execution_change_set, dict)
             ):
                 raise SchedulerAuditValidationError(
@@ -2008,7 +2335,7 @@ def project_scheduler_audit(
                     workflow_id=workflow_id,
                     task_id=profile.task_id,
                     execution_assignment_id=(
-                        completed_execution_assignment.assignment_id
+                        verification_execution_assignment.assignment_id
                     ),
                     patch_digest=str(execution_change_set["patchDigest"]),
                     required_check_ids=tuple(request_checks_by_id),
@@ -2041,15 +2368,15 @@ def project_scheduler_audit(
                     artifact_id=evidence_ref,
                     workflow_id=workflow_id,
                     execution_assignment_id=(
-                        completed_execution_assignment.assignment_id
+                        verification_execution_assignment.assignment_id
                     ),
                     patch_digest=str(execution_change_set["patchDigest"]),
                     result_check=check,
                     request_check=request_checks_by_id[check_id],
                 )
             expected_diff_id = (
-                f"artifact_{completed_execution_assignment.assignment_id}_"
-                f"{completed_execution_attempt_id}_frozen_diff"
+                f"artifact_{verification_execution_assignment.assignment_id}_"
+                f"{verification_execution_attempt_id}_frozen_diff"
             )
             frozen_diff = artifact_documents.get(expected_diff_id)
             if frozen_diff is not None:
@@ -2101,12 +2428,29 @@ def project_scheduler_audit(
         if transition["stage"] == "verifier"
         and transition["outcome"] == "completed"
     ]
-    if contract_mode == "v2" and completed_verifier_transitions:
-        if len(acceptance_matrices) != 1:
-            raise SchedulerAuditValidationError(
-                "scheduler acceptance evidence matrix is missing"
-            )
-        matrix_id, matrix = next(iter(acceptance_matrices.items()))
+    has_reviewer = False
+    matrices_by_verification = {
+        str(matrix["verificationArtifactRef"]): (matrix_id, matrix)
+        for matrix_id, matrix in acceptance_matrices.items()
+    }
+    if contract_mode == "v2" and (
+        len(matrices_by_verification) != len(acceptance_matrices)
+        or set(matrices_by_verification) != {
+            str(item["artifactId"]) for item in completed_verifier_transitions
+        }
+    ):
+        raise SchedulerAuditValidationError(
+            "scheduler acceptance matrices do not match completed verification revisions"
+        )
+    for verified_transition in (
+        completed_verifier_transitions if contract_mode == "v2" else []
+    ):
+        matrix_id, matrix = matrices_by_verification[str(verified_transition["artifactId"])]
+        matrix_execution_record = execution_before(verified_transition)
+        if matrix_execution_record is None:
+            raise SchedulerAuditValidationError("scheduler matrix lacks its execution revision")
+        matrix_execution_assignment = matrix_execution_record[1]
+        matrix_execution_document = matrix_execution_record[2]
         verification_document = artifact_documents.get(
             str(matrix["verificationArtifactRef"])
         )
@@ -2120,6 +2464,7 @@ def project_scheduler_audit(
             ]
             for transition in normalized_trace["transitions"]
             if transition["stage"] == "reviewer"
+            and execution_before(transition) == matrix_execution_record
             and transition["outcome"] == "dispatched"
             and (
                 str(transition["assignmentId"]),
@@ -2129,6 +2474,7 @@ def project_scheduler_audit(
         ]
         reviewer_preflight_blocked = any(
             transition["stage"] == "reviewer"
+            and execution_before(transition) == matrix_execution_record
             and (
                 str(transition["assignmentId"]),
                 str(transition["attemptId"]),
@@ -2142,22 +2488,26 @@ def project_scheduler_audit(
             else set()
         )
         execution_change_set = (
-            completed_execution_document.get("changeSet")
-            if completed_execution_document is not None
+            matrix_execution_document.get("changeSet")
+            if matrix_execution_document is not None
             else None
         )
+        # The scoped route has no Reviewer to bind the matrix into; every
+        # digest-chain condition below still applies unchanged.
+        has_reviewer = bool(review_assignments_for_evidence)
         if (
-            len(completed_verifier_transitions) != 1
-            or matrix["verificationArtifactRef"]
-            != completed_verifier_transitions[0]["artifactId"]
-            or completed_execution_assignment is None
+            matrix["verificationArtifactRef"]
+            != verified_transition["artifactId"]
+            or matrix_execution_assignment is None
             or not isinstance(execution_change_set, dict)
             or (
-                not reviewer_preflight_blocked
+                has_reviewer
+                and not reviewer_preflight_blocked
                 and matrix_id not in final_reviewer_input_refs
             )
             or (
-                not reviewer_preflight_blocked
+                has_reviewer
+                and not reviewer_preflight_blocked
                 and matrix["frozenDiffRef"] not in final_reviewer_input_refs
             )
             or not isinstance(verification_document, dict)
@@ -2166,7 +2516,7 @@ def project_scheduler_audit(
             or verification_document.get("status") != "passed"
             or verification_document.get("patchDigest") != matrix["patchDigest"]
             or verification_document.get("executionAssignmentId")
-            != completed_execution_assignment.assignment_id
+            != matrix_execution_assignment.assignment_id
             or execution_change_set.get("patchDigest") != matrix["patchDigest"]
             or not isinstance(diff_document, dict)
             or diff_document.get("patchDigest") != matrix["patchDigest"]
@@ -2190,44 +2540,44 @@ def project_scheduler_audit(
             ),
             None,
         )
-        execution_artifact_id = next(
-            str(transition["artifactId"])
-            for transition in normalized_trace["transitions"]
-            if transition["stage"] == "executor"
-            and transition["outcome"] == "completed"
-        )
-        analyst_handoff = artifact_documents.get(str(analyst_handoff_id))
-        if (
-            not isinstance(analyst_handoff, dict)
-            or not isinstance(analyst_handoff.get("evidenceSnapshotRefs"), list)
-        ):
-            raise SchedulerAuditValidationError(
-                "scheduler Reviewer Analyst handoff is invalid"
+        execution_artifact_id = str(matrix_execution_record[0]["artifactId"])
+        if review_assignments_for_evidence:
+            # Reviewer topology only exists on the reviewed chain; the
+            # scoped route has no Reviewer assignment to bind.
+            analyst_handoff = artifact_documents.get(str(analyst_handoff_id))
+            if (
+                not isinstance(analyst_handoff, dict)
+                or not isinstance(
+                    analyst_handoff.get("evidenceSnapshotRefs"), list
+                )
+            ):
+                raise SchedulerAuditValidationError(
+                    "scheduler Reviewer Analyst handoff is invalid"
+                )
+            expected_reviewer_refs = (
+                str(analyst_handoff_id),
+                request_artifact_id,
+                *(
+                    str(ref)
+                    for ref in analyst_handoff["evidenceSnapshotRefs"]
+                ),
+                str(matrix_execution_document["orderId"]),
+                execution_artifact_id,
+                str(matrix["frozenDiffRef"]),
+                str(matrix["verificationArtifactRef"]),
+                *(
+                    str(check["artifactRef"])
+                    for check in verification_document["checks"]
+                ),
+                matrix_id,
             )
-        expected_reviewer_refs = (
-            str(analyst_handoff_id),
-            request_artifact_id,
-            *(
-                str(ref)
-                for ref in analyst_handoff["evidenceSnapshotRefs"]
-            ),
-            str(completed_execution_document["orderId"]),
-            execution_artifact_id,
-            str(matrix["frozenDiffRef"]),
-            str(matrix["verificationArtifactRef"]),
-            *(
-                str(check["artifactRef"])
-                for check in verification_document["checks"]
-            ),
-            matrix_id,
-        )
-        if any(
-            assignment.input_refs != expected_reviewer_refs
-            for assignment in review_assignments_for_evidence
-        ):
-            raise SchedulerAuditValidationError(
-                "scheduler Reviewer input topology is inconsistent"
-            )
+            if any(
+                assignment.input_refs != expected_reviewer_refs
+                for assignment in review_assignments_for_evidence
+            ):
+                raise SchedulerAuditValidationError(
+                    "scheduler Reviewer input topology is inconsistent"
+                )
         checks = verification_document.get("checks")
         if not isinstance(checks, list):
             raise SchedulerAuditValidationError(
@@ -2240,7 +2590,7 @@ def project_scheduler_audit(
         }
         request = next(iter(workflow_requests.values()))
         parsed_verification = validated_verification_documents.get(
-            str(completed_verifier_transitions[0]["artifactId"])
+            str(verified_transition["artifactId"])
         )
         if parsed_verification != verification_document:
             raise SchedulerAuditValidationError(
@@ -2258,7 +2608,8 @@ def project_scheduler_audit(
             if (
                 not isinstance(evidence_ref, str)
                 or (
-                    not reviewer_preflight_blocked
+                    has_reviewer
+                    and not reviewer_preflight_blocked
                     and evidence_ref not in final_reviewer_input_refs
                 )
             ):
@@ -2270,7 +2621,7 @@ def project_scheduler_audit(
                 artifact_id=evidence_ref,
                 workflow_id=workflow_id,
                 execution_assignment_id=(
-                    completed_execution_assignment.assignment_id
+                    matrix_execution_assignment.assignment_id
                 ),
                 patch_digest=str(verification_document["patchDigest"]),
                 result_check=check,
@@ -2322,6 +2673,8 @@ def project_scheduler_audit(
                     raise SchedulerAuditValidationError(
                         "scheduler acceptance matrix evidence is invalid"
                     )
+        # Without a Reviewer (scoped route, or a preflight-blocked one) the
+        # matrix must still cover the request's own acceptance criteria.
         final_reviewer_criteria = (
             {
                 item.criterion_id
@@ -2329,8 +2682,6 @@ def project_scheduler_audit(
             }
             if review_assignments_for_evidence
             else {item.criterion_id for item in request.criteria}
-            if reviewer_preflight_blocked
-            else set()
         )
         if observed_criteria != final_reviewer_criteria:
             raise SchedulerAuditValidationError(
@@ -2344,6 +2695,8 @@ def project_scheduler_audit(
             *completed_review_records,
             *terminal_review_results,
         ):
+            if execution_before(transition) != matrix_execution_record:
+                continue
             evidence_binding_invalid = False
             for criterion_result in review["criteria"]:
                 if criterion_result["status"] != "satisfied":
@@ -2400,6 +2753,7 @@ def project_scheduler_audit(
     if (
         contract_mode == "v2"
         and normalized_trace.get("committed") is True
+        and has_reviewer
         and (
             len(completed_review_results) != 1
             or completed_review_results[0].get("verdict") != "approved"
@@ -2684,6 +3038,8 @@ def _validate_commit_ready_against_audit(
             for artifact, document in documents
             if isinstance(document, dict)
             and document.get("resultType") == "AcceptanceEvidenceMatrix.v1"
+            and verification_binding is not None
+            and document.get("verificationArtifactRef") == verification_binding[0].artifact_id
         ),
         None,
     )
@@ -2717,6 +3073,10 @@ def _validate_commit_ready_against_audit(
     diff_artifact, diff = (
         diff_binding if diff_binding is not None else (None, None)
     )
+    last_repair_sequence = max((
+        int(transition["sequence"]) for transition in audit.trace["transitions"]
+        if transition["outcome"] == "repairing"
+    ), default=0)
     completed_artifacts_by_stage = {
         stage: {
             str(transition["artifactId"])
@@ -2724,6 +3084,7 @@ def _validate_commit_ready_against_audit(
             if transition["stage"] == stage
             and transition["outcome"] == "completed"
             and transition["artifactId"] is not None
+            and (stage == "human" or transition["sequence"] > last_repair_sequence)
         }
         for stage in ("verifier", "reviewer", "human")
     }

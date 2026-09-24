@@ -37,6 +37,13 @@ def test_darwin_wrapper_is_absolute_deny_by_default_and_network_denied(
     assert str(cwd) in profile
     assert str(home) in profile
     assert wrapped[-1] == str(executable)
+    # Toolchains stat their ancestors during collection (pytest walks each
+    # parent of the invocation directory); the profile must allow
+    # metadata-only reads on the ancestor directories themselves while
+    # keeping their subtrees unreadable.
+    assert "(allow file-read-metadata" in profile
+    assert f'(literal "{tmp_path}")' in profile
+    assert f'(subpath "{tmp_path}")' not in profile
 
 
 def test_darwin_wrapper_classifies_launcher_failure_as_infrastructure() -> None:

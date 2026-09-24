@@ -82,7 +82,6 @@ def test_dedup_liveness_reconciles_even_when_new_dedup_is_disabled(
     compactor.process_request(
         messages,
         enable_tool_budget=False,
-        enable_read_dedup=False,
         enable_auto_compact=False,
     )
 

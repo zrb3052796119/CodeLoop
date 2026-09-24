@@ -55,7 +55,7 @@ _SHADOW_STATUSES = frozenset(
 _PATH_LOCKS_GUARD = threading.Lock()
 _PATH_LOCKS: dict[str, threading.RLock] = {}
 
-SkillIdentity = tuple[str, str, str, str]
+SkillIdentity = tuple[str, str, str, str, str]
 SkillKey = tuple[str, str, str]
 GateEvidence = tuple[
     bool,
@@ -113,9 +113,12 @@ def _skill_identity(value: object) -> SkillIdentity:
     name = _field(value, "qualified_name") or _field(value, "qualifiedName")
     source = _field(value, "source")
     directory = _field(value, "directory")
-    digest = _field(value, "content_digest") or _field(
+    content_digest = _field(value, "content_digest") or _field(
         value, "contentDigest"
     )
+    routing_digest = _field(value, "routing_identity_digest") or _field(
+        value, "routingIdentityDigest"
+    ) or content_digest
     if (
         not isinstance(name, str)
         or _SKILL_NAME_RE.fullmatch(name) is None
@@ -125,11 +128,13 @@ def _skill_identity(value: object) -> SkillIdentity:
             directory
             and _SKILL_DIRECTORY_RE.fullmatch(directory) is None
         )
-        or not isinstance(digest, str)
-        or _SHA256_RE.fullmatch(digest) is None
+        or not isinstance(content_digest, str)
+        or _SHA256_RE.fullmatch(content_digest) is None
+        or not isinstance(routing_digest, str)
+        or _SHA256_RE.fullmatch(routing_digest) is None
     ):
         raise SkillVersionLedgerError("invalid Skill catalog identity")
-    return name, source, directory, digest
+    return name, source, directory, routing_digest, content_digest
 
 
 def _skill_key(identity: SkillIdentity) -> SkillKey:
@@ -137,17 +142,33 @@ def _skill_key(identity: SkillIdentity) -> SkillKey:
 
 
 def _skill_dict(identity: SkillIdentity) -> dict[str, str]:
-    return {
+    projected = {
         "qualifiedName": identity[0],
         "source": identity[1],
         "directory": identity[2],
-        "contentDigest": identity[3],
+        "contentDigest": identity[4],
     }
+    # Records written before routing metadata had its own identity contain
+    # only contentDigest.  Preserve their exact projection/version ID while
+    # adding the stronger identity to new records.
+    if identity[3] != identity[4]:
+        projected["routingIdentityDigest"] = identity[3]
+    return projected
 
 
 def _version_id(identity: SkillIdentity) -> str:
+    version_identity = (
+        _skill_dict(identity)
+        if identity[3] == identity[4]
+        else {
+            "qualifiedName": identity[0],
+            "source": identity[1],
+            "directory": identity[2],
+            "routingIdentityDigest": identity[3],
+        }
+    )
     encoded = json.dumps(
-        _skill_dict(identity),
+        version_identity,
         ensure_ascii=True,
         sort_keys=True,
         separators=(",", ":"),
@@ -155,10 +176,31 @@ def _version_id(identity: SkillIdentity) -> str:
     return "skillv_" + hashlib.sha256(encoded).hexdigest()[:32]
 
 
+def _accepted_version_ids(identity: SkillIdentity) -> frozenset[str]:
+    """Accept the one pre-migration ID shape without weakening validation.
+
+    Early routing-identity ledgers hashed the complete serialized Skill,
+    including both routing and content digests. The canonical ID now keys the
+    version by routing identity when it is available. Both forms are fully
+    content-derived, so accepting the old form keeps existing immutable
+    lineage readable while every newly appended record uses the canonical ID.
+    """
+    accepted = {_version_id(identity)}
+    if identity[3] != identity[4]:
+        encoded = json.dumps(
+            _skill_dict(identity),
+            ensure_ascii=True,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        accepted.add("skillv_" + hashlib.sha256(encoded).hexdigest()[:32])
+    return frozenset(accepted)
+
+
 def _normalize_catalog(values: Iterable[object]) -> tuple[SkillIdentity, ...]:
     identities: list[SkillIdentity] = []
     seen_versions: set[SkillIdentity] = set()
-    seen_keys: dict[SkillKey, str] = {}
+    seen_keys: dict[SkillKey, tuple[str, str]] = {}
     try:
         iterator = iter(values)
     except TypeError as error:
@@ -166,10 +208,11 @@ def _normalize_catalog(values: Iterable[object]) -> tuple[SkillIdentity, ...]:
     for value in iterator:
         identity = _skill_identity(value)
         key = _skill_key(identity)
-        prior_digest = seen_keys.get(key)
-        if prior_digest is not None and prior_digest != identity[3]:
+        digests = (identity[3], identity[4])
+        prior_digests = seen_keys.get(key)
+        if prior_digests is not None and prior_digests != digests:
             raise SkillVersionLedgerError("ambiguous Skill catalog version")
-        seen_keys[key] = identity[3]
+        seen_keys[key] = digests
         if identity not in seen_versions:
             identities.append(identity)
             seen_versions.add(identity)
@@ -733,7 +776,7 @@ class SkillVersionLedger:
         if (
             not isinstance(version_id, str)
             or _VERSION_ID_RE.fullmatch(version_id) is None
-            or version_id != _version_id(identity)
+            or version_id not in _accepted_version_ids(identity)
             or version_id in prior_records
             or parent != latest_by_key.get(_skill_key(identity))
             or value.get("status") != "observed"

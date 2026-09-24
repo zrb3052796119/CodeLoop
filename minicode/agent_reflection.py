@@ -13,10 +13,9 @@ import json
 import inspect
 import time
 from dataclasses import dataclass, field, replace
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from minicode.logging_config import get_logger
-from minicode.memory import MemoryApprovalPolicy, MemoryManager, MemoryScope
 from minicode.reflection_evidence import (
     TaskEvidence,
     TraceEvidenceExtractor,
@@ -43,6 +42,11 @@ from minicode.reflection_synthesis import (
     ReflectionValueGate,
     RuleReflectionSynthesizer,
 )
+
+if TYPE_CHECKING:
+    from minicode.memory import MemoryManager
+    from minicode.recovery_lesson import RecoveryLessonAgent
+    from minicode.reflection_shadow_metrics import RecoveryLessonShadowSummary
 
 logger = get_logger("agent_reflection")
 
@@ -83,7 +87,11 @@ class ReflectionResult:
     replace_regression: bool = False
     suppressed_claim_ids: list[str] = field(default_factory=list)
     suppression_reason_codes: dict[str, str] = field(default_factory=dict)
+    # Observation only: deliberately excluded from to_memory_entry and all
+    # production claim selection fields.
+    recovery_lesson_shadow_summary: RecoveryLessonShadowSummary | None = None
     _shadow_completed: bool = field(default=False, repr=False, compare=False)
+    _recovery_lesson_shadow_completed: bool = field(default=False, repr=False, compare=False)
 
     def to_memory_entry(self) -> dict[str, Any]:
         """Convert to a memory entry for persistence."""
@@ -245,7 +253,17 @@ class _LLMPathResult:
 
 
 class ReflectionEngine:
-    """Engine for agent self-reflection."""
+    """Synthesize reflection results without owning durable persistence.
+
+    ``MemoryPipeline.write`` is the sole authority for turning a
+    :class:`ReflectionResult` into durable memory.  Keeping synthesis and
+    persistence separate is important because the pipeline applies the
+    per-claim approval, identity, safety, and supersession contracts.
+
+    ``memory_manager`` remains accepted as a source-compatible no-op while
+    callers migrate.  The old ``persist_reflections=True`` mode is rejected
+    explicitly instead of silently producing entries with weaker policy.
+    """
 
     def __init__(
         self,
@@ -256,10 +274,23 @@ class ReflectionEngine:
         llm_synthesizer: AttemptingReflectionSynthesizer | None = None,
         llm_unavailable_reason: str | None = None,
         shadow_metrics_recorder: Any | None = None,
+        recovery_lesson_agent: RecoveryLessonAgent | None = None,
     ):
-        self.memory = memory_manager
+        if persist_reflections:
+            raise ValueError(
+                "persist_reflections=True is no longer supported; "
+                "ReflectionEngine only synthesizes ReflectionResult values. "
+                "Persist reflections through MemoryPipeline.write()."
+            )
+        # Compatibility-only constructor input.  Deliberately do not retain
+        # the manager: ReflectionEngine must not regain storage authority via
+        # a later code path.
+        del memory_manager
+        # Compatibility-only reporting boundary. Durable admission is owned by
+        # ReflectionValueGate plus per-claim evidence/approval policy in
+        # MemoryPipeline; this value must never be interpreted as a persistence
+        # gate. Keep the public attribute until callers finish migrating.
         self.min_confidence = min_confidence_threshold
-        self.persist_reflections = persist_reflections
         self._evidence_extractor = TraceEvidenceExtractor()
         self._synthesizer = RuleReflectionSynthesizer()
         self._claim_validator = ReflectionClaimValidator()
@@ -269,6 +300,7 @@ class ReflectionEngine:
         self._llm_unavailable_reason = llm_unavailable_reason or "model_unavailable"
         self._llm_eligibility = ReflectionLLMEligibilityGate()
         self._shadow_metrics_recorder = shadow_metrics_recorder
+        self._recovery_lesson_agent = recovery_lesson_agent
 
     def reflect(
         self,
@@ -488,18 +520,6 @@ class ReflectionEngine:
             suppression_reason_codes=suppression_reason_codes,
         )
 
-        if (
-            self.persist_reflections
-            and self.memory
-            and structured_claims
-        ):
-            from minicode.memory_pipeline import assess_trace_memory_safety
-
-            self._persist_reflection(
-                reflection,
-                trace_safety=assess_trace_memory_safety(execution_trace),
-            )
-
         if self._llm_config.mode == "llm_shadow" and not defer_shadow:
             self.complete_shadow(
                 reflection,
@@ -693,6 +713,123 @@ class ReflectionEngine:
         )
 
     def complete_shadow(
+        self,
+        reflection: ReflectionResult,
+        *,
+        agent_budget: Any | None = None,
+        event_sink: Any | None = None,
+        cancellation_token: Any | None = None,
+        deadline_monotonic: float | None = None,
+    ) -> ShadowComparisonResult | None:
+        """Evaluate independent non-production branches at most once each."""
+        from minicode.model_call_control import ModelCallDeadlineExceeded
+        from minicode.turn_cancellation import TurnCancellationRequested
+
+        if self._llm_config.mode != "llm_shadow":
+            return reflection.shadow_comparison
+        try:
+            self._complete_whole_task_shadow(
+                reflection,
+                agent_budget=agent_budget,
+                event_sink=event_sink,
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+            )
+        except (TurnCancellationRequested, ModelCallDeadlineExceeded):
+            raise
+        except Exception:
+            logger.info("Reflection whole-task shadow failed safely")
+        self._complete_recovery_lesson_shadow(
+            reflection,
+            agent_budget=agent_budget,
+            event_sink=event_sink,
+            cancellation_token=cancellation_token,
+            deadline_monotonic=deadline_monotonic,
+        )
+        return reflection.shadow_comparison
+
+    def _complete_recovery_lesson_shadow(
+        self,
+        reflection: ReflectionResult,
+        *,
+        agent_budget: Any | None = None,
+        event_sink: Any | None = None,
+        cancellation_token: Any | None = None,
+        deadline_monotonic: float | None = None,
+    ) -> RecoveryLessonShadowSummary | None:
+        if (
+            self._llm_config.mode != "llm_shadow"
+            or not self._llm_config.recovery_lesson_shadow_enabled
+            or reflection._recovery_lesson_shadow_completed
+        ):
+            return reflection.recovery_lesson_shadow_summary
+        # Set before any optional work, including provider/recorder failure.
+        reflection._recovery_lesson_shadow_completed = True
+        from minicode.model_call_control import ModelCallDeadlineExceeded
+        from minicode.recovery_lesson import extract_recovery_episodes
+        from minicode.reflection_shadow_metrics import (
+            build_recovery_shadow_summary,
+            deterministic_shadow_sample,
+            reflection_task_identifier,
+        )
+        from minicode.turn_cancellation import TurnCancellationRequested
+
+        episodes = []
+        eligible = sampled = False
+        result = None
+        reason = None
+        try:
+            if reflection.task_evidence is not None:
+                episodes = extract_recovery_episodes(reflection.task_evidence)
+            if not episodes:
+                reason = "no_recovery_episode"
+            elif self._recovery_lesson_agent is None:
+                reason = self._llm_unavailable_reason or "model_unavailable"
+            else:
+                # Episode candidates deliberately bypass the whole-task
+                # durable-signal gate: an unproven timeout retry is useful
+                # evidence here even though that gate correctly declines it.
+                eligible = True
+                sampled = deterministic_shadow_sample(
+                    reflection_task_identifier(reflection.task_summary),
+                    self._llm_config.shadow_sample_rate,
+                )
+                if sampled:
+                    result = self._recovery_lesson_agent.attempt_lessons(
+                        reflection.task_summary,
+                        reflection.task_evidence,
+                        agent_budget=agent_budget,
+                        event_sink=event_sink,
+                        cancellation_token=cancellation_token,
+                        deadline_monotonic=deadline_monotonic,
+                    )
+                else:
+                    reason = "sampled_out"
+            summary = build_recovery_shadow_summary(
+                reflection.task_summary, episodes, result,
+                eligible=eligible, sampled=sampled, fallback_reason=reason,
+            )
+        except (TurnCancellationRequested, ModelCallDeadlineExceeded):
+            raise
+        except Exception:
+            summary = build_recovery_shadow_summary(
+                reflection.task_summary, [], eligible=eligible,
+                sampled=sampled, fallback_reason="recovery_shadow_error",
+            )
+        reflection.recovery_lesson_shadow_summary = summary
+        if self._shadow_metrics_recorder is not None:
+            try:
+                self._shadow_metrics_recorder.record_recovery(summary)
+            except Exception:
+                logger.info("Recovery lesson shadow metrics recording failed safely")
+        logger.info(
+            "Recovery lesson shadow: episodes=%d called=%d valid=%d fallback=%s",
+            summary.episode_count, summary.llm_called, summary.valid_claim_count,
+            summary.fallback_reason or "none",
+        )
+        return summary
+
+    def _complete_whole_task_shadow(
         self,
         reflection: ReflectionResult,
         *,
@@ -944,57 +1081,3 @@ class ReflectionEngine:
             confidence = min(confidence, 0.35)
 
         return max(0.0, min(1.0, confidence))
-
-    def _persist_reflection(
-        self,
-        reflection: ReflectionResult,
-        *,
-        trace_safety: Any | None = None,
-    ) -> None:
-        """Save reflection to long-term memory."""
-        if (
-            self.memory is None
-            or not reflection.value_decision.accepted
-            or not reflection.claim_validation.valid_claims
-        ):
-            return
-
-        entry = reflection.to_memory_entry()
-        try:
-            # Use add_entry if available (new API), fallback to add (old API)
-            if hasattr(self.memory, "add_entry"):
-                safety_kwargs = {}
-                if trace_safety is not None and not trace_safety.allowed:
-                    safety_kwargs = {
-                        "safety_status": trace_safety.status,
-                        "safety_reason": trace_safety.reason,
-                    }
-                self.memory.add_entry(
-                    scope=MemoryScope.PROJECT,
-                    category=entry["category"],
-                    content=entry["content"],
-                    tags=entry["tags"],
-                    domains=entry.get("domains", []),
-                    metadata=entry.get("metadata", {}),
-                    source="reflection",
-                    approval_policy=MemoryApprovalPolicy.USER_REVIEW_REQUIRED,
-                    **safety_kwargs,
-                )
-            else:
-                if trace_safety is not None and not trace_safety.allowed:
-                    logger.warning(
-                        "Skipped reflection persistence: legacy memory adapter "
-                        "cannot represent safety status %s",
-                        trace_safety.status,
-                    )
-                    return
-                self.memory.add(
-                    content=entry["content"],
-                    scope=MemoryScope.PROJECT,
-                    category=entry["category"],
-                    tags=entry["tags"],
-                    metadata=entry["metadata"],
-                )
-            logger.info("Reflection persisted to memory (confidence: %.2f)", reflection.confidence)
-        except Exception as e:
-            logger.warning("Failed to persist reflection: %s", e)

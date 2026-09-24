@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="513" viewBox="0 0 980 513" role="img" aria-labelledby="title desc">
+<title id="title">Paired cumulative input tokens through turn five</title>
+<desc id="desc">Each row joins one canonical compaction run to its matched high-window control.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="30" y="30" font-family="sans-serif" font-size="20" font-weight="700">Paired total input tokens through turn five</text>
+<circle cx="650" cy="25" r="5" fill="#0072B2"/><text x="662" y="29" font-family="sans-serif" font-size="12">canonical</text>
+<circle cx="760" cy="25" r="5" fill="#D55E00"/><text x="772" y="29" font-family="sans-serif" font-size="12">control</text>
+<line x1="210.0" y1="55" x2="210.0" y2="478" stroke="#e5e7eb"/>
+<text x="210.0" y="498" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4b5563">0k</text>
+<line x1="355.0" y1="55" x2="355.0" y2="478" stroke="#e5e7eb"/>
+<text x="355.0" y="498" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4b5563">207k</text>
+<line x1="500.0" y1="55" x2="500.0" y2="478" stroke="#e5e7eb"/>
+<text x="500.0" y="498" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4b5563">415k</text>
+<line x1="645.0" y1="55" x2="645.0" y2="478" stroke="#e5e7eb"/>
+<text x="645.0" y="498" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4b5563">622k</text>
+<line x1="790.0" y1="55" x2="790.0" y2="478" stroke="#e5e7eb"/>
+<text x="790.0" y="498" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4b5563">830k</text>
+<line x1="935.0" y1="55" x2="935.0" y2="478" stroke="#e5e7eb"/>
+<text x="935.0" y="498" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4b5563">1037k</text>
+<text x="200" y="74" text-anchor="end" font-family="sans-serif" font-size="11">cache-key-r1</text>
+<line x1="480.7" y1="70" x2="485.8" y2="70" stroke="#9ca3af" stroke-width="2"/>
+<circle cx="485.8" cy="70" r="5" fill="#D55E00"/>
+<circle cx="480.7" cy="70" r="5" fill="#0072B2"/>
+<text x="200" y="108" text-anchor="end" font-family="sans-serif" font-size="11">cache-key-r2</text>
+<line x1="337.1" y1="104" x2="412.8" y2="104" stroke="#9ca3af" stroke-width="2"/>
+<circle cx="412.8" cy="104" r="5" fill="#D55E00"/>
+<circle cx="337.1" cy="104" r="5" fill="#0072B2"/>
+<text x="200" y="142" text-anchor="end" font-family="sans-serif" font-size="11">cache-key-r3</text>
+<line x1="434.6" y1="138" x2="480.8" y2="138" stroke="#9ca3af" stroke-width="2"/>
+<circle cx="480.8" cy="138" r="5" fill="#D55E00"/>
+<circle cx="434.6" cy="138" r="5" fill="#0072B2"/>
+<text x="200" y="176" text-anchor="end" font-family="sans-serif" font-size="11">port-normalization-r1</text>
+<line x1="584.3" y1="172" x2="678.8" y2="172" stroke="#9ca3af" stroke-width="2"/>
+<circle cx="678.8" cy="172" r="5" fill="#D55E00"/>
+<circle cx="584.3" cy="172" r="5" fill="#0072B2"/>
+<text x="200" y="210" text-anchor="end" font-family="sans-serif" font-size="11">port-normalization-r2</text>
+<line x1="443.2" y1="206" x2="488.0" y2="206" stroke="#9ca3af" stroke-width="2"/>
+<circle cx="488.0" cy="206" r="5" fill="#D55E00"/>
+<circle cx="443.2" cy="206" r="5" fill="#0072B2"/>
+<text x="200" y="244" text-anchor="end" font-family="sans-serif" font-size="11">port-normalization-r3</text>
+<line x1="479.4" y1="240" x2="598.8" y2="240" stroke="#9ca3af" stroke-width="2"/>
+<circle cx="598.8" cy="240" r="5" fill="#D55E00"/>
+<circle cx="479.4" cy="240" r="5" fill="#0072B2"/>
+<text x="200" y="278" text-anchor="end" font-family="sans-serif" font-size="11">record-parser-r1</text>
+<line x1="425.9" y1="274" x2="498.4" y2="274" stroke="#9ca3af" stroke-width="2"/>
+<circle cx="498.4" cy="274" r="5" fill="#D55E00"/>
+<circle cx="425.9" cy="274" r="5" fill="#0072B2"/>
+<text x="200" y="312" text-anchor="end" font-family="sans-serif" font-size="11">record-parser-r2</text>
+<line x1="487.0" y1="308" x2="415.2" y2="308" stroke="#9ca3af" stroke-width="2"/>
+<circle cx="415.2" cy="308" r="5" fill="#D55E00"/>
+<circle cx="487.0" cy="308" r="5" fill="#0072B2"/>
+<text x="200" y="346" text-anchor="end" font-family="sans-serif" font-size="11">record-parser-r3</text>
+<line x1="411.3" y1="342" x2="480.6" y2="342" stroke="#9ca3af" stroke-width="2"/>
+<circle cx="480.6" cy="342" r="5" fill="#D55E00"/>
+<circle cx="411.3" cy="342" r="5" fill="#0072B2"/>
+<text x="200" y="380" text-anchor="end" font-family="sans-serif" font-size="11">retry-delay-r1</text>
+<line x1="397.0" y1="376" x2="900.5" y2="376" stroke="#9ca3af" stroke-width="2"/>
+<circle cx="900.5" cy="376" r="5" fill="#D55E00"/>
+<circle cx="397.0" cy="376" r="5" fill="#0072B2"/>
+<text x="200" y="414" text-anchor="end" font-family="sans-serif" font-size="11">retry-delay-r2</text>
+<line x1="563.5" y1="410" x2="783.3" y2="410" stroke="#9ca3af" stroke-width="2"/>
+<circle cx="783.3" cy="410" r="5" fill="#D55E00"/>
+<circle cx="563.5" cy="410" r="5" fill="#0072B2"/>
+<text x="200" y="448" text-anchor="end" font-family="sans-serif" font-size="11">retry-delay-r3</text>
+<line x1="473.4" y1="444" x2="499.1" y2="444" stroke="#9ca3af" stroke-width="2"/>
+<circle cx="499.1" cy="444" r="5" fill="#D55E00"/>
+<circle cx="473.4" cy="444" r="5" fill="#0072B2"/>
+</svg>

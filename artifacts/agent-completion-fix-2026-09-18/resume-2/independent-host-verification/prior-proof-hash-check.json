@@ -1,0 +1,8 @@
+{
+  "timeout_test_same_as_saved_red": false,
+  "timeout_before_source_same_as_saved_red": true,
+  "git_test_same_as_saved_proof": true,
+  "prior_proofs_reviewed_not_rerun": true,
+  "timeout_final_test_same_as_final_proof": true,
+  "timeout_final_proof_source": "../timeout-regression-proof.json"
+}

@@ -159,6 +159,7 @@ def test_agent_runtime_passes_runtime_config_to_shared_budget_factory(
     )
 
     assert captured["runtime"] is runtime_config
+    assert captured["defer_curator_maintenance"] is False
 
 
 def test_presentation_baseexceptions_cannot_change_agent_result() -> None:

@@ -5,6 +5,9 @@
 ## Acceptance
 
 - Evaluation integrity passed: `False`
+- Behavior candidate passed: `False`
+- Source certification passed: `False`
+- Accepted baseline: `False`
 - Production code modified by Phase 3A: `False`
 - Remote calls: `0`
 - Dataset: `108` cases (`72` positive, `36` hard negative)
@@ -20,31 +23,31 @@
 
 | Metric | Manager | Canonical diagnostic | Sealed diagnostic | Raw diagnostic count |
 |---|---:|---:|---:|---:|
-| Recall@1 | 19.44% | 22.22% | 12.50% | 16/72 |
-| Recall@3 | 22.22% | 27.78% | 12.50% | 20/72 |
-| Recall@5 | 23.61% | 29.17% | 12.50% | 21/72 |
-| Recall@10 | 34.72% | 36.11% | 12.50% | 26/72 |
-| Recall@20 | 44.44% | 47.22% | 20.83% | 34/72 |
-| MRR@20 | 0.2328 | 0.2685 | 0.1313 | - |
-| NDCG@5 | 0.2180 | 0.2608 | 0.1250 | - |
+| Recall@1 | 19.44% | 23.61% | 12.50% | 17/72 |
+| Recall@3 | 23.61% | 29.17% | 12.50% | 21/72 |
+| Recall@5 | 29.17% | 36.11% | 12.50% | 26/72 |
+| Recall@10 | 37.50% | 41.67% | 12.50% | 30/72 |
+| Recall@20 | 45.83% | 48.61% | 20.83% | 35/72 |
+| MRR@20 | 0.2428 | 0.2895 | 0.1313 | - |
+| NDCG@5 | 0.2422 | 0.2980 | 0.1250 | - |
 
 ## Downstream And Negative Metrics
 
-- Post-Gate recall: `16.67%`.
-- Post-Consolidation recall: `16.67%`.
-- Rendered recall / precision: `16.67%` / `24.49%`.
-- Hard-negative candidate / post-Gate / rendered rates: `75.00%` / `55.56%` / `55.56%`.
+- Post-Gate recall: `19.44%`.
+- Post-Consolidation recall: `19.44%`.
+- Rendered recall / precision: `19.44%` / `26.42%`.
+- Hard-negative candidate / post-Gate / rendered rates: `75.00%` / `61.11%` / `61.11%`.
 - Forbidden candidate leakage entries: `0`.
 
 ## First Loss
 
-- `candidate_generation_top20`: 38
-- `relevance_gate`: 23
-- `rendered`: 11
+- `candidate_generation_top20`: 37
+- `relevance_gate`: 22
+- `rendered`: 13
 
 ## Decision
 
-- Confirmed semantic gaps: `37` overall, `18` sealed.
+- Confirmed semantic gaps: `36` overall, `18` sealed.
 - Phase 3B entry gate: `False` (`inconclusive_expand_independent_holdout`).
 - Direct production hybrid enablement: `False`.
 

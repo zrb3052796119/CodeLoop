@@ -6,6 +6,7 @@ with AST-aware filtering, glob patterns, and context lines.
 from __future__ import annotations
 
 import fnmatch
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -235,30 +236,40 @@ def _run(input_data: dict, context) -> ToolResult:
     include_globs = input_data.get("include", [])
     exclude_globs = input_data.get("exclude", [])
     
-    # Collect files
+    # Collect files, pruning skip-listed and hidden directories during the
+    # walk. rglob("*") materializes the entire tree — node_modules and .git
+    # included — before any filter runs, so a large repo paid full traversal
+    # cost regardless of MAX_FILES.
+    all_files: list[Path] = []
     try:
-        all_files = sorted(root.rglob("*"))
+        for dirpath, dirnames, filenames in os.walk(root):
+            dirnames[:] = [
+                name
+                for name in dirnames
+                if name not in SKIP_DIRS and not name.startswith(".")
+            ]
+            for filename in filenames:
+                if filename.startswith("."):
+                    continue
+                all_files.append(Path(dirpath) / filename)
+            if len(all_files) >= MAX_FILES:
+                break
     except PermissionError:
         return ToolResult(ok=False, output=f"Permission denied: {root}")
     except OSError as e:
         return ToolResult(ok=False, output=f"Cannot read directory: {e}")
-    
+    all_files.sort()
+
     # Search
     results: list[tuple[Path, list[dict[str, Any]]]] = []
     file_count = 0
     skipped = 0
     total_matches = 0
-    
+
     for file_path in all_files:
-        # Skip directories
         if not file_path.is_file():
             continue
-        
-        # Skip hidden and common large directories
-        if any(part in SKIP_DIRS or part.startswith('.') for part in file_path.relative_to(root).parts):
-            skipped += 1
-            continue
-        
+
         # File limit
         if file_count >= MAX_FILES:
             break

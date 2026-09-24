@@ -493,20 +493,21 @@ def run_pilot(
 
 
 def _validate_temporary_persistence(cases: list[dict[str, Any]]) -> dict[str, Any]:
-    from minicode.agent_reflection import ReflectionEngine
     from minicode.memory import MemoryManager, MemoryScope
+    from minicode.memory_pipeline import MemoryPipeline
 
     attempted = 0
     persisted = 0
     with tempfile.TemporaryDirectory(prefix="minicode-reflection-pilot-") as directory:
         manager = MemoryManager(project_root=Path(directory))
-        engine = ReflectionEngine(
-            memory_manager=manager,
-            persist_reflections=True,
+        pipeline = MemoryPipeline(manager)
+        pipeline.initialize(
+            workspace_path=directory,
+            enable_reranker=False,
         )
         for case in cases[:3]:
             attempted += 1
-            engine.reflect(case["task_description"], case["trace"])
+            pipeline.write(case["task_description"], case["trace"])
         persisted = len(manager.memories[MemoryScope.PROJECT].entries)
     return {
         "temporary_only": True,

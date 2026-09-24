@@ -38,7 +38,8 @@ def _validate(input_data: dict) -> dict:
 
 def _run(input_data: dict, context):
     target = resolve_tool_path(context, input_data["path"], "write")
-    content = load_existing_file(target)
+    original_content = load_existing_file(target)
+    content = original_content
     applied: list[str] = []
     for index, replacement in enumerate(input_data["replacements"], start=1):
         if replacement["search"] not in content:
@@ -50,7 +51,16 @@ def _run(input_data: dict, context):
         else:
             content = content.replace(replacement["search"], replacement["replace"], 1)
             applied.append(f"#{index} replaceOnce")
-    result = apply_reviewed_file_change(context, input_data["path"], target, content)
+    # The patch was computed from the original read; conflict-check against
+    # it so a concurrent writer surfaces as edit_conflict instead of being
+    # silently overwritten.
+    result = apply_reviewed_file_change(
+        context,
+        input_data["path"],
+        target,
+        content,
+        expected_previous=original_content,
+    )
     if not result.ok:
         return result
     return ToolResult(

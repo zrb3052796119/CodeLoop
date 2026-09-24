@@ -3,9 +3,11 @@ from __future__ import annotations
 import argparse
 import sys
 import os
+import threading
 from pathlib import Path
 
 from minicode.agent_loop import run_agent_turn
+from minicode.agent_runtime import final_response_text
 from minicode.cli_commands import try_handle_local_command
 from minicode.config import load_runtime_config
 from minicode.history import load_history_entries, save_history_entries
@@ -16,9 +18,13 @@ from minicode.permissions import PermissionManager
 from minicode.prompt import build_system_prompt
 from minicode.run_events import emit_skill_routing_safely
 from minicode.run_lifecycle import observe_run
-from minicode.skill_router import required_skill_names_for_routing
+from minicode.skill_router import (
+    required_skill_names_for_routing,
+    skill_load_policy_for_routing,
+)
 from minicode.tools import create_default_tool_registry
 from minicode.tooling import ToolContext
+from minicode.user_evidence import stable_constraint_seeds
 from minicode.tui.transcript import format_transcript_text
 from minicode.tui.types import TranscriptEntry
 from minicode.tty_app import run_tty_app
@@ -28,11 +34,18 @@ from minicode.workspace import resolve_tool_path
 def _handle_local_command(user_input: str, tools) -> str | None:
     if user_input == "/tools":
         return "\n".join(f"{tool.name}: {tool.description}" for tool in tools.list())
-    local_result = try_handle_local_command(user_input, tools=tools, cwd=str(Path.cwd()))
+    local_result = try_handle_local_command(
+        user_input, tools=tools, cwd=str(Path.cwd())
+    )
     return local_result
 
 
-def _render_banner(runtime: dict | None, cwd: str, permission_summary: list[str], counts: dict[str, int]) -> str:
+def _render_banner(
+    runtime: dict | None,
+    cwd: str,
+    permission_summary: list[str],
+    counts: dict[str, int],
+) -> str:
     model = runtime["model"] if runtime else "unconfigured"
     project = Path(cwd).name or cwd
     lines = [
@@ -49,10 +62,7 @@ def _render_banner(runtime: dict | None, cwd: str, permission_summary: list[str]
 
 def _render_quick_start() -> str:
     """Render a concise guide for line-oriented, non-interactive use."""
-    return (
-        "Try: 帮我分析这个项目的结构\n"
-        "Commands: /help · /skills · /status · /exit"
-    )
+    return "Try: 帮我分析这个项目的结构\nCommands: /help · /skills · /status · /exit"
 
 
 def _render_startup_prelude(
@@ -85,18 +95,25 @@ def _append_transcript(transcript: list[TranscriptEntry], **kwargs) -> None:
 
 def _make_cli_permission_prompt():
     """Create a simple CLI-based permission prompt for non-TTY fallback."""
+    # Concurrent batch workers can hit permission checks at the same time;
+    # interleaved print/input from two threads would corrupt the question
+    # and swallow one answer. Serialize prompts so each stays readable.
+    prompt_lock = threading.Lock()
+
     def _prompt(request: dict) -> dict:
-        print(f"\n{request.get('summary', 'Permission Request')}")
-        choices = request.get("choices", [])
-        if choices:
-            for choice in choices:
-                print(f"  [{choice.get('key', '')}] {choice.get('label', '')}")
-            answer = input("Choose: ").strip()
-            for choice in choices:
-                if answer == choice.get("key"):
-                    return {"decision": choice.get("decision", "allow_once")}
-        answer = input("Allow? (y/n): ").strip().lower()
-        return {"decision": "allow_once" if answer in ("y", "yes") else "deny_once"}
+        with prompt_lock:
+            print(f"\n{request.get('summary', 'Permission Request')}")
+            choices = request.get("choices", [])
+            if choices:
+                for choice in choices:
+                    print(f"  [{choice.get('key', '')}] {choice.get('label', '')}")
+                answer = input("Choose: ").strip()
+                for choice in choices:
+                    if answer == choice.get("key"):
+                        return {"decision": choice.get("decision", "allow_once")}
+            answer = input("Allow? (y/n): ").strip().lower()
+            return {"decision": "allow_once" if answer in ("y", "yes") else "deny_once"}
+
     return _prompt
 
 
@@ -110,8 +127,12 @@ def _configure_stdio_for_unicode() -> None:
                 pass
 
 
-def _save_transcript_file(cwd: str, permissions, transcript: list[TranscriptEntry], output_path: str) -> str:
-    target = resolve_tool_path(ToolContext(cwd=cwd, permissions=permissions), output_path, "write")
+def _save_transcript_file(
+    cwd: str, permissions, transcript: list[TranscriptEntry], output_path: str
+) -> str:
+    target = resolve_tool_path(
+        ToolContext(cwd=cwd, permissions=permissions), output_path, "write"
+    )
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(format_transcript_text(transcript), encoding="utf-8")
     return str(target)
@@ -121,23 +142,38 @@ def _route_skills_for_prompt(
     cwd: str,
     tools,
     user_input: str | None,
+    *,
+    call_context: dict | None = None,
+    parsed_intent=None,
+    refresh_catalog: bool = True,
 ) -> tuple[list[dict], object | None]:
+    from minicode.skill_catalog_context import refresh_skill_catalog_for_turn
+
+    if refresh_catalog:
+        refresh_skill_catalog_for_turn(cwd, tools)
     if not user_input:
         return tools.get_skills(), None
-    from minicode.capability_registry import get_registry, register_tool_capabilities
-    from minicode.intent_parser import parse_intent
-    from minicode.skill_router import build_skill_router
-
-    register_tool_capabilities(tools)
-    intent = parse_intent(user_input)
-    routing = build_skill_router(cwd).route(
-        tools.get_skills(), intent, get_registry()
+    from minicode.capability_registry import (
+        build_tool_capability_snapshot,
     )
-    # Abstention means "no routing evidence", not "no skills" — the prompt
-    # must still see the full inventory or the model believes none exist.
-    if getattr(routing, "used_fallback", False):
-        return tools.get_skills(), routing
-    return routing.selected_skill_dicts(), routing
+    from minicode.skill_router import build_skill_router
+    from minicode.skill_routing_turn import (
+        SkillRoutingTurnAdapters,
+        SkillRoutingTurnRequest,
+        route_skill_turn,
+    )
+
+    turn_routing = route_skill_turn(
+        SkillRoutingTurnRequest(
+            prompt=user_input,
+            parsed_intent=parsed_intent,
+            skills=tools.get_skills(),
+            registry=build_tool_capability_snapshot(tools),
+        ),
+        SkillRoutingTurnAdapters(router=build_skill_router(cwd)),
+        controls=call_context,
+    )
+    return list(turn_routing.prompt_skills), turn_routing.routing
 
 
 def main() -> None:
@@ -198,18 +234,20 @@ def main() -> None:
     # Run config validation if requested
     if args.validate_config:
         from minicode.config import format_config_diagnostic
+
         print(format_config_diagnostic())
         return
-    
+
     # Run installer if requested
     if args.install:
         from minicode.install import main as install_main
+
         install_main()
         return
-    
+
     cwd = str(Path.cwd())
     argv = remaining_argv
-    
+
     # ``argparse`` already consumed top-level options. Preserve every
     # remaining management option together with its value; dropping only the
     # ``--name`` token turns ``--option value`` into a stray positional value.
@@ -241,7 +279,7 @@ def main() -> None:
     prompt_handler = _make_cli_permission_prompt() if sys.stdin.isatty() else None
     tools = create_default_tool_registry(cwd, runtime=runtime)
     permissions = PermissionManager(cwd, prompt=prompt_handler)
-    
+
     # Use unified model registry for adapter creation
     force_mock = runtime is None
     model = create_model_adapter(
@@ -250,31 +288,55 @@ def main() -> None:
         runtime=runtime,
         force_mock=force_mock,
     )
-    
+    from minicode.intent_semantic_classifier import (
+        build_semantic_intent_adapter,
+    )
+
+    semantic_intent_adapter = build_semantic_intent_adapter(
+        model,
+        runtime=runtime or {},
+    )
+    from minicode.skill_candidate_reranker import (
+        build_skill_candidate_reranker,
+    )
+
+    skill_candidate_reranker = build_skill_candidate_reranker(
+        model,
+        runtime=runtime or {},
+    )
+
     # Initialize ContextManager for context window management
     from minicode.context_manager import ContextManager
     from minicode.logging_config import get_logger
+
     logger = get_logger("main")
     context_mgr = None
     if runtime:
         context_mgr = ContextManager(model=runtime.get("model", "default"))
-        logger.info("Context manager initialized for model: %s", runtime.get("model", "unknown"))
-    
+        logger.info(
+            "Context manager initialized for model: %s", runtime.get("model", "unknown")
+        )
+
     # Initialize MemoryManager for cross-session knowledge retention
     from minicode.memory import MemoryManager
+
     memory_mgr = MemoryManager(project_root=Path(cwd))
     logger.info("Memory manager initialized")
-    
+
     # Initialize UserProfileManager for user preferences
     from minicode.user_profile import UserProfileManager
+
     profile_manager = UserProfileManager(cwd=cwd)
     profile_manager.load_merged()
-    logger.info("User profile manager initialized (global=%s, project=%s)",
-                profile_manager.global_path.exists(),
-                profile_manager.project_path.exists())
-    
+    logger.info(
+        "User profile manager initialized (global=%s, project=%s)",
+        profile_manager.global_path.exists(),
+        profile_manager.project_path.exists(),
+    )
+
     # Initialize Store for global state management (inspired by Claude Code's Zustand store)
     from minicode.state import create_app_store
+
     app_store = create_app_store(
         initial={
             "session_id": args.session or "new",
@@ -283,7 +345,7 @@ def main() -> None:
         }
     )
     logger.info("Store initialized with session: %s", app_store.get_state().session_id)
-    
+
     messages = [
         {
             "role": "system",
@@ -329,7 +391,9 @@ def main() -> None:
                     if not output_path:
                         print("Usage: /transcript-save <path>")
                         continue
-                    saved_path = _save_transcript_file(cwd, permissions, transcript, output_path)
+                    saved_path = _save_transcript_file(
+                        cwd, permissions, transcript, output_path
+                    )
                     print(f"Saved transcript to {saved_path}")
                     continue
                 memory_result = memory_mgr.handle_user_memory_input(user_input)
@@ -365,22 +429,6 @@ def main() -> None:
                 messages.append({"role": "user", "content": user_input})
                 history.append(user_input)
                 save_history_entries(history)
-                routed_skills, skill_routing = _route_skills_for_prompt(
-                    cwd, tools, user_input
-                )
-                messages[0] = {
-                    "role": "system",
-                    "content": build_system_prompt(
-                        cwd,
-                        permissions.get_summary(),
-                        {
-                            "skills": routed_skills,
-                            "skill_routing": skill_routing,
-                            "mcpServers": tools.get_mcp_servers(),
-                            "memory_context": "",
-                        },
-                    ),
-                }
                 permissions.begin_turn()
                 try:
                     with observe_run(
@@ -389,6 +437,86 @@ def main() -> None:
                         title=user_input,
                         session_id=None,
                     ) as observation:
+                        from minicode.agent_budget import AgentTurnBudget
+                        from minicode.intent_parser import IntentContext, parse_intent
+                        from minicode.skill_catalog_context import (
+                            refresh_skill_catalog_for_turn,
+                        )
+
+                        messages = refresh_skill_catalog_for_turn(cwd, tools, messages)
+                        agent_budget = AgentTurnBudget.from_runtime(runtime or {})
+                        parsed_intent = parse_intent(
+                            user_input,
+                            context=IntentContext.from_messages(messages[:-1]),
+                            semantic_adapter=semantic_intent_adapter,
+                            call_context={
+                                "agent_budget": agent_budget,
+                                "event_sink": observation,
+                                "cancellation_token": None,
+                                "deadline_monotonic": None,
+                            },
+                        )
+                        skill_routing_call_context = {
+                            "agent_budget": agent_budget,
+                            "event_sink": observation,
+                            "cancellation_token": None,
+                            "deadline_monotonic": None,
+                            "purpose": "skill-routing",
+                            "preserve_model_calls": 1,
+                            "skill_selection_mode": str(
+                                (runtime or {}).get("skillSelection", {}).get(
+                                    "mode", "routed"
+                                )
+                                or "routed"
+                            ),
+                            "skill_flat_catalog_chars": int(
+                                (runtime or {}).get("skillSelection", {}).get(
+                                    "flatCatalogCharBudget", 8000
+                                )
+                                or 8000
+                            ),
+                            "skill_page_chars": int(
+                                (runtime or {}).get("skillSelection", {}).get(
+                                    "skillPageCharBudget", 4000
+                                )
+                                or 4000
+                            ),
+                            "skill_intent_hints": bool(
+                                (runtime or {}).get("skillSelection", {}).get(
+                                    "intentHints", False
+                                )
+                            ),
+                            "skill_intent_prefetch": bool(
+                                (runtime or {}).get("skillSelection", {}).get(
+                                    "intentPrefetch", False
+                                )
+                            ),
+                        }
+                        if skill_candidate_reranker is not None:
+                            skill_routing_call_context[
+                                "skill_candidate_reranker"
+                            ] = skill_candidate_reranker
+                        routed_skills, skill_routing = _route_skills_for_prompt(
+                            cwd,
+                            tools,
+                            user_input,
+                            call_context=skill_routing_call_context,
+                            parsed_intent=parsed_intent,
+                            refresh_catalog=False,
+                        )
+                        messages[0] = {
+                            "role": "system",
+                            "content": build_system_prompt(
+                                cwd,
+                                permissions.get_summary(),
+                                {
+                                    "skills": routed_skills,
+                                    "skill_routing": skill_routing,
+                                    "mcpServers": tools.get_mcp_servers(),
+                                    "memory_context": "",
+                                },
+                            ),
+                        }
                         emit_skill_routing_safely(observation, skill_routing)
                         messages = run_agent_turn(
                             model=model,
@@ -400,17 +528,24 @@ def main() -> None:
                                 observation.tool_started(tool_name)
                             ),
                             on_tool_result=lambda tool_name, _output, is_error: (
-                                observation.tool_finished(
-                                    tool_name, is_error=is_error
-                                )
+                                observation.tool_finished(tool_name, is_error=is_error)
                             ),
                             store=app_store,
                             context_manager=context_mgr,
                             runtime=runtime,
                             memory_manager=memory_mgr,
                             event_sink=observation,
+                            agent_budget=agent_budget,
+                            enable_bounded_completion=True,
                             required_skill_names=required_skill_names_for_routing(
                                 skill_routing
+                            ),
+                            skill_load_policy=skill_load_policy_for_routing(
+                                skill_routing
+                            ),
+                            parsed_intent=parsed_intent,
+                            trusted_user_evidence=stable_constraint_seeds(
+                                user_input
                             ),
                         )
                         returned_assistant = next(
@@ -439,15 +574,21 @@ def main() -> None:
                         )
                 finally:
                     permissions.end_turn()
-                
+
                 # Log context usage after turn
                 if context_mgr:
                     stats = context_mgr.get_stats()
-                    logger.debug("After turn: %d tokens (%.0f%%)", stats.total_tokens, stats.usage_percentage)
-                last_assistant = next((message for message in reversed(messages) if message["role"] == "assistant"), None)
-                if last_assistant:
-                    _append_transcript(transcript, kind="assistant", body=last_assistant["content"])
-                    print(last_assistant["content"])
+                    logger.debug(
+                        "After turn: %d tokens (%.0f%%)",
+                        stats.total_tokens,
+                        stats.usage_percentage,
+                    )
+                last_response = final_response_text(messages)
+                if last_response:
+                    _append_transcript(
+                        transcript, kind="assistant", body=last_response
+                    )
+                    print(last_response)
             return
 
         run_tty_app(
@@ -467,16 +608,17 @@ def main() -> None:
     finally:
         # Graceful shutdown: clean up all resources
         from minicode.logging_config import get_logger
+
         logger = get_logger("main")
         logger.info("Shutting down...")
-        
+
         # Dispose tools (closes MCP connections)
         try:
             tools.dispose()
             logger.info("Tools disposed successfully")
         except Exception as e:
             logger.warning("Error disposing tools: %s", e)
-        
+
         logger.info("Shutdown complete")
 
 

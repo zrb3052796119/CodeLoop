@@ -1,0 +1,8 @@
+{
+  "originalFrozenRoot": "/private/tmp/minicode-multi-agent-buggy-ahhcgrxd",
+  "auditBaselineCopy": "/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/minicode-audit-baseline-qmjcp9io",
+  "currentHarnessCopied": {
+    "scripts/run_functional_audit.py": "bcc54bc91ad0e871fa55c3d4c927561d50f41945c647c722ef9bb3d9af640600",
+    "tests/functional_audit/test_runner.py": "9a4977d55c9c8f311e15c89cc9fb5dd79e9dd61c03d638fe6ba88509db12a4c5"
+  }
+}

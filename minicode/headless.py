@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING
 from minicode.agent_runtime import (
     AgentRuntimeConfigError,
     create_agent_turn_runtime,
+    final_response_text,
     prepare_conversation_messages,
 )
 from minicode.run_events import emit_skill_routing_safely
@@ -89,6 +90,7 @@ def run_headless(
                     prompt=prompt,
                     mcp_current_state_registry=mcp_current_state_registry,
                     allow_user_interaction=False,
+                    event_sink=observation,
                 )
             except AgentRuntimeConfigError as error:
                 print(f"Config error: {error.cause}", file=sys.stderr)
@@ -124,9 +126,10 @@ def run_headless(
                     len(assistant_content) if isinstance(assistant_content, str) else 0
                 ),
             )
-            response = (
-                last_assistant["content"] if last_assistant else "(no response)"
-            )
+            # A committed workflow ends with the authoritative tool_result and
+            # no closing assistant text; deliver that report instead of an
+            # empty response.
+            response = final_response_text(result_messages) or "(no response)"
         return response
     except Exception as exc:  # noqa: BLE001
         if not execution_started:

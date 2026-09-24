@@ -74,6 +74,40 @@ def test_save_and_load_session(temp_session_dir):
     assert loaded.workspace == "/tmp/test"
 
 
+def test_session_atomic_replaces_sync_their_parent_directories(
+    temp_session_dir,
+) -> None:
+    if os.name != "posix":
+        pytest.skip("directory fsync is a POSIX durability primitive")
+    real_open = os.open
+    real_fsync = os.fsync
+    directory_descriptors: dict[int, Path] = {}
+    synced_directories: set[Path] = set()
+
+    def tracking_open(path, flags, *args, **kwargs):
+        descriptor = real_open(path, flags, *args, **kwargs)
+        candidate = Path(path)
+        if candidate.is_dir():
+            directory_descriptors[descriptor] = candidate
+        return descriptor
+
+    def tracking_fsync(descriptor):
+        directory = directory_descriptors.get(descriptor)
+        if directory is not None:
+            synced_directories.add(directory)
+        return real_fsync(descriptor)
+
+    session = create_new_session(workspace="/tmp/test")
+    session.messages = [{"role": "user", "content": "durable"}]
+    with patch("os.open", side_effect=tracking_open), patch(
+        "os.fsync", side_effect=tracking_fsync
+    ):
+        save_session(session, force_full=True)
+
+    assert temp_session_dir in synced_directories
+    assert temp_session_dir.parent in synced_directories
+
+
 def test_full_save_replace_failure_preserves_last_valid_session(
     temp_session_dir,
 ) -> None:
@@ -594,7 +628,7 @@ def test_delta_replace_failure_preserves_tracking_and_retries_without_duplicates
     ]
 
 
-def test_index_replace_failure_preserves_valid_index_and_can_retry(
+def test_index_replace_failure_does_not_reverse_committed_session(
     temp_session_dir,
 ) -> None:
     session = create_new_session(workspace="/tmp/test")
@@ -612,18 +646,60 @@ def test_index_replace_failure_preserves_valid_index_and_can_retry(
         return real_replace(source, destination)
 
     with patch("os.replace", side_effect=fail_index):
-        with pytest.raises(OSError, match="index replace interrupted"):
-            save_session(session)
+        save_session(session)
 
+    # sessions_index.json is a rebuildable projection.  Its failed refresh
+    # must not report the already-durable canonical Session as uncommitted.
     assert index_path.read_bytes() == original_index
     assert json.loads(index_path.read_text(encoding="utf-8"))[
         session.session_id
     ]["message_count"] == 1
+    restarted = load_session(session.session_id)
+    assert restarted is not None
+    assert restarted.messages == [
+        {"role": "user", "content": "first"},
+        {"role": "assistant", "content": "second"},
+    ]
 
     save_session(session)
     assert json.loads(index_path.read_text(encoding="utf-8"))[
         session.session_id
     ]["message_count"] == 2
+
+
+def test_malformed_index_is_not_replaced_from_an_empty_projection_view(
+    temp_session_dir,
+) -> None:
+    first = create_new_session(workspace="/tmp/test")
+    first.messages = [{"role": "user", "content": "first"}]
+    save_session(first, force_full=True)
+    second = create_new_session(workspace="/tmp/test")
+    second.messages = [{"role": "user", "content": "second"}]
+    save_session(second, force_full=True)
+
+    index_path = temp_session_dir.parent / "sessions_index.json"
+    malformed_index = b'{"truncated":'
+    index_path.write_bytes(malformed_index)
+
+    first.messages.append({"role": "assistant", "content": "committed"})
+    save_session(first)
+
+    # The Session delta is canonical and commits even though its projection
+    # cannot be read safely. A writer must preserve the malformed projection
+    # for diagnosis/repair instead of treating it as an empty valid index and
+    # silently dropping every other Session entry.
+    assert index_path.read_bytes() == malformed_index
+    restarted_first = load_session(first.session_id)
+    restarted_second = load_session(second.session_id)
+    assert restarted_first is not None
+    assert restarted_first.messages[-1] == {
+        "role": "assistant",
+        "content": "committed",
+    }
+    assert restarted_second is not None
+    assert restarted_second.messages == [
+        {"role": "user", "content": "second"}
+    ]
 
 
 def test_atomic_temp_cleanup_error_does_not_mask_original_replace_error(

@@ -17,9 +17,11 @@ from minicode.reflection_evidence import (
     RecoveryEvidence,
     TaskEvidence,
     VerificationEvidence,
+    call_objective_from_rendered,
+    objectives_same_target,
     sanitize_evidence_text,
+    tool_semantic,
 )
-
 
 ClaimType = Literal[
     "constraint",
@@ -71,9 +73,6 @@ _GENERIC_ERROR_MESSAGES = {
     "unknown error",
     "an error occurred",
 }
-# Tools whose failures describe the host's network egress rather than the
-# project being worked on.
-_NETWORK_EGRESS_TOOLS = {"web_search", "web_fetch", "http_request"}
 # Transport/reachability codes emitted by those tools. A failure carrying one
 # of these describes the machine the agent happens to be running on -- a proxy,
 # a DNS policy, an unreachable remote host -- so it is state, not knowledge:
@@ -101,10 +100,6 @@ _ENVIRONMENT_ERROR_PATTERN = re.compile(
     r"no route to host|sslerror|ssl handshake fail|"
     r"certificate verify failed|proxy (?:error|connection))\b"
 )
-_READ_TOOLS = {"read_file"}
-_SEARCH_TOOLS = {"grep_files", "search_files", "find_symbols", "find_references"}
-_LIST_TOOLS = {"list_directory", "list_files", "directory_tree"}
-_FORMAT_TOOLS = {"format_file", "formatter"}
 _RECOVERY_TASK_ANCHOR_NOISE = {
     "call",
     "customer",
@@ -336,7 +331,8 @@ def _is_environment_scoped_error(error: ErrorEvidence) -> bool:
         return True
     if _ENVIRONMENT_ERROR_PATTERN.search(haystack):
         return True
-    if _normalize_text(error.tool_name) not in _NETWORK_EGRESS_TOOLS:
+    semantic = tool_semantic(error.tool_name)
+    if semantic is None or semantic.reflection_value_class != "network":
         return False
     return any(
         re.search(rf"\b{re.escape(code)}\b", haystack)
@@ -482,6 +478,160 @@ def _event_position(evidence: TaskEvidence, event_ids: list[str] | tuple[str, ..
     return max(positions, default=-1)
 
 
+def _passed_verifications_after_recovery(
+    recovery: RecoveryEvidence | None,
+    evidence: TaskEvidence,
+) -> list[VerificationEvidence]:
+    """Passed verifications ordered after the recovery boundary.
+
+    Shared by the rule synthesizer and the claim validator: whichever path
+    produced a candidate, "confirmed" may only cite a passing check that
+    could have observed the repaired state.
+    """
+    recovery_position = _event_position(evidence, recovery.event_ids) if recovery else -1
+    return [
+        item
+        for item in evidence.verification
+        if item.result == "passed"
+        and (
+            recovery_position < 0
+            or _event_position(evidence, item.event_ids) < 0
+            or _event_position(evidence, item.event_ids) > recovery_position
+        )
+    ]
+
+
+def _verification_invocation(
+    item: VerificationEvidence, evidence: TaskEvidence
+) -> str | None:
+    if not item.call_id:
+        return None
+    for call in evidence.tool_calls:
+        if call.call_id == item.call_id and call.invocation:
+            return call.invocation
+    return None
+
+
+def _verification_target_matches(
+    failed_invocation: str, passed_invocation: str
+) -> bool:
+    """Whether two checks exercised the same verification target.
+
+    The red-green proof needs the *same* check to have failed before and
+    passed after; sharing a ``command_kind`` (both ``test``) proves nothing
+    about which test.  Both invocations go through the shared
+    CallObjective contract: selection scope must be identical and the
+    passing run must cover every input target the failing run named,
+    resolved against each call's own cwd/anchor.
+    """
+    return objectives_same_target(
+        _objective_from_rendered(failed_invocation),
+        _objective_from_rendered(passed_invocation),
+    )
+
+
+def _objective_from_rendered(invocation: str):
+    """CallObjective for a rendered invocation, via the shared adapter."""
+    return call_objective_from_rendered(invocation)
+
+
+def _verification_reproduces_earlier_failure(
+    verification: VerificationEvidence,
+    recovery: RecoveryEvidence,
+    evidence: TaskEvidence,
+) -> bool:
+    """Report the red-green pattern: this check failed before the change.
+
+    The token-overlap fallback in ``_verification_evidence_matches_recovery``
+    compares a recovery against a verification summary, but a whole-suite
+    summary is "1 passed in 0.01s" -- it shares nothing with the failure
+    except, by coincidence, the duration string. A real run showed the
+    consequence: 640 characters of coloured pytest output were truncated at
+    the 600-character evidence limit, the trailing "1 failed in 0.01s" was
+    lost with it, and the only overlapping token went with it, silently
+    demoting a genuinely verified fix to "inferred". Whether a fix counts
+    as verified must not depend on how verbose the tool was.
+
+    The red side must come from the errors this recovery is tied to: an
+    auth recovery cannot borrow a billing failure's red-green pair.  When
+    either invocation is missing the relationship cannot be established at
+    all and stays a candidate.
+    """
+    if not verification.command_kind:
+        return False
+    recovery_position = _event_position(evidence, recovery.event_ids)
+    if recovery_position < 0:
+        return False
+    passed_invocation = _verification_invocation(verification, evidence)
+    if passed_invocation is None:
+        return False
+    # The red side's scope is derived from the recovery's own related
+    # errors -- never from what a candidate claim asserts.  A claim that
+    # swaps, widens, or empties its error references must not widen whose
+    # failure the green check may borrow.  Without a bindable failure call
+    # the relationship simply cannot be established.
+    related_call_ids = {
+        error.call_id
+        for error in evidence.errors
+        if error.error_id in recovery.related_error_ids and error.call_id
+    }
+    if not related_call_ids:
+        return False
+    for item in evidence.verification:
+        if item.result != "failed" or item.command_kind != verification.command_kind:
+            continue
+        if related_call_ids is not None and item.call_id not in related_call_ids:
+            continue
+        position = _event_position(evidence, item.event_ids)
+        if not 0 <= position < recovery_position:
+            continue
+        failed_invocation = _verification_invocation(item, evidence)
+        if failed_invocation is None:
+            continue
+        if _verification_target_matches(failed_invocation, passed_invocation):
+            return True
+    return False
+
+
+def _verification_evidence_matches_recovery(
+    verification: VerificationEvidence,
+    recovery: RecoveryEvidence,
+    errors: list[ErrorEvidence],
+    evidence: TaskEvidence,
+) -> bool:
+    """Whether a passing check actually verified this recovery.
+
+    This is the single admission-time relationship test shared by the rule
+    synthesizer and the validator: a passed verification belongs to a
+    recovery only through a direct call link, full-suite scope, a red-green
+    rerun of the same check kind, or textual overlap with the failure.
+    Merely citing any passed verification in the task is not linkage.
+    """
+    if (
+        verification.call_id
+        and verification.call_id in recovery.verification_call_ids
+    ):
+        return True
+    if verification.scope == "full":
+        return True
+    if _verification_reproduces_earlier_failure(
+        verification, recovery, evidence
+    ):
+        return True
+    recovery_text = " ".join(
+        [recovery.action, *recovery.files_changed, *(item.message for item in errors)]
+    )
+    verification_files = [
+        item.path
+        for item in evidence.referenced_files
+        if verification.call_id and item.call_id == verification.call_id
+    ]
+    verification_text = " ".join([verification.summary, *verification_files])
+    if _text_tokens(recovery_text) & _text_tokens(verification_text):
+        return True
+    return bool(_cjk_bigrams(recovery_text) & _cjk_bigrams(verification_text))
+
+
 @dataclass
 class ReflectionClaim:
     """One reusable proposition linked to exact evidence records."""
@@ -497,6 +647,13 @@ class ReflectionClaim:
     verification_ids: list[str] = field(default_factory=list)
     related_error_ids: list[str] = field(default_factory=list)
     related_recovery_ids: list[str] = field(default_factory=list)
+    # Verbatim excerpts from the cited evidence records. They carry the
+    # groundable part of the lesson so the statement itself may abstract
+    # ("raise the command timeout budget") instead of quoting machine paths
+    # and full tool output. Validation checks every excerpt against the
+    # evidence text; the statement's own claims about scope and cause stay
+    # bounded by applies_when/limitations and the relationship gates.
+    evidence_quotes: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -511,7 +668,38 @@ class ReflectionClaim:
             "verification_ids": list(self.verification_ids),
             "related_error_ids": list(self.related_error_ids),
             "related_recovery_ids": list(self.related_recovery_ids),
+            "evidence_quotes": list(self.evidence_quotes),
         }
+
+
+def durable_signals_for_claim(claim: ReflectionClaim) -> tuple[str, ...]:
+    """Return only authority signals semantically owned by one claim."""
+
+    if claim.claim_type == "constraint":
+        return ("stable_project_constraint",)
+    if claim.claim_type == "dependency" and claim.epistemic_status == "confirmed":
+        return ("confirmed_dependency",)
+    if claim.claim_type in {"error_pattern", "warning"}:
+        return ("reusable_error_pattern",)
+    if claim.claim_type == "root_cause" and claim.epistemic_status == "confirmed":
+        return ("confirmed_error_recovery_verified",)
+    if claim.claim_type == "recovery" and claim.epistemic_status == "confirmed":
+        return ("confirmed_error_recovery_verified", "verified_solution")
+    if claim.claim_type == "decision":
+        return ("key_technical_decision",)
+    if claim.claim_type == "correction":
+        signals = ["user_correction"]
+        normalized = _normalize_text(f"{claim.semantic_key} {claim.statement}")
+        if "memory" in normalized and any(
+            word in normalized for word in ("wrong", "invalid", "stale")
+        ):
+            signals.append("old_memory_disproved")
+        return tuple(signals)
+    if claim.claim_type == "verification_rule":
+        return ("stable_verification_rule",)
+    if claim.claim_type == "approach" and claim.epistemic_status == "confirmed":
+        return ("verified_approach",)
+    return ()
 
 
 @dataclass
@@ -1007,17 +1195,7 @@ class RuleReflectionSynthesizer:
         recovery: RecoveryEvidence | None,
         evidence: TaskEvidence,
     ) -> list[VerificationEvidence]:
-        recovery_position = _event_position(evidence, recovery.event_ids) if recovery else -1
-        return [
-            item
-            for item in evidence.verification
-            if item.result == "passed"
-            and (
-                recovery_position < 0
-                or _event_position(evidence, item.event_ids) < 0
-                or _event_position(evidence, item.event_ids) > recovery_position
-            )
-        ]
+        return _passed_verifications_after_recovery(recovery, evidence)
 
     def _verification_matches_recovery(
         self,
@@ -1026,27 +1204,9 @@ class RuleReflectionSynthesizer:
         errors: list[ErrorEvidence],
         evidence: TaskEvidence,
     ) -> bool:
-        if (
-            verification.call_id
-            and verification.call_id in recovery.verification_call_ids
-        ):
-            return True
-        if verification.scope == "full":
-            return True
-        if self._reproduces_an_earlier_failure(verification, recovery, evidence):
-            return True
-        recovery_text = " ".join(
-            [recovery.action, *recovery.files_changed, *(item.message for item in errors)]
+        return _verification_evidence_matches_recovery(
+            verification, recovery, errors, evidence
         )
-        verification_files = [
-            item.path
-            for item in evidence.referenced_files
-            if verification.call_id and item.call_id == verification.call_id
-        ]
-        verification_text = " ".join([verification.summary, *verification_files])
-        if _text_tokens(recovery_text) & _text_tokens(verification_text):
-            return True
-        return bool(_cjk_bigrams(recovery_text) & _cjk_bigrams(verification_text))
 
     def _reproduces_an_earlier_failure(
         self,
@@ -1054,28 +1214,8 @@ class RuleReflectionSynthesizer:
         recovery: RecoveryEvidence,
         evidence: TaskEvidence,
     ) -> bool:
-        """Report the red-green pattern: this check failed before the change.
-
-        The token-overlap fallback below compares a recovery against a
-        verification summary, but a whole-suite summary is "1 passed in
-        0.01s" -- it shares nothing with the failure except, by coincidence,
-        the duration string. A real run showed the consequence: 640 characters
-        of coloured pytest output were truncated at the 600-character evidence
-        limit, the trailing "1 failed in 0.01s" was lost with it, and the only
-        overlapping token went with it, silently demoting a genuinely verified
-        fix to "inferred". Whether a fix counts as verified must not depend on
-        how verbose the tool was.
-        """
-        if not verification.command_kind:
-            return False
-        recovery_position = _event_position(evidence, recovery.event_ids)
-        if recovery_position < 0:
-            return False
-        return any(
-            item.result == "failed"
-            and item.command_kind == verification.command_kind
-            and 0 <= _event_position(evidence, item.event_ids) < recovery_position
-            for item in evidence.verification
+        return _verification_reproduces_earlier_failure(
+            verification, recovery, evidence
         )
 
     def _specific_error(self, error: ErrorEvidence) -> bool:
@@ -1161,7 +1301,7 @@ class ReflectionClaimValidator:
             claim, redaction_issue = self._sanitize_claim(merged)
             if redaction_issue is not None:
                 issues.append(redaction_issue)
-            claim_issues = self._validate_claim(claim, indexes)
+            claim_issues = self._validate_claim(claim, indexes, evidence)
             if any(issue.severity == "error" for issue in claim_issues):
                 rejected.append(claim)
             else:
@@ -1229,6 +1369,10 @@ class ReflectionClaimValidator:
             sanitize_evidence_text(item, CLAIM_MAX_AUX_TEXT_CHARS)
             for item in claim.limitations[:CLAIM_MAX_ITEMS]
         ]
+        sanitized_quotes = [
+            sanitize_evidence_text(item, CLAIM_MAX_AUX_TEXT_CHARS)
+            for item in claim.evidence_quotes[:CLAIM_MAX_ITEMS]
+        ]
         sanitized = replace(
             claim,
             semantic_key=sanitized_key,
@@ -1239,11 +1383,13 @@ class ReflectionClaimValidator:
             verification_ids=_ordered_unique(claim.verification_ids),
             related_error_ids=_ordered_unique(claim.related_error_ids),
             related_recovery_ids=_ordered_unique(claim.related_recovery_ids),
+            evidence_quotes=sanitized_quotes,
         )
         changed = (
             sanitized_statement != claim.statement
             or sanitized_applies != claim.applies_when
             or sanitized_limitations != claim.limitations
+            or sanitized_quotes != claim.evidence_quotes
         )
         if not changed:
             return sanitized, None
@@ -1260,9 +1406,26 @@ class ReflectionClaimValidator:
         libraries_by_event: dict[str, list[Any]] = defaultdict(list)
         errors_by_event: dict[str, list[ErrorEvidence]] = defaultdict(list)
         recoveries_by_event: dict[str, list[RecoveryEvidence]] = defaultdict(list)
+        tool_invocations_by_event: dict[str, list[Any]] = defaultdict(list)
         errors_by_id = {item.error_id: item for item in evidence.errors}
         recoveries_by_id = {item.recovery_id: item for item in evidence.recoveries}
         verification_by_id = {item.verification_id: item for item in evidence.verification}
+
+        for item in evidence.tool_calls:
+            if not item.invocation:
+                continue
+            # A pure tool event (call + results) owns its bounded invocation
+            # rendering; quote grounding needs an event-keyed view of it.
+            tool_invocations_by_event[item.call_event_id].append(item.invocation)
+            for event_id in item.result_event_ids:
+                tool_invocations_by_event[event_id].append(item.invocation)
+        # Tool events are referable evidence in their own right: the LLM
+        # envelope allows citing a call/result event, so the validator must
+        # recognize the ID instead of rejecting it as unknown.
+        for item in evidence.tool_calls:
+            event_types[item.call_event_id].add("tool")
+            for event_id in item.result_event_ids:
+                event_types[event_id].add("tool")
 
         for item in evidence.files_read + evidence.files_changed + evidence.referenced_files:
             for event_id in item.event_ids:
@@ -1297,10 +1460,11 @@ class ReflectionClaimValidator:
             "errors_by_id": errors_by_id,
             "recoveries_by_id": recoveries_by_id,
             "verification_by_id": verification_by_id,
+            "tool_invocations_by_event": tool_invocations_by_event,
         }
 
     def _validate_claim(
-        self, claim: ReflectionClaim, indexes: dict[str, Any]
+        self, claim: ReflectionClaim, indexes: dict[str, Any], evidence: TaskEvidence
     ) -> list[ClaimValidationIssue]:
         issues: list[ClaimValidationIssue] = []
 
@@ -1333,7 +1497,7 @@ class ReflectionClaimValidator:
         referenced_types = set().union(
             *(indexes["event_types"].get(event_id, set()) for event_id in claim.evidence_ids)
         ) if claim.evidence_ids else set()
-        self._validate_groundedness(claim, referenced_types, indexes, reject)
+        self._validate_groundedness(claim, referenced_types, indexes, reject, evidence)
         self._validate_statement_alignment(claim, indexes, reject)
 
         if claim.epistemic_status == "unknown":
@@ -1376,6 +1540,7 @@ class ReflectionClaimValidator:
         referenced_types: set[str],
         indexes: dict[str, Any],
         reject: Any,
+        evidence: TaskEvidence,
     ) -> None:
         required: dict[str, set[str]] = {
             "constraint": {"decision"},
@@ -1426,11 +1591,78 @@ class ReflectionClaimValidator:
             indexes["verification_by_id"].get(item) for item in claim.verification_ids
         ]
         has_passed = any(item and item.result == "passed" for item in passed)
-        if claim.claim_type == "recovery" and claim.epistemic_status == "confirmed" and not has_passed:
-            reject("confirmed_recovery_without_verification", "Confirmed recovery requires passed verification.")
+        if claim.claim_type == "recovery" and claim.epistemic_status == "confirmed":
+            if not has_passed:
+                reject("confirmed_recovery_without_verification", "Confirmed recovery requires passed verification.")
+            else:
+                self._reject_unlinked_recovery_verification(
+                    claim, indexes, evidence, reject
+                )
         if claim.claim_type == "root_cause" and claim.epistemic_status == "confirmed":
             if not claim.related_error_ids or not claim.related_recovery_ids or not has_passed:
                 reject("confirmed_root_cause_without_full_chain", "Confirmed root cause requires error, recovery, and passed verification.")
+            else:
+                self._reject_unlinked_recovery_verification(
+                    claim, indexes, evidence, reject
+                )
+
+    def _reject_unlinked_recovery_verification(
+        self,
+        claim: ReflectionClaim,
+        indexes: dict[str, Any],
+        evidence: TaskEvidence,
+        reject: Any,
+    ) -> None:
+        """Admission-time check that cited checks verified the cited recovery.
+
+        The rule synthesizer has always refused to confirm a recovery from a
+        passed verification it cannot tie back to that recovery (order, call
+        link, scope, or red-green rerun). Candidates built outside it used to
+        bypass that test: any passed verification in the task was enough.
+        Both paths now share this gate, so an unrelated green check can no
+        longer confirm a recovery it never exercised.
+        """
+        linked_recoveries = [
+            indexes["recoveries_by_id"][item]
+            for item in claim.related_recovery_ids
+            if item in indexes["recoveries_by_id"]
+        ]
+        if not linked_recoveries:
+            reject(
+                "confirmed_recovery_missing_recovery_reference",
+                "Confirmed recovery/root_cause requires a recovery reference to test verification linkage.",
+            )
+            return
+        cited = [
+            verification
+            for verification in (
+                indexes["verification_by_id"].get(item)
+                for item in claim.verification_ids
+            )
+            if verification is not None and verification.result == "passed"
+        ]
+        for recovery in linked_recoveries:
+            # Keep the error evidence and temporal boundary within the same
+            # recovery. A union would let one recovery borrow another's
+            # error text while supplying its own earlier change boundary.
+            related_errors = [
+                indexes["errors_by_id"][item]
+                for item in recovery.related_error_ids
+                if item in indexes["errors_by_id"]
+            ]
+            passed_after = _passed_verifications_after_recovery(recovery, evidence)
+            if any(
+                verification in passed_after
+                and _verification_evidence_matches_recovery(
+                    verification, recovery, related_errors, evidence
+                )
+                for verification in cited
+            ):
+                return
+        reject(
+            "confirmed_recovery_verification_unrelated",
+            "Cited passed verification is not linked to the referenced recovery.",
+        )
 
     def _validate_statement_alignment(
         self,
@@ -1482,6 +1714,64 @@ class ReflectionClaimValidator:
             for item in indexes["recoveries_by_event"].get(event_id, [])
         ]
 
+        if claim.evidence_quotes:
+            # Grounding travels through the quotes, not the statement. The
+            # lesson text may abstract as long as every verbatim excerpt is
+            # checked against the cited records here -- parse-time checks
+            # are convenience only; this gate does not trust them.
+            source_texts = [
+                *(
+                    sanitize_evidence_text(item.message, 2_000) for item in errors
+                ),
+                *(
+                    text
+                    for item in recoveries
+                    for text in (
+                        sanitize_evidence_text(item.action, 2_000),
+                        sanitize_evidence_text(item.change_summary, 2_000),
+                    )
+                    if text
+                ),
+                *(
+                    sanitize_evidence_text(item.statement, 2_000)
+                    for item in decisions
+                ),
+                *(
+                    sanitize_evidence_text(item.summary, 2_000)
+                    for item_id in claim.verification_ids
+                    if (item := indexes["verification_by_id"].get(item_id))
+                    is not None
+                    and item.summary
+                ),
+                # Tool invocations are quotable evidence: the bounded
+                # rendering the envelope shows the model is exactly the
+                # record a lesson about a changed input should cite.
+                *(
+                    sanitize_evidence_text(invocation, 2_000)
+                    for event_id in claim.evidence_ids
+                    for invocation in indexes["tool_invocations_by_event"].get(
+                        event_id, []
+                    )
+                ),
+            ]
+            normalized_sources = [
+                _normalize_text(text) for text in source_texts if _normalize_text(text)
+            ]
+            ungrounded = [
+                quote
+                for quote in claim.evidence_quotes
+                if not any(
+                    _normalize_text(quote) in source
+                    for source in normalized_sources
+                )
+            ]
+            if ungrounded:
+                reject(
+                    "evidence_quote_not_grounded",
+                    "An evidence quote is not a verbatim excerpt of the cited evidence.",
+                )
+            return
+
         aligned = True
         if claim.claim_type in {"constraint", "decision", "correction", "verification_rule", "root_cause"}:
             aligned = any(
@@ -1514,18 +1804,31 @@ class ReflectionClaimValidator:
         statuses: list[str] = []
         claim_statement = _normalize_text(claim.statement)
         for event_id in claim.evidence_ids:
-            statuses.extend(
-                item.epistemic_status
-                for item in indexes["decisions_by_event"].get(event_id, [])
-                if _normalize_text(
-                    sanitize_evidence_text(item.statement, CLAIM_MAX_TEXT_CHARS)
-                )
-                in claim_statement
-                or claim_statement
-                in _normalize_text(
-                    sanitize_evidence_text(item.statement, CLAIM_MAX_TEXT_CHARS)
+            # With evidence_quotes the statement is an abstraction, so the
+            # quote channel -- not statement containment -- decides which
+            # records the claim actually rests on. Inheriting certainty from
+            # containment alone let a real quote promote an inferred
+            # decision to "confirmed" (2026-09-09 implementation review F1):
+            # the rewritten statement no longer contained the source
+            # sentence, so the inferred status silently dropped out of this
+            # check. Referenced records always contribute their status now.
+            decision_statuses = (
+                (item.epistemic_status for item in indexes["decisions_by_event"].get(event_id, []))
+                if claim.evidence_quotes
+                else (
+                    item.epistemic_status
+                    for item in indexes["decisions_by_event"].get(event_id, [])
+                    if _normalize_text(
+                        sanitize_evidence_text(item.statement, CLAIM_MAX_TEXT_CHARS)
+                    )
+                    in claim_statement
+                    or claim_statement
+                    in _normalize_text(
+                        sanitize_evidence_text(item.statement, CLAIM_MAX_TEXT_CHARS)
+                    )
                 )
             )
+            statuses.extend(decision_statuses)
             statuses.extend(
                 item.epistemic_status
                 for item in indexes["libraries_by_event"].get(event_id, [])
@@ -1713,40 +2016,26 @@ class ReflectionValueGate:
         return any(len(occurrences) >= 2 for occurrences in signatures.values())
 
     def _signals_for_claim(self, claim: ReflectionClaim) -> list[str]:
-        if claim.claim_type == "constraint":
-            return ["stable_project_constraint"]
-        if claim.claim_type == "dependency" and claim.epistemic_status == "confirmed":
-            return ["confirmed_dependency"]
-        if claim.claim_type in {"error_pattern", "warning"}:
-            return ["reusable_error_pattern"]
-        if claim.claim_type == "root_cause" and claim.epistemic_status == "confirmed":
-            return ["confirmed_error_recovery_verified"]
-        if claim.claim_type == "recovery" and claim.epistemic_status == "confirmed":
-            return ["confirmed_error_recovery_verified", "verified_solution"]
-        if claim.claim_type == "decision":
-            return ["key_technical_decision"]
-        if claim.claim_type == "correction":
-            signals = ["user_correction"]
-            normalized = _normalize_text(f"{claim.semantic_key} {claim.statement}")
-            if "memory" in normalized and any(word in normalized for word in ("wrong", "invalid", "stale")):
-                signals.append("old_memory_disproved")
-            return signals
-        if claim.claim_type == "verification_rule":
-            return ["stable_verification_rule"]
-        if claim.claim_type == "approach" and claim.epistemic_status == "confirmed":
-            return ["verified_approach"]
-        return []
+        return list(durable_signals_for_claim(claim))
 
     def _low_value_reasons(self, evidence: TaskEvidence) -> list[str]:
         tools = {item.tool_name for item in evidence.tool_calls}
         reasons: list[str] = []
-        if tools and tools <= _READ_TOOLS:
+        value_classes = {
+            semantic.reflection_value_class
+            for tool in tools
+            if (semantic := tool_semantic(tool)) is not None
+        }
+        all_tools_classified = len(value_classes) > 0 and all(
+            tool_semantic(tool) is not None for tool in tools
+        )
+        if all_tools_classified and value_classes == {"read"}:
             reasons.append("routine_read_only")
-        if tools and tools <= _SEARCH_TOOLS:
+        if all_tools_classified and value_classes == {"search"}:
             reasons.append("routine_search_only")
-        if tools and tools <= _LIST_TOOLS:
+        if all_tools_classified and value_classes == {"list"}:
             reasons.append("routine_directory_listing")
-        if tools and tools <= _FORMAT_TOOLS:
+        if all_tools_classified and value_classes == {"format"}:
             reasons.append("routine_format_only")
         if evidence.verification and not evidence.errors and not evidence.recoveries:
             reasons.append("routine_verification_only")

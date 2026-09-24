@@ -32,8 +32,11 @@ read boundary.
 
 ### Shared budget and observations
 
-- Default per-turn ceilings are finite: 1,000,000 total tokens, 80 model calls
-  and USD 5.00, with existing runtime/environment overrides preserved.
+- Default per-turn ceilings are finite: 3,000,000 total tokens, 150 model calls
+  and USD 5.00, with existing runtime/environment overrides preserved. (Raised
+  from 1,000,000/80 after live multi-agent runs: one whole-repository explore
+  survey alone approaches the old token ceiling, and a workflow chain
+  attributes 30-60 model calls into the same shared budget.)
 - Main Agent calls, compaction, Hybrid Memory verifier/challenger, remote
   embeddings, reflection and memory curation settle against the same
   `AgentTurnBudget` instance.

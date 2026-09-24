@@ -1,0 +1,65 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_____________ test_summary_keeps_late_source_and_test_changes[13] ______________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-57/test_summary_keeps_late_source0')
+fixture_count = 13
+
+    @pytest.mark.parametrize("fixture_count", [13, 70])
+    def test_summary_keeps_late_source_and_test_changes(tmp_path: Path, fixture_count):
+        policy = TurnCompletionPolicy(50, 35, str(tmp_path))
+        for index in range(fixture_count):
+            record_write(policy, tmp_path, f"repro/test_{index:03d}.py", "fixture", 1)
+        record_write(policy, tmp_path, "minicode/tools/test_runner.py", "fixed", 2)
+        record_write(policy, tmp_path, "tests/test_tools.py", "regression", 3)
+        summary = policy.summary("cost budget exhausted")
+>       assert "minicode/tools/test_runner.py" in summary
+E       AssertionError: assert 'minicode/tools/test_runner.py' in 'Partial progress; stopped because cost budget exhausted.\nObserved file changes: repro/test_000.py, repro/test_001.py...o independent verification result was observed.\nOverall completion is unconfirmed; remaining work requires follow-up.'
+
+tests/test_completion_recent_changes.py:27: AssertionError
+_____________ test_summary_keeps_late_source_and_test_changes[70] ______________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-57/test_summary_keeps_late_source1')
+fixture_count = 70
+
+    @pytest.mark.parametrize("fixture_count", [13, 70])
+    def test_summary_keeps_late_source_and_test_changes(tmp_path: Path, fixture_count):
+        policy = TurnCompletionPolicy(50, 35, str(tmp_path))
+        for index in range(fixture_count):
+            record_write(policy, tmp_path, f"repro/test_{index:03d}.py", "fixture", 1)
+        record_write(policy, tmp_path, "minicode/tools/test_runner.py", "fixed", 2)
+        record_write(policy, tmp_path, "tests/test_tools.py", "regression", 3)
+        summary = policy.summary("cost budget exhausted")
+>       assert "minicode/tools/test_runner.py" in summary
+E       AssertionError: assert 'minicode/tools/test_runner.py' in 'Partial progress; stopped because cost budget exhausted.\nObserved file changes: repro/test_000.py, repro/test_001.py...o independent verification result was observed.\nOverall completion is unconfirmed; remaining work requires follow-up.'
+
+tests/test_completion_recent_changes.py:27: AssertionError
+__________ test_revisiting_a_file_refreshes_its_place_in_the_summary ___________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-57/test_revisiting_a_file_refresh0')
+
+    def test_revisiting_a_file_refreshes_its_place_in_the_summary(tmp_path: Path):
+        policy = TurnCompletionPolicy(50, 35, str(tmp_path))
+        record_write(policy, tmp_path, "source.py", "first change", 1)
+        for index in range(13):
+            record_write(policy, tmp_path, f"repro/test_{index:03d}.py", "fixture", 2)
+        record_write(policy, tmp_path, "source.py", "corrected change", 3)
+        summary = policy.summary("cost budget exhausted")
+        assert "source.py" in summary
+>       assert "repro/test_000.py" not in summary
+E       AssertionError: assert 'repro/test_000.py' not in 'Partial pro...s follow-up.'
+E         
+E         'repro/test_000.py' is contained here:
+E         ?           ^
+E           ource.py, repro/test_000.py, repro/test_001.py, repro/test_002.py, repro/test_003.py, repro/test_004.py, repro/test_005.py, repro/test_006.py, repro/test_007.py, repro/test_008.py, repro/test_009.py, repro/test_010.py
+E         ?           ^^^^^^^^^^^^^^^^^^
+E           Additional observed paths omitted from this bounded summary.
+E           No independent verification result was observed.
+E           Overall completion is unconfirmed; remaining work requires follow-up.
+
+tests/test_completion_recent_changes.py:41: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_completion_recent_changes.py::test_summary_keeps_late_source_and_test_changes[13]
+FAILED tests/test_completion_recent_changes.py::test_summary_keeps_late_source_and_test_changes[70]
+FAILED tests/test_completion_recent_changes.py::test_revisiting_a_file_refreshes_its_place_in_the_summary
+3 failed in 0.20s

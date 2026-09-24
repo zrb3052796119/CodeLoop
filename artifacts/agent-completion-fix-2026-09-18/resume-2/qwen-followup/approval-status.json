@@ -1,0 +1,7 @@
+{
+  "status": "awaiting explicit user approval",
+  "executed": false,
+  "autoReviewReason": "Third-party Qwen destination and task/code data export require explicit user authorization; combined workflow can also push/create PR.",
+  "userQuestionSubmitted": true,
+  "unsafeActionRetried": false
+}

@@ -79,6 +79,7 @@ def _record_experience(
     duration_ms: int | None = None,
     cost_unavailable: bool = False,
     malformed_cost_event: bool = False,
+    model_purpose: str | None = None,
     verification_outcomes: tuple[str, ...] = (),
     user_signal: str | None = None,
 ) -> None:
@@ -126,11 +127,14 @@ def _record_experience(
             )
     if cost_nano_usd is not None or duration_ms is not None or cost_unavailable:
         operation_id = "modelop_" + "d" * 32
+        started_payload: dict[str, object] = {"operationId": operation_id}
+        if model_purpose is not None:
+            started_payload["purpose"] = model_purpose
         journal.append_event(
             record.id,
             "model.started",
             step=1,
-            payload={"operationId": operation_id},
+            payload=started_payload,
         )
         completed_payload: dict[str, object] = {
             "operationId": operation_id,
@@ -147,6 +151,8 @@ def _record_experience(
         }
         if duration_ms is not None:
             completed_payload["durationMs"] = duration_ms
+        if model_purpose is not None:
+            completed_payload["purpose"] = model_purpose
         journal.append_event(
             record.id,
             "model.completed",
@@ -161,6 +167,11 @@ def _record_experience(
                 payload={
                     "costVersion": 1,
                     "operationId": operation_id,
+                    **(
+                        {"purpose": model_purpose}
+                        if model_purpose is not None
+                        else {}
+                    ),
                     "status": "priced",
                     "quality": "provider_usage_catalog_rate",
                     "currency": "USD",
@@ -183,6 +194,11 @@ def _record_experience(
                 payload={
                     "costVersion": 1,
                     "operationId": operation_id,
+                    **(
+                        {"purpose": model_purpose}
+                        if model_purpose is not None
+                        else {}
+                    ),
                     "status": "unavailable",
                     "quality": "unavailable",
                     "currency": "USD",
@@ -420,6 +436,7 @@ def test_ledger_preserves_exact_cost_and_latency_coverage_per_cohort(
             success=True,
             cost_nano_usd=100,
             duration_ms=200,
+            model_purpose="skill-routing",
         )
         _record_experience(
             journal,
@@ -427,6 +444,7 @@ def test_ledger_preserves_exact_cost_and_latency_coverage_per_cohort(
             success=False,
             cost_nano_usd=120,
             duration_ms=240,
+            model_purpose="skill-routing",
         )
 
     evaluation = SkillEvidenceLedger(journal).snapshot()["evaluations"][0]

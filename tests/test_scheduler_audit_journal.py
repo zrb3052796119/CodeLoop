@@ -16,12 +16,21 @@ from minicode.central_scheduler import (
     TaskProfile,
     TaskRisk,
 )
+from minicode.multi_agent_contracts import (
+    Assignment,
+    AssignmentBudget,
+    AssignmentRisk,
+    AssignmentScope,
+    ImplementationOrder,
+    WorkerRole,
+)
 from minicode.run_journal import RunJournal, RunJournalStorageError
 from minicode.run_lifecycle import observe_run
 from minicode.scheduler_artifacts import SchedulerArtifactStore
 from minicode.scheduler_audit import (
     SchedulerCommitReady,
     SchedulerAuditValidationError,
+    _order_scope_within_assignment,
     parse_scheduler_commit_ready,
     project_scheduler_audit,
     project_scheduler_commit_ready,
@@ -562,4 +571,82 @@ def test_run_observation_returns_commit_ready_persistence_result(
             _WORKFLOW_ID,
         )
         == ready
+    )
+
+
+def _executor_assignment(write_paths: tuple[str, ...]) -> Assignment:
+    return Assignment(
+        workflow_id=_WORKFLOW_ID,
+        task_id=_TASK_ID,
+        assignment_id="assignment_executor_scope",
+        role=WorkerRole.EXECUTOR,
+        mode="implement",
+        objective="Apply the bounded change.",
+        scope=AssignmentScope(
+            read_roots=(".",),
+            write_paths=write_paths,
+            forbidden_paths=(".git", ".env"),
+        ),
+        constraints=(),
+        acceptance_criteria=(),
+        input_refs=(),
+        risk=AssignmentRisk.LOW,
+        budget=AssignmentBudget(
+            deadline_at="2999-01-01T00:00:00Z",
+            max_model_calls=4,
+            max_input_tokens=1024,
+            max_output_tokens=1024,
+        ),
+        expected_result_type="ExecutionResult.v1",
+    )
+
+
+def _order(allowed_paths: tuple[str, ...]) -> ImplementationOrder:
+    return ImplementationOrder(
+        order_id="order_scope_regression",
+        assignment_id="assignment_executor_scope",
+        base_digest=_digest("b"),
+        allowed_paths=allowed_paths,
+        steps=(),
+        criterion_ids=(),
+        verification_requests=(),
+    )
+
+
+def test_executor_order_scope_may_narrow_assignment_write_scope() -> None:
+    assignment = _executor_assignment(("src/app.py", "tests/test_app.py"))
+
+    # Exact equality remains legal, and so does any lexical subset: the order
+    # narrows (never widens) what the Assignment permits.
+    assert _order_scope_within_assignment(
+        _order(("src/app.py", "tests/test_app.py")),
+        assignment,
+    )
+    assert _order_scope_within_assignment(_order(("src/app.py",)), assignment)
+
+
+def test_executor_order_scope_still_rejects_paths_outside_assignment() -> None:
+    assignment = _executor_assignment(("src/app.py", "tests/test_app.py"))
+
+    # A superset or any path outside the Assignment write scope stays
+    # fail-closed, exactly as the order contract parser enforces.
+    assert not _order_scope_within_assignment(
+        _order(("src/app.py", "docs/notes.md")),
+        assignment,
+    )
+    assert not _order_scope_within_assignment(
+        _order(("../outside.py",)),
+        assignment,
+    )
+
+
+def test_executor_order_scope_empty_allowed_paths_writes_nothing() -> None:
+    assignment = _executor_assignment(("src/app.py",))
+
+    # An empty allowed_paths is the maximal narrowing: the order commits to
+    # writing nothing at all, which can never exceed the Assignment scope.
+    assert _order_scope_within_assignment(_order(()), assignment)
+    assert _order_scope_within_assignment(
+        _order(()),
+        _executor_assignment(()),
     )

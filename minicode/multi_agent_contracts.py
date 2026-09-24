@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -588,24 +588,34 @@ class WorkflowRequest:
             sensitive = bool(path_terms & _SENSITIVE_PATH_TERMS) or any(
                 criterion.kind == "safety" for criterion in self.criteria
             )
+            # A narrow, non-sensitive scope with at most two executable
+            # checks is the canonical small fix (one source file, one test
+            # command).  Broader scopes or more checks keep the full
+            # analyst->executor->verifier->reviewer chain.
+            narrow_scope = (
+                not broad_scope
+                and len(self.scope.write_paths) <= 2
+                and len(self.verification_checks) <= 2
+                and not sensitive
+            )
             inferred_complex = (
                 broad_scope
-                or len(self.scope.write_paths) > 1
+                or len(self.scope.write_paths) > 3
                 or len(self.verification_checks) > 2
             )
             if broad_scope or sensitive:
                 inferred_risk = "high"
-            elif len(self.scope.write_paths) > 1:
-                inferred_risk = "medium"
+            elif narrow_scope:
+                # The deterministic Verifier still runs every declared check
+                # before commit on the scoped route, so a bounded code scope
+                # does not need the Reviewer gate to stay safe.
+                inferred_risk = "low"
             elif self.scope.write_paths:
-                suffix = "." + self.scope.write_paths[0].rsplit(".", 1)[-1]
-                inferred_risk = (
-                    "low"
-                    if suffix.casefold() in _LOW_RISK_CHANGE_SUFFIXES
-                    else "medium"
-                )
+                inferred_risk = "medium"
             else:
                 inferred_risk = "high"
+        else:
+            narrow_scope = False
         effective_risk = max(
             (self.risk, inferred_risk),
             key=_RISK_ORDER.__getitem__,
@@ -619,13 +629,23 @@ class WorkflowRequest:
             # Parent-only work is selected before invoking the task tool.
             parent_has_sufficient_context=False,
             scope_clear=scope_clear,
-            # WorkflowRequest is public model input. A caller may request
-            # policy-safe argv and declare criterion coverage, but cannot
-            # certify the semantic check↔criterion relationship. Until a
-            # scheduler-owned recipe registry supplies that proof, every
-            # public change retains the Reviewer gate.
+            # WorkflowRequest is public model input.  Semantic check↔criterion
+            # equivalence cannot be certified from the request alone, so only
+            # a narrow, non-sensitive, fully covered, low-risk scope may skip
+            # the Reviewer: the Verifier gate, isolated workspace, digest
+            # binding, and fail-closed promotion all remain in force on the
+            # scoped route.
             acceptance_executable=(
-                declared_coverage_complete and not self.structured
+                declared_coverage_complete
+                and (
+                    not self.structured
+                    or (
+                        narrow_scope
+                        and effective_risk == "low"
+                        and scope_clear
+                        and not (self.complex or inferred_complex)
+                    )
+                )
             ),
             human_confirmation_required=(
                 self.structured
@@ -2245,6 +2265,86 @@ def _parse_adjudication_result(
     }
 
 
+MAX_ROLE_PAYLOAD_REPAIR_BYTES = max(MAX_ANALYST_REPORT_BYTES, MAX_ROLE_CONTRACT_BYTES)
+_REPAIR_INVISIBLE_CHARS = ("\ufeff", "\u200b", "\u200c", "\u200d", "\u2060")
+_REPAIR_MAX_DEPTH = 64
+_REPAIR_MAX_CANDIDATES = 64
+
+
+def _balanced_json_object_spans(text: str) -> Iterator[str]:
+    """Yield the first bounded set of string-aware balanced ``{...}`` spans."""
+    start: int | None = None
+    depth = 0
+    in_string = False
+    escaped = False
+    found = 0
+    for index, char in enumerate(text):
+        if start is None:
+            if char == "{":
+                start = index
+                depth = 1
+                in_string = False
+                escaped = False
+            continue
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+            if depth > _REPAIR_MAX_DEPTH:
+                # Pathological nesting: abandon this candidate, keep scanning.
+                start = None
+                depth = 0
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                yield text[start : index + 1]
+                found += 1
+                if found >= _REPAIR_MAX_CANDIDATES:
+                    return
+                start = None
+
+
+def repair_role_payload(text: object) -> str | None:
+    """Repair only format noise around one role result JSON document.
+
+    Strips a BOM/zero-width characters and, when the whole text still is not
+    a JSON object, extracts the first balanced ``{...}`` span (skipping
+    markdown fences and surrounding prose) that parses as a JSON object.
+    Returns the repaired candidate, or ``None`` when no bounded repair
+    applies; oversized or non-string inputs are refused unchanged.  The
+    caller must still run the unchanged strict ``parse_role_result``
+    validation, so semantic contract failures stay fail-closed.
+    """
+
+    if not isinstance(text, str):
+        return None
+    if len(text.encode("utf-8", errors="ignore")) > MAX_ROLE_PAYLOAD_REPAIR_BYTES:
+        return None
+    stripped = text
+    for char in _REPAIR_INVISIBLE_CHARS:
+        if char in stripped:
+            stripped = stripped.replace(char, "")
+    candidates = [stripped.strip()]
+    candidates.extend(_balanced_json_object_spans(stripped))
+    for candidate in candidates:
+        if not candidate:
+            continue
+        try:
+            if isinstance(json.loads(candidate), dict):
+                return candidate
+        except ValueError:
+            continue
+    return None
+
+
 def parse_role_result(
     assignment: Assignment,
     value: object,
@@ -2321,6 +2421,7 @@ __all__ = [
     "MAX_ANALYST_EVIDENCE_SNAPSHOTS",
     "MAX_ANALYST_REPORT_BYTES",
     "MAX_ROLE_CONTRACT_BYTES",
+    "MAX_ROLE_PAYLOAD_REPAIR_BYTES",
     "MAX_WORKFLOW_CRITERIA",
     "MAX_WORKFLOW_CRITERION_CHECK_LINKS",
     "WorkflowRequest",
@@ -2334,4 +2435,5 @@ __all__ = [
     "parse_role_result",
     "parse_verification_result",
     "parse_workflow_request",
+    "repair_role_payload",
 ]

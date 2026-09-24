@@ -1,0 +1,1 @@
+'/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python' -c 'from pathlib import Path; import sys; [compile(Path(p).read_bytes(), p, "exec") for p in sys.argv[1:]]' minicode/agent_loop.py minicode/tools/git.py tests/test_primary_model_timeout_recovery.py tests/test_git_status_regressions.py

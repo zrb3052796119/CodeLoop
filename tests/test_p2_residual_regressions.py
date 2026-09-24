@@ -19,7 +19,6 @@ from minicode.memory import MemoryManager
 from minicode.memory_pipeline import MemoryPipeline
 from minicode.project_facts import ProjectFactsStore
 from minicode.subagent_mailbox import SubagentMailbox
-from minicode.task_outcome import canonicalize_task_outcome
 from minicode.tooling import ToolContext, ToolResult
 from minicode.workflow_workspace import WorkflowWorkspaceTransaction
 
@@ -119,18 +118,29 @@ def test_workflow_snapshot_is_charged_to_overall_deadline(
     assert calls == []
 
 
-def test_general_subagent_checks_deadline_after_model_boundary(
+def test_general_subagent_deadline_hard_kills_the_subprocess(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("MINICODE_TASK_TIMEOUT_SECONDS", "0.005")
+    """A write-capable general sub-agent runs in a supervised subprocess:
+    when the deadline expires the parent kills the process group instead of
+    waiting for a stuck model call to return."""
+    import functools
+    import sys
 
-    def slow_turn(**kwargs):
-        time.sleep(0.03)
-        kwargs["outcome_capture"].record(canonicalize_task_outcome("success", 0))
-        return [{"role": "assistant", "content": "late success"}]
+    from minicode.subagent_supervisor import run_subagent_process
 
-    monkeypatch.setattr(task_module, "run_agent_turn", slow_turn)
+    monkeypatch.setenv("MINICODE_TASK_TIMEOUT_SECONDS", "0.5")
+    monkeypatch.setattr(
+        task_module,
+        "run_subagent_process",
+        functools.partial(
+            run_subagent_process,
+            command=[sys.executable, "-c", "import time; time.sleep(60)"],
+        ),
+    )
+
+    started = time.monotonic()
     result = task_module.task_tool.run(
         {
             "description": "general deadline",
@@ -141,7 +151,9 @@ def test_general_subagent_checks_deadline_after_model_boundary(
     )
 
     assert result.ok is False
-    assert "deadline_exceeded" in result.output
+    assert "timed_out" in result.output
+    # The 60s sleeper was killed near the 0.5s deadline, not awaited.
+    assert time.monotonic() - started < 30
 
 
 def test_microcompact_invalidates_dedup_source_that_it_erases(
@@ -178,16 +190,25 @@ def test_microcompact_invalidates_dedup_source_that_it_erases(
 
 def test_failed_summary_model_call_settles_token_reservation() -> None:
     class FailingModel:
+        def __init__(self) -> None:
+            self.calls = 0
+
         def next(self, _messages):
+            self.calls += 1
             raise ConnectionError("synthetic provider outage")
 
     budget = AgentTurnBudget(max_total_tokens=10_000, max_model_calls=5)
-    generator = LLMSummaryGenerator(FailingModel(), agent_budget=budget)
+    model = FailingModel()
+    generator = LLMSummaryGenerator(model, agent_budget=budget)
 
     assert generator.summarize([{"role": "user", "content": "z" * 1000}]) is None
     snapshot = budget.snapshot()
 
-    assert snapshot.used_model_calls == 1
+    # A provider error gets exactly one bounded retry (LLMSummaryGenerator
+    # contract); admission consumes one model-call slot per attempt, and
+    # every reservation is settled — none stays leased.
+    assert model.calls == 2
+    assert snapshot.used_model_calls == 2
     assert snapshot.reserved_total_tokens == 0
 
 

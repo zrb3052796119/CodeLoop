@@ -4,8 +4,18 @@ from pathlib import Path
 import pytest
 
 import minicode.mcp as mcp_module
+from minicode.auto_mode import PermissionMode
 from minicode.mcp import StdioMcpClient, create_mcp_backed_tools
+from minicode.permissions import PermissionManager
 from minicode.tooling import ToolContext
+
+
+def _bypass_context(tmp_path: Path) -> ToolContext:
+    """MCP dispatch is permission-gated; transport tests run in bypass mode."""
+    return ToolContext(
+        cwd=str(tmp_path),
+        permissions=PermissionManager(str(tmp_path), auto_mode=PermissionMode.BYPASS),
+    )
 
 
 def _fake_server_script() -> Path:
@@ -43,15 +53,23 @@ def test_create_mcp_backed_tools_supports_newline_json(tmp_path: Path) -> None:
     assert "list_mcp_prompts" in names
 
     echo_tool = next(tool for tool in mcp["tools"] if tool.name == "mcp__fake__echo")
-    result = echo_tool.run({"text": "hi"}, ToolContext(cwd=str(tmp_path)))
+    result = echo_tool.run({"text": "hi"}, _bypass_context(tmp_path))
     assert result.ok is True
     assert result.output == "echo:hi"
 
     resource_tool = next(tool for tool in mcp["tools"] if tool.name == "read_mcp_resource")
+    assert (resource_tool.capability_domain, resource_tool.capability_scope) == (
+        "unknown",
+        "external",
+    )
     resource_result = resource_tool.run({"server": "fake", "uri": "fake://hello"}, ToolContext(cwd=str(tmp_path)))
     assert "hello resource" in resource_result.output
 
     prompt_tool = next(tool for tool in mcp["tools"] if tool.name == "get_mcp_prompt")
+    assert (prompt_tool.capability_domain, prompt_tool.capability_scope) == (
+        "unknown",
+        "external",
+    )
     prompt_result = prompt_tool.run({"server": "fake", "name": "hello", "arguments": {"name": "cc"}}, ToolContext(cwd=str(tmp_path)))
     assert "hello cc" in prompt_result.output
 

@@ -1,0 +1,38 @@
+{
+  "runId": "run_ad516d64824a4663807c9c29f374c5fc",
+  "durationSeconds": 109.57,
+  "modelCalls": 8,
+  "providerUsageCalls": 8,
+  "inputTokens": 158738,
+  "outputTokens": 2985,
+  "toolCounts": {
+    "list_files": 1,
+    "file_tree": 1,
+    "grep_files": 3,
+    "read_file": 5
+  },
+  "toolStartsAfterClosingModel": 0,
+  "finalPartial": true,
+  "taskOutcome": {
+    "outcomeVersion": 2,
+    "outcomeStatus": "unknown",
+    "completionSucceeded": false,
+    "verificationStatus": "unverified",
+    "verificationPassedCount": 0,
+    "verificationFailedCount": 0,
+    "goalAchieved": false,
+    "learningSuccess": null,
+    "hadToolErrors": false,
+    "errorsRecovered": false,
+    "toolErrorCount": 0
+  },
+  "subagentCount": 0,
+  "targetWorkspaceClean": false,
+  "completionLimitedEventInLiveJournal": false,
+  "liveScope": "Real provider budget-exhaustion hand-back, not full bug-fix delivery or adaptive step-extension proof",
+  "targetSourceUnchanged": true,
+  "targetUntrackedRuntimeArtifacts": [
+    ".minicode-memory-authority.lock"
+  ],
+  "journalGapRepairedAfterRun": true
+}

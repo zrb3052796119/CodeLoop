@@ -15,10 +15,28 @@ from minicode.local_tool_shortcuts import parse_local_tool_shortcut
 from minicode.prompt import build_system_prompt
 from minicode.run_events import emit_skill_routing_safely
 from minicode.run_lifecycle import observe_run
-from minicode.skill_router import required_skill_names_for_routing
+from minicode.skill_router import (
+    required_skill_names_for_routing,
+    skill_load_policy_for_routing,
+)
 from minicode.tooling import ToolContext
-from minicode.tui.tool_helpers import _summarize_tool_input, _is_file_edit_tool, _extract_path_from_tool_input, _summarize_collapsed_tool_body
-from minicode.tui.tool_lifecycle import _push_transcript_entry, _update_tool_entry, _update_transcript_entry, _append_to_transcript_entry, _collapse_tool_entry, _finalize_dangling_running_tools, _get_running_tool_entries, _schedule_tool_auto_collapse
+from minicode.user_evidence import stable_constraint_seeds
+from minicode.tui.tool_helpers import (
+    _summarize_tool_input,
+    _is_file_edit_tool,
+    _extract_path_from_tool_input,
+    _summarize_collapsed_tool_body,
+)
+from minicode.tui.tool_lifecycle import (
+    _push_transcript_entry,
+    _update_tool_entry,
+    _update_transcript_entry,
+    _append_to_transcript_entry,
+    _collapse_tool_entry,
+    _finalize_dangling_running_tools,
+    _get_running_tool_entries,
+    _schedule_tool_auto_collapse,
+)
 
 logger = logging.getLogger("minicode.input_handler")
 
@@ -31,16 +49,16 @@ logger = logging.getLogger("minicode.input_handler")
 # We translate these to the ANSI sequences that input_parser.py already
 # understands.
 _WIN_SCANCODE_TO_ANSI: dict[int, str] = {
-    72: "\x1b[A",    # Up
-    80: "\x1b[B",    # Down
-    77: "\x1b[C",    # Right
-    75: "\x1b[D",    # Left
-    71: "\x1b[H",    # Home
-    79: "\x1b[F",    # End
-    73: "\x1b[5~",   # Page Up
-    81: "\x1b[6~",   # Page Down
-    83: "\x1b[3~",   # Delete
-    82: "\x1b[2~",   # Insert
+    72: "\x1b[A",  # Up
+    80: "\x1b[B",  # Down
+    77: "\x1b[C",  # Right
+    75: "\x1b[D",  # Left
+    71: "\x1b[H",  # Home
+    79: "\x1b[F",  # End
+    73: "\x1b[5~",  # Page Up
+    81: "\x1b[6~",  # Page Down
+    83: "\x1b[3~",  # Delete
+    82: "\x1b[2~",  # Insert
     # Alt+Arrow (returned with \x00 prefix on some terminals)
     152: "\x1b[1;3A",  # Alt+Up
     160: "\x1b[1;3B",  # Alt+Down
@@ -152,10 +170,12 @@ class _RawModeContext:
         if sys.platform == "win32":
             # Ensure VT processing is active (idempotent)
             from minicode.tui.screen import _enable_windows_vt_processing
+
             _enable_windows_vt_processing()
             # Switch console to UTF-8 code page for proper Unicode handling
             try:
                 import ctypes
+
                 kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
                 self._old_cp = kernel32.GetConsoleOutputCP()
                 kernel32.SetConsoleOutputCP(65001)  # UTF-8
@@ -175,15 +195,20 @@ class _RawModeContext:
 
                 def _on_resize(signum, frame):
                     from minicode.tui.chrome import invalidate_terminal_size_cache
+
                     invalidate_terminal_size_cache()
+
                 self._old_sigwinch = signal.signal(signal.SIGWINCH, _on_resize)
             except (ImportError, AttributeError):
                 pass  # Windows or no SIGWINCH support
             # Input flags: disable CR→NL translation and XON/XOFF flow control,
             # strip high bit, and break signal generation.
             new[0] &= ~(
-                termios.BRKINT | termios.ICRNL | termios.INPCK
-                | termios.ISTRIP | termios.IXON
+                termios.BRKINT
+                | termios.ICRNL
+                | termios.INPCK
+                | termios.ISTRIP
+                | termios.IXON
             )
             # Output flags: KEEP OPOST so that \n → \r\n translation still
             # works.  tty.setraw() clears OPOST which causes "staircase"
@@ -195,9 +220,7 @@ class _RawModeContext:
             new[2] |= termios.CS8
             # Local flags: disable echo, canonical mode, extended processing,
             # and signal generation from keys (Ctrl-C, Ctrl-Z).
-            new[3] &= ~(
-                termios.ECHO | termios.ICANON | termios.IEXTEN | termios.ISIG
-            )
+            new[3] &= ~(termios.ECHO | termios.ICANON | termios.IEXTEN | termios.ISIG)
             # Special characters: read returns after 1 byte, no timeout.
             new[6][termios.VMIN] = 1
             new[6][termios.VTIME] = 0
@@ -209,6 +232,7 @@ class _RawModeContext:
             if self._old_cp is not None:
                 try:
                     import ctypes
+
                     ctypes.windll.kernel32.SetConsoleOutputCP(self._old_cp)  # type: ignore[attr-defined]
                 except Exception:
                     pass
@@ -217,9 +241,10 @@ class _RawModeContext:
             import signal
 
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, self._old_settings)
-            if getattr(self, '_old_sigwinch', None) is not None:
+            if getattr(self, "_old_sigwinch", None) is not None:
                 try:
                     import signal
+
                     signal.signal(signal.SIGWINCH, self._old_sigwinch)
                 except Exception:
                     pass
@@ -255,10 +280,12 @@ def _execute_tool_shortcut(
             tool_input,
             context=ToolContext(cwd=args.cwd, permissions=args.permissions),
         )
-        state.recent_tools.append({
-            "name": tool_name,
-            "status": "success" if result.ok else "error",
-        })
+        state.recent_tools.append(
+            {
+                "name": tool_name,
+                "status": "success" if result.ok else "error",
+            }
+        )
         output = result.output if result.ok else f"ERROR: {result.output}"
         _update_tool_entry(state, entry_id, "success" if result.ok else "error", output)
         _collapse_tool_entry(state, entry_id, _summarize_collapsed_tool_body(output))
@@ -285,7 +312,7 @@ def _handle_input(
     """Returns True if /exit was typed."""
     if state.is_busy:
         # Animated spinner during tool execution
-        spinners = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        spinners = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
         tick = int(time.monotonic() * 8) % len(spinners)
         spin = spinners[tick]
         state.status = (
@@ -295,7 +322,9 @@ def _handle_input(
         )
         return False
 
-    input_text = (submitted_raw_input if submitted_raw_input is not None else state.input).strip()
+    input_text = (
+        submitted_raw_input if submitted_raw_input is not None else state.input
+    ).strip()
     if not input_text:
         return False
     if input_text == "/exit":
@@ -325,9 +354,7 @@ def _handle_input(
         _push_transcript_entry(
             state,
             kind="assistant",
-            body="\n".join(
-                f"{t.name}: {t.description}" for t in args.tools.list()
-            ),
+            body="\n".join(f"{t.name}: {t.description}" for t in args.tools.list()),
         )
         return False
 
@@ -364,61 +391,38 @@ def _handle_input(
     state.transcript_scroll_offset = 0
     state.status = "Thinking..."
     state.is_busy = True
-    
+
     # Hook: user input
     from minicode.hooks import HookEvent, fire_hook_sync
+
     fire_hook_sync(HookEvent.USER_INPUT, user_input=input_text)
-    
+
     # Prompt injection detection (input layer)
     from minicode.auto_mode import AutoModeChecker
+
     is_injection, injection_reason = AutoModeChecker.detect_prompt_injection(input_text)
     if is_injection:
         logger.warning("Potential prompt injection detected: %s", injection_reason)
         # Don't block, but add a system message warning
-        args.messages.append({
-            "role": "system",
-            "content": f"[SECURITY WARNING] Potential prompt injection pattern detected: {injection_reason}. Proceed with caution and verify all outputs."
-        })
-    
+        args.messages.append(
+            {
+                "role": "system",
+                "content": f"[SECURITY WARNING] Potential prompt injection pattern detected: {injection_reason}. Proceed with caution and verify all outputs.",
+            }
+        )
+
     # Update app state
     if state.app_state:
         from minicode.state import set_busy
+
         state.app_state.set_state(set_busy())
-    
+
     rerender()
 
     pending_tool_entries: dict[str, list[int]] = defaultdict(list)
     aggregated_edit_by_key: dict[str, AggregatedEditProgress] = {}
     aggregated_edit_by_entry_id: dict[int, AggregatedEditProgress] = {}
 
-    # Refresh system prompt
-    from minicode.capability_registry import get_registry, register_tool_capabilities
-    from minicode.intent_parser import parse_intent
-    from minicode.skill_router import build_skill_router
-
-    register_tool_capabilities(args.tools)
-    intent = parse_intent(input_text)
-    skill_routing = build_skill_router(args.cwd).route(
-        args.tools.get_skills(), intent, get_registry()
-    )
-    skills_for_prompt = (
-        args.tools.get_skills()
-        if getattr(skill_routing, "used_fallback", False)
-        else skill_routing.selected_skill_dicts()
-    )
-    args.messages[0] = {
-        "role": "system",
-        "content": build_system_prompt(
-            args.cwd,
-            args.permissions.get_summary(),
-            {
-                "skills": skills_for_prompt,
-                "skill_routing": skill_routing.to_dict(),
-                "mcpServers": args.tools.get_mcp_servers(),
-                "memory_context": "",
-            },
-        ),
-    }
     args.messages.append({"role": "user", "content": input_text})
 
     active_stream_entry_id = None
@@ -426,7 +430,9 @@ def _handle_input(
     def on_assistant_stream_chunk(content: str) -> None:
         nonlocal active_stream_entry_id
         if active_stream_entry_id is None:
-            active_stream_entry_id = _push_transcript_entry(state, kind="assistant", body=content)
+            active_stream_entry_id = _push_transcript_entry(
+                state, kind="assistant", body=content
+            )
         else:
             _append_to_transcript_entry(state, active_stream_entry_id, content)
         state.transcript_scroll_offset = 0
@@ -438,6 +444,7 @@ def _handle_input(
         fire_hook_sync(HookEvent.ASSISTANT_OUTPUT, assistant_output=content[:500])
         # Output safety check (output layer)
         from minicode.auto_mode import AutoModeChecker
+
         is_unsafe, unsafe_reason = AutoModeChecker.classify_output_safety(content)
         if is_unsafe:
             logger.warning("Potentially unsafe output detected: %s", unsafe_reason)
@@ -452,7 +459,9 @@ def _handle_input(
     def on_progress_message(content: str) -> None:
         nonlocal active_stream_entry_id
         if active_stream_entry_id is not None:
-            _update_transcript_entry(state, active_stream_entry_id, kind="progress", body=content)
+            _update_transcript_entry(
+                state, active_stream_entry_id, kind="progress", body=content
+            )
             active_stream_entry_id = None
         else:
             _push_transcript_entry(state, kind="progress", body=content)
@@ -521,8 +530,8 @@ def _handle_input(
                 if elapsed_secs < 60:
                     elapsed_note = f"[{elapsed_secs:.1f}s] "
                 else:
-                    elapsed_note = f"[{elapsed_secs/60:.1f}m] "
-        
+                    elapsed_note = f"[{elapsed_secs / 60:.1f}m] "
+
         pending = pending_tool_entries.get(tool_name, [])
         entry_id = pending.pop(0) if pending else None
         if entry_id is not None:
@@ -534,52 +543,68 @@ def _handle_input(
                 aggregated.last_output = output
                 done = aggregated.completed >= aggregated.total
                 if done:
-                    state.recent_tools.append({
-                        "name": f"{tool_name} x{aggregated.total}",
-                        "status": "error" if aggregated.errors > 0 else "success",
-                    })
+                    state.recent_tools.append(
+                        {
+                            "name": f"{tool_name} x{aggregated.total}",
+                            "status": "error" if aggregated.errors > 0 else "success",
+                        }
+                    )
                 body = (
-                    "\n".join([
-                        f"Aggregated {tool_name} for {aggregated.path}",
-                        f"Operations: {aggregated.total}, errors: {aggregated.errors}",
-                        f"Last result: {aggregated.last_output}",
-                    ])
+                    "\n".join(
+                        [
+                            f"Aggregated {tool_name} for {aggregated.path}",
+                            f"Operations: {aggregated.total}, errors: {aggregated.errors}",
+                            f"Last result: {aggregated.last_output}",
+                        ]
+                    )
                     if done
                     else f"Aggregated {tool_name} for {aggregated.path}\nCompleted: {aggregated.completed}/{aggregated.total}"
                 )
                 _update_tool_entry(
                     state,
                     entry_id,
-                    "error" if aggregated.errors > 0 else ("success" if done else "running"),
+                    "error"
+                    if aggregated.errors > 0
+                    else ("success" if done else "running"),
                     body,
                 )
                 if done:
-                    _collapse_tool_entry(state, entry_id, _summarize_collapsed_tool_body(body))
+                    _collapse_tool_entry(
+                        state, entry_id, _summarize_collapsed_tool_body(body)
+                    )
                     aggregated_edit_by_entry_id.pop(entry_id, None)
                     aggregated_edit_by_key.pop(f"{tool_name}:{aggregated.path}", None)
             else:
-                state.recent_tools.append({
-                    "name": tool_name,
-                    "status": "error" if is_error else "success",
-                })
-                
+                state.recent_tools.append(
+                    {
+                        "name": tool_name,
+                        "status": "error" if is_error else "success",
+                    }
+                )
+
                 # 错误恢复引导
                 display_output = elapsed_note + output
                 if is_error:
                     suggestions = []
                     output_lower = output.lower()
                     if "not found" in output_lower or "no such file" in output_lower:
-                        suggestions.append("💡 File not found. Try /ls to see available files")
+                        suggestions.append(
+                            "💡 File not found. Try /ls to see available files"
+                        )
                     elif "permission" in output_lower or "denied" in output_lower:
-                        suggestions.append("💡 Permission denied. Check file access rights")
+                        suggestions.append(
+                            "💡 Permission denied. Check file access rights"
+                        )
                     elif "syntax" in output_lower or "error" in output_lower:
-                        suggestions.append("💡 Error occurred. Review the output and fix issues")
-                    
+                        suggestions.append(
+                            "💡 Error occurred. Review the output and fix issues"
+                        )
+
                     if suggestions:
                         display_output = f"ERROR: {output}\n\n" + "\n".join(suggestions)
                     else:
                         display_output = f"ERROR: {output}"
-                
+
                 _update_tool_entry(
                     state,
                     entry_id,
@@ -603,7 +628,7 @@ def _handle_input(
         rerender()
 
     args.permissions.begin_turn()
-    
+
     active_thinking_entry_id = None
 
     def on_thinking_chunk(content: str) -> None:
@@ -621,13 +646,11 @@ def _handle_input(
     agent_error = None
     agent_result: dict = {"messages": None}
     agent_thread_lock = threading.Lock()
-    
+
     def _run_agent_background():
         nonlocal agent_error, agent_result
         try:
-            session_id = (
-                state.session.session_id if state.session is not None else None
-            )
+            session_id = state.session.session_id if state.session is not None else None
             with observe_run(
                 workspace=args.cwd,
                 source="tui",
@@ -636,7 +659,105 @@ def _handle_input(
                 journal_factory=args.run_journal_factory,
                 enabled=args.run_observation_enabled,
             ) as observation:
+                from minicode.agent_budget import AgentTurnBudget
+                from minicode.capability_registry import (
+                    build_tool_capability_snapshot,
+                )
+                from minicode.intent_parser import IntentContext
+                from minicode.intent_semantic_classifier import (
+                    build_semantic_intent_adapter,
+                )
+                from minicode.skill_router import build_skill_router
+                from minicode.skill_catalog_context import (
+                    refresh_skill_catalog_for_turn,
+                )
+                from minicode.skill_candidate_reranker import (
+                    build_skill_candidate_reranker,
+                )
+                from minicode.skill_routing_turn import (
+                    SkillRoutingTurnAdapters,
+                    SkillRoutingTurnRequest,
+                    route_skill_turn,
+                )
+
+                turn_messages = refresh_skill_catalog_for_turn(
+                    args.cwd, args.tools, args.messages
+                )
+                agent_budget = AgentTurnBudget.from_runtime(args.runtime or {})
+                semantic_adapter = build_semantic_intent_adapter(
+                    args.model,
+                    runtime=args.runtime or {},
+                )
+                skill_candidate_reranker = build_skill_candidate_reranker(
+                    args.model,
+                    runtime=args.runtime or {},
+                )
+                routing_controls = {
+                    "agent_budget": agent_budget,
+                    "event_sink": observation,
+                    "cancellation_token": None,
+                    "deadline_monotonic": None,
+                    "skill_selection_mode": str(
+                        (args.runtime or {}).get("skillSelection", {}).get(
+                            "mode", "routed"
+                        )
+                        or "routed"
+                    ),
+                    "skill_flat_catalog_chars": int(
+                        (args.runtime or {}).get("skillSelection", {}).get(
+                            "flatCatalogCharBudget", 8000
+                        )
+                        or 8000
+                    ),
+                    "skill_page_chars": int(
+                        (args.runtime or {}).get("skillSelection", {}).get(
+                            "skillPageCharBudget", 4000
+                        )
+                        or 4000
+                    ),
+                    "skill_intent_hints": bool(
+                        (args.runtime or {}).get("skillSelection", {}).get(
+                            "intentHints", False
+                        )
+                    ),
+                    "skill_intent_prefetch": bool(
+                        (args.runtime or {}).get("skillSelection", {}).get(
+                            "intentPrefetch", False
+                        )
+                    ),
+                }
+                turn_routing = route_skill_turn(
+                    SkillRoutingTurnRequest(
+                        prompt=input_text,
+                        context=IntentContext.from_messages(turn_messages[:-1]),
+                        skills=args.tools.get_skills(),
+                        registry=build_tool_capability_snapshot(args.tools),
+                    ),
+                    SkillRoutingTurnAdapters(
+                        router=build_skill_router(args.cwd),
+                        semantic_intent=semantic_adapter,
+                        candidate_reranker=skill_candidate_reranker,
+                    ),
+                    controls=routing_controls,
+                )
+                intent = turn_routing.intent
+                skill_routing = turn_routing.routing
+                skills_for_prompt = list(turn_routing.prompt_skills)
+                turn_messages[0] = {
+                    "role": "system",
+                    "content": build_system_prompt(
+                        args.cwd,
+                        args.permissions.get_summary(),
+                        {
+                            "skills": skills_for_prompt,
+                            "skill_routing": skill_routing.to_dict(),
+                            "mcpServers": args.tools.get_mcp_servers(),
+                            "memory_context": "",
+                        },
+                    ),
+                }
                 emit_skill_routing_safely(observation, skill_routing)
+
                 def observed_tool_start(tool_name: str, tool_input: dict) -> None:
                     on_tool_start(tool_name, tool_input)
                     observation.tool_started(tool_name)
@@ -650,7 +771,7 @@ def _handle_input(
                 next_messages = run_agent_turn(
                     model=args.model,
                     tools=args.tools,
-                    messages=list(args.messages),  # Copy to avoid race condition
+                    messages=turn_messages,
                     cwd=args.cwd,
                     permissions=args.permissions,
                     on_tool_start=observed_tool_start,
@@ -664,9 +785,16 @@ def _handle_input(
                     runtime=args.runtime,
                     memory_manager=memory_mgr,
                     event_sink=observation,
+                    agent_budget=agent_budget,
+                    enable_bounded_completion=True,
                     required_skill_names=required_skill_names_for_routing(
                         skill_routing
                     ),
+                    skill_load_policy=skill_load_policy_for_routing(
+                        skill_routing
+                    ),
+                    parsed_intent=intent,
+                    trusted_user_evidence=stable_constraint_seeds(input_text),
                 )
                 returned_assistant = next(
                     (
@@ -706,7 +834,7 @@ def _handle_input(
             state.active_tool = None
             state.status = None
             rerender()
-    
+
     agent_thread = threading.Thread(target=_run_agent_background, daemon=True)
     agent_thread.start()
     state.agent_thread = agent_thread
@@ -714,7 +842,7 @@ def _handle_input(
     # so the lock must already be available to avoid AttributeError.
     state.agent_lock = agent_thread_lock
     state.agent_result = agent_result
-    
+
     # Return immediately - agent runs in background
     return False
 

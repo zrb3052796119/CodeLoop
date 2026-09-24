@@ -1,0 +1,444 @@
+..FFFFFFFF.F                                                             [100%]
+=================================== FAILURES ===================================
+_ test_every_scheduler_reader_enforces_assignment_and_input_boundaries[adjudicator] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-792/test_every_scheduler_reader_en2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107827d10>
+role = 'adjudicator'
+
+    @pytest.mark.parametrize("role", ["analyst", "reviewer", "adjudicator"])
+    def test_every_scheduler_reader_enforces_assignment_and_input_boundaries(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, role: str
+    ) -> None:
+        tmp_path = tmp_path.resolve()
+        (tmp_path / "allowed").mkdir()
+        captured = _capture_worker(monkeypatch)
+        result = task_module._run(
+            {"agent_type": "plan", "description": role, "prompt": "Read frozen inputs."},
+            ToolContext(
+                cwd=str(tmp_path),
+                _runtime={"model": "fake"},
+                _workflow_phase=True,
+                _logical_agent_role=role,
+                _logical_agent_scope={
+                    "read_roots": ("allowed",),
+                    "write_paths": (),
+                    "forbidden_paths": ("allowed/private.txt",),
+                },
+                _logical_agent_workspace_root=str(tmp_path),
+            ),
+        )
+    
+        assert result.ok, result.output
+        permissions = captured["permissions"]
+        permissions.ensure_path_access(str(tmp_path / "allowed/public.txt"), "read")
+        for relative in ("outside.txt", "allowed/private.txt", "allowed/.env"):
+>           with pytest.raises(PermissionDeniedError):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE <class 'minicode.permissions.PermissionDeniedError'>
+
+tests/test_scheduler_role_boundaries_regression.py:71: Failed
+_____ test_invalid_role_type_pairs_fail_before_worker_setup[unknown-plan] ______
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-792/test_invalid_role_type_pairs_f0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10789b8a0>
+role = 'unknown', agent_type = 'plan'
+
+    @pytest.mark.parametrize(
+        ("role", "agent_type"),
+        [
+            ("unknown", "plan"),
+            ("", "plan"),
+            ([], "plan"),
+            ("adjudicator", "explore"),
+            ("executor", "plan"),
+            ("analyst", "general"),
+            ("reviewer", "workflow"),
+        ],
+    )
+    def test_invalid_role_type_pairs_fail_before_worker_setup(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        role: object,
+        agent_type: str,
+    ) -> None:
+        captured = _capture_worker(monkeypatch)
+        # No scope is intentionally supplied: invalid pairs must never fall back
+        # to the ordinary Plan/General permissions or start a workflow.
+        result = task_module._run(
+            {"agent_type": agent_type, "description": "invalid", "prompt": "fixture"},
+            ToolContext(
+                cwd=str(tmp_path),
+                _runtime={"model": "fake"},
+                _workflow_phase=True,
+                _logical_agent_role=role,
+            ),
+        )
+>       assert not result.ok
+E       assert not True
+E        +  where True = ToolResult(ok=True, output='[Sub-agent Plan completed]\n  Type: plan\n  Model turns: 1 (tool calls: 0)\n  Duration: 0....ion":{"checks":[],"status":"inconclusive"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+
+tests/test_scheduler_role_boundaries_regression.py:112: AssertionError
+_________ test_invalid_role_type_pairs_fail_before_worker_setup[-plan] _________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-792/test_invalid_role_type_pairs_f1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1079788d0>, role = ''
+agent_type = 'plan'
+
+    @pytest.mark.parametrize(
+        ("role", "agent_type"),
+        [
+            ("unknown", "plan"),
+            ("", "plan"),
+            ([], "plan"),
+            ("adjudicator", "explore"),
+            ("executor", "plan"),
+            ("analyst", "general"),
+            ("reviewer", "workflow"),
+        ],
+    )
+    def test_invalid_role_type_pairs_fail_before_worker_setup(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        role: object,
+        agent_type: str,
+    ) -> None:
+        captured = _capture_worker(monkeypatch)
+        # No scope is intentionally supplied: invalid pairs must never fall back
+        # to the ordinary Plan/General permissions or start a workflow.
+        result = task_module._run(
+            {"agent_type": agent_type, "description": "invalid", "prompt": "fixture"},
+            ToolContext(
+                cwd=str(tmp_path),
+                _runtime={"model": "fake"},
+                _workflow_phase=True,
+                _logical_agent_role=role,
+            ),
+        )
+>       assert not result.ok
+E       assert not True
+E        +  where True = ToolResult(ok=True, output='[Sub-agent Plan completed]\n  Type: plan\n  Model turns: 1 (tool calls: 0)\n  Duration: 0....ion":{"checks":[],"status":"inconclusive"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+
+tests/test_scheduler_role_boundaries_regression.py:112: AssertionError
+______ test_invalid_role_type_pairs_fail_before_worker_setup[role2-plan] _______
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-792/test_invalid_role_type_pairs_f2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10788b450>, role = []
+agent_type = 'plan'
+
+    @pytest.mark.parametrize(
+        ("role", "agent_type"),
+        [
+            ("unknown", "plan"),
+            ("", "plan"),
+            ([], "plan"),
+            ("adjudicator", "explore"),
+            ("executor", "plan"),
+            ("analyst", "general"),
+            ("reviewer", "workflow"),
+        ],
+    )
+    def test_invalid_role_type_pairs_fail_before_worker_setup(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        role: object,
+        agent_type: str,
+    ) -> None:
+        captured = _capture_worker(monkeypatch)
+        # No scope is intentionally supplied: invalid pairs must never fall back
+        # to the ordinary Plan/General permissions or start a workflow.
+>       result = task_module._run(
+            {"agent_type": agent_type, "description": "invalid", "prompt": "fixture"},
+            ToolContext(
+                cwd=str(tmp_path),
+                _runtime={"model": "fake"},
+                _workflow_phase=True,
+                _logical_agent_role=role,
+            ),
+        )
+
+tests/test_scheduler_role_boundaries_regression.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input_data = {'agent_type': 'plan', 'description': 'invalid', 'prompt': 'fixture'}
+context = ToolContext(cwd='/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-792/test_invalid_role_type_pairs_f2', permissions=None, _runtime={'model': 'fake'}, _event_sink=None, _step=None, _agent_depth=0)
+
+    def _run(input_data: dict, context) -> ToolResult:
+        """Execute a sub-agent task.
+    
+        This creates an isolated agent loop with:
+        - Its own message history (system + task prompt)
+        - Filtered tools based on agent type
+        - A turn limit
+        - Result summarized for the parent context
+        """
+        from minicode.permissions import PermissionManager
+        from minicode.subagent_model_routing import (
+            SubagentModelRoutingError,
+            create_subagent_model_adapter,
+            resolve_subagent_model_route,
+        )
+        from minicode.tools import create_default_tool_registry
+    
+        agent_type = input_data["agent_type"]
+        logical_role = getattr(context, "_logical_agent_role", None)
+        scheduler_executor = agent_type == "general" and logical_role == "executor"
+>       scheduler_read_worker = agent_type == "plan" and logical_role in {
+            "analyst",
+            "reviewer",
+        }
+E       TypeError: unhashable type: 'list'
+
+minicode/tools/task.py:1857: TypeError
+__ test_invalid_role_type_pairs_fail_before_worker_setup[adjudicator-explore] __
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-792/test_invalid_role_type_pairs_f3')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107a24250>
+role = 'adjudicator', agent_type = 'explore'
+
+    @pytest.mark.parametrize(
+        ("role", "agent_type"),
+        [
+            ("unknown", "plan"),
+            ("", "plan"),
+            ([], "plan"),
+            ("adjudicator", "explore"),
+            ("executor", "plan"),
+            ("analyst", "general"),
+            ("reviewer", "workflow"),
+        ],
+    )
+    def test_invalid_role_type_pairs_fail_before_worker_setup(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        role: object,
+        agent_type: str,
+    ) -> None:
+        captured = _capture_worker(monkeypatch)
+        # No scope is intentionally supplied: invalid pairs must never fall back
+        # to the ordinary Plan/General permissions or start a workflow.
+        result = task_module._run(
+            {"agent_type": agent_type, "description": "invalid", "prompt": "fixture"},
+            ToolContext(
+                cwd=str(tmp_path),
+                _runtime={"model": "fake"},
+                _workflow_phase=True,
+                _logical_agent_role=role,
+            ),
+        )
+>       assert not result.ok
+E       assert not True
+E        +  where True = ToolResult(ok=True, output='[Sub-agent Explore completed]\n  Type: explore\n  Model turns: 1 (tool calls: 0)\n  Durati...ion":{"checks":[],"status":"inconclusive"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+
+tests/test_scheduler_role_boundaries_regression.py:112: AssertionError
+_____ test_invalid_role_type_pairs_fail_before_worker_setup[executor-plan] _____
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-792/test_invalid_role_type_pairs_f4')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1078b32f0>
+role = 'executor', agent_type = 'plan'
+
+    @pytest.mark.parametrize(
+        ("role", "agent_type"),
+        [
+            ("unknown", "plan"),
+            ("", "plan"),
+            ([], "plan"),
+            ("adjudicator", "explore"),
+            ("executor", "plan"),
+            ("analyst", "general"),
+            ("reviewer", "workflow"),
+        ],
+    )
+    def test_invalid_role_type_pairs_fail_before_worker_setup(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        role: object,
+        agent_type: str,
+    ) -> None:
+        captured = _capture_worker(monkeypatch)
+        # No scope is intentionally supplied: invalid pairs must never fall back
+        # to the ordinary Plan/General permissions or start a workflow.
+        result = task_module._run(
+            {"agent_type": agent_type, "description": "invalid", "prompt": "fixture"},
+            ToolContext(
+                cwd=str(tmp_path),
+                _runtime={"model": "fake"},
+                _workflow_phase=True,
+                _logical_agent_role=role,
+            ),
+        )
+>       assert not result.ok
+E       assert not True
+E        +  where True = ToolResult(ok=True, output='[Sub-agent Plan completed]\n  Type: plan\n  Model turns: 1 (tool calls: 0)\n  Duration: 0....ion":{"checks":[],"status":"inconclusive"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+
+tests/test_scheduler_role_boundaries_regression.py:112: AssertionError
+____ test_invalid_role_type_pairs_fail_before_worker_setup[analyst-general] ____
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-792/test_invalid_role_type_pairs_f5')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1078b2210>
+role = 'analyst', agent_type = 'general'
+
+    @pytest.mark.parametrize(
+        ("role", "agent_type"),
+        [
+            ("unknown", "plan"),
+            ("", "plan"),
+            ([], "plan"),
+            ("adjudicator", "explore"),
+            ("executor", "plan"),
+            ("analyst", "general"),
+            ("reviewer", "workflow"),
+        ],
+    )
+    def test_invalid_role_type_pairs_fail_before_worker_setup(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        role: object,
+        agent_type: str,
+    ) -> None:
+        captured = _capture_worker(monkeypatch)
+        # No scope is intentionally supplied: invalid pairs must never fall back
+        # to the ordinary Plan/General permissions or start a workflow.
+        result = task_module._run(
+            {"agent_type": agent_type, "description": "invalid", "prompt": "fixture"},
+            ToolContext(
+                cwd=str(tmp_path),
+                _runtime={"model": "fake"},
+                _workflow_phase=True,
+                _logical_agent_role=role,
+            ),
+        )
+>       assert not result.ok
+E       assert not True
+E        +  where True = ToolResult(ok=True, output='[Sub-agent General completed]\n  Type: general\n  Model turns: 1 (tool calls: 0)\n  Durati...ion":{"checks":[],"status":"inconclusive"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+
+tests/test_scheduler_role_boundaries_regression.py:112: AssertionError
+___ test_invalid_role_type_pairs_fail_before_worker_setup[reviewer-workflow] ___
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-792/test_invalid_role_type_pairs_f6')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1078c99b0>
+role = 'reviewer', agent_type = 'workflow'
+
+    @pytest.mark.parametrize(
+        ("role", "agent_type"),
+        [
+            ("unknown", "plan"),
+            ("", "plan"),
+            ([], "plan"),
+            ("adjudicator", "explore"),
+            ("executor", "plan"),
+            ("analyst", "general"),
+            ("reviewer", "workflow"),
+        ],
+    )
+    def test_invalid_role_type_pairs_fail_before_worker_setup(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        role: object,
+        agent_type: str,
+    ) -> None:
+        captured = _capture_worker(monkeypatch)
+        # No scope is intentionally supplied: invalid pairs must never fall back
+        # to the ordinary Plan/General permissions or start a workflow.
+        result = task_module._run(
+            {"agent_type": agent_type, "description": "invalid", "prompt": "fixture"},
+            ToolContext(
+                cwd=str(tmp_path),
+                _runtime={"model": "fake"},
+                _workflow_phase=True,
+                _logical_agent_role=role,
+            ),
+        )
+        assert not result.ok
+>       assert "scheduler_role_invalid" in result.output
+E       assert 'scheduler_role_invalid' in '[Workflow plan phase failed]\n\nplan unavailable\n\n=== WORKFLOW FINALIZATION v1 ===\n{"auditStatus": "not_configured...a1e41e237c07","workflowId":"wf_bfe20175b60c4102802aa1e41e237c07"}],"workflowId":"wf_bfe20175b60c4102802aa1e41e237c07"}'
+E        +  where '[Workflow plan phase failed]\n\nplan unavailable\n\n=== WORKFLOW FINALIZATION v1 ===\n{"auditStatus": "not_configured...a1e41e237c07","workflowId":"wf_bfe20175b60c4102802aa1e41e237c07"}],"workflowId":"wf_bfe20175b60c4102802aa1e41e237c07"}' = ToolResult(ok=False, output='[Workflow plan phase failed]\n\nplan unavailable\n\n=== WORKFLOW FINALIZATION v1 ===\n{"a...wId":"wf_bfe20175b60c4102802aa1e41e237c07"}', backgroundTask=None, awaitUser=False, verification=None, capability=None).output
+
+tests/test_scheduler_role_boundaries_regression.py:113: AssertionError
+____ test_adjudicator_can_read_frozen_evidence_but_not_unassigned_artifacts ____
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-792/test_adjudicator_can_read_froz0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1078d3930>
+
+    def test_adjudicator_can_read_frozen_evidence_but_not_unassigned_artifacts(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Reuse the existing structured request/report builders, while retaining
+        # the real scheduler, runner, immutable Store and Assignment channel.
+        spec = importlib.util.spec_from_file_location(
+            "scheduler_role_routing_fixtures",
+            Path(__file__).with_name("test_workflow_v2_structured_routing.py"),
+        )
+        assert spec is not None and spec.loader is not None
+        fixture = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(fixture)
+        evidence_reads: list[tuple[str, str]] = []
+        handoffs: list[dict] = []
+        evidence_errors: list[str] = []
+        roles: list[str] = []
+    
+        def worker(input_data: dict, context: ToolContext) -> ToolResult:
+            role = fixture._worker_role(input_data)
+            roles.append(role)
+            if role == "analyst":
+                fixture._write_analyst_result(
+                    input_data,
+                    context,
+                    prepare_change=True,
+                    risks=[{
+                        "severity": "high",
+                        "statement": "Fixture requires risk adjudication.",
+                        "evidenceRefs": ["claim_route"],
+                    }],
+                )
+                return ToolResult(ok=True, output="analysis found a risk")
+            assert role == "adjudicator"
+            package = fixture._prompt_json(input_data["prompt"], "CONFLICT PACKAGE")
+            assignment = fixture._prompt_json(input_data["prompt"], "ASSIGNMENT")
+            for claim in package["claims"]:
+                for ref in claim["evidenceRefs"]:
+                    try:
+                        artifact = context._subagent_mailbox.read(ref)
+                        assert artifact is not None
+                        document = json.loads(artifact.content)
+                        evidence_reads.append((ref, document["resultType"]))
+                        assert ref in assignment["inputRefs"]
+                    except SchedulerArtifactError as error:
+                        evidence_errors.append(str(error))
+            for ref in assignment["inputRefs"]:
+                if ref.startswith("artifact_"):
+                    artifact = context._subagent_mailbox.read(ref)
+                    assert artifact is not None
+                    document = json.loads(artifact.content)
+                    if document.get("resultType") == "AnalystHandoff.v1":
+                        handoffs.append(document)
+            with pytest.raises(SchedulerArtifactError, match="not readable"):
+                context._subagent_mailbox.read("artifact_unassigned")
+            fixture._write_adjudication_result(input_data, context, decision="insufficient")
+            return ToolResult(ok=True, output="fixture stops after evidence inspection")
+    
+        target = tmp_path / "allowed.txt"
+        target.write_text("before\n", encoding="utf-8")
+        monkeypatch.setattr(task_module, "_run", worker)
+        result = fixture._run(
+            tmp_path, fixture._request(risk="medium", complex=True), monkeypatch,
+            commit_audit_waived=True,
+        )
+        assert roles == ["analyst", "adjudicator"]
+        assert not result.ok
+        assert target.read_text(encoding="utf-8") == "before\n"
+>       assert not evidence_errors
+E       AssertionError: assert not ['Artifact key is not readable', 'Artifact key is not readable']
+
+tests/test_scheduler_role_boundaries_regression.py:197: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_scheduler_role_boundaries_regression.py::test_every_scheduler_reader_enforces_assignment_and_input_boundaries[adjudicator]
+FAILED tests/test_scheduler_role_boundaries_regression.py::test_invalid_role_type_pairs_fail_before_worker_setup[unknown-plan]
+FAILED tests/test_scheduler_role_boundaries_regression.py::test_invalid_role_type_pairs_fail_before_worker_setup[-plan]
+FAILED tests/test_scheduler_role_boundaries_regression.py::test_invalid_role_type_pairs_fail_before_worker_setup[role2-plan]
+FAILED tests/test_scheduler_role_boundaries_regression.py::test_invalid_role_type_pairs_fail_before_worker_setup[adjudicator-explore]
+FAILED tests/test_scheduler_role_boundaries_regression.py::test_invalid_role_type_pairs_fail_before_worker_setup[executor-plan]
+FAILED tests/test_scheduler_role_boundaries_regression.py::test_invalid_role_type_pairs_fail_before_worker_setup[analyst-general]
+FAILED tests/test_scheduler_role_boundaries_regression.py::test_invalid_role_type_pairs_fail_before_worker_setup[reviewer-workflow]
+FAILED tests/test_scheduler_role_boundaries_regression.py::test_adjudicator_can_read_frozen_evidence_but_not_unassigned_artifacts
+9 failed, 3 passed in 0.63s

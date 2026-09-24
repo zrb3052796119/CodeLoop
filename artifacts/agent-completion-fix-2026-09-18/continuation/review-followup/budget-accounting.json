@@ -1,0 +1,11 @@
+{
+  "priorContinuationModelCalls": 34,
+  "priorContinuationTokens": 1498196,
+  "remainingCallAllocation": 20,
+  "remainingTokenAllocation": 420000,
+  "maxAggregateModelCalls": 54,
+  "maxAggregateTokensBeforeOutputOverrun": 1918196,
+  "reviewCallCostGuardUsd": 2,
+  "reason": "Prior $5 cost guard used unpriced-model conservative fallback; follow-up remains within the originally stated total 60-call/2M-token allocation. No claim of actual provider billing.",
+  "handoff": "Actual prior assistant final only; new prompt contains independently verified reviewer feedback. This is an explicit second review turn, not claimed as a one-shot autonomous success."
+}

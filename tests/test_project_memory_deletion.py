@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import multiprocessing
 import threading
 from pathlib import Path
@@ -9,6 +10,8 @@ import pytest
 
 import minicode.memory as memory_module
 from minicode.memory import MemoryManager, MemoryScope
+from minicode.memory_approval import MemoryApprovalAuthority
+from minicode.memory_store import MemoryStoreConflict
 from minicode.project_memory_deletion import (
     ProjectMemoryDeletionAuthority,
     ProjectMemoryDeletionError,
@@ -81,12 +84,11 @@ def test_project_memory_authority_removes_entry_audit_and_backlinks_only(
     assert target is not None and neighbor is not None
     assert user is not None and local is not None
 
-    def link() -> None:
-        current = manager.memories[MemoryScope.PROJECT]._id_index[neighbor.id]
-        current.related_to = [target.id, target.id]
-        manager._save_scope(MemoryScope.PROJECT)
-
-    manager.coordinated_write((MemoryScope.PROJECT,), link)
+    assert manager.set_related_memories(
+        MemoryScope.PROJECT,
+        neighbor.id,
+        [target.id],
+    )
     authority = ProjectMemoryDeletionAuthority(
         workspace,
         data_dir=data_dir,
@@ -107,7 +109,7 @@ def test_project_memory_authority_removes_entry_audit_and_backlinks_only(
     assert preview["affected"] == {
         "entries": 1,
         "approvalAuditRecords": 1,
-        "backlinks": 2,
+        "backlinks": 1,
     }
     assert _file_facts(workspace) == before_preview
     assert not (data_dir / "dashboard").exists()
@@ -120,7 +122,7 @@ def test_project_memory_authority_removes_entry_audit_and_backlinks_only(
     assert result["deleted"] == {
         "entries": 1,
         "approvalAuditRecords": 1,
-        "backlinks": 2,
+        "backlinks": 1,
     }
     reloaded = MemoryManager(project_root=workspace)
     project = reloaded.memories[MemoryScope.PROJECT]
@@ -136,6 +138,68 @@ def test_project_memory_authority_removes_entry_audit_and_backlinks_only(
     with pytest.raises(ProjectMemoryDeletionError) as forged:
         authority.delete("project-forged", str(preview["deletionRevision"]))
     assert forged.value.code == "deletion_target_not_found"
+
+
+def test_project_memory_preview_reads_one_snapshot_and_ignores_stale_audit_projection(
+    memory_workspace: tuple[Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace, data_dir = memory_workspace
+    manager = MemoryManager(project_root=workspace)
+    target = manager.add_entry(
+        MemoryScope.PROJECT,
+        "note",
+        "embedded audit authority wins over its stale projection",
+    )
+    assert target is not None
+    scope_root = workspace / ".mini-code-memory"
+    memory_data = json.loads(
+        (scope_root / "memory.json").read_text(encoding="utf-8")
+    )
+    embedded = [
+        record
+        for record in memory_data["approval_audit"]
+        if record.get("entry_id") == target.id
+    ]
+    assert len(embedded) == 1
+    stale_projection = {
+        "scope": MemoryScope.PROJECT.value,
+        "records": [
+            {**embedded[0], "reason": "stale projection one"},
+            {**embedded[0], "reason": "stale projection two"},
+        ],
+    }
+    (scope_root / "approval_audit.json").write_text(
+        json.dumps(stale_projection),
+        encoding="utf-8",
+    )
+    before = _file_facts(workspace)
+    reads: dict[str, int] = {}
+    original_read = MemoryApprovalAuthority._read_regular_file
+
+    def tracked_read(root: Path, filename: str) -> bytes | None:
+        reads[filename] = reads.get(filename, 0) + 1
+        return original_read(root, filename)
+
+    monkeypatch.setattr(
+        MemoryApprovalAuthority,
+        "_read_regular_file",
+        staticmethod(tracked_read),
+    )
+
+    preview = ProjectMemoryDeletionAuthority(
+        workspace,
+        data_dir=data_dir,
+    ).snapshot(target.id)
+
+    assert (
+        preview["affected"]["approvalAuditRecords"],
+        reads,
+    ) == (
+        1,
+        {"memory.json": 1},
+    )
+    assert _file_facts(workspace) == before
 
 
 def test_project_memory_revision_rejects_update_after_preview(
@@ -179,12 +243,11 @@ def test_project_memory_revision_rejects_approval_or_backlink_change(
     if change == "approval":
         assert manager.reject_entry(target.id).startswith("Rejected memory")
     else:
-        def add_backlink() -> None:
-            current = manager.memories[MemoryScope.PROJECT]._id_index[neighbor.id]
-            current.related_to.append(target.id)
-            manager._save_scope(MemoryScope.PROJECT)
-
-        manager.coordinated_write((MemoryScope.PROJECT,), add_backlink)
+        assert manager.set_related_memories(
+            MemoryScope.PROJECT,
+            neighbor.id,
+            [target.id],
+        )
 
     with pytest.raises(ProjectMemoryDeletionError) as stale:
         authority.delete(target.id, str(preview["deletionRevision"]))
@@ -212,6 +275,9 @@ def test_project_memory_supported_lifecycle_states_remain_deletable(
     def set_lifecycle() -> None:
         current = manager.memories[MemoryScope.PROJECT]._id_index[target.id]
         current.lifecycle_status = lifecycle_status
+        # Test fixture authorization: production callers must use a Manager
+        # transition instead of persisting an unsealed live-object edit.
+        current._seal_authority_state()
         manager._save_scope(MemoryScope.PROJECT)
 
     manager.coordinated_write((MemoryScope.PROJECT,), set_lifecycle)
@@ -237,17 +303,16 @@ def test_project_memory_unknown_metadata_fails_closed(
         current.lifecycle_status = "private-unknown-status"
         manager._save_scope(MemoryScope.PROJECT)
 
-    manager.coordinated_write((MemoryScope.PROJECT,), make_unknown)
-    authority = ProjectMemoryDeletionAuthority(workspace, data_dir=data_dir)
-    preview = authority.snapshot(target.id)
+    with pytest.raises(
+        MemoryStoreConflict,
+        match="authority changed|invalid state",
+    ):
+        manager.coordinated_write((MemoryScope.PROJECT,), make_unknown)
 
-    assert preview["status"] == "unavailable"
-    assert preview["target"]["lifecycleStatus"] == "unknown"
-    assert preview["diagnostics"] == [{"code": "memory_metadata_invalid"}]
-    assert "private-unknown-status" not in str(preview)
-    with pytest.raises(ProjectMemoryDeletionError) as unavailable:
-        authority.delete(target.id, str(preview["deletionRevision"]))
-    assert unavailable.value.code == "deletion_unavailable"
+    reloaded = MemoryManager(project_root=workspace)
+    assert reloaded.memories[MemoryScope.PROJECT]._id_index[
+        target.id
+    ].lifecycle_status == "active"
 
 
 def test_project_memory_symlinked_authority_file_fails_closed(
@@ -308,6 +373,55 @@ def test_project_memory_orphan_audit_and_backlink_are_previewed_and_cleaned(
         ._id_index[neighbor.id]
         .related_to
         == []
+    )
+
+
+def test_project_memory_deletion_cleans_supersession_relationships(
+    memory_workspace: tuple[Path, Path],
+) -> None:
+    workspace, data_dir = memory_workspace
+    manager = MemoryManager(project_root=workspace)
+    target = manager.add_entry(
+        MemoryScope.PROJECT,
+        "note",
+        "supersession target",
+    )
+    assert target is not None
+    older = manager.add_entry(
+        MemoryScope.PROJECT,
+        "note",
+        "older entry stays non-active after its replacement is deleted",
+        metadata={"superseded_by": target.id},
+    )
+    replacement = manager.add_entry(
+        MemoryScope.PROJECT,
+        "note",
+        "replacement metadata must not retain a deleted target",
+        metadata={"supersedes": [target.id, target.id]},
+    )
+    assert older is not None and replacement is not None
+
+    authority = ProjectMemoryDeletionAuthority(workspace, data_dir=data_dir)
+    preview = authority.snapshot(target.id)
+
+    assert preview["affected"]["backlinks"] == 3
+    result = authority.delete(target.id, str(preview["deletionRevision"]))
+    assert result["status"] == "completed"
+    assert result["deleted"]["backlinks"] == 3
+
+    reloaded = MemoryManager(project_root=workspace)
+    older_after = reloaded.memories[MemoryScope.PROJECT]._id_index[older.id]
+    replacement_after = reloaded.memories[MemoryScope.PROJECT]._id_index[
+        replacement.id
+    ]
+    assert "superseded_by" not in older_after.metadata
+    assert replacement_after.metadata.get("supersedes") == []
+    assert older_after.approval_content_hash == memory_module._approval_hash_for_entry(
+        older_after
+    )
+    assert (
+        replacement_after.approval_content_hash
+        == memory_module._approval_hash_for_entry(replacement_after)
     )
 
 

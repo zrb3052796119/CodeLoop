@@ -1,0 +1,70 @@
+{
+  "scope": "Current root minicode multi-agent correctness and bounded implementation repair",
+  "integration": {
+    "python": "3.12",
+    "files": 49,
+    "passed": 939,
+    "failed": 0,
+    "log": "integration-final.txt",
+    "command": "integration-command.json"
+  },
+  "whole_repository": [
+    {
+      "python": "3.12",
+      "stage": "collection",
+      "errors": 3,
+      "reason": "Missing jsonschema in interpreter environment",
+      "log": "full-suite.txt"
+    },
+    {
+      "python": "3.13.13",
+      "environment": "sandbox",
+      "passed": 9640,
+      "failed": 151,
+      "errors": 128,
+      "skipped": 2,
+      "log": "full-suite-python313.txt"
+    },
+    {
+      "python": "3.13.13",
+      "environment": "approved local loopback outside sandbox",
+      "scope": "279 previously failing cases; finalized probe-name mapping recorded in retry-scope.json",
+      "passed": 257,
+      "failed": 22,
+      "errors": 0,
+      "log": "retry-outside-sandbox.txt",
+      "junit": "retry-results.xml"
+    }
+  ],
+  "remaining_failure_groups": {
+    "preexisting_skill_quality_gate": 3,
+    "preexisting_memory_release_hash_certification": 15,
+    "concurrent_skill_call_context_contract_change": 1,
+    "current_skill_catalog_contract_mismatch_timing_unknown": 2,
+    "packaged_atomic_write_test_observer_mismatch": 1
+  },
+  "proofs": [
+    {
+      "artifact": "roles-proof.json",
+      "status": "PROVEN"
+    },
+    {
+      "artifact": "parent-proof.json",
+      "status": "PROVEN"
+    },
+    {
+      "artifact": "delegation-proof.json",
+      "status": "PROVEN"
+    },
+    {
+      "artifact": "write-skew-counterexample.json",
+      "status": "PROVEN"
+    },
+    {
+      "artifact": "implementation-repair-counterexample.json",
+      "status": "PROVEN"
+    }
+  ],
+  "independent_review": "Parent continuation and implementation repair reviewed independently; no unresolved blocking multi-agent findings.",
+  "qualification": "This is not an all-green full-repository result. Historical release manifests were not regenerated. Source file ownership is partial where concurrent Skill work touches the same files."
+}

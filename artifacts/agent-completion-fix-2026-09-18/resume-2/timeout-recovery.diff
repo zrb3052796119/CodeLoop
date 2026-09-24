@@ -1,0 +1,105 @@
+--- before/minicode/agent_loop.py
++++ minicode/agent_loop.py
+@@ -1976,6 +1976,8 @@
+     saw_tool_result = False
+     empty_response_retry_count = 0
+     recoverable_thinking_retry_count = 0
++    model_timeout_retry_count = 0
++    model_timeout_retry_pending = False
+     unfinished_action_retry_count = 0
+     tool_error_count = 0
+     recovery_guard = RecoveryGuard()
+@@ -2950,13 +2952,19 @@
+         })
+         return True
+ 
+-    def finish_bounded_completion(reason: str, closing_step_index: int) -> None:
++    def finish_bounded_completion(
++        reason: str,
++        closing_step_index: int,
++        *,
++        allow_model_summary: bool = True,
++    ) -> None:
+         nonlocal turn_outcome, authority_delivery_ready
+         assert completion_policy is not None
+         raise_if_cancelled(cancellation_token)
+         raise_if_deadline_exceeded()
+         landed = (
+-            closing_step_index <= completion_hard_limit
++            allow_model_summary
++            and closing_step_index <= completion_hard_limit
+             and _attempt_max_steps_soft_landing(
+                 prompt=completion_policy.closing_prompt(reason),
+                 closing_step_index=closing_step_index,
+@@ -3265,6 +3273,7 @@
+                 )
+                 raise_if_cancelled(cancellation_token)
+                 raise_if_deadline_exceeded()
++                model_timeout_retry_pending = False
+                 if abandoned_event is not None and abandoned_event.is_set():
+                     turn_outcome = "failed"
+                     tool_abandoned = True
+@@ -3290,7 +3299,8 @@
+                     if metrics_collector:
+                         metrics_collector.end_turn(total_tokens=0)
+                     finish_bounded_completion(
+-                        f"turn_budget_exceeded: {error.reason}", step
++                        f"turn_budget_exceeded: {error.reason}", step,
++                        allow_model_summary=not model_timeout_retry_pending,
+                     )
+                     return current_messages
+                 fallback = (
+@@ -3377,7 +3387,6 @@
+                     model_budget_reservation,
+                     charge_estimate=True,
+                 )
+-                raise_if_cancelled(cancellation_token)
+                 model_duration_ms = (
+                     _finish_model_observation_clock(model_started_at)
+                     if event_sink is not None
+@@ -3396,6 +3405,33 @@
+                             model_duration_ms,
+                         ),
+                     )
++                raise_if_cancelled(cancellation_token)
++                raise_if_deadline_exceeded()
++                if completion_policy is not None:
++                    model_timeout_retry_pending = True
++                    if metrics_collector:
++                        metrics_collector.end_turn(total_tokens=0)
++                    if (
++                        model_timeout_retry_count == 0
++                        and step < max_steps
++                        and recovery_guard.stop_decision() is None
++                    ):
++                        model_timeout_retry_count += 1
++                        logger.warning(
++                            "Model transport timed out; retrying once within turn limits"
++                        )
++                        # The failed response produced no tool batch. Re-enter
++                        # normal admission with the completed tools' messages
++                        # intact; never replay those tools or reset this quota.
++                        continue
++                    finish_bounded_completion(
++                        "model transport timeout; automatic retry unavailable or exhausted",
++                        step,
++                        # A failing provider must not receive a third request
++                        # merely to describe its second timeout.
++                        allow_model_summary=False,
++                    )
++                    return current_messages
+                 turn_outcome = "failed"
+                 fallback = f"Model API timeout: {error}"
+                 logger.error("Model API timeout: %s", error)
+@@ -5005,7 +5041,10 @@
+         # convert the partial survey into a marked partial summary instead of
+         # a discarded hard failure.
+         if completion_policy is not None:
+-            finish_bounded_completion("execution step limit reached", step + 1)
++            finish_bounded_completion(
++                "execution step limit reached", step + 1,
++                allow_model_summary=not model_timeout_retry_pending,
++            )
+             return current_messages
+         if max_steps_soft_landing and max_steps is not None:
+             if _attempt_max_steps_soft_landing():

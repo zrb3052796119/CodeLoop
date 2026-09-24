@@ -5,7 +5,11 @@ from __future__ import annotations
 import os
 import time
 
-DEFAULT_TASK_TIMEOUT_SECONDS = 120.0
+# A focused read-only survey of a mid-sized repository legitimately runs
+# 1-2 minutes of model turns; the old 120s ceiling killed such surveys
+# mid-flight.  The value stays a cooperative default: MINICODE_TASK_TIMEOUT_
+# SECONDS and runtime settings still override it, and nesting only tightens.
+DEFAULT_TASK_TIMEOUT_SECONDS = 480.0
 MIN_TASK_TIMEOUT_SECONDS = 0.001
 MAX_TASK_TIMEOUT_SECONDS = 86_400.0
 

@@ -1,0 +1,42 @@
+
+==================================== ERRORS ====================================
+_______ ERROR collecting tests/test_memory_retrieval_hybrid_evaluator.py _______
+ImportError while importing test module '/Users/zhourunbo/code/coding agent/MiniCode-Python-main/tests/test_memory_retrieval_hybrid_evaluator.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_memory_retrieval_hybrid_evaluator.py:8: in <module>
+    import jsonschema
+E   ModuleNotFoundError: No module named 'jsonschema'
+____ ERROR collecting tests/test_memory_retrieval_semantic_gap_evaluator.py ____
+ImportError while importing test module '/Users/zhourunbo/code/coding agent/MiniCode-Python-main/tests/test_memory_retrieval_semantic_gap_evaluator.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_memory_retrieval_semantic_gap_evaluator.py:125: in <module>
+    from scripts.memory_retrieval_semantic_gap_evaluator import (
+scripts/memory_retrieval_semantic_gap_evaluator.py:24: in <module>
+    import jsonschema
+E   ModuleNotFoundError: No module named 'jsonschema'
+____ ERROR collecting tests/test_memory_retrieval_semantic_gap_isolation.py ____
+ImportError while importing test module '/Users/zhourunbo/code/coding agent/MiniCode-Python-main/tests/test_memory_retrieval_semantic_gap_isolation.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_memory_retrieval_semantic_gap_isolation.py:7: in <module>
+    import scripts.memory_retrieval_semantic_gap_evaluator as evaluator_module
+scripts/memory_retrieval_semantic_gap_evaluator.py:24: in <module>
+    import jsonschema
+E   ModuleNotFoundError: No module named 'jsonschema'
+=========================== short test summary info ============================
+ERROR tests/test_memory_retrieval_hybrid_evaluator.py
+ERROR tests/test_memory_retrieval_semantic_gap_evaluator.py
+ERROR tests/test_memory_retrieval_semantic_gap_isolation.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!
+3 errors in 3.31s

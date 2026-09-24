@@ -1,0 +1,113 @@
+diff --git a/minicode/tools/test_runner.py b/minicode/tools/test_runner.py
+index 406098c..0a2246e 100644
+--- a/minicode/tools/test_runner.py
++++ b/minicode/tools/test_runner.py
+@@ -211,9 +211,12 @@ def _run(input_data: dict, context) -> ToolResult:
+     # Build command
+     if framework == "pytest":
+         cmd = [sys.executable, "-m", "pytest"]
+-        
+-        # Add test files
+-        cmd.extend([str(f) for f in test_files[:10]])  # Limit to 10 files
++
++        # Pass every discovered (and pattern-filtered) test file. The previous
++        # `test_files[:10]` cap silently dropped files 11+ from the pytest
++        # invocation, so a failing test in a later file never executed and the
++        # tool reported a false pass (direct pytest would show the failure).
++        cmd.extend([str(f) for f in test_files])
+         
+         if verbose:
+             cmd.append("-v")
+diff --git a/tests/test_tools.py b/tests/test_tools.py
+index 1014b6f..92c6b70 100644
+--- a/tests/test_tools.py
++++ b/tests/test_tools.py
+@@ -433,6 +433,88 @@ def test_test_runner_attaches_verification_after_suite_exit(
+     }
+ 
+ 
++def test_test_runner_passes_every_discovered_test_file_to_pytest(
++    tmp_path: Path,
++    monkeypatch: pytest.MonkeyPatch,
++) -> None:
++    """A directory run must hand *every* discovered test file to pytest.
++
++    test_runner used to truncate the pytest invocation to the first 10 files,
++    so with more than 10 test files a failing case in the 11th+ file (sorted)
++    never executed and the tool reported a false pass.
++    """
++    workspace = tmp_path / "workspace"
++    suite = workspace / "tests"
++    suite.mkdir(parents=True)
++    expected: list[str] = []
++    for index in range(12):
++        name = f"test_{index:02d}_module.py"
++        (suite / name).write_text("def test_ok():\n    assert True\n", encoding="utf-8")
++        expected.append(name)
++
++    captured_cmds: list[list[str]] = []
++
++    def fake_run(cmd, **_kwargs):
++        captured_cmds.append(list(cmd))
++        return SimpleNamespace(returncode=0, stdout="12 passed", stderr="")
++
++    monkeypatch.setattr(test_runner_module.subprocess, "run", fake_run)
++
++    result = test_runner_tool.run(
++        {
++            "path": "tests",
++            "framework": "pytest",
++            "verbose": False,
++            "coverage": False,
++            "pattern": None,
++            "timeout": 60,
++        },
++        ToolContext(cwd=str(workspace), permissions=None),
++    )
++
++    assert result.ok is True
++    assert len(captured_cmds) == 1
++    passed_files = [Path(arg).name for arg in captured_cmds[0] if arg.endswith(".py")]
++    assert passed_files == expected
++
++
++def test_test_runner_directory_run_fails_when_last_discovered_file_fails(
++    tmp_path: Path,
++) -> None:
++    """End-to-end regression for the reported false pass.
++
++    With 12 test files where only the 12th (sorted last) contains a failing
++    case, plain pytest exits non-zero — so test_runner must report failure
++    too, instead of silently dropping that file from the pytest invocation.
++    """
++    workspace = tmp_path / "workspace"
++    suite = workspace / "tests"
++    suite.mkdir(parents=True)
++    for index in range(11):
++        (suite / f"test_{index:02d}_module.py").write_text(
++            "def test_ok():\n    assert True\n", encoding="utf-8"
++        )
++    (suite / "test_11_module.py").write_text(
++        "def test_broken():\n    assert False, 'regression lives here'\n",
++        encoding="utf-8",
++    )
++
++    result = test_runner_tool.run(
++        {
++            "path": "tests",
++            "framework": "pytest",
++            "verbose": False,
++            "coverage": False,
++            "pattern": None,
++            "timeout": 60,
++        },
++        ToolContext(cwd=str(workspace), permissions=None),
++    )
++
++    assert result.ok is False
++    assert "✗ Failed:  1" in result.output
++
++
+ def test_test_runner_permission_review_stays_approvable_for_an_in_workspace_target(
+     tmp_path: Path,
+     monkeypatch: pytest.MonkeyPatch,

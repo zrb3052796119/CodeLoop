@@ -105,24 +105,31 @@ def install_permission_prompt(
 ) -> tuple[threading.Event, dict[str, Any], Any]:
     approval_event = threading.Event()
     approval_result: dict[str, Any] = {}
+    # The concurrent tool batch can raise permission prompts from several
+    # worker threads at once. This single reusable channel is not safe for
+    # overlapping prompts: a second handler's reset would erase a decision
+    # the UI just published for the first, or swap the on-screen approval
+    # out from under it. Serialize so exactly one prompt is in flight.
+    prompt_lock = threading.Lock()
 
     def _permission_prompt_handler(request: dict[str, Any]) -> dict[str, Any]:
         nonlocal approval_result
-        # Reset the reusable channel before making the request observable.
-        # A renderer or input driver may resolve immediately after pending is
-        # published; clearing afterwards would erase that decision and wait
-        # forever.
-        approval_result.clear()
-        approval_event.clear()
-        state.pending_approval = PendingApproval(
-            request=request,
-            resolve=lambda r: None,
-        )
-        rerender()
-        approval_event.wait()
-        result = approval_result.copy()
-        state.pending_approval = None
-        return result
+        with prompt_lock:
+            # Reset the reusable channel before making the request observable.
+            # A renderer or input driver may resolve immediately after pending is
+            # published; clearing afterwards would erase that decision and wait
+            # forever.
+            approval_result.clear()
+            approval_event.clear()
+            state.pending_approval = PendingApproval(
+                request=request,
+                resolve=lambda r: None,
+            )
+            rerender()
+            approval_event.wait()
+            result = approval_result.copy()
+            state.pending_approval = None
+            return result
 
     args.permissions.prompt = _permission_prompt_handler
     return approval_event, approval_result, _permission_prompt_handler

@@ -1,0 +1,37 @@
+........................................................................ [  7%]
+........................................................................ [ 15%]
+........................................................................ [ 23%]
+........................................................................ [ 30%]
+........................................................................ [ 38%]
+........................................................................ [ 46%]
+........................................................................ [ 53%]
+........................................................................ [ 61%]
+........................................................................ [ 69%]
+........................................................................ [ 76%]
+...........................F............................................ [ 84%]
+........................................................................ [ 92%]
+........................................................................ [ 99%]
+..                                                                       [100%]
+=================================== FAILURES ===================================
+_____ test_previous_passing_verification_cannot_authorize_a_repaired_patch _____
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-855/test_previous_passing_verifica0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107d6da00>
+
+    def test_previous_passing_verification_cannot_authorize_a_repaired_patch(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        result, roles, _inputs, audits = _repair_run(
+            tmp_path, monkeypatch, rejection="reviewer", replay_verification=True
+        )
+        assert not result.ok
+        assert roles.count("executor") == 2
+        assert roles.count("reviewer") == 1
+>       assert "verifier_unavailable" in result.output
+E       assert 'verifier_unavailable' in '[Workflow structured workflow route failed]\n  Phases: explore -> plan -> execute -> verifier\n\n=== DETERMINISTIC VE...,"verification":{"checks":["check_tests: passed [artifact_verification_ba20098c7f30f5148203f567]"],"status":"passed"}}'
+E        +  where '[Workflow structured workflow route failed]\n  Phases: explore -> plan -> execute -> verifier\n\n=== DETERMINISTIC VE...,"verification":{"checks":["check_tests: passed [artifact_verification_ba20098c7f30f5148203f567]"],"status":"passed"}}' = ToolResult(ok=False, output='[Workflow structured workflow route failed]\n  Phases: explore -> plan -> execute -> veri...098c7f30f5148203f567]"],"status":"passed"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).output
+
+tests/test_workflow_implementation_repair.py:240: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_workflow_implementation_repair.py::test_previous_passing_verification_cannot_authorize_a_repaired_patch
+1 failed, 937 passed in 40.30s

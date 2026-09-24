@@ -235,9 +235,23 @@ def validate_turn_commits(
             or assistant_index >= len(messages)
             or messages[user_index].get("role") != "user"
             or not isinstance(messages[user_index].get("content"), str)
-            or messages[assistant_index].get("role") != "assistant"
+            or messages[assistant_index].get("role") not in {
+                "assistant",
+                "tool_result",
+            }
             or not isinstance(messages[assistant_index].get("content"), str)
             or not messages[assistant_index].get("content")
+            or (
+                messages[assistant_index].get("role") == "tool_result"
+                and (
+                    assistant_index <= 0
+                    or messages[assistant_index - 1].get("role")
+                    != "assistant_tool_call"
+                    or not messages[assistant_index].get("toolUseId")
+                    or messages[assistant_index - 1].get("toolUseId")
+                    != messages[assistant_index].get("toolUseId")
+                )
+            )
         ):
             raise TypeError("invalid Session turn commit")
         seen.add(turn_id)
@@ -526,6 +540,19 @@ def _session_index_file() -> Path:
     return MINI_CODE_DIR / "sessions_index.json"
 
 
+def _fsync_directory(directory: Path) -> None:
+    """Make a successful atomic replace durable in its parent directory."""
+    if os.name != "posix":
+        return
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    flags |= getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(directory, flags)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
 def _atomic_write_text(path: Path, content: str) -> None:
     """Atomically replace one UTF-8 text file under process-local coordination."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -536,6 +563,7 @@ def _atomic_write_text(path: Path, content: str) -> None:
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, path)
+        _fsync_directory(path.parent)
     finally:
         try:
             temporary.unlink()
@@ -544,19 +572,35 @@ def _atomic_write_text(path: Path, content: str) -> None:
 
 
 def _load_session_index() -> dict[str, SessionMetadata]:
-    """Load the session index (lightweight metadata for all sessions)."""
+    """Load the Session projection without laundering malformed data.
+
+    Writers rely on an exception here to preserve an invalid projection for
+    diagnosis and repair.  Treating invalid bytes as an empty valid index
+    would let the next save silently discard every unrelated Session entry.
+    Read-only callers that intentionally degrade to an empty view handle this
+    exception at their boundary.
+    """
     index_path = _session_index_file()
     if not index_path.exists():
         return {}
     try:
         raw = index_path.read_text(encoding="utf-8")
         data = json.loads(raw)
+        if not isinstance(data, dict):
+            raise TypeError("invalid Session index")
         return {
             sid: SessionMetadata(**meta)
             for sid, meta in data.items()
         }
-    except (json.JSONDecodeError, TypeError, KeyError):
-        return {}
+    except (
+        json.JSONDecodeError,
+        UnicodeDecodeError,
+        TypeError,
+        KeyError,
+        AttributeError,
+        ValueError,
+    ) as error:
+        raise ValueError("invalid Session index") from error
 
 
 def _save_session_index(index: dict[str, SessionMetadata]) -> None:
@@ -814,10 +858,17 @@ def _save_session_locked(session: SessionData, force_full: bool = False) -> None
         # Delta save: only append new data
         _save_delta(session)
     
-    # Update index (always lightweight)
-    index = _load_session_index()
-    index[session.session_id] = session.metadata
-    _save_session_index(index)
+    # The Session base/delta above is the canonical commit point.  The index
+    # is a rebuildable read projection: once canonical content is durable, a
+    # failed refresh must not make callers report that commit as failed.
+    # Leaving the old index in place also makes the drift visible to storage
+    # health and lets any later successful save repair it.
+    try:
+        index = _load_session_index()
+        index[session.session_id] = session.metadata
+        _save_session_index(index)
+    except Exception:  # noqa: BLE001 - canonical Session already committed
+        pass
 
 
 def load_session(session_id: str) -> SessionData | None:
@@ -1011,7 +1062,12 @@ def load_session(session_id: str) -> SessionData | None:
 
 def list_sessions() -> list[SessionMetadata]:
     """List all available sessions, newest first."""
-    index = _load_session_index()
+    try:
+        index = _load_session_index()
+    except (OSError, ValueError):
+        # This is a derived listing projection.  Storage health exposes the
+        # malformed authority while interactive listing remains fail-closed.
+        index = {}
     sessions = list(index.values())
     sessions.sort(key=lambda s: s.updated_at, reverse=True)
     return sessions

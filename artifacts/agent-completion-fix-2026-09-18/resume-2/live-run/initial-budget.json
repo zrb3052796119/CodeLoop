@@ -1,0 +1,11 @@
+{
+  "limitTotalTokens": 1000000,
+  "limitModelCalls": 40,
+  "limitCostUsd": "5",
+  "usedTotalTokens": 0,
+  "reservedTotalTokens": 0,
+  "usedModelCalls": 0,
+  "usedCostUsd": "0.0",
+  "usedInputTokens": 0,
+  "usedOutputTokens": 0
+}

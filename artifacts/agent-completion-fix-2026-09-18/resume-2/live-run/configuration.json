@@ -1,0 +1,55 @@
+{
+  "model": "glm-5.3-flash",
+  "provider": "custom",
+  "configSources": {
+    "model": "user_env",
+    "provider": "user_env",
+    "credential": {
+      "anthropic": "default",
+      "openai": "default",
+      "openrouter": "default",
+      "custom": "user_env",
+      "deepseek": "default"
+    },
+    "legacyModelFallbackEnabled": false
+  },
+  "toolProfile": "core",
+  "subagentRoutingEnabled": true,
+  "subagentProvider": "openai-compatible",
+  "subagentModels": {
+    "default": "qwen3.7-plus",
+    "explore": "qwen3.7-plus",
+    "plan": "qwen3.7-max",
+    "general": "qwen3.7-max"
+  },
+  "memoryHybridEnabled": false,
+  "memoryHybridEmbeddingProvider": "qwen",
+  "reflectionSynthesizerMode": "llm_shadow",
+  "recoveryLessonShadowEnabled": false,
+  "recoveryLessonMaxCalls": 2,
+  "intentSemanticClassifier": {
+    "enabled": false,
+    "calibrationConfigured": false,
+    "allowsUnreviewedCalibration": false
+  },
+  "skillCandidateReranker": {
+    "enabled": false,
+    "nativeJsonSchemaRequired": true
+  },
+  "skillSelection": {
+    "mode": "model",
+    "flatCatalogCharBudget": 8000,
+    "skillPageCharBudget": 4000,
+    "intentHints": false,
+    "intentPrefetch": false
+  },
+  "credentials": {
+    "primaryConfigured": true,
+    "subagentConfigured": true
+  },
+  "effectiveTurnBudget": {
+    "maxTokens": 1000000,
+    "maxModelCalls": 40,
+    "maxCostUsd": "5"
+  }
+}

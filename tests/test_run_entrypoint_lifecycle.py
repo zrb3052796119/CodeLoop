@@ -62,13 +62,13 @@ def test_classic_skill_routing_receives_the_workspace(
             captured["registry"] = registry
             return Routing()
 
+    def build_capability_snapshot(tools: FakeTools) -> str:
+        captured["snapshot_tools"] = tools
+        return "registry"
+
     monkeypatch.setattr(
-        "minicode.capability_registry.register_tool_capabilities",
-        lambda tools: captured.setdefault("tools", tools),
-    )
-    monkeypatch.setattr(
-        "minicode.capability_registry.get_registry",
-        lambda: "registry",
+        "minicode.capability_registry.build_tool_capability_snapshot",
+        build_capability_snapshot,
     )
     monkeypatch.setattr(
         "minicode.skill_router.build_skill_router",
@@ -87,7 +87,8 @@ def test_classic_skill_routing_receives_the_workspace(
     assert routed == []
     assert isinstance(routing, Routing)
     assert captured["workspace"] == workspace
-    assert captured["tools"] is tools
+    assert captured["snapshot_tools"] is tools
+    assert captured["registry"] == "registry"
 
 
 class RecordingJournal:
@@ -184,10 +185,19 @@ def patch_headless_runtime(
     monkeypatch.setattr("minicode.prompt.build_system_prompt", lambda *_args, **_kwargs: "system")
     monkeypatch.setattr("minicode.capability_registry.get_registry", lambda: object())
     monkeypatch.setattr("minicode.capability_registry.register_tool_capabilities", lambda _tools: None)
-    monkeypatch.setattr("minicode.intent_parser.parse_intent", lambda _prompt: object())
     monkeypatch.setattr(
-        "minicode.skill_router.SkillRouter",
-        lambda: SimpleNamespace(route=lambda *_args, **_kwargs: routing),
+        "minicode.capability_registry.build_tool_capability_snapshot",
+        lambda _tools: object(),
+    )
+    monkeypatch.setattr(
+        "minicode.intent_parser.parse_intent",
+        lambda _prompt, **_kwargs: object(),
+    )
+    monkeypatch.setattr(
+        "minicode.skill_router.build_skill_router",
+        lambda _workspace: SimpleNamespace(
+            route=lambda *_args, **_kwargs: routing
+        ),
     )
 
     def fake_agent_turn(**kwargs):
@@ -252,6 +262,52 @@ def test_headless_forwards_optional_current_state_registry_only_when_supplied(
     assert "mcp_current_state_registry" not in calls[1]
     assert calls[0]["include_user_interaction"] is False
     assert calls[1]["include_user_interaction"] is False
+
+
+def test_headless_routing_and_agent_loop_share_lifecycle_context(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    patch_headless_runtime(monkeypatch, agent_result="unused")
+    captured: dict[str, object] = {}
+    routing = SimpleNamespace(
+        used_fallback=True,
+        selected_skill_dicts=lambda: [],
+        to_dict=lambda: {},
+    )
+
+    class Router:
+        def route(self, _skills, _intent, registry, *, call_context=None):
+            captured["registry"] = registry
+            captured["routing_context"] = call_context
+            return routing
+
+    monkeypatch.setattr(
+        "minicode.skill_router.build_skill_router",
+        lambda _workspace: Router(),
+    )
+
+    def fake_agent_turn(**kwargs):
+        captured["loop_budget"] = kwargs["agent_budget"]
+        captured["loop_sink"] = kwargs["event_sink"]
+        return [
+            *kwargs["messages"],
+            {"role": "assistant", "content": "ok"},
+        ]
+
+    monkeypatch.setattr("minicode.agent_loop.run_agent_turn", fake_agent_turn)
+    monkeypatch.chdir(tmp_path)
+
+    assert headless_module.run_headless(
+        "route then execute",
+        run_observation_enabled=False,
+    ) == "ok"
+
+    context = captured["routing_context"]
+    assert isinstance(context, dict)
+    assert context["agent_budget"] is captured["loop_budget"]
+    assert context["event_sink"] is captured["loop_sink"]
+    assert context["purpose"] == "skill-routing"
 
 
 def test_real_agent_working_memory_event_precedes_assistant_and_terminal(
@@ -831,8 +887,47 @@ def test_event_driven_tui_turn_uses_real_session_id_and_completes(
     data_dir = tmp_path / "home" / ".mini-code"
 
     callback_calls: list[tuple[object, ...]] = []
+    lifecycle: dict[str, object] = {}
+    semantic_model = object()
+    semantic_adapter = SimpleNamespace(
+        infer=lambda _request, **_kwargs: (),
+    )
+    from minicode.skill_router import build_skill_router as real_router_builder
+    from minicode.intent_parser import parse_intent as real_parse_intent
+
+    real_router = real_router_builder(workspace)
+
+    class RecordingRouter:
+        def route(self, *args, **kwargs):
+            lifecycle["routing_context"] = kwargs.get("call_context")
+            return real_router.route(*args, **kwargs)
+
+    monkeypatch.setattr(
+        "minicode.skill_router.build_skill_router",
+        lambda _workspace: RecordingRouter(),
+    )
+
+    def build_semantic_adapter(model, *, runtime):
+        lifecycle["semantic_model"] = model
+        lifecycle["semantic_runtime"] = runtime
+        return semantic_adapter
+
+    def capture_parse_intent(prompt, **kwargs):
+        lifecycle["intent_call"] = kwargs
+        return real_parse_intent(prompt, **kwargs)
+
+    monkeypatch.setattr(
+        "minicode.intent_semantic_classifier.build_semantic_intent_adapter",
+        build_semantic_adapter,
+    )
+    monkeypatch.setattr(
+        "minicode.intent_parser.parse_intent",
+        capture_parse_intent,
+    )
 
     def fake_agent_turn(**kwargs):
+        lifecycle["loop_budget"] = kwargs["agent_budget"]
+        lifecycle["loop_sink"] = kwargs["event_sink"]
         operation_id = "modelop_" + "b" * 32
         kwargs["event_sink"].emit(
             "model.started", step=1, payload={"operationId": operation_id}
@@ -861,7 +956,7 @@ def test_event_driven_tui_turn_uses_real_session_id_and_completes(
     args = TtyAppArgs(
         runtime={"model": "fake"},
         tools=ToolRegistry([]),
-        model=object(),
+        model=semantic_model,
         messages=[{"role": "system", "content": "system"}],
         cwd=str(workspace),
         permissions=PermissionManager(str(workspace)),
@@ -887,6 +982,20 @@ def test_event_driven_tui_turn_uses_real_session_id_and_completes(
         ("start", "read_file", {"path": "visible-to-ui-only"}),
         ("result", "read_file", "visible UI result", False),
     ]
+    assert lifecycle["semantic_model"] is semantic_model
+    assert lifecycle["semantic_runtime"] is args.runtime
+    intent_call = lifecycle["intent_call"]
+    assert isinstance(intent_call, dict)
+    assert intent_call["semantic_adapter"] is semantic_adapter
+    intent_call_context = intent_call["call_context"]
+    assert intent_call_context["agent_budget"] is lifecycle["loop_budget"]
+    assert intent_call_context["event_sink"] is lifecycle["loop_sink"]
+    assert intent_call_context["cancellation_token"] is None
+    assert intent_call_context["deadline_monotonic"] is None
+    routing_context = lifecycle["routing_context"]
+    assert isinstance(routing_context, dict)
+    assert routing_context["agent_budget"] is lifecycle["loop_budget"]
+    assert routing_context["event_sink"] is lifecycle["loop_sink"]
     events = RunJournal(workspace, data_dir=data_dir).list_events(
         page.items[0].id
     ).items
@@ -1100,6 +1209,10 @@ def test_classic_non_tty_agent_turn_creates_one_tui_run_without_fake_session(
     permissions = CountingPermissions(str(workspace))
     tools = FakeTools()
     tools.list = lambda: []  # type: ignore[attr-defined]
+    semantic_model = object()
+    semantic_adapter = SimpleNamespace(
+        infer=lambda _request, **_kwargs: (),
+    )
     memory = SimpleNamespace(handle_user_memory_input=lambda _value: None)
     profile = SimpleNamespace(
         load_merged=lambda: None,
@@ -1123,7 +1236,11 @@ def test_classic_non_tty_agent_turn_creates_one_tui_run_without_fake_session(
     monkeypatch.setattr(main_module, "load_runtime_config", lambda _cwd: {})
     monkeypatch.setattr(main_module, "create_default_tool_registry", lambda *_args, **_kwargs: tools)
     monkeypatch.setattr(main_module, "PermissionManager", lambda *_args, **_kwargs: permissions)
-    monkeypatch.setattr(main_module, "create_model_adapter", lambda **_kwargs: object())
+    monkeypatch.setattr(
+        main_module,
+        "create_model_adapter",
+        lambda **_kwargs: semantic_model,
+    )
     monkeypatch.setattr(main_module, "build_system_prompt", lambda *_args, **_kwargs: "system")
     monkeypatch.setattr(main_module, "load_history_entries", lambda: [])
     monkeypatch.setattr(main_module, "save_history_entries", lambda _history: None)
@@ -1135,12 +1252,40 @@ def test_classic_non_tty_agent_turn_creates_one_tui_run_without_fake_session(
         selected_skills=[],
         used_fallback=True,
     )
+    lifecycle: dict[str, object] = {}
+
+    from minicode.intent_parser import parse_intent as real_parse_intent
+
+    def build_semantic_adapter(model, *, runtime):
+        lifecycle["semantic_model"] = model
+        lifecycle["semantic_runtime"] = runtime
+        return semantic_adapter
+
+    def capture_parse_intent(prompt, **kwargs):
+        lifecycle["intent_call"] = kwargs
+        return real_parse_intent(prompt, **kwargs)
+
+    monkeypatch.setattr(
+        "minicode.intent_semantic_classifier.build_semantic_intent_adapter",
+        build_semantic_adapter,
+    )
+    monkeypatch.setattr(
+        "minicode.intent_parser.parse_intent",
+        capture_parse_intent,
+    )
+
+    def route_skills(*_args, **kwargs):
+        lifecycle["routing_context"] = kwargs.get("call_context")
+        return [], skill_routing
+
     monkeypatch.setattr(
         main_module,
         "_route_skills_for_prompt",
-        lambda *_args: ([], skill_routing),
+        route_skills,
     )
     def classic_agent_turn(**kwargs):
+        lifecycle["loop_budget"] = kwargs["agent_budget"]
+        lifecycle["loop_sink"] = kwargs["event_sink"]
         operation_id = "modelop_" + "c" * 32
         kwargs["event_sink"].emit(
             "model.started", step=1, payload={"operationId": operation_id}
@@ -1205,3 +1350,17 @@ def test_classic_non_tty_agent_turn_creates_one_tui_run_without_fake_session(
     assert permissions.begin_calls == 1
     assert permissions.end_calls == 1
     assert tools.dispose_calls == 1
+    routing_context = lifecycle["routing_context"]
+    assert isinstance(routing_context, dict)
+    assert routing_context["agent_budget"] is lifecycle["loop_budget"]
+    assert routing_context["event_sink"] is lifecycle["loop_sink"]
+    assert lifecycle["semantic_model"] is semantic_model
+    assert lifecycle["semantic_runtime"] == {}
+    intent_call = lifecycle["intent_call"]
+    assert isinstance(intent_call, dict)
+    assert intent_call["semantic_adapter"] is semantic_adapter
+    intent_call_context = intent_call["call_context"]
+    assert intent_call_context["agent_budget"] is lifecycle["loop_budget"]
+    assert intent_call_context["event_sink"] is lifecycle["loop_sink"]
+    assert intent_call_context["cancellation_token"] is None
+    assert intent_call_context["deadline_monotonic"] is None

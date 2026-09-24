@@ -1,0 +1,20 @@
+🧪 Test Runner
+============================================================
+
+Framework: pytest
+Test files discovered: 1
+Test files executed: 1
+Pattern: all
+Coverage: disabled
+
+------------------------------------------------------------
+
+📊 Results:
+  ✓ Passed:  1
+  ✗ Failed:  1
+  ⚠ Errors:  2
+  ⊘ Skipped: 0
+
+❌ Failures:
+
+⚠️  1 warning(s)

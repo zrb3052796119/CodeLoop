@@ -1,0 +1,16 @@
+E                                                                        [100%]
+==================================== ERRORS ====================================
+_____ ERROR at setup of test_chat_http_success_has_versioned_safe_contract _____
+tests/test_dashboard_chat_http.py:117: in chat_server
+    server = ThreadingHTTPServer(("127.0.0.1", 0), MiniCodeGatewayHandler)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../miniconda3/lib/python3.13/socketserver.py:457: in __init__
+    self.server_bind()
+../../../miniconda3/lib/python3.13/http/server.py:140: in server_bind
+    socketserver.TCPServer.server_bind(self)
+../../../miniconda3/lib/python3.13/socketserver.py:478: in server_bind
+    self.socket.bind(self.server_address)
+E   PermissionError: [Errno 1] Operation not permitted
+=========================== short test summary info ============================
+ERROR tests/test_dashboard_chat_http.py::test_chat_http_success_has_versioned_safe_contract
+1 error in 0.37s

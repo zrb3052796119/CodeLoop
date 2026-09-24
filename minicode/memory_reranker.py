@@ -1,20 +1,14 @@
-"""Memory Reranker — LLM-based curation of BM25 search results.
+"""Legacy opt-in LLM reranker for standalone compatibility callers.
 
-Phase N1 of memory optimization. After BM25 retrieves top-15 candidates,
-the Reranker calls a lightweight LLM to:
+This module is not wired into canonical memory retrieval.  A caller may pass
+an already-configured model explicitly to curate a list of BM25 candidates:
 
 1. Select the 3-5 most relevant memories for the current task
 2. Detect contradictory memory pairs
 3. Generate a 2-3 sentence context summary
 
-Design principles:
-- Lightweight: uses Haiku-level model, ~$0.0005/query
-- Cached: LRU cache (task + memory IDs → result), 60s TTL
-- Fallback: any failure → original BM25 results unchanged
-- JSON output: strict format with robust parsing
-
-Architecture:
-  BM25 top-15 → Reranker.curate() → top 3-5 + summary + conflicts
+No provider or credential discovery occurs here.  Without an explicit model,
+the reranker is a deterministic offline pass-through.
 """
 from __future__ import annotations
 
@@ -134,7 +128,6 @@ class MemoryReranker:
         self._enabled = model_adapter is not None
         self._call_count = 0
         self._cache_hits = 0
-        self._fallback_count = 0
 
         # Internal LRU cache
         self._cache: dict[str, tuple[float, RerankResult]] = {}
@@ -200,7 +193,6 @@ class MemoryReranker:
             return result
         except Exception as e:
             logger.warning("MemoryReranker: LLM call failed, fallback to BM25: %s", e)
-            self._fallback_count += 1
             return RerankResult.fallback(
                 [getattr(c, 'id', '') for c in candidates[:5]]
             )
@@ -328,19 +320,10 @@ class MemoryReranker:
 # ── Convenience factory ─────────────────────────────────────────────
 
 def create_reranker(model: Any | None = None, **kwargs: Any) -> MemoryReranker:
-    """Create a MemoryReranker, auto-detecting suitable model if none provided."""
-    if model is not None:
-        return MemoryReranker(model_adapter=model, **kwargs)
+    """Create an explicitly configured reranker or an offline pass-through.
 
-    # Try to create a lightweight model for reranking
-    try:
-        from minicode.model_registry import create_model_adapter
-        adapter = create_model_adapter(
-            model="claude-haiku-3-5-20241022",
-            tools=None,
-            runtime={"model": "claude-haiku-3-5-20241022"},
-        )
-        return MemoryReranker(model_adapter=adapter, **kwargs)
-    except Exception:
-        logger.info("MemoryReranker: no model available, running in pass-through mode")
-        return MemoryReranker(model_adapter=None, **kwargs)
+    The canonical retrieval path does not use this compatibility module.  In
+    particular, omitting ``model`` must never discover credentials, construct a
+    provider adapter, or turn a local/unit-test call into remote model traffic.
+    """
+    return MemoryReranker(model_adapter=model, **kwargs)

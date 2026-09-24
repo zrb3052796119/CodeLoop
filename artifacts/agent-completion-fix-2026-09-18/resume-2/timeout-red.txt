@@ -1,0 +1,82 @@
+FFFFFFFF.FF..                                                            [100%]
+=================================== FAILURES ===================================
+______ test_transient_timeout_retries_with_fresh_budget_and_paired_events ______
+tests/test_primary_model_timeout_recovery.py:75: in test_transient_timeout_retries_with_fresh_budget_and_paired_events
+    assert model.calls == 2
+E   assert 1 == 2
+E    +  where 1 = <test_primary_model_timeout_recovery.Model object at 0x103a50470>.calls
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:3401 Model API timeout: transport open timed out
+___ test_repeated_timeout_retains_real_changes_and_checks_without_third_call ___
+tests/test_primary_model_timeout_recovery.py:121: in test_repeated_timeout_retains_real_changes_and_checks_without_third_call
+    assert model.calls == 4
+E   assert 3 == 4
+E    +  where 3 = <test_primary_model_timeout_recovery.Model object at 0x103a2b440>.calls
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:3401 Model API timeout: private transport payload
+_______ test_retry_allowance_is_not_reset_after_a_successful_model_step ________
+tests/test_primary_model_timeout_recovery.py:150: in test_retry_allowance_is_not_reset_after_a_successful_model_step
+    assert model.calls == 3
+E   assert 1 == 3
+E    +  where 1 = <test_primary_model_timeout_recovery.Model object at 0x103a52810>.calls
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:3401 Model API timeout: first timeout
+_ test_retry_budget_refusal_uses_host_summary_without_spending_closing_call[calls] _
+tests/test_primary_model_timeout_recovery.py:170: in test_retry_budget_refusal_uses_host_summary_without_spending_closing_call
+    assert messages[-1]["_partial"] is True
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: '_partial'
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:3401 Model API timeout: transport timeout
+_ test_retry_budget_refusal_uses_host_summary_without_spending_closing_call[tokens] _
+tests/test_primary_model_timeout_recovery.py:170: in test_retry_budget_refusal_uses_host_summary_without_spending_closing_call
+    assert messages[-1]["_partial"] is True
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: '_partial'
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:3401 Model API timeout: transport timeout
+_____ test_timeout_at_work_cap_uses_host_summary_without_a_closing_request _____
+tests/test_primary_model_timeout_recovery.py:178: in test_timeout_at_work_cap_uses_host_summary_without_a_closing_request
+    assert messages[-1]["_partial"] is True
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: '_partial'
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:3401 Model API timeout: transport timeout
+___ test_cancellation_during_timeout_forbids_retry_and_keeps_terminal_event ____
+tests/test_primary_model_timeout_recovery.py:190: in test_cancellation_during_timeout_forbids_retry_and_keeps_terminal_event
+    assert len([e for e in sink.events if e[0] == "model.failed"]) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+_______ test_deadline_expiring_during_timeout_forbids_retry_and_closing ________
+tests/test_primary_model_timeout_recovery.py:200: in test_deadline_expiring_during_timeout_forbids_retry_and_closing
+    with pytest.raises(loop.AgentTurnDeadlineExceeded):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE AgentTurnDeadlineExceeded
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:3401 Model API timeout: transport timeout
+_______ test_committed_receipt_is_preserved_without_reexecuting_its_tool _______
+tests/test_primary_model_timeout_recovery.py:226: in test_committed_receipt_is_preserved_without_reexecuting_its_tool
+    assert model.calls == 3
+E   assert 2 == 3
+E    +  where 2 = <test_primary_model_timeout_recovery.Model object at 0x103aeee40>.calls
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:3401 Model API timeout: transport timeout
+____ test_partial_stream_before_timeout_does_not_become_a_successful_final _____
+tests/test_primary_model_timeout_recovery.py:243: in test_partial_stream_before_timeout_does_not_become_a_successful_final
+    assert model.calls == 2
+E   assert 1 == 2
+E    +  where 1 = <test_primary_model_timeout_recovery.Model object at 0x103aedf40>.calls
+------------------------------ Captured log call -------------------------------
+ERROR    minicode.agent_loop:agent_loop.py:3401 Model API timeout: transport timeout
+=========================== short test summary info ============================
+FAILED tests/test_primary_model_timeout_recovery.py::test_transient_timeout_retries_with_fresh_budget_and_paired_events
+FAILED tests/test_primary_model_timeout_recovery.py::test_repeated_timeout_retains_real_changes_and_checks_without_third_call
+FAILED tests/test_primary_model_timeout_recovery.py::test_retry_allowance_is_not_reset_after_a_successful_model_step
+FAILED tests/test_primary_model_timeout_recovery.py::test_retry_budget_refusal_uses_host_summary_without_spending_closing_call[calls]
+FAILED tests/test_primary_model_timeout_recovery.py::test_retry_budget_refusal_uses_host_summary_without_spending_closing_call[tokens]
+FAILED tests/test_primary_model_timeout_recovery.py::test_timeout_at_work_cap_uses_host_summary_without_a_closing_request
+FAILED tests/test_primary_model_timeout_recovery.py::test_cancellation_during_timeout_forbids_retry_and_keeps_terminal_event
+FAILED tests/test_primary_model_timeout_recovery.py::test_deadline_expiring_during_timeout_forbids_retry_and_closing
+FAILED tests/test_primary_model_timeout_recovery.py::test_committed_receipt_is_preserved_without_reexecuting_its_tool
+FAILED tests/test_primary_model_timeout_recovery.py::test_partial_stream_before_timeout_does_not_become_a_successful_final
+10 failed, 3 passed in 0.40s

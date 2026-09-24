@@ -1,0 +1,26 @@
+{
+  "repository": "https://github.com/zrb3052796119/CodeLoop",
+  "commit": "638b7dd1f07c56b7fa864832f70cdcafc0cb3b0b",
+  "branch": "codex/fix-complete-test-discovery",
+  "trackedDiffEmpty": true,
+  "untracked": [
+    ".minicode-memory-authority.lock"
+  ],
+  "remote": "https://github.com/zrb3052796119/CodeLoop.git",
+  "modelDestinations": [
+    "open.bigmodel.cn",
+    "token-plan.cn-beijing.maas.aliyuncs.com"
+  ],
+  "priorUserAuthorization": {
+    "specificEndpointApproval": "用户在展示这两个端点、源码及工具输出传输说明后回复：可以 你开始测试吧",
+    "realPRRequest": "真实常见PR吧，你上github上找到一个合适的吧",
+    "continuation": "那你继续吧"
+  },
+  "harnessPath": "artifacts/agent-completion-fix-2026-09-18/run_live_continuation.py",
+  "budget": {
+    "maxModelCalls": 60,
+    "maxTokens": 2000000,
+    "maxCostUsd": 5
+  },
+  "externalWriteScope": "Only this repository, new codex/* branch, no force push, no merge; PR if authenticated."
+}

@@ -121,7 +121,9 @@ def test_structured_request_conservatively_derives_risk_and_complexity() -> None
         task_id=_TASK_ID,
         kind=TaskKind.CHANGE,
         risk=TaskRisk.HIGH,
-        complex=True,
+        # Two narrow paths no longer force complexity on their own; the
+        # sensitive auth scope keeps the risk-derived human gate.
+        complex=False,
         parent_has_sufficient_context=False,
         scope_clear=True,
         acceptance_executable=False,
@@ -184,7 +186,7 @@ def test_assignment_budget_projects_the_enforced_shared_limits() -> None:
     assert assignment.budget.max_output_tokens == 700
 
 
-def test_public_check_claim_cannot_skip_semantic_review_even_for_text() -> None:
+def test_narrow_fully_covered_low_risk_change_takes_the_scoped_route() -> None:
     raw = _workflow_request()
     raw["scope"] = {
         "readRoots": ["."],
@@ -197,6 +199,27 @@ def test_public_check_claim_cannot_skip_semantic_review_even_for_text() -> None:
     assert request.task_profile.risk is TaskRisk.LOW
     assert request.task_profile.complex is False
     assert request.task_profile.parent_has_sufficient_context is False
+    assert request.task_profile.acceptance_executable is True
+    # The Reviewer is skipped only here: the Verifier gate still runs every
+    # declared check before the frozen change may commit.
+    assert CentralScheduler().plan(request.task_profile).rule_id == (
+        "route.scoped_change"
+    )
+
+
+def test_wider_scope_keeps_the_reviewer_gate() -> None:
+    raw = _workflow_request()
+    raw["scope"] = {
+        "readRoots": ["."],
+        "writePaths": ["a.py", "b.py", "c.py"],
+        "forbiddenPaths": [".env", ".git"],
+    }
+
+    request = _parse_request(raw)
+
+    # Three write paths exceed the narrow-scope bound: the request cannot
+    # certify executable acceptance and keeps the full reviewed chain.
+    assert request.task_profile.acceptance_executable is False
     assert CentralScheduler().plan(request.task_profile).rule_id == (
         "route.reviewed_change"
     )

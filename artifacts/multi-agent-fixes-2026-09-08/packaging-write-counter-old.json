@@ -1,0 +1,26 @@
+{
+  "production_root": "/private/tmp/minicode-multi-agent-buggy-ahhcgrxd",
+  "loaded_modules": {
+    "file_review": "/private/tmp/minicode-multi-agent-buggy-ahhcgrxd/minicode/file_review.py",
+    "tooling": "/private/tmp/minicode-multi-agent-buggy-ahhcgrxd/minicode/tooling.py",
+    "permissions": "/private/tmp/minicode-multi-agent-buggy-ahhcgrxd/minicode/permissions.py"
+  },
+  "file_review_sha256": "6f65cf8250c4bb02a32b258aa215b5c6d34184ebb0f1a3c4b764f88566b6c324",
+  "ok": true,
+  "output": "Applied reviewed changes to installed-absolute-allow.txt",
+  "prompt_count": 1,
+  "prompt_kinds": [
+    "edit"
+  ],
+  "target_content": "installed-absolute-safe\n",
+  "target_content_correct": true,
+  "path_write_text_calls": [],
+  "smoke_counter_assertion_would_pass": false,
+  "atomic_replacements": [
+    {
+      "source_is_same_directory_temp": true,
+      "source_content": "installed-absolute-safe\n",
+      "destination_exactly_matches_counter_target": true
+    }
+  ]
+}

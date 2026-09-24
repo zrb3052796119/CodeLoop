@@ -23,15 +23,11 @@ from minicode.memory import (
     MemoryTier,
 )
 from minicode.memory_hybrid import (
-    HYBRID_CHALLENGER_PROMPT_VERSION,
-    HYBRID_CHALLENGER_SYSTEM_PROMPT,
-    HYBRID_CHALLENGER_MODE,
-    HYBRID_CHALLENGER_VETO_REASONS,
     HYBRID_EVIDENCE_SCHEMA_VERSION,
-    HYBRID_PROMPT_VERSION,
+    HYBRID_PROMOTION_INFERENCE_PROFILE,
     HYBRID_PROTOCOL_VERSION,
     HYBRID_QUERY_GATE_VERSION,
-    HYBRID_SYSTEM_PROMPT,
+    build_hybrid_decision_contract,
     build_hybrid_promotion_verifier_runtime,
     evidence_fingerprint,
 )
@@ -203,24 +199,8 @@ def evaluation_evidence(model_path: Path, verifier_model_id: str) -> dict[str, A
         "synthetic_data": True,
         "evaluation_only": True,
         "model": _model_identity(model_path),
-        "verifier": {
-            "model_id": verifier_model_id,
-            "prompt_version": HYBRID_PROMPT_VERSION,
-            "prompt_sha256": hashlib.sha256(
-                HYBRID_SYSTEM_PROMPT.encode("utf-8")
-            ).hexdigest(),
-            "minimum_confidence": 0.85,
-        },
-        "challenger": {
-            "model_id": verifier_model_id,
-            "prompt_version": HYBRID_CHALLENGER_PROMPT_VERSION,
-            "prompt_sha256": hashlib.sha256(
-                HYBRID_CHALLENGER_SYSTEM_PROMPT.encode("utf-8")
-            ).hexdigest(),
-            "minimum_confidence": 0.8,
-            "mode": HYBRID_CHALLENGER_MODE,
-            "veto_reason_codes": sorted(HYBRID_CHALLENGER_VETO_REASONS),
-        },
+        "inference_profile": dict(HYBRID_PROMOTION_INFERENCE_PROFILE),
+        **build_hybrid_decision_contract(verifier_model_id),
         "dense_top_k": DEFAULT_DENSE_TOP_K,
         "max_union_candidates": MAX_CANDIDATES,
         "max_model_calls_per_task": 8,
@@ -539,15 +519,17 @@ def main() -> None:
         "provider_fallback_count": metrics["provider_fallback_count"] == 0,
     }
     report = {
-        "schema_version": "2.0",
+        "schema_version": HYBRID_EVIDENCE_SCHEMA_VERSION,
         "protocol_version": HYBRID_PROTOCOL_VERSION,
         "synthetic_data": True,
         "one_shot": True,
         "holdout_version": args.holdout_version,
         "dataset": frozen,
         "model": _model_identity(args.model_path),
+        "inference_profile": evidence["inference_profile"],
         "verifier": evidence["verifier"],
         "challenger": evidence["challenger"],
+        "resolver": evidence["resolver"],
         "dense_top_k": DEFAULT_DENSE_TOP_K,
         "max_union_candidates": MAX_CANDIDATES,
         "candidate_corpus_protocol": "global_45_eligible_memories",

@@ -904,6 +904,21 @@ def _project_compact_trace(
     source = [dict(item) for item in raw_transitions if isinstance(item, dict)]
     if len(source) != len(raw_transitions) or not source:
         raise RuntimeError("scheduler trace transitions are invalid")
+    if count < len(source):
+        repair_indices = [
+            index for index, item in enumerate(source)
+            if item.get("outcome") == "repairing"
+        ]
+        if repair_indices:
+            # The durable audit retains every failed revision. The bounded
+            # parent-facing projection may show the final effective chain,
+            # but must never splice old approvals into the revised patch.
+            last_repair = repair_indices[-1]
+            source = [
+                item for index, item in enumerate(source)
+                if index > last_repair
+                or item.get("stage") in {"analyst", "human", "adjudicator"}
+            ]
     required_indices = {len(source) - 1}
     completed_by_stage: dict[str, int] = {}
     dispatched_by_identity: dict[tuple[str, str, str, str], int] = {}
@@ -1156,6 +1171,12 @@ def _project_final_tool_result(
         awaitUser=result.awaitUser,
         verification=result.verification if not failed else None,
         _must_deliver=snapshot.scheduler_outcome.committed,
+        _continue_parent=(
+            snapshot.scheduler_outcome.committed
+            and result.ok
+            and not failed
+            and not result.awaitUser
+        ),
     )
 
 

@@ -149,6 +149,13 @@ class RecoveryGuard:
         self._recent_failed_steps: deque[bool] = deque(maxlen=10)
         self._strategy_switch_issued = False
         self._pending_stop: RecoveryStop | None = None
+        # Command executions fail for their own reasons (missing paths, wrong
+        # cwd, bad module names) without any permission denial, and an
+        # unrelated success in the same step (e.g. a read_file) must not
+        # reset that failure streak — the benchmark showed retries spanning
+        # dozens of model calls when it did.
+        self._consecutive_command_failures = 0
+        self._command_switch_issued = False
 
     def suppression_for(self, call: Mapping[str, Any]) -> SuppressedAction | None:
         fingerprint = action_fingerprint(call)
@@ -168,15 +175,23 @@ class RecoveryGuard:
         else:
             guidance = (
                 "error[repeated_blocked_action]: Equivalent denied action "
-                "suppressed before execution. Use a "
-                "materially different path or an already-authorized tool action; "
-                "do not repeat the denied target through another wrapper."
+                "suppressed before execution. Do not repeat the same denied "
+                "target through another direct tool; to still make the "
+                'change, delegate it through task with agent_type="workflow" '
+                "(the central scheduler owns authorized writes), or use a "
+                "materially different authorized approach."
             )
         return SuppressedAction(fingerprint=fingerprint, message=guidance)
 
     def observe(self, call: Mapping[str, Any], *, ok: bool, output: str) -> None:
         if not ok and output.casefold().startswith(_PERMISSION_DENIED_PREFIX):
             self._denied[action_fingerprint(call)] += 1
+        if str(call.get("toolName") or "") == "run_command":
+            if ok:
+                self._consecutive_command_failures = 0
+                self._command_switch_issued = False
+            else:
+                self._consecutive_command_failures += 1
 
     def denial_count(self, call: Mapping[str, Any]) -> int:
         """Return prior permission denials for this equivalence class."""
@@ -192,16 +207,30 @@ class RecoveryGuard:
         Suppressed calls are intentionally excluded.  Permission repetition has
         its own tighter circuit, while this budget covers distinct real tool
         failures.  Any real success is treated as progress and resets the
-        consecutive-failure budget.
+        consecutive-failure budget.  The command-failure circuit is evaluated
+        independently of step success: a failing command streak must not be
+        masked by unrelated successes in the same step.
         """
         if not executed_outcomes or self._pending_stop is not None:
             return None
+        if self._consecutive_command_failures >= 5:
+            self._pending_stop = self._general_failure_stop(
+                reason_code="consecutive_command_failures"
+            )
+            return None
+        command_nudge: str | None = None
+        if (
+            self._consecutive_command_failures >= 3
+            and not self._command_switch_issued
+        ):
+            command_nudge = self._issue_command_switch_nudge()
+
         failed_step = not any(executed_outcomes)
         self._recent_failed_steps.append(failed_step)
         if not failed_step:
             self._consecutive_failed_steps = 0
             self._strategy_switch_issued = False
-            return None
+            return command_nudge
 
         self._consecutive_failed_steps += 1
         if self._consecutive_failed_steps >= 5:
@@ -217,7 +246,10 @@ class RecoveryGuard:
                 reason_code="failure_window_exhausted"
             )
             return None
-        if self._consecutive_failed_steps == 3 and not self._strategy_switch_issued:
+        if (
+            self._consecutive_failed_steps == 3
+            and not self._strategy_switch_issued
+        ):
             self._strategy_switch_issued = True
             return (
                 "error[strategy_switch_required]: Three consecutive tool steps "
@@ -225,7 +257,20 @@ class RecoveryGuard:
                 "evidence and choose materially different tools or inputs. Two "
                 "more failed steps will open the recovery circuit."
             )
-        return None
+        return command_nudge
+
+    def _issue_command_switch_nudge(self) -> str:
+        self._command_switch_issued = True
+        return (
+            "error[command_strategy_switch_required]: Three command "
+            "executions have failed in a row (permission denials or "
+            "execution errors). Do not try another spelling of the same "
+            "command. Re-check the file layout, the working directory, and "
+            "the module paths against the repository before running "
+            "anything; then issue at most one corrected direct command, or "
+            "report the blocker honestly. Two more failed commands will "
+            "open the recovery circuit."
+        )
 
     def _general_failure_stop(self, *, reason_code: str) -> RecoveryStop:
         return RecoveryStop(

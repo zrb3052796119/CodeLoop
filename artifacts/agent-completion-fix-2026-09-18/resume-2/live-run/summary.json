@@ -1,0 +1,65 @@
+{
+  "historySource": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/continuation/review-retry/live-run/messages.json",
+  "historyMessageCount": 29,
+  "runId": "run_a7aae85c367440fcbc2f4b0a1247a45d",
+  "failure": null,
+  "durationSeconds": 360.29,
+  "workflowApprovals": [],
+  "permissions": [],
+  "budgetSnapshot": {
+    "limitTotalTokens": 1000000,
+    "limitModelCalls": 40,
+    "limitCostUsd": "5",
+    "usedTotalTokens": 26046,
+    "reservedTotalTokens": 0,
+    "usedModelCalls": 2,
+    "usedCostUsd": "0.0",
+    "usedInputTokens": 26046,
+    "usedOutputTokens": 0
+  },
+  "budgetCaveat": "Internal admission counters include charged estimates for timeout; unpriced default-cost estimate is not actual billing; provider usage excludes failed requests without receipts.",
+  "taskOutcome": {
+    "outcomeVersion": 2,
+    "outcomeStatus": "unknown",
+    "completionSucceeded": false,
+    "verificationStatus": "unverified",
+    "verificationPassedCount": 0,
+    "verificationFailedCount": 0,
+    "goalAchieved": false,
+    "learningSuccess": null,
+    "hadToolErrors": false,
+    "errorsRecovered": false,
+    "toolErrorCount": 0
+  },
+  "modelFailures": [
+    {
+      "operationId": "modelop_5759526c0a2b4eeb903990394513bc8b",
+      "failureKind": "timeout",
+      "durationMs": 180003
+    },
+    {
+      "operationId": "modelop_f4780aa485e64d1dad79e484f892986b",
+      "failureKind": "timeout",
+      "durationMs": 180003
+    }
+  ],
+  "failedModelCallsWithoutUsageReceipt": 2,
+  "modelCalls": 2,
+  "inputTokens": 0,
+  "outputTokens": 0,
+  "subagents": [],
+  "eventTypes": [
+    "run.queued",
+    "run.started",
+    "memory.retrieved",
+    "memory.rendered",
+    "model.started",
+    "model.failed",
+    "model.started",
+    "model.failed",
+    "execution.completion_limited",
+    "task.outcome",
+    "assistant.completed",
+    "run.completed"
+  ]
+}

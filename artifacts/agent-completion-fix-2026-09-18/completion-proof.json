@@ -1,0 +1,23 @@
+{
+  "before": {
+    "exitCode": 1,
+    "cwd": "/private/tmp/codeloop-completion-before-3uj6925e",
+    "testSha256": "0ca723b29f031731a86169120f62640487ffd1c12dd9e067a973cb87dec9a015",
+    "output": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/completion-before.txt"
+  },
+  "after": {
+    "exitCode": 0,
+    "cwd": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main",
+    "testSha256": "0ca723b29f031731a86169120f62640487ffd1c12dd9e067a973cb87dec9a015",
+    "output": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/agent-completion-fix-2026-09-18/completion-after.txt"
+  },
+  "command": [
+    "python3",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_primary_agent_completion.py",
+    "-k",
+    "primary_limit_returns_findings_instead_of_discarding_them or closing_tool_calls_are_not_executed"
+  ]
+}

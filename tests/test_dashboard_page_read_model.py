@@ -7,6 +7,13 @@ from unittest.mock import patch
 
 import pytest
 
+from minicode.memory import (
+    MemoryEntry,
+    MemoryScope,
+    MemoryTier,
+    _approval_hash_for_entry,
+)
+from minicode.memory_authority_io import CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION
 from minicode.session import load_session
 from minicode.web.read_model import DashboardReadError, DashboardReadModel
 
@@ -95,6 +102,56 @@ def _write_memory_scope(
     return path
 
 
+def _current_memory_entry(
+    entry_id: str,
+    *,
+    content: str = "safe current memory",
+    updated_at: float = 2.0,
+) -> dict[str, object]:
+    entry = MemoryEntry(
+        id=entry_id,
+        scope=MemoryScope.PROJECT,
+        category="testing",
+        content=content,
+        created_at=max(0.0, updated_at - 1),
+        updated_at=updated_at,
+        tier=MemoryTier.SHORT_TERM,
+        last_accessed=0.0,
+    )
+    entry.approval_content_hash = _approval_hash_for_entry(entry)
+    return entry.to_dict()
+
+
+def _write_current_memory_scope(
+    directory: Path,
+    entries: list[dict[str, object]],
+    *,
+    schema_version: int = CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION,
+) -> Path:
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / "memory.json"
+    authority = {
+        "schemaVersion": schema_version,
+        "scope": "project",
+        "last_updated": 3.0,
+        "entries": entries,
+        "approval_audit": [],
+        "write_receipts": [],
+        "pipeline_operation_receipts": [],
+    }
+    if schema_version == CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION:
+        authority["approval_audit_head"] = None
+        authority["observation_receipts"] = {
+            "maintenance": [],
+            "telemetry": [],
+        }
+    path.write_text(
+        json.dumps(authority),
+        encoding="utf-8",
+    )
+    return path
+
+
 def _memory_entry(
     entry_id: str,
     scope: str,
@@ -120,6 +177,8 @@ def _memory_entry(
         "updated_at": updated_at,
         "retrieval_count": 3,
         "injection_count": 2,
+        "success_count": 9,
+        "failure_count": 1,
         "usefulness_score": 0.8,
         "corroborated_success_count": corroborated_success_count,
         "corroborated_failure_count": corroborated_failure_count,
@@ -908,7 +967,103 @@ def test_memory_page_returns_real_summary_and_safe_bounded_items(tmp_path: Path)
     assert "hidden-value" not in json.dumps(payload)
 
 
-def test_memory_page_rejects_entries_with_invalid_corroborated_fields(
+@pytest.mark.parametrize(
+    "corruption",
+    [
+        "bad_state_digest",
+        "unsupported_schema",
+        "entry_capacity",
+        "content_capacity",
+    ],
+)
+def test_current_memory_authority_errors_fail_the_scope_on_page_and_overview(
+    tmp_path: Path,
+    corruption: str,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    entries = [_current_memory_entry("project-current")]
+    schema_version = CURRENT_MEMORY_AUTHORITY_SCHEMA_VERSION
+    if corruption == "bad_state_digest":
+        entries[0]["authority_state_digest"] = "0" * 64
+    elif corruption == "unsupported_schema":
+        schema_version = 999
+    elif corruption == "entry_capacity":
+        entries = [
+            _current_memory_entry(f"project-{index}")
+            for index in range(201)
+        ]
+    elif corruption == "content_capacity":
+        entries = [
+            _current_memory_entry(
+                "project-large",
+                content="x" * (26 * 1024),
+            )
+        ]
+    memory_path = _write_current_memory_scope(
+        workspace / ".mini-code-memory",
+        entries,
+        schema_version=schema_version,
+    )
+    before = memory_path.read_bytes()
+    before_names = sorted(path.name for path in memory_path.parent.iterdir())
+    model = DashboardReadModel(workspace, data_dir=data_dir)
+
+    page = model.memory()
+    overview = model.snapshot()
+
+    assert page["source"]["status"] == "error"
+    assert page["scopes"]["project"]["status"] == "error"
+    assert page["summary"]["byScope"]["project"] is None
+    assert page["items"] == []
+    assert overview["sources"]["memory"]["status"] == "error"
+    assert overview["overview"]["memory"]["scopes"]["project"] == {
+        "status": "error",
+        "count": None,
+        "tiers": None,
+        "categories": None,
+    }
+    assert memory_path.read_bytes() == before
+    assert sorted(path.name for path in memory_path.parent.iterdir()) == before_names
+
+
+def test_valid_current_memory_authority_is_shared_by_page_and_overview(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    data_dir = tmp_path / "home" / ".mini-code"
+    _write_current_memory_scope(
+        workspace / ".mini-code-memory",
+        [_current_memory_entry("project-current")],
+    )
+    model = DashboardReadModel(workspace, data_dir=data_dir)
+
+    page = model.memory()
+    overview = model.snapshot()
+
+    assert page["scopes"]["project"] == {
+        "status": "live",
+        "count": 1,
+        "location": ".mini-code-memory/",
+    }
+    assert page["items"][0]["id"] == "project-current"
+    assert page["items"][0]["approvalStatus"] == "approved"
+    assert overview["overview"]["memory"]["scopes"]["project"] == {
+        "status": "live",
+        "count": 1,
+        "tiers": {
+            "working": 0,
+            "short_term": 1,
+            "long_term": 0,
+            "archival": 0,
+        },
+        "categories": {"testing": 1},
+    }
+
+
+def test_memory_page_rejects_scope_with_invalid_corroborated_fields(
     tmp_path: Path,
 ) -> None:
     workspace = tmp_path / "workspace"
@@ -948,9 +1103,11 @@ def test_memory_page_rejects_entries_with_invalid_corroborated_fields(
 
     payload = DashboardReadModel(workspace, data_dir=data_dir).memory()
 
-    assert [item["id"] for item in payload["items"]] == ["project-valid"]
+    assert payload["scopes"]["project"]["status"] == "error"
+    assert payload["summary"]["byScope"]["project"] is None
+    assert payload["items"] == []
     assert any(
-        item["code"] == "entry_invalid" for item in payload["diagnostics"]
+        item["code"] == "scope_read_failed" for item in payload["diagnostics"]
     )
 
 
@@ -1077,6 +1234,7 @@ def test_memory_page_isolates_corrupt_scopes_and_malformed_entries(
         "status": "error",
         "count": 1,
         "location": ".mini-code-memory/",
+        "migrationRequired": True,
     }
     assert {item["id"] for item in payload["items"]} == {
         "project-valid",
@@ -1151,10 +1309,10 @@ def test_memory_page_never_disguises_or_exposes_unapproved_unsafe_content(
     for entry_id in ("suspicious", "unsafe", "unapproved"):
         assert by_id[entry_id]["content"] == "[Content hidden by safety policy]"
         assert by_id[entry_id]["contentHidden"] is True
-    assert by_id["suspicious"]["safetyStatus"] == "suspicious"
+    assert by_id["suspicious"]["safetyStatus"] == "safe"
     assert by_id["suspicious"]["approvalStatus"] == "pending"
     assert by_id["unsafe"]["lifecycleStatus"] == "rejected"
-    assert by_id["unsafe"]["safetyStatus"] == "unsafe"
+    assert by_id["unsafe"]["safetyStatus"] == "safe"
     assert by_id["unsafe"]["approvalStatus"] == "rejected"
     serialized = json.dumps(payload)
     for secret in (
@@ -1321,10 +1479,10 @@ def test_memory_page_truncates_content_without_changing_files_or_counters(
             "project",
             category="testing",
             tier="short_term",
-            content=f"memory-{index}-" + "x" * 5_000,
-            updated_at=float(index),
+            content=f"memory-{index}-" + "x" * 1_150,
+            updated_at=float(index + 1),
         )
-        for index in range(30)
+        for index in range(21)
     ]
     memory_path = _write_memory_scope(
         workspace / ".mini-code-memory", "project", entries

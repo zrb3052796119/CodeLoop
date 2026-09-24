@@ -14,9 +14,11 @@ import json
 import re
 import stat
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from pathlib import Path
 
 from minicode.agent_budget import AgentTurnBudget
@@ -48,14 +50,17 @@ from minicode.multi_agent_contracts import (
     WorkflowRequest,
     analyst_report_requires_reclassification,
     parse_assignment,
+    parse_conflict_package,
     parse_executor_declaration,
     parse_implementation_order,
     parse_role_result,
     parse_verification_result,
     parse_workflow_request,
+    repair_role_payload,
 )
 from minicode.scheduler_artifacts import (
     AssignmentArtifactChannel,
+    SchedulerArtifactError,
     SchedulerArtifactStore,
 )
 from minicode.scheduler_audit import (
@@ -72,7 +77,7 @@ from minicode.subagent_journal import (
 from minicode.subagent_observation import (
     emit_subagent_observation as _emit_subagent_observation,
 )
-from minicode.subagent_types import AGENT_TYPES, MAX_AGENT_DEPTH
+from minicode.subagent_types import AGENT_TYPES, MAX_AGENT_DEPTH, resolve_max_turns
 from minicode.task_deadline import (
     TaskDeadlineExceeded as _TaskDeadlineExceeded,
 )
@@ -94,6 +99,18 @@ from minicode.workflow_finalization import (
     _WorkflowFinalizationSnapshot,
     _WorkflowObservation,
     finalize_workflow,
+)
+from minicode.workflow_scope_registry import (
+    WorkflowScopeRegistration,
+    WorkflowWriteScopeConflict,
+    process_workflow_scope_registry,
+)
+from minicode.workflow_repair import (
+    REPAIR_REQUEST_TYPE,
+    implementation_repair_input_refs,
+    parse_implementation_repair_request,
+    review_supports_implementation_repair,
+    verification_supports_implementation_repair,
 )
 from minicode.workflow_workspace import (
     FrozenWorkflowChange as _FrozenWorkflowChange,
@@ -180,6 +197,7 @@ class _WorkflowExecutionState:
     research_notes: str
     review_key: str
     review_result: ToolResult | None
+    role_result_parse_errors: dict[str, str]
     run_subagent: _RunSubagent
     scheduler_artifact_authority: object
     task_id: str
@@ -187,6 +205,9 @@ class _WorkflowExecutionState:
     transaction: _WorkflowWorkspaceTransaction | None
     transitions: list[SchedulerTransition]
     typed_review: dict[str, object]
+    adjudication_verdict: dict[str, object] | None
+    pending_conflict_artifact_id: str | None
+    pending_conflict_package: dict[str, object] | None
     verification_artifact_id: str | None
     verification_evidence_ids: list[str]
     verification_result: dict[str, object] | None
@@ -222,11 +243,24 @@ def _deterministic_verifier_for_context(
             if raw_trusted is None and isinstance(verifier_settings, dict):
                 raw_trusted = verifier_settings.get("_trustedExecutables")
     trusted_executables = dict(raw_trusted) if isinstance(raw_trusted, dict) else {}
+    raw_explicit = getattr(context, "_verifier_explicit_trusted_executables", None)
+    if not isinstance(raw_explicit, dict):
+        # Host embedders inject the field through ToolContext; the CLI path
+        # resolves the same user-owned env channel directly.
+        from minicode.verifier_sandbox import user_registered_trusted_executables
+
+        raw_explicit = user_registered_trusted_executables()
+    explicit_trusted = {
+        str(name): str(path)
+        for name, path in raw_explicit.items()
+        if isinstance(name, str) and isinstance(path, str)
+    }
     if trusted_git_executable is not None:
         trusted_executables["git"] = trusted_git_executable
     return DeterministicVerifier(
         sandbox_backend=backend,
         trusted_executables=trusted_executables,
+        explicit_trusted_executables=explicit_trusted,
         untrusted_executable_roots=(
             (untrusted_executable_root,)
             if untrusted_executable_root is not None
@@ -507,11 +541,14 @@ def _build_worker_assignment(
         .replace("+00:00", "Z")
     )
     budget_snapshot = agent_budget.snapshot()
+    # Declared per-role model-call budget, resolved through the same
+    # host-overridable knob the phase dispatch applies so the Assignment
+    # never promises a limit the worker does not actually get.
     role_model_limit = {
-        "analyst": AGENT_TYPES["plan"]["max_turns"],
-        "executor": AGENT_TYPES["general"]["max_turns"],
-        "reviewer": AGENT_TYPES["plan"]["max_turns"],
-        "adjudicator": AGENT_TYPES["plan"]["max_turns"],
+        "analyst": resolve_max_turns("plan"),
+        "executor": resolve_max_turns("general"),
+        "reviewer": resolve_max_turns("plan"),
+        "adjudicator": resolve_max_turns("plan"),
     }[role]
     remaining_model_calls = role_model_limit
     if budget_snapshot.limit_model_calls is not None:
@@ -700,7 +737,9 @@ def _freeze_analyst_evidence(
                         content_digest.update(line)
             if line_end > line_count:
                 raise _WorkflowIsolationError(
-                    "Analyst evidence line range exceeds the snapshot file"
+                    "Analyst evidence line range exceeds the snapshot file: "
+                    f"{relative} has {line_count} lines but claim "
+                    f"{claim_id or '<unknown>'} cites lineEnd {line_end}"
                 )
             identity = (
                 f"{getattr(stage_assignment, 'assignment_id')}\0"
@@ -735,11 +774,195 @@ def _freeze_analyst_evidence(
     return frozen
 
 
+# Independent verification checks each clone the frozen tree; more than
+# three concurrent clones turns the disk into the bottleneck.
+_PARALLEL_VERIFICATION_WORKERS = 3
+_RISK_CONFLICT_STOP_CHOICE = "stop_for_reclassification"
+_RISK_CONFLICT_CONTINUE_CHOICE = "proceed_under_locked_classification"
+
+
+def _freeze_analyst_risk_conflict(
+    request: WorkflowRequest,
+    stage_assignment: object,
+    analyst_assignment: Assignment,
+    report: Mapping[str, object],
+    *,
+    analyst_evidence_ids: Sequence[str],
+    workflow_request_artifact_id: str,
+) -> tuple[dict[str, object], str]:
+    """Freeze one scheduler-owned risk-reclassification conflict.
+
+    The Analyst validated risks above the locked Assignment risk.  Instead
+    of silently discarding either authority, the escalation becomes a frozen
+    ConflictPackage: claim A carries the Analyst's exceeding findings with
+    their frozen evidence snapshots, claim B carries the locked profile's
+    grounds (declared write scope, forbidden paths, bound verification).
+    Claims order the continuation second so the scheduler's ``select_b``
+    verdict is the only resumption path.
+    """
+
+    assigned_rank = {
+        "low": 0,
+        "medium": 1,
+        "high": 2,
+        "critical": 3,
+    }[analyst_assignment.risk.value]
+    exceeding: list[Mapping[str, object]] = [
+        risk
+        for risk in (
+            item
+            if isinstance(item, Mapping)
+            else None
+            for item in (report.get("risks") or [])
+        )
+        if risk is not None
+        and {
+            "low": 0,
+            "medium": 1,
+            "high": 2,
+            "critical": 3,
+        }.get(str(risk.get("severity")), -1)
+        > assigned_rank
+    ]
+    if not exceeding:
+        raise ValueError("no exceeding Analyst risk to freeze")
+    conflict_identity = (
+        f"{analyst_assignment.workflow_id}\0"
+        f"{getattr(stage_assignment, 'assignment_id')}"
+    )
+    conflict_seed = hashlib.sha256(conflict_identity.encode("utf-8")).hexdigest()
+    analyst_statement = " ".join(
+        str(risk.get("statement") or "").strip() for risk in exceeding[:4]
+    )[:1200]
+    claim_a_evidence = (
+        list(analyst_evidence_ids[:8])
+        if analyst_evidence_ids
+        else [workflow_request_artifact_id]
+    )
+    claim_b_statement = (
+        "The locked Assignment classification stands: the request declares "
+        f"kind={request.task_profile.kind.value}, risk={analyst_assignment.risk.value}, "
+        f"{len(request.scope.write_paths)} bounded write path(s), forbidden "
+        f"paths enforced, {len(request.criteria)} acceptance criteria, and "
+        f"{len(request.verification_checks)} bound deterministic verification "
+        "check(s); every promoted byte must still pass the Verifier gate."
+    )[:1200]
+    package: dict[str, object] = {
+        "conflictVersion": 1,
+        "conflictId": f"conflict_{conflict_seed[:16]}",
+        "workflowId": analyst_assignment.workflow_id,
+        "taskId": analyst_assignment.task_id,
+        "kind": "risk",
+        "risk": str(exceeding[0].get("severity")),
+        "question": {
+            "questionId": f"question_{conflict_seed[:16]}",
+            "prompt": (
+                "Validated Analyst findings exceed the locked Assignment "
+                "risk. Should this workflow proceed under the locked "
+                "classification, or stop for reclassification?"
+            ),
+            "choices": [
+                _RISK_CONFLICT_STOP_CHOICE,
+                _RISK_CONFLICT_CONTINUE_CHOICE,
+            ],
+        },
+        "claims": [
+            {
+                "claimId": "claim_analyst_risk",
+                "choice": _RISK_CONFLICT_STOP_CHOICE,
+                "statement": analyst_statement
+                or "Analyst findings exceed the locked risk.",
+                "evidenceRefs": claim_a_evidence,
+            },
+            {
+                "claimId": "claim_locked_profile",
+                "choice": _RISK_CONFLICT_CONTINUE_CHOICE,
+                "statement": claim_b_statement,
+                "evidenceRefs": [workflow_request_artifact_id],
+            },
+        ],
+        "evidenceDigest": "sha256:"
+        + hashlib.sha256(
+            json.dumps(
+                {
+                    "conflictId": f"conflict_{conflict_seed[:16]}",
+                    "analystEvidence": claim_a_evidence,
+                    "lockedEvidence": [workflow_request_artifact_id],
+                },
+                sort_keys=True,
+            ).encode("utf-8")
+        ).hexdigest(),
+        "voteEligible": False,
+    }
+    validated = parse_conflict_package(
+        package,
+        workflow_id=analyst_assignment.workflow_id,
+        task_id=analyst_assignment.task_id,
+    )
+    conflict_artifact_id = (
+        "artifact_conflict_"
+        + hashlib.sha256(
+            conflict_identity.encode("utf-8")
+        ).hexdigest()[:32]
+    )
+    return validated, conflict_artifact_id
+
+
+def _analyst_findings_notes(
+    report: Mapping[str, object] | None,
+    *,
+    maximum_chars: int = 4_000,
+) -> str:
+    """Bound the Analyst's frozen findings into executor prompt context.
+
+    The findings are already contract-validated and byte-frozen; restating
+    them (statement plus evidence path/lines) lets the Executor start from
+    the surveyed facts instead of re-reading each cited file cold.
+    """
+
+    if not isinstance(report, Mapping):
+        return ""
+    findings = report.get("findings")
+    if not isinstance(findings, list) or not findings:
+        return ""
+    lines: list[str] = []
+    used = 0
+    for finding in findings:
+        if not isinstance(finding, Mapping):
+            continue
+        statement = str(finding.get("statement") or "").strip()
+        if not statement:
+            continue
+        evidence = finding.get("evidence")
+        citations = []
+        if isinstance(evidence, list):
+            for item in evidence[:2]:
+                if isinstance(item, Mapping):
+                    citations.append(
+                        f"{item.get('path')}:{item.get('lineStart')}-"
+                        f"{item.get('lineEnd')}"
+                    )
+        line = "- " + statement
+        if citations:
+            line += " (" + ", ".join(citations) + ")"
+        if used + len(line) > maximum_chars:
+            break
+        lines.append(line)
+        used += len(line) + 1
+    if not lines:
+        return ""
+    return (
+        "ANALYST FINDINGS (frozen evidence; use these instead of "
+        "re-reading the cited files for context):\n" + "\n".join(lines)
+    )
+
+
 def _role_result_instruction(
     assignment: Assignment,
     *,
     result_key: str,
     implementation_order: ImplementationOrder | None = None,
+    previous_error: str | None = None,
 ) -> str:
     if assignment.role.value == "analyst":
         read_root = assignment.scope.read_roots[0]
@@ -834,6 +1057,22 @@ def _role_result_instruction(
             "requestedChecks": [],
             "confidence": "high|medium|low",
         }
+    elif assignment.role.value == "adjudicator":
+        template = {
+            "resultVersion": 1,
+            "assignmentId": assignment.assignment_id,
+            "conflictId": "conflict_<id from the ConflictPackage>",
+            "decision": "select_a|select_b|synthesize|insufficient|human_required",
+            "resolvedClaims": [
+                {
+                    "claimId": "claim_<one claim from the ConflictPackage>",
+                    "resolution": "why this claim was accepted or rejected",
+                    "evidenceRefs": ["<ConflictPackage claim evidence refs only>"],
+                }
+            ],
+            "conditions": [],
+            "confidence": "high|medium|low",
+        }
     else:
         template = {
             "resultVersion": 1,
@@ -844,7 +1083,7 @@ def _role_result_instruction(
         if assignment.role.value == "analyst"
         else MAX_ROLE_CONTRACT_BYTES
     )
-    return (
+    instruction = (
         "The Scheduler accepts only a strict role result. Before your final "
         "answer, call subagent_note_write exactly once with key "
         f"`{result_key}` and content containing ONLY JSON shaped like this "
@@ -856,6 +1095,53 @@ def _role_result_instruction(
         "bytes. Executor results must not include a "
         "changeSet; the Scheduler derives it from frozen workspace bytes."
     )
+    if assignment.role.value == "analyst":
+        instruction += (
+            "\nOptional list element shapes: each risks entry is an object "
+            '{"severity": "low|medium|high|critical", "statement": "...", '
+            '"evidenceRefs": ["claim_1"]}; unknowns and verificationRequests '
+            "entries are plain strings."
+            "\nEvidence line ranges must stay within the cited file's actual "
+            "line count; the Scheduler freezes each citation against exact "
+            "file bytes and rejects any lineEnd beyond the end of the file."
+        )
+    if assignment.role.value == "executor":
+        instruction += (
+            "\nselfChecks must stay an empty array and every stepResults "
+            "entry must keep artifactRefs as an empty array: the Verifier "
+            "owns command evidence and the Scheduler owns artifacts. Report "
+            "honest per-step status in stepResults and any deviation in "
+            "deviations instead."
+            "\nStatus rule: \"completed\" requires every step completed, no "
+            "blockers, and no high-impact deviation. If a step itself cannot "
+            "be completed — e.g. a file in allowedPaths does not exist or an "
+            "edit could not be applied — status must be \"blocked\" with a "
+            "blocker naming the obstacle; never report \"completed\" with "
+            "blockers. Running verification commands is the Verifier's job, "
+            "not yours: when no command-execution tool is available, leave "
+            "verification to the Verifier and note it at most as a "
+            "low-impact deviation."
+            "\nOptional list element shapes: each deviations entry is an "
+            'object {"stepId": "s1", "reason": "...", "impact": '
+            '"low|medium|high"}; blockers entries are plain strings.'
+        )
+    if assignment.role.value == "adjudicator":
+        instruction += (
+            "\ndecision selects claims by ConflictPackage order: select_a is "
+            "the FIRST claim, select_b the SECOND. A decisive decision "
+            "(select_a/select_b/synthesize) must resolve claims in "
+            "resolvedClaims, and every resolution's evidenceRefs may cite "
+            "only evidence refs already present in the ConflictPackage "
+            "claims. decisions insufficient and human_required fail the "
+            "workflow closed rather than guessing."
+        )
+    if previous_error is not None:
+        instruction += (
+            "\nYour previous submission for this assignment failed "
+            f"validation: {previous_error}. Correct the JSON and resubmit "
+            "the complete document."
+        )
+    return instruction
 
 
 def _read_role_result_payload(channel: object, key: str) -> object:
@@ -869,6 +1155,113 @@ def _read_role_result_payload(channel: object, key: str) -> object:
         return json.loads(note.content)
     except (TypeError, ValueError) as exc:
         raise ValueError("role result is not valid JSON") from exc
+
+
+_ROLE_RESULT_ERROR_FEEDBACK_LIMIT = 400
+
+
+def _role_result_error_feedback(error: BaseException) -> str:
+    """Bounded single-line validation feedback for the next attempt prompt."""
+    text = " ".join(f"{type(error).__name__}: {error}".split())
+    if len(text) > _ROLE_RESULT_ERROR_FEEDBACK_LIMIT:
+        text = text[: _ROLE_RESULT_ERROR_FEEDBACK_LIMIT - 1].rstrip() + "…"
+    return text
+
+
+def _read_role_result_payload_with_repair(channel: object, key: str) -> tuple[object, bool]:
+    """Read one role payload, applying bounded format repair before failing.
+
+    Returns ``(payload, repaired)``.  Repair only strips format noise; the
+    unchanged strict ``parse_role_result`` validation still runs afterwards.
+    """
+    reader = getattr(channel, "read", None)
+    if not callable(reader):
+        raise ValueError("role result channel is unavailable")
+    note = reader(key)
+    if note is None:
+        raise ValueError("role result is missing")
+    content = getattr(note, "content", None)
+    try:
+        return json.loads(content), False
+    except (TypeError, ValueError):
+        pass
+    repaired = repair_role_payload(content)
+    if repaired is not None:
+        try:
+            return json.loads(repaired), True
+        except (TypeError, ValueError):
+            pass
+    raise ValueError("role result is not valid JSON")
+
+
+def _repair_receipt_artifact_id(stage_assignment: object, role_code: str) -> str:
+    """Unique audit artifact recording one repaired role payload attempt."""
+    identity = (
+        f"{getattr(stage_assignment, 'assignment_id')}\0"
+        f"{getattr(stage_assignment, 'attempt_id')}\0{role_code}\0repair"
+    )
+    return (
+        "artifact_repair_"
+        + hashlib.sha256(identity.encode("utf-8")).hexdigest()[:32]
+    )
+
+
+def _publish_role_result_repair_receipt(
+    state: _WorkflowExecutionState,
+    stage_assignment: object,
+    role_code: str,
+) -> None:
+    """Record that format repair was applied; audit stays able to tell a
+    first-pass-clean payload apart from a repaired one."""
+    try:
+        state.artifact_store.publish(
+            _repair_receipt_artifact_id(stage_assignment, role_code),
+            {
+                "repairReceiptVersion": 1,
+                "resultType": "RoleResultRepairReceipt.v1",
+                "assignmentId": getattr(stage_assignment, "assignment_id"),
+                "attemptId": getattr(stage_assignment, "attempt_id"),
+                "agentRunId": getattr(stage_assignment, "agent_run_id"),
+                "stage": getattr(stage_assignment, "stage").value,
+                "role": role_code,
+                "repaired": True,
+            },
+            authority=state.scheduler_artifact_authority,
+        )
+    except Exception:  # noqa: BLE001 - repair telemetry must not fail the stage
+        pass
+
+
+class _RepairingRoleResultChannel:
+    """Write boundary that repairs format noise before the Store's JSON gate.
+
+    Only format noise is repaired (markdown fences, surrounding prose,
+    invisible characters); Store canonicalization and the unchanged strict
+    ``parse_role_result`` contract still decide acceptance, so semantic
+    failures stay fail-closed.  Whether a repair was applied is exposed so
+    the Scheduler can publish an audit receipt distinguishing a
+    first-pass-clean payload from a repaired one.
+    """
+
+    def __init__(self, inner: AssignmentArtifactChannel) -> None:
+        self._inner = inner
+        self.repaired = False
+
+    def write(self, key: str, content: str, *, author: str):
+        try:
+            return self._inner.write(key, content, author=author)
+        except SchedulerArtifactError as error:
+            if "not valid JSON" not in str(error):
+                raise
+            repaired = repair_role_payload(content)
+            if repaired is None:
+                raise
+            written = self._inner.write(key, repaired, author=author)
+            self.repaired = True
+            return written
+
+    def __getattr__(self, name: str):
+        return getattr(self._inner, name)
 
 
 def _workflow_result_counts(results: list[ToolResult]) -> tuple[int, int]:
@@ -962,6 +1355,8 @@ def _record_workflow_observation(
     if journal is not None:
         budget = getattr(context, "_agent_budget", None)
         snapshot = getattr(budget, "snapshot", None)
+        attributed_tokens = getattr(budget, "attributed_tokens", None)
+        tokens = attributed_tokens() if callable(attributed_tokens) else None
         try:
             journal.finish(
                 subagent_id,
@@ -976,6 +1371,8 @@ def _record_workflow_observation(
                 max_turns=_WORKFLOW_MAX_PHASES,
                 result_truncated=observation.result_truncated,
                 budget=snapshot() if callable(snapshot) else None,
+                input_tokens=tokens[0] if tokens is not None else None,
+                output_tokens=tokens[1] if tokens is not None else None,
             )
         except Exception:  # noqa: BLE001 - sidecar observation is optional
             pass
@@ -983,6 +1380,29 @@ def _record_workflow_observation(
 
 class _WorkflowCommitStateUnknown(BaseException):
     """Promotion was interrupted and the parent is neither base nor target."""
+
+
+def _inline_explore_notes(
+    explore_results: list[ToolResult],
+    *,
+    per_facet_chars: int = 3_000,
+) -> str:
+    """Bound parallel-explore outputs into inline Analyst prompt context."""
+
+    sections: list[str] = []
+    for result in explore_results:
+        text = str(result.output or "").strip()
+        if not text:
+            continue
+        if len(text) > per_facet_chars:
+            text = text[:per_facet_chars] + "\n…(truncated)"
+        sections.append(text)
+    if not sections:
+        return ""
+    return (
+        "\n\nPRE-SURVEY (parallel read-only exploration; treat as leads to "
+        "verify, not frozen evidence):\n" + "\n---\n".join(sections)
+    )
 
 
 def _run_parallel_exploration(
@@ -1048,6 +1468,30 @@ def _run_parallel_exploration(
     return [results_by_key[key] for key, _ in _WORKFLOW_EXPLORATION_FACETS]
 
 
+def _workflow_declared_write_paths(
+    input_data: dict,
+    *,
+    subagent_id: str,
+) -> tuple[str, ...]:
+    """Best-effort declared write scope for admission and baseline scoping.
+
+    The phase runner re-parses the request and owns the typed contract
+    failure; an unparseable request can never reach the Executor stage, so
+    admission treats it as an empty scope and lets that downstream error
+    stand.  The legacy fallback declares no write paths and never conflicts.
+    """
+    try:
+        request = parse_workflow_request(
+            input_data.get("workflow_request"),
+            legacy_task_id="task_" + subagent_id.removeprefix("sub_"),
+        )
+    except Exception:  # noqa: BLE001 - the phase runner owns the typed error
+        return ()
+    if not request.structured:
+        return ()
+    return request.scope.write_paths
+
+
 def run_workflow(
     input_data: dict,
     context,
@@ -1056,14 +1500,25 @@ def run_workflow(
     subagent_id: str,
     run_subagent: _RunSubagent,
 ) -> ToolResult:
-    """Run a workflow against a disposable workspace transaction."""
+    """Run a workflow against a disposable workspace transaction.
+
+    Admission first claims the declared write scope in the process-local
+    registry so overlapping concurrent workflows are rejected before any
+    stage burns model budget; the claim is released on every terminal path.
+    """
     agent_budget = getattr(context, "_agent_budget", None)
     if agent_budget is None:
         runtime = getattr(context, "_runtime", None)
         agent_budget = AgentTurnBudget.from_runtime(
             runtime if isinstance(runtime, dict) else {}
         )
-        context = replace(context, _agent_budget=agent_budget)
+    # The workflow row is the single journal entry for the whole scheduled
+    # chain, so its attribution view must see every phase's model calls:
+    # phases nest their own views inside this one through the shared context.
+    attribution_view = getattr(agent_budget, "attribution_view", None)
+    if callable(attribution_view):
+        agent_budget = attribution_view(subagent_id)
+    context = replace(context, _agent_budget=agent_budget)
     workflow_journal = _open_subagent_journal(context)
     if workflow_journal is not None:
         try:
@@ -1096,6 +1551,51 @@ def run_workflow(
     deadline_monotonic = getattr(context, "_task_deadline_monotonic", None)
     transaction: _WorkflowWorkspaceTransaction | None = None
     workflow_result: ToolResult | None = None
+
+    # Process-local admission: refuse before the snapshot when the declared
+    # write scope overlaps an active workflow.  The claim is held through
+    # promotion and released on every terminal path (see the finally below).
+    workflow_id = "wf_" + subagent_id.removeprefix("sub_")
+    declared_write_paths = _workflow_declared_write_paths(
+        input_data,
+        subagent_id=subagent_id,
+    )
+    resolved_write_paths = tuple(
+        (Path(context.cwd).resolve(strict=False) / path).as_posix()
+        for path in declared_write_paths
+    )
+    scope_registry = process_workflow_scope_registry()
+    scope_registration: WorkflowScopeRegistration | None = None
+    try:
+        scope_registration = scope_registry.register(
+            workflow_id,
+            write_paths=resolved_write_paths,
+        )
+    except WorkflowWriteScopeConflict as conflict:
+        _emit_workflow_observation(
+            context,
+            subagent_id=subagent_id,
+            result_contract_status="unavailable",
+            journal=workflow_journal,
+            outcome="write_scope_conflict",
+            results=[],
+            phase_count=0,
+            started=isolation_started,
+            model_turn_limit=_workflow_model_turn_limit(agent_budget),
+            result_truncated=False,
+        )
+        overlap_preview = ", ".join(
+            f"{incoming} ~ {active}"
+            for incoming, active in conflict.overlapping_paths[:5]
+        )
+        return ToolResult(
+            ok=False,
+            output=(
+                "error[workflow_write_conflict]: declared write scope overlaps "
+                f"active workflow {conflict.conflicting_workflow_id} "
+                f"({overlap_preview}); rerun after it finishes"
+            ),
+        )
 
     def committed_fallback(finalization: str) -> ToolResult:
         status = {
@@ -1160,6 +1660,13 @@ def run_workflow(
             ),
             timeout_seconds=timeout_seconds,
             operation_checkpoint=lambda: _raise_task_deadline(context),
+            # Keep the declared write bound for freeze and apply reconciliation.
+            # Promotion validates the complete snapshot baseline because write
+            # paths alone do not prove the change's read dependencies.
+            baseline_scope_paths=(
+                declared_write_paths if declared_write_paths else None
+            ),
+            baseline_scope_relative_to_cwd=True,
         ) as transaction:
             isolated_input = dict(input_data)
             isolated_input["prompt"] = transaction.remap_text(input_data["prompt"])
@@ -1173,6 +1680,28 @@ def run_workflow(
                 transaction=transaction,
                 run_subagent=run_subagent,
             )
+            if input_data.get("_workflow_auto_constructed") is True:
+                # Keep the simplified entry distinguishable from a
+                # hand-written WorkflowRequest.v1 in the result handed back
+                # to the parent; the input flag carries the same fact for
+                # embedders and tests.
+                workflow_result = replace(
+                    workflow_result,
+                    output=(
+                        workflow_result.output
+                        + "\n\nrequestSource: auto-constructed from the "
+                        "simplified task entry ("
+                        + (
+                            "structured WorkflowRequest.v1 built from "
+                            "write_paths/verification_commands)"
+                            if input_data.get("_workflow_auto_constructed_mode")
+                            == "structured"
+                            else "fail-closed legacy request; no write paths "
+                            "were declared, so the declared write scope stays "
+                            "empty)"
+                        )
+                    ),
+                )
         return workflow_result
     except (_TaskDeadlineExceeded, AgentTurnDeadlineExceeded) as exc:
         promoted = promoted_result_or_fallback("timed_out_after_commit")
@@ -1245,6 +1774,12 @@ def run_workflow(
         if promoted is not None:
             return promoted
         raise
+    finally:
+        # Every terminal path (success, failure, cancellation, timeout and
+        # all post-promotion fallbacks) releases the admission claim so a
+        # later workflow may reuse the same write paths.
+        if scope_registration is not None:
+            scope_registry.unregister(scope_registration.workflow_id)
 
 
 class _WorkflowRunSession:
@@ -1346,16 +1881,6 @@ class _WorkflowRunSession:
             _agent_budget=agent_budget,
             _workflow_phase=True,
         )
-        if input_data.get("workflow_request") is not None and input_data.get(
-            "parallel_explore"
-        ):
-            return ToolResult(
-                ok=False,
-                output=(
-                    "error[structured_parallel_bypass_rejected]: legacy parallel "
-                    "exploration is not part of the central DispatchPlan"
-                ),
-            )
         mailbox = getattr(context, "_subagent_mailbox", None)
         explore_results: list[ToolResult] = []
         if input_data.get("parallel_explore"):
@@ -1368,14 +1893,21 @@ class _WorkflowRunSession:
             )
             _raise_task_deadline(context)
 
-        research_notes = (
-            "\n\nResearch notes are available in the shared mailbox under "
-            "workflow_explore_architecture, workflow_explore_tests and "
-            "workflow_explore_risks. Read the relevant notes with "
-            "subagent_note_read before finalizing the plan."
-            if explore_results
-            else ""
-        )
+        structured = input_data.get("workflow_request") is not None
+        if structured:
+            # Structured Analysts read only scheduler-assigned artifacts, so
+            # the fan-out survey is inlined into their prompt (bounded per
+            # facet) instead of the legacy shared-mailbox notes.
+            research_notes = _inline_explore_notes(explore_results)
+        else:
+            research_notes = (
+                "\n\nResearch notes are available in the shared mailbox under "
+                "workflow_explore_architecture, workflow_explore_tests and "
+                "workflow_explore_risks. Read the relevant notes with "
+                "subagent_note_read before finalizing the plan."
+                if explore_results
+                else ""
+            )
 
         plan_result: ToolResult | None = None
         execute_result: ToolResult | None = None
@@ -1510,6 +2042,7 @@ class _WorkflowRunSession:
             research_notes=research_notes,
             review_key=review_key,
             review_result=review_result,
+            role_result_parse_errors={},
             run_subagent=run_subagent,
             scheduler_artifact_authority=scheduler_artifact_authority,
             task_id=task_id,
@@ -1517,6 +2050,9 @@ class _WorkflowRunSession:
             transaction=transaction,
             transitions=transitions,
             typed_review=typed_review,
+            adjudication_verdict=None,
+            pending_conflict_artifact_id=None,
+            pending_conflict_package=None,
             verification_artifact_id=verification_artifact_id,
             verification_evidence_ids=verification_evidence_ids,
             verification_result=verification_result,
@@ -1740,6 +2276,8 @@ class _WorkflowRunSession:
             return self._run_executor(assignment)
         if assignment.stage is DispatchStage.REVIEWER:
             return self._run_reviewer(assignment)
+        if assignment.stage is DispatchStage.ADJUDICATOR:
+            return self._run_adjudicator(assignment)
         return StageResult(
             status="failed",
             artifact_id=_stage_receipt_artifact_id(assignment),
@@ -1780,6 +2318,7 @@ class _WorkflowRunSession:
                 ),
                 write_key=result_key,
             )
+            channel = _RepairingRoleResultChannel(channel)
             analyst_context = replace(
                 self._execution_state().child_context,
                 _subagent_mailbox=channel,
@@ -1799,7 +2338,13 @@ class _WorkflowRunSession:
                     "prompt": (
                         "Complete only this immutable Analyst Assignment. "
                         "Every material claim needs a repository path and "
-                        "line range. Do not modify files.\n\nASSIGNMENT:\n"
+                        "line range. Do not modify files.\n"
+                        + (
+                            self._execution_state().research_notes
+                            if self._execution_state().research_notes
+                            else ""
+                        )
+                        + "\n\nASSIGNMENT:\n"
                         + json.dumps(
                             analyst_assignment.to_dict(),
                             ensure_ascii=False,
@@ -1810,6 +2355,11 @@ class _WorkflowRunSession:
                     "_result_instruction": _role_result_instruction(
                         analyst_assignment,
                         result_key=result_key,
+                        previous_error=(
+                            self._execution_state().role_result_parse_errors.get(
+                                "analyst"
+                            )
+                        ),
                     ),
                 },
                 analyst_context,
@@ -1817,19 +2367,32 @@ class _WorkflowRunSession:
             )
             if self._execution_state().plan_result.ok:
                 try:
-                    self._execution_state().analyst_report = parse_role_result(
-                        analyst_assignment,
-                        _read_role_result_payload(
+                    analyst_payload, analyst_repaired = (
+                        _read_role_result_payload_with_repair(
                             self._execution_state().artifact_store,
                             result_key,
-                        ),
+                        )
                     )
-                except Exception:
+                    self._execution_state().analyst_report = parse_role_result(
+                        analyst_assignment,
+                        analyst_payload,
+                    )
+                except Exception as exc:
+                    self._execution_state().role_result_parse_errors["analyst"] = (
+                        _role_result_error_feedback(exc)
+                    )
                     return StageResult(
                         status="failed",
                         artifact_id=_stage_receipt_artifact_id(assignment),
                         retryable=True,
                         error_code="analyst_result_invalid",
+                    )
+                self._execution_state().role_result_parse_errors.pop("analyst", None)
+                if analyst_repaired or channel.repaired:
+                    _publish_role_result_repair_receipt(
+                        self._execution_state(),
+                        assignment,
+                        "analyst",
                     )
                 try:
                     if self._execution_state().transaction is None:
@@ -1868,7 +2431,13 @@ class _WorkflowRunSession:
                         },
                         authority=self._execution_state().scheduler_artifact_authority,
                     )
-                except _WorkflowIsolationError:
+                except _WorkflowIsolationError as exc:
+                    # Same bounded-feedback seam as parse failures: the retry
+                    # prompt names the offending evidence rule so the Analyst
+                    # can correct its citations instead of repeating them.
+                    self._execution_state().role_result_parse_errors["analyst"] = (
+                        _role_result_error_feedback(exc)
+                    )
                     return StageResult(
                         status="failed",
                         artifact_id=_stage_receipt_artifact_id(assignment),
@@ -1894,10 +2463,40 @@ class _WorkflowRunSession:
                     analyst_assignment,
                     self._execution_state().analyst_report,
                 ):
+                    conflict_package, conflict_artifact_id = (
+                        _freeze_analyst_risk_conflict(
+                            self._execution_state().workflow_request,
+                            assignment,
+                            analyst_assignment,
+                            self._execution_state().analyst_report,
+                            analyst_evidence_ids=(
+                                self._execution_state().analyst_evidence_ids
+                            ),
+                            workflow_request_artifact_id=(
+                                self._execution_state()
+                                .workflow_request_artifact_id
+                            ),
+                        )
+                    )
+                    self._execution_state().artifact_store.publish(
+                        conflict_artifact_id,
+                        conflict_package,
+                        authority=(
+                            self._execution_state().scheduler_artifact_authority
+                        ),
+                    )
+                    self._execution_state().pending_conflict_package = (
+                        conflict_package
+                    )
+                    self._execution_state().pending_conflict_artifact_id = (
+                        conflict_artifact_id
+                    )
                     return StageResult(
                         status="blocked",
                         artifact_id=self._execution_state().analyst_artifact_id,
                         error_code=("analyst_risk_requires_reclassification"),
+                        escalate_conflict=conflict_package,
+                        conflict_artifact_id=conflict_artifact_id,
                     )
         else:
             self._execution_state().plan_result = self._execution_state().run_subagent(
@@ -1953,6 +2552,96 @@ class _WorkflowRunSession:
             else "plan_phase_failed",
         )
 
+    def _repair_budget_available(self) -> bool:
+        state = self._execution_state()
+        if not state.workflow_request.structured or state.profile.human_confirmation_required:
+            return False
+        budget = state.agent_budget.snapshot()
+        return (
+            (budget.limit_model_calls is None or budget.used_model_calls < budget.limit_model_calls)
+            and (budget.limit_total_tokens is None or (
+                budget.used_total_tokens + budget.reserved_total_tokens < budget.limit_total_tokens
+            ))
+            and (budget.limit_cost_usd is None or (
+                Decimal(budget.used_cost_usd) < Decimal(budget.limit_cost_usd)
+            ))
+        )
+
+    def _verification_repairable(self) -> bool:
+        state = self._execution_state()
+        if (
+            not self._repair_budget_available()
+            or state.verification_result is None
+            or not state.change_diff_artifact
+            or state.change_diff_artifact.get("complete") is not True
+        ):
+            return False
+        documents = []
+        for artifact_id in state.verification_evidence_ids:
+            artifact = state.artifact_store.read(artifact_id)
+            if artifact is None:
+                return False
+            documents.append(json.loads(artifact.content))
+        return verification_supports_implementation_repair(state.verification_result, documents)
+
+    def _prepare_implementation_repair(self, assignment) -> tuple[str, dict[str, object]]:
+        state = self._execution_state()
+        if (
+            not self._repair_budget_available()
+            or state.transaction is None
+            or state.frozen_workspace_change is None
+            or state.implementation_order is None
+        ):
+            raise ValueError("implementation repair authority is unavailable")
+        source = state.artifact_store.read(assignment.repair_source_artifact_id)
+        if source is None:
+            raise ValueError("implementation repair feedback is unavailable")
+        source_document = json.loads(source.content)
+        source_stage = (
+            "verifier" if source_document.get("resultType") == "VerificationResult.v1"
+            else "reviewer"
+        )
+        if not (
+            self._verification_repairable() if source_stage == "verifier"
+            else review_supports_implementation_repair(source_document)
+        ):
+            raise ValueError("implementation repair source is not actionable")
+        request = parse_implementation_repair_request({
+            "repairVersion": 1,
+            "resultType": REPAIR_REQUEST_TYPE,
+            "workflowId": state.workflow_id,
+            "taskId": state.task_id,
+            "assignmentId": assignment.assignment_id,
+            "repairIndex": assignment.repair_index,
+            "sourceStage": source_stage,
+            "sourceArtifactRef": assignment.repair_source_artifact_id,
+            "requestArtifactRef": state.workflow_request_artifact_id,
+            "previousExecutionArtifactRef": state.execution_artifact_id,
+            "previousOrderRef": state.implementation_order.order_id,
+            "previousDiffArtifactRef": state.change_diff_artifact_id,
+            "previousPatchDigest": state.frozen_workspace_change.patch_digest,
+            "previousVerificationArtifactRef": state.verification_artifact_id,
+            "evidenceRefs": list(state.verification_evidence_ids),
+        })
+        artifact_id = f"artifact_repair_{assignment.assignment_id}"
+        state.artifact_store.publish(artifact_id, request, authority=state.scheduler_artifact_authority)
+        state.transaction.resume_for_repair(state.frozen_workspace_change)
+        # No previous patch capability or gate approval may authorize a revision.
+        state.frozen_workspace_change = None
+        state.frozen_change_set = None
+        state.execution_artifact = None
+        state.execution_artifact_id = None
+        state.change_diff_artifact = None
+        state.change_diff_artifact_id = None
+        state.verification_result = None
+        state.verification_artifact_id = None
+        state.verification_evidence_ids.clear()
+        state.acceptance_evidence_matrix = None
+        state.acceptance_evidence_matrix_id = None
+        state.review_result = None
+        state.typed_review = _workflow_review_not_applicable()
+        return artifact_id, request
+
     def _run_executor(self, assignment) -> StageResult:
         if (
             self._execution_state().profile.human_confirmation_required
@@ -1969,6 +2658,17 @@ class _WorkflowRunSession:
                 requires_human=True,
                 error_code="human_approval_expired",
             )
+        repair_request = None
+        repair_refs: tuple[str, ...] = ()
+        if assignment.repair_source_artifact_id is not None:
+            try:
+                repair_id, repair_request = self._prepare_implementation_repair(assignment)
+                repair_refs = implementation_repair_input_refs(repair_id, repair_request)
+            except (ValueError, _WorkflowIsolationError):
+                return StageResult(
+                    status="failed", artifact_id=_stage_receipt_artifact_id(assignment),
+                    error_code="implementation_repair_unavailable",
+                )
         self._execution_state().executor_assignment_id = assignment.assignment_id
         if (
             self._execution_state().plan_result is None
@@ -2001,8 +2701,13 @@ class _WorkflowRunSession:
                 )
                 if self._execution_state().analyst_report is not None
                 and self._execution_state().analyst_artifact_id is not None
-                else ()
+                else (
+                    # Scoped route: no Analyst handoff exists, but the
+                    # executor stays bound to the frozen WorkflowRequest.
+                    self._execution_state().workflow_request_artifact_id,
+                )
             )
+            executor_input_refs = (*executor_input_refs, *repair_refs)
             executor_assignment = _build_worker_assignment(
                 self._execution_state().workflow_request,
                 assignment,
@@ -2167,9 +2872,13 @@ class _WorkflowRunSession:
             _logical_agent_scope=(
                 executor_assignment.scope
                 if executor_assignment is not None
+                # Legacy requests carry no structured Assignment, so the
+                # fallback is least-privilege: full snapshot read, no writes.
+                # Legacy change work must migrate to WorkflowRequest.v1; the
+                # mandatory forbidden set still applies on top regardless.
                 else {
                     "read_roots": (".",),
-                    "write_paths": (".",),
+                    "write_paths": (),
                     "forbidden_paths": (".git",),
                 }
             ),
@@ -2182,6 +2891,11 @@ class _WorkflowRunSession:
                 if self._execution_state().transaction is not None
                 else self._execution_state().context.cwd
             ),
+        )
+        findings_notes = _analyst_findings_notes(
+            self._execution_state().analyst_report
+            if self._execution_state().workflow_request.structured
+            else None
         )
         self._execution_state().execute_result = self.run_assigned_worker(
             {
@@ -2196,6 +2910,30 @@ class _WorkflowRunSession:
                     "End with <final> plus a concise summary.\n\n"
                     f"ORIGINAL TASK:\n{self._execution_state().task_prompt}\n\n"
                     f"PLAN:\n{plan_text}"
+                    + (
+                        "\n\nIMPLEMENTATION REPAIR REQUEST:\n"
+                        + json.dumps(repair_request, ensure_ascii=False, sort_keys=True)
+                        + "\nRepair the concrete failed criteria using the referenced "
+                        "frozen feedback. Preserve the original scope and acceptance "
+                        "checks; do not suppress tests or claim prior verification. "
+                        "If the request cannot be repaired within this order, report blocked."
+                        if repair_request is not None else ""
+                    )
+                    + (
+                        "\n\n" + findings_notes
+                        if findings_notes
+                        else ""
+                    )
+                    + (
+                        # Scoped route: the fan-out survey reaches the only
+                        # Worker; on the full chain the Analyst already
+                        # consumed it upstream.
+                        self._execution_state().research_notes
+                        if self._execution_state().workflow_request.structured
+                        and self._execution_state().research_notes
+                        and self._execution_state().analyst_report is None
+                        else ""
+                    )
                     + (
                         "\n\nEXECUTOR ASSIGNMENT:\n"
                         + json.dumps(
@@ -2316,6 +3054,14 @@ class _WorkflowRunSession:
             self._execution_state().frozen_change_set = (
                 self._execution_state().frozen_workspace_change.change_set_document
             )
+            if repair_request is not None and (
+                self._execution_state().frozen_change_set["patchDigest"]
+                == repair_request["previousPatchDigest"]
+            ):
+                return StageResult(
+                    status="failed", artifact_id=_stage_receipt_artifact_id(assignment),
+                    error_code="implementation_repair_no_change",
+                )
         except _WorkflowIsolationError:
             return StageResult(
                 status="failed",
@@ -2449,6 +3195,7 @@ class _WorkflowRunSession:
                 readable_keys=(*reviewer_input_refs, assignment_artifact_id),
                 write_key=result_key,
             )
+            channel = _RepairingRoleResultChannel(channel)
             reviewer_context = replace(
                 self._execution_state().child_context,
                 _subagent_mailbox=channel,
@@ -2512,6 +3259,11 @@ class _WorkflowRunSession:
                     "_result_instruction": _role_result_instruction(
                         reviewer_assignment,
                         result_key=result_key,
+                        previous_error=(
+                            self._execution_state().role_result_parse_errors.get(
+                                "reviewer"
+                            )
+                        ),
                     ),
                 },
                 reviewer_context,
@@ -2529,14 +3281,20 @@ class _WorkflowRunSession:
                     error_code="review_phase_failed",
                 )
             try:
-                review_verdict = parse_role_result(
-                    reviewer_assignment,
-                    _read_role_result_payload(
+                review_payload, review_repaired = (
+                    _read_role_result_payload_with_repair(
                         self._execution_state().artifact_store,
                         result_key,
-                    ),
+                    )
                 )
-            except Exception:
+                review_verdict = parse_role_result(
+                    reviewer_assignment,
+                    review_payload,
+                )
+            except Exception as exc:
+                self._execution_state().role_result_parse_errors["reviewer"] = (
+                    _role_result_error_feedback(exc)
+                )
                 return StageResult(
                     status="failed",
                     artifact_id=_stage_receipt_artifact_id(assignment),
@@ -2545,6 +3303,13 @@ class _WorkflowRunSession:
                     ),
                     retryable=True,
                     error_code="review_result_invalid",
+                )
+            self._execution_state().role_result_parse_errors.pop("reviewer", None)
+            if review_repaired or channel.repaired:
+                _publish_role_result_repair_receipt(
+                    self._execution_state(),
+                    assignment,
+                    "reviewer",
                 )
             if (
                 self._execution_state().acceptance_evidence_matrix_id is None
@@ -2603,6 +3368,10 @@ class _WorkflowRunSession:
                 artifact_id=result_key,
                 patch_digest=str(review_verdict["patchDigest"]),
                 approved=(review_verdict["verdict"] == "approved" and diff_is_complete),
+                repairable=(
+                    diff_is_complete and self._repair_budget_available()
+                    and review_supports_implementation_repair(review_verdict)
+                ),
                 error_code=(None if diff_is_complete else "review_evidence_truncated"),
             )
         self._execution_state().review_result = self._execution_state().run_subagent(
@@ -2652,6 +3421,167 @@ class _WorkflowRunSession:
             error_code=None
             if self._execution_state().review_result.ok
             else "review_phase_failed",
+        )
+
+    def _run_adjudicator(self, assignment) -> StageResult:
+        """Resolve the frozen conflict a blocked Worker stage escalated."""
+        state = self._execution_state()
+        conflict_package = state.pending_conflict_package
+        conflict_artifact_id = state.pending_conflict_artifact_id
+        if not isinstance(conflict_package, Mapping) or not isinstance(
+            conflict_artifact_id, str
+        ):
+            return StageResult(
+                status="failed",
+                artifact_id=_stage_receipt_artifact_id(assignment),
+                error_code="adjudication_conflict_missing",
+            )
+        conflict_id = str(conflict_package.get("conflictId"))
+        # The closed ConflictPackage carries references, not evidence bytes.
+        # Grant its referenced frozen inputs explicitly, including the Analyst
+        # handoff that explains the claims behind its evidence snapshots.
+        adjudication_input_artifacts = tuple(
+            dict.fromkeys(
+                (
+                    conflict_artifact_id,
+                    *(
+                        ref
+                        for claim in conflict_package["claims"]
+                        for ref in claim["evidenceRefs"]
+                    ),
+                    *(
+                        (state.analyst_artifact_id,)
+                        if state.analyst_artifact_id is not None
+                        else ()
+                    ),
+                )
+            )
+        )
+        adjudicator_assignment = _build_worker_assignment(
+            state.workflow_request,
+            assignment,
+            context=state.context,
+            agent_budget=state.agent_budget,
+            role="adjudicator",
+            mode="resolve_conflict",
+            objective=(
+                "Resolve the frozen ConflictPackage: weigh each claim's "
+                "evidence and return one AdjudicationVerdict.v1."
+            ),
+            # The contract binds the verdict to this exact conflict id.
+            input_refs=(conflict_id, *adjudication_input_artifacts),
+        )
+        result_key = _assignment_result_key(assignment, "adjudicator")
+        assignment_artifact_id = _assignment_artifact_id(assignment)
+        state.artifact_store.publish(
+            assignment_artifact_id,
+            _assignment_artifact_document(assignment, adjudicator_assignment),
+            authority=state.scheduler_artifact_authority,
+        )
+        channel = state.artifact_store.create_assignment_channel(
+            readable_keys=(
+                *adjudication_input_artifacts,
+                assignment_artifact_id,
+            ),
+            write_key=result_key,
+        )
+        channel = _RepairingRoleResultChannel(channel)
+        adjudicator_context = replace(
+            state.child_context,
+            _subagent_mailbox=channel,
+            _logical_agent_role="adjudicator",
+            _logical_agent_scope=adjudicator_assignment.scope,
+            _logical_agent_workspace_root=(
+                str(state.transaction.cwd)
+                if state.transaction is not None
+                else state.context.cwd
+            ),
+        )
+        state.plan_result = self.run_assigned_worker(
+            {
+                "description": (
+                    f"adjudicator:{state.description}"
+                ),
+                "agent_type": "plan",
+                "_subagent_id": assignment.agent_run_id,
+                "prompt": (
+                    "Complete only this immutable Adjudicator Assignment. "
+                    "Weigh each claim's frozen evidence; you cannot modify "
+                    "files or expand the question. Select the claim the "
+                    "evidence supports, resolve every claim you reject, and "
+                    "bind each resolution to ConflictPackage evidence "
+                    "refs.\n\nASSIGNMENT:\n"
+                    + json.dumps(
+                        adjudicator_assignment.to_dict(),
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    )
+                    + "\n\nCONFLICT PACKAGE:\n"
+                    + json.dumps(
+                        conflict_package,
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    )
+                ),
+                "_result_key": result_key,
+                "_result_instruction": _role_result_instruction(
+                    adjudicator_assignment,
+                    result_key=result_key,
+                    previous_error=(
+                        state.role_result_parse_errors.get("adjudicator")
+                    ),
+                ),
+            },
+            adjudicator_context,
+            channel,
+        )
+        if not state.plan_result.ok:
+            return StageResult(
+                status="failed",
+                artifact_id=_stage_receipt_artifact_id(assignment),
+                error_code="adjudication_worker_failed",
+            )
+        try:
+            verdict_payload, verdict_repaired = _read_role_result_payload_with_repair(
+                state.artifact_store,
+                result_key,
+            )
+            verdict = parse_role_result(
+                adjudicator_assignment,
+                verdict_payload,
+                conflict_package=conflict_package,
+            )
+        except Exception as exc:
+            state.role_result_parse_errors["adjudicator"] = (
+                _role_result_error_feedback(exc)
+            )
+            return StageResult(
+                status="failed",
+                artifact_id=_stage_receipt_artifact_id(assignment),
+                retryable=True,
+                error_code="adjudication_result_invalid",
+            )
+        state.role_result_parse_errors.pop("adjudicator", None)
+        verdict_artifact_id = (
+            "artifact_adjudication_"
+            + hashlib.sha256(
+                (
+                    f"{assignment.assignment_id}\0{assignment.attempt_id}"
+                ).encode("utf-8")
+            ).hexdigest()[:32]
+        )
+        state.artifact_store.publish(
+            verdict_artifact_id,
+            verdict,
+            authority=state.scheduler_artifact_authority,
+        )
+        state.adjudication_verdict = verdict
+        if verdict_repaired or channel.repaired:
+            _publish_role_result_repair_receipt(state, assignment, "adjudicator")
+        return StageResult(
+            status="completed",
+            artifact_id=verdict_artifact_id,
+            conflict_verdict=verdict,
         )
 
     def run_verifier(self, assignment) -> StageResult:
@@ -2728,11 +3658,20 @@ class _WorkflowRunSession:
             )
             isolated_checks: list[dict[str, object]] = []
             isolated_statuses: list[str] = []
+            evidence_ids_by_index: list[list[str]] = [
+                [] for _ in self._execution_state().requested_checks
+            ]
             verification_id: str | None = None
             # Every check receives a fresh clone and private HOME. A test,
             # build or linter can therefore never influence the bytes seen
             # by a later gate.
-            for check in self._execution_state().requested_checks:
+            # Every check receives its own fresh clone, so independent
+            # checks run concurrently in a bounded pool; results, evidence
+            # ids, and failure propagation are re-sequenced into request
+            # order afterwards, preserving the serial contract exactly.
+            requested_checks = tuple(self._execution_state().requested_checks)
+
+            def run_one_check(check):
                 with (
                     self._execution_state().frozen_workspace_change.verification_workspace(
                         read_roots=(
@@ -2744,6 +3683,22 @@ class _WorkflowRunSession:
                         retain_git_metadata=check.kind == "oracle",
                     ) as verification_cwd
                 ):
+                    per_check_evidence: list[str] = []
+
+                    def per_check_sink(artifact_id, evidence):
+                        # Publish-only: the shared evidence-id list is
+                        # re-sequenced after the pool joins, in request
+                        # order, exactly like the serial loop produced.
+                        self._execution_state().artifact_store.publish(
+                            artifact_id,
+                            evidence,
+                            authority=(
+                                self._execution_state()
+                                .scheduler_artifact_authority
+                            ),
+                        )
+                        per_check_evidence.append(artifact_id)
+
                     partial = verifier.run(
                         checks=(check,),
                         cwd=str(verification_cwd),
@@ -2761,11 +3716,57 @@ class _WorkflowRunSession:
                         cancellation_checkpoint=lambda: _raise_task_deadline(
                             self._execution_state().context
                         ),
-                        evidence_sink=publish_verification_evidence,
+                        evidence_sink=per_check_sink,
                     )
+                    # Validate the port's actual identity before aggregation;
+                    # rebuilding an envelope must not rebind an old passing
+                    # check result to this revision's assignment and digest.
+                    partial = parse_verification_result(
+                        {key: value for key, value in partial.items() if key != "resultType"},
+                        workflow_id=self._execution_state().workflow_id,
+                        task_id=self._execution_state().task_id,
+                        execution_assignment_id=self._execution_state().executor_assignment_id,
+                        patch_digest=patch_digest,
+                        required_check_ids=(check.check_id,),
+                    )
+                return partial, per_check_evidence
+
+            partials: list[object] = [None] * len(requested_checks)
+            check_errors: list[BaseException | None] = [None] * len(requested_checks)
+            worker_limit = min(_PARALLEL_VERIFICATION_WORKERS, len(requested_checks))
+            if worker_limit > 1:
+                with ThreadPoolExecutor(max_workers=worker_limit) as pool:
+                    futures = {
+                        pool.submit(run_one_check, check): index
+                        for index, check in enumerate(requested_checks)
+                    }
+                    for future in as_completed(futures):
+                        index = futures[future]
+                        try:
+                            partials[index], evidence_ids_by_index[index] = (
+                                future.result()
+                            )
+                        except BaseException as exc:  # noqa: BLE001 - re-raised in order
+                            check_errors[index] = exc
+            else:
+                for index, check in enumerate(requested_checks):
+                    try:
+                        partials[index], evidence_ids_by_index[index] = (
+                            run_one_check(check)
+                        )
+                    except BaseException as exc:  # noqa: BLE001 - re-raised below
+                        check_errors[index] = exc
+            for error in check_errors:
+                if error is not None:
+                    raise error
+            for partial in partials:
                 verification_id = str(partial["verificationId"])
                 isolated_checks.extend(partial["checks"])
                 isolated_statuses.append(str(partial["status"]))
+            for index in range(len(requested_checks)):
+                self._execution_state().verification_evidence_ids.extend(
+                    evidence_ids_by_index[index]
+                )
             aggregate_status = (
                 "failed"
                 if "failed" in isolated_statuses
@@ -2872,6 +3873,7 @@ class _WorkflowRunSession:
                         status="inconclusive",
                         artifact_id=self._execution_state().verification_artifact_id,
                         patch_digest=patch_digest,
+                        repairable=self._verification_repairable(),
                         error_code="acceptance_evidence_incomplete",
                     )
                 matrix_criteria.append(
@@ -2886,6 +3888,7 @@ class _WorkflowRunSession:
                 + hashlib.sha256(
                     (
                         f"{self._execution_state().workflow_id}\0{self._execution_state().task_id}\0{patch_digest}"
+                        f"\0{self._execution_state().executor_assignment_id}"
                     ).encode("utf-8")
                 ).hexdigest()[:32]
             )
@@ -2911,6 +3914,7 @@ class _WorkflowRunSession:
             artifact_id=self._execution_state().verification_artifact_id,
             patch_digest=patch_digest,
             retryable=False,
+            repairable=self._verification_repairable(),
             error_code=(
                 None
                 if verification_status == "passed"
@@ -3128,12 +4132,23 @@ class _WorkflowRunSession:
             )
             is True
         )
+        commit_audit_waived = (
+            getattr(
+                self._execution_state().context, "_workflow_commit_audit_waived", False
+            )
+            is True
+        )
         if not callable(recorder):
-            if production_enforced:
-                self._execution_state().commit_ready_status = "recorder_missing"
-                return False
-            self._execution_state().commit_ready_status = "not_configured"
-            return True
+            # Fail closed by default: a structured workflow must not change the
+            # parent workspace without a persisted commit-ready record. Only an
+            # explicit non-production waiver reopens the lenient path, and it
+            # is recorded as commitReadyStatus=waived in the finalization
+            # status/audit projection.
+            if commit_audit_waived and not production_enforced:
+                self._execution_state().commit_ready_status = "waived"
+                return True
+            self._execution_state().commit_ready_status = "recorder_missing"
+            return False
         if production_enforced and not callable(final_audit_recorder):
             self._execution_state().commit_ready_status = "recorder_missing"
             return False

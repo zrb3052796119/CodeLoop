@@ -1,0 +1,20 @@
+[
+  {
+    "case": "provider_error",
+    "returned_receipt": true,
+    "final_text": "Earlier workflow changes are already committed; remaining work is incomplete. The committed receipts are retained above.\n\nNetwork error (connection failed or dropped): fixture dropped",
+    "calls": 2
+  },
+  {
+    "case": "budget_raise",
+    "returned_receipt": true,
+    "final_text": "Earlier workflow changes are already committed; remaining work is incomplete because the shared turn budget was exhausted. The committed receipts are retained above.",
+    "calls": 2
+  },
+  {
+    "case": "outcome_callback_after_final",
+    "returned_receipt": true,
+    "final_text": "All requested work complete.",
+    "calls": 2
+  }
+]

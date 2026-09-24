@@ -17,16 +17,13 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from minicode.conflict_port_runner import BoundedConflictPortRunner
+from minicode.workflow_repair import (
+    MAX_IMPLEMENTATION_REPAIRS,
+    REPAIR_TRANSITION_ERROR,
+)
 
 if TYPE_CHECKING:
     from minicode.conflict_port_runner import ConflictPortRunner
-    from minicode.conflict_resolution import (
-        ConflictBallot,
-        ConflictExecutionOutcome,
-        ConflictPortRequest,
-        ConflictResolution,
-        ConflictTransition,
-    )
 
 
 SCHEDULER_POLICY_VERSION = 2
@@ -58,6 +55,8 @@ class DispatchStage(str, Enum):
     EXECUTOR = "executor"
     VERIFIER = "verifier"
     REVIEWER = "reviewer"
+    # Runtime escalation from a blocked Worker stage carrying a frozen
+    # ConflictPackage; never selected by a static plan rule.
     ADJUDICATOR = "adjudicator"
     HUMAN = "human"
     COMMIT = "commit"
@@ -140,8 +139,19 @@ class StageResult:
     patch_digest: str | None = None
     approved: bool | None = None
     retryable: bool = False
+    # Host-classified implementation feedback, never a Worker wire flag.
+    repairable: bool = False
     requires_human: bool = False
     error_code: str | None = None
+    # A blocked Worker stage may carry a frozen ConflictPackage.v1 document.
+    # The scheduler answers it with one bounded ADJUDICATOR escalation; the
+    # package's claims must order the continuation claim second so an
+    # explicit ``select_b`` verdict is the only resumption path.
+    escalate_conflict: Mapping[str, object] | None = None
+    conflict_artifact_id: str | None = None
+    # Set only by an ADJUDICATOR stage result: the validated
+    # AdjudicationVerdict.v1 document the scheduler's decision maps from.
+    conflict_verdict: Mapping[str, object] | None = None
 
     def __post_init__(self) -> None:
         if self.status not in {
@@ -162,6 +172,8 @@ class StageResult:
             raise ValueError("stage result approved must be a boolean or null")
         if type(self.retryable) is not bool:
             raise ValueError("stage result retryable must be boolean")
+        if type(self.repairable) is not bool:
+            raise ValueError("stage result repairable must be boolean")
         if type(self.requires_human) is not bool:
             raise ValueError("stage result requires_human must be boolean")
         if self.requires_human and self.status == "completed":
@@ -170,6 +182,22 @@ class StageResult:
             not isinstance(self.error_code, str) or not self.error_code.strip()
         ):
             raise ValueError("stage result error_code is invalid")
+        if self.escalate_conflict is not None and (
+            self.status != "blocked"
+            or not isinstance(self.escalate_conflict, Mapping)
+        ):
+            raise ValueError("stage escalation requires a blocked ConflictPackage")
+        if self.conflict_artifact_id is not None and (
+            self.escalate_conflict is None
+            or not isinstance(self.conflict_artifact_id, str)
+            or not self.conflict_artifact_id.strip()
+        ):
+            raise ValueError("stage conflict artifact requires an escalation")
+        if self.conflict_verdict is not None and (
+            self.status != "completed"
+            or not isinstance(self.conflict_verdict, Mapping)
+        ):
+            raise ValueError("stage verdict requires a completed adjudication")
 
 
 @dataclass(frozen=True, slots=True)
@@ -183,6 +211,8 @@ class StageAssignment:
     stage: DispatchStage
     rule_id: str
     input_artifact_ids: tuple[str, ...] = ()
+    repair_source_artifact_id: str | None = None
+    repair_index: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -231,6 +261,10 @@ class SchedulerExecutionPolicy:
     executor_max_attempts: int = 2
     verifier_max_attempts: int = 2
     reviewer_max_attempts: int = 2
+    # One verdict per conflict by default: a re-ask may only repair a
+    # malformed AdjudicationVerdict, never re-litigate a decided one.
+    adjudicator_max_attempts: int = 1
+    implementation_max_repairs: int = 1
 
     def __post_init__(self) -> None:
         limits = (
@@ -238,6 +272,7 @@ class SchedulerExecutionPolicy:
             self.executor_max_attempts,
             self.verifier_max_attempts,
             self.reviewer_max_attempts,
+            self.adjudicator_max_attempts,
         )
         if any(
             isinstance(value, bool)
@@ -246,6 +281,10 @@ class SchedulerExecutionPolicy:
             for value in limits
         ):
             raise ValueError("scheduler retry limits must be between one and three")
+        if type(self.implementation_max_repairs) is not int or not (
+            0 <= self.implementation_max_repairs <= MAX_IMPLEMENTATION_REPAIRS
+        ):
+            raise ValueError("implementation repair limit must be between zero and two")
 
     def max_attempts(self, stage: DispatchStage) -> int:
         return {
@@ -253,6 +292,7 @@ class SchedulerExecutionPolicy:
             DispatchStage.EXECUTOR: self.executor_max_attempts,
             DispatchStage.VERIFIER: self.verifier_max_attempts,
             DispatchStage.REVIEWER: self.reviewer_max_attempts,
+            DispatchStage.ADJUDICATOR: self.adjudicator_max_attempts,
         }.get(stage, 1)
 
 
@@ -277,67 +317,6 @@ class CentralScheduler:
             raise ValueError("conflict runners must use independent capacity")
         self._conflict_port_runner = conflict_port_runner
         self._conflict_observer_runner = conflict_observer_runner
-
-    def resolve_conflict(self, package, **authorities):
-        """Resolve or escalate a validated conflict under central authority."""
-        from minicode.conflict_resolution import ConflictResolver
-
-        return ConflictResolver().resolve(package, **authorities)
-
-    def execute_conflict(
-        self,
-        package: Mapping[str, object],
-        *,
-        collect_ballot: Callable[
-            ["ConflictPortRequest", Mapping[str, object]], "ConflictBallot"
-        ]
-        | None = None,
-        run_adjudicator: Callable[
-            ["ConflictPortRequest", Mapping[str, object]],
-            "ConflictResolution | None",
-        ]
-        | None = None,
-        request_human: Callable[
-            ["ConflictPortRequest", Mapping[str, object]],
-            "ConflictResolution | None",
-        ]
-        | None = None,
-        human_choice: str | None = None,
-        user_choice: str | None = None,
-        policy_choice: str | None = None,
-        deterministic_choice: str | None = None,
-        on_transition: Callable[["ConflictTransition"], None] | None = None,
-        deadline_monotonic: float | None = None,
-        clock: Callable[[], float] = time.monotonic,
-        abort_exceptions: tuple[type[BaseException], ...] = (),
-        cancellation_token: object | None = None,
-    ) -> "ConflictExecutionOutcome":
-        """Coordinate one conflict through process-shared bounded runners.
-
-        Authority and observer capacity are independent.  Both runners are
-        fixed at Scheduler construction so individual conflict calls cannot
-        replace either gate.
-        """
-
-        from minicode.conflict_resolution import ConflictCoordinator
-
-        return ConflictCoordinator().execute(
-            package,
-            collect_ballot=collect_ballot,
-            run_adjudicator=run_adjudicator,
-            request_human=request_human,
-            human_choice=human_choice,
-            user_choice=user_choice,
-            policy_choice=policy_choice,
-            deterministic_choice=deterministic_choice,
-            on_transition=on_transition,
-            deadline_monotonic=deadline_monotonic,
-            clock=clock,
-            abort_exceptions=abort_exceptions,
-            port_runner=self._conflict_port_runner,
-            observer_runner=self._conflict_observer_runner,
-            cancellation_token=cancellation_token,
-        )
 
     def plan(self, profile: TaskProfile) -> DispatchPlan:
         if (
@@ -477,6 +456,9 @@ class CentralScheduler:
             raise TypeError("abort_exceptions must be exception classes")
 
         plan = self.plan(profile)
+        pending_stages = list(plan.stages)
+        repair_count = 0
+        repair_source_artifact_id: str | None = None
         completed: list[DispatchStage] = []
         artifacts: list[str] = []
         patch_digest: str | None = None
@@ -513,6 +495,11 @@ class CentralScheduler:
                 stage=stage,
                 rule_id=plan.rule_id,
                 input_artifact_ids=tuple(artifacts),
+                repair_source_artifact_id=(
+                    repair_source_artifact_id
+                    if stage is DispatchStage.EXECUTOR else None
+                ),
+                repair_index=repair_count,
             )
 
         def emit(
@@ -592,7 +579,59 @@ class CentralScheduler:
                 committed=False,
             )
 
-        for ordinal, stage in enumerate(plan.stages, start=1):
+        for ordinal, stage in enumerate(pending_stages, start=1):
+            repair_scheduled = False
+
+            def schedule_implementation_repair(
+                candidate: StageResult, failed_assignment: StageAssignment
+            ) -> bool:
+                nonlocal repair_count, repair_source_artifact_id, patch_digest
+                if (
+                    not candidate.repairable
+                    or stage not in {DispatchStage.VERIFIER, DispatchStage.REVIEWER}
+                    or plan.rule_id not in {"route.scoped_change", "route.reviewed_change"}
+                    or candidate.requires_human
+                    or candidate.escalate_conflict is not None
+                    or candidate.patch_digest != patch_digest
+                    or patch_digest is None
+                    or (
+                        stage is DispatchStage.VERIFIER and (
+                            candidate.status not in {"failed", "inconclusive"}
+                            or candidate.error_code not in {
+                                "verification_failed", "acceptance_evidence_incomplete",
+                            }
+                        )
+                    )
+                    or (
+                        stage is DispatchStage.REVIEWER and (
+                            candidate.status != "completed"
+                            or candidate.approved is not False
+                            or candidate.error_code is not None
+                        )
+                    )
+                    or repair_count >= policy.implementation_max_repairs
+                    or deadline_reached()
+                ):
+                    return False
+                repair_count += 1
+                repair_source_artifact_id = candidate.artifact_id
+                artifacts.append(candidate.artifact_id)
+                emit(
+                    failed_assignment,
+                    outcome="repairing",
+                    artifact_id=candidate.artifact_id,
+                    error_code=REPAIR_TRANSITION_ERROR,
+                )
+                # Mutating only the unvisited tail preserves a unique ordinal
+                # (and therefore fresh identities) for every revised stage.
+                executor_index = plan.stages.index(DispatchStage.EXECUTOR)
+                pending_stages[ordinal:] = plan.stages[executor_index:]
+                completed[:] = [item for item in completed if item not in {
+                    DispatchStage.EXECUTOR, DispatchStage.VERIFIER, DispatchStage.REVIEWER,
+                }]
+                patch_digest = None
+                return True
+
             assignment = assignment_for(stage, ordinal=ordinal, attempt=1)
             if deadline_reached():
                 emit(
@@ -714,6 +753,168 @@ class CentralScheduler:
                             ),
                             patch_digest=patch_digest,
                         )
+                    if candidate.escalate_conflict is not None:
+                        # A frozen ConflictPackage converts a terminal-looking
+                        # blocked stage into exactly one bounded adjudication.
+                        # The verdict is binding: only an explicit selection
+                        # of the continuation claim (ordered second in the
+                        # package) resumes the plan; every other decision,
+                        # including an inconclusive one, fails closed.
+                        emit(
+                            assignment,
+                            outcome="blocked",
+                            artifact_id=candidate.artifact_id,
+                            error_code=(
+                                candidate.error_code
+                                or f"stage_{candidate.status}"
+                            ),
+                        )
+                        if candidate.conflict_artifact_id is not None:
+                            artifacts.append(candidate.conflict_artifact_id)
+                        adjudicated_result: StageResult | None = None
+                        for adjudication_attempt in range(
+                            1,
+                            policy.max_attempts(DispatchStage.ADJUDICATOR) + 1,
+                        ):
+                            adjudicator_assignment = assignment_for(
+                                DispatchStage.ADJUDICATOR,
+                                ordinal=ordinal,
+                                attempt=adjudication_attempt,
+                            )
+                            if deadline_reached():
+                                emit(
+                                    adjudicator_assignment,
+                                    outcome="timed_out",
+                                    error_code="global_deadline_exceeded",
+                                )
+                                return terminal(
+                                    "timed_out",
+                                    DispatchStage.ADJUDICATOR,
+                                    "global_deadline_exceeded",
+                                )
+                            emit(adjudicator_assignment, outcome="dispatched")
+                            try:
+                                adj_candidate = run_worker(
+                                    adjudicator_assignment
+                                )
+                            except abort_exceptions:
+                                raise
+                            except Exception:  # noqa: BLE001 - untyped port failures fail closed
+                                emit(
+                                    adjudicator_assignment,
+                                    outcome="failed",
+                                    error_code="stage_port_failed",
+                                )
+                                return terminal(
+                                    "failed",
+                                    DispatchStage.ADJUDICATOR,
+                                    "stage_port_failed",
+                                )
+                            if deadline_reached():
+                                emit(
+                                    adjudicator_assignment,
+                                    outcome="timed_out",
+                                    error_code="global_deadline_exceeded",
+                                )
+                                return terminal(
+                                    "timed_out",
+                                    DispatchStage.ADJUDICATOR,
+                                    "global_deadline_exceeded",
+                                )
+                            if not isinstance(adj_candidate, StageResult) or (
+                                adj_candidate.status != "completed"
+                                or not isinstance(
+                                    adj_candidate.conflict_verdict,
+                                    Mapping,
+                                )
+                            ):
+                                adj_error = (
+                                    adj_candidate.error_code
+                                    if isinstance(adj_candidate, StageResult)
+                                    else None
+                                ) or "adjudication_result_invalid"
+                                adj_artifact = (
+                                    adj_candidate.artifact_id
+                                    if isinstance(adj_candidate, StageResult)
+                                    else None
+                                )
+                                emit(
+                                    adjudicator_assignment,
+                                    outcome=(
+                                        adj_candidate.status
+                                        if isinstance(adj_candidate, StageResult)
+                                        else "rejected"
+                                    ),
+                                    artifact_id=adj_artifact,
+                                    error_code=adj_error,
+                                )
+                                if (
+                                    isinstance(adj_candidate, StageResult)
+                                    and adj_candidate.retryable
+                                    and adjudication_attempt
+                                    < policy.max_attempts(
+                                        DispatchStage.ADJUDICATOR
+                                    )
+                                ):
+                                    emit(
+                                        adjudicator_assignment,
+                                        outcome="retrying",
+                                        error_code=adj_error,
+                                    )
+                                    continue
+                                return terminal(
+                                    "failed",
+                                    DispatchStage.ADJUDICATOR,
+                                    adj_error,
+                                )
+                            verdict_decision = str(
+                                adj_candidate.conflict_verdict.get("decision")
+                            )
+                            if verdict_decision == "select_b":
+                                emit(
+                                    adjudicator_assignment,
+                                    outcome="completed",
+                                    artifact_id=adj_candidate.artifact_id,
+                                )
+                                # The escalation lives inside the escalated
+                                # stage's attempt: completed_stages stays
+                                # plan-pure and ordered.
+                                artifacts.append(adj_candidate.artifact_id)
+                                adjudicated_result = StageResult(
+                                    status="completed",
+                                    artifact_id=candidate.artifact_id,
+                                    patch_digest=candidate.patch_digest,
+                                    approved=candidate.approved,
+                                )
+                                break
+                            adjudication_reason = {
+                                "select_a": "adjudicated_reclassification_required",
+                                "synthesize": "adjudication_decision_not_binding",
+                                "insufficient": "adjudication_inconclusive",
+                                "human_required": "adjudication_human_required",
+                            }.get(
+                                verdict_decision,
+                                "adjudication_decision_invalid",
+                            )
+                            emit(
+                                adjudicator_assignment,
+                                outcome="rejected",
+                                artifact_id=adj_candidate.artifact_id,
+                                error_code=adjudication_reason,
+                            )
+                            return terminal(
+                                "failed",
+                                DispatchStage.ADJUDICATOR,
+                                adjudication_reason,
+                            )
+                        if adjudicated_result is None:  # pragma: no cover - loop shape
+                            return terminal(
+                                "failed",
+                                DispatchStage.ADJUDICATOR,
+                                "adjudication_attempts_exhausted",
+                            )
+                        result = adjudicated_result
+                        break
                     emit(
                         assignment,
                         outcome=candidate.status,
@@ -736,6 +937,9 @@ class CentralScheduler:
                             ),
                         )
                         continue
+                    if schedule_implementation_repair(candidate, assignment):
+                        repair_scheduled = True
+                        break
                     return terminal(
                         "failed",
                         stage,
@@ -743,6 +947,8 @@ class CentralScheduler:
                     )
                 result = candidate
                 break
+            if repair_scheduled:
+                continue
             if result is None:
                 return terminal("failed", stage, "stage_attempts_exhausted")
 
@@ -803,6 +1009,8 @@ class CentralScheduler:
                         artifact_id=result.artifact_id,
                         error_code=review_rejection,
                     )
+                    if schedule_implementation_repair(result, assignment):
+                        continue
                     return terminal("failed", stage, review_rejection)
 
             artifacts.append(result.artifact_id)
@@ -829,7 +1037,7 @@ class CentralScheduler:
             )
         commit_assignment = assignment_for(
             DispatchStage.COMMIT,
-            ordinal=len(plan.stages) + 1,
+            ordinal=len(pending_stages) + 1,
             attempt=1,
         )
         if deadline_reached():

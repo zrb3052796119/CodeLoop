@@ -15,6 +15,7 @@ These lock in three properties that were previously missing entirely:
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 
@@ -60,6 +61,17 @@ def _approve_workflow_review(mailbox, prompt: str) -> None:
 
 def _capture_sub_turn(monkeypatch) -> dict:
     captured: dict = {}
+    original_prompt_builder = task_module._build_sub_agent_system_prompt
+
+    def capture_prompt_builder(**kwargs):
+        captured["routing_context"] = kwargs.get("routing_call_context")
+        return original_prompt_builder(**kwargs)
+
+    monkeypatch.setattr(
+        task_module,
+        "_build_sub_agent_system_prompt",
+        capture_prompt_builder,
+    )
 
     def fake_run_agent_turn(**kwargs):
         captured.update(kwargs)
@@ -88,20 +100,84 @@ def test_general_sub_agent_never_receives_the_task_tool(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """`general` gets the full registry; the recursion entry point must be
-    withheld rather than advertised and then refused on every call."""
-    captured = _capture_sub_turn(monkeypatch)
+    withheld rather than advertised and then refused on every call.
 
-    result = task_tool.run(
-        {"description": "broad", "prompt": "broad work", "agent_type": "general"},
-        _context(tmp_path, _agent_depth=0),
+    General sub-agents now run in the subprocess worker, so the registry
+    guarantee is asserted where the loop is actually composed.
+    """
+    import minicode.subagent_worker as worker_module
+
+    captured: dict = {}
+    original_prompt_builder = task_module._build_sub_agent_system_prompt
+
+    def capture_prompt_builder(**kwargs):
+        captured["routing_context"] = kwargs.get("routing_call_context")
+        return original_prompt_builder(**kwargs)
+
+    monkeypatch.setattr(
+        task_module,
+        "_build_sub_agent_system_prompt",
+        capture_prompt_builder,
     )
 
-    assert result.ok is True
+    def fake_run_agent_turn(**kwargs):
+        captured.update(kwargs)
+        from minicode.task_outcome import canonicalize_task_outcome
+
+        kwargs["outcome_capture"].record(
+            canonicalize_task_outcome("success", 0)
+        )
+        return [{"role": "assistant", "content": "sub-agent done"}]
+
+    monkeypatch.setattr(worker_module, "run_agent_turn", fake_run_agent_turn)
+    request_path = tmp_path / "worker-request.json"
+    result_path = tmp_path / "worker-result.json"
+    request_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "cwd": str(tmp_path),
+                "prompt": "broad work",
+                "subagent_id": "sub_" + "0" * 32,
+                "result_key": "subagent_result_" + "0" * 32,
+                "result_instruction": "",
+                "max_turns": 3,
+                "timeout_seconds": 30.0,
+                    "runtime": {"model": "fake"},
+                    "inject_memory": False,
+                    "budget_lease": {
+                        "budgetLeaseVersion": 2,
+                        "leaseId": 1,
+                        "leaseNonce": "a" * 64,
+                        "maxTotalTokens": 1_000_000,
+                        "maxModelCalls": 6,
+                        "maxCostUsd": "5.00",
+                    },
+                }
+        ),
+        encoding="utf-8",
+    )
+
+    original_cwd = os.getcwd()
+    try:
+        code = worker_module.run_worker(str(request_path), str(result_path))
+    finally:
+        os.chdir(original_cwd)
+
+    assert code == 0
     tool_names = [tool.name for tool in captured["tools"].list()]
     assert "task" not in tool_names
     assert "ask_user" not in tool_names
     assert "read_file" in tool_names
     assert captured["allow_user_interaction"] is False
+    routing_context = captured["routing_context"]
+    assert isinstance(routing_context, dict)
+    assert routing_context["agent_budget"] is captured["agent_budget"]
+    assert routing_context["event_sink"] is captured["event_sink"]
+    assert routing_context["deadline_monotonic"] is captured[
+        "deadline_monotonic"
+    ]
+    assert routing_context["preserve_model_calls"] == 1
     assert "ask_user is unavailable" in captured["messages"][0]["content"]
 
 
@@ -181,6 +257,43 @@ def test_scheduler_executor_is_local_without_narrowing_direct_general(
         },
         executor_context,
     )
+
+    # The direct legacy general path now runs in a subprocess worker. Execute
+    # the same worker logic in-process so the registry assertions below keep
+    # their meaning without spawning a real interpreter.
+    import minicode.subagent_worker as worker_module
+    from minicode.subagent_supervisor import SubagentProcessOutcome
+
+    worker_captured: list[dict[str, object]] = []
+
+    def capture_worker_turn(**kwargs):
+        worker_captured.append(kwargs)
+        kwargs["outcome_capture"].record(
+            canonicalize_task_outcome("success", 0)
+        )
+        return [{"role": "assistant", "content": "direct done"}]
+
+    def in_process_worker(request, **_kwargs) -> SubagentProcessOutcome:
+        request_path = tmp_path / "worker-request.json"
+        result_path = tmp_path / "worker-result.json"
+        request_path.write_text(json.dumps(request), encoding="utf-8")
+        original_cwd = os.getcwd()
+        try:
+            worker_module.run_worker(str(request_path), str(result_path))
+        finally:
+            os.chdir(original_cwd)
+        payload = json.loads(result_path.read_text(encoding="utf-8"))
+        return SubagentProcessOutcome(
+            status=payload["status"],
+            result=payload,
+            error=payload.get("error"),
+            duration_ms=0,
+            pid=None,
+        )
+
+    monkeypatch.setattr(worker_module, "run_agent_turn", capture_worker_turn)
+    monkeypatch.setattr(task_module, "run_subagent_process", in_process_worker)
+
     direct_result = task_tool.run(
         {
             "description": "legacy general",
@@ -196,7 +309,8 @@ def test_scheduler_executor_is_local_without_narrowing_direct_general(
 
     assert executor_result.ok is True
     assert direct_result.ok is True
-    executor_run, direct_run = captured_runs
+    (executor_run,) = captured_runs
+    (direct_run,) = worker_captured
     direct_tools = {tool.name for tool in direct_run["tools"].list()}
     assert {
         "mcp__fixture__external",
@@ -206,7 +320,9 @@ def test_scheduler_executor_is_local_without_narrowing_direct_general(
     } <= direct_tools
     assert "task" not in direct_tools
     assert "ask_user" not in direct_tools
-    assert direct_run["permissions"].prompt is parent_prompt
+    # The subprocess backend is non-interactive: permission prompts fail
+    # closed instead of inheriting the parent's interactive handler.
+    assert direct_run["permissions"].prompt is None
 
     executor_tools = {tool.name for tool in executor_run["tools"].list()}
     assert executor_tools == {
@@ -225,6 +341,7 @@ def test_scheduler_executor_is_local_without_narrowing_direct_general(
         "SchedulerExecutorPermissions"
     )
     assert executor_run["allow_user_interaction"] is False
+    # The Executor is MCP-free; only the direct general run constructs it.
     assert len(mcp_constructions) == 1
 
 
@@ -239,6 +356,67 @@ def test_sub_agent_runs_one_level_deeper_than_its_parent(
     )
 
     assert captured["agent_depth"] == 1
+
+
+def test_in_process_sub_agent_semantic_intent_reuses_attributed_controls(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from minicode.agent_budget import AgentTurnBudget
+    from minicode.intent_parser import parse_intent as real_parse_intent
+
+    captured = _capture_sub_turn(monkeypatch)
+    semantic_adapter = type(
+        "SemanticAdapter",
+        (),
+        {"infer": lambda self, _request, **_kwargs: ()},
+    )()
+
+    def build_semantic_adapter(model, *, runtime):
+        captured["semantic_model"] = model
+        captured["semantic_runtime"] = runtime
+        return semantic_adapter
+
+    def capture_parse_intent(prompt, **kwargs):
+        captured["intent_call"] = kwargs
+        return real_parse_intent(prompt, **kwargs)
+
+    monkeypatch.setattr(
+        "minicode.intent_semantic_classifier.build_semantic_intent_adapter",
+        build_semantic_adapter,
+    )
+    monkeypatch.setattr(
+        "minicode.intent_parser.parse_intent",
+        capture_parse_intent,
+    )
+    parent_budget = AgentTurnBudget(max_model_calls=5)
+    cancellation_token = TurnCancellationToken(TURN_ID)
+
+    result = task_tool.run(
+        {
+            "description": "explore",
+            "prompt": "inspect the routing implementation",
+            "agent_type": "explore",
+        },
+        _context(
+            tmp_path,
+            _agent_budget=parent_budget,
+            _cancellation_token=cancellation_token,
+        ),
+    )
+
+    assert result.ok is True
+    assert captured["semantic_model"] is captured["model"]
+    assert captured["semantic_runtime"] is captured["runtime"]
+    intent_call = captured["intent_call"]
+    assert intent_call["semantic_adapter"] is semantic_adapter
+    intent_call_context = intent_call["call_context"]
+    assert intent_call_context["agent_budget"] is captured["agent_budget"]
+    assert intent_call_context["event_sink"] is captured["event_sink"]
+    assert intent_call_context["cancellation_token"] is cancellation_token
+    assert intent_call_context["deadline_monotonic"] == captured[
+        "deadline_monotonic"
+    ]
 
 
 def test_sub_agent_uses_its_agent_type_qwen_route_instead_of_parent_model(
@@ -868,7 +1046,13 @@ def test_workflow_runs_plan_execute_review_phases_with_shared_budget(
     assert result.ok is True
     assert [call[0] for call in captured] == ["plan", "general", "plan"]
     assert all(call[2] == 1 for call in captured)
-    assert all(call[3] is budget for call in captured)
+    # The workflow wraps the shared budget in one attribution view (so the
+    # workflow journal row can carry the whole chain's tokens); phases still
+    # share that single object, which delegates to the same underlying
+    # budget.
+    assert all(call[3] is captured[0][3] for call in captured)
+    captured[0][3].record_model_call(input_tokens=7, output_tokens=3)
+    assert budget.snapshot().used_total_tokens == 10
     assert "=== PLAN ===" in result.output
     assert "=== EXECUTE ===" in result.output
     assert "=== REVIEW VERDICT ===" in result.output
@@ -1033,7 +1217,7 @@ def test_standalone_workflow_creates_one_budget_shared_by_all_phases(
     assert result.ok is True
     assert budgets[0] is not None
     assert all(budget is budgets[0] for budget in budgets)
-    assert budgets[0].snapshot().limit_model_calls == 80
+    assert budgets[0].snapshot().limit_model_calls == 150
 
 
 def test_workflow_review_failure_is_a_typed_failure(

@@ -1,0 +1,102 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_implementation_repair_rewrites_bytes_and_earns_new_gate_evidence[verifier] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-830/test_implementation_repair_rew0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x103e3cc80>
+rejection = 'verifier'
+
+    @pytest.mark.parametrize("rejection", ["verifier", "reviewer"])
+    def test_implementation_repair_rewrites_bytes_and_earns_new_gate_evidence(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, rejection: str
+    ) -> None:
+        result, roles, inputs, audits = _repair_run(
+            tmp_path, monkeypatch, rejection=rejection
+        )
+>       assert result.ok, result.output
+E       AssertionError: [Workflow structured workflow route failed]
+E           Phases: explore -> plan -> execute -> verifier
+E         
+E         === DETERMINISTIC VERIFICATION ===
+E         {"checks": [{"artifactRef": "artifact_verification_405b3fac02f97896a31ccf78", "checkId": "check_tests", "durationMs": 96, "exitCode": 1, "kind": "tests", "status": "failed"}], "executionAssignmentId": "asg_33d7e7e689a1_2_executor", "patchDigest": "sha256:0231a1df5851580a1d05618fb15eec4ea3a61071fa7b46322ea74bab82d362d2", "resultType": "VerificationResult.v1", "status": "failed", "taskId": "task_structured_route", "verificationId": "verification_754e2691290bf1d819f7a1b2", "verificationVersion": 1, "workflowId": "wf_81bbcf3cd1ff4927a07b129205ea1803"}
+E         
+E         === EXECUTE ===
+E         {"assignmentId": "asg_33d7e7e689a1_2_executor", "blockers": [], "changeSet": {"baseDigest": "sha256:7953f747ac981dc5e9c488e348af6295498798bf0d88540f21a7c1db197082e6", "files": [{"action": "modified", "path": "allowed.txt"}], "patchDigest": "sha256:0231a1df5851580a1d05618fb15eec4ea3a61071fa7b46322ea74bab82d362d2", "workspaceRef": "isolated://workflow"}, "deviations": [], "orderId": "order_asg_33d7e7e689a1_2_executor_attempt_33d7e7e689a1_2_1", "resultType": "ExecutionResult.v1", "resultVersion": 1, "selfChecks": [], "status": "completed", "stepResults": [{"artifactRefs": [], "status": "completed", "stepId": "s_route"}]}
+E         
+E         === WORKFLOW FINALIZATION v1 ===
+E         {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E         
+E         === SCHEDULER TRACE v1 ===
+E         {"committed":false,"policyVersion":2,"ruleId":"route.reviewed_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"acceptance_evidence_incomplete","transitions":[{"agentRunId":"sub_63437ea8da27d2495b58b2905a175ff6","artifactId":null,"assignmentId":"asg_33d7e7e689a1_1_analyst","attemptId":"attempt_33d7e7e689a1_1_1","decisionId":"decision_33d7e7e689a1_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"analyst","taskId":"task_structured_route","workflowId":"wf_81bbcf3cd1ff4927a07b129205ea1803"},{"agentRunId":"sub_63437ea8da27d2495b58b2905a175ff6","artifactId":"artifact_asg_33d7e7e689a1_1_analyst_attempt_33d7e7e689a1_1_1_analyst_handoff","assignmentId":"asg_33d7e7e689a1_1_analyst","attemptId":"attempt_33d7e7e689a1_1_1","decisionId":"decision_33d7e7e689a1_0002","errorCode":null,"outcome":"completed","parentDecisionId":"decision_33d7e7e689a1_0001","sequence":2,"stage":"analyst","taskId":"task_structured_route","workflowId":"wf_81bbcf3cd1ff4927a07b129205ea1803"},{"agentRunId":"sub_9550c877b45b43a5f33fbaf06f251367","artifactId":null,"assignmentId":"asg_33d7e7e689a1_2_executor","attemptId":"attempt_33d7e7e689a1_2_1","decisionId":"decision_33d7e7e689a1_0003","errorCode":null,"outcome":"dispatched","parentDecisionId":"decision_33d7e7e689a1_0002","sequence":3,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_81bbcf3cd1ff4927a07b129205ea1803"},{"agentRunId":"sub_9550c877b45b43a5f33fbaf06f251367","artifactId":"artifact_asg_33d7e7e689a1_2_executor_attempt_33d7e7e689a1_2_1_execution","assignmentId":"asg_33d7e7e689a1_2_executor","attemptId":"attempt_33d7e7e689a1_2_1","decisionId":"decision_33d7e7e689a1_0004","errorCode":null,"outcome":"completed","parentDecisionId":"decision_33d7e7e689a1_0003","sequence":4,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_81bbcf3cd1ff4927a07b129205ea1803"},{"agentRunId":"sub_80228b5b63259a97e87f20902560a9f6","artifactId":null,"assignmentId":"asg_33d7e7e689a1_3_verifier","attemptId":"attempt_33d7e7e689a1_3_1","decisionId":"decision_33d7e7e689a1_0005","errorCode":null,"outcome":"dispatched","parentDecisionId":"decision_33d7e7e689a1_0004","sequence":5,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_81bbcf3cd1ff4927a07b129205ea1803"},{"agentRunId":"sub_80228b5b63259a97e87f20902560a9f6","artifactId":"artifact_asg_33d7e7e689a1_3_verifier_attempt_33d7e7e689a1_3_1_verification","assignmentId":"asg_33d7e7e689a1_3_verifier","attemptId":"attempt_33d7e7e689a1_3_1","decisionId":"decision_33d7e7e689a1_0006","errorCode":"acceptance_evidence_incomplete","outcome":"inconclusive","parentDecisionId":"decision_33d7e7e689a1_0005","sequence":6,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_81bbcf3cd1ff4927a07b129205ea1803"}],"workflowId":"wf_81bbcf3cd1ff4927a07b129205ea1803"}
+E         
+E         === SUBAGENT RESULT v1 ===
+E         {"agentType":"workflow","contractStatus":"derived","files":[{"action":"modified","path":"allowed.txt"}],"outcome":"failed","resultVersion":1,"risks":["error[acceptance_evidence_incomplete]: workflow review was not authoritative"],"subagentId":"sub_81bbcf3cd1ff4927a07b129205ea1803","summary":"Central scheduler failed a frozen change set for 1 file(s).","verification":{"checks":["check_tests: failed [artifact_verification_405b3fac02f97896a31ccf78]"],"status":"failed"}}
+E       assert False
+E        +  where False = ToolResult(ok=False, output='[Workflow structured workflow route failed]\n  Phases: explore -> plan -> execute -> veri...3fac02f97896a31ccf78]"],"status":"failed"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+
+tests/test_workflow_implementation_repair.py:112: AssertionError
+_ test_implementation_repair_rewrites_bytes_and_earns_new_gate_evidence[reviewer] _
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-830/test_implementation_repair_rew1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x103e67470>
+rejection = 'reviewer'
+
+    @pytest.mark.parametrize("rejection", ["verifier", "reviewer"])
+    def test_implementation_repair_rewrites_bytes_and_earns_new_gate_evidence(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, rejection: str
+    ) -> None:
+        result, roles, inputs, audits = _repair_run(
+            tmp_path, monkeypatch, rejection=rejection
+        )
+>       assert result.ok, result.output
+E       AssertionError: [Workflow structured workflow route failed]
+E           Phases: explore -> plan -> execute -> review
+E           Duration: 0.2s
+E         
+E         === REVIEW VERDICT ===
+E         {"blockingFindings": ["error[review_not_approved]: the Scheduler rejected the review gate; no isolated changes were promoted"], "reviewVersion": 1, "verdict": "changes_required", "warnings": []}
+E         
+E         === DETERMINISTIC VERIFICATION ===
+E         {"checks": [{"artifactRef": "artifact_verification_edfe5de2198bd0023ec6ea14", "checkId": "check_tests", "durationMs": 90, "exitCode": 0, "kind": "tests", "status": "passed"}], "executionAssignmentId": "asg_db731f234631_2_executor", "patchDigest": "sha256:0231a1df5851580a1d05618fb15eec4ea3a61071fa7b46322ea74bab82d362d2", "resultType": "VerificationResult.v1", "status": "passed", "taskId": "task_structured_route", "verificationId": "verification_f2fd391d8152b7f929b0965c", "verificationVersion": 1, "workflowId": "wf_ffc79d00ab2b440cbb030e06bff95503"}
+E         
+E         === EXECUTION RESULT ===
+E         {"assignmentId": "asg_db731f234631_2_executor", "blockers": [], "changeSet": {"baseDigest": "sha256:a71cf39d571b7a630490918d3f41ebbfb1f91cf06fdc07e030f1c69eaa73a6d3", "files": [{"action": "modified", "path": "allowed.txt"}], "patchDigest": "sha256:0231a1df5851580a1d05618fb15eec4ea3a61071fa7b46322ea74bab82d362d2", "workspaceRef": "isolated://workflow"}, "deviations": [], "orderId": "order_asg_db731f234631_2_executor_attempt_db731f234631_2_1", "resultType": "ExecutionResult.v1", "resultVersion": 1, "selfChecks": [], "status": "completed", "stepResults": [{"artifactRefs": [], "status": "completed", "stepId": "s_route"}]}
+E         
+E         === ANALYST REPORT ===
+E         {"assignmentId": "asg_db731f234631_1_analyst", "ballot": null, "findings": [{"claimId": "claim_route", "confidence": "high", "evidence": [{"lineEnd": 1, "lineStart": 1, "path": "allowed.txt"}], "statement": "The bounded route is supported."}], "implementationOrderCandidate": {"required": true, "steps": [{"action": "Apply the bounded change.", "allowedPaths": ["allowed.txt"], "id": "s_route"}], "verificationRequests": []}, "resultType": "AnalystReport.v1", "resultVersion": 1, "risks": [], "status": "completed", "unknowns": []}
+E         
+E         === WORKFLOW FINALIZATION v1 ===
+E         {"auditStatus": "persisted", "changesCommitted": false, "commitReadyStatus": "not_applicable", "finalizationStatus": "completed", "finalizationVersion": 1, "resultProjection": "full", "traceProjection": "full"}
+E         
+E         === SCHEDULER TRACE v1 ===
+E         {"committed":false,"policyVersion":2,"ruleId":"route.reviewed_change","schedulerTraceVersion":1,"status":"failed","taskId":"task_structured_route","terminalReason":"review_not_approved","transitions":[{"agentRunId":"sub_73e3e45fb7ac7178f1181c2f98fbe782","artifactId":null,"assignmentId":"asg_db731f234631_1_analyst","attemptId":"attempt_db731f234631_1_1","decisionId":"decision_db731f234631_0001","errorCode":null,"outcome":"dispatched","parentDecisionId":null,"sequence":1,"stage":"analyst","taskId":"task_structured_route","workflowId":"wf_ffc79d00ab2b440cbb030e06bff95503"},{"agentRunId":"sub_73e3e45fb7ac7178f1181c2f98fbe782","artifactId":"artifact_asg_db731f234631_1_analyst_attempt_db731f234631_1_1_analyst_handoff","assignmentId":"asg_db731f234631_1_analyst","attemptId":"attempt_db731f234631_1_1","decisionId":"decision_db731f234631_0002","errorCode":null,"outcome":"completed","parentDecisionId":"decision_db731f234631_0001","sequence":2,"stage":"analyst","taskId":"task_structured_route","workflowId":"wf_ffc79d00ab2b440cbb030e06bff95503"},{"agentRunId":"sub_e5d6f0e19a747c50dc6c3d843667be5d","artifactId":null,"assignmentId":"asg_db731f234631_2_executor","attemptId":"attempt_db731f234631_2_1","decisionId":"decision_db731f234631_0003","errorCode":null,"outcome":"dispatched","parentDecisionId":"decision_db731f234631_0002","sequence":3,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_ffc79d00ab2b440cbb030e06bff95503"},{"agentRunId":"sub_e5d6f0e19a747c50dc6c3d843667be5d","artifactId":"artifact_asg_db731f234631_2_executor_attempt_db731f234631_2_1_execution","assignmentId":"asg_db731f234631_2_executor","attemptId":"attempt_db731f234631_2_1","decisionId":"decision_db731f234631_0004","errorCode":null,"outcome":"completed","parentDecisionId":"decision_db731f234631_0003","sequence":4,"stage":"executor","taskId":"task_structured_route","workflowId":"wf_ffc79d00ab2b440cbb030e06bff95503"},{"agentRunId":"sub_295e858c81afdf5fcdcca741a9e40430","artifactId":null,"assignmentId":"asg_db731f234631_3_verifier","attemptId":"attempt_db731f234631_3_1","decisionId":"decision_db731f234631_0005","errorCode":null,"outcome":"dispatched","parentDecisionId":"decision_db731f234631_0004","sequence":5,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_ffc79d00ab2b440cbb030e06bff95503"},{"agentRunId":"sub_295e858c81afdf5fcdcca741a9e40430","artifactId":"artifact_asg_db731f234631_3_verifier_attempt_db731f234631_3_1_verification","assignmentId":"asg_db731f234631_3_verifier","attemptId":"attempt_db731f234631_3_1","decisionId":"decision_db731f234631_0006","errorCode":null,"outcome":"completed","parentDecisionId":"decision_db731f234631_0005","sequence":6,"stage":"verifier","taskId":"task_structured_route","workflowId":"wf_ffc79d00ab2b440cbb030e06bff95503"},{"agentRunId":"sub_3e09c0651d619548ff7a5706bc83f3ed","artifactId":null,"assignmentId":"asg_db731f234631_4_reviewer","attemptId":"attempt_db731f234631_4_1","decisionId":"decision_db731f234631_0007","errorCode":null,"outcome":"dispatched","parentDecisionId":"decision_db731f234631_0006","sequence":7,"stage":"reviewer","taskId":"task_structured_route","workflowId":"wf_ffc79d00ab2b440cbb030e06bff95503"},{"agentRunId":"sub_3e09c0651d619548ff7a5706bc83f3ed","artifactId":"artifact_asg_db731f234631_4_reviewer_attempt_db731f234631_4_1_review","assignmentId":"asg_db731f234631_4_reviewer","attemptId":"attempt_db731f234631_4_1","decisionId":"decision_db731f234631_0008","errorCode":"review_not_approved","outcome":"rejected","parentDecisionId":"decision_db731f234631_0007","sequence":8,"stage":"reviewer","taskId":"task_structured_route","workflowId":"wf_ffc79d00ab2b440cbb030e06bff95503"}],"workflowId":"wf_ffc79d00ab2b440cbb030e06bff95503"}
+E         
+E         === SUBAGENT RESULT v1 ===
+E         {"agentType":"workflow","contractStatus":"derived","files":[{"action":"modified","path":"allowed.txt"}],"outcome":"failed","resultVersion":1,"risks":["error[review_not_approved]: the Scheduler rejected the review gate; no isolated changes were promoted"],"subagentId":"sub_ffc79d00ab2b440cbb030e06bff95503","summary":"Central scheduler failed a frozen change set for 1 file(s).","verification":{"checks":["check_tests: passed [artifact_verification_edfe5de2198bd0023ec6ea14]"],"status":"passed"}}
+E       assert False
+E        +  where False = ToolResult(ok=False, output='[Workflow structured workflow route failed]\n  Phases: explore -> plan -> execute -> revi...5de2198bd0023ec6ea14]"],"status":"passed"}}', backgroundTask=None, awaitUser=False, verification=None, capability=None).ok
+
+tests/test_workflow_implementation_repair.py:112: AssertionError
+____________ test_default_repair_allowance_stops_after_one_revision ____________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-830/test_default_repair_allowance_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x103e3fd40>
+
+    def test_default_repair_allowance_stops_after_one_revision(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        result, roles, _inputs, _audits = _repair_run(
+            tmp_path, monkeypatch, rejection="verifier", always_bad=True
+        )
+        assert not result.ok
+>       assert roles.count("executor") == 2
+E       AssertionError: assert 1 == 2
+E        +  where 1 = <built-in method count of list object at 0x103ec9d80>('executor')
+E        +    where <built-in method count of list object at 0x103ec9d80> = ['analyst', 'executor'].count
+
+tests/test_workflow_implementation_repair.py:142: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_workflow_implementation_repair.py::test_implementation_repair_rewrites_bytes_and_earns_new_gate_evidence[verifier]
+FAILED tests/test_workflow_implementation_repair.py::test_implementation_repair_rewrites_bytes_and_earns_new_gate_evidence[reviewer]
+FAILED tests/test_workflow_implementation_repair.py::test_default_repair_allowance_stops_after_one_revision
+3 failed in 1.03s

@@ -1,0 +1,30 @@
+{
+  "failed_nodes": 279,
+  "unmatched": [],
+  "by_file": {
+    "tests/functional_audit/test_runner.py": 1,
+    "tests/test_agent_quality_evaluator.py": 3,
+    "tests/test_dashboard_chat_http.py": 75,
+    "tests/test_dashboard_chat_stream.py": 6,
+    "tests/test_dashboard_deletion_http.py": 20,
+    "tests/test_dashboard_sse.py": 14,
+    "tests/test_dashboard_web.py": 59,
+    "tests/test_file_review_normalization.py": 9,
+    "tests/test_http_request_safety.py": 1,
+    "tests/test_intent_runtime_integration.py": 1,
+    "tests/test_mcp_current_state_composition.py": 4,
+    "tests/test_mcp_transports.py": 5,
+    "tests/test_memory_approval_http.py": 22,
+    "tests/test_memory_approval_read_only.py": 2,
+    "tests/test_memory_retrieval_production_baseline_v40.py": 3,
+    "tests/test_memory_retrieval_production_baseline_v41.py": 12,
+    "tests/test_packaging.py": 4,
+    "tests/test_permission_conversation.py": 4,
+    "tests/test_permission_http.py": 18,
+    "tests/test_run_entrypoint_lifecycle.py": 5,
+    "tests/test_scheduler_repair_audit.py": 1,
+    "tests/test_skill_catalog_contracts.py": 1,
+    "tests/test_skill_frontmatter_example_acceptance.py": 1,
+    "tests/test_storage_health_http.py": 8
+  }
+}

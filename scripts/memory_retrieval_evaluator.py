@@ -471,29 +471,47 @@ class _InstrumentedMemoryManagerMixin:
         )
         return super().search(query, **kwargs)
 
-    def record_injections(self, entry_ids: list[str]) -> None:
+    def record_injections(
+        self,
+        entry_ids: list[str],
+        *,
+        observation_id: str | None = None,
+    ) -> None:
         self.injection_calls.append(list(entry_ids))
-        super().record_injections(entry_ids)
+        super().record_injections(entry_ids, observation_id=observation_id)
 
-    def record_retrievals(self, entry_ids: list[str]) -> None:
+    def record_retrievals(
+        self,
+        entry_ids: list[str],
+        *,
+        observation_id: str | None = None,
+    ) -> None:
         self.retrieval_calls.append(list(entry_ids))
-        super().record_retrievals(entry_ids)
+        super().record_retrievals(entry_ids, observation_id=observation_id)
 
     def record_retrievals_and_injections(
         self,
         retrieved_entry_ids: list[str],
         injected_entry_ids: list[str],
+        *,
+        observation_id: str | None = None,
     ) -> None:
         self.retrieval_calls.append(list(retrieved_entry_ids))
         self.injection_calls.append(list(injected_entry_ids))
         super().record_retrievals_and_injections(
             retrieved_entry_ids,
             injected_entry_ids,
+            observation_id=observation_id,
         )
 
-    def record_feedback(self, entry_ids: list[str], success: bool) -> None:
+    def record_feedback(
+        self,
+        entry_ids: list[str],
+        success: bool,
+        **kwargs: Any,
+    ) -> None:
         self.feedback_calls.append({"entry_ids": list(entry_ids), "success": success})
-        super().record_feedback(entry_ids, success)
+        super().record_feedback(entry_ids, success, **kwargs)
 
 
 @contextmanager
@@ -570,10 +588,6 @@ def _pipeline_for_case(manager: Any, case: dict[str, Any], *, reranker_model: An
         enable_reranker=False,
         enable_vector=False,
     )
-    if pipeline._injector is not None:
-        pipeline._injector._max_injected = case["max_memories"]
-        pipeline._injector._max_tokens = max(1, case["max_tokens"] // case["max_memories"])
-        pipeline._injector._injection_cooldown = 0.0
     return pipeline
 
 
@@ -741,9 +755,18 @@ def evaluate_arm(case: dict[str, Any], arm: str) -> dict[str, Any]:
                 manager.record_retrievals_and_injections(
                     list(result.selected_ids),
                     list(result.rendered_ids),
+                    observation_id=(
+                        f"evaluation-prompt-{case['case_id']}-{arm}"
+                    ),
                 )
                 task_start_save_count = len(manager.save_events)
-                manager.record_feedback(list(result.rendered_ids), success=True)
+                manager.record_feedback(
+                    list(result.rendered_ids),
+                    success=True,
+                    observation_id=(
+                        f"evaluation-feedback-{case['case_id']}-{arm}"
+                    ),
+                )
                 feedback_save_count = len(manager.save_events) - task_start_save_count
                 candidate_ids = list(result.candidate_ids)
                 selected_ids = list(result.selected_ids)

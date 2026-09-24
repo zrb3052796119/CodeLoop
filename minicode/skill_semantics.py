@@ -22,6 +22,7 @@ confirm, but never invent evidence on its own.
 
 from __future__ import annotations
 
+import inspect
 import json
 import logging
 import os
@@ -56,30 +57,92 @@ logger = logging.getLogger(__name__)
 _CONCEPT_GROUPS: tuple[tuple[str, ...], ...] = (
     ("database", "sql", "数据库",),
     ("query", "查询",),
-    ("optimize", "optimization", "performance", "tuning", "优化", "性能", "调优",),
+    ("optimize", "optimization", "tuning", "优化", "调优",),
+    ("performance", "slow", "slowness", "性能", "慢", "卡顿", "开销",),
+    (
+        "profile", "profiling", "hotspot", "测量", "瓶颈", "热点", "性能剖析",
+    ),
+    ("timing", "时间",),
+    (
+        "cpu", "latency", "throughput", "lock contention", "p95",
+        "regression", "regressions", "runtime", "application runtime",
+        "耗时", "延迟", "吞吐", "锁等待", "回归", "运行时",
+    ),
     ("test", "testing", "pytest", "测试",),
-    ("debug", "debugging", "troubleshoot", "调试", "排查",)
-    ,
+    ("fixture", "test fixture", "夹具",),
+    ("debug", "debugging", "troubleshoot", "diagnose", "root cause", "调试", "排查", "根因",),
     ("refactor", "重构",),
-    ("document", "documentation", "docs", "文档",),
+    (
+        "document", "documentation", "docs", "readme", "guide", "manual",
+        "adr", "rfc", "spec", "specification", "文档", "指南", "手册", "规范",
+    ),
+    (
+        "poem", "poetry", "verse", "诗", "诗歌", "短诗",
+    ),
+    ("explain", "explanation", "describe", "understand", "说明", "解释", "讲解",),
+    (
+        "call flow", "call path", "call chain", "execution path", "data flow",
+        "state flow", "component hierarchy", "path", "调用链", "调用路径", "执行路径",
+        "数据流", "状态流", "组件层级", "链路", "路径",
+    ),
     ("search", "搜索", "检索",),
+    (
+        "news", "headline", "headlines", "breaking news", "新闻", "热点新闻",
+        "头条",
+    ),
+    ("definition", "defined", "reference", "references", "usage", "定义", "引用", "调用点",),
     ("memory", "记忆",),
+    (
+        "persistent memory", "long term memory", "agent memory",
+        "长期记忆", "持久记忆",
+    ),
+    ("retrieval", "recall", "召回", "检索",),
+    ("provenance", "source chain", "来源", "来源链",),
+    ("preference", "偏好",),
+    ("context", "context window", "上下文",),
+    ("compaction", "compression", "压缩",),
+    ("summary", "fidelity", "摘要", "保真",),
     ("skill", "技能",),
     ("routing", "路由",),
-    ("agent", "代理",),
+    ("agent", "multi agent", "sub agent", "worker", "工作单元", "代理", "子代理",),
+    ("delegation", "task assignment", "parallel agent", "aggregation", "委派", "分工", "任务分配", "汇总",),
     ("frontend", "ui", "前端",),
+    (
+        "component", "layout", "responsive", "mobile", "overflow",
+        "组件", "布局", "移动端", "手机", "溢出",
+    ),
     ("backend", "api", "接口", "后端",),
-    ("security", "安全",),
+    (
+        "security", "credential", "credentials", "secret", "localstorage",
+        "local storage", "安全", "凭据", "密钥",
+    ),
+    (
+        "injection", "command injection", "shell injection", "sql injection",
+        "命令注入", "代码注入", "sql注入", "sql 注入",
+    ),
+    (
+        "permission", "permissions", "authorization", "access control",
+        "unauthorized", "admin access", "权限", "授权", "越权", "管理员权限",
+    ),
     ("dependency", "package", "依赖", "包",),
-    ("deploy", "deployment", "发布", "部署",),
+    (
+        "deploy", "deployment", "rollout", "rollback", "pipeline",
+        "image", "gray release", "发布", "部署", "灰度", "回滚", "流水线", "镜像", "放量", "上线",
+    ),
     ("docker", "container", "容器",),
-    ("git", "version control", "版本",),
+    (
+        "git", "version control", "branch", "commit", "rebase", "merge conflict",
+        "history", "rollback record", "分支", "提交", "变基", "合并冲突", "开发线", "版本记录", "可回滚记录",
+    ),
+    ("injection", "注入", "指令执行", "命令执行", "当成指令",),
+    ("path traversal", "traversal", "目录穿越", "绕出", "绕过", "越权访问",),
     ("network", "网络",),
     ("error", "错误", "报错",),
     ("retry", "重试",),
     ("cache", "缓存",),
     ("config", "configuration", "配置",),
     ("file", "文件",),
+    ("module", "模块",),
     ("code", "代码",),
     ("review", "audit", "审查", "审核",),
     ("architecture", "架构",),
@@ -110,6 +173,27 @@ def _semantic_tokens(text: str) -> set[str]:
         tokens.add(run)
         tokens.update(run[i : i + 2] for i in range(len(run) - 1))
     return {token for token in tokens if len(token) > 1 or not token.isascii()}
+
+
+def _contains_semantic_term(
+    flat_text: str,
+    tokens: set[str],
+    term: str,
+) -> bool:
+    """Match one normalized alias, including multi-word/qualified phrases."""
+    if not term:
+        return False
+    if not term.isascii():
+        return term in flat_text
+    if term in tokens:
+        return True
+    return (
+        re.search(
+            rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])",
+            flat_text,
+        )
+        is not None
+    )
 
 
 def _build_term_index() -> tuple[dict[str, tuple[int, ...]], tuple[frozenset[str], ...]]:
@@ -151,48 +235,47 @@ class AliasSemanticMatcher:
     def matched_concepts(self, query_text: str, skill_text: str) -> set[str]:
         """Concepts whose members occur on both the query and the skill side."""
         query_tokens = _semantic_tokens(query_text)
-        if not query_tokens:
+        query_flat = _normalize_term(query_text)
+        if not query_tokens and not query_flat:
             return set()
         skill_tokens = _semantic_tokens(skill_text)
         skill_flat = _normalize_term(skill_text)
         query_groups = {
             group_id
-            for token in query_tokens
-            for group_id in _TERM_TO_GROUPS.get(token, ())
+            for term, group_ids in _TERM_TO_GROUPS.items()
+            if _contains_semantic_term(query_flat, query_tokens, term)
+            for group_id in group_ids
         }
-        # A CJK run inside the query may contain a concept as a substring
-        # ("帮我优化数据库查询" contains "数据库") even though the run itself
-        # is not a table term.
-        query_flat = _normalize_term(query_text)
-        for term, group_ids in _TERM_TO_GROUPS.items():
-            if not term.isascii() and term in query_flat:
-                query_groups.update(group_ids)
         if not query_groups:
             return set()
 
         matched: set[str] = set()
         for group_id in query_groups:
             for term in _GROUPS[group_id]:
-                if term.isascii():
-                    if term in skill_tokens:
-                        matched.add(term)
-                        break
-                elif term in skill_flat:
+                if _contains_semantic_term(skill_flat, skill_tokens, term):
                     matched.add(term)
                     break
         return matched
+
+    def matched_group_ids(self, query_text: str, skill_text: str) -> set[int]:
+        """Stable concept identities shared by query and Skill text."""
+        matched = self.matched_concepts(query_text, skill_text)
+        return {
+            group_id
+            for term in matched
+            for group_id in _TERM_TO_GROUPS.get(term, ())
+        }
 
     def query_groups(self, query_text: str) -> set[int]:
         """Concept groups with any member present in the query text."""
         tokens = _semantic_tokens(query_text)
         flat = _normalize_term(query_text)
-        groups: set[int] = set()
-        for token in tokens:
-            groups.update(_TERM_TO_GROUPS.get(token, ()))
-        for term, group_ids in _TERM_TO_GROUPS.items():
-            if not term.isascii() and term in flat:
-                groups.update(group_ids)
-        return groups
+        return {
+            group_id
+            for term, group_ids in _TERM_TO_GROUPS.items()
+            if _contains_semantic_term(flat, tokens, term)
+            for group_id in group_ids
+        }
 
     def query_coverage(self, query_text: str, skill_text: str) -> float:
         """Share of the query's concept groups the skill also covers."""
@@ -229,6 +312,7 @@ DEFAULT_SIGNAL_THRESHOLD_UNKNOWN = 0.67
 DEFAULT_BOOST_THRESHOLD = 0.52
 
 _MAX_BATCH = 24
+_MAX_NEW_VECTORS_PER_ROUTE = 24
 _CACHE_MAX_ENTRIES = 2_000
 
 
@@ -246,10 +330,14 @@ class EmbeddingSemanticMatcher:
         cache_path: str | Path,
         *,
         clock: Callable[[], float] = time.time,
+        cache_anchor: str | Path | None = None,
     ) -> None:
         self._client = client
         self._cache_path = Path(cache_path)
         self._clock = clock
+        self._cache_anchor = (
+            Path(cache_anchor).absolute() if cache_anchor is not None else None
+        )
         self._vectors: dict[str, list[float]] | None = None
         self._dirty = False
 
@@ -262,11 +350,23 @@ class EmbeddingSemanticMatcher:
         remote embedding credentials or endpoints. An empty API key keeps the
         matcher off entirely (alias matching still runs).
         """
-        client = create_openai_compatible_embedding_client(workspace)
+        try:
+            client = create_openai_compatible_embedding_client(workspace)
+        except EmbeddingUnavailable as error:
+            logger.warning(
+                "Skill embedding configuration is unavailable; alias matching "
+                "only: %s",
+                error,
+            )
+            return None
         if client is None:
             return None
         root = Path(workspace) / ".mini-code"
-        return cls(client, root / "skill-embeddings.json")
+        return cls(
+            client,
+            root / "skill-embeddings.json",
+            cache_anchor=workspace,
+        )
 
     # ── Cache ───────────────────────────────────────────────────────
 
@@ -284,6 +384,12 @@ class EmbeddingSemanticMatcher:
 
     def _load_cache(self) -> dict[str, list[float]]:
         if self._vectors is not None:
+            return self._vectors
+        if not self._cache_path_is_safe():
+            logger.warning(
+                "Skill embedding cache ignored because its managed path is unsafe"
+            )
+            self._vectors = {}
             return self._vectors
         try:
             with open(self._cache_path, "r", encoding="utf-8") as handle:
@@ -312,8 +418,18 @@ class EmbeddingSemanticMatcher:
     def _save_cache(self) -> None:
         if not self._dirty or self._vectors is None:
             return
+        if not self._cache_path_is_safe():
+            logger.warning(
+                "Skill embedding cache write skipped because its managed path is unsafe"
+            )
+            return
         try:
             self._cache_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            if not self._cache_path_is_safe():
+                logger.warning(
+                    "Skill embedding cache write skipped after an unsafe path change"
+                )
+                return
             trimmed = dict(
                 sorted(self._vectors.items(), key=lambda item: item[0])[
                     -_CACHE_MAX_ENTRIES:
@@ -338,18 +454,49 @@ class EmbeddingSemanticMatcher:
         except OSError as error:
             logger.warning("Skill embedding cache write failed: %s", error)
 
+    def _cache_path_is_safe(self) -> bool:
+        """Reject workspace-managed cache roots redirected through symlinks."""
+        anchor = self._cache_anchor
+        if anchor is None:
+            return True
+        try:
+            cache_path = self._cache_path.absolute()
+            relative = cache_path.relative_to(anchor)
+            if anchor.is_symlink():
+                return False
+            current = anchor
+            for part in relative.parts:
+                current = current / part
+                if current.is_symlink():
+                    return False
+
+            resolved_anchor = anchor.resolve(strict=True)
+            existing_parent = cache_path.parent
+            while not existing_parent.exists():
+                parent = existing_parent.parent
+                if parent == existing_parent:
+                    return False
+                existing_parent = parent
+            return existing_parent.resolve(strict=True).is_relative_to(
+                resolved_anchor
+            )
+        except (OSError, RuntimeError, ValueError):
+            return False
+
     # ── Matching ────────────────────────────────────────────────────
 
     def similarities(
         self,
         query: str,
         skills: Sequence[tuple[str, str]],
+        *,
+        call_context: dict[str, Any] | None = None,
     ) -> list[float]:
         """Cosine similarity of ``query`` against each ``(digest, text)``.
 
-        Raises :class:`EmbeddingUnavailable` only when the query embedding
-        itself cannot be fetched; per-skill failures simply yield 0.0 so one
-        bad skill never takes routing down.
+        Provider failures raise :class:`EmbeddingUnavailable` so the router's
+        shared cooldown can prevent repeated document-batch retries. Invalid
+        individual vectors still yield 0.0 for only that Skill.
         """
         cache = self._load_cache()
         missing: list[tuple[str, str]] = []
@@ -359,32 +506,44 @@ class EmbeddingSemanticMatcher:
             if text.strip() and key not in cache and key not in seen:
                 seen.add(key)
                 missing.append((key, text))
-        if missing:
-            # Fetch every uncached skill, but keep each request chain bounded:
-            # the outer client already splits at the endpoint batch limit, and
-            # this second cap avoids one giant uninterrupted call sequence for
-            # a very large catalog while still filling every missing vector.
+        pending = missing[:_MAX_NEW_VECTORS_PER_ROUTE]
+        if pending:
+            # Warm a bounded prefix on each turn. Large catalogs converge over
+            # subsequent turns without allowing cold-cache routing to issue an
+            # unbounded remote request chain before the Agent loop starts.
             try:
-                for start in range(0, len(missing), _MAX_BATCH):
-                    batch = missing[start : start + _MAX_BATCH]
-                    vectors = self._client.embed(
-                        [text for _, text in batch]
+                for start in range(0, len(pending), _MAX_BATCH):
+                    batch = pending[start : start + _MAX_BATCH]
+                    vectors = _call_with_optional_context(
+                        self._client.embed,
+                        [text for _, text in batch],
+                        call_context=call_context,
                     )
                     for (key, _), vector in zip(batch, vectors):
                         if is_valid_embedding_vector(vector):
                             cache[key] = [float(item) for item in vector]
                             self._dirty = True
-                if len(missing) > _MAX_BATCH:
+                if len(pending) > _MAX_BATCH:
                     logger.info(
                         "Skill embedding cache filled in %d batches",
-                        (len(missing) + _MAX_BATCH - 1) // _MAX_BATCH,
+                        (len(pending) + _MAX_BATCH - 1) // _MAX_BATCH,
                     )
             except EmbeddingUnavailable as error:
                 self._save_cache()
-                logger.info("Skill embedding fetch skipped: %s", error)
+                logger.info("Skill embedding fetch failed: %s", error)
+                raise
+        if len(missing) > len(pending):
+            logger.info(
+                "Skill embedding warm-up deferred %d vectors to later turns",
+                len(missing) - len(pending),
+            )
 
         try:
-            query_vector = self._client.embed_one(query)
+            query_vector = _call_with_optional_context(
+                self._client.embed_one,
+                query,
+                call_context=call_context,
+            )
         except EmbeddingUnavailable:
             self._save_cache()
             raise
@@ -430,6 +589,27 @@ def embedding_thresholds(
 
 def _digest_key(digest: str) -> str:
     return str(digest)[:64]
+
+
+def _call_with_optional_context(
+    method: Callable[..., Any],
+    *args: Any,
+    call_context: dict[str, Any] | None,
+) -> Any:
+    """Pass call context only to clients whose public signature accepts it."""
+    if call_context is None:
+        return method(*args)
+    try:
+        parameters = inspect.signature(method).parameters.values()
+    except (TypeError, ValueError):
+        parameters = ()
+    if any(
+        parameter.name == "call_context"
+        or parameter.kind == inspect.Parameter.VAR_KEYWORD
+        for parameter in parameters
+    ):
+        return method(*args, call_context=call_context)
+    return method(*args)
 
 
 __all__ = [

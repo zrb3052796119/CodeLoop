@@ -1,10 +1,8 @@
-"""An explicit user verdict must reach the lesson the turn wrote.
+"""Response feedback reaches written lessons as weak, version-bound evidence.
 
-The Run Journal already bound each Run to the memories *rendered into* it, so
-a later accept/correct/reject could score how useful those were. Nothing bound
-a Run to the memory it *produced*. A turn the user marked wrong therefore left
-its conclusion sitting in the approval queue, indistinguishable from a turn
-that went well, and eligible to be approved and injected forever after.
+The user evaluates a whole response, not every claim later extracted from it.
+That signal may update ordinary usefulness, but only a claim-specific verdict
+may corroborate or reject a written Memory.
 """
 
 from __future__ import annotations
@@ -15,7 +13,7 @@ from typing import Any
 import pytest
 
 from minicode.conversation import (
-    _apply_written_memory_verdict,
+    _apply_written_run_outcome_feedback,
 )
 from minicode.memory import MemoryManager, MemoryScope
 from minicode.run_journal import RunJournal, RunJournalOwnershipError
@@ -25,7 +23,7 @@ def _entry(manager: MemoryManager, entry_id: str):
     return manager.memories[MemoryScope.PROJECT]._id_index.get(entry_id)
 
 
-def _stored_lesson(workspace: Path) -> str:
+def _stored_lesson(workspace: Path) -> tuple[str, str]:
     manager = MemoryManager(project_root=workspace)
     entry = manager.add_entry(
         MemoryScope.PROJECT,
@@ -33,62 +31,87 @@ def _stored_lesson(workspace: Path) -> str:
         content="Changed src/lease.py, after which pytest tests/test_lease.py passed.",
     )
     assert entry is not None
-    return entry.id
+    return entry.id, entry.approval_content_hash
 
 
 class _Journal:
     """Only the seam the verdict path uses."""
 
-    def __init__(self, written: tuple[str, ...] | None) -> None:
+    def __init__(
+        self,
+        written: tuple[tuple[str, str], ...] | None,
+    ) -> None:
         self._written = written
 
-    def get_written_memory_ids(self, run_id: str) -> tuple[str, ...] | None:
+    def get_written_memory_versions(
+        self,
+        run_id: str,
+    ) -> tuple[tuple[str, str], ...] | None:
         del run_id
         return self._written
 
 
 @pytest.mark.parametrize("signal", ["reject", "correct"])
-def test_a_wrong_turn_cannot_leave_its_lesson_approvable(
+def test_a_wrong_turn_records_weak_failure_without_rejecting_each_lesson(
     tmp_path: Path, signal: str
 ) -> None:
-    entry_id = _stored_lesson(tmp_path)
+    version = _stored_lesson(tmp_path)
+    entry_id, _digest = version
 
-    _apply_written_memory_verdict(tmp_path, _Journal((entry_id,)), "run-1", signal)
+    _apply_written_run_outcome_feedback(
+        tmp_path, _Journal((version,)), "run-1", signal
+    )
 
     entry = _entry(MemoryManager(project_root=tmp_path), entry_id)
     assert entry is not None
-    assert entry.approval_status == "rejected"
-    assert entry.lifecycle_status == "rejected"
+    assert entry.failure_count == 1
+    assert entry.corroborated_failure_count == 0
+    assert entry.approval_status == "approved"
+    assert entry.lifecycle_status == "active"
 
 
-def test_the_verdict_is_recorded_in_the_approval_audit(tmp_path: Path) -> None:
-    """An automatic rejection must stay reviewable, not silently disappear."""
-    entry_id = _stored_lesson(tmp_path)
+def test_whole_response_failure_does_not_create_a_rejection_audit(
+    tmp_path: Path,
+) -> None:
+    version = _stored_lesson(tmp_path)
+    entry_id, _digest = version
 
-    _apply_written_memory_verdict(tmp_path, _Journal((entry_id,)), "run-1", "reject")
+    _apply_written_run_outcome_feedback(
+        tmp_path, _Journal((version,)), "run-1", "reject"
+    )
 
     audit = MemoryManager(project_root=tmp_path).get_approval_audit(entry_id)
-    rejections = [item for item in audit if item.get("action") == "reject"]
-    assert rejections
-    assert rejections[-1]["actor"] == "user_signal"
-    assert "reject" in rejections[-1]["reason"]
+    rejections = [
+        item
+        for item in audit
+        if item.get("action") in {"reject", "feedback_quarantine"}
+    ]
+    assert rejections == []
 
 
-def test_acceptance_corroborates_instead_of_rejecting(tmp_path: Path) -> None:
-    entry_id = _stored_lesson(tmp_path)
+def test_acceptance_is_ordinary_evidence_instead_of_corroboration(
+    tmp_path: Path,
+) -> None:
+    version = _stored_lesson(tmp_path)
+    entry_id, _digest = version
 
-    _apply_written_memory_verdict(tmp_path, _Journal((entry_id,)), "run-1", "accept")
+    _apply_written_run_outcome_feedback(
+        tmp_path, _Journal((version,)), "run-1", "accept"
+    )
 
     entry = _entry(MemoryManager(project_root=tmp_path), entry_id)
     assert entry is not None
     assert entry.approval_status != "rejected"
-    assert entry.corroborated_success_count == 1
+    assert entry.success_count == 1
+    assert entry.corroborated_success_count == 0
 
 
 def test_a_run_that_wrote_nothing_is_left_alone(tmp_path: Path) -> None:
-    entry_id = _stored_lesson(tmp_path)
+    entry_id, _digest = _stored_lesson(tmp_path)
 
-    _apply_written_memory_verdict(tmp_path, _Journal(None), "run-1", "reject")
+    _apply_written_run_outcome_feedback(
+        tmp_path, _Journal(None), "run-1", "reject"
+    )
 
     entry = _entry(MemoryManager(project_root=tmp_path), entry_id)
     assert entry is not None
@@ -99,12 +122,17 @@ def test_a_broken_journal_never_breaks_recording_the_signal(tmp_path: Path) -> N
     """The verdict is best-effort; feedback must succeed regardless."""
 
     class _Exploding:
-        def get_written_memory_ids(self, run_id: str) -> tuple[str, ...]:
+        def get_written_memory_versions(
+            self,
+            run_id: str,
+        ) -> tuple[tuple[str, str], ...]:
             raise RuntimeError("journal unavailable")
 
-    entry_id = _stored_lesson(tmp_path)
+    entry_id, _digest = _stored_lesson(tmp_path)
 
-    _apply_written_memory_verdict(tmp_path, _Exploding(), "run-1", "reject")
+    _apply_written_run_outcome_feedback(
+        tmp_path, _Exploding(), "run-1", "reject"
+    )
 
     entry = _entry(MemoryManager(project_root=tmp_path), entry_id)
     assert entry is not None

@@ -1,0 +1,17 @@
+{
+  "runtimeSource": "current local working tree; not a clean release revision",
+  "runtimeGitHead": "81a41bf14c6bd286383607c59122b17e7e046f84",
+  "runtimeSourceSha256": {
+    "minicode/agent_runtime.py": "9d67804a604835e05653e3d951e65434cadebd9b2f768b2bed3df4a1557a2f7c",
+    "minicode/agent_loop.py": "0f2299a470844f7f9de343f4053af3fdb30aed6c586e040c256db3c594c045fe",
+    "minicode/tools/task.py": "f0c1a85236bd20d76c855fe505bef4930f16347073c22793add7ce3dc92fef78",
+    "minicode/central_scheduler.py": "2c32e6530629bf389da70718e633e685b00f321b9464f6dc4f9d3de4bd8a146c",
+    "minicode/workflow_runner.py": "c560f5db56ade8f09e1e30f3b355fb9b74153d9da14c85894daf9d6eebf660df",
+    "minicode/permissions.py": "b447453f68999ea2698a377fefa4788354762d95531f89fbb025e790118299eb",
+    "minicode/prompt.py": "cebb7a87493cb134474496f6947f0c6fa60939dfe5886f132460836d97dfdfda"
+  },
+  "targetRepository": "https://github.com/zrb3052796119/CodeLoop",
+  "targetBaseline": "638b7dd1f07c56b7fa864832f70cdcafc0cb3b0b",
+  "taskPromptSha256": "46acdd28ce569706a69f22b71086805703336986c27113795c0fac37c7979ae4",
+  "independentOracleSha256": "784ef1c6dc34b66fcc4509c067a96a31d85135aec2566db089cb822f2de55124"
+}

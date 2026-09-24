@@ -1,0 +1,281 @@
+.FF                                                                      [100%]
+=================================== FAILURES ===================================
+____________ test_project_skills_declare_narrow_operation_contracts ____________
+
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-873/test_project_skills_declare_na0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x105b5d0f0>
+
+    def test_project_skills_declare_narrow_operation_contracts(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setenv("HOME", str(tmp_path / "home"))
+        workspace = Path(__file__).resolve().parents[1]
+        expected = {
+            "code-skills/minicode-study": (
+                ["codebase explanation", "architecture walkthrough"],
+                ["explain.read"],
+            ),
+            "code-understanding/codebase-explanation": (
+                ["codebase explanation", "runtime trace"],
+                ["explain.read", "search.read"],
+            ),
+            "code-understanding/design-review": (
+                ["design review", "code audit"],
+                ["review.analyze", "review.compare"],
+            ),
+            "code-understanding/minicode-learning-coach-demo": (
+                ["guided codebase explanation", "architecture walkthrough"],
+                ["explain.read", "question.create"],
+            ),
+            "debugging/concurrency-debugging": (
+                ["concurrency diagnosis", "race and deadlock analysis"],
+                ["debug.analyze"],
+            ),
+            "debugging/pytest-debugging": (
+                ["pytest failure diagnosis", "pytest failure repair"],
+                ["debug.analyze", "debug.update", "test.execute"],
+            ),
+            "dependencies/dependency-hygiene": (
+                ["dependency addition", "dependency upgrade or removal"],
+                ["configure.update", "review.analyze", "test.execute"],
+            ),
+            "documentation/readme-authoring": (
+                ["README authoring", "README revision"],
+                ["document.create", "document.update"],
+            ),
+                "git/commit-hygiene": (
+                    ["change review before commit", "record code changes"],
+                    ["review.analyze", "code.update", "document.create"],
+                ),
+            "performance/hotpath-profiling": (
+                ["performance diagnosis", "measured optimization"],
+                [
+                    "debug.analyze",
+                    "review.analyze",
+                    "refactor.update",
+                    "test.execute",
+                ],
+            ),
+            "quality/lint-and-static-cleanup": (
+                ["lint warning repair", "static analysis cleanup"],
+                ["code.update"],
+            ),
+            "refactoring/safe-refactor": (
+                ["behavior-preserving refactor"],
+                ["refactor.update"],
+            ),
+            "refactoring/structural-rename": (
+                ["structural rename", "module move"],
+                ["code.rename", "code.update"],
+            ),
+            "security/secret-and-injection-review": (
+                ["security audit", "secret and injection review"],
+                ["review.analyze"],
+            ),
+            "testing/regression-from-bug-report": (
+                ["bug reproduction", "regression test and repair"],
+                [
+                    "debug.analyze",
+                    "debug.update",
+                    "test.create",
+                    "test.execute",
+                ],
+            ),
+            "testing/test-driven-development": (
+                ["test-first implementation", "test-first code change"],
+                ["test.create", "test.execute", "code.create", "code.update"],
+            ),
+        }
+    
+        actual = {
+            skill.qualified_name: (
+                skill.purposes,
+                skill.supported_operations,
+            )
+            for skill in discover_skills(workspace)
+            if skill.source == "project"
+        }
+    
+>       assert actual == expected
+E       AssertionError: assert {'code-skills...reate']), ...} == {'code-skills...reate']), ...}
+E         
+E         Omitting 15 identical items, use -vv to show
+E         Differing items:
+E         {'quality/lint-and-static-cleanup': (['lint warning repair', 'static analysis cleanup'], ['code.update', 'debug.update'])} != {'quality/lint-and-static-cleanup': (['lint warning repair', 'static analysis cleanup'], ['code.update'])}
+E         Use -v to get more diff
+
+tests/test_skill_catalog_contracts.py:309: AssertionError
+_______ test_all_project_skill_examples_route_back_to_their_source_skill _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x105fe2330>
+tmp_path = PosixPath('/private/var/folders/f4/9n10ft0d23v18qrjy2_l_wy40000gn/T/pytest-of-zhourunbo/pytest-873/test_all_project_skill_example0')
+
+    def test_all_project_skill_examples_route_back_to_their_source_skill(
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """Exercise workspace catalog examples through the production parse/route seam."""
+        repository = Path(__file__).resolve().parents[1]
+        isolated_home = tmp_path / "home"
+        isolated_home.mkdir()
+        monkeypatch.setenv("HOME", str(isolated_home))
+    
+        # ``compat_project`` may coexist under .claude/skills.  This acceptance
+        # contract intentionally covers only the workspace .mini-code catalog.
+        skills = [
+            skill for skill in discover_skills(repository) if skill.source == "project"
+        ]
+        examples = [(skill, prompt) for skill in skills for prompt in skill.examples]
+    
+        assert len(skills) == _EXPECTED_SKILL_COUNT
+        assert len(examples) == _EXPECTED_EXAMPLE_COUNT
+        assert all(skill.examples for skill in skills)
+    
+        catalog: dict[str, SkillSummary] = {skill.qualified_name: skill for skill in skills}
+        runtime_workspace = tmp_path / "runtime-workspace"
+        runtime_workspace.mkdir()
+        tools = create_default_tool_registry(
+            str(runtime_workspace),
+            {"toolProfile": "core"},
+            include_mcp=False,
+        )
+        registry = build_tool_capability_snapshot(tools)
+        actual_examples = {(skill.qualified_name, prompt) for skill, prompt in examples}
+        assert actual_examples == set(_EXPECTED_EXAMPLES)
+    
+        mismatches: list[str] = []
+        contract_violations: list[str] = []
+        lane_violations: list[str] = []
+        covered_operations: set[tuple[str, str]] = set()
+    
+        try:
+            for source_skill, prompt in examples:
+                decision = route_skill_turn(
+                    SkillRoutingTurnRequest(
+                        prompt=prompt,
+                        skills=skills,
+                        registry=registry,
+                        top_k=_TOP_K,
+                    ),
+                    SkillRoutingTurnAdapters(router=SkillRouter()),
+                )
+                operations = _operations(decision.intent)
+                selected = _selected(decision.routing)
+                expected_operations, expected_selected = _EXPECTED_EXAMPLES[
+                    (source_skill.qualified_name, prompt)
+                ]
+                if operations != expected_operations or selected != expected_selected:
+                    mismatches.append(
+                        _case_line(
+                            source_skill.qualified_name,
+                            prompt,
+                            operations,
+                            selected,
+                        )
+                        + (
+                            f" expected_operations={expected_operations!r} "
+                            f"expected_selected={expected_selected!r}"
+                        )
+                    )
+    
+                affirmed_indexes = tuple(
+                    index
+                    for index, operation in enumerate(decision.intent.operations)
+                    if operation.polarity.value == "affirmed"
+                )
+                source_routes = [
+                    routed
+                    for routed in decision.routing.selected
+                    if routed.qualified_name == source_skill.qualified_name
+                ]
+                if (
+                    len(source_routes) != 1
+                    or tuple(source_routes[0].operation_indexes) != affirmed_indexes
+                ):
+                    lane_violations.append(
+                        _case_line(
+                            source_skill.qualified_name,
+                            prompt,
+                            operations,
+                            selected,
+                        )
+                        + f" affirmed_indexes={affirmed_indexes!r}"
+                    )
+    
+                for routed in decision.routing.selected:
+                    contract = set(catalog[routed.qualified_name].supported_operations)
+                    if not contract:
+                        continue
+                    for operation_index in routed.operation_indexes:
+                        if not 0 <= operation_index < len(decision.intent.operations):
+                            contract_violations.append(
+                                _case_line(
+                                    source_skill.qualified_name,
+                                    prompt,
+                                    operations,
+                                    selected,
+                                )
+                                + (
+                                    f" routed={routed.qualified_name!r} "
+                                    f"invalid_operation_index={operation_index!r}"
+                                )
+                            )
+                            continue
+                        operation = decision.intent.operations[operation_index]
+                        actual = (
+                            f"{operation.intent_type.value}.{operation.action_type.value}"
+                        )
+                        if actual not in contract:
+                            contract_violations.append(
+                                _case_line(
+                                    source_skill.qualified_name,
+                                    prompt,
+                                    operations,
+                                    selected,
+                                )
+                                + (
+                                    f" routed={routed.qualified_name!r} "
+                                    f"claimed={operation_index}:{actual!r} "
+                                    f"contract={sorted(contract)!r}"
+                                )
+                            )
+                        elif operation.polarity.value == "affirmed":
+                            covered_operations.add((routed.qualified_name, actual))
+        finally:
+            tools.dispose()
+    
+        failures: list[str] = []
+        if mismatches:
+            failures.append(
+                f"frozen example mismatches={len(mismatches)}/{len(examples)}:\n"
+                + "\n".join(mismatches)
+            )
+        if contract_violations:
+            failures.append(
+                f"operation contract violations={len(contract_violations)}:\n"
+                + "\n".join(contract_violations)
+            )
+        if lane_violations:
+            failures.append(
+                f"source Skill did not cover every affirmed lane="
+                f"{len(lane_violations)}:\n" + "\n".join(lane_violations)
+            )
+        declared_operations = {
+            (skill.qualified_name, operation)
+            for skill in skills
+            for operation in skill.supported_operations
+        }
+        uncovered = sorted(declared_operations - covered_operations)
+        if uncovered:
+            failures.append(f"uncovered supported_operations={uncovered!r}")
+    
+>       assert not failures, "\n\n".join(failures)
+E       AssertionError: uncovered supported_operations=[('quality/lint-and-static-cleanup', 'debug.update')]
+E       assert not ["uncovered supported_operations=[('quality/lint-and-static-cleanup', 'debug.update')]"]
+
+tests/test_skill_frontmatter_example_acceptance.py:437: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_skill_catalog_contracts.py::test_project_skills_declare_narrow_operation_contracts
+FAILED tests/test_skill_frontmatter_example_acceptance.py::test_all_project_skill_examples_route_back_to_their_source_skill
+2 failed, 1 passed in 6.94s

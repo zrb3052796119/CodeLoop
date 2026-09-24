@@ -58,11 +58,37 @@ USER_MODEL_ENV_KEYS = frozenset(
         "MINI_CODE_REFLECTION_SHADOW_SAMPLE_RATE",
         "MINI_CODE_REFLECTION_SHADOW_MAX_RECORDS",
         "MINI_CODE_REFLECTION_SHADOW_MAX_FILE_BYTES",
+        "MINI_CODE_RECOVERY_LESSON_SHADOW_ENABLED",
+        "MINI_CODE_RECOVERY_LESSON_MAX_CALLS",
         "MINI_CODE_REFLECTION_PROMPT_VERSION",
         "MINI_CODE_REFLECTION_LLM_SELECTION_STRATEGY",
         "MINI_CODE_TURN_BUDGET_TOKENS",
         "MINI_CODE_TURN_BUDGET_MODEL_CALLS",
         "MINI_CODE_TURN_BUDGET_COST_USD",
+        "MINI_CODE_INTENT_SEMANTIC_ENABLED",
+        "MINI_CODE_INTENT_SEMANTIC_TIMEOUT_SECONDS",
+        "MINI_CODE_INTENT_SEMANTIC_MIN_CONFIDENCE",
+        "MINI_CODE_INTENT_SEMANTIC_MAX_INPUT_CHARS",
+        "MINI_CODE_INTENT_SEMANTIC_MAX_OUTPUT_BYTES",
+        "MINI_CODE_INTENT_SEMANTIC_MAX_OUTPUT_TOKENS",
+        "MINI_CODE_INTENT_SEMANTIC_JSON_MODE",
+        "MINI_CODE_INTENT_SEMANTIC_REASONING_EFFORT",
+        "MINI_CODE_INTENT_SEMANTIC_RESERVE_MODEL_CALLS",
+        "MINI_CODE_INTENT_SEMANTIC_CALIBRATION_PATH",
+        "MINI_CODE_INTENT_SEMANTIC_ALLOW_UNREVIEWED_CALIBRATION",
+        "MINI_CODE_SKILL_RERANKER_ENABLED",
+        "MINI_CODE_SKILL_RERANKER_TIMEOUT_SECONDS",
+        "MINI_CODE_SKILL_RERANKER_MIN_CONFIDENCE",
+        "MINI_CODE_SKILL_RERANKER_MAX_CANDIDATES",
+        "MINI_CODE_SKILL_RERANKER_MAX_INPUT_CHARS",
+        "MINI_CODE_SKILL_RERANKER_MAX_OUTPUT_BYTES",
+        "MINI_CODE_SKILL_RERANKER_MAX_OUTPUT_TOKENS",
+        "MINI_CODE_SKILL_RERANKER_RESERVE_MODEL_CALLS",
+        "MINI_CODE_SKILL_SELECTION_MODE",
+        "MINI_CODE_SKILL_FLAT_CATALOG_CHARS",
+        "MINI_CODE_SKILL_PAGE_CHARS",
+        "MINI_CODE_SKILL_INTENT_HINTS",
+        "MINI_CODE_SKILL_INTENT_PREFETCH",
         "MINI_CODE_SUBAGENT_ROUTING_ENABLED",
         "MINI_CODE_SUBAGENT_PROVIDER",
         "MINI_CODE_SUBAGENT_BASE_URL",
@@ -71,6 +97,9 @@ USER_MODEL_ENV_KEYS = frozenset(
         "MINI_CODE_SUBAGENT_EXPLORE_MODEL",
         "MINI_CODE_SUBAGENT_PLAN_MODEL",
         "MINI_CODE_SUBAGENT_GENERAL_MODEL",
+        "MINI_CODE_SUBAGENT_EXPLORE_MAX_TURNS",
+        "MINI_CODE_SUBAGENT_PLAN_MAX_TURNS",
+        "MINI_CODE_SUBAGENT_GENERAL_MAX_TURNS",
         "MINI_CODE_MEMORY_HYBRID_ENABLED",
         "MINI_CODE_MEMORY_HYBRID_EMBEDDING_PROVIDER",
         "MINI_CODE_ALLOW_REMOTE_MEMORY_EMBEDDING",
@@ -516,6 +545,8 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
         "reflectionShadowSampleRate": "MINI_CODE_REFLECTION_SHADOW_SAMPLE_RATE",
         "reflectionShadowMaxRecords": "MINI_CODE_REFLECTION_SHADOW_MAX_RECORDS",
         "reflectionShadowMaxFileBytes": "MINI_CODE_REFLECTION_SHADOW_MAX_FILE_BYTES",
+        "recoveryLessonShadowEnabled": "MINI_CODE_RECOVERY_LESSON_SHADOW_ENABLED",
+        "recoveryLessonMaxCalls": "MINI_CODE_RECOVERY_LESSON_MAX_CALLS",
         "reflectionPromptVersion": "MINI_CODE_REFLECTION_PROMPT_VERSION",
         "reflectionLLMSelectionStrategy": "MINI_CODE_REFLECTION_LLM_SELECTION_STRATEGY",
     }
@@ -543,6 +574,313 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
         or budget_settings.get("maxModelCalls"),
         "maxCostUsd": env.get("MINI_CODE_TURN_BUDGET_COST_USD")
         or budget_settings.get("maxCostUsd"),
+    }
+
+    # Optional semantic fallback for unresolved intent. This is deliberately
+    # opt-in because it sends a bounded excerpt of the conversation to the
+    # already configured primary model and consumes the same per-turn budget.
+    intent_semantic_settings = (
+        effective.get("intentSemanticClassifier", {})
+        if legacy_model_fallback_enabled
+        else {}
+    )
+    if not isinstance(intent_semantic_settings, dict):
+        intent_semantic_settings = {}
+
+    def intent_semantic_value(
+        env_name: str,
+        setting_name: str,
+        default: Any,
+    ) -> Any:
+        value, source = resolved(env_name)
+        if source != "default":
+            return value
+        return intent_semantic_settings.get(setting_name, default)
+
+    def bounded_int(value: Any, *, default: int, minimum: int, maximum: int) -> int:
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            return default
+        return parsed if minimum <= parsed <= maximum else default
+
+    def bounded_float(
+        value: Any,
+        *,
+        default: float,
+        minimum: float,
+        maximum: float,
+    ) -> float:
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError):
+            return default
+        return parsed if minimum <= parsed <= maximum else default
+
+    intent_semantic_classifier = {
+        "enabled": _as_bool(
+            intent_semantic_value(
+                "MINI_CODE_INTENT_SEMANTIC_ENABLED",
+                "enabled",
+                False,
+            )
+        ),
+        "timeoutSeconds": bounded_float(
+            intent_semantic_value(
+                "MINI_CODE_INTENT_SEMANTIC_TIMEOUT_SECONDS",
+                "timeoutSeconds",
+                5.0,
+            ),
+            default=5.0,
+            minimum=0.05,
+            maximum=10.0,
+        ),
+        "minConfidence": bounded_float(
+            intent_semantic_value(
+                "MINI_CODE_INTENT_SEMANTIC_MIN_CONFIDENCE",
+                "minConfidence",
+                0.72,
+            ),
+            default=0.72,
+            minimum=0.5,
+            maximum=0.85,
+        ),
+        "maxInputChars": bounded_int(
+            intent_semantic_value(
+                "MINI_CODE_INTENT_SEMANTIC_MAX_INPUT_CHARS",
+                "maxInputChars",
+                4000,
+            ),
+            default=4000,
+            minimum=256,
+            maximum=20_000,
+        ),
+        "maxOutputBytes": bounded_int(
+            intent_semantic_value(
+                "MINI_CODE_INTENT_SEMANTIC_MAX_OUTPUT_BYTES",
+                "maxOutputBytes",
+                4096,
+            ),
+            default=4096,
+            minimum=256,
+            maximum=16_384,
+        ),
+        "maxOutputTokens": bounded_int(
+            intent_semantic_value(
+                "MINI_CODE_INTENT_SEMANTIC_MAX_OUTPUT_TOKENS",
+                "maxOutputTokens",
+                512,
+            ),
+            default=512,
+            minimum=32,
+            maximum=1024,
+        ),
+        "jsonMode": _as_bool(
+            intent_semantic_value(
+                "MINI_CODE_INTENT_SEMANTIC_JSON_MODE", "jsonMode", True
+            )
+        ),
+        "reasoningEffort": str(
+            intent_semantic_value(
+                "MINI_CODE_INTENT_SEMANTIC_REASONING_EFFORT",
+                "reasoningEffort",
+                "low",
+            )
+            or "default"
+        ).strip().lower(),
+        "reserveModelCalls": bounded_int(
+            intent_semantic_value(
+                "MINI_CODE_INTENT_SEMANTIC_RESERVE_MODEL_CALLS",
+                "reserveModelCalls",
+                1,
+            ),
+            default=1,
+            minimum=1,
+            maximum=10,
+        ),
+        "calibrationPath": str(
+            intent_semantic_value(
+                "MINI_CODE_INTENT_SEMANTIC_CALIBRATION_PATH",
+                "calibrationPath",
+                "",
+            )
+            or ""
+        ).strip(),
+        "allowUnreviewedCalibration": _as_bool(
+            intent_semantic_value(
+                "MINI_CODE_INTENT_SEMANTIC_ALLOW_UNREVIEWED_CALIBRATION",
+                "allowUnreviewedCalibration",
+                False,
+            )
+        ),
+    }
+
+    if intent_semantic_classifier["reasoningEffort"] not in {
+        "default", "low", "high", "max"
+    }:
+        intent_semantic_classifier["reasoningEffort"] = "low"
+
+    # Optional remote semantic reranking for the deterministic Skill candidate
+    # pool. It reuses the configured primary provider and the shared turn
+    # budget, and is disabled unless explicitly opted in. The adapter itself
+    # additionally requires provider-enforced native JSON Schema support.
+    skill_reranker_settings = (
+        effective.get("skillCandidateReranker", {})
+        if legacy_model_fallback_enabled
+        else {}
+    )
+    if not isinstance(skill_reranker_settings, dict):
+        skill_reranker_settings = {}
+
+    def skill_reranker_value(
+        env_name: str,
+        setting_name: str,
+        default: Any,
+    ) -> Any:
+        value, source = resolved(env_name)
+        if source != "default":
+            return value
+        return skill_reranker_settings.get(setting_name, default)
+
+    skill_candidate_reranker = {
+        "enabled": _as_bool(
+            skill_reranker_value(
+                "MINI_CODE_SKILL_RERANKER_ENABLED",
+                "enabled",
+                False,
+            )
+        ),
+        "timeoutSeconds": bounded_float(
+            skill_reranker_value(
+                "MINI_CODE_SKILL_RERANKER_TIMEOUT_SECONDS",
+                "timeoutSeconds",
+                1.5,
+            ),
+            default=1.5,
+            minimum=0.05,
+            maximum=10.0,
+        ),
+        "minConfidence": bounded_float(
+            skill_reranker_value(
+                "MINI_CODE_SKILL_RERANKER_MIN_CONFIDENCE",
+                "minConfidence",
+                0.80,
+            ),
+            default=0.80,
+            minimum=0.5,
+            maximum=0.95,
+        ),
+        "maxCandidates": bounded_int(
+            skill_reranker_value(
+                "MINI_CODE_SKILL_RERANKER_MAX_CANDIDATES",
+                "maxCandidates",
+                8,
+            ),
+            default=8,
+            minimum=2,
+            maximum=16,
+        ),
+        "maxInputChars": bounded_int(
+            skill_reranker_value(
+                "MINI_CODE_SKILL_RERANKER_MAX_INPUT_CHARS",
+                "maxInputChars",
+                6000,
+            ),
+            default=6000,
+            minimum=512,
+            maximum=20_000,
+        ),
+        "maxOutputBytes": bounded_int(
+            skill_reranker_value(
+                "MINI_CODE_SKILL_RERANKER_MAX_OUTPUT_BYTES",
+                "maxOutputBytes",
+                2048,
+            ),
+            default=2048,
+            minimum=256,
+            maximum=16_384,
+        ),
+        "maxOutputTokens": bounded_int(
+            skill_reranker_value(
+                "MINI_CODE_SKILL_RERANKER_MAX_OUTPUT_TOKENS",
+                "maxOutputTokens",
+                128,
+            ),
+            default=128,
+            minimum=32,
+            maximum=1024,
+        ),
+        "reserveModelCalls": bounded_int(
+            skill_reranker_value(
+                "MINI_CODE_SKILL_RERANKER_RESERVE_MODEL_CALLS",
+                "reserveModelCalls",
+                1,
+            ),
+            default=1,
+            minimum=1,
+            maximum=10,
+        ),
+    }
+
+    # Model-first Skill selection shows the whole authorized catalog to the
+    # main model instead of pre-filtering by relevance routing. This is a
+    # new-style setting: process/private env overrides the settings key, and
+    # the enum guard falls back conservatively on invalid values.
+    skill_selection_settings = effective.get("skillSelection", {})
+    if not isinstance(skill_selection_settings, dict):
+        skill_selection_settings = {}
+    skill_selection_mode = str(
+        env.get("MINI_CODE_SKILL_SELECTION_MODE")
+        or skill_selection_settings.get("mode")
+        or "model"
+    ).strip().lower()
+    if skill_selection_mode not in {"routed", "model"}:
+        import warnings
+
+        warnings.warn(
+            f"Invalid skillSelection.mode {skill_selection_mode!r}; "
+            "falling back to 'model'"
+        )
+        skill_selection_mode = "model"
+    # Hierarchical discovery budgets (model mode only): the flat catalog is
+    # shown whole while its estimated size fits flatCatalogCharBudget; larger
+    # catalogs with at least one SKILL_DIR directory escalate to directory
+    # cards plus the browse_skill_directory/search_skills tools, whose pages
+    # stay within skillPageCharBudget.
+    skill_selection = {
+        "mode": skill_selection_mode,
+        "flatCatalogCharBudget": bounded_int(
+            env.get("MINI_CODE_SKILL_FLAT_CATALOG_CHARS")
+            or skill_selection_settings.get("flatCatalogCharBudget"),
+            default=8000,
+            minimum=1000,
+            maximum=200000,
+        ),
+        "skillPageCharBudget": bounded_int(
+            env.get("MINI_CODE_SKILL_PAGE_CHARS")
+            or skill_selection_settings.get("skillPageCharBudget"),
+            default=4000,
+            minimum=500,
+            maximum=50000,
+        ),
+        # Experiment arm B (intent hints): both default off. intentPrefetch
+        # implies intentHints — prefetching renders the hint block's top
+        # directory page, which is meaningless without the hints themselves.
+        "intentHints": _as_bool(
+            env.get("MINI_CODE_SKILL_INTENT_HINTS")
+            or skill_selection_settings.get("intentHints"),
+            False,
+        )
+        or _as_bool(
+            env.get("MINI_CODE_SKILL_INTENT_PREFETCH")
+            or skill_selection_settings.get("intentPrefetch"),
+            False,
+        ),
+        "intentPrefetch": _as_bool(
+            env.get("MINI_CODE_SKILL_INTENT_PREFETCH")
+            or skill_selection_settings.get("intentPrefetch"),
+            False,
+        ),
     }
 
     # Child-agent model routing is independent from the parent provider. The
@@ -616,7 +954,7 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
         else hybrid_settings.get("allowRemoteEmbedding", False)
     )
     default_hybrid_evidence_name = (
-        "memory-retrieval-hybrid-qwen-v1-production-evidence.json"
+        "memory-retrieval-hybrid-qwen-v2-production-evidence.json"
         if memory_hybrid_embedding_provider == "qwen"
         else "memory-retrieval-hybrid-v4-production-evidence.json"
     )
@@ -683,9 +1021,14 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
         "reflectionShadowSampleRate": reflection_config.shadow_sample_rate,
         "reflectionShadowMaxRecords": reflection_config.shadow_max_records,
         "reflectionShadowMaxFileBytes": reflection_config.shadow_max_file_bytes,
+        "recoveryLessonShadowEnabled": reflection_config.recovery_lesson_shadow_enabled,
+        "recoveryLessonMaxCalls": reflection_config.recovery_lesson_max_calls,
         "reflectionPromptVersion": reflection_config.prompt_version,
         "reflectionLLMSelectionStrategy": reflection_config.selection_strategy,
         "agentTurnBudget": agent_turn_budget,
+        "intentSemanticClassifier": intent_semantic_classifier,
+        "skillCandidateReranker": skill_candidate_reranker,
+        "skillSelection": skill_selection,
         "subagentRoutingEnabled": _as_bool(subagent_enabled_value),
         "subagentProvider": str(
             subagent_env_value("MINI_CODE_SUBAGENT_PROVIDER")
@@ -753,6 +1096,14 @@ def _is_valid_http_url(value: str | None) -> bool:
     }
 
 
+def _summary_int(value: Any, default: int) -> int:
+    try:
+        parsed = int(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return default
+    return parsed if parsed > 0 else default
+
+
 def safe_runtime_summary(runtime: Mapping[str, Any]) -> dict[str, Any]:
     """Return an explicit, credential-free runtime diagnostic projection."""
     from minicode.agent_budget import AgentTurnBudget
@@ -766,6 +1117,15 @@ def safe_runtime_summary(runtime: Mapping[str, Any]) -> dict[str, Any]:
             value = subagent_models.get(key)
             if isinstance(value, str) and value.strip():
                 safe_models[key] = value.strip()[:160]
+    intent_semantic_values = values.get("intentSemanticClassifier")
+    if not isinstance(intent_semantic_values, Mapping):
+        intent_semantic_values = {}
+    skill_reranker_values = values.get("skillCandidateReranker")
+    if not isinstance(skill_reranker_values, Mapping):
+        skill_reranker_values = {}
+    skill_selection_values = values.get("skillSelection")
+    if not isinstance(skill_selection_values, Mapping):
+        skill_selection_values = {}
     return {
         "model": str(values.get("model") or "")[:160],
         "provider": str(values.get("provider") or "")[:40],
@@ -781,6 +1141,34 @@ def safe_runtime_summary(runtime: Mapping[str, Any]) -> dict[str, Any]:
         "reflectionSynthesizerMode": str(
             values.get("reflectionSynthesizerMode") or ""
         )[:80],
+        "recoveryLessonShadowEnabled": _as_bool(values.get("recoveryLessonShadowEnabled")),
+        "recoveryLessonMaxCalls": _summary_int(values.get("recoveryLessonMaxCalls"), 2),
+        "intentSemanticClassifier": {
+            "enabled": _as_bool(intent_semantic_values.get("enabled")),
+            "calibrationConfigured": bool(
+                intent_semantic_values.get("calibrationPath")
+            ),
+            "allowsUnreviewedCalibration": _as_bool(
+                intent_semantic_values.get("allowUnreviewedCalibration")
+            ),
+        },
+        "skillCandidateReranker": {
+            "enabled": _as_bool(skill_reranker_values.get("enabled")),
+            "nativeJsonSchemaRequired": True,
+        },
+        "skillSelection": {
+            "mode": str(skill_selection_values.get("mode") or "model")[:40],
+            "flatCatalogCharBudget": _summary_int(
+                skill_selection_values.get("flatCatalogCharBudget"), 8000
+            ),
+            "skillPageCharBudget": _summary_int(
+                skill_selection_values.get("skillPageCharBudget"), 4000
+            ),
+            "intentHints": _as_bool(skill_selection_values.get("intentHints")),
+            "intentPrefetch": _as_bool(
+                skill_selection_values.get("intentPrefetch")
+            ),
+        },
         "credentials": {
             "primaryConfigured": any(
                 bool(values.get(key))
