@@ -113,11 +113,14 @@ def _run_case(
     previous = os.environ.get(env_name)
     os.environ[env_name] = str(turns)
     try:
+        from minicode.subagent_mailbox import SubagentMailbox
+
         budget = AgentTurnBudget.from_runtime(runtime)
         context = ToolContext(
             cwd=cwd,
             _runtime=runtime,
             _agent_budget=budget,
+            _subagent_mailbox=SubagentMailbox(),
             _subagent_sessions=SubagentSessionStore(),
         )
         result = task_tool.run(

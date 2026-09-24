@@ -1,0 +1,74 @@
+{
+  "caseFile": "tests/fixtures/explore_turn_ab_cases.json",
+  "configs": {
+    "12": {
+      "cases": [
+        {
+          "caseId": "map-module",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 4,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 6
+        },
+        {
+          "caseId": "trace-call-flow",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 3,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 4
+        },
+        {
+          "caseId": "find-config-owners",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 5,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 8
+        },
+        {
+          "caseId": "enumerate-error-handling",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 4,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 6
+        },
+        {
+          "caseId": "test-inventory",
+          "contractStatus": "fallback",
+          "error": null,
+          "model_turns": 4,
+          "ok": true,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": 6
+        }
+      ],
+      "summary": {
+        "caseCount": 5,
+        "fallbackRate": 1.0,
+        "meanModelTurns": 4.0,
+        "meanToolCalls": 6.0,
+        "partialRate": 0.0,
+        "successRate": 1.0
+      }
+    }
+  },
+  "mode": "live",
+  "notes": "successRate counts task-tool ok; partialRate counts soft-landed results; fallbackRate counts contractStatus=fallback. live mode spends API quota.",
+  "repeats": 1,
+  "schemaVersion": 1,
+  "turnsCompared": [
+    12
+  ]
+}

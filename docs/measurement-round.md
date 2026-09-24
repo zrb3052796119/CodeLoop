@@ -105,10 +105,40 @@ retries can push a case past its step cap (a soft-landed row showing 9
 turns against a cap of 8 is expected accounting, not a bug).
 
 **Follow-up finding (independent of turn count):** every live run returned
-`contractStatus: fallback` — the real sub-agent model never wrote the
-typed `subagent_note_write` hand-back before finishing, so the structured
-result is synthesized from free text each time. The contract machinery is
-verified by tests; live-model compliance on this route is the gap. That is
-a prompt-compliance question (worth a follow-up round: strengthen the
-result instruction or penalize missing notes in the closing turn), not a
-turn-budget question.
+`contractStatus: fallback` — **CORRECTION 2026-09-25 (later same day): this
+measurement was partially a harness artifact.** The A/B harness called
+`task_tool.run` directly without attaching the turn's `SubagentMailbox`, so
+the typed-result instruction was never delivered to the sub-agent at all
+and the closing reminder could not fire. The harness now attaches a
+mailbox (matching the production loop).
+
+## 5. Contract-compliance fix and corrected live verification (2026-09-25)
+
+Two changes shipped (`tests/test_subagent_contract_compliance.py`, 6
+tests):
+
+1. the typed-result instruction is now imperative ("MANDATORY FINAL STEP…
+   non-compliant"), with the JSON shape block byte-identical;
+2. after a successful non-partial run whose note is missing, the task tool
+   runs **one bounded closing reminder** (≤2 extra steps, fresh outcome
+   capture, same budget/journal/sink; partial runs and runs without a
+   mailbox are skipped by design). The result header states the outcome
+   verbatim: `recovered via closing reminder` or `not submitted despite
+   one closing reminder`.
+
+Live verification (5 frozen cases, cap 12, with the corrected harness;
+`artifacts/explore-turn-ab-contract-check2-2026-09-25`):
+
+| case | contract | note |
+| --- | --- | --- |
+| map-module | reported | note submitted |
+| trace-call-flow | reported | note submitted |
+| find-config-owners | reported | note submitted |
+| enumerate-error-handling | fallback | 13 turns / 28 tool calls — hit the cap, soft-landed partial; the reminder is skipped for partial runs by design |
+| test-inventory | reported | note submitted |
+
+**4/5 reported vs 0/20 in the (flawed) baseline.** Honest reading: the
+live model complies when the instruction actually reaches it; the
+remaining fallback case is the documented partial boundary, not
+disobedience. Small sample, single run; the corrected harness makes every
+future A/B comparable.
