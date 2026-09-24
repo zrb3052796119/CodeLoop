@@ -449,3 +449,24 @@ def test_factory_does_not_instantiate_remote_client_without_opt_in(monkeypatch) 
     assert result.client is None
     assert result.unavailable_reason == "remote_model_not_allowed"
     assert called is False
+
+
+def test_unknown_model_tariff_is_not_reported_as_known_shadow_cost(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "urllib.request.urlopen",
+        lambda request, timeout=60: DummyResponse({
+            "choices": [{"message": {"content": "{}"}, "finish_reason": "stop"}],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 2},
+        }),
+    )
+    adapter = OpenAIModelAdapter({
+        "model": "synthetic-unknown-pricing-model",
+        "openaiBaseUrl": "https://example.invalid/v1",
+        "openaiApiKey": "test", "modelMaxRetries": 0,
+    }, None)
+    response = ModelAdapterStructuredGenerationClient(adapter).generate_json(
+        [{"role": "user", "content": "json"}], timeout_seconds=5, max_output_tokens=100,
+    )
+    assert response.input_tokens == 10
+    assert response.output_tokens == 2
+    assert response.estimated_cost_usd is None

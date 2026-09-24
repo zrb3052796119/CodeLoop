@@ -1,0 +1,1616 @@
+{
+  "schema_version": 1,
+  "review_kind": "independent_assistant_manual_style_semantic_adjudication",
+  "reviewer": "objective_contract_consumers",
+  "reviewed_at_utc": "2026-09-09T10:26:02.755579+00:00",
+  "source_report": "artifacts/recovery-rule-review-2026-09-09/model-response-fix/live-fixed.json",
+  "source_report_sha256": "c7b65cd8ea84e3b621467ed3f64cf196121228952459dd006a4714e804305bda",
+  "dataset_content_sha256": "3715f6991b3ce494db67a19f1478c0cb2e94619ee390c294605c330d731e7fc6",
+  "supporting_full_synthetic_trace_file": "tests/fixtures/recovery_lesson_shadow/cases.json",
+  "supporting_trace_sha256": "5f3d48c25c975143476e84f399eb020d5f3db44e37746e405069387db9b6fb88",
+  "scope": "Six admitted lessons from the six verified episodes: four single-episode cases and both independent recoveries. Candidate episodes and identity prechecks were not adjudicated here.",
+  "method": "Read every statement, applies_when, limitation, identifier and quote against projected evidence and the complete synthetic trace, then compare to the same-episode rule baseline. Mechanical reference checks supplement but do not determine the semantic verdict. No model or provider request was made for this review.",
+  "summary": {
+    "reviewed_verified_episode_count": 6,
+    "reviewed_admitted_lesson_count": 6,
+    "blocking_semantic_error_count": 0,
+    "supported_lesson_count": 6,
+    "recovery_confirmed_count": 4,
+    "warning_inferred_count": 2,
+    "causal_overclaim_count": 0,
+    "cross_episode_misuse_count": 0,
+    "unsupported_added_technical_mechanism_count": 0,
+    "conservative_downgrade_count": 2,
+    "direct_edit_result_citation_omission_count": 1,
+    "new_transferable_technical_rules_demonstrated_count": 0,
+    "assessment": "No blocking semantic error in these six synthetic lessons. Added value is primarily more precise applicability, scoped verification and clearer retrieval keys; all technical actions were already present in the rule baseline. Two verified episodes remain conservative warning/inferred claims, so six admitted lessons must not be reported as six confirmed recoveries. This small selected synthetic sample does not establish production readiness or generalization."
+  },
+  "limitations": [
+    "A targeted passing check proves only the observed recovery/check relationship at the stated scope, not root cause or universal effectiveness.",
+    "Claims saying no broader tests were run are checked against the complete supplied synthetic trace; omission from a projected real trace alone would support not evidenced rather than never run.",
+    "Case annotations are evaluation guidance and were not treated as facts unavailable in the evidence.",
+    "No production memories, model requests, source modules or raw reports were modified."
+  ],
+  "episodes": [
+    {
+      "case_id": "auth-expiry",
+      "episode_id": "episode-000001",
+      "report_pointer": "/cases/0/episodes/0",
+      "claim_id": "episode-000001:llm-claim-000001",
+      "claim_type": "recovery",
+      "epistemic_status": "confirmed",
+      "verdict": "supported_with_nonblocking_notes",
+      "blocking_semantic_error": false,
+      "manual_assessment": {
+        "factual_support": "The cited failed invocation and assertion identify the authentication test and expired-token failure. The recovery change_summary supports adding check_expiry(token); the cited same-target rerun supports exactly one targeted passing test. The lesson does not invent token lookup internals hidden by redaction.",
+        "causality_and_scope": "Confirmed status is restricted to the observed edit-to-check relationship. Both limitations explicitly reject broader coverage and an established root cause.",
+        "applicability": "Names the actual test, file, assertion, and edit. The condition partly describes the already-completed edit, so it is a bounded retrieval description rather than a general prospective rule.",
+        "cross_episode_misuse": "none observed",
+        "incremental_utility_vs_same_episode_rule": "Clearer targeted applicability and test count than the rule baseline, with a shorter domain-specific semantic key; no new technical mechanism or transferable strategy beyond the baseline facts.",
+        "novel_transferable_technical_rule_demonstrated": false,
+        "nonblocking_notes": [
+          "The semantic key contains fix, but the natural-language claim explicitly limits this to an observed passing rerun; it does not assert universal repair.",
+          "The phrase linking check_expiry(token) as the cause of the original failure is awkward because this was the added action; better wording would distinguish the repair mechanism from the original cause. This does not introduce a false positive causal conclusion."
+        ]
+      },
+      "claim": {
+        "claim_id": "episode-000001:llm-claim-000001",
+        "claim_type": "recovery",
+        "semantic_key": "check_expiry_token_fix_passed_test",
+        "statement": "After the pytest run failed with 'AssertionError: Expired token was accepted', the change to src/auth.py adding check_expiry(token) was followed by a passing targeted pytest tests/test_auth.py run.",
+        "evidence_ids": [
+          "event-000001",
+          "event-000002",
+          "event-000003",
+          "event-000004",
+          "event-000005",
+          "event-000006",
+          "event-000007"
+        ],
+        "epistemic_status": "confirmed",
+        "applies_when": "pytest tests/test_auth.py fails with 'AssertionError: Expired token was accepted' and the recovery edit adds check_expiry(token) in src/auth.py; passing result observed only on the targeted test suite run.",
+        "limitations": [
+          "Verification is targeted (tests/test_auth.py, 1 passed) and does not cover other tests, environments, or token scenarios.",
+          "No causal decision evidence links check_expiry(token) as the cause of the original expired-token failure; only the linked recovery-to-check relationship is established."
+        ],
+        "verification_ids": [
+          "verify-000002"
+        ],
+        "related_error_ids": [
+          "error-000001"
+        ],
+        "related_recovery_ids": [
+          "recovery-000001"
+        ],
+        "evidence_quotes": [
+          "python -m pytest tests/test_auth.py",
+          "AssertionError: Expired token was accepted",
+          "src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'",
+          "Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py",
+          "1 passed"
+        ]
+      },
+      "same_episode_rule_claims": [
+        {
+          "claim_id": "claim-000001",
+          "claim_type": "recovery",
+          "semantic_key": "recovery_changed_src_auth_py_after_which_run_command_succeeded_on_python_pytest",
+          "statement": "After AssertionError: Expired token was accepted, the recovery action was: Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py. Change: src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'.",
+          "evidence_ids": [
+            "event-000002",
+            "event-000003",
+            "event-000001",
+            "event-000004",
+            "event-000005",
+            "event-000006",
+            "event-000007"
+          ],
+          "epistemic_status": "confirmed",
+          "applies_when": "When run_command fails with AssertionError.",
+          "limitations": [
+            "The recovery was checked only by targeted verification."
+          ],
+          "verification_ids": [
+            "verify-000002"
+          ],
+          "related_error_ids": [
+            "error-000001"
+          ],
+          "related_recovery_ids": [
+            "recovery-000001"
+          ],
+          "evidence_quotes": []
+        }
+      ],
+      "source_support": {
+        "error_records": [
+          {
+            "error_id": "error-000001",
+            "call_id": "call-1",
+            "tool_name": "run_command",
+            "error_type": "ToolError",
+            "message": "AssertionError: Expired token was accepted",
+            "source_event_ids": [
+              "event-000002",
+              "event-000003"
+            ],
+            "epistemic_status": "confirmed"
+          }
+        ],
+        "recovery_records": [
+          {
+            "recovery_id": "recovery-000001",
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "action": "Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py",
+            "event_ids": [
+              "event-000002",
+              "event-000001",
+              "event-000004",
+              "event-000005"
+            ],
+            "files_changed": [
+              "src/auth.py"
+            ],
+            "epistemic_status": "confirmed",
+            "change_summary": "src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'",
+            "verification_call_ids": [
+              "call-3"
+            ]
+          }
+        ],
+        "verification_records": [
+          {
+            "verification_id": "verify-000002",
+            "tool_name": "run_command",
+            "call_id": "call-3",
+            "command_kind": "test",
+            "scope": "targeted",
+            "result": "passed",
+            "event_ids": [
+              "event-000006",
+              "event-000007"
+            ],
+            "summary": "1 passed"
+          },
+          {
+            "verification_id": "verify-000001",
+            "tool_name": "run_command",
+            "call_id": "call-1",
+            "command_kind": "test",
+            "scope": "targeted",
+            "result": "failed",
+            "event_ids": [
+              "event-000001",
+              "event-000002"
+            ],
+            "summary": "AssertionError: Expired token was accepted"
+          }
+        ],
+        "tool_invocations": [
+          {
+            "tool_name": "run_command",
+            "call_id": "call-1",
+            "call_event_id": "event-000001",
+            "result_event_ids": [
+              "event-000002",
+              "event-000003"
+            ],
+            "status": "failed",
+            "invocation": "python -m pytest tests/test_auth.py"
+          },
+          {
+            "tool_name": "run_command",
+            "call_id": "call-3",
+            "call_event_id": "event-000006",
+            "result_event_ids": [
+              "event-000007"
+            ],
+            "status": "success",
+            "invocation": "python -m pytest tests/test_auth.py"
+          }
+        ]
+      },
+      "mechanical_reference_audit": {
+        "all_event_ids_in_projection": true,
+        "all_typed_references_in_projection": true,
+        "all_quotes_in_referenced_structured_records": true,
+        "quote_sources": [
+          {
+            "quote": "python -m pytest tests/test_auth.py",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "tool_call",
+                "record_id": "call-1",
+                "field": "invocation",
+                "source_event_ids": [
+                  "event-000001",
+                  "event-000002",
+                  "event-000003"
+                ]
+              },
+              {
+                "record_type": "tool_call",
+                "record_id": "call-3",
+                "field": "invocation",
+                "source_event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "AssertionError: Expired token was accepted",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "errors",
+                "record_id": "error-000001",
+                "field": "message",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ]
+              },
+              {
+                "record_type": "verification",
+                "record_id": "verify-000001",
+                "field": "summary",
+                "source_event_ids": [
+                  "event-000001",
+                  "event-000002"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "recoveries",
+                "record_id": "recovery-000001",
+                "field": "change_summary",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "recoveries",
+                "record_id": "recovery-000001",
+                "field": "action",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "1 passed",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "verification",
+                "record_id": "verify-000002",
+                "field": "summary",
+                "source_event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ]
+              }
+            ]
+          }
+        ],
+        "is_semantic_verdict": false
+      }
+    },
+    {
+      "case_id": "bilingual-offset",
+      "episode_id": "episode-000001",
+      "report_pointer": "/cases/1/episodes/0",
+      "claim_id": "episode-000001:llm-claim-000001",
+      "claim_type": "warning",
+      "epistemic_status": "inferred",
+      "verdict": "supported_with_nonblocking_notes",
+      "blocking_semantic_error": false,
+      "manual_assessment": {
+        "factual_support": "The bilingual assertion, call-1/call-3 identity, parse_unsigned-to-parse_signed replacement, and targeted 1 passed result all match the cited projected records and the complete fixture trace.",
+        "causality_and_scope": "No root cause or universal timezone claim is made. The warning/inferred classification is more conservative than the runtime verified relationship and the baseline recovery/confirmed classification.",
+        "applicability": "Restricted to the actual offset test, observed rejection, and parser replacement; no claim that all timestamp grammars or timezone formats now work.",
+        "cross_episode_misuse": "none observed",
+        "incremental_utility_vs_same_episode_rule": "Preserves bilingual context and gives a precise trigger and scope. However, downgrading an already verified recovery to warning/inferred and repeating several caveats weakens usefulness relative to a concise bounded recovery.",
+        "novel_transferable_technical_rule_demonstrated": false,
+        "nonblocking_notes": [
+          "This is one of the six admitted lessons but is not a confirmed recovery claim. Count it as a conservative warning, not successful confirmed-recovery synthesis.",
+          "Statements that no full suite was run are supported by this complete synthetic trace; for a projected real-world trace, prefer no full-suite verification is evidenced."
+        ]
+      },
+      "claim": {
+        "claim_id": "episode-000001:llm-claim-000001",
+        "claim_type": "warning",
+        "semantic_key": "parse_signed_offset_change_followed_by_passing_test",
+        "statement": "在 call-1 中运行 python -m pytest tests/test_offset.py 失败，报 'AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected'；随后将 src/offset.py 中 'offset = parse_unsigned(value)' 改为 'offset = parse_signed(value)'，之后 call-3 再次运行同一测试命令成功（verify-000002: '1 passed'）。该观察未确立根因，也未证明该修改为通用修复。",
+        "evidence_ids": [
+          "event-000001",
+          "event-000002",
+          "event-000003",
+          "event-000004",
+          "event-000005",
+          "event-000006",
+          "event-000007"
+        ],
+        "epistemic_status": "inferred",
+        "applies_when": "运行 python -m pytest tests/test_offset.py 时出现 '负 UTC 偏移被拒绝 / negative UTC offset rejected' 断言失败，且 src/offset.py 中的偏移解析函数被替换。",
+        "limitations": [
+          "验证仅限 targeted 范围（verify-000002 摘要为 '1 passed'），未运行全量测试，不能确定该修改在其他场景有效。",
+          "缺少显式因果 DecisionEvidence，未确立将 parse_unsigned 改为 parse_signed 是失败的根因。",
+          "单次通过的针对性检查不足以证明该修改普遍修复了偏移处理问题。"
+        ],
+        "verification_ids": [
+          "verify-000002"
+        ],
+        "related_error_ids": [
+          "error-000001"
+        ],
+        "related_recovery_ids": [
+          "recovery-000001"
+        ],
+        "evidence_quotes": [
+          "AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected",
+          "python -m pytest tests/test_offset.py",
+          "src/offset.py: 'offset = parse_unsigned(value)' -> 'offset = parse_signed(value)'"
+        ]
+      },
+      "same_episode_rule_claims": [
+        {
+          "claim_id": "claim-000001",
+          "claim_type": "recovery",
+          "semantic_key": "recovery_changed_src_offset_py_after_which_run_command_succeeded_on_python_pytest",
+          "statement": "After AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected, the recovery action was: Changed src/offset.py, after which run_command succeeded on python pytest tests/test_offset.py. Change: src/offset.py: 'offset = parse_unsigned(value)' -> 'offset = parse_signed(value)'.",
+          "evidence_ids": [
+            "event-000002",
+            "event-000003",
+            "event-000001",
+            "event-000004",
+            "event-000005",
+            "event-000006",
+            "event-000007"
+          ],
+          "epistemic_status": "confirmed",
+          "applies_when": "When run_command fails with AssertionError.",
+          "limitations": [
+            "The recovery was checked only by targeted verification."
+          ],
+          "verification_ids": [
+            "verify-000002"
+          ],
+          "related_error_ids": [
+            "error-000001"
+          ],
+          "related_recovery_ids": [
+            "recovery-000001"
+          ],
+          "evidence_quotes": []
+        }
+      ],
+      "source_support": {
+        "error_records": [
+          {
+            "error_id": "error-000001",
+            "call_id": "call-1",
+            "tool_name": "run_command",
+            "error_type": "ToolError",
+            "message": "AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected",
+            "source_event_ids": [
+              "event-000002",
+              "event-000003"
+            ],
+            "epistemic_status": "confirmed"
+          }
+        ],
+        "recovery_records": [
+          {
+            "recovery_id": "recovery-000001",
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "action": "Changed src/offset.py, after which run_command succeeded on python pytest tests/test_offset.py",
+            "event_ids": [
+              "event-000002",
+              "event-000001",
+              "event-000004",
+              "event-000005"
+            ],
+            "files_changed": [
+              "src/offset.py"
+            ],
+            "epistemic_status": "confirmed",
+            "change_summary": "src/offset.py: 'offset = parse_unsigned(value)' -> 'offset = parse_signed(value)'",
+            "verification_call_ids": [
+              "call-3"
+            ]
+          }
+        ],
+        "verification_records": [
+          {
+            "verification_id": "verify-000002",
+            "tool_name": "run_command",
+            "call_id": "call-3",
+            "command_kind": "test",
+            "scope": "targeted",
+            "result": "passed",
+            "event_ids": [
+              "event-000006",
+              "event-000007"
+            ],
+            "summary": "1 passed"
+          },
+          {
+            "verification_id": "verify-000001",
+            "tool_name": "run_command",
+            "call_id": "call-1",
+            "command_kind": "test",
+            "scope": "targeted",
+            "result": "failed",
+            "event_ids": [
+              "event-000001",
+              "event-000002"
+            ],
+            "summary": "AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected"
+          }
+        ],
+        "tool_invocations": [
+          {
+            "tool_name": "run_command",
+            "call_id": "call-1",
+            "call_event_id": "event-000001",
+            "result_event_ids": [
+              "event-000002",
+              "event-000003"
+            ],
+            "status": "failed",
+            "invocation": "python -m pytest tests/test_offset.py"
+          },
+          {
+            "tool_name": "run_command",
+            "call_id": "call-3",
+            "call_event_id": "event-000006",
+            "result_event_ids": [
+              "event-000007"
+            ],
+            "status": "success",
+            "invocation": "python -m pytest tests/test_offset.py"
+          }
+        ]
+      },
+      "mechanical_reference_audit": {
+        "all_event_ids_in_projection": true,
+        "all_typed_references_in_projection": true,
+        "all_quotes_in_referenced_structured_records": true,
+        "quote_sources": [
+          {
+            "quote": "AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "errors",
+                "record_id": "error-000001",
+                "field": "message",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ]
+              },
+              {
+                "record_type": "verification",
+                "record_id": "verify-000001",
+                "field": "summary",
+                "source_event_ids": [
+                  "event-000001",
+                  "event-000002"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "python -m pytest tests/test_offset.py",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "tool_call",
+                "record_id": "call-1",
+                "field": "invocation",
+                "source_event_ids": [
+                  "event-000001",
+                  "event-000002",
+                  "event-000003"
+                ]
+              },
+              {
+                "record_type": "tool_call",
+                "record_id": "call-3",
+                "field": "invocation",
+                "source_event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "src/offset.py: 'offset = parse_unsigned(value)' -> 'offset = parse_signed(value)'",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "recoveries",
+                "record_id": "recovery-000001",
+                "field": "change_summary",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005"
+                ]
+              }
+            ]
+          }
+        ],
+        "is_semantic_verdict": false
+      }
+    },
+    {
+      "case_id": "checksum-before-publish",
+      "episode_id": "episode-000001",
+      "report_pointer": "/cases/2/episodes/0",
+      "claim_id": "episode-000001:llm-claim-000001",
+      "claim_type": "warning",
+      "epistemic_status": "inferred",
+      "verdict": "supported_with_nonblocking_notes",
+      "blocking_semantic_error": false,
+      "manual_assessment": {
+        "factual_support": "The assertion, checksum recomputation before publish, and unchanged checksum-test invocation changing from failed to 1 passed are supported. The edit-success event event-000005 exists in the fixture and projected recovery provenance but is absent from the claim evidence_ids.",
+        "causality_and_scope": "The lesson explicitly declines both a universal fix and established cause. Warning/inferred understates the runtime verified recovery-check relationship but does not overstate evidence.",
+        "applicability": "Tied to this source file, edit sequence and targeted checksum test. It does not claim prevention of all corruption or validation of all export formats.",
+        "cross_episode_misuse": "none observed",
+        "incremental_utility_vs_same_episode_rule": "More concrete bounded applicability and validation details than the baseline, but the applicability condition assumes the edit has already happened and does not name the stale-checksum trigger. Useful as a scoped record; limited new prospective guidance.",
+        "novel_transferable_technical_rule_demonstrated": false,
+        "nonblocking_notes": [
+          "Direct event-chain citation coverage is incomplete: edit-result event-000005 is omitted. This is not an unsupported-change claim under the current structured-record contract because related_recovery_ids includes confirmed recovery-000001, its change_summary is quoted, event-000004 anchors that record, and the subsequent passing invocation/results are cited. Prefer including the edit result for a self-contained raw-event audit.",
+          "This is an admitted warning/inferred claim, not a confirmed recovery claim."
+        ]
+      },
+      "claim": {
+        "claim_id": "episode-000001:llm-claim-000001",
+        "claim_type": "warning",
+        "semantic_key": "recompute_checksum_before_publish_targeted_test_passed",
+        "statement": "The run of python -m pytest tests/test_checksum.py failed with 'AssertionError: Published export had a stale checksum'; after changing src/checksum.py from 'publish(export)' to 'recompute_checksum(export); publish(export)', a subsequent run of the same test command passed ('1 passed'). The observed pass does not establish that the change fixed the failure or its cause.",
+        "evidence_ids": [
+          "event-000001",
+          "event-000002",
+          "event-000003",
+          "event-000004",
+          "event-000006",
+          "event-000007"
+        ],
+        "epistemic_status": "inferred",
+        "applies_when": "Running python -m pytest tests/test_checksum.py after changing src/checksum.py so publish(export) is preceded by recompute_checksum(export).",
+        "limitations": [
+          "Verification was targeted (python -m pytest tests/test_checksum.py, summary '1 passed'); coverage of other scenarios is not established.",
+          "No causal DecisionEvidence links recompute_checksum(export) to the fix; the causal relationship is not verified."
+        ],
+        "verification_ids": [
+          "verify-000001",
+          "verify-000002"
+        ],
+        "related_error_ids": [
+          "error-000001"
+        ],
+        "related_recovery_ids": [
+          "recovery-000001"
+        ],
+        "evidence_quotes": [
+          "python -m pytest tests/test_checksum.py",
+          "AssertionError: Published export had a stale checksum",
+          "src/checksum.py: 'publish(export)' -> 'recompute_checksum(export); publish(export)'",
+          "1 passed"
+        ]
+      },
+      "same_episode_rule_claims": [
+        {
+          "claim_id": "claim-000001",
+          "claim_type": "recovery",
+          "semantic_key": "recovery_changed_src_checksum_py_after_which_run_command_succeeded_on_python_pytest",
+          "statement": "After AssertionError: Published export had a stale checksum, the recovery action was: Changed src/checksum.py, after which run_command succeeded on python pytest tests/test_checksum.py. Change: src/checksum.py: 'publish(export)' -> 'recompute_checksum(export); publish(export)'.",
+          "evidence_ids": [
+            "event-000002",
+            "event-000003",
+            "event-000001",
+            "event-000004",
+            "event-000005",
+            "event-000006",
+            "event-000007"
+          ],
+          "epistemic_status": "confirmed",
+          "applies_when": "When run_command fails with AssertionError.",
+          "limitations": [
+            "The recovery was checked only by targeted verification."
+          ],
+          "verification_ids": [
+            "verify-000002"
+          ],
+          "related_error_ids": [
+            "error-000001"
+          ],
+          "related_recovery_ids": [
+            "recovery-000001"
+          ],
+          "evidence_quotes": []
+        }
+      ],
+      "source_support": {
+        "error_records": [
+          {
+            "error_id": "error-000001",
+            "call_id": "call-1",
+            "tool_name": "run_command",
+            "error_type": "ToolError",
+            "message": "AssertionError: Published export had a stale checksum",
+            "source_event_ids": [
+              "event-000002",
+              "event-000003"
+            ],
+            "epistemic_status": "confirmed"
+          }
+        ],
+        "recovery_records": [
+          {
+            "recovery_id": "recovery-000001",
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "action": "Changed src/checksum.py, after which run_command succeeded on python pytest tests/test_checksum.py",
+            "event_ids": [
+              "event-000002",
+              "event-000001",
+              "event-000004",
+              "event-000005"
+            ],
+            "files_changed": [
+              "src/checksum.py"
+            ],
+            "epistemic_status": "confirmed",
+            "change_summary": "src/checksum.py: 'publish(export)' -> 'recompute_checksum(export); publish(export)'",
+            "verification_call_ids": [
+              "call-3"
+            ]
+          }
+        ],
+        "verification_records": [
+          {
+            "verification_id": "verify-000002",
+            "tool_name": "run_command",
+            "call_id": "call-3",
+            "command_kind": "test",
+            "scope": "targeted",
+            "result": "passed",
+            "event_ids": [
+              "event-000006",
+              "event-000007"
+            ],
+            "summary": "1 passed"
+          },
+          {
+            "verification_id": "verify-000001",
+            "tool_name": "run_command",
+            "call_id": "call-1",
+            "command_kind": "test",
+            "scope": "targeted",
+            "result": "failed",
+            "event_ids": [
+              "event-000001",
+              "event-000002"
+            ],
+            "summary": "AssertionError: Published export had a stale checksum"
+          }
+        ],
+        "tool_invocations": [
+          {
+            "tool_name": "run_command",
+            "call_id": "call-1",
+            "call_event_id": "event-000001",
+            "result_event_ids": [
+              "event-000002",
+              "event-000003"
+            ],
+            "status": "failed",
+            "invocation": "python -m pytest tests/test_checksum.py"
+          },
+          {
+            "tool_name": "run_command",
+            "call_id": "call-3",
+            "call_event_id": "event-000006",
+            "result_event_ids": [
+              "event-000007"
+            ],
+            "status": "success",
+            "invocation": "python -m pytest tests/test_checksum.py"
+          }
+        ]
+      },
+      "mechanical_reference_audit": {
+        "all_event_ids_in_projection": true,
+        "all_typed_references_in_projection": true,
+        "all_quotes_in_referenced_structured_records": true,
+        "quote_sources": [
+          {
+            "quote": "python -m pytest tests/test_checksum.py",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "tool_call",
+                "record_id": "call-1",
+                "field": "invocation",
+                "source_event_ids": [
+                  "event-000001",
+                  "event-000002",
+                  "event-000003"
+                ]
+              },
+              {
+                "record_type": "tool_call",
+                "record_id": "call-3",
+                "field": "invocation",
+                "source_event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "AssertionError: Published export had a stale checksum",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "errors",
+                "record_id": "error-000001",
+                "field": "message",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ]
+              },
+              {
+                "record_type": "verification",
+                "record_id": "verify-000001",
+                "field": "summary",
+                "source_event_ids": [
+                  "event-000001",
+                  "event-000002"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "src/checksum.py: 'publish(export)' -> 'recompute_checksum(export); publish(export)'",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "recoveries",
+                "record_id": "recovery-000001",
+                "field": "change_summary",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "1 passed",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "verification",
+                "record_id": "verify-000002",
+                "field": "summary",
+                "source_event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ]
+              }
+            ]
+          }
+        ],
+        "is_semantic_verdict": false
+      }
+    },
+    {
+      "case_id": "cache-invalidation",
+      "episode_id": "episode-000001",
+      "report_pointer": "/cases/3/episodes/0",
+      "claim_id": "episode-000001:llm-claim-000001",
+      "claim_type": "recovery",
+      "epistemic_status": "confirmed",
+      "verdict": "supported_with_nonblocking_notes",
+      "blocking_semantic_error": false,
+      "manual_assessment": {
+        "factual_support": "The revoked-role cache assertion, addition of invalidate_permission_cache(role) after revoke(role), and targeted same-test passing rerun match the cited records. No distributed consistency mechanism is invented.",
+        "causality_and_scope": "Confirmed status is explicitly limited to the recovery-check relationship; root cause and production behavior are expressly unverified.",
+        "applicability": "Restricted to this cache file, test and observed edit. It does not promise that revocation will invalidate every cache or repair every authorization failure.",
+        "cross_episode_misuse": "none observed",
+        "incremental_utility_vs_same_episode_rule": "A clearer domain-specific key and explicit limit to the targeted check improve retrieval and interpretation. The condition is mostly post-edit and does not add an independent diagnostic rule.",
+        "novel_transferable_technical_rule_demonstrated": false,
+        "nonblocking_notes": [
+          "The key revoke_role_invalidates_permission_cache describes the actual inserted call sequence; read with the explicit test-scope limitations, it does not establish production-wide cache correctness."
+        ]
+      },
+      "claim": {
+        "claim_id": "episode-000001:llm-claim-000001",
+        "claim_type": "recovery",
+        "semantic_key": "revoke_role_invalidates_permission_cache",
+        "statement": "After the test run failed with 'AssertionError: Revoked role remained in the permission cache', the change 'revoke(role) -> revoke(role); invalidate_permission_cache(role)' in src/cache.py was followed by a passing rerun of 'python -m pytest tests/test_cache.py' ('1 passed'). This confirms the recovery-check relationship within the scope of that targeted test only.",
+        "evidence_ids": [
+          "event-000001",
+          "event-000002",
+          "event-000003",
+          "event-000004",
+          "event-000005",
+          "event-000006",
+          "event-000007"
+        ],
+        "epistemic_status": "confirmed",
+        "applies_when": "Running tests/test_cache.py after changing src/cache.py so that revoke(role) also calls invalidate_permission_cache(role); observed within this episode only.",
+        "limitations": [
+          "Verification was targeted (tests/test_cache.py, '1 passed'); broader test coverage or production behavior was not verified.",
+          "Root cause beyond the observed assertion failure is not established; the episode confirms only the linked recovery-check relationship within the targeted test scope."
+        ],
+        "verification_ids": [
+          "verify-000001",
+          "verify-000002"
+        ],
+        "related_error_ids": [
+          "error-000001"
+        ],
+        "related_recovery_ids": [
+          "recovery-000001"
+        ],
+        "evidence_quotes": [
+          "AssertionError: Revoked role remained in the permission cache",
+          "src/cache.py: 'revoke(role)' -> 'revoke(role); invalidate_permission_cache(role)'",
+          "Changed src/cache.py, after which run_command succeeded on python pytest tests/test_cache.py",
+          "1 passed"
+        ]
+      },
+      "same_episode_rule_claims": [
+        {
+          "claim_id": "claim-000001",
+          "claim_type": "recovery",
+          "semantic_key": "recovery_changed_src_cache_py_after_which_run_command_succeeded_on_python_pytest",
+          "statement": "After AssertionError: Revoked role remained in the permission cache, the recovery action was: Changed src/cache.py, after which run_command succeeded on python pytest tests/test_cache.py. Change: src/cache.py: 'revoke(role)' -> 'revoke(role); invalidate_permission_cache(role)'.",
+          "evidence_ids": [
+            "event-000002",
+            "event-000003",
+            "event-000001",
+            "event-000004",
+            "event-000005",
+            "event-000006",
+            "event-000007"
+          ],
+          "epistemic_status": "confirmed",
+          "applies_when": "When run_command fails with AssertionError.",
+          "limitations": [
+            "The recovery was checked only by targeted verification."
+          ],
+          "verification_ids": [
+            "verify-000002"
+          ],
+          "related_error_ids": [
+            "error-000001"
+          ],
+          "related_recovery_ids": [
+            "recovery-000001"
+          ],
+          "evidence_quotes": []
+        }
+      ],
+      "source_support": {
+        "error_records": [
+          {
+            "error_id": "error-000001",
+            "call_id": "call-1",
+            "tool_name": "run_command",
+            "error_type": "PermissionError",
+            "message": "AssertionError: Revoked role remained in the permission cache",
+            "source_event_ids": [
+              "event-000002",
+              "event-000003"
+            ],
+            "epistemic_status": "confirmed"
+          }
+        ],
+        "recovery_records": [
+          {
+            "recovery_id": "recovery-000001",
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "action": "Changed src/cache.py, after which run_command succeeded on python pytest tests/test_cache.py",
+            "event_ids": [
+              "event-000002",
+              "event-000001",
+              "event-000004",
+              "event-000005"
+            ],
+            "files_changed": [
+              "src/cache.py"
+            ],
+            "epistemic_status": "confirmed",
+            "change_summary": "src/cache.py: 'revoke(role)' -> 'revoke(role); invalidate_permission_cache(role)'",
+            "verification_call_ids": [
+              "call-3"
+            ]
+          }
+        ],
+        "verification_records": [
+          {
+            "verification_id": "verify-000002",
+            "tool_name": "run_command",
+            "call_id": "call-3",
+            "command_kind": "test",
+            "scope": "targeted",
+            "result": "passed",
+            "event_ids": [
+              "event-000006",
+              "event-000007"
+            ],
+            "summary": "1 passed"
+          },
+          {
+            "verification_id": "verify-000001",
+            "tool_name": "run_command",
+            "call_id": "call-1",
+            "command_kind": "test",
+            "scope": "targeted",
+            "result": "failed",
+            "event_ids": [
+              "event-000001",
+              "event-000002"
+            ],
+            "summary": "AssertionError: Revoked role remained in the permission cache"
+          }
+        ],
+        "tool_invocations": [
+          {
+            "tool_name": "run_command",
+            "call_id": "call-1",
+            "call_event_id": "event-000001",
+            "result_event_ids": [
+              "event-000002",
+              "event-000003"
+            ],
+            "status": "failed",
+            "invocation": "python -m pytest tests/test_cache.py"
+          },
+          {
+            "tool_name": "run_command",
+            "call_id": "call-3",
+            "call_event_id": "event-000006",
+            "result_event_ids": [
+              "event-000007"
+            ],
+            "status": "success",
+            "invocation": "python -m pytest tests/test_cache.py"
+          }
+        ]
+      },
+      "mechanical_reference_audit": {
+        "all_event_ids_in_projection": true,
+        "all_typed_references_in_projection": true,
+        "all_quotes_in_referenced_structured_records": true,
+        "quote_sources": [
+          {
+            "quote": "AssertionError: Revoked role remained in the permission cache",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "errors",
+                "record_id": "error-000001",
+                "field": "message",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ]
+              },
+              {
+                "record_type": "verification",
+                "record_id": "verify-000001",
+                "field": "summary",
+                "source_event_ids": [
+                  "event-000001",
+                  "event-000002"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "src/cache.py: 'revoke(role)' -> 'revoke(role); invalidate_permission_cache(role)'",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "recoveries",
+                "record_id": "recovery-000001",
+                "field": "change_summary",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "Changed src/cache.py, after which run_command succeeded on python pytest tests/test_cache.py",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "recoveries",
+                "record_id": "recovery-000001",
+                "field": "action",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "1 passed",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "verification",
+                "record_id": "verify-000002",
+                "field": "summary",
+                "source_event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ]
+              }
+            ]
+          }
+        ],
+        "is_semantic_verdict": false
+      }
+    },
+    {
+      "case_id": "two-independent-recoveries",
+      "episode_id": "episode-000001",
+      "report_pointer": "/cases/4/episodes/0",
+      "claim_id": "episode-000001:llm-claim-000001",
+      "claim_type": "recovery",
+      "epistemic_status": "confirmed",
+      "verdict": "supported_with_nonblocking_notes",
+      "blocking_semantic_error": false,
+      "manual_assessment": {
+        "factual_support": "The lease assertion, refresh_fencing_token-before-renew edit, same lease-test invocation, and one passing targeted test are all present and cited. All cited event, error and recovery IDs belong to the lease chain.",
+        "causality_and_scope": "The statement records the sequence; confirmed status is limited to this test and explicitly distinguished from root cause. Broader environments and production behavior are unverified.",
+        "applicability": "Names stale fencing-token renewal, the lease source file, and the lease test. It does not borrow the later billing change or check.",
+        "cross_episode_misuse": "none observed",
+        "incremental_utility_vs_same_episode_rule": "Precise domain trigger and a concise semantic key improve retrieval compared with When run_command fails with AssertionError. The operational action was already in the rule baseline change summary.",
+        "novel_transferable_technical_rule_demonstrated": false,
+        "nonblocking_notes": [
+          "Both failed and passed verification IDs are cited. This is appropriate for the red/green narrative and does not treat the failed verification as passing.",
+          "The wording no explicit causal decision links the stale fencing token to the change is imprecise, but it correctly declines an established root cause."
+        ]
+      },
+      "claim": {
+        "claim_id": "episode-000001:llm-claim-000001",
+        "claim_type": "recovery",
+        "semantic_key": "refresh_fencing_token_before_lease_renew",
+        "statement": "A run of 'python -m pytest tests/test_lease.py' failed with 'AssertionError: Lease renewal used a stale fencing token'; after changing src/lease.py so 'renew(lease)' became 'refresh_fencing_token(lease); renew(lease)', the same invocation succeeded, with verification summary '1 passed' (scope: targeted).",
+        "evidence_ids": [
+          "event-000001",
+          "event-000002",
+          "event-000003",
+          "event-000004",
+          "event-000005",
+          "event-000006",
+          "event-000007"
+        ],
+        "epistemic_status": "confirmed",
+        "applies_when": "When a lease renewal in src/lease.py is checked by tests/test_lease.py and renewal previously used a stale fencing token.",
+        "limitations": [
+          "Verification was targeted: a single test in tests/test_lease.py passed ('1 passed'); no broader test suite or production verification was run.",
+          "No explicit causal decision evidence links the stale fencing token to the change; the edit is a confirmed recovery for this test, not an established root cause.",
+          "Effectiveness in other environments or code paths is not established."
+        ],
+        "verification_ids": [
+          "verify-000001",
+          "verify-000002"
+        ],
+        "related_error_ids": [
+          "error-000001"
+        ],
+        "related_recovery_ids": [
+          "recovery-000001"
+        ],
+        "evidence_quotes": [
+          "AssertionError: Lease renewal used a stale fencing token",
+          "src/lease.py: 'renew(lease)' -> 'refresh_fencing_token(lease); renew(lease)'",
+          "Changed src/lease.py, after which run_command succeeded on python pytest tests/test_lease.py"
+        ]
+      },
+      "same_episode_rule_claims": [
+        {
+          "claim_id": "claim-000001",
+          "claim_type": "recovery",
+          "semantic_key": "recovery_changed_src_lease_py_after_which_run_command_succeeded_on_python_pytest",
+          "statement": "After AssertionError: Lease renewal used a stale fencing token, the recovery action was: Changed src/lease.py, after which run_command succeeded on python pytest tests/test_lease.py. Change: src/lease.py: 'renew(lease)' -> 'refresh_fencing_token(lease); renew(lease)'.",
+          "evidence_ids": [
+            "event-000002",
+            "event-000003",
+            "event-000001",
+            "event-000004",
+            "event-000005",
+            "event-000006",
+            "event-000007"
+          ],
+          "epistemic_status": "confirmed",
+          "applies_when": "When run_command fails with AssertionError.",
+          "limitations": [
+            "The recovery was checked only by targeted verification."
+          ],
+          "verification_ids": [
+            "verify-000002"
+          ],
+          "related_error_ids": [
+            "error-000001"
+          ],
+          "related_recovery_ids": [
+            "recovery-000001"
+          ],
+          "evidence_quotes": []
+        }
+      ],
+      "source_support": {
+        "error_records": [
+          {
+            "error_id": "error-000001",
+            "call_id": "call-1",
+            "tool_name": "run_command",
+            "error_type": "ToolError",
+            "message": "AssertionError: Lease renewal used a stale fencing token",
+            "source_event_ids": [
+              "event-000002",
+              "event-000003"
+            ],
+            "epistemic_status": "confirmed"
+          }
+        ],
+        "recovery_records": [
+          {
+            "recovery_id": "recovery-000001",
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "action": "Changed src/lease.py, after which run_command succeeded on python pytest tests/test_lease.py",
+            "event_ids": [
+              "event-000002",
+              "event-000001",
+              "event-000004",
+              "event-000005"
+            ],
+            "files_changed": [
+              "src/lease.py"
+            ],
+            "epistemic_status": "confirmed",
+            "change_summary": "src/lease.py: 'renew(lease)' -> 'refresh_fencing_token(lease); renew(lease)'",
+            "verification_call_ids": [
+              "call-3"
+            ]
+          }
+        ],
+        "verification_records": [
+          {
+            "verification_id": "verify-000002",
+            "tool_name": "run_command",
+            "call_id": "call-3",
+            "command_kind": "test",
+            "scope": "targeted",
+            "result": "passed",
+            "event_ids": [
+              "event-000006",
+              "event-000007"
+            ],
+            "summary": "1 passed"
+          },
+          {
+            "verification_id": "verify-000001",
+            "tool_name": "run_command",
+            "call_id": "call-1",
+            "command_kind": "test",
+            "scope": "targeted",
+            "result": "failed",
+            "event_ids": [
+              "event-000001",
+              "event-000002"
+            ],
+            "summary": "AssertionError: Lease renewal used a stale fencing token"
+          }
+        ],
+        "tool_invocations": [
+          {
+            "tool_name": "run_command",
+            "call_id": "call-1",
+            "call_event_id": "event-000001",
+            "result_event_ids": [
+              "event-000002",
+              "event-000003"
+            ],
+            "status": "failed",
+            "invocation": "python -m pytest tests/test_lease.py"
+          },
+          {
+            "tool_name": "run_command",
+            "call_id": "call-3",
+            "call_event_id": "event-000006",
+            "result_event_ids": [
+              "event-000007"
+            ],
+            "status": "success",
+            "invocation": "python -m pytest tests/test_lease.py"
+          }
+        ]
+      },
+      "mechanical_reference_audit": {
+        "all_event_ids_in_projection": true,
+        "all_typed_references_in_projection": true,
+        "all_quotes_in_referenced_structured_records": true,
+        "quote_sources": [
+          {
+            "quote": "AssertionError: Lease renewal used a stale fencing token",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "errors",
+                "record_id": "error-000001",
+                "field": "message",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ]
+              },
+              {
+                "record_type": "verification",
+                "record_id": "verify-000001",
+                "field": "summary",
+                "source_event_ids": [
+                  "event-000001",
+                  "event-000002"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "src/lease.py: 'renew(lease)' -> 'refresh_fencing_token(lease); renew(lease)'",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "recoveries",
+                "record_id": "recovery-000001",
+                "field": "change_summary",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "Changed src/lease.py, after which run_command succeeded on python pytest tests/test_lease.py",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "recoveries",
+                "record_id": "recovery-000001",
+                "field": "action",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005"
+                ]
+              }
+            ]
+          }
+        ],
+        "is_semantic_verdict": false
+      }
+    },
+    {
+      "case_id": "two-independent-recoveries",
+      "episode_id": "episode-000002",
+      "report_pointer": "/cases/4/episodes/1",
+      "claim_id": "episode-000002:llm-claim-000001",
+      "claim_type": "recovery",
+      "epistemic_status": "confirmed",
+      "verdict": "supported_with_nonblocking_notes",
+      "blocking_semantic_error": false,
+      "manual_assessment": {
+        "factual_support": "The invoice-total assertion, round_float-to-round_decimal replacement and same billing test passing are directly supported. The claim cites only event-000008 through event-000014 and billing error-000002/recovery-000002/verify-000004.",
+        "causality_and_scope": "Confirmed status concerns the observed billing recovery and targeted result. No assertion that floating-point arithmetic is the established sole cause or that every invoice format is repaired.",
+        "applicability": "Restricted to invoice rounding in the actual billing file/test and incorrect-total trigger. No cross-project effectiveness is claimed.",
+        "cross_episode_misuse": "none observed",
+        "incremental_utility_vs_same_episode_rule": "The more precise problem trigger and semantic key are useful compared with the baseline generic AssertionError applicability. It adds no unobserved rounding algorithm, precision or currency policy.",
+        "novel_transferable_technical_rule_demonstrated": false,
+        "nonblocking_notes": [
+          "The billing projected evidence also contains the unrelated failed lease invocation/verification as context. The lesson correctly excludes it from all citations, text and its successful-check claim; no cross-episode borrowing was observed."
+        ]
+      },
+      "claim": {
+        "claim_id": "episode-000002:llm-claim-000001",
+        "claim_type": "recovery",
+        "semantic_key": "billing_round_decimal_replaces_round_float",
+        "statement": "After python -m pytest tests/test_billing.py failed with \"AssertionError: Invoice rounding produced an incorrect total\", src/billing.py was changed from 'total = round_float(value)' to 'total = round_decimal(value)', after which the same targeted test invocation passed (\"1 passed\").",
+        "evidence_ids": [
+          "event-000008",
+          "event-000009",
+          "event-000010",
+          "event-000011",
+          "event-000012",
+          "event-000013",
+          "event-000014"
+        ],
+        "epistemic_status": "confirmed",
+        "applies_when": "Invoice rounding in src/billing.py fails tests/test_billing.py with an incorrect total",
+        "limitations": [
+          "Verification is targeted: only tests/test_billing.py passed (1 passed); no full-suite verification was run",
+          "No causal DecisionEvidence links round_float to the incorrect total; root cause is not established",
+          "Effectiveness beyond this codebase and test scope is not verified"
+        ],
+        "verification_ids": [
+          "verify-000004"
+        ],
+        "related_error_ids": [
+          "error-000002"
+        ],
+        "related_recovery_ids": [
+          "recovery-000002"
+        ],
+        "evidence_quotes": [
+          "AssertionError: Invoice rounding produced an incorrect total",
+          "src/billing.py: 'total = round_float(value)' -> 'total = round_decimal(value)'",
+          "Changed src/billing.py, after which run_command succeeded on python pytest tests/test_billing.py",
+          "1 passed"
+        ]
+      },
+      "same_episode_rule_claims": [
+        {
+          "claim_id": "claim-000001",
+          "claim_type": "recovery",
+          "semantic_key": "recovery_changed_src_billing_py_after_which_run_command_succeeded_on_python_pytest",
+          "statement": "After AssertionError: Invoice rounding produced an incorrect total, the recovery action was: Changed src/billing.py, after which run_command succeeded on python pytest tests/test_billing.py. Change: src/billing.py: 'total = round_float(value)' -> 'total = round_decimal(value)'.",
+          "evidence_ids": [
+            "event-000009",
+            "event-000010",
+            "event-000008",
+            "event-000011",
+            "event-000012",
+            "event-000013",
+            "event-000014"
+          ],
+          "epistemic_status": "confirmed",
+          "applies_when": "When run_command fails with AssertionError.",
+          "limitations": [
+            "The recovery was checked only by targeted verification."
+          ],
+          "verification_ids": [
+            "verify-000004"
+          ],
+          "related_error_ids": [
+            "error-000002"
+          ],
+          "related_recovery_ids": [
+            "recovery-000002"
+          ],
+          "evidence_quotes": []
+        }
+      ],
+      "source_support": {
+        "error_records": [
+          {
+            "error_id": "error-000002",
+            "call_id": "call-4",
+            "tool_name": "run_command",
+            "error_type": "ToolError",
+            "message": "AssertionError: Invoice rounding produced an incorrect total",
+            "source_event_ids": [
+              "event-000009",
+              "event-000010"
+            ],
+            "epistemic_status": "confirmed"
+          }
+        ],
+        "recovery_records": [
+          {
+            "recovery_id": "recovery-000002",
+            "related_error_ids": [
+              "error-000002"
+            ],
+            "action": "Changed src/billing.py, after which run_command succeeded on python pytest tests/test_billing.py",
+            "event_ids": [
+              "event-000009",
+              "event-000008",
+              "event-000011",
+              "event-000012"
+            ],
+            "files_changed": [
+              "src/billing.py"
+            ],
+            "epistemic_status": "confirmed",
+            "change_summary": "src/billing.py: 'total = round_float(value)' -> 'total = round_decimal(value)'",
+            "verification_call_ids": [
+              "call-6"
+            ]
+          }
+        ],
+        "verification_records": [
+          {
+            "verification_id": "verify-000004",
+            "tool_name": "run_command",
+            "call_id": "call-6",
+            "command_kind": "test",
+            "scope": "targeted",
+            "result": "passed",
+            "event_ids": [
+              "event-000013",
+              "event-000014"
+            ],
+            "summary": "1 passed"
+          },
+          {
+            "verification_id": "verify-000003",
+            "tool_name": "run_command",
+            "call_id": "call-4",
+            "command_kind": "test",
+            "scope": "targeted",
+            "result": "failed",
+            "event_ids": [
+              "event-000008",
+              "event-000009"
+            ],
+            "summary": "AssertionError: Invoice rounding produced an incorrect total"
+          },
+          {
+            "verification_id": "verify-000001",
+            "tool_name": "run_command",
+            "call_id": "call-1",
+            "command_kind": "test",
+            "scope": "targeted",
+            "result": "failed",
+            "event_ids": [
+              "event-000001",
+              "event-000002"
+            ],
+            "summary": "AssertionError: Lease renewal used a stale fencing token"
+          }
+        ],
+        "tool_invocations": [
+          {
+            "tool_name": "run_command",
+            "call_id": "call-4",
+            "call_event_id": "event-000008",
+            "result_event_ids": [
+              "event-000009",
+              "event-000010"
+            ],
+            "status": "failed",
+            "invocation": "python -m pytest tests/test_billing.py"
+          },
+          {
+            "tool_name": "run_command",
+            "call_id": "call-6",
+            "call_event_id": "event-000013",
+            "result_event_ids": [
+              "event-000014"
+            ],
+            "status": "success",
+            "invocation": "python -m pytest tests/test_billing.py"
+          },
+          {
+            "tool_name": "run_command",
+            "call_id": "call-1",
+            "call_event_id": "event-000001",
+            "result_event_ids": [
+              "event-000002",
+              "event-000003"
+            ],
+            "status": "failed",
+            "invocation": "python -m pytest tests/test_lease.py"
+          }
+        ]
+      },
+      "mechanical_reference_audit": {
+        "all_event_ids_in_projection": true,
+        "all_typed_references_in_projection": true,
+        "all_quotes_in_referenced_structured_records": true,
+        "quote_sources": [
+          {
+            "quote": "AssertionError: Invoice rounding produced an incorrect total",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "errors",
+                "record_id": "error-000002",
+                "field": "message",
+                "source_event_ids": [
+                  "event-000009",
+                  "event-000010"
+                ]
+              },
+              {
+                "record_type": "verification",
+                "record_id": "verify-000003",
+                "field": "summary",
+                "source_event_ids": [
+                  "event-000008",
+                  "event-000009"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "src/billing.py: 'total = round_float(value)' -> 'total = round_decimal(value)'",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "recoveries",
+                "record_id": "recovery-000002",
+                "field": "change_summary",
+                "source_event_ids": [
+                  "event-000009",
+                  "event-000008",
+                  "event-000011",
+                  "event-000012"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "Changed src/billing.py, after which run_command succeeded on python pytest tests/test_billing.py",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "recoveries",
+                "record_id": "recovery-000002",
+                "field": "action",
+                "source_event_ids": [
+                  "event-000009",
+                  "event-000008",
+                  "event-000011",
+                  "event-000012"
+                ]
+              }
+            ]
+          },
+          {
+            "quote": "1 passed",
+            "sources_with_cited_event_overlap": [
+              {
+                "record_type": "verification",
+                "record_id": "verify-000004",
+                "field": "summary",
+                "source_event_ids": [
+                  "event-000013",
+                  "event-000014"
+                ]
+              }
+            ]
+          }
+        ],
+        "is_semantic_verdict": false
+      }
+    }
+  ]
+}

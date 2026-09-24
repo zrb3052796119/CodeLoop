@@ -1,0 +1,56 @@
+..FF........                                                             [100%]
+=================================== FAILURES ===================================
+_ test_errors_and_temporal_boundaries_cannot_be_borrowed_across_recoveries[recovery_ids2] _
+
+recovery_ids = ['recovery-auth', 'recovery-billing']
+
+    @pytest.mark.parametrize(
+        "recovery_ids",
+        [
+            ["recovery-auth"],
+            ["recovery-billing"],
+            ["recovery-auth", "recovery-billing"],
+            ["recovery-billing", "recovery-auth"],
+        ],
+    )
+    def test_errors_and_temporal_boundaries_cannot_be_borrowed_across_recoveries(
+        recovery_ids: list[str],
+    ) -> None:
+        validation, value = _admission(_separate_recovery_chains(), recovery_ids)
+    
+>       assert validation.valid_claims == []
+E       AssertionError: assert [ReflectionCl...ce_quotes=[])] == []
+E         
+E         Left contains one more item: ReflectionClaim(claim_id='llm-claim-000001', claim_type='recovery', semantic_key='expiry_and_rounding', statement='Aft...or_ids=['error-auth', 'error-billing'], related_recovery_ids=['recovery-auth', 'recovery-billing'], evidence_quotes=[])
+E         Use -v to get more diff
+
+tests/test_reflection_recovery_chain_isolation.py:144: AssertionError
+_ test_errors_and_temporal_boundaries_cannot_be_borrowed_across_recoveries[recovery_ids3] _
+
+recovery_ids = ['recovery-billing', 'recovery-auth']
+
+    @pytest.mark.parametrize(
+        "recovery_ids",
+        [
+            ["recovery-auth"],
+            ["recovery-billing"],
+            ["recovery-auth", "recovery-billing"],
+            ["recovery-billing", "recovery-auth"],
+        ],
+    )
+    def test_errors_and_temporal_boundaries_cannot_be_borrowed_across_recoveries(
+        recovery_ids: list[str],
+    ) -> None:
+        validation, value = _admission(_separate_recovery_chains(), recovery_ids)
+    
+>       assert validation.valid_claims == []
+E       AssertionError: assert [ReflectionCl...ce_quotes=[])] == []
+E         
+E         Left contains one more item: ReflectionClaim(claim_id='llm-claim-000001', claim_type='recovery', semantic_key='expiry_and_rounding', statement='Aft...or_ids=['error-auth', 'error-billing'], related_recovery_ids=['recovery-billing', 'recovery-auth'], evidence_quotes=[])
+E         Use -v to get more diff
+
+tests/test_reflection_recovery_chain_isolation.py:144: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_reflection_recovery_chain_isolation.py::test_errors_and_temporal_boundaries_cannot_be_borrowed_across_recoveries[recovery_ids2]
+FAILED tests/test_reflection_recovery_chain_isolation.py::test_errors_and_temporal_boundaries_cannot_be_borrowed_across_recoveries[recovery_ids3]
+2 failed, 10 passed in 0.18s

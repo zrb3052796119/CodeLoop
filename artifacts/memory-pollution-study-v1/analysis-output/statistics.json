@@ -1,0 +1,447 @@
+{
+  "bootstrap": {
+    "samples": 20000,
+    "seed": 202609091
+  },
+  "poolEndpoints": {
+    "correctRenderedAnyRoundRate": {
+      "clean": 1.0,
+      "polluted-off": 1.0,
+      "polluted-rule": 1.0
+    },
+    "staleQuarantinedRate": {
+      "clean": null,
+      "polluted-off": 0.0,
+      "polluted-rule": 0.0
+    },
+    "staleRenderedRound3Rate": {
+      "polluted-off": 0.6666666666666666,
+      "polluted-rule": 0.5
+    }
+  },
+  "primaryTests": {
+    "task_input_tokens:polluted-off-minus-clean:round1": {
+      "bootstrapCI95": [
+        2351.833333333334,
+        34860.0
+      ],
+      "differences": [
+        45724.0,
+        47182.0,
+        13132.0,
+        129.0,
+        217.0,
+        287.0
+      ],
+      "holmP": 0.375,
+      "meanDifference": 17778.5,
+      "wilcoxon": {
+        "n_nonzero": 6,
+        "p_two_sided": 0.03125,
+        "rank_biserial": 1.0,
+        "statistic": 0.0,
+        "w_minus": 0.0,
+        "w_plus": 21.0
+      }
+    },
+    "task_input_tokens:polluted-off-minus-clean:round3": {
+      "bootstrapCI95": [
+        200.0,
+        4387.999999999998
+      ],
+      "differences": [
+        8489.0,
+        429.0,
+        335.0,
+        150.0,
+        187.0,
+        191.0
+      ],
+      "holmP": 0.375,
+      "meanDifference": 1630.1666666666667,
+      "wilcoxon": {
+        "n_nonzero": 6,
+        "p_two_sided": 0.03125,
+        "rank_biserial": 1.0,
+        "statistic": 0.0,
+        "w_minus": 0.0,
+        "w_plus": 21.0
+      }
+    },
+    "task_input_tokens:polluted-rule-minus-clean:round1": {
+      "bootstrapCI95": [
+        186.0,
+        19985.666666666664
+      ],
+      "differences": [
+        413.0,
+        258.0,
+        39683.0,
+        226.0,
+        73.0,
+        265.0
+      ],
+      "holmP": 0.375,
+      "meanDifference": 6819.666666666667,
+      "wilcoxon": {
+        "n_nonzero": 6,
+        "p_two_sided": 0.03125,
+        "rank_biserial": 1.0,
+        "statistic": 0.0,
+        "w_minus": 0.0,
+        "w_plus": 21.0
+      }
+    },
+    "task_input_tokens:polluted-rule-minus-clean:round3": {
+      "bootstrapCI95": [
+        138.66666666666606,
+        336.33333333333394
+      ],
+      "differences": [
+        468.0,
+        139.0,
+        303.0,
+        183.0,
+        94.0,
+        172.0
+      ],
+      "holmP": 0.375,
+      "meanDifference": 226.5,
+      "wilcoxon": {
+        "n_nonzero": 6,
+        "p_two_sided": 0.03125,
+        "rank_biserial": 1.0,
+        "statistic": 0.0,
+        "w_minus": 0.0,
+        "w_plus": 21.0
+      }
+    },
+    "task_input_tokens:polluted-rule-minus-polluted-off:round1": {
+      "bootstrapCI95": [
+        -31041.5,
+        8855.5
+      ],
+      "differences": [
+        -45311.0,
+        -46924.0,
+        26551.0,
+        97.0,
+        -144.0,
+        -22.0
+      ],
+      "holmP": 1.0,
+      "meanDifference": -10958.833333333334,
+      "wilcoxon": {
+        "n_nonzero": 6,
+        "p_two_sided": 0.4375,
+        "rank_biserial": -0.42857142857142855,
+        "statistic": 6.0,
+        "w_minus": 15.0,
+        "w_plus": 6.0
+      }
+    },
+    "task_input_tokens:polluted-rule-minus-polluted-off:round3": {
+      "bootstrapCI95": [
+        -4067.333333333332,
+        -16.83333333333212
+      ],
+      "differences": [
+        -8021.0,
+        -290.0,
+        -32.0,
+        33.0,
+        -93.0,
+        -19.0
+      ],
+      "holmP": 1.0,
+      "meanDifference": -1403.6666666666667,
+      "wilcoxon": {
+        "n_nonzero": 6,
+        "p_two_sided": 0.15625,
+        "rank_biserial": -0.7142857142857143,
+        "statistic": 3.0,
+        "w_minus": 18.0,
+        "w_plus": 3.0
+      }
+    },
+    "tool_calls:polluted-off-minus-clean:round1": {
+      "bootstrapCI95": [
+        0.33333333333333326,
+        4.333333333333333
+      ],
+      "differences": [
+        6.0,
+        5.0,
+        2.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "holmP": 1.0,
+      "meanDifference": 2.1666666666666665,
+      "wilcoxon": {
+        "n_nonzero": 3,
+        "p_two_sided": 0.25,
+        "rank_biserial": 1.0,
+        "statistic": 0.0,
+        "w_minus": 0.0,
+        "w_plus": 6.0
+      }
+    },
+    "tool_calls:polluted-off-minus-clean:round3": {
+      "bootstrapCI95": [
+        0.0,
+        0.5
+      ],
+      "differences": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "holmP": 1.0,
+      "meanDifference": 0.16666666666666666,
+      "wilcoxon": {
+        "n_nonzero": 1,
+        "p_two_sided": 1.0,
+        "rank_biserial": 1.0,
+        "statistic": 0.0,
+        "w_minus": 0.0,
+        "w_plus": 1.0
+      }
+    },
+    "tool_calls:polluted-rule-minus-clean:round1": {
+      "bootstrapCI95": [
+        0.0,
+        3.0
+      ],
+      "differences": [
+        0.0,
+        0.0,
+        6.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "holmP": 1.0,
+      "meanDifference": 1.0,
+      "wilcoxon": {
+        "n_nonzero": 1,
+        "p_two_sided": 1.0,
+        "rank_biserial": 1.0,
+        "statistic": 0.0,
+        "w_minus": 0.0,
+        "w_plus": 1.0
+      }
+    },
+    "tool_calls:polluted-rule-minus-clean:round3": {
+      "bootstrapCI95": [
+        0.0,
+        0.0
+      ],
+      "differences": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "holmP": 1.0,
+      "meanDifference": 0.0,
+      "wilcoxon": {
+        "n_nonzero": 0,
+        "p_two_sided": 1.0,
+        "rank_biserial": 0.0,
+        "statistic": 0.0,
+        "w_minus": 0.0,
+        "w_plus": 0.0
+      }
+    },
+    "tool_calls:polluted-rule-minus-polluted-off:round1": {
+      "bootstrapCI95": [
+        -3.833333333333333,
+        1.3333333333333333
+      ],
+      "differences": [
+        -6.0,
+        -5.0,
+        4.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "holmP": 1.0,
+      "meanDifference": -1.1666666666666667,
+      "wilcoxon": {
+        "n_nonzero": 3,
+        "p_two_sided": 0.5,
+        "rank_biserial": -0.6666666666666666,
+        "statistic": 1.0,
+        "w_minus": 5.0,
+        "w_plus": 1.0
+      }
+    },
+    "tool_calls:polluted-rule-minus-polluted-off:round3": {
+      "bootstrapCI95": [
+        -0.5,
+        0.0
+      ],
+      "differences": [
+        -1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "holmP": 1.0,
+      "meanDifference": -0.16666666666666666,
+      "wilcoxon": {
+        "n_nonzero": 1,
+        "p_two_sided": 1.0,
+        "rank_biserial": -1.0,
+        "statistic": 0,
+        "w_minus": 1.0,
+        "w_plus": 0
+      }
+    }
+  },
+  "primaryUnit": "family",
+  "roundSummary": [
+    {
+      "arm": "clean",
+      "duration_ms_mean": 12503.67,
+      "families": 6,
+      "outcomeSuccess": 6,
+      "round": 1,
+      "side_model_calls_mean": 0.0,
+      "task_input_tokens_mean": 15465.5,
+      "task_model_calls_mean": 2.0,
+      "task_output_tokens_mean": 244.0,
+      "tool_calls_mean": 1.0,
+      "tool_failures_mean": 0.0
+    },
+    {
+      "arm": "clean",
+      "duration_ms_mean": 17295.5,
+      "families": 6,
+      "outcomeSuccess": 6,
+      "round": 2,
+      "side_model_calls_mean": 0.0,
+      "task_input_tokens_mean": 18204.67,
+      "task_model_calls_mean": 2.33,
+      "task_output_tokens_mean": 373.0,
+      "tool_calls_mean": 1.33,
+      "tool_failures_mean": 0.0
+    },
+    {
+      "arm": "clean",
+      "duration_ms_mean": 12728.83,
+      "families": 6,
+      "outcomeSuccess": 6,
+      "round": 3,
+      "side_model_calls_mean": 0.0,
+      "task_input_tokens_mean": 15508.17,
+      "task_model_calls_mean": 2.0,
+      "task_output_tokens_mean": 265.83,
+      "tool_calls_mean": 1.0,
+      "tool_failures_mean": 0.0
+    },
+    {
+      "arm": "polluted-off",
+      "duration_ms_mean": 40406.33,
+      "families": 6,
+      "outcomeSuccess": 6,
+      "round": 1,
+      "side_model_calls_mean": 0.17,
+      "task_input_tokens_mean": 33244.0,
+      "task_model_calls_mean": 3.83,
+      "task_output_tokens_mean": 1236.33,
+      "tool_calls_mean": 3.17,
+      "tool_failures_mean": 0.5
+    },
+    {
+      "arm": "polluted-off",
+      "duration_ms_mean": 19630.5,
+      "families": 6,
+      "outcomeSuccess": 6,
+      "round": 2,
+      "side_model_calls_mean": 0.0,
+      "task_input_tokens_mean": 18682.0,
+      "task_model_calls_mean": 2.33,
+      "task_output_tokens_mean": 627.33,
+      "tool_calls_mean": 1.5,
+      "tool_failures_mean": 0.0
+    },
+    {
+      "arm": "polluted-off",
+      "duration_ms_mean": 13669.17,
+      "families": 6,
+      "outcomeSuccess": 6,
+      "round": 3,
+      "side_model_calls_mean": 0.0,
+      "task_input_tokens_mean": 17138.33,
+      "task_model_calls_mean": 2.17,
+      "task_output_tokens_mean": 368.17,
+      "tool_calls_mean": 1.17,
+      "tool_failures_mean": 0.0
+    },
+    {
+      "arm": "polluted-rule",
+      "duration_ms_mean": 22604.17,
+      "families": 6,
+      "outcomeSuccess": 6,
+      "round": 1,
+      "side_model_calls_mean": 0.17,
+      "task_input_tokens_mean": 22285.17,
+      "task_model_calls_mean": 2.67,
+      "task_output_tokens_mean": 654.17,
+      "tool_calls_mean": 2.0,
+      "tool_failures_mean": 0.17
+    },
+    {
+      "arm": "polluted-rule",
+      "duration_ms_mean": 29831.0,
+      "families": 6,
+      "outcomeSuccess": 6,
+      "round": 2,
+      "side_model_calls_mean": 0.17,
+      "task_input_tokens_mean": 29413.5,
+      "task_model_calls_mean": 3.5,
+      "task_output_tokens_mean": 831.83,
+      "tool_calls_mean": 2.67,
+      "tool_failures_mean": 0.33
+    },
+    {
+      "arm": "polluted-rule",
+      "duration_ms_mean": 15529.5,
+      "families": 6,
+      "outcomeSuccess": 6,
+      "round": 3,
+      "side_model_calls_mean": 0.0,
+      "task_input_tokens_mean": 15734.67,
+      "task_model_calls_mean": 2.0,
+      "task_output_tokens_mean": 360.33,
+      "tool_calls_mean": 1.0,
+      "tool_failures_mean": 0.0
+    }
+  ],
+  "strictSuccessRound3": {
+    "clean": [
+      6,
+      6
+    ],
+    "polluted-off": [
+      6,
+      6
+    ],
+    "polluted-rule": [
+      6,
+      6
+    ]
+  },
+  "suiteId": "minicode-memory-pollution-self-correction-2026-09-09-v1"
+}

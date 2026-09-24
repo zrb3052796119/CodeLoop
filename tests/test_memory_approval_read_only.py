@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import http.client
 import hashlib
+import http.client
 import json
 import multiprocessing
 import os
@@ -18,7 +18,11 @@ import minicode.memory_approval as memory_approval_mod
 from minicode.advisory_lock import WINDOWS_LOCK_SENTINEL
 from minicode.gateway import MiniCodeGatewayHandler
 from minicode.memory import MemoryApprovalPolicy, MemoryManager, MemoryScope
-from minicode.memory_approval import MemoryApprovalAuthority, MemoryApprovalError
+from minicode.memory_approval import (
+    MemoryApprovalAuthority,
+    MemoryApprovalError,
+    ScopeAuthoritySnapshot,
+)
 from minicode.memory_store import MemoryStoreCoordinator
 from minicode.web.read_model import DashboardReadModel
 
@@ -45,7 +49,8 @@ def _file_state(
                 if (
                     not allow_locked_memory_store
                     or os.name != "nt"
-                    or path.name != "memory-store.lock"
+                    or path.name
+                    not in {"memory-store.lock", ".minicode-memory-authority.lock"}
                 ):
                     raise
                 # A Windows byte-range lock denies a second handle access to
@@ -100,8 +105,7 @@ def _locked_update_worker(
     memory_mod.MINI_CODE_DIR = Path(home)
     try:
         manager = MemoryManager(project_root=workspace)
-        coordinator = MemoryStoreCoordinator(home)
-        with coordinator.transaction():
+        with manager._transaction_for_scopes((MemoryScope.PROJECT,)):
             ready.set()
             if not release.wait(timeout=10):
                 raise RuntimeError("parent did not release the writer")
@@ -250,6 +254,100 @@ def test_current_store_snapshot_revision_and_real_get_preserve_all_files(
     assert not (mini_code_dir / "memory-store.lock").exists()
 
 
+def test_public_scope_snapshot_uses_projection_for_legacy_json_without_embedded_audit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mini_code_dir = tmp_path / "home" / ".mini-code"
+    monkeypatch.setattr(memory_mod, "MINI_CODE_DIR", mini_code_dir)
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    entry = MemoryManager(project_root=workspace).add_entry(
+        MemoryScope.PROJECT,
+        "note",
+        "Legacy authority still reads its bounded audit projection",
+    )
+    assert entry is not None
+    scope_root = workspace / ".mini-code-memory"
+    memory_json = scope_root / "memory.json"
+    memory_data = json.loads(memory_json.read_text(encoding="utf-8"))
+    memory_data.pop("schemaVersion")
+    embedded_audit = memory_data.pop("approval_audit")
+    assert isinstance(embedded_audit, list) and embedded_audit
+    memory_json.write_text(json.dumps(memory_data, indent=2), encoding="utf-8")
+    projection_data = json.loads(
+        (scope_root / "approval_audit.json").read_text(encoding="utf-8")
+    )
+    before_entries = _tree_entries(tmp_path)
+    before_files = _file_state(tmp_path)
+
+    snapshot = MemoryApprovalAuthority(workspace).read_scope_snapshot(
+        MemoryScope.PROJECT
+    )
+
+    assert isinstance(snapshot, ScopeAuthoritySnapshot)
+    assert snapshot.scope is MemoryScope.PROJECT
+    assert [item.id for item in snapshot.entries] == [entry.id]
+    assert [item.get("id") for item in snapshot.raw_entries] == [entry.id]
+    assert list(snapshot.approval_audit) == projection_data["records"]
+    assert _tree_entries(tmp_path) == before_entries
+    assert _file_state(tmp_path) == before_files
+
+
+def test_embedded_audit_ignores_an_invalid_standalone_projection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mini_code_dir = tmp_path / "home" / ".mini-code"
+    monkeypatch.setattr(memory_mod, "MINI_CODE_DIR", mini_code_dir)
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    entry = MemoryManager(project_root=workspace).add_entry(
+        MemoryScope.PROJECT,
+        "note",
+        "Embedded audit remains authoritative after projection validation",
+    )
+    assert entry is not None
+    scope_root = workspace / ".mini-code-memory"
+    (scope_root / "approval_audit.json").write_text("[]", encoding="utf-8")
+    before_entries = _tree_entries(tmp_path)
+    before_files = _file_state(tmp_path)
+
+    memory_data = json.loads(
+        (scope_root / "memory.json").read_text(encoding="utf-8")
+    )
+    snapshot = MemoryApprovalAuthority(workspace).read_scope_snapshot(
+        MemoryScope.PROJECT
+    )
+
+    assert list(snapshot.approval_audit) == memory_data["approval_audit"]
+    assert _tree_entries(tmp_path) == before_entries
+    assert _file_state(tmp_path) == before_files
+
+
+def test_public_scope_snapshot_rejects_oversized_projection_without_writes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mini_code_dir = tmp_path / "home" / ".mini-code"
+    monkeypatch.setattr(memory_mod, "MINI_CODE_DIR", mini_code_dir)
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    scope_root = workspace / ".mini-code-memory"
+    scope_root.mkdir()
+    (scope_root / "approval_audit.json").write_bytes(b"x" * (2 * 1024 * 1024 + 1))
+    before_entries = _tree_entries(tmp_path)
+    before_files = _file_state(tmp_path)
+
+    with pytest.raises(MemoryApprovalError) as captured:
+        MemoryApprovalAuthority(workspace).read_scope_snapshot(MemoryScope.PROJECT)
+
+    assert captured.value.code == "memory_approval_unavailable"
+    assert _tree_entries(tmp_path) == before_entries
+    assert _file_state(tmp_path) == before_files
+    assert not mini_code_dir.exists()
+
+
 def test_legacy_missing_policy_is_read_only_and_revision_matches_decision_loader(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -268,6 +366,7 @@ def test_legacy_missing_policy_is_read_only_and_revision_matches_decision_loader
     assert entry is not None
     memory_json = workspace / ".mini-code-memory" / "memory.json"
     data = json.loads(memory_json.read_text(encoding="utf-8"))
+    data.pop("schemaVersion")
     data["entries"][0].pop("approval_policy")
     memory_json.write_text(json.dumps(data, indent=2), encoding="utf-8")
     (mini_code_dir / "memory-store.lock").unlink()
@@ -318,6 +417,7 @@ def test_preapproval_legacy_projection_is_stable_safe_and_no_write(
     scope_root = workspace / ".mini-code-memory"
     memory_json = scope_root / "memory.json"
     data = json.loads(memory_json.read_text(encoding="utf-8"))
+    data.pop("schemaVersion")
     for raw_entry in data["entries"]:
         raw_entry.pop("approval_status")
         raw_entry.pop("approval_content_hash")
@@ -606,7 +706,7 @@ def test_snapshot_is_not_a_writer_while_another_process_holds_commit_lock(
     )
     process.start()
     assert ready.wait(timeout=10)
-    lock_path = mini_code_dir / "memory-store.lock"
+    lock_path = workspace / ".minicode-memory-authority.lock"
     before_snapshot = _file_state(
         tmp_path,
         allow_locked_memory_store=True,

@@ -5,7 +5,6 @@ from __future__ import annotations
 # the repository owner's approval: they made every legitimate code change
 # require a full baseline re-versioning ceremony. Historical manifest
 # immutability checks are preserved.
-
 import copy
 import json
 import os
@@ -15,33 +14,6 @@ from pathlib import Path
 
 import pytest
 
-from scripts.memory_retrieval_semantic_gap_evaluator import (
-    ACCEPTED_V1_ARTIFACT_SHA256,
-    ACCEPTED_V1_BEHAVIOR_PROJECTION_SHA256,
-    MAX_METADATA_BYTES,
-    PHASE1_FROZEN_HASHES,
-    PHASE2A_FROZEN_HASHES,
-    PHASE2B_FROZEN_HASHES,
-    PRODUCTION_RETRIEVAL_HASHES,
-    _first_loss,
-    _safe_report_scan,
-    diagnostic_tokens,
-    evaluate_semantic_gap,
-    hash_paths,
-    load_dataset,
-    normalized_token_overlap,
-    render_analysis_markdown,
-    render_baseline_markdown,
-    render_performance_markdown,
-    semantic_behavior_fingerprint,
-    semantic_behavior_projection_fingerprint,
-    semantic_behavior_view,
-    semantic_gap_adjudication,
-    stage_metrics,
-    sha256_file,
-    validate_bounded_value,
-    verify_frozen_dataset,
-)
 from scripts.memory_retrieval_production_baseline import (
     EXPECTED_CHANGED_FILES,
     EXPECTED_V3_CHANGED_FILES,
@@ -107,6 +79,7 @@ from scripts.memory_retrieval_production_baseline import (
     EXPECTED_V38_CHANGED_FILES,
     EXPECTED_V39_ADDED_FILES,
     EXPECTED_V39_CHANGED_FILES,
+    PINNED_MANIFEST_SHA256,
     PRODUCTION_RETRIEVAL_HASHES_V1,
     PRODUCTION_RETRIEVAL_HASHES_V2,
     PRODUCTION_RETRIEVAL_HASHES_V3,
@@ -149,12 +122,51 @@ from scripts.memory_retrieval_production_baseline import (
     load_baseline_manifest,
     verify_active_baseline,
 )
-
+from scripts.memory_retrieval_semantic_gap_evaluator import (
+    ACCEPTED_V1_ARTIFACT_SHA256,
+    ACCEPTED_V1_BEHAVIOR_PROJECTION_SHA256,
+    ACCEPTED_V2_ARTIFACT_SHA256,
+    MAX_METADATA_BYTES,
+    PHASE1_FROZEN_HASHES,
+    PHASE2A_FROZEN_HASHES,
+    PHASE2B_FROZEN_HASHES,
+    PRODUCTION_RETRIEVAL_HASHES,
+    PRODUCTION_V40_MANIFEST_SHA256,
+    V2_CANDIDATE_ARTIFACT_SHA256,
+    V2_CANDIDATE_BEHAVIOR_PROJECTION_SHA256,
+    V2_CANDIDATE_CASE_FINGERPRINT_SHA256,
+    _first_loss,
+    _safe_report_scan,
+    diagnostic_tokens,
+    evaluate_semantic_gap,
+    hash_paths,
+    load_dataset,
+    normalized_token_overlap,
+    render_analysis_markdown,
+    render_baseline_markdown,
+    render_performance_markdown,
+    semantic_behavior_fingerprint,
+    semantic_behavior_projection_fingerprint,
+    semantic_behavior_v2_projection_fingerprint,
+    semantic_behavior_v2_view,
+    semantic_behavior_view,
+    semantic_gap_adjudication,
+    sha256_file,
+    stage_metrics,
+    validate_bounded_value,
+    verify_frozen_dataset,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATASET_ROOT = PROJECT_ROOT / "tests" / "fixtures" / "memory_retrieval_semantic_gap"
 ACCEPTED_V1_ARTIFACT = (
     PROJECT_ROOT / "artifacts" / "memory-retrieval-semantic-gap-baseline.json"
+)
+V2_CANDIDATE_ARTIFACT = (
+    PROJECT_ROOT / "artifacts" / "memory-retrieval-semantic-gap-v2-candidate.json"
+)
+ACCEPTED_V2_ARTIFACT = (
+    PROJECT_ROOT / "artifacts" / "memory-retrieval-semantic-gap-baseline-v2.json"
 )
 OFFICIAL_EVALUATOR = PROJECT_ROOT / "scripts" / "evaluate_memory_retrieval_semantic_gap.py"
 AUTHORITATIVE_ACCEPTED_V1_SHA256 = (
@@ -421,25 +433,117 @@ def test_stage_metrics_is_deterministic_for_identical_input(phase3a_report: dict
     assert stage_metrics(results) == stage_metrics(copy.deepcopy(results))
 
 
-def test_v4_semantic_behavior_matches_the_accepted_v1_v2_v3_projection(
-    phase3a_report: dict,
-) -> None:
-    accepted = json.loads(ACCEPTED_V1_ARTIFACT.read_text(encoding="utf-8"))
+def test_v2_candidate_behavior_is_bounded_by_a_finite_usefulness_migration() -> None:
+    accepted_v1 = json.loads(ACCEPTED_V1_ARTIFACT.read_text(encoding="utf-8"))
+    candidate_v2 = json.loads(V2_CANDIDATE_ARTIFACT.read_text(encoding="utf-8"))
+    accepted_v2 = json.loads(ACCEPTED_V2_ARTIFACT.read_text(encoding="utf-8"))
+    # This is a historical proof about the immutable v1 -> v2 transition.  It
+    # must not replay today's retrieval source and expect it to retain v2
+    # behavior forever; current-source behavior is certified by the active
+    # production freeze (currently v41) and its dedicated tests.
+    migration = accepted_v2["v1_to_v2_migration"]
 
     assert sha256_file(ACCEPTED_V1_ARTIFACT) == ACCEPTED_V1_ARTIFACT_SHA256
-    assert semantic_behavior_view(phase3a_report) == semantic_behavior_view(accepted)
-    assert semantic_behavior_fingerprint(phase3a_report) == semantic_behavior_fingerprint(
-        accepted
-    )
-    assert semantic_behavior_fingerprint(accepted) == accepted["determinism"][
+    assert sha256_file(V2_CANDIDATE_ARTIFACT) == V2_CANDIDATE_ARTIFACT_SHA256
+    assert sha256_file(ACCEPTED_V2_ARTIFACT) == ACCEPTED_V2_ARTIFACT_SHA256
+    assert semantic_behavior_fingerprint(accepted_v1) == accepted_v1["determinism"][
         "pythonhashseed_fingerprints"
     ]["1"]
-    assert semantic_behavior_projection_fingerprint(accepted) == (
+    assert semantic_behavior_projection_fingerprint(accepted_v1) == (
         ACCEPTED_V1_BEHAVIOR_PROJECTION_SHA256
     )
-    assert semantic_behavior_projection_fingerprint(phase3a_report) == (
-        ACCEPTED_V1_BEHAVIOR_PROJECTION_SHA256
+    assert migration["passed"] is True
+    assert migration["reason"] == (
+        "Persisted feedback scores without supporting counters are not evidence "
+        "and no longer receive retrieval authority."
     )
+    assert migration["legacy_v1_case_fingerprint_sha256"] == (
+        accepted_v1["determinism"]["pythonhashseed_fingerprints"]["1"]
+    )
+    assert migration["derived_v2_case_fingerprint_sha256"] == (
+        V2_CANDIDATE_CASE_FINGERPRINT_SHA256
+    )
+    assert migration["difference_count"] == sum(
+        migration["allowed_difference_shapes"].values()
+    )
+    assert migration["observed_difference_shapes"] == migration[
+        "allowed_difference_shapes"
+    ]
+    assert semantic_behavior_v2_view(accepted_v2) == semantic_behavior_v2_view(
+        candidate_v2
+    )
+    assert semantic_behavior_v2_projection_fingerprint(candidate_v2) == (
+        V2_CANDIDATE_BEHAVIOR_PROJECTION_SHA256
+    )
+    assert semantic_behavior_v2_projection_fingerprint(accepted_v2) == (
+        V2_CANDIDATE_BEHAVIOR_PROJECTION_SHA256
+    )
+
+
+def test_v2_migration_projection_detects_tampering() -> None:
+    accepted_v2 = json.loads(ACCEPTED_V2_ARTIFACT.read_text(encoding="utf-8"))
+    expected = semantic_behavior_v2_projection_fingerprint(accepted_v2)
+    accepted_v2["v1_to_v2_migration"]["reason"] = "tampered"
+
+    assert semantic_behavior_v2_projection_fingerprint(accepted_v2) != expected
+
+
+def test_v2_acceptance_binds_behavior_to_v40_source_certification(
+    phase3a_report: dict,
+) -> None:
+    del phase3a_report
+    accepted_report = json.loads(ACCEPTED_V2_ARTIFACT.read_text(encoding="utf-8"))
+    acceptance = accepted_report["acceptance"]
+
+    assert acceptance["status"] == "accepted_source_certified"
+    assert acceptance["accepted"] is True
+    assert acceptance["behavior_candidate"]["passed"] is True
+    assert acceptance["behavior_candidate"]["case_count"] == 108
+    assert acceptance["source_certification"]["passed"] is True
+    assert acceptance["source_certification"]["status"] == "certified"
+    assert acceptance["source_certification"]["failed_gates"] == []
+    assert acceptance["source_certification"]["production_baseline_binding"] == {
+        "manifest_id": "memory-retrieval-production-v40",
+        "manifest_sha256": "52d7131db710ef61674e776f931426e6efa8e91764df95eaa86612295f79e4f7",
+        "current_file_count": 73,
+        "candidate_matches": True,
+        "manifest_integrity_v40": True,
+    }
+    assert accepted_report["evaluation_passed"] is True
+    assert accepted_report["determinism"]["matches"] is True
+    fingerprints = accepted_report["determinism"]["pythonhashseed_fingerprints"]
+    assert set(fingerprints) == {"1", "777"}
+    assert set(fingerprints.values()) == {V2_CANDIDATE_CASE_FINGERPRINT_SHA256}
+    assert accepted_report["accepted_v2_comparison"]["matches"] is True
+    assert accepted_report["schema_version"] == (
+        "memory-retrieval-semantic-gap-baseline-v2"
+    )
+    v40_path = (
+        PROJECT_ROOT
+        / "tests"
+        / "fixtures"
+        / "memory_retrieval_production_freeze"
+        / "v40.json"
+    )
+    assert PRODUCTION_V40_MANIFEST_SHA256 == PINNED_MANIFEST_SHA256["v40"]
+    assert sha256_file(v40_path) == PRODUCTION_V40_MANIFEST_SHA256
+
+
+def test_v2_migration_fixture_contract_is_narrow_and_explicit(
+    phase3a_report: dict,
+) -> None:
+    fixture = phase3a_report["v1_to_v2_migration"]["fixture_contract"]
+
+    assert fixture == {
+        "background_entry_count": 32,
+        "case_entry_count": 110,
+        "entries_with_persisted_counters": 0,
+        "nonzero_bare_usefulness_entry_count": 32,
+        "nonzero_bare_usefulness_locations": ["background"],
+        "nonzero_bare_usefulness_values": [0.2],
+        "v1_semantics": "serialized usefulness_score was accepted without evidence counters",
+        "v2_semantics": "usefulness_score is derived from success_count and failure_count",
+    }
 
 
 def test_authoritative_accepted_artifact_and_phase3b_pin_are_restored() -> None:
@@ -450,10 +554,16 @@ def test_authoritative_accepted_artifact_and_phase3b_pin_are_restored() -> None:
     assert sha256_file(ACCEPTED_V1_ARTIFACT) == AUTHORITATIVE_ACCEPTED_V1_SHA256
 
 
-def test_official_evaluator_rejects_accepted_gold_as_an_explicit_output() -> None:
+@pytest.mark.parametrize(
+    "protected_artifact",
+    [ACCEPTED_V1_ARTIFACT, ACCEPTED_V2_ARTIFACT, V2_CANDIDATE_ARTIFACT],
+)
+def test_official_evaluator_rejects_protected_artifact_as_an_explicit_output(
+    protected_artifact: Path,
+) -> None:
     before = (
-        ACCEPTED_V1_ARTIFACT.read_bytes(),
-        ACCEPTED_V1_ARTIFACT.stat().st_mtime_ns,
+        protected_artifact.read_bytes(),
+        protected_artifact.stat().st_mtime_ns,
     )
 
     completed = subprocess.run(
@@ -461,7 +571,7 @@ def test_official_evaluator_rejects_accepted_gold_as_an_explicit_output() -> Non
             sys.executable,
             str(OFFICIAL_EVALUATOR),
             "--output",
-            str(ACCEPTED_V1_ARTIFACT),
+            str(protected_artifact),
             "--fingerprint",
         ],
         cwd=PROJECT_ROOT,
@@ -471,10 +581,10 @@ def test_official_evaluator_rejects_accepted_gold_as_an_explicit_output() -> Non
     )
 
     assert completed.returncode != 0
-    assert "accepted semantic baseline is immutable" in completed.stderr
+    assert "protected semantic artifact" in completed.stderr
     assert (
-        ACCEPTED_V1_ARTIFACT.read_bytes(),
-        ACCEPTED_V1_ARTIFACT.stat().st_mtime_ns,
+        protected_artifact.read_bytes(),
+        protected_artifact.stat().st_mtime_ns,
     ) == before
 
 

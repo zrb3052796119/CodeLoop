@@ -1,0 +1,86 @@
+{
+  "claim_controlled_red_scope": {
+    "recovery_errors": [
+      "error-auth"
+    ],
+    "passed_invocation": "pytest tests/test_billing.py",
+    "auth_only_control": {
+      "valid": false,
+      "persistable": false,
+      "issues": [
+        "confirmed_recovery_verification_unrelated"
+      ]
+    },
+    "claim_adds_billing_error": {
+      "valid": true,
+      "persistable": true,
+      "issues": []
+    },
+    "claim_omits_related_errors": {
+      "valid": true,
+      "persistable": true,
+      "issues": []
+    },
+    "claim_replaces_with_billing_error": {
+      "valid": true,
+      "persistable": true,
+      "issues": []
+    }
+  },
+  "unbound_error_widens_red_scope": {
+    "auth_error_call_id": null,
+    "actual_red_call_id": "failed-call",
+    "admission": {
+      "valid": true,
+      "persistable": true,
+      "issues": []
+    },
+    "rule": {
+      "valid": true,
+      "issues": [],
+      "persistable": true,
+      "rule_recovery_statuses": [
+        "confirmed"
+      ]
+    }
+  },
+  "episode_cwd_displacement": {
+    "failed": "python scripts/report.py (cwd: /repo/backend; timeout: 1)",
+    "selected": [
+      "python scripts/report.py (cwd: /repo/other0; timeout: 120)",
+      "python scripts/report.py (cwd: /repo/other1; timeout: 120)"
+    ],
+    "real_retry": "python scripts/report.py (cwd: /repo/backend; timeout: 120)",
+    "real_retry_retained": false,
+    "causal_status": "candidate"
+  },
+  "projection_loses_fifth_check_invocation": {
+    "parent": {
+      "valid": true,
+      "persistable": true,
+      "issues": []
+    },
+    "episode": {
+      "valid": false,
+      "persistable": false,
+      "issues": [
+        "confirmed_recovery_verification_unrelated"
+      ]
+    },
+    "episode_verification_calls": [
+      "passed-1",
+      "passed-2",
+      "passed-3",
+      "passed-4",
+      "passed-5",
+      "failed-call"
+    ],
+    "episode_tool_calls": [
+      "failed-call",
+      "passed-1",
+      "passed-2",
+      "passed-3",
+      "passed-4"
+    ]
+  }
+}

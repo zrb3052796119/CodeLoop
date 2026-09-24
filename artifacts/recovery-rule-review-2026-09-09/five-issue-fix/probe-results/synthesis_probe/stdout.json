@@ -1,0 +1,54 @@
+{
+  "output": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/recovery-rule-review-2026-09-09/five-issue-fix/probe-results/synthesis_probe/synthesis_probe.json",
+  "cases": {
+    "verbatim_baseline": {
+      "statement": "After Expired token was accepted, the recovery was: Moved the expiry check before lookup.",
+      "valid": true,
+      "validation_issue_codes": [],
+      "durable": true,
+      "value_reason_codes": [
+        "accepted_durable_reflection"
+      ]
+    },
+    "semantic_paraphrase": {
+      "statement": "The lookup accepted an expired token; moving expiration validation ahead of the lookup was the verified repair.",
+      "valid": false,
+      "validation_issue_codes": [
+        "claim_statement_not_grounded"
+      ],
+      "durable": false,
+      "value_reason_codes": [
+        "generic_error_summary",
+        "no_valid_claim"
+      ]
+    },
+    "verbatim_plus_unsupported_conclusion": {
+      "statement": "After Expired token was accepted, the recovery was: Moved the expiry check before lookup. The same change also resolves every clock synchronization defect in distributed databases.",
+      "valid": true,
+      "validation_issue_codes": [],
+      "durable": true,
+      "value_reason_codes": [
+        "accepted_durable_reflection"
+      ]
+    },
+    "verbatim_with_unrelated_verification": {
+      "statement": "After Expired token was accepted, the recovery was: Moved the expiry check before lookup.",
+      "valid": false,
+      "validation_issue_codes": [
+        "confirmed_recovery_verification_unrelated"
+      ],
+      "durable": false,
+      "value_reason_codes": [
+        "generic_error_summary",
+        "no_valid_claim"
+      ]
+    }
+  },
+  "rule_claims_for_unrelated_verification": [
+    {
+      "claim_type": "recovery",
+      "epistemic_status": "inferred",
+      "verification_ids": []
+    }
+  ]
+}

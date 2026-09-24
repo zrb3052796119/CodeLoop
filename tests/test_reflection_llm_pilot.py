@@ -356,9 +356,10 @@ def test_pilot_uses_explicit_prompt_and_schema_version(prompt_version: str) -> N
     assert report["prompt_version"] == prompt_version
     assert client.messages[0][0]["content"] == get_reflection_prompt(prompt_version)
     payload = json.loads(client.messages[0][1]["content"])
-    assert payload["required_output_schema"] == get_reflection_output_schema(
-        prompt_version
-    )
+    expected_schema = get_reflection_output_schema(prompt_version)
+    expected_schema["properties"]["task_summary"]["const"] = case["task_description"]
+    expected_schema["properties"]["outcome"]["const"] = payload["task_evidence"]["task"]["final_outcome"]
+    assert payload["required_output_schema"] == expected_schema
 
 
 def test_pilot_reports_structural_claim_diagnostics_without_raw_key() -> None:

@@ -1,0 +1,1370 @@
+{
+  "engine_cases": [
+    {
+      "name": "main_deriver_truncates_sixth_target",
+      "expected": "Do not confirm: auth target was dropped from the passing run.",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "pytest",
+            "args": [
+              "tests/test_one.py",
+              "tests/test_two.py",
+              "tests/test_three.py",
+              "tests/test_four.py",
+              "tests/test_five.py",
+              "tests/test_auth.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py",
+            "tests/test_five.py",
+            "tests/test_four.py",
+            "tests/test_one.py",
+            "tests/test_three.py",
+            "tests/test_two.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "AssertionError: expired token accepted",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py",
+            "tests/test_five.py",
+            "tests/test_four.py",
+            "tests/test_one.py",
+            "tests/test_three.py",
+            "tests/test_two.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "AssertionError: expired token accepted",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py",
+            "tests/test_five.py",
+            "tests/test_four.py",
+            "tests/test_one.py",
+            "tests/test_three.py",
+            "tests/test_two.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "input": {
+            "path": "docs/README.md",
+            "search": "Foo",
+            "replace": "Bar",
+            "replace_all": false,
+            "fuzzy": false
+          },
+          "files": [
+            "docs/README.md"
+          ],
+          "files_changed": [
+            "docs/README.md"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "updated",
+          "files": [
+            "docs/README.md"
+          ],
+          "files_changed": [
+            "docs/README.md"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "tool_call",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "input": {
+            "command": "pytest",
+            "args": [
+              "tests/test_one.py",
+              "tests/test_two.py",
+              "tests/test_three.py",
+              "tests/test_four.py",
+              "tests/test_five.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_five.py",
+            "tests/test_four.py",
+            "tests/test_one.py",
+            "tests/test_three.py",
+            "tests/test_two.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        },
+        {
+          "type": "tool_result",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "5 passed",
+          "files": [],
+          "referenced_files": [
+            "tests/test_five.py",
+            "tests/test_four.py",
+            "tests/test_one.py",
+            "tests/test_three.py",
+            "tests/test_two.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000007"
+        },
+        {
+          "type": "task_result",
+          "status": "success",
+          "trace_schema_version": 2,
+          "event_id": "event-000008"
+        }
+      ],
+      "recoveries": [],
+      "verification": [
+        {
+          "verification_id": "verify-000001",
+          "tool_name": "run_command",
+          "call_id": "call-1",
+          "command_kind": "test",
+          "scope": "targeted",
+          "result": "failed",
+          "event_ids": [
+            "event-000001",
+            "event-000002"
+          ],
+          "summary": "AssertionError: expired token accepted"
+        },
+        {
+          "verification_id": "verify-000002",
+          "tool_name": "run_command",
+          "call_id": "call-3",
+          "command_kind": "test",
+          "scope": "targeted",
+          "result": "passed",
+          "event_ids": [
+            "event-000006",
+            "event-000007"
+          ],
+          "summary": "5 passed"
+        }
+      ],
+      "persistable_claims": [],
+      "value_accepted": false,
+      "objectives": [
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "tests/test_one.py",
+            "tests/test_two.py",
+            "tests/test_three.py",
+            "tests/test_four.py",
+            "tests/test_five.py",
+            "tests/test_auth.py"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": []
+        },
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "tests/test_one.py",
+            "tests/test_two.py",
+            "tests/test_three.py",
+            "tests/test_four.py",
+            "tests/test_five.py"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": []
+        }
+      ],
+      "shared_contract_match": false
+    },
+    {
+      "name": "main_deriver_truncates_selection",
+      "expected": "Do not confirm: successful run selected a different marker.",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "pytest",
+            "args": [
+              "tests/test_one.py",
+              "tests/test_two.py",
+              "tests/test_three.py",
+              "tests/test_four.py",
+              "tests/test_five.py",
+              "-m=expired"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_five.py",
+            "tests/test_four.py",
+            "tests/test_one.py",
+            "tests/test_three.py",
+            "tests/test_two.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "AssertionError: expired token accepted",
+          "files": [],
+          "referenced_files": [
+            "tests/test_five.py",
+            "tests/test_four.py",
+            "tests/test_one.py",
+            "tests/test_three.py",
+            "tests/test_two.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "AssertionError: expired token accepted",
+          "files": [],
+          "referenced_files": [
+            "tests/test_five.py",
+            "tests/test_four.py",
+            "tests/test_one.py",
+            "tests/test_three.py",
+            "tests/test_two.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "input": {
+            "path": "docs/README.md",
+            "search": "Foo",
+            "replace": "Bar",
+            "replace_all": false,
+            "fuzzy": false
+          },
+          "files": [
+            "docs/README.md"
+          ],
+          "files_changed": [
+            "docs/README.md"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "updated",
+          "files": [
+            "docs/README.md"
+          ],
+          "files_changed": [
+            "docs/README.md"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "tool_call",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "input": {
+            "command": "pytest",
+            "args": [
+              "tests/test_one.py",
+              "tests/test_two.py",
+              "tests/test_three.py",
+              "tests/test_four.py",
+              "tests/test_five.py",
+              "-m=valid"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_five.py",
+            "tests/test_four.py",
+            "tests/test_one.py",
+            "tests/test_three.py",
+            "tests/test_two.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        },
+        {
+          "type": "tool_result",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "5 passed, 1 deselected",
+          "files": [],
+          "referenced_files": [
+            "tests/test_five.py",
+            "tests/test_four.py",
+            "tests/test_one.py",
+            "tests/test_three.py",
+            "tests/test_two.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000007"
+        },
+        {
+          "type": "task_result",
+          "status": "success",
+          "trace_schema_version": 2,
+          "event_id": "event-000008"
+        }
+      ],
+      "recoveries": [],
+      "verification": [
+        {
+          "verification_id": "verify-000001",
+          "tool_name": "run_command",
+          "call_id": "call-1",
+          "command_kind": "test",
+          "scope": "targeted",
+          "result": "failed",
+          "event_ids": [
+            "event-000001",
+            "event-000002"
+          ],
+          "summary": "AssertionError: expired token accepted"
+        },
+        {
+          "verification_id": "verify-000002",
+          "tool_name": "run_command",
+          "call_id": "call-3",
+          "command_kind": "test",
+          "scope": "targeted",
+          "result": "passed",
+          "event_ids": [
+            "event-000006",
+            "event-000007"
+          ],
+          "summary": "5 passed, 1 deselected"
+        }
+      ],
+      "persistable_claims": [],
+      "value_accepted": false,
+      "objectives": [
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "tests/test_one.py",
+            "tests/test_two.py",
+            "tests/test_three.py",
+            "tests/test_four.py",
+            "tests/test_five.py"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [
+            "-m=expired"
+          ],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": []
+        },
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "tests/test_one.py",
+            "tests/test_two.py",
+            "tests/test_three.py",
+            "tests/test_four.py",
+            "tests/test_five.py"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [
+            "-m=valid"
+          ],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": []
+        }
+      ],
+      "shared_contract_match": false
+    },
+    {
+      "name": "generic_fallback_overrides_ambiguous_objective",
+      "expected": "Keep candidate: shared objective explicitly marks selection ambiguous.",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "dbtool",
+            "args": [
+              "migrate",
+              "auth",
+              "-m=expired"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "UsageError: invalid mode",
+          "files": [],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "UsageError: invalid mode",
+          "files": [],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "run_command",
+          "input": {
+            "command": "dbtool",
+            "args": [
+              "migrate",
+              "auth",
+              "-m=valid"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "Migration completed",
+          "files": [],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "task_result",
+          "status": "success",
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        }
+      ],
+      "recoveries": [],
+      "verification": [],
+      "persistable_claims": [],
+      "value_accepted": false,
+      "objectives": [
+        {
+          "executable": "dbtool",
+          "input_paths": [],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [],
+          "bare_operands": [
+            "auth",
+            "migrate"
+          ],
+          "ambiguous_selection": true,
+          "unknown_flags": []
+        },
+        {
+          "executable": "dbtool",
+          "input_paths": [],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [],
+          "bare_operands": [
+            "auth",
+            "migrate"
+          ],
+          "ambiguous_selection": true,
+          "unknown_flags": []
+        }
+      ],
+      "shared_contract_match": false
+    },
+    {
+      "name": "generic_fallback_overrides_changed_marker",
+      "expected": "Do not confirm: known selection changed; bare directory is treated as pathless.",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "pytest",
+            "args": [
+              "tests",
+              "-m=expired"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "AssertionError: expired token accepted",
+          "files": [],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "AssertionError: expired token accepted",
+          "files": [],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "run_command",
+          "input": {
+            "command": "pytest",
+            "args": [
+              "tests",
+              "-m=valid"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "1 passed, 1 deselected",
+          "files": [],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "task_result",
+          "status": "success",
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        }
+      ],
+      "recoveries": [],
+      "verification": [
+        {
+          "verification_id": "verify-000001",
+          "tool_name": "run_command",
+          "call_id": "call-1",
+          "command_kind": "test",
+          "scope": "unknown",
+          "result": "failed",
+          "event_ids": [
+            "event-000001",
+            "event-000002"
+          ],
+          "summary": "AssertionError: expired token accepted"
+        },
+        {
+          "verification_id": "verify-000002",
+          "tool_name": "run_command",
+          "call_id": "call-2",
+          "command_kind": "test",
+          "scope": "unknown",
+          "result": "passed",
+          "event_ids": [
+            "event-000004",
+            "event-000005"
+          ],
+          "summary": "1 passed, 1 deselected"
+        }
+      ],
+      "persistable_claims": [],
+      "value_accepted": false,
+      "objectives": [
+        {
+          "executable": "pytest",
+          "input_paths": [],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [
+            "-m=expired"
+          ],
+          "bare_operands": [
+            "tests"
+          ],
+          "ambiguous_selection": false,
+          "unknown_flags": []
+        },
+        {
+          "executable": "pytest",
+          "input_paths": [],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [
+            "-m=valid"
+          ],
+          "bare_operands": [
+            "tests"
+          ],
+          "ambiguous_selection": false,
+          "unknown_flags": []
+        }
+      ],
+      "shared_contract_match": false
+    },
+    {
+      "name": "missing_target_default_scope_accepts_echo",
+      "expected": "Do not confirm: echo does not retry the failed pytest objective.",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "pytest",
+            "args": [
+              "tests/test_auth.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "FileNotFoundError: No such file or directory: 'tests/test_auth.py'",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "FileNotFoundError: No such file or directory: 'tests/test_auth.py'",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "run_command",
+          "input": {
+            "command": "echo",
+            "args": [
+              "done"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "done",
+          "files": [],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "task_result",
+          "status": "success",
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        }
+      ],
+      "recoveries": [],
+      "verification": [
+        {
+          "verification_id": "verify-000001",
+          "tool_name": "run_command",
+          "call_id": "call-1",
+          "command_kind": "test",
+          "scope": "targeted",
+          "result": "failed",
+          "event_ids": [
+            "event-000001",
+            "event-000002"
+          ],
+          "summary": "FileNotFoundError: No such file or directory: 'tests/test_auth.py'"
+        }
+      ],
+      "persistable_claims": [],
+      "value_accepted": false,
+      "objectives": [
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "tests/test_auth.py"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": []
+        },
+        {
+          "executable": "echo",
+          "input_paths": [],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [],
+          "bare_operands": [
+            "done"
+          ],
+          "ambiguous_selection": false,
+          "unknown_flags": []
+        }
+      ],
+      "shared_contract_match": false
+    },
+    {
+      "name": "missing_target_relocation_discards_selection_guard",
+      "expected": "Do not confirm: relocation does not license selecting different tests.",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "pytest",
+            "args": [
+              "tests/test_auth.py",
+              "-m=expired"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "FileNotFoundError: No such file or directory: 'tests/test_auth.py'",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "FileNotFoundError: No such file or directory: 'tests/test_auth.py'",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "run_command",
+          "input": {
+            "command": "pytest",
+            "args": [
+              "backend/tests/test_auth.py",
+              "-m=valid"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "backend/tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "3 passed",
+          "files": [],
+          "referenced_files": [
+            "backend/tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "task_result",
+          "status": "success",
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        }
+      ],
+      "recoveries": [],
+      "verification": [
+        {
+          "verification_id": "verify-000001",
+          "tool_name": "run_command",
+          "call_id": "call-1",
+          "command_kind": "test",
+          "scope": "targeted",
+          "result": "failed",
+          "event_ids": [
+            "event-000001",
+            "event-000002"
+          ],
+          "summary": "FileNotFoundError: No such file or directory: 'tests/test_auth.py'"
+        },
+        {
+          "verification_id": "verify-000002",
+          "tool_name": "run_command",
+          "call_id": "call-2",
+          "command_kind": "test",
+          "scope": "targeted",
+          "result": "passed",
+          "event_ids": [
+            "event-000004",
+            "event-000005"
+          ],
+          "summary": "3 passed"
+        }
+      ],
+      "persistable_claims": [],
+      "value_accepted": false,
+      "objectives": [
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "tests/test_auth.py"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [
+            "-m=expired"
+          ],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": []
+        },
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "backend/tests/test_auth.py"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [
+            "-m=valid"
+          ],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": []
+        }
+      ],
+      "shared_contract_match": false
+    },
+    {
+      "name": "real_traceback_test_path_is_not_missing_object",
+      "expected": "Do not confirm relocation: the requested test file exists; its fixture is missing.",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "-q",
+              "--tb=short",
+              "tests/test_auth.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n__________________________________ test_auth _______________________________\n...[truncated middle]...\n] No such file or directory: 'fixtures/credentials.json'\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_auth - FileNotFoundError: [Errno 2] No such f...\n1 failed in 0.01s\n",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "F                                                                        [100%]\n=================================== FAILURES ===================================\n__________________________________ test_auth _______________________________\n...[truncated middle]...\n] No such file or directory: 'fixtures/credentials.json'\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_auth - FileNotFoundError: [Errno 2] No such f...\n1 failed in 0.01s\n",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "-q",
+              "--tb=short",
+              "backend/tests/test_auth.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "backend/tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": ".                                                                        [100%]\n1 passed in 0.00s\n",
+          "files": [],
+          "referenced_files": [
+            "backend/tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "task_result",
+          "status": "success",
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        }
+      ],
+      "recoveries": [],
+      "verification": [
+        {
+          "verification_id": "verify-000001",
+          "tool_name": "run_command",
+          "call_id": "call-1",
+          "command_kind": "test",
+          "scope": "full",
+          "result": "failed",
+          "event_ids": [
+            "event-000001",
+            "event-000002"
+          ],
+          "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n__________________________________ test_auth _______________________________\n...[truncated middle]...\n] No such file or directory: 'fixtures/credentials.json'\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_auth - FileNotFoundError: [Errno 2] No such f...\n1 failed in 0.01s\n"
+        },
+        {
+          "verification_id": "verify-000002",
+          "tool_name": "run_command",
+          "call_id": "call-2",
+          "command_kind": "test",
+          "scope": "full",
+          "result": "passed",
+          "event_ids": [
+            "event-000004",
+            "event-000005"
+          ],
+          "summary": ".                                                                        [100%]\n1 passed in 0.00s\n"
+        }
+      ],
+      "persistable_claims": [],
+      "value_accepted": false,
+      "objectives": [
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "tests/test_auth.py"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": []
+        },
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "backend/tests/test_auth.py"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": []
+        }
+      ],
+      "shared_contract_match": false,
+      "real_pytest_runs": [
+        {
+          "target": "tests/test_auth.py",
+          "exit_code": 1,
+          "output": "F                                                                        [100%]\n=================================== FAILURES ===================================\n__________________________________ test_auth ___________________________________\ntests/test_auth.py:2: in test_auth\n    open(\"fixtures/credentials.json\").read()\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   FileNotFoundError: [Errno 2] No such file or directory: 'fixtures/credentials.json'\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_auth - FileNotFoundError: [Errno 2] No such f...\n1 failed in 0.01s\n"
+        },
+        {
+          "target": "backend/tests/test_auth.py",
+          "exit_code": 0,
+          "output": ".                                                                        [100%]\n1 passed in 0.00s\n"
+        }
+      ]
+    }
+  ],
+  "episode_case": {
+    "name": "episode_rendered_cwd_not_restored",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "scripts/report.py"
+          ],
+          "cwd": "/repo/backend",
+          "timeout": 1
+        },
+        "files": [],
+        "referenced_files": [
+          "scripts/report.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "Command timed out after 1 seconds (process group terminated).",
+        "files": [],
+        "referenced_files": [
+          "scripts/report.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "Command timed out after 1 seconds (process group terminated).",
+        "files": [],
+        "referenced_files": [
+          "scripts/report.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "scripts/report.py"
+          ],
+          "cwd": "/repo/frontend",
+          "timeout": 120
+        },
+        "files": [],
+        "referenced_files": [
+          "scripts/report.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "report created",
+        "files": [],
+        "referenced_files": [
+          "scripts/report.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "tool_call",
+        "step": 3,
+        "call_id": "call-3",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "scripts/report.py"
+          ],
+          "cwd": "/repo/another",
+          "timeout": 120
+        },
+        "files": [],
+        "referenced_files": [
+          "scripts/report.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      },
+      {
+        "type": "tool_result",
+        "step": 3,
+        "call_id": "call-3",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "report created",
+        "files": [],
+        "referenced_files": [
+          "scripts/report.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000007"
+      },
+      {
+        "type": "tool_call",
+        "step": 4,
+        "call_id": "call-4",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "scripts/report.py"
+          ],
+          "cwd": "/repo/backend",
+          "timeout": 120
+        },
+        "files": [],
+        "referenced_files": [
+          "scripts/report.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000008"
+      },
+      {
+        "type": "tool_result",
+        "step": 4,
+        "call_id": "call-4",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "report created",
+        "files": [],
+        "referenced_files": [
+          "scripts/report.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000009"
+      }
+    ],
+    "expected": "Only original backend report retry should be retained.",
+    "failed": "python scripts/report.py (cwd: /repo/backend; timeout: 1)",
+    "selected_followups": [
+      "python scripts/report.py (cwd: /repo/backend; timeout: 120)"
+    ],
+    "actual_retry": "python scripts/report.py (cwd: /repo/backend; timeout: 120)",
+    "actual_retry_retained": true,
+    "causal_status": "candidate"
+  }
+}

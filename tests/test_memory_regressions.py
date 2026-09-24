@@ -9,7 +9,13 @@ import pytest
 import minicode.memory as memory_mod
 from minicode.agent_loop import _append_tool_trace_events, _sanitize_trace_value
 from minicode.agent_reflection import ReflectionEngine
-from minicode.memory import MemoryEntry, MemoryFile, MemoryManager, MemoryScope, MemoryTier
+from minicode.memory import (
+    MemoryEntry,
+    MemoryFile,
+    MemoryManager,
+    MemoryScope,
+    MemoryTier,
+)
 from minicode.memory_curator_agent import MemoryCuratorAgent
 from minicode.memory_pipeline import MemoryPipeline
 from minicode.tooling import ToolResult
@@ -214,7 +220,7 @@ def test_context_pressure_controls_actual_pipeline_injection(isolated_workspace:
         context_usage=0.90,
     )
     assert blocked[0]["content"] == messages[0]["content"]
-    assert high_pressure._injector.last_decision.mode.value == "none"
+    assert high_pressure.last_injection_decision.mode.value == "none"
 
     normal = _pipeline(manager, isolated_workspace)
     injected = normal.inject(

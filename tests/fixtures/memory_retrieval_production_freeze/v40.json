@@ -1,0 +1,244 @@
+{
+  "addedFiles": {
+    "minicode/advisory_lock.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/curator_schedule.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/memory_approval_interpretation.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/memory_audit_contract.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/memory_authority_io.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/memory_authority_publisher.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/memory_blob_store.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/memory_lexical_policy.py": {
+      "reasonCode": "persistent_memory_retrieval_semantics"
+    },
+    "minicode/memory_provenance.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/memory_write_contract.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/project_facts.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    }
+  },
+  "allowedChangesFromParent": {
+    "minicode/agent_loop.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/agent_reflection.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/agent_runtime.py": {
+      "reasonCode": "skill_routing_semantic_authority"
+    },
+    "minicode/context_compactor.py": {
+      "reasonCode": "context_compaction_fidelity_authority"
+    },
+    "minicode/conversation.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/conversation_turn_store.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/deletion_store.py": {
+      "reasonCode": "production_source_state_reconciliation"
+    },
+    "minicode/gateway.py": {
+      "reasonCode": "production_source_state_reconciliation"
+    },
+    "minicode/headless.py": {
+      "reasonCode": "multi_agent_workflow_authority"
+    },
+    "minicode/main.py": {
+      "reasonCode": "skill_routing_semantic_authority"
+    },
+    "minicode/memory.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/memory_approval.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/memory_candidate_consolidation.py": {
+      "reasonCode": "persistent_memory_retrieval_semantics"
+    },
+    "minicode/memory_curator_agent.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/memory_injector.py": {
+      "reasonCode": "persistent_memory_retrieval_semantics"
+    },
+    "minicode/memory_pipeline.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/memory_retrieval.py": {
+      "reasonCode": "persistent_memory_retrieval_semantics"
+    },
+    "minicode/memory_store.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/permission_approval.py": {
+      "reasonCode": "production_source_state_reconciliation"
+    },
+    "minicode/permissions.py": {
+      "reasonCode": "multi_agent_workflow_authority"
+    },
+    "minicode/project_memory_deletion.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/run_events.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/run_journal.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/run_lifecycle.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/session.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/storage_health.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/tooling.py": {
+      "reasonCode": "multi_agent_workflow_authority"
+    },
+    "minicode/tools/__init__.py": {
+      "reasonCode": "production_source_state_reconciliation"
+    },
+    "minicode/tools/network_safety.py": {
+      "reasonCode": "production_source_state_reconciliation"
+    },
+    "minicode/tools/run_command.py": {
+      "reasonCode": "production_source_state_reconciliation"
+    },
+    "minicode/tools/search_providers.py": {
+      "reasonCode": "production_source_state_reconciliation"
+    },
+    "minicode/tools/task.py": {
+      "reasonCode": "multi_agent_workflow_authority"
+    },
+    "minicode/tools/web_search.py": {
+      "reasonCode": "production_source_state_reconciliation"
+    },
+    "minicode/tui/input_handler.py": {
+      "reasonCode": "skill_routing_semantic_authority"
+    },
+    "minicode/web/change_feed.py": {
+      "reasonCode": "production_source_state_reconciliation"
+    },
+    "minicode/web/chat_http.py": {
+      "reasonCode": "production_source_state_reconciliation"
+    },
+    "minicode/web/chat_stream.py": {
+      "reasonCode": "production_source_state_reconciliation"
+    },
+    "minicode/web/read_model.py": {
+      "reasonCode": "persistent_memory_lifecycle_authority"
+    },
+    "minicode/web/static/assets/app.js": {
+      "reasonCode": "client_surface_runtime_integration"
+    },
+    "minicode/web/static/assets/styles.css": {
+      "reasonCode": "production_source_state_reconciliation"
+    },
+    "minicode/web/static/index.html": {
+      "reasonCode": "production_source_state_reconciliation"
+    },
+    "minicode/workspace.py": {
+      "reasonCode": "production_source_state_reconciliation"
+    }
+  },
+  "baselineId": "memory-retrieval-production-v40",
+  "files": {
+    "minicode/advisory_lock.py": "61918bab1c9519709ebddfe52db270c0fa13015f0b2fb729c3f400c2b75e7202",
+    "minicode/agent_loop.py": "76a0110dca82712585259692dc1578649443ad3a8f1e1bf9605f58faa749e1ad",
+    "minicode/agent_reflection.py": "3154869b7e819334d6d3b04ddab7923f56a101ab3386a7691c70eb9d521b7ccc",
+    "minicode/agent_runtime.py": "0c543e6ba5f0752310c4d172b8a9b79732aa8c7e7e3c353cc339f08fa8789971",
+    "minicode/context_compactor.py": "c21711b0d5a90cb22504f4db2d593f485dbca06b138ffe68884199344226834c",
+    "minicode/conversation.py": "936088facca46a1479a0c7a63602916c967acb0ef8055e6e5df38d9fedee3100",
+    "minicode/conversation_deletion.py": "6ce8f1abdb4464f7749d87e3d25b089270207d74c78a265168fa6652a6a3ec6f",
+    "minicode/conversation_presentation.py": "54be4609427fb704545c910a06a30af8d8814b312253fc822050f8a8d6e40838",
+    "minicode/conversation_turn_store.py": "baa88c3e198059da7a74dc7045e7309b4668c00aa178e9e00025e06234696bca",
+    "minicode/curator_schedule.py": "4cfd49e6de518e9b361fbff4ebbf9201af5c3a58aeb49998564a8d4bd02cac89",
+    "minicode/deletion_store.py": "09bc0c9d4ec5ac942b966058e27338b696d39f98c718365e40336e8e36e5612e",
+    "minicode/file_review.py": "9ae0db16cc51731863fcd6f32ffcf93164e5ac6fa57b0c2071198485e9ced389",
+    "minicode/gateway.py": "afe88bb63cfff6b3caa91c9e9bfe52127f62b43c73506c7aaec7f55028286314",
+    "minicode/headless.py": "134b492b31397a995cbeb062ed9fd255baa0c146b550e88befa0f78de36950a6",
+    "minicode/main.py": "9d71519cbdd5afddbfc3ef91337ff4fa6e775445aeed5d31fb4bb5998ff2a533",
+    "minicode/mcp.py": "e39f2e44d2a4c06f2e53114f5664df4d9bf2b10435cc3917cb95c2f50f35d077",
+    "minicode/mcp_current_state.py": "063fed4b7e4a8ed117be46482fa1aeb876cb3fcffc24fb69073ce3a96553cbcc",
+    "minicode/mcp_event_contract.py": "583dc481a8e2d1ff30b9b3d6cf091a7c06bed91e14d7580f4399967745a25daa",
+    "minicode/mcp_observation.py": "d822098ee1f4f61a127f740806cdaa6f8d1a7cbeeb6e3f8cbe227948142fd0b8",
+    "minicode/memory.py": "e8dac517909e26841635fef2547fff08a20a649888bdff426b93e79da130581e",
+    "minicode/memory_approval.py": "69a2a88baebaf2ea585909bc3d387cfea4023502e23485f9734daf829bb4102c",
+    "minicode/memory_approval_interpretation.py": "683eb7c51560480d7d3ae70ff6a285817a150b0026cb25876e6adbec5335a8c4",
+    "minicode/memory_audit_contract.py": "654857642c349b03f4365bca9e3736023b990ea570e0dd1fa724aff33d168e09",
+    "minicode/memory_authority_io.py": "6ae3e1ac663edfcd1f367d6b61a60ab36146fb16604308eca7a17887c8fd435f",
+    "minicode/memory_authority_publisher.py": "3ae33616aa46b60cccbef75662be7e4f1210a7d2d02abe4f46610619da25b77a",
+    "minicode/memory_blob_store.py": "7e6f72a6294bd377bf9d7f01a57b30c7d128cdf30907aada68232d9d67089e86",
+    "minicode/memory_candidate_consolidation.py": "4780f873dcf59add9da7838cc583dcd23e0ac753e047e22e95859b1c36e70260",
+    "minicode/memory_curator_agent.py": "7daee651c2ebe9a9fdb7fc6bf1db1d278b4cdaabbc53710829e53467c350a03f",
+    "minicode/memory_injector.py": "bcb4fadb85082016c4b2ffcbba67454f7fbdec1039d3c4295e2e77cedab917b7",
+    "minicode/memory_lexical_policy.py": "1c634a186d44cf113199b159b6797367d0cf327da21f9503cafcbda528aad9ef",
+    "minicode/memory_pipeline.py": "1f3c3d20c7445ab68f14eb2635db894b1519dc82c86a1269511cc15a81e07f80",
+    "minicode/memory_provenance.py": "6ed5bf0856b0c343c99d91daf88c2a8e5ca1c7df2d592ed0e4ecde589ae8aaf4",
+    "minicode/memory_retrieval.py": "861ab6e766b4b869ee03853421dc3b4b5a21303db9d26c314317d75c0a8af1a1",
+    "minicode/memory_store.py": "0c56546e95b176864b2fcabdb4b38619c3068ac68c7b12c4ef38e0ae38b46783",
+    "minicode/memory_write_contract.py": "1486c98c733d9df4d9c43bcfa2fb92ce4d95620d9b3453f30f76f6862c9e4405",
+    "minicode/permission_approval.py": "a8666024b8c342d713697dd346cd0b2b916f08b3c6654e0a6214cf8469594141",
+    "minicode/permission_event_contract.py": "bbf89c726f1e83f874f4d8164f1f9273ebd295d822adbe39b2fc20e88617b684",
+    "minicode/permissions.py": "2775be4d47e220af8176a36a308daa59b6232c3d4b29a783febca434038f453b",
+    "minicode/pricing.py": "ff06fc77656186da6530048420b16b56eb5b588ab6247a62a3884eff585e5ca0",
+    "minicode/project_facts.py": "0c4ea763c5759e71538f8ef91e17fbf6d6db3a6f9209fcbdfba25ac2c1fadf99",
+    "minicode/project_memory_deletion.py": "475e84310f56a27cdf83410c9d285868f5f805f10db88838f3bc80e57efd0b6a",
+    "minicode/run_events.py": "d97dcb909e176183ce1461f342e35e13524a34290937fa95b6b10c11fc314f67",
+    "minicode/run_journal.py": "ff4f21c8817b6f53c4f43e7834ecc1c9cd2da0406ffbd80f67257e31d56a056a",
+    "minicode/run_lifecycle.py": "a5f3c1f390a4fc8bb29b5f8cc198829ec0d2a85ea1413bc06ee2e458bc15da0a",
+    "minicode/session.py": "83b337afb3fa8efa7a5c7ed686de267f948a261d8cefa85f02a802de630849b2",
+    "minicode/storage_health.py": "21b9e50dc0211491f89ca907a744e0db08ced379ad65b3ba093c42c79a4d0ea6",
+    "minicode/tooling.py": "208703e59f1143c4b83c08248738069e3f35ac6ce1d16dbe09f3f92acf89ebdb",
+    "minicode/tools/__init__.py": "feee855ada5b015e33a8ade1faf1f48216d56f85c4012ee8cc32e5a5639b3a2d",
+    "minicode/tools/bounded_resolver.py": "55275c0acb527036f6691646bd689d9be54e1877774c371daf28d59ee89f5523",
+    "minicode/tools/http_utils.py": "d677707fe69f25147fe98ad51f6bd733276191ff05988c3b32d6734db6d1bd84",
+    "minicode/tools/network_safety.py": "a0d79db7b0effb5400ae50bf720e9192c8dbcbf2787d63484ac1921635df781c",
+    "minicode/tools/run_command.py": "8bc4d1e5b6b7bb76ce8a78b5b5d5646ca1915aafd6df7eac6468ebc7ad9876ce",
+    "minicode/tools/search_providers.py": "a5e03a850ea3dd54d130f07816b4368ce177c640596b18f32bbd822c27402df8",
+    "minicode/tools/task.py": "4ca336a6fad019c85b2639fc63281edf18177ad7967137651b487eb07bd07a3c",
+    "minicode/tools/web_fetch.py": "7ee2c130b96dbc6b9fe3f874204c9be6035ec3c9d97ea815b3e7614dc3f11ef0",
+    "minicode/tools/web_search.py": "6cf95bf1d2c5b685ea5df83d1a6ebbf226dc7aab28ba131dabdece86c4951e0e",
+    "minicode/tui/input_handler.py": "28783be0fc8e918c194af941e3071f067052e16dbf9b85ff3655fb4011a0a37d",
+    "minicode/turn_cancellation.py": "1423a75023c835b211a0f2dd0e85c1e98d5fcec6910c2435c2f48b2d74daf37f",
+    "minicode/web/change_feed.py": "cc26b60c2812ec8bbd2619ae4dc58e4d6493dafb3ff1610955b92455e0468e49",
+    "minicode/web/chat_http.py": "4d1b7623d6f05ba2e3caa113846dbe63b3ee525a79fab56613f1dac827ddfcd2",
+    "minicode/web/chat_stream.py": "b067232d3de9169f64b8ab3801c75d1bbe4f1c80580a366001a9b2b94c60fa57",
+    "minicode/web/data_management_http.py": "6a2d478157fa02fe0c9f7548d8bb795f90fbe7bfc218e976a0fb56e3f55757d4",
+    "minicode/web/event_stream.py": "f6d70d13e04b0746811301d11bfacd681613e199518fa34b9b8763dacb30d728",
+    "minicode/web/http.py": "4b000f6d77a517fca7ade094cda54a1a7efdbc2aeb1c8b04b98f54dab1c0519a",
+    "minicode/web/memory_approval_http.py": "f3e8a047d6dff7fce4142eba5226bf698693b1f3f6bd301137c5978bf9f30ded",
+    "minicode/web/permission_http.py": "bfa2f062135a77652b7911d80db547f39db6e7237c840906e2f1dc30533944dc",
+    "minicode/web/read_model.py": "67b5e472a1dbec3a87808d150e1fa7252bb86e00b86f370968be960914d8f8a5",
+    "minicode/web/static/assets/app.js": "861626a2f4352c30c4ecc05359fc0316fe8a51cfaa78d119d7601fdada258695",
+    "minicode/web/static/assets/styles.css": "9ac1ad5047c20a162ae58ba88a8cbf4a2dddb9d370152dfa951b23b61bb7d003",
+    "minicode/web/static/index.html": "35019b94aa6b96860367dc3a8b21fb3749759bfe4908fa3e27000962b3f62682",
+    "minicode/web/storage_health_http.py": "14ec6f907ed16c41fb2f550a2c99557135079e2ec99d7bf139ca7fdc2773a8ff",
+    "minicode/working_memory.py": "a3a44415ec418116c14300746cbb4cae3a14a181bc634c87a2600753ecc256e5",
+    "minicode/workspace.py": "f18c80d76eba4e55f9fa7b6ba328f288b1ecf8bf33e8821337935d56d35a4dd4"
+  },
+  "parentBaselineId": "memory-retrieval-production-v39",
+  "reason": "Source-state reconciliation plus bounded persistent Memory, retrieval, context, Skill routing, workflow and client integration changes",
+  "schemaVersion": 1
+}

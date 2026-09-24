@@ -336,6 +336,9 @@ def test_sorting_excludes_inactive_and_keeps_relevance_dominant(isolated_workspa
     inactive.lifecycle_status = "deprecated"
     inactive.tier = MemoryTier.ARCHIVAL
     inactive.curator_locked = True
+    # This is an intentional fixture state, not a caller attempting to gain
+    # authority through a mutable object returned by the Manager.
+    inactive._seal_authority_state()
     manager._save_scope(MemoryScope.USER)
     manager._save_scope(MemoryScope.PROJECT)
 

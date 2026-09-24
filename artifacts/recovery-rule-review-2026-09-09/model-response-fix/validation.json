@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-09",
+  "stage": "model-response-fix",
+  "validation": {
+    "test_modules": 51,
+    "passed": 1115,
+    "failed": 0,
+    "duration_seconds": 9.14,
+    "ruff_F": "passed",
+    "git_diff_check": "passed"
+  },
+  "real_runs": {
+    "full_replay": {
+      "provider_calls": 10,
+      "parsed": 10,
+      "failures": 0
+    },
+    "candidate_followup": {
+      "provider_calls": 2,
+      "parsed": 2,
+      "failures": 0
+    }
+  },
+  "interpretation": "Full replay precedes candidate projection/prompt refinement; the two targeted real cases verify those refinements. Raw reports remain separate. Source hashes below identify final code, not a claim that earlier batches used identical code.",
+  "sha256": {
+    "minicode/reflection_llm.py": "9540f60fdc3b5f6ed12b26b56a61a5624c47d1ccbf17ca087611b359d92ea603",
+    "minicode/recovery_lesson.py": "a6b883bed567685c79ec1ca816a9d2c1e8cc943e7bec8d90a55c2de6fd0b4cc7",
+    "scripts/evaluate_recovery_lesson_shadow.py": "dad7aa456728aff5d1fdf8cf55c17d81c0a96cd94bc67d01d326839c1f301467",
+    "docs/recovery-lesson-shadow.md": "f891b6c209ee534c0d43490c027b5f1ca40f3ad8cead7b75f6cb2004106d7f28",
+    "tests/test_reflection_generation_controls.py": "15be76530e05de49a144f3919383012ef49b15c39ece1458a153bf77c1cee93d",
+    "tests/test_reflection_response_diagnostics.py": "f213cdb4a2887b65c3df29a975eb4df8ce6bedf45b3ff015616841719987d123",
+    "tests/test_reflection_local_deadline.py": "e81bad32549f67845e00d6442b31b1780adcb1720b1bf54f4ff768a3d9eb1807",
+    "tests/test_recovery_lesson_failed_followup.py": "74e5969b6e8b73637238315fa7016fc42a7732243091f7ba4f7c63f5be5a2ff6",
+    "tests/test_recovery_lesson_prompt.py": "ac517a8a70afef883e2328e3bbac8b4cee11b7ee997c41f554356de883d0c8c9",
+    "tests/test_reflection_llm_pilot.py": "5fbe06f8092a45c951d3089679e1eaf8b395f512ae1b062ead93d86d430bbdda",
+    "tests/fixtures/recovery_lesson_shadow/cases.json": "5f3d48c25c975143476e84f399eb020d5f3db44e37746e405069387db9b6fb88",
+    "artifacts/recovery-rule-review-2026-09-09/model-response-fix/live-fixed.json": "c7b65cd8ea84e3b621467ed3f64cf196121228952459dd006a4714e804305bda",
+    "artifacts/recovery-rule-review-2026-09-09/model-response-fix/offline-fixed.json": "4253c71ef32d1eac371b7299cd0b04ac07ff93bf642c308278ff5d46ddc8288e",
+    "artifacts/recovery-rule-review-2026-09-09/model-response-fix/candidate-followup-fixed.json": "30a5525663a085e07925f874c859abb2307a451ba551d26b722ae04bb01a1871",
+    "artifacts/recovery-rule-review-2026-09-09/model-response-fix/probe-low-json.json": "a87d10e7233c6aa1543c1f02ae47c76c970edcc6dd4abca9d968f7e9c50bec40",
+    "artifacts/recovery-rule-review-2026-09-09/model-response-fix/probe-fixed-contract.json": "078ce1a7a2be8394dd387c9dea6b578d5cb0377444ca9f47182054b823122943",
+    "artifacts/recovery-rule-review-2026-09-09/model-response-fix/verified-adjudication.json": "ddab86a82151e444e881b5bb56b9d11cda3c6749afa73fa40c671cfdd04df167",
+    "artifacts/recovery-rule-review-2026-09-09/model-response-fix/candidate-adjudication.json": "e764adbee04890a73a92fb85d2651d8189612fc46aa6727ae29b00414974d083",
+    "artifacts/recovery-rule-review-2026-09-09/model-response-fix/candidate-followup-adjudication.json": "fa074fa430188b7ca23e7985d4bb2302fe92ab86c75c35f91dd6daab650f6724",
+    "artifacts/recovery-rule-review-2026-09-09/model-response-fix/surface-tests-final.txt": "fa20a611d7d3483ad1d904dbcc55f1ed7b4c5c0cd2a40c15ad5dca6dee47227f",
+    "artifacts/recovery-rule-review-2026-09-09/model-response-fix/request-controls-baseline.txt": "2aeb2bd7b807c3ed000bc69cc65c50440bc3bacefc91af9d5959b5871da920ea",
+    "artifacts/recovery-rule-review-2026-09-09/model-response-fix/candidate-failed-followup-fix.md": "add81f93a3c52b97178287fd089c2ae8944a734ed42ea8bde3075c1faa235e1b",
+    "artifacts/recovery-rule-review-2026-09-09/model-response-fix/test-files.json": "f5667654af51bb4a659b9b5e2ca56c32756049faa88bc706c6cead29b9096216",
+    "artifacts/recovery-rule-review-2026-09-09/model-response-fix/completion.md": "47cd9b67d293163204c4a28c4f4bb031009f0f8d05e16c00263c4c0ce3ce3449"
+  }
+}

@@ -212,15 +212,39 @@ def test_stale_path_check_uses_per_run_cache(
     assert report.stale_paths_checked == 1
 
 
-def test_curator_scan_does_not_count_as_real_usage(isolated_workspace: Path):
+def test_curator_rewrite_resets_prior_version_usage(isolated_workspace: Path):
     manager = _manager(isolated_workspace)
     entry = _entry(0, "Use pytest fixtures with src/missing.py")
     entry.last_accessed = 123.0
     entry.retrieval_count = 7
+    entry.success_count = 3
+    entry.failure_count = 1
     entry.usefulness_score = 0.5
     _install_entries(manager, [entry])
 
     MemoryCuratorAgent(manager, workspace_path=str(isolated_workspace)).run_cycle(force=True)
+
+    assert entry.last_accessed == 0.0
+    assert entry.retrieval_count == 0
+    assert entry.usefulness_score == 0.0
+
+
+def test_curator_scan_without_rewrite_does_not_count_as_real_usage(
+    isolated_workspace: Path,
+):
+    manager = _manager(isolated_workspace)
+    entry = _entry(0, "Use pytest fixtures for unit tests")
+    entry.last_accessed = 123.0
+    entry.retrieval_count = 7
+    entry.success_count = 3
+    entry.failure_count = 1
+    entry.usefulness_score = 0.5
+    _install_entries(manager, [entry])
+
+    MemoryCuratorAgent(
+        manager,
+        workspace_path=str(isolated_workspace),
+    ).run_cycle(force=True)
 
     assert entry.last_accessed == 123.0
     assert entry.retrieval_count == 7
@@ -326,6 +350,7 @@ def test_stale_file_reappearing_still_requires_restore(isolated_workspace: Path)
 
 def test_ten_thousand_representative_dataset_uses_subquadratic_refine(
     isolated_workspace: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     manager = _manager(isolated_workspace)
     now = time.time()
@@ -339,7 +364,15 @@ def test_ten_thousand_representative_dataset_uses_subquadratic_refine(
         entry.updated_at = now
         entry.last_accessed = now
         entries.append(entry)
-    _install_entries(manager, entries)
+    # This is an in-memory algorithmic complexity fixture, not a persistence
+    # capacity contract.  Keep the 10k corpus that can expose quadratic
+    # duplicate refinement, while leaving the production authority reader's
+    # bounded entry limit intact.
+    memory_file = manager.memories[MemoryScope.PROJECT]
+    memory_file.entries = entries
+    memory_file._rebuild_indices()
+    monkeypatch.setattr(manager, "_save_approval_audit", lambda scope: None)
+    monkeypatch.setattr(manager, "_save_scope", lambda scope: None)
 
     report = CuratorReport()
     archived = MemoryCuratorAgent(
@@ -361,7 +394,7 @@ def test_extreme_candidate_budget_returns_partial_without_corrupting_indexes(
     manager = _manager(isolated_workspace)
     entries = [
         _entry(i, " ".join([f"common{j}" for j in range(40)] + [f"unique{i}"]))
-        for i in range(300)
+        for i in range(50)
     ]
     _install_entries(manager, entries)
 

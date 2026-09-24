@@ -1,0 +1,2207 @@
+{
+  "blockSeeds": [
+    202609092,
+    202609093
+  ],
+  "caseCount": 24,
+  "cases": [
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "ledgerlib/__init__.py": "",
+        "ledgerlib/tests/__init__.py": "",
+        "ledgerlib/tests/test_config.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-LEDGER-642\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b1-c1-ledger-verify-cold",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "ledgerlib.tests.test_config"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-LEDGER-642"
+          ]
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 1,
+        "condition": "cold",
+        "correctTarget": "ledgerlib.tests.test_config",
+        "familyId": "c1-ledger-verify",
+        "pairOrder": 0,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-LEDGER-642",
+        "targetTurnIndex": 0,
+        "warmFirst": false,
+        "wrongTarget": "tests.test_config"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's ledger configuration verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "ledgerlib/__init__.py": "",
+        "ledgerlib/tests/__init__.py": "",
+        "ledgerlib/tests/test_config.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-LEDGER-642\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b1-c1-ledger-verify-warm",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "ledgerlib.tests.test_config"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-LEDGER-642"
+          ]
+        },
+        {
+          "id": "source-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-covers-target",
+          "kind": "memory_lesson_covers",
+          "text": "ledgerlib.tests.test_config"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 1,
+        "condition": "warm",
+        "correctTarget": "ledgerlib.tests.test_config",
+        "familyId": "c1-ledger-verify",
+        "pairOrder": 0,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-LEDGER-642",
+        "targetTurnIndex": 1,
+        "warmFirst": true,
+        "wrongTarget": "tests.test_config"
+      },
+      "turns": [
+        {
+          "prompt": "A previous note says the ledger configuration verification suite runs with python -m unittest tests.test_config — start with that command and report the marker it prints."
+        },
+        {
+          "prompt": "Run this project's ledger configuration verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "datalib/__init__.py": "",
+        "datalib/tests/__init__.py": "",
+        "datalib/tests/test_normalizer.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-NORMALIZER-773\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b1-c2-normalizer-verify-warm",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "datalib.tests.test_normalizer"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-NORMALIZER-773"
+          ]
+        },
+        {
+          "id": "source-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-covers-target",
+          "kind": "memory_lesson_covers",
+          "text": "datalib.tests.test_normalizer"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 1,
+        "condition": "warm",
+        "correctTarget": "datalib.tests.test_normalizer",
+        "familyId": "c2-normalizer-verify",
+        "pairOrder": 1,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-NORMALIZER-773",
+        "targetTurnIndex": 1,
+        "warmFirst": true,
+        "wrongTarget": "test_normalizer"
+      },
+      "turns": [
+        {
+          "prompt": "A previous note says the data normalizer verification suite runs with python -m unittest test_normalizer — start with that command and report the marker it prints."
+        },
+        {
+          "prompt": "Run this project's data normalizer verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "datalib/__init__.py": "",
+        "datalib/tests/__init__.py": "",
+        "datalib/tests/test_normalizer.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-NORMALIZER-773\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b1-c2-normalizer-verify-cold",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "datalib.tests.test_normalizer"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-NORMALIZER-773"
+          ]
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 1,
+        "condition": "cold",
+        "correctTarget": "datalib.tests.test_normalizer",
+        "familyId": "c2-normalizer-verify",
+        "pairOrder": 1,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-NORMALIZER-773",
+        "targetTurnIndex": 0,
+        "warmFirst": false,
+        "wrongTarget": "test_normalizer"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's data normalizer verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "registrylib/__init__.py": "",
+        "registrylib/tests/__init__.py": "",
+        "registrylib/tests/test_registry.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-REGISTRY-824\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b1-c3-registry-verify-cold",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "registrylib.tests.test_registry"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-REGISTRY-824"
+          ]
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 1,
+        "condition": "cold",
+        "correctTarget": "registrylib.tests.test_registry",
+        "familyId": "c3-registry-verify",
+        "pairOrder": 2,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-REGISTRY-824",
+        "targetTurnIndex": 0,
+        "warmFirst": false,
+        "wrongTarget": "registrylib.test_registry"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's registry contract verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "registrylib/__init__.py": "",
+        "registrylib/tests/__init__.py": "",
+        "registrylib/tests/test_registry.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-REGISTRY-824\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b1-c3-registry-verify-warm",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "registrylib.tests.test_registry"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-REGISTRY-824"
+          ]
+        },
+        {
+          "id": "source-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-covers-target",
+          "kind": "memory_lesson_covers",
+          "text": "registrylib.tests.test_registry"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 1,
+        "condition": "warm",
+        "correctTarget": "registrylib.tests.test_registry",
+        "familyId": "c3-registry-verify",
+        "pairOrder": 2,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-REGISTRY-824",
+        "targetTurnIndex": 1,
+        "warmFirst": true,
+        "wrongTarget": "registrylib.test_registry"
+      },
+      "turns": [
+        {
+          "prompt": "A previous note says the registry contract verification suite runs with python -m unittest registrylib.test_registry — start with that command and report the marker it prints."
+        },
+        {
+          "prompt": "Run this project's registry contract verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "sessionlib/__init__.py": "",
+        "sessionlib/tests/__init__.py": "",
+        "sessionlib/tests/test_expiry.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-SESSION-851\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b1-c4-session-verify-warm",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "sessionlib.tests.test_expiry"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-SESSION-851"
+          ]
+        },
+        {
+          "id": "source-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-covers-target",
+          "kind": "memory_lesson_covers",
+          "text": "sessionlib.tests.test_expiry"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 1,
+        "condition": "warm",
+        "correctTarget": "sessionlib.tests.test_expiry",
+        "familyId": "c4-session-verify",
+        "pairOrder": 3,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-SESSION-851",
+        "targetTurnIndex": 1,
+        "warmFirst": true,
+        "wrongTarget": "tests.test_expiry"
+      },
+      "turns": [
+        {
+          "prompt": "A previous note says the session expiry verification suite runs with python -m unittest tests.test_expiry — start with that command and report the marker it prints."
+        },
+        {
+          "prompt": "Run this project's session expiry verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "sessionlib/__init__.py": "",
+        "sessionlib/tests/__init__.py": "",
+        "sessionlib/tests/test_expiry.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-SESSION-851\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b1-c4-session-verify-cold",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "sessionlib.tests.test_expiry"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-SESSION-851"
+          ]
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 1,
+        "condition": "cold",
+        "correctTarget": "sessionlib.tests.test_expiry",
+        "familyId": "c4-session-verify",
+        "pairOrder": 3,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-SESSION-851",
+        "targetTurnIndex": 0,
+        "warmFirst": false,
+        "wrongTarget": "tests.test_expiry"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's session expiry verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "schemalib/__init__.py": "",
+        "schemalib/tests/__init__.py": "",
+        "schemalib/tests/test_compat.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-SCHEMA-903\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b1-c5-schema-verify-cold",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "schemalib.tests.test_compat"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-SCHEMA-903"
+          ]
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 1,
+        "condition": "cold",
+        "correctTarget": "schemalib.tests.test_compat",
+        "familyId": "c5-schema-verify",
+        "pairOrder": 4,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-SCHEMA-903",
+        "targetTurnIndex": 0,
+        "warmFirst": false,
+        "wrongTarget": "test_compat"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's schema compatibility verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "schemalib/__init__.py": "",
+        "schemalib/tests/__init__.py": "",
+        "schemalib/tests/test_compat.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-SCHEMA-903\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b1-c5-schema-verify-warm",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "schemalib.tests.test_compat"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-SCHEMA-903"
+          ]
+        },
+        {
+          "id": "source-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-covers-target",
+          "kind": "memory_lesson_covers",
+          "text": "schemalib.tests.test_compat"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 1,
+        "condition": "warm",
+        "correctTarget": "schemalib.tests.test_compat",
+        "familyId": "c5-schema-verify",
+        "pairOrder": 4,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-SCHEMA-903",
+        "targetTurnIndex": 1,
+        "warmFirst": true,
+        "wrongTarget": "test_compat"
+      },
+      "turns": [
+        {
+          "prompt": "A previous note says the schema compatibility verification suite runs with python -m unittest test_compat — start with that command and report the marker it prints."
+        },
+        {
+          "prompt": "Run this project's schema compatibility verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "invoicelib/__init__.py": "",
+        "invoicelib/tests/__init__.py": "",
+        "invoicelib/tests/test_rounding.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-ROUNDING-947\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b1-c6-invoice-verify-warm",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "invoicelib.tests.test_rounding"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-ROUNDING-947"
+          ]
+        },
+        {
+          "id": "source-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-covers-target",
+          "kind": "memory_lesson_covers",
+          "text": "invoicelib.tests.test_rounding"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 1,
+        "condition": "warm",
+        "correctTarget": "invoicelib.tests.test_rounding",
+        "familyId": "c6-invoice-verify",
+        "pairOrder": 5,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-ROUNDING-947",
+        "targetTurnIndex": 1,
+        "warmFirst": true,
+        "wrongTarget": "invoicelib.test_rounding"
+      },
+      "turns": [
+        {
+          "prompt": "A previous note says the invoice rounding verification suite runs with python -m unittest invoicelib.test_rounding — start with that command and report the marker it prints."
+        },
+        {
+          "prompt": "Run this project's invoice rounding verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "invoicelib/__init__.py": "",
+        "invoicelib/tests/__init__.py": "",
+        "invoicelib/tests/test_rounding.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-ROUNDING-947\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b1-c6-invoice-verify-cold",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "invoicelib.tests.test_rounding"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-ROUNDING-947"
+          ]
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 1,
+        "condition": "cold",
+        "correctTarget": "invoicelib.tests.test_rounding",
+        "familyId": "c6-invoice-verify",
+        "pairOrder": 5,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-ROUNDING-947",
+        "targetTurnIndex": 0,
+        "warmFirst": false,
+        "wrongTarget": "invoicelib.test_rounding"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's invoice rounding verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "ledgerlib/__init__.py": "",
+        "ledgerlib/tests/__init__.py": "",
+        "ledgerlib/tests/test_config.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-LEDGER-642\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b2-c1-ledger-verify-warm",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "ledgerlib.tests.test_config"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-LEDGER-642"
+          ]
+        },
+        {
+          "id": "source-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-covers-target",
+          "kind": "memory_lesson_covers",
+          "text": "ledgerlib.tests.test_config"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 2,
+        "condition": "warm",
+        "correctTarget": "ledgerlib.tests.test_config",
+        "familyId": "c1-ledger-verify",
+        "pairOrder": 0,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-LEDGER-642",
+        "targetTurnIndex": 1,
+        "warmFirst": true,
+        "wrongTarget": "tests.test_config"
+      },
+      "turns": [
+        {
+          "prompt": "A previous note says the ledger configuration verification suite runs with python -m unittest tests.test_config — start with that command and report the marker it prints."
+        },
+        {
+          "prompt": "Run this project's ledger configuration verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "ledgerlib/__init__.py": "",
+        "ledgerlib/tests/__init__.py": "",
+        "ledgerlib/tests/test_config.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-LEDGER-642\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b2-c1-ledger-verify-cold",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "ledgerlib.tests.test_config"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-LEDGER-642"
+          ]
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 2,
+        "condition": "cold",
+        "correctTarget": "ledgerlib.tests.test_config",
+        "familyId": "c1-ledger-verify",
+        "pairOrder": 0,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-LEDGER-642",
+        "targetTurnIndex": 0,
+        "warmFirst": false,
+        "wrongTarget": "tests.test_config"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's ledger configuration verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "datalib/__init__.py": "",
+        "datalib/tests/__init__.py": "",
+        "datalib/tests/test_normalizer.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-NORMALIZER-773\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b2-c2-normalizer-verify-cold",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "datalib.tests.test_normalizer"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-NORMALIZER-773"
+          ]
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 2,
+        "condition": "cold",
+        "correctTarget": "datalib.tests.test_normalizer",
+        "familyId": "c2-normalizer-verify",
+        "pairOrder": 1,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-NORMALIZER-773",
+        "targetTurnIndex": 0,
+        "warmFirst": false,
+        "wrongTarget": "test_normalizer"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's data normalizer verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "datalib/__init__.py": "",
+        "datalib/tests/__init__.py": "",
+        "datalib/tests/test_normalizer.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-NORMALIZER-773\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b2-c2-normalizer-verify-warm",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "datalib.tests.test_normalizer"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-NORMALIZER-773"
+          ]
+        },
+        {
+          "id": "source-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-covers-target",
+          "kind": "memory_lesson_covers",
+          "text": "datalib.tests.test_normalizer"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 2,
+        "condition": "warm",
+        "correctTarget": "datalib.tests.test_normalizer",
+        "familyId": "c2-normalizer-verify",
+        "pairOrder": 1,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-NORMALIZER-773",
+        "targetTurnIndex": 1,
+        "warmFirst": true,
+        "wrongTarget": "test_normalizer"
+      },
+      "turns": [
+        {
+          "prompt": "A previous note says the data normalizer verification suite runs with python -m unittest test_normalizer — start with that command and report the marker it prints."
+        },
+        {
+          "prompt": "Run this project's data normalizer verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "registrylib/__init__.py": "",
+        "registrylib/tests/__init__.py": "",
+        "registrylib/tests/test_registry.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-REGISTRY-824\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b2-c3-registry-verify-warm",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "registrylib.tests.test_registry"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-REGISTRY-824"
+          ]
+        },
+        {
+          "id": "source-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-covers-target",
+          "kind": "memory_lesson_covers",
+          "text": "registrylib.tests.test_registry"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 2,
+        "condition": "warm",
+        "correctTarget": "registrylib.tests.test_registry",
+        "familyId": "c3-registry-verify",
+        "pairOrder": 2,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-REGISTRY-824",
+        "targetTurnIndex": 1,
+        "warmFirst": true,
+        "wrongTarget": "registrylib.test_registry"
+      },
+      "turns": [
+        {
+          "prompt": "A previous note says the registry contract verification suite runs with python -m unittest registrylib.test_registry — start with that command and report the marker it prints."
+        },
+        {
+          "prompt": "Run this project's registry contract verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "registrylib/__init__.py": "",
+        "registrylib/tests/__init__.py": "",
+        "registrylib/tests/test_registry.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-REGISTRY-824\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b2-c3-registry-verify-cold",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "registrylib.tests.test_registry"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-REGISTRY-824"
+          ]
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 2,
+        "condition": "cold",
+        "correctTarget": "registrylib.tests.test_registry",
+        "familyId": "c3-registry-verify",
+        "pairOrder": 2,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-REGISTRY-824",
+        "targetTurnIndex": 0,
+        "warmFirst": false,
+        "wrongTarget": "registrylib.test_registry"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's registry contract verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "sessionlib/__init__.py": "",
+        "sessionlib/tests/__init__.py": "",
+        "sessionlib/tests/test_expiry.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-SESSION-851\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b2-c4-session-verify-cold",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "sessionlib.tests.test_expiry"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-SESSION-851"
+          ]
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 2,
+        "condition": "cold",
+        "correctTarget": "sessionlib.tests.test_expiry",
+        "familyId": "c4-session-verify",
+        "pairOrder": 3,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-SESSION-851",
+        "targetTurnIndex": 0,
+        "warmFirst": false,
+        "wrongTarget": "tests.test_expiry"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's session expiry verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "sessionlib/__init__.py": "",
+        "sessionlib/tests/__init__.py": "",
+        "sessionlib/tests/test_expiry.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-SESSION-851\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b2-c4-session-verify-warm",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "sessionlib.tests.test_expiry"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-SESSION-851"
+          ]
+        },
+        {
+          "id": "source-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-covers-target",
+          "kind": "memory_lesson_covers",
+          "text": "sessionlib.tests.test_expiry"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 2,
+        "condition": "warm",
+        "correctTarget": "sessionlib.tests.test_expiry",
+        "familyId": "c4-session-verify",
+        "pairOrder": 3,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-SESSION-851",
+        "targetTurnIndex": 1,
+        "warmFirst": true,
+        "wrongTarget": "tests.test_expiry"
+      },
+      "turns": [
+        {
+          "prompt": "A previous note says the session expiry verification suite runs with python -m unittest tests.test_expiry — start with that command and report the marker it prints."
+        },
+        {
+          "prompt": "Run this project's session expiry verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "schemalib/__init__.py": "",
+        "schemalib/tests/__init__.py": "",
+        "schemalib/tests/test_compat.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-SCHEMA-903\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b2-c5-schema-verify-warm",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "schemalib.tests.test_compat"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-SCHEMA-903"
+          ]
+        },
+        {
+          "id": "source-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-covers-target",
+          "kind": "memory_lesson_covers",
+          "text": "schemalib.tests.test_compat"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 2,
+        "condition": "warm",
+        "correctTarget": "schemalib.tests.test_compat",
+        "familyId": "c5-schema-verify",
+        "pairOrder": 4,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-SCHEMA-903",
+        "targetTurnIndex": 1,
+        "warmFirst": true,
+        "wrongTarget": "test_compat"
+      },
+      "turns": [
+        {
+          "prompt": "A previous note says the schema compatibility verification suite runs with python -m unittest test_compat — start with that command and report the marker it prints."
+        },
+        {
+          "prompt": "Run this project's schema compatibility verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "schemalib/__init__.py": "",
+        "schemalib/tests/__init__.py": "",
+        "schemalib/tests/test_compat.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-SCHEMA-903\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b2-c5-schema-verify-cold",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "schemalib.tests.test_compat"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-SCHEMA-903"
+          ]
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 2,
+        "condition": "cold",
+        "correctTarget": "schemalib.tests.test_compat",
+        "familyId": "c5-schema-verify",
+        "pairOrder": 4,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-SCHEMA-903",
+        "targetTurnIndex": 0,
+        "warmFirst": false,
+        "wrongTarget": "test_compat"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's schema compatibility verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "invoicelib/__init__.py": "",
+        "invoicelib/tests/__init__.py": "",
+        "invoicelib/tests/test_rounding.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-ROUNDING-947\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b2-c6-invoice-verify-cold",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "invoicelib.tests.test_rounding"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-ROUNDING-947"
+          ]
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 2,
+        "condition": "cold",
+        "correctTarget": "invoicelib.tests.test_rounding",
+        "familyId": "c6-invoice-verify",
+        "pairOrder": 5,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-ROUNDING-947",
+        "targetTurnIndex": 0,
+        "warmFirst": false,
+        "wrongTarget": "invoicelib.test_rounding"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's invoice rounding verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-lesson-benefit-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "llm"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-lesson-benefit study. Verification suites live inside their packages.\n",
+        "invoicelib/__init__.py": "",
+        "invoicelib/tests/__init__.py": "",
+        "invoicelib/tests/test_rounding.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-ROUNDING-947\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-lesson-benefit-synthetic-v1",
+      "id": "lb-b2-c6-invoice-verify-warm",
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "invoicelib.tests.test_rounding"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-ROUNDING-947"
+          ]
+        },
+        {
+          "id": "source-failure",
+          "kind": "tool_failed",
+          "min": 1,
+          "toolName": "run_command"
+        },
+        {
+          "id": "lesson-written",
+          "kind": "memory_written"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-covers-target",
+          "kind": "memory_lesson_covers",
+          "text": "invoicelib.tests.test_rounding"
+        },
+        {
+          "claimType": "recovery",
+          "id": "lesson-attributed",
+          "kind": "memory_attributed",
+          "min": 1,
+          "renderedTurn": 1,
+          "source": "written",
+          "sourceTurn": 0
+        }
+      ],
+      "promptClass": "memory-lesson-benefit-study",
+      "study": {
+        "block": 2,
+        "condition": "warm",
+        "correctTarget": "invoicelib.tests.test_rounding",
+        "familyId": "c6-invoice-verify",
+        "pairOrder": 5,
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-ROUNDING-947",
+        "targetTurnIndex": 1,
+        "warmFirst": true,
+        "wrongTarget": "invoicelib.test_rounding"
+      },
+      "turns": [
+        {
+          "prompt": "A previous note says the invoice rounding verification suite runs with python -m unittest invoicelib.test_rounding — start with that command and report the marker it prints."
+        },
+        {
+          "prompt": "Run this project's invoice rounding verification suite and report the marker it prints."
+        }
+      ]
+    }
+  ],
+  "conditionCount": 2,
+  "description": "Memory lesson benefit: paired warm/cold target turns; warm cases first learn from a genuinely failing misdirected episode; contribution reviewer in llm mode everywhere.",
+  "familyCount": 6,
+  "primaryUnit": "family",
+  "runtimeProfileContract": {
+    "adapterType": "openai_compatible",
+    "endpointUrl": "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions",
+    "model": "glm-5.3-flash",
+    "profileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+    "provider": "custom",
+    "version": 2
+  },
+  "schemaVersion": 1,
+  "suiteId": "minicode-memory-lesson-benefit-2026-09-09-v1"
+}

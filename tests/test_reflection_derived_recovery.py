@@ -219,8 +219,15 @@ def test_success_on_a_different_target_is_not_a_recovery() -> None:
     assert evidence.recoveries == []
 
 
-def test_flag_only_differences_still_match_the_same_target() -> None:
-    """`pytest -q x` and `pytest x --lf` are the same target; flags are noise."""
+def test_history_dependent_flag_difference_stays_a_candidate() -> None:
+    """``--lf`` reruns a history-dependent subset, not the same target.
+
+    Presentation flags (``-q``) are recognized as harmless; ``--lf`` changes
+    which tests run based on cache state, which the contract cannot classify.
+    An unclassified argument difference keeps the pair at candidate level
+    (2026-09-09 objective-contract review R2): ignoring it once produced
+    confirmed recoveries for runs that merely deselected the failing test.
+    """
     trace = [
         *_call(
             1,
@@ -244,7 +251,10 @@ def test_flag_only_differences_still_match_the_same_target() -> None:
 
     evidence, _ = _evaluate(trace)
 
-    assert len(evidence.recoveries) == 1
+    assert all(
+        recovery.epistemic_status != "confirmed"
+        for recovery in evidence.recoveries
+    )
 
 
 def test_targetless_tools_never_pair_into_a_recovery() -> None:

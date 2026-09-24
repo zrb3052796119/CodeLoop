@@ -1,4 +1,4 @@
-from minicode.recovery_control import action_fingerprint
+from minicode.recovery_control import RecoveryGuard, action_fingerprint
 
 
 def _call(command: str, args: list[str]) -> dict:
@@ -40,3 +40,19 @@ def test_direct_argv_recovery_is_distinct_from_shell_wrapper() -> None:
     )
 
     assert action_fingerprint(wrapper) != action_fingerprint(direct)
+
+
+def test_repeated_edit_denial_guidance_allows_workflow_delegation() -> None:
+    """A repeated denied edit is still suppressed, but the guidance must
+    point at central-scheduler delegation instead of only forbidding."""
+    guard = RecoveryGuard()
+    call = {"toolName": "edit_file", "input": {"path": "src/app.py"}}
+
+    assert guard.suppression_for(call) is None
+    guard.observe(call, ok=False, output="error[permission_denied]: denied")
+
+    suppressed = guard.suppression_for(call)
+    assert suppressed is not None
+    assert "repeated_blocked_action" in suppressed.message
+    assert "Do not repeat the same denied target" in suppressed.message
+    assert 'agent_type="workflow"' in suppressed.message

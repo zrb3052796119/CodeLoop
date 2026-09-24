@@ -1,0 +1,261 @@
+{
+  "schema_version": 1,
+  "review_kind": "independent_manual_candidate_semantic_adjudication",
+  "source_report": "artifacts/recovery-rule-review-2026-09-09/model-response-fix/live-fixed.json",
+  "source_report_sha256": "c7b65cd8ea84e3b621467ed3f64cf196121228952459dd006a4714e804305bda",
+  "dataset": "tests/fixtures/recovery_lesson_shadow/cases.json",
+  "dataset_sha256": "5f3d48c25c975143476e84f399eb020d5f3db44e37746e405069387db9b6fb88",
+  "scope": "Only the four candidate episodes in this live synthetic batch; verified lessons are outside this review.",
+  "method": [
+    "Read generated claims and retained observations, including statement/applies_when/limitations and evidence quotes.",
+    "Compare quoted and cited facts against projected evidence and complete synthetic fixture traces.",
+    "Check candidate lessons remain empty and observed content is identical to generated content except the namespaced claim id."
+  ],
+  "limitations": [
+    "A successful hard contract does not establish semantic accuracy of every generated clause.",
+    "This adjudication does not modify the raw model response, live report, production code or formal memory.",
+    "No network or additional model call was used."
+  ],
+  "summary": {
+    "candidate_episode_count": 4,
+    "generated_claim_count": 4,
+    "observation_count": 4,
+    "candidate_lesson_count": 0,
+    "hard_contract_verdict": "pass",
+    "confirmed_causal_or_repair_claim_count": 0,
+    "incorrect_candidate_claims_entered_lessons": false,
+    "material_factual_absence_issue_count": 1,
+    "semantic_scope_concern_count": 1,
+    "semantically_clean_with_episode_scope_count": 2,
+    "semantic_verdict": "needs_revision_in_observations",
+    "conclusion": "All candidate outputs remained inferred observations with no admitted lessons. retry-still-failed contains one unsupported no-verification assertion because the failed retry is omitted from the projection. report-timeout-budget accurately reports temporal association and withholds causality, but its applies_when condition should be restricted to the observed configuration and outcome."
+  },
+  "cases": [
+    {
+      "case_id": "unverified-failed",
+      "episode_id": "episode-000001",
+      "report_case_index": 5,
+      "generated_claim_id": "llm-claim-000001",
+      "observation_claim_id": "episode-000001:llm-claim-000001",
+      "hard_contract": {
+        "verdict": "pass",
+        "claim_type": "warning",
+        "epistemic_status": "inferred",
+        "lesson_count": 0,
+        "observation_count": 1,
+        "generated_and_observed_content_identical_except_namespaced_id": true,
+        "confirmed_causal_or_repair_claim_found": false
+      },
+      "semantic_verdict": "pass_with_episode_scope_qualification",
+      "statement_clause_checks": [
+        {
+          "clause": "The named pytest invocation failed with the quoted unknown-cause error.",
+          "verdict": "supported",
+          "evidence": [
+            "event-000001 invocation",
+            "event-000002 result",
+            "event-000003 error"
+          ],
+          "literal_quote_coverage": "complete"
+        },
+        {
+          "clause": "An implementation change was subsequently attempted.",
+          "verdict": "supported",
+          "evidence": [
+            "event-000006 recovery action; event positions 0..5"
+          ],
+          "literal_quote_coverage": "complete"
+        },
+        {
+          "clause": "No successful verification is established.",
+          "verdict": "supported",
+          "evidence": [
+            "event-000006 recovery action",
+            "empty projected verification list",
+            "full raw trace has no post-change verification invocation"
+          ],
+          "literal_quote_coverage": "complete"
+        }
+      ],
+      "applies_when_review": "Bound to the named invocation and observed error. No confirmed repair or diagnosed cause is asserted.",
+      "limitations_review": "The absence statements are accurate when read as post-change/same-target verification within this episode. They should retain that scope: the trace does contain the initial failed pytest attempt and edit_file calls.",
+      "issues": []
+    },
+    {
+      "case_id": "retry-still-failed",
+      "episode_id": "episode-000001",
+      "report_case_index": 6,
+      "generated_claim_id": "llm-claim-000001",
+      "observation_claim_id": "episode-000001:llm-claim-000001",
+      "hard_contract": {
+        "verdict": "pass",
+        "claim_type": "warning",
+        "epistemic_status": "inferred",
+        "lesson_count": 0,
+        "observation_count": 1,
+        "generated_and_observed_content_identical_except_namespaced_id": true,
+        "confirmed_causal_or_repair_claim_found": false
+      },
+      "semantic_verdict": "needs_revision_factual_absence_claim",
+      "statement_clause_checks": [
+        {
+          "clause": "The named pytest invocation failed with the quoted error, followed by an attempted implementation change.",
+          "verdict": "supported",
+          "evidence": [
+            "event-000001",
+            "event-000002",
+            "event-000003",
+            "event-000006"
+          ],
+          "literal_quote_coverage": "complete"
+        },
+        {
+          "clause": "No successful verification is established.",
+          "verdict": "supported",
+          "evidence": [
+            "event-000006 recovery action",
+            "raw event-000007..000009 retry remains failed"
+          ],
+          "literal_quote_coverage": "complete"
+        }
+      ],
+      "applies_when_review": "Correctly limits the observation to this episode and does not assert a broader environment.",
+      "limitations_review": "The first limitation substitutes no verification was performed for no successful verification was established. These are different claims.",
+      "issues": [
+        {
+          "issue_id": "C1",
+          "kind": "unsupported_negative_and_omitted_failed_retry",
+          "claim_field": "limitations[0]",
+          "text": "No verification check was performed, so any repair effect is unverified.",
+          "assessment": "A post-change invocation of the same pytest target was attempted at raw event-000007, and its result/error at event-000008 and event-000009 again report failure. The evidence does not establish completed tests, but it does establish an attempted verification invocation. The absolute no-check claim is therefore not justified.",
+          "source_relation": "The projected evidence only retains call-1 and event-000006; call-3 and its failed result are absent. The model received a bounded projection and promoted absence from that projection to an assertion about what was performed.",
+          "raw_trace_event_ids": [
+            "event-000007",
+            "event-000008",
+            "event-000009"
+          ],
+          "suggested_wording": "A later invocation of the same pytest target also failed with the same reported error; no successful verification or repair is established.",
+          "safe_wording_using_current_projection_only": "No successful verification is established in the provided episode evidence.",
+          "admitted_to_lessons": false,
+          "retained_in_observations": true,
+          "hard_contract_breach": false
+        }
+      ]
+    },
+    {
+      "case_id": "unverified-modification",
+      "episode_id": "episode-000001",
+      "report_case_index": 7,
+      "generated_claim_id": "llm-claim-000001",
+      "observation_claim_id": "episode-000001:llm-claim-000001",
+      "hard_contract": {
+        "verdict": "pass",
+        "claim_type": "warning",
+        "epistemic_status": "inferred",
+        "lesson_count": 0,
+        "observation_count": 1,
+        "generated_and_observed_content_identical_except_namespaced_id": true,
+        "confirmed_causal_or_repair_claim_found": false
+      },
+      "semantic_verdict": "pass",
+      "statement_clause_checks": [
+        {
+          "clause": "The named pytest invocation failed with the quoted error.",
+          "verdict": "supported",
+          "evidence": [
+            "event-000001",
+            "event-000002",
+            "event-000003"
+          ],
+          "literal_quote_coverage": "complete"
+        },
+        {
+          "clause": "An implementation change was attempted and no successful verification is established.",
+          "verdict": "supported",
+          "evidence": [
+            "event-000006 recovery action",
+            "empty verification list"
+          ],
+          "literal_quote_coverage": "complete"
+        },
+        {
+          "clause": "The episode outcome remains unknown.",
+          "verdict": "supported_by_structured_context",
+          "evidence": [
+            "projected_evidence.outcome = unknown",
+            "raw event-000007 task_result.status = unknown"
+          ],
+          "literal_quote_coverage": "not in the selected quotations; supplied as authoritative task outcome context"
+        }
+      ],
+      "applies_when_review": "Limited to the observed invocation, error and unverified change; no causal repair claim.",
+      "limitations_review": "Preserves the unknown cause and unknown repair outcome. The empty verification_ids list is descriptive of the supplied evidence; in this raw case there is also no post-change test invocation.",
+      "issues": []
+    },
+    {
+      "case_id": "report-timeout-budget",
+      "episode_id": "episode-000001",
+      "report_case_index": 8,
+      "generated_claim_id": "llm-claim-000001",
+      "observation_claim_id": "episode-000001:llm-claim-000001",
+      "hard_contract": {
+        "verdict": "pass",
+        "claim_type": "warning",
+        "epistemic_status": "inferred",
+        "lesson_count": 0,
+        "observation_count": 1,
+        "generated_and_observed_content_identical_except_namespaced_id": true,
+        "confirmed_causal_or_repair_claim_found": false
+      },
+      "semantic_verdict": "statement_pass_scope_needs_narrowing",
+      "statement_clause_checks": [
+        {
+          "clause": "python scripts/report.py used a 1-second timeout and failed with the quoted timeout message.",
+          "verdict": "supported",
+          "evidence": [
+            "event-000001 invocation",
+            "event-000002 result",
+            "event-000003 error"
+          ],
+          "literal_quote_coverage": "complete"
+        },
+        {
+          "clause": "A later invocation of the same command used timeout 120 and returned success.",
+          "verdict": "supported_by_cited_structured_result",
+          "evidence": [
+            "event-000004 invocation",
+            "event-000005 status = success; raw output_summary = report created",
+            "same cwd /synthetic/workspace"
+          ],
+          "literal_quote_coverage": "timeout 120 and same command are quoted; returned success is supported by the cited event and tool status, not by the selected literal quotations"
+        },
+        {
+          "clause": "The association has no recorded verification of its underlying cause.",
+          "verdict": "supported",
+          "evidence": [
+            "empty recoveries",
+            "empty verification",
+            "empty decisions"
+          ],
+          "literal_quote_coverage": "absence/uncertainty is grounded in structured episode context"
+        }
+      ],
+      "applies_when_review": "The phrase timeout that is too short for the script to finish is a broader explanatory condition than the observation that one run timed out after one second. It can describe that specific run, but should not become an established diagnosis or general rule about the script.",
+      "limitations_review": "Both limitations explicitly withhold repair and causal verification. Neither statement claims that 120 seconds is universally sufficient or a confirmed root-cause fix.",
+      "issues": [
+        {
+          "issue_id": "C2",
+          "kind": "semantic_scope_concern",
+          "claim_field": "applies_when",
+          "text": "Running python scripts/report.py in /synthetic/workspace with a command timeout that is too short for the script to finish.",
+          "assessment": "Retain the observed 1-to-120-second configuration change and same-target later success. There is no measured normal runtime or diagnosed reason for the initial timeout. This is a scope concern in the condition, not evidence of an explicit confirmed causal claim in the statement.",
+          "suggested_wording": "When this report invocation in /synthetic/workspace times out at one second and a later same-target invocation with a 120-second timeout succeeds, while the cause remains unverified.",
+          "admitted_to_lessons": false,
+          "retained_in_observations": true,
+          "hard_contract_breach": false
+        }
+      ],
+      "quote_coverage_note": "Do not present the literal quotation array alone as proving the successful result. The claim cites event-000005 and the prompt retains its structured success status, which does support the fact. No unsupported success claim or cross-episode evidence borrowing was found."
+    }
+  ]
+}

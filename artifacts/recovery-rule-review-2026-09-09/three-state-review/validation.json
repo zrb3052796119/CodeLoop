@@ -1,0 +1,38 @@
+{
+  "focused_tests": {
+    "passed": 369,
+    "seconds": 3.23,
+    "modules": [
+      "tests/test_recovery_misassociation_regression.py",
+      "tests/test_recovery_lesson.py",
+      "tests/test_reflection_synthesis.py",
+      "tests/test_reflection_llm_modes.py",
+      "tests/test_reflection_derived_recovery.py",
+      "tests/test_reflection_operational_recovery.py",
+      "tests/test_reflection_generic_tool_recovery.py",
+      "tests/test_reflection_tool_semantics.py",
+      "tests/test_reflection_persistence_authority.py",
+      "tests/test_reflection_evidence.py",
+      "tests/test_reflection_llm.py",
+      "tests/test_reflection_claim_selection.py",
+      "tests/test_reflection_claim_precision_evaluator.py",
+      "tests/test_memory_reflection_batch_atomicity.py",
+      "tests/test_reflection_memory_operation_identity.py",
+      "tests/test_memory_write_contract.py"
+    ]
+  },
+  "old_concrete_findings": "consumer, parser, validator and episode counterexamples closed",
+  "new_findings": {
+    "P1_groups": 5,
+    "real_pytest_engine_counterexamples": 6,
+    "controlled_validator_counterexamples": 1
+  },
+  "controls": "-q moved after targets rejects; nested invalid-argument phrase removed rejects; single recovery references both reject",
+  "source_sha256": {
+    "minicode/reflection_evidence.py": "720becfd608bdb8165a3897ee104f3119031ed8c6ad1f6ce1058d81778a4fffe",
+    "minicode/reflection_synthesis.py": "b0f675fb0cd67e2f503de43ff45a13d212a6e9160d5bc8ee378c2f1b8676eebb",
+    "minicode/reflection_llm.py": "b615f3428b0627fb31a615dfa93a6d6540cd41379dbe2ecbc0cd43fa4a00c86f",
+    "minicode/recovery_lesson.py": "388b2cf88cd68f110fe2b1ddf26d5ee316a7d9e88a729aa9244de25bd891f5cc"
+  },
+  "review_links_exist": true
+}

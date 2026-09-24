@@ -1,0 +1,26 @@
+{
+  "status": "complete",
+  "surface_tests": {
+    "modules": 38,
+    "passed": 841
+  },
+  "new_regressions": {
+    "count": 43,
+    "baseline_failed": 27,
+    "baseline_passed": 16,
+    "current_passed": 43
+  },
+  "probe_groups": 13,
+  "independent_review": "specified gaps closed",
+  "source_sha256": {
+    "minicode/reflection_evidence.py": "8a42451ce62a43b6ec0d858ad127aa89afcace3299cfcadf447b27868798dbaa",
+    "minicode/reflection_synthesis.py": "aca0b884781d2e8b2af2156821187c3d9cb2d39058f733dd45906edc97e9c885",
+    "tests/test_reflection_objective_arguments.py": "823bc24a916dd64010edfc923e07f54f7b1a9f4acf8e4050af72056d42fe2521",
+    "tests/test_reflection_recovery_exception_contract.py": "8d4a22a549d42da4dc7bc2efd91126141857327f898cb49d9c9a15e5e3ee35d0",
+    "tests/test_reflection_recovery_chain_isolation.py": "56f56be43a7d4bb19bbff6929541387211658faca0a6b3a5adeec866a0135abd"
+  },
+  "known_boundaries": [
+    "RecoveryLessonAgent production integration and live shadow remain pending",
+    "Natural-language semantic overgeneralization is outside this structural fix"
+  ]
+}

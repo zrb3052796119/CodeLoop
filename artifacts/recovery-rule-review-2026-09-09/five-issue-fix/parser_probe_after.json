@@ -1,0 +1,745 @@
+[
+  {
+    "name": "boolean_flag_swallows_first_target",
+    "expected": "Do not confirm: auth was replaced by billing; -q has no argument.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "-q",
+            "tests/test_auth.py",
+            "tests/test_smoke.py",
+            "--tb=short"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py",
+          "tests/test_smoke.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth ___________________________\n...[truncated middle]...\nError: expired token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed, 1 passed in 0.01s\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py",
+          "tests/test_smoke.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth ___________________________\n...[truncated middle]...\nError: expired token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed, 1 passed in 0.01s\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py",
+          "tests/test_smoke.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "-q",
+            "tests/test_billing.py",
+            "tests/test_smoke.py",
+            "--tb=short"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_billing.py",
+          "tests/test_smoke.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "..                                                                       [100%]\n2 passed in 0.00s\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_billing.py",
+          "tests/test_smoke.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "full",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth ___________________________\n...[truncated middle]...\nError: expired token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed, 1 passed in 0.01s\n"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-2",
+        "command_kind": "test",
+        "scope": "full",
+        "result": "passed",
+        "event_ids": [
+          "event-000004",
+          "event-000005"
+        ],
+        "summary": "..                                                                       [100%]\n2 passed in 0.00s\n"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false,
+    "real_pytest_runs": [
+      {
+        "args": [
+          "-q",
+          "tests/test_auth.py",
+          "tests/test_smoke.py",
+          "--tb=short"
+        ],
+        "exit_code": 1,
+        "output": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth _______________________________\ntests/test_auth.py:2: in test_expired_auth\n    assert False, \"expired token accepted\"\nE   AssertionError: expired token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed, 1 passed in 0.01s\n"
+      },
+      {
+        "args": [
+          "-q",
+          "tests/test_billing.py",
+          "tests/test_smoke.py",
+          "--tb=short"
+        ],
+        "exit_code": 0,
+        "output": "..                                                                       [100%]\n2 passed in 0.00s\n"
+      }
+    ],
+    "objectives": [
+      {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/test_auth.py",
+          "tests/test_smoke.py"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [],
+        "executes_work": true
+      },
+      {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/test_billing.py",
+          "tests/test_smoke.py"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [],
+        "executes_work": true
+      }
+    ],
+    "relation": "conflict"
+  },
+  {
+    "name": "quoted_selector_tail_disappears",
+    "expected": "Do not confirm: the second complete -k expression excludes failing auth.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/",
+            "-q",
+            "--tb=short",
+            "-k",
+            "test_smoke or test_expired_auth"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth ___________________________\n...[truncated middle]...\n token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed, 1 passed, 1 deselected in 0.01s\n",
+        "files": [],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth ___________________________\n...[truncated middle]...\n token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed, 1 passed, 1 deselected in 0.01s\n",
+        "files": [],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/",
+            "-q",
+            "--tb=short",
+            "-k",
+            "test_smoke and not test_expired_auth"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": ".                                                                        [100%]\n1 passed, 2 deselected in 0.00s\n",
+        "files": [],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "unknown",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth ___________________________\n...[truncated middle]...\n token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed, 1 passed, 1 deselected in 0.01s\n"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-2",
+        "command_kind": "test",
+        "scope": "unknown",
+        "result": "passed",
+        "event_ids": [
+          "event-000004",
+          "event-000005"
+        ],
+        "summary": ".                                                                        [100%]\n1 passed, 2 deselected in 0.00s\n"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false,
+    "real_pytest_runs": [
+      {
+        "args": [
+          "tests/",
+          "-q",
+          "--tb=short",
+          "-k",
+          "test_smoke or test_expired_auth"
+        ],
+        "exit_code": 1,
+        "output": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth _______________________________\ntests/test_auth.py:2: in test_expired_auth\n    assert False, \"expired token accepted\"\nE   AssertionError: expired token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed, 1 passed, 1 deselected in 0.01s\n"
+      },
+      {
+        "args": [
+          "tests/",
+          "-q",
+          "--tb=short",
+          "-k",
+          "test_smoke and not test_expired_auth"
+        ],
+        "exit_code": 0,
+        "output": ".                                                                        [100%]\n1 passed, 2 deselected in 0.00s\n"
+      }
+    ],
+    "objectives": [
+      {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [
+          "-k=test_smoke or test_expired_auth"
+        ],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [],
+        "executes_work": true
+      },
+      {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [
+          "-k=test_smoke and not test_expired_auth"
+        ],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [],
+        "executes_work": true
+      }
+    ],
+    "relation": "conflict"
+  },
+  {
+    "name": "version_is_not_test_verification",
+    "expected": "Do not confirm: printing pytest version does not execute the failed test.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/test_auth.py",
+            "-q",
+            "--tb=short"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth ___________________________\n...[truncated middle]...\n AssertionError: expired token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed in 0.01s\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "F                                                                        [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth ___________________________\n...[truncated middle]...\n AssertionError: expired token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed in 0.01s\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/test_auth.py",
+            "-q",
+            "--tb=short",
+            "--version"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "pytest 9.1.1\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "F                                                                        [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth ___________________________\n...[truncated middle]...\n AssertionError: expired token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed in 0.01s\n"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-2",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "unknown",
+        "event_ids": [
+          "event-000004",
+          "event-000005"
+        ],
+        "summary": "pytest 9.1.1\n"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false,
+    "real_pytest_runs": [
+      {
+        "args": [
+          "tests/test_auth.py",
+          "-q",
+          "--tb=short"
+        ],
+        "exit_code": 1,
+        "output": "F                                                                        [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth _______________________________\ntests/test_auth.py:2: in test_expired_auth\n    assert False, \"expired token accepted\"\nE   AssertionError: expired token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed in 0.01s\n"
+      },
+      {
+        "args": [
+          "tests/test_auth.py",
+          "-q",
+          "--tb=short",
+          "--version"
+        ],
+        "exit_code": 0,
+        "output": "pytest 9.1.1\n"
+      }
+    ],
+    "objectives": [
+      {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/test_auth.py"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [],
+        "executes_work": true
+      },
+      {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/test_auth.py"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [
+          "-version=None"
+        ],
+        "executes_work": false
+      }
+    ],
+    "relation": "conflict"
+  },
+  {
+    "name": "different_targets_without_leading_boolean_control",
+    "expected": "Do not confirm; control changes only placement of -q.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/test_auth.py",
+            "tests/test_smoke.py",
+            "-q",
+            "--tb=short"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py",
+          "tests/test_smoke.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth ___________________________\n...[truncated middle]...\nError: expired token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed, 1 passed in 0.01s\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py",
+          "tests/test_smoke.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth ___________________________\n...[truncated middle]...\nError: expired token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed, 1 passed in 0.01s\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py",
+          "tests/test_smoke.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/test_billing.py",
+            "tests/test_smoke.py",
+            "-q",
+            "--tb=short"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_billing.py",
+          "tests/test_smoke.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "..                                                                       [100%]\n2 passed in 0.00s\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_billing.py",
+          "tests/test_smoke.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth ___________________________\n...[truncated middle]...\nError: expired token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed, 1 passed in 0.01s\n"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-2",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "passed",
+        "event_ids": [
+          "event-000004",
+          "event-000005"
+        ],
+        "summary": "..                                                                       [100%]\n2 passed in 0.00s\n"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false,
+    "real_pytest_runs": [
+      {
+        "args": [
+          "tests/test_auth.py",
+          "tests/test_smoke.py",
+          "-q",
+          "--tb=short"
+        ],
+        "exit_code": 1,
+        "output": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_auth _______________________________\ntests/test_auth.py:2: in test_expired_auth\n    assert False, \"expired token accepted\"\nE   AssertionError: expired token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_auth - AssertionError: expired token ...\n1 failed, 1 passed in 0.01s\n"
+      },
+      {
+        "args": [
+          "tests/test_billing.py",
+          "tests/test_smoke.py",
+          "-q",
+          "--tb=short"
+        ],
+        "exit_code": 0,
+        "output": "..                                                                       [100%]\n2 passed in 0.00s\n"
+      }
+    ],
+    "objectives": [
+      {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/test_auth.py",
+          "tests/test_smoke.py"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [],
+        "executes_work": true
+      },
+      {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/test_billing.py",
+          "tests/test_smoke.py"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [],
+        "executes_work": true
+      }
+    ],
+    "relation": "conflict"
+  }
+]

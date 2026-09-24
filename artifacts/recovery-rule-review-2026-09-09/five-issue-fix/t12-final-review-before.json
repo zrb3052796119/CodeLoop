@@ -1,0 +1,60 @@
+{
+  "pytest_version": {
+    "-V": {
+      "verifications": [
+        [
+          "call-1",
+          "failed"
+        ],
+        [
+          "call-2",
+          "passed"
+        ]
+      ],
+      "claims": [
+        [
+          "recovery",
+          "confirmed"
+        ]
+      ],
+      "persistable": true,
+      "executes_work": true
+    },
+    "--version": {
+      "verifications": [
+        [
+          "call-1",
+          "failed"
+        ],
+        [
+          "call-2",
+          "unknown"
+        ]
+      ],
+      "claims": [],
+      "persistable": false,
+      "executes_work": false
+    }
+  },
+  "unparsed_shell_help": {
+    "verifications": [
+      [
+        "c1",
+        "failed"
+      ],
+      [
+        "c3",
+        "passed"
+      ]
+    ],
+    "claims": [
+      [
+        "recovery",
+        "confirmed"
+      ]
+    ],
+    "persistable": true,
+    "ambiguous_selection": true,
+    "executes_work": true
+  }
+}

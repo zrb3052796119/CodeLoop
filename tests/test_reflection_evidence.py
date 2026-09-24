@@ -33,7 +33,7 @@ def test_file_roles_keep_event_and_call_ids_without_command_false_positive() -> 
     trace = [
         {"event_id": "e1", "call_id": "read", "type": "tool_call", "tool_name": "read_file", "input": {"path": "src/a.py"}},
         {"event_id": "e2", "call_id": "edit", "type": "tool_result", "tool_name": "edit_file", "status": "success", "changed_files": ["src/b.py"]},
-        {"event_id": "e3", "call_id": "test", "type": "tool_call", "tool_name": "run_command", "input": {"command": "pytest tests/test_b.py -q"}},
+        {"event_id": "e3", "call_id": "test", "type": "tool_call", "tool_name": "run_command", "input": {"command": "pytest", "args": ["tests/test_b.py", "-q"]}},
     ]
 
     evidence = _extract(trace)
@@ -41,7 +41,15 @@ def test_file_roles_keep_event_and_call_ids_without_command_false_positive() -> 
     assert [(item.path, item.call_id) for item in evidence.files_read] == [("src/a.py", "read")]
     assert [(item.path, item.call_id) for item in evidence.files_changed] == [("src/b.py", "edit")]
     assert [item.path for item in evidence.referenced_files] == ["tests/test_b.py"]
-    assert "pytest tests/test_b.py -q" not in str(evidence.to_dict())
+    # A command must not masquerade as a file role. The bounded invocation
+    # rendering itself is deliberately preserved on the tool record: it is
+    # the only place that says what the call actually ran.
+    projected = str(evidence.to_dict())
+    assert "'path': 'pytest" not in projected
+    assert any(
+        tool.invocation == "pytest tests/test_b.py -q"
+        for tool in evidence.tool_calls
+    )
 
 
 def test_same_call_tool_result_and_error_merge_with_complete_sources() -> None:

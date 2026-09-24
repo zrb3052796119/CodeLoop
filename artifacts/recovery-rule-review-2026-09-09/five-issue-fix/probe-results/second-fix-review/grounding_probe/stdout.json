@@ -1,0 +1,216 @@
+{
+  "red_green_target_identity": [
+    {
+      "name": "same_target_control",
+      "failed_invocation": "pytest tests/test_auth.py (cwd: /repo/backend)",
+      "passed_invocation": "pytest tests/test_auth.py (cwd: /repo/backend)",
+      "expected_valid": true,
+      "identity_match": true,
+      "with_failed_check": {
+        "valid": true,
+        "issues": [],
+        "persistable": true,
+        "rule_recovery_statuses": [
+          "confirmed"
+        ]
+      },
+      "without_failed_check_control": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "rule_recovery_statuses": [
+          "inferred"
+        ]
+      }
+    },
+    {
+      "name": "different_target_control",
+      "failed_invocation": "pytest tests/test_auth.py",
+      "passed_invocation": "pytest tests/test_billing.py",
+      "expected_valid": false,
+      "identity_match": false,
+      "with_failed_check": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "rule_recovery_statuses": [
+          "inferred"
+        ]
+      },
+      "without_failed_check_control": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "rule_recovery_statuses": [
+          "inferred"
+        ]
+      }
+    },
+    {
+      "name": "different_cwd",
+      "failed_invocation": "pytest tests/test_auth.py (cwd: /repo/backend)",
+      "passed_invocation": "pytest tests/test_auth.py (cwd: /repo/frontend)",
+      "expected_valid": false,
+      "identity_match": false,
+      "with_failed_check": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "rule_recovery_statuses": [
+          "inferred"
+        ]
+      },
+      "without_failed_check_control": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "rule_recovery_statuses": [
+          "inferred"
+        ]
+      }
+    },
+    {
+      "name": "different_cwd_absolute_relative_false_negative",
+      "failed_invocation": "pytest /repo/backend/tests/test_auth.py",
+      "passed_invocation": "pytest tests/test_auth.py (cwd: /repo/backend)",
+      "expected_valid": true,
+      "identity_match": true,
+      "with_failed_check": {
+        "valid": true,
+        "issues": [],
+        "persistable": true,
+        "rule_recovery_statuses": [
+          "confirmed"
+        ]
+      },
+      "without_failed_check_control": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "rule_recovery_statuses": [
+          "inferred"
+        ]
+      }
+    },
+    {
+      "name": "one_side_pathless_target",
+      "failed_invocation": "pytest tests/test_auth.py",
+      "passed_invocation": "pytest smoke",
+      "expected_valid": false,
+      "identity_match": false,
+      "with_failed_check": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "rule_recovery_statuses": [
+          "inferred"
+        ]
+      },
+      "without_failed_check_control": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "rule_recovery_statuses": [
+          "inferred"
+        ]
+      }
+    },
+    {
+      "name": "dropped_failed_file",
+      "failed_invocation": "pytest tests/test_auth.py tests/test_smoke.py",
+      "passed_invocation": "pytest tests/test_smoke.py",
+      "expected_valid": false,
+      "identity_match": false,
+      "with_failed_check": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "rule_recovery_statuses": [
+          "inferred"
+        ]
+      },
+      "without_failed_check_control": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "rule_recovery_statuses": [
+          "inferred"
+        ]
+      }
+    },
+    {
+      "name": "changed_node_selector",
+      "failed_invocation": "pytest tests/test_auth.py::test_expired",
+      "passed_invocation": "pytest tests/test_auth.py::test_valid",
+      "expected_valid": false,
+      "identity_match": false,
+      "with_failed_check": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "rule_recovery_statuses": [
+          "inferred"
+        ]
+      },
+      "without_failed_check_control": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "rule_recovery_statuses": [
+          "inferred"
+        ]
+      }
+    }
+  ],
+  "unrelated_failed_check": {
+    "recovery_related_error_calls": [
+      "auth-failure"
+    ],
+    "red_check_call": "failed-call",
+    "expected_valid": false,
+    "with_unrelated_red_green": {
+      "valid": false,
+      "issues": [
+        "confirmed_recovery_verification_unrelated"
+      ],
+      "persistable": false,
+      "rule_recovery_statuses": [
+        "inferred"
+      ]
+    },
+    "without_failed_check_control": {
+      "valid": false,
+      "issues": [
+        "confirmed_recovery_verification_unrelated"
+      ],
+      "persistable": false,
+      "rule_recovery_statuses": [
+        "inferred"
+      ]
+    }
+  }
+}

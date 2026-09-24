@@ -161,6 +161,9 @@ def test_restore_safe_curator_locked_entry_clears_lock_with_audit(
     entry.lifecycle_status = "deprecated"
     entry.curator_locked = True
     entry.tier = MemoryTier.ARCHIVAL
+    # Construct an already-authorized curator state; arbitrary callers cannot
+    # persist these live-object edits through the Manager commit seam.
+    entry._seal_authority_state()
     manager._save_scope(MemoryScope.PROJECT)
 
     result = manager.restore_entry(entry.id)
@@ -182,6 +185,7 @@ def test_restore_missing_reference_goes_to_pending(isolated_workspace: Path):
     entry.lifecycle_status = "deprecated"
     entry.curator_locked = True
     entry.tier = MemoryTier.ARCHIVAL
+    entry._seal_authority_state()
     manager._save_scope(MemoryScope.PROJECT)
 
     result = manager.restore_entry(entry.id)

@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "review_kind": "independent_assistant_manual_style_targeted_semantic_adjudication",
+  "reviewer": "objective_contract_consumers",
+  "reviewed_at_utc": "2026-09-09T10:33:10.524359+00:00",
+  "source_report": "artifacts/recovery-rule-review-2026-09-09/model-response-fix/candidate-followup-fixed.json",
+  "source_report_sha256": "30a5525663a085e07925f874c859abb2307a451ba551d26b722ae04bb01a1871",
+  "dataset_content_sha256": "f6bc630a49ac6512af9f76e58e45b41790c0bd0f5fb3542bf1871d3e3c351305",
+  "supporting_fixture": "tests/fixtures/recovery_lesson_shadow/cases.json",
+  "supporting_fixture_sha256": "5f3d48c25c975143476e84f399eb020d5f3db44e37746e405069387db9b6fb88",
+  "scope": "Only retry-still-failed and report-timeout-budget from the final controlled follow-up batch. Review compares generated text and observations to model-visible projected evidence and the full supplied synthetic fixture.",
+  "summary": {
+    "reviewed_candidates": 2,
+    "targeted_regressions_closed": 2,
+    "blocking_semantic_error_count": 0,
+    "nonblocking_wording_note_count": 1,
+    "warning_inferred_count": 2,
+    "confirmed_recovery_count": 0,
+    "admitted_lesson_count": 0,
+    "conclusion": "The failed rerun is explicitly acknowledged, and timeout applicability no longer presupposes the timeout cause. Both candidates remain non-persisted inferred observations. This is a two-case follow-up result, not proof of general semantic reliability."
+  },
+  "episodes": [
+    {
+      "case_id": "retry-still-failed",
+      "episode_id": "episode-000001",
+      "report_pointer": "/cases/0/episodes/0",
+      "reviewed_claim": {
+        "claim_id": "llm-claim-000001",
+        "claim_type": "warning",
+        "semantic_key": "implementation_change_without_successful_verification",
+        "statement": "The initial run of 'python -m pytest tests/test_pending.py' failed with 'Operation incomplete; cause unknown.'; recovery-000001 then attempted an implementation change, and the follow-up targeted run of the same command still recorded status failed. No successful verification was established for this change.",
+        "evidence_ids": [
+          "event-000001",
+          "event-000002",
+          "event-000003",
+          "event-000006",
+          "event-000007",
+          "event-000008",
+          "event-000009"
+        ],
+        "epistemic_status": "inferred",
+        "applies_when": "python -m pytest tests/test_pending.py was run via run_command before and after recovery-000001's implementation change; both runs are recorded as failed",
+        "limitations": [
+          "The recovery action changed the implementation but no successful verification exists; verify-000002 (targeted test) failed.",
+          "The error message states only 'Operation incomplete; cause unknown.', so no root cause can be established.",
+          "The episode does not demonstrate that the implementation change repaired anything."
+        ],
+        "verification_ids": [
+          "verify-000002"
+        ],
+        "related_error_ids": [
+          "error-000001"
+        ],
+        "related_recovery_ids": [
+          "recovery-000001"
+        ],
+        "evidence_quotes": [
+          "python -m pytest tests/test_pending.py",
+          "Operation incomplete; cause unknown.",
+          "Attempted an implementation change; no successful verification is established."
+        ]
+      },
+      "targeted_regression_verdict": "closed",
+      "blocking_semantic_error": false,
+      "factual_clause_review": [
+        {
+          "clause": "Initial invocation failed with the quoted error.",
+          "judgment": "supported",
+          "support": [
+            "tool_calls call-1 invocation/status",
+            "error-000001, source events event-000002 and event-000003",
+            "event-000001"
+          ]
+        },
+        {
+          "clause": "An implementation change was attempted before the follow-up test.",
+          "judgment": "supported",
+          "support": [
+            "recovery-000001 action at event-000006",
+            "event_positions: event-000006 precedes event-000007"
+          ]
+        },
+        {
+          "clause": "Follow-up targeted verification occurred and failed; there is no successful verification.",
+          "judgment": "supported",
+          "support": [
+            "verify-000002 result failed",
+            "tool_calls call-3 status failed",
+            "event-000007",
+            "event-000008",
+            "event-000009"
+          ]
+        }
+      ],
+      "applies_when_review": "Correctly describes both recorded failed invocations around an attempted change. It does not claim no rerun or no verification occurred.",
+      "causality_and_admission_review": "Warning/inferred status is preserved; no confirmed repair or root cause is asserted. The outcome remains an observation and has no durable lesson admission.",
+      "nonblocking_notes": [
+        {
+          "field": "limitations[0] and applies_when",
+          "issue": "Uses changed the implementation / implementation change where the supplied recovery action states attempted an implementation change.",
+          "evidence_boundary": "The complete synthetic fixture has successful edit events event-000004 and event-000005, so the statement is true for this fixture; however those events are absent from projected_evidence and the claim citations. The model-visible record supports the attempted wording more precisely.",
+          "preferred_wording": "An implementation change was attempted; the follow-up verification failed.",
+          "impact": "Minor precision issue in a non-persisted warning. It does not reopen the verified-versus-unexecuted regression."
+        }
+      ],
+      "overall_verdict": "supported_for_targeted_regression_with_nonblocking_wording_note",
+      "mechanical_reference_audit": {
+        "all_cited_event_ids_in_projection": true,
+        "verification_ids": [
+          "verify-000002"
+        ],
+        "generated_claim_count": 1,
+        "observation_count": 1,
+        "lesson_count": 0,
+        "semantic_review_not_inferred_from_validator": true
+      }
+    },
+    {
+      "case_id": "report-timeout-budget",
+      "episode_id": "episode-000001",
+      "report_pointer": "/cases/1/episodes/0",
+      "reviewed_claim": {
+        "claim_id": "llm-claim-000001",
+        "claim_type": "warning",
+        "semantic_key": "report_timeout_increased_budget_retry",
+        "statement": "An invocation of python scripts/report.py with a timeout of 1 failed with 'Command timed out after 1 seconds (process group terminated).'; a later invocation of the same command with timeout 120 succeeded. No verification evidence links the changed time budget to the successful result.",
+        "evidence_ids": [
+          "event-000001",
+          "event-000002",
+          "event-000003",
+          "event-000004",
+          "event-000005"
+        ],
+        "epistemic_status": "inferred",
+        "applies_when": "Running 'python scripts/report.py' in /synthetic/workspace with a 1 second timeout",
+        "limitations": [
+          "No verification records exist for this episode; the mechanism behind the timeout is unknown.",
+          "The later successful run does not confirm a verified repair or establish that a 120 second timeout is necessary or sufficient in general."
+        ],
+        "verification_ids": [],
+        "related_error_ids": [
+          "error-000001"
+        ],
+        "related_recovery_ids": [],
+        "evidence_quotes": [
+          "python scripts/report.py (cwd: /synthetic/workspace; timeout: 1)",
+          "Command timed out after 1 seconds (process group terminated).",
+          "python scripts/report.py (cwd: /synthetic/workspace; timeout: 120)"
+        ]
+      },
+      "targeted_regression_verdict": "closed",
+      "blocking_semantic_error": false,
+      "factual_clause_review": [
+        {
+          "clause": "Initial invocation failed with the quoted error.",
+          "judgment": "supported",
+          "support": [
+            "tool_calls call-1 invocation/status",
+            "error-000001, source events event-000002 and event-000003",
+            "event-000001"
+          ]
+        },
+        {
+          "clause": "The later same command used timeout 120 and succeeded.",
+          "judgment": "supported",
+          "support": [
+            "tool_calls call-2 invocation/status",
+            "event-000004",
+            "event-000005"
+          ]
+        },
+        {
+          "clause": "The timeout mechanism and causal effect of the budget change are not established.",
+          "judgment": "supported",
+          "support": [
+            "verification is empty",
+            "recoveries is empty",
+            "No causal decision in projected or complete fixture trace"
+          ]
+        }
+      ],
+      "applies_when_review": "Restricted to the actual command, cwd and 1-second timeout. It does not say the timeout happened because the time budget was too small or that raising it is a general solution.",
+      "causality_and_admission_review": "Warning/inferred status is preserved; no confirmed repair or root cause is asserted. The outcome remains an observation and has no durable lesson admission.",
+      "nonblocking_notes": [],
+      "overall_verdict": "supported",
+      "mechanical_reference_audit": {
+        "all_cited_event_ids_in_projection": true,
+        "verification_ids": [],
+        "generated_claim_count": 1,
+        "observation_count": 1,
+        "lesson_count": 0,
+        "semantic_review_not_inferred_from_validator": true
+      }
+    }
+  ],
+  "no_model_requests": true,
+  "source_report_unchanged": true
+}

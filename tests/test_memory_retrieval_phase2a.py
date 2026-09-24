@@ -7,7 +7,13 @@ from pathlib import Path
 import pytest
 
 from minicode.context_manager import estimate_tokens
-from minicode.memory import MemoryEntry, MemoryManager, MemoryScope, MemoryTier
+from minicode.memory import (
+    MemoryEntry,
+    MemoryManager,
+    MemoryScope,
+    MemoryTier,
+    _approval_hash_for_entry,
+)
 from minicode.memory_pipeline import MemoryPipeline
 from minicode.memory_injector import MemoryInjector
 from minicode.memory_retrieval import (
@@ -43,7 +49,7 @@ def _entry(
     updated_at: float = 1_700_000_000.0,
     usefulness_score: float = 0.0,
 ) -> MemoryEntry:
-    return MemoryEntry(
+    entry = MemoryEntry(
         id=entry_id,
         scope=scope,
         category=category,
@@ -60,6 +66,8 @@ def _entry(
         last_accessed=updated_at,
         usefulness_score=usefulness_score,
     )
+    entry.approval_content_hash = _approval_hash_for_entry(entry)
+    return entry
 
 
 def _request(query: str, **overrides: object) -> MemoryRetrievalRequest:
@@ -512,13 +520,12 @@ def test_only_rendered_ids_receive_injection_and_feedback(tmp_path: Path) -> Non
     manager = _manager(tmp_path, entries)
     pipeline = MemoryPipeline(manager)
     pipeline.initialize(workspace_path=str(tmp_path), enable_reranker=False)
-    pipeline._injector._max_injected = 1
-
     pipeline.inject(
         "fix report export timeout",
         [],
         [{"role": "system", "content": "SYSTEM"}],
         context_usage=0.4,
+        max_memories=1,
     )
     rendered = set(pipeline._last_injected_ids)
     pipeline.feedback("success")
@@ -541,12 +548,12 @@ def test_feedback_rejects_caller_supplied_non_rendered_ids(tmp_path: Path) -> No
     manager = _manager(tmp_path, [rendered, unrelated])
     pipeline = MemoryPipeline(manager)
     pipeline.initialize(workspace_path=str(tmp_path), enable_reranker=False)
-    pipeline._injector._max_injected = 1
     pipeline.inject(
         "fix report export timeout",
         [],
         [{"role": "system", "content": "SYSTEM"}],
         context_usage=0.4,
+        max_memories=1,
     )
 
     pipeline.feedback(True, [unrelated.id])
@@ -618,7 +625,7 @@ def test_pipeline_default_path_never_enables_remote_reranker(tmp_path: Path) -> 
 
     pipeline.initialize(model_adapter=object(), workspace_path=str(tmp_path))
 
-    assert pipeline._reranker is None
+    assert not hasattr(pipeline, "_reranker")
     assert pipeline.stats["reranker_enabled"] is False
 
 
@@ -783,6 +790,7 @@ def test_context_compactor_uses_latest_user_query_and_fails_closed_without_one()
 
 def test_agent_turn_performs_one_main_retrieval_and_one_prompt_injection(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from minicode.agent_loop import run_agent_turn
     from minicode.mock_model import MockModelAdapter
@@ -795,14 +803,18 @@ def test_agent_turn_performs_one_main_retrieval_and_one_prompt_injection(
         domains=["backend"],
     )
     manager = _manager(tmp_path, [entry])
-    search_calls: list[str] = []
-    original_search = manager.search
+    retrieval_calls: list[str] = []
+    original_retrieve = CanonicalMemoryRetriever.retrieve
 
-    def observed_search(query: str, *args: object, **kwargs: object):
-        search_calls.append(query)
-        return original_search(query, *args, **kwargs)
+    def observed_retrieve(
+        retriever: CanonicalMemoryRetriever,
+        request: MemoryRetrievalRequest,
+        **kwargs: object,
+    ):
+        retrieval_calls.append(request.query)
+        return original_retrieve(retriever, request, **kwargs)
 
-    manager.search = observed_search  # type: ignore[method-assign]
+    monkeypatch.setattr(CanonicalMemoryRetriever, "retrieve", observed_retrieve)
     result = run_agent_turn(
         model=MockModelAdapter(),
         tools=ToolRegistry([]),
@@ -817,7 +829,7 @@ def test_agent_turn_performs_one_main_retrieval_and_one_prompt_injection(
     )
 
     system = next(message["content"] for message in result if message["role"] == "system")
-    assert search_calls == ["fix checkout total rounding"]
+    assert retrieval_calls == ["fix checkout total rounding"]
     assert system.count(entry.content) == 1
     assert entry.retrieval_count == 1
     assert entry.injection_count == 1

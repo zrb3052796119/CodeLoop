@@ -12,7 +12,7 @@ from scripts.memory_hybrid_qwen_canonical_evaluator import (
 )
 
 
-def test_qwen_production_evidence_joins_passing_report_and_frozen_holdout() -> None:
+def test_spent_v7_evaluator_cannot_mint_current_production_evidence() -> None:
     report = {
         "report_fingerprint": "a" * 64,
         "model": {
@@ -31,17 +31,12 @@ def test_qwen_production_evidence_joins_passing_report_and_frozen_holdout() -> N
         "acceptance_gate": {"passed": True, "checks": {"all": True}},
     }
 
-    evidence = build_qwen_production_evidence(report)
-
-    assert evidence["holdout"] == {
-        "version": "v7-qwen",
-        "manifest_sha256": (
-            "d3bfde05c1652f6498cb529dd69148165da1eaea44cca4e5f1e48a64a454d97e"
-        ),
-    }
-    assert evidence["promotion_report"]["report_fingerprint"] == "a" * 64
-    assert evidence["production_enablement_allowed"] is True
-    assert evidence["report_fingerprint"] == evidence_fingerprint(evidence)
+    try:
+        build_qwen_production_evidence(report)
+    except RuntimeError as error:
+        assert "v7 Qwen canonical evaluator is retired" in str(error)
+    else:
+        raise AssertionError("spent v7 evaluator unexpectedly minted evidence")
 
 
 def test_accepted_qwen_evidence_is_bound_to_passing_v7_report() -> None:

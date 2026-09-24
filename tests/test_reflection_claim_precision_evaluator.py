@@ -110,9 +110,19 @@ def test_real_ab_selection_contains_two_rule_gap_controls() -> None:
         case for case in cases if case["case_id"] in manifest["real_ab_case_ids"]
     ]
 
+    # After the 2026-09-09 recovery-rule review, an unlinked targeted check
+    # can no longer confirm a recovery on the model path, so the two former
+    # gap-fill controls (105/106) now declare their verifying call in the
+    # trace and are confirmed by the rule itself. The remaining gap control
+    # is the multi-error case; linked-recovery confirmation is covered by
+    # the rule-sufficient annotations across the dataset.
     assert sum(
         case["expected_gap_fill_behavior"] == "llm_gap_fill"
         for case in selected
+    ) >= 1
+    assert sum(
+        case["expected_gap_fill_behavior"] == "rule_sufficient"
+        for case in cases
     ) >= 2
 
 
@@ -150,9 +160,25 @@ def test_scripted_gap_fill_counts_at_least_two_correct_rule_gaps() -> None:
     report = evaluate_precision(HOLDOUT)
     metrics = report["arms"]["calibrated_compact_gap_fill"]["metrics"]
 
-    assert metrics["gap_fill_success_count"] >= 2
+    # The former scripted gap fills rode on citing an unlinked targeted
+    # check, which the shared admission gate now rejects for every producer.
+    # Those recoveries instead declare their verifying call in the trace, so
+    # the rule branch confirms them directly: gap filling must stay clean
+    # (no false positives, no regressions) rather than profitable through
+    # the closed loophole.
     assert metrics["gap_fill_false_positive_count"] == 0
     assert metrics["rule_regression_count"] == 0
+    cases = {
+        case["case_id"]: case
+        for case in report["arms"]["calibrated_compact_gap_fill"]["cases"]
+    }
+    for case_id in (
+        "precision-positive-gap-recovery-105",
+        "precision-positive-gap-recovery-106",
+    ):
+        case = cases[case_id]
+        assert case["rule_persistable_claim_ids"], case_id
+        assert case["gap_fill_success"] is False, case_id
 
 
 def test_replace_metric_records_weaker_llm_regression() -> None:

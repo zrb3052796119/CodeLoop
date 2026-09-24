@@ -56,15 +56,18 @@ def _candidate(index: int, *, rank: int | None = None) -> RetrievedMemory:
     )
 
 
-def test_consolidator_has_one_post_gate_pre_controller_integration_point() -> None:
-    # ``retrieve`` owns the revision-fenced snapshot; the actual pipeline is
-    # intentionally isolated in this helper so the lock covers every stage.
+def test_controller_threshold_precedes_gate_and_consolidation() -> None:
+    # ``retrieve`` captures and revalidates the authority revision around this
+    # helper; the helper owns the deterministic gate/consolidation order.
     source = inspect.getsource(CanonicalMemoryRetriever._retrieve_snapshot)
 
     assert source.count("self._consolidator.consolidate(") == 1
+    assert source.index("self._preflight(") < source.index("self._score_entry(")
     assert source.index("selected_after_gate") < source.index("self._consolidator.consolidate(")
-    assert source.index("self._consolidator.consolidate(") < source.index("self._decision(")
-    assert source.index("self._decision(") < source.index("self._render(")
+    assert source.index("self._consolidator.consolidate(") < source.index("self._render(")
+    assert source.index("decision = preflight.controller_decision") < source.index(
+        "self._render("
+    )
 
 
 def test_suppressed_ids_never_reach_prompt_counters_or_feedback() -> None:

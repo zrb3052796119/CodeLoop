@@ -1,0 +1,22 @@
+[
+  {
+    "case": "shared_cwd_unrelated_tests",
+    "value_accepted": false,
+    "claims": []
+  },
+  {
+    "case": "different_cwd_same_relative_test",
+    "value_accepted": false,
+    "claims": []
+  },
+  {
+    "case": "relative_suffix_is_not_file_identity",
+    "value_accepted": false,
+    "claims": []
+  },
+  {
+    "case": "changed_filter_skips_failed_test",
+    "value_accepted": false,
+    "claims": []
+  }
+]

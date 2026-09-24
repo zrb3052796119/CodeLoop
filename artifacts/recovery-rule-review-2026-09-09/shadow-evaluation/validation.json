@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "test_modules": 43,
+  "tests_passed": 973,
+  "test_seconds": 6.93,
+  "tests_added_this_stage": 69,
+  "ruff_F": "passed",
+  "git_diff_check": "passed",
+  "offline_provider_calls": 0,
+  "offline_scripted_calls": 10,
+  "offline_structurally_admitted_lessons": 6,
+  "offline_same_episode_rule_lessons": 6,
+  "live_outside_sandbox_attempts": 10,
+  "live_parseable_responses": 0,
+  "production_readiness": "not_established",
+  "memory_pipeline_writes_in_pilot": false,
+  "artifact_sha256": {
+    "surface-tests.txt": "54762de020d1a8fc462361f04a434102be3e22a8a8f6629e4c2d7472157d7172",
+    "test-files.json": "3ac0536aa9c7170fcf0a372ab3c34b1c05a3495971f1dfa4721a8a742431b578",
+    "source-hashes.json": "7bf32ef8bac41fb08945632e08765de29218c18775898bb18d3cb45782795644",
+    "offline.json": "2d953d33ea45d354e93a33db279fe4d3f6912e590e1326315827de1de3f1902b",
+    "live-sandbox-attempt.json": "cf5198fcd92e21d2fd5399a15442eb2eb262345ae8341ba76b85070a359d73de",
+    "live.json": "3ed435cfac16f7abadc3ff59ff8a1b7ae8e8e4afddb404ccb989dacf38626b7e",
+    "live-diagnostic-60s.json": "800e32d0df6a3cd1880e5076135b0d3b664570d4ed435785e0cd6f69832650c0",
+    "adjudication.json": "cf9fa6f14974cbe3ef72fc5e03102111946ecebff3c73466b0e58face859b928"
+  },
+  "recovery_lesson_shadow_enabled": false
+}

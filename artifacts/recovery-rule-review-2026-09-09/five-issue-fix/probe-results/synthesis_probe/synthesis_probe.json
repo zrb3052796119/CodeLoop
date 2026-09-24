@@ -1,0 +1,121 @@
+{
+  "scope": "synthetic offline candidate validation only; no model or memory writes",
+  "evidence": {
+    "files_read": [],
+    "files_changed": [],
+    "referenced_files": [],
+    "tool_calls": [],
+    "libraries": [],
+    "errors": [
+      {
+        "error_id": "error-1",
+        "call_id": "call-error",
+        "tool_name": "run_command",
+        "error_type": "AssertionError",
+        "message": "Expired token was accepted",
+        "source_event_ids": [
+          "event-error"
+        ],
+        "epistemic_status": "confirmed"
+      }
+    ],
+    "recoveries": [
+      {
+        "recovery_id": "recovery-1",
+        "related_error_ids": [
+          "error-1"
+        ],
+        "action": "Moved the expiry check before lookup",
+        "event_ids": [
+          "event-recovery"
+        ],
+        "files_changed": [
+          "src/auth.py"
+        ],
+        "epistemic_status": "confirmed",
+        "change_summary": "",
+        "verification_call_ids": [
+          "call-verify"
+        ]
+      }
+    ],
+    "recovery_suggestions": [],
+    "decisions": [],
+    "verification": [
+      {
+        "verification_id": "verify-1",
+        "tool_name": "run_command",
+        "call_id": "call-verify",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "passed",
+        "event_ids": [
+          "event-verify"
+        ],
+        "summary": "Auth expiry regression passed"
+      }
+    ],
+    "outcome": "success",
+    "had_errors": false,
+    "errors_recovered": false,
+    "final_summary": "",
+    "final_summary_event_ids": [],
+    "diagnostics": [],
+    "event_positions": {
+      "event-error": 0,
+      "event-recovery": 1,
+      "event-verify": 2
+    }
+  },
+  "cases": {
+    "verbatim_baseline": {
+      "statement": "After Expired token was accepted, the recovery was: Moved the expiry check before lookup.",
+      "valid": true,
+      "validation_issue_codes": [],
+      "durable": true,
+      "value_reason_codes": [
+        "accepted_durable_reflection"
+      ]
+    },
+    "semantic_paraphrase": {
+      "statement": "The lookup accepted an expired token; moving expiration validation ahead of the lookup was the verified repair.",
+      "valid": false,
+      "validation_issue_codes": [
+        "claim_statement_not_grounded"
+      ],
+      "durable": false,
+      "value_reason_codes": [
+        "generic_error_summary",
+        "no_valid_claim"
+      ]
+    },
+    "verbatim_plus_unsupported_conclusion": {
+      "statement": "After Expired token was accepted, the recovery was: Moved the expiry check before lookup. The same change also resolves every clock synchronization defect in distributed databases.",
+      "valid": true,
+      "validation_issue_codes": [],
+      "durable": true,
+      "value_reason_codes": [
+        "accepted_durable_reflection"
+      ]
+    },
+    "verbatim_with_unrelated_verification": {
+      "statement": "After Expired token was accepted, the recovery was: Moved the expiry check before lookup.",
+      "valid": false,
+      "validation_issue_codes": [
+        "confirmed_recovery_verification_unrelated"
+      ],
+      "durable": false,
+      "value_reason_codes": [
+        "generic_error_summary",
+        "no_valid_claim"
+      ]
+    }
+  },
+  "rule_claims_for_unrelated_verification": [
+    {
+      "claim_type": "recovery",
+      "epistemic_status": "inferred",
+      "verification_ids": []
+    }
+  ]
+}

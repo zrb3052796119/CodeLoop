@@ -1,0 +1,18 @@
+{
+  "minicode/recovery_lesson.py": "2736c0ae2f52a5ef1c6bcce76e73f9fcfc4bec79246a2e518a2b7a6aebc21a68",
+  "minicode/reflection_llm.py": "614abe21ff2915c38279ec82b2ae5da836adc4e68c472bb973dce2e8eaf860e3",
+  "minicode/agent_reflection.py": "14834a94b3800444b0e75d7f8ba476f01500592da25482a85b854ca8feed2de1",
+  "minicode/reflection_shadow_metrics.py": "083f35fdd94f93b4bbf989b572d5a80e17fcc6e80f6d5c3bb1fee24ebbf5cd80",
+  "minicode/cybernetic_orchestrator.py": "a6236e529d109b4f42549c2044f5852d1210f0cdb06038ffb418a0db6c781987",
+  "minicode/config.py": "a8bae242edebfb4eee559ba1f8313c63555cd01638f5f2e63b658175f82589d5",
+  "scripts/evaluate_recovery_lesson_shadow.py": "ec9fcaacc3ad7f37d3ea32f41f717291d74bfbc22f3f7a291a7ffaea832f3e4e",
+  "tests/fixtures/recovery_lesson_shadow/manifest.json": "a9c936d575676a70c3e18ead70f68ce1c1036ba3ba650ea8a2b9e289f1ab63c1",
+  "tests/fixtures/recovery_lesson_shadow/cases.json": "5f3d48c25c975143476e84f399eb020d5f3db44e37746e405069387db9b6fb88",
+  "tests/test_recovery_lesson.py": "0e4a376d4ebfe02f1ea97571434b543ad8586b68b78c07c78053a719493fcb4a",
+  "tests/test_recovery_lesson_prompt.py": "c41fac7d901fbba0645bfa7d069162590c4d108e5034e3dd6ef2b83b77697e6c",
+  "tests/test_recovery_lesson_shadow.py": "00e72aadb1cfe831a33f7c94a8a434d0ce95a7eea7a47b4b4de433eb033df99c",
+  "tests/test_recovery_lesson_shadow_evaluator.py": "27b957408e6802bc410ba55c91c9966bab70089ebac94a62a9f3308c941cd3ea",
+  "tests/test_reflection_structured_client.py": "d45a7f02f3ef1e1883a39267e135ce113d66ac8595f39e693e3765f7f5aa2279",
+  "tests/test_config.py": "d6efaeb2e824fcb4832b37beea04589510eb74822b32e6d316c76ecbb482a4ab",
+  "docs/recovery-lesson-shadow.md": "a4ffdcaac61fa1b557e6593ff65b6f74505e91f32eb55dcc1a1b96fb72ebdd3d"
+}

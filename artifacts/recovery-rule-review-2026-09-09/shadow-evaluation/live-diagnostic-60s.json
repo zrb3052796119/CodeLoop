@@ -1,0 +1,529 @@
+{
+  "schema_version": 1,
+  "dataset": "recovery_lesson_shadow_v1",
+  "dataset_content_sha256": "e841e65f582a05bc5ef926936e5abc8ac7778f810852559ca249b7630ff139fa",
+  "mode": "real_provider",
+  "synthetic_data": true,
+  "memory_writes": false,
+  "runtime": {
+    "model": "glm-5.3-flash",
+    "provider": "custom",
+    "remote": true,
+    "allow_remote_reflection": true,
+    "credentials_present": true,
+    "prompt_version": "calibrated_compact"
+  },
+  "limits": {
+    "batch_max_calls": 1,
+    "per_case_max_calls": 2,
+    "timeout_seconds": 60.0
+  },
+  "cases": [
+    {
+      "case_id": "auth-expiry",
+      "category": "verified_recovery",
+      "precheck": {
+        "matched": true,
+        "expected_episode_count": 1,
+        "actual_episode_count": 1
+      },
+      "whole_task_rule": {
+        "generated_claims": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_changed_src_auth_py_after_which_run_command_succeeded_on_python_pytest",
+            "statement": "After AssertionError: Expired token was accepted, the recovery action was: Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py. Change: src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'.",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003",
+              "event-000001",
+              "event-000004",
+              "event-000005",
+              "event-000006",
+              "event-000007"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "The recovery was checked only by targeted verification."
+            ],
+            "verification_ids": [
+              "verify-000002"
+            ],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [
+              "recovery-000001"
+            ],
+            "evidence_quotes": []
+          }
+        ],
+        "lessons": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_changed_src_auth_py_after_which_run_command_succeeded_on_python_pytest",
+            "statement": "After AssertionError: Expired token was accepted, the recovery action was: Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py. Change: src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'.",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003",
+              "event-000001",
+              "event-000004",
+              "event-000005",
+              "event-000006",
+              "event-000007"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "The recovery was checked only by targeted verification."
+            ],
+            "verification_ids": [
+              "verify-000002"
+            ],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [
+              "recovery-000001"
+            ],
+            "evidence_quotes": []
+          }
+        ],
+        "validation": {
+          "accepted": true,
+          "valid_claims": [
+            {
+              "claim_id": "claim-000001",
+              "claim_type": "recovery",
+              "semantic_key": "recovery_changed_src_auth_py_after_which_run_command_succeeded_on_python_pytest",
+              "statement": "After AssertionError: Expired token was accepted, the recovery action was: Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py. Change: src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'.",
+              "evidence_ids": [
+                "event-000002",
+                "event-000003",
+                "event-000001",
+                "event-000004",
+                "event-000005",
+                "event-000006",
+                "event-000007"
+              ],
+              "epistemic_status": "confirmed",
+              "applies_when": "When run_command fails with AssertionError.",
+              "limitations": [
+                "The recovery was checked only by targeted verification."
+              ],
+              "verification_ids": [
+                "verify-000002"
+              ],
+              "related_error_ids": [
+                "error-000001"
+              ],
+              "related_recovery_ids": [
+                "recovery-000001"
+              ],
+              "evidence_quotes": []
+            }
+          ],
+          "rejected_claim_ids": [],
+          "issues": [],
+          "rejected_claims": []
+        },
+        "value": {
+          "accepted": true,
+          "reason_codes": [
+            "accepted_durable_reflection"
+          ],
+          "durable_signals": [
+            "confirmed_error_recovery_verified",
+            "verified_solution"
+          ],
+          "accepted_claim_ids": [
+            "claim-000001"
+          ],
+          "rejected_claim_ids": []
+        }
+      },
+      "episodes": [
+        {
+          "episode_id": "episode-000001",
+          "annotation": {
+            "expected_causal_status": "verified",
+            "expected_recovery_lesson": true,
+            "allowed_scope": "Only expiry validation before lookup in this authentication flow.",
+            "forbidden_conclusions": [
+              "All token validation vulnerabilities are fixed.",
+              "This proves the sole root cause for every authentication failure."
+            ],
+            "manual_semantic_review_required": true,
+            "offline_response": {
+              "kind": "lesson",
+              "statement": "Validate expiry before token lookup when expired authentication tokens are accepted. The cited targeted authentication check passed."
+            }
+          },
+          "projected_evidence": {
+            "files_read": [],
+            "files_changed": [],
+            "referenced_files": [
+              {
+                "path": "tests/test_auth.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002",
+                  "event-000003"
+                ],
+                "call_id": "call-1",
+                "epistemic_status": "confirmed"
+              },
+              {
+                "path": "tests/test_auth.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ],
+                "call_id": "call-3",
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "tool_calls": [
+              {
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "call_event_id": "event-000001",
+                "result_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "status": "failed",
+                "invocation": "python -m pytest tests/test_auth.py"
+              },
+              {
+                "tool_name": "run_command",
+                "call_id": "call-3",
+                "call_event_id": "event-000006",
+                "result_event_ids": [
+                  "event-000007"
+                ],
+                "status": "success",
+                "invocation": "python -m pytest tests/test_auth.py"
+              }
+            ],
+            "libraries": [],
+            "errors": [
+              {
+                "error_id": "error-000001",
+                "call_id": "call-1",
+                "tool_name": "run_command",
+                "error_type": "ToolError",
+                "message": "AssertionError: Expired token was accepted",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "recoveries": [
+              {
+                "recovery_id": "recovery-000001",
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "action": "Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py",
+                "event_ids": [
+                  "event-000002",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005"
+                ],
+                "files_changed": [
+                  "src/auth.py"
+                ],
+                "epistemic_status": "confirmed",
+                "change_summary": "src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'",
+                "verification_call_ids": [
+                  "call-3"
+                ]
+              }
+            ],
+            "recovery_suggestions": [],
+            "decisions": [],
+            "verification": [
+              {
+                "verification_id": "verify-000002",
+                "tool_name": "run_command",
+                "call_id": "call-3",
+                "command_kind": "test",
+                "scope": "targeted",
+                "result": "passed",
+                "event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ],
+                "summary": "1 passed"
+              },
+              {
+                "verification_id": "verify-000001",
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "command_kind": "test",
+                "scope": "targeted",
+                "result": "failed",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002"
+                ],
+                "summary": "AssertionError: Expired token was accepted"
+              }
+            ],
+            "outcome": "success",
+            "had_errors": true,
+            "errors_recovered": true,
+            "final_summary": "",
+            "final_summary_event_ids": [],
+            "diagnostics": [],
+            "event_positions": {
+              "event-000001": 0,
+              "event-000002": 1,
+              "event-000003": 2,
+              "event-000004": 3,
+              "event-000005": 4,
+              "event-000006": 5,
+              "event-000007": 6
+            }
+          },
+          "rule_baseline": {
+            "generated_claims": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_changed_src_auth_py_after_which_run_command_succeeded_on_python_pytest",
+                "statement": "After AssertionError: Expired token was accepted, the recovery action was: Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py. Change: src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'.",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005",
+                  "event-000006",
+                  "event-000007"
+                ],
+                "epistemic_status": "confirmed",
+                "applies_when": "When run_command fails with AssertionError.",
+                "limitations": [
+                  "The recovery was checked only by targeted verification."
+                ],
+                "verification_ids": [
+                  "verify-000002"
+                ],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000001"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "lessons": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_changed_src_auth_py_after_which_run_command_succeeded_on_python_pytest",
+                "statement": "After AssertionError: Expired token was accepted, the recovery action was: Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py. Change: src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'.",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005",
+                  "event-000006",
+                  "event-000007"
+                ],
+                "epistemic_status": "confirmed",
+                "applies_when": "When run_command fails with AssertionError.",
+                "limitations": [
+                  "The recovery was checked only by targeted verification."
+                ],
+                "verification_ids": [
+                  "verify-000002"
+                ],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000001"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "validation": {
+              "accepted": true,
+              "valid_claims": [
+                {
+                  "claim_id": "claim-000001",
+                  "claim_type": "recovery",
+                  "semantic_key": "recovery_changed_src_auth_py_after_which_run_command_succeeded_on_python_pytest",
+                  "statement": "After AssertionError: Expired token was accepted, the recovery action was: Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py. Change: src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'.",
+                  "evidence_ids": [
+                    "event-000002",
+                    "event-000003",
+                    "event-000001",
+                    "event-000004",
+                    "event-000005",
+                    "event-000006",
+                    "event-000007"
+                  ],
+                  "epistemic_status": "confirmed",
+                  "applies_when": "When run_command fails with AssertionError.",
+                  "limitations": [
+                    "The recovery was checked only by targeted verification."
+                  ],
+                  "verification_ids": [
+                    "verify-000002"
+                  ],
+                  "related_error_ids": [
+                    "error-000001"
+                  ],
+                  "related_recovery_ids": [
+                    "recovery-000001"
+                  ],
+                  "evidence_quotes": []
+                }
+              ],
+              "rejected_claim_ids": [],
+              "issues": [],
+              "rejected_claims": []
+            },
+            "value": {
+              "accepted": true,
+              "reason_codes": [
+                "accepted_durable_reflection"
+              ],
+              "durable_signals": [
+                "confirmed_error_recovery_verified",
+                "verified_solution"
+              ],
+              "accepted_claim_ids": [
+                "claim-000001"
+              ],
+              "rejected_claim_ids": []
+            }
+          },
+          "outcome": {
+            "episode_id": "episode-000001",
+            "causal_status": "verified",
+            "attempted": true,
+            "model_called": true,
+            "failure_code": "empty_response",
+            "latency_ms": 23916.699833935127,
+            "input_tokens": 1933,
+            "output_tokens": 1200,
+            "cache_read_tokens": 1920,
+            "cache_creation_tokens": null,
+            "usage_source": "provider",
+            "estimated_cost_usd": null,
+            "claim_count": 0,
+            "generated_claims": [],
+            "validation_issues": [],
+            "value_reason_codes": [],
+            "lessons": [],
+            "observations": [],
+            "outcome_available": true,
+            "physical_call": {
+              "case_id": "auth-expiry",
+              "call_index": 1,
+              "latency_ms": 23916.90479090903,
+              "input_tokens": 1933,
+              "output_tokens": 1200,
+              "estimated_cost_usd": null,
+              "usage_source": "provider",
+              "raw_response_text": "",
+              "provider_failure": null,
+              "messages_sha256": "1410e814ff8511a9cbe8cab10e0140ea444c0fa81a0e724f7e614bd3afd9fc87",
+              "request_parameters": {
+                "timeout_seconds": 60.0,
+                "max_output_tokens": 1200
+              },
+              "episode_id": "episode-000001",
+              "raw_response_truncated": false,
+              "raw_response_sanitized": true
+            }
+          },
+          "semantic_review": {
+            "status": "pending",
+            "verdict": null,
+            "notes": []
+          }
+        }
+      ]
+    }
+  ],
+  "review_rubric": [
+    "Every factual clause is supported by the cited events, including changed inputs and later results.",
+    "Causality and confidence do not exceed the observed recovery relationship.",
+    "Applicability and limitations preserve the verified target and scope.",
+    "The lesson adds an accurate usable abstraction beyond the same-episode rule baseline.",
+    "Abstention is appropriate when the evidence cannot establish a reusable lesson."
+  ],
+  "semantic_quality": {
+    "verdict": "not_established",
+    "manual_review_required": true
+  },
+  "limitations": [
+    "Scripted mode validates pipeline contracts only; it is not evidence of model quality.",
+    "Validator admission establishes structural gates, not semantic support or generalization quality.",
+    "This fixed smoke sample is too small to establish production readiness.",
+    "No changes are made to runtime configuration or durable memory."
+  ],
+  "summary": {
+    "case_count": 1,
+    "processed_case_count": 1,
+    "unprocessed_case_count": 0,
+    "episode_count": 1,
+    "provider_calls": 1,
+    "scripted_calls": 0,
+    "precheck_mismatch_count": 0,
+    "zero_episode_precheck_count": 0,
+    "budget_skipped_episode_count": 0,
+    "provider_failure_count": 0,
+    "unavailable_outcome_count": 0,
+    "case_aborted_unprocessed_episode_count": 0,
+    "parsed_response_count": 0,
+    "generated_claim_count": 0,
+    "structurally_admitted_lesson_count": 0,
+    "candidate_confirmed_recovery_count": 0,
+    "same_episode_rule_lesson_count": 1,
+    "manual_review_pending_episode_count": 1,
+    "usage": {
+      "input_tokens": {
+        "total": 1933,
+        "known_subtotal": 1933,
+        "known_count": 1,
+        "unknown_count": 0
+      },
+      "output_tokens": {
+        "total": 1200,
+        "known_subtotal": 1200,
+        "known_count": 1,
+        "unknown_count": 0
+      },
+      "estimated_cost_usd": {
+        "total": null,
+        "known_subtotal": null,
+        "known_count": 0,
+        "unknown_count": 1
+      }
+    },
+    "latency_ms": {
+      "total": 23916.90479090903,
+      "median": 23916.90479090903
+    },
+    "extraction_and_candidate_safety_passed": true,
+    "pipeline_completed": false,
+    "production_readiness": "not_established"
+  }
+}

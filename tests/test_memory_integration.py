@@ -15,32 +15,30 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from minicode.agent_loop import run_agent_turn
+from minicode.context_manager import ContextManager, estimate_tokens
 from minicode.memory import (
+    _CODE_TERM_EXPANSIONS,
     MemoryEntry,
     MemoryManager,
     MemoryScope,
-    inject_memory_into_prompt,
     _auto_classify_content,
     _tokenize,
-    _CODE_TERM_EXPANSIONS,
+    inject_memory_into_prompt,
 )
-from minicode.context_manager import ContextManager, estimate_tokens
-from minicode.session import (
-    save_session,
-    load_session,
-    create_new_session,
-)
-from minicode.agent_loop import run_agent_turn
 from minicode.mock_model import MockModelAdapter
 from minicode.permissions import PermissionManager
-from minicode.tools import create_default_tool_registry
 from minicode.prompt import build_system_prompt
-
-from tests.test_helpers import (
-    verify_memory_integrity,
-    create_corrupted_memory_file,
+from minicode.session import (
+    create_new_session,
+    load_session,
+    save_session,
 )
-
+from minicode.tools import create_default_tool_registry
+from tests.test_helpers import (
+    create_corrupted_memory_file,
+    verify_memory_integrity,
+)
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
@@ -783,7 +781,7 @@ class TestMemoryRecoveryIntegration:
             "scope": "project",
             "entries": [
                 {"id": "valid-1", "scope": "project", "category": "test", "content": "Valid entry 1"},
-                {"id": "bad-2", "scope": "invalid_scope", "category": "test", "content": "Bad scope"},
+                {"id": "bad-2", "scope": "project", "category": 42, "content": "Bad category"},
                 {"id": "valid-3", "scope": "project", "category": "test", "content": "Valid entry 3"},
                 "not_a_dict",
                 {"id": "", "scope": "project", "category": "test", "content": "Empty id"},
@@ -807,7 +805,7 @@ class TestMemoryRecoveryIntegration:
             "scope": "project",
             "entries": [
                 {"id": "good-1", "scope": "project", "category": "test", "content": "Good entry"},
-                {"id": "bad-2", "scope": "invalid", "category": "test", "content": "Bad entry"},
+                {"id": "bad-2", "scope": "project", "category": 42, "content": "Bad entry"},
             ],
         }
         memory_json.write_text(json.dumps(corrupted_data), encoding="utf-8")

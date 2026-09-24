@@ -33,6 +33,18 @@ class ScriptedClient:
         return response
 
 
+class _FixedReflectionEngine:
+    """Return one synthesized result so Pipeline owns persistence in tests."""
+
+    min_confidence = 0.5
+
+    def __init__(self, result: object) -> None:
+        self._result = result
+
+    def reflect(self, *_args, **_kwargs):
+        return self._result
+
+
 def _constraint_trace() -> list[dict]:
     return [
         {
@@ -334,7 +346,6 @@ def test_suppressed_llm_claim_is_diagnostic_only_and_not_persisted(
     )
     engine = ReflectionEngine(
         memory_manager=memory,
-        persist_reflections=True,
         llm_config=config,
         llm_synthesizer=LLMReflectionSynthesizer(client, config),
     )
@@ -346,6 +357,17 @@ def test_suppressed_llm_claim_is_diagnostic_only_and_not_persisted(
     assert result.suppression_reason_codes == {
         "llm-claim-000002": "subsumed_by_verified_recovery"
     }
+    assert memory.memories[MemoryScope.PROJECT].entries == []
+
+    pipeline = MemoryPipeline(memory)
+    pipeline.initialize(
+        workspace_path=tmp_path,
+        enable_reranker=False,
+        reflection_engine=_FixedReflectionEngine(result),
+    )
+    entry_id = pipeline.write(case["task_description"], case["trace"])
+
+    assert entry_id is not None
     entries = memory.memories[MemoryScope.PROJECT].entries
     assert len(entries) == 1
     structured = entries[0].metadata["structured_reflection"]
@@ -472,7 +494,6 @@ def test_llm_value_rejection_preserves_rule_memory_write(tmp_path, monkeypatch) 
     config = ReflectionLLMConfig(mode="llm", selection_strategy="replace")
     engine = ReflectionEngine(
         memory_manager=memory,
-        persist_reflections=True,
         llm_config=config,
         llm_synthesizer=LLMReflectionSynthesizer(client, config),
     )
@@ -491,9 +512,20 @@ def test_llm_value_rejection_preserves_rule_memory_write(tmp_path, monkeypatch) 
 
     result = engine.reflect("Preserve parser API", _constraint_trace())
 
-    entries = memory.memories[MemoryScope.PROJECT].entries
     assert result.synthesis_source == "rule_fallback"
     assert result.synthesis_fallback_reason == "llm_value_rejected"
+    assert memory.memories[MemoryScope.PROJECT].entries == []
+
+    pipeline = MemoryPipeline(memory)
+    pipeline.initialize(
+        workspace_path=tmp_path,
+        enable_reranker=False,
+        reflection_engine=_FixedReflectionEngine(result),
+    )
+    entry_id = pipeline.write("Preserve parser API", _constraint_trace())
+
+    assert entry_id is not None
+    entries = memory.memories[MemoryScope.PROJECT].entries
     assert len(entries) == 1
     assert entries[0].source == "reflection"
     assert "Do not change the public parse API" in entries[0].content
@@ -554,7 +586,6 @@ def test_both_rule_and_llm_value_rejection_produce_no_memory(tmp_path, monkeypat
     client = ScriptedClient([StructuredGenerationResponse(text=_llm_output())])
     engine = ReflectionEngine(
         memory_manager=memory,
-        persist_reflections=True,
         llm_config=ReflectionLLMConfig(mode="llm"),
         llm_synthesizer=LLMReflectionSynthesizer(
             client, ReflectionLLMConfig(mode="llm")
@@ -572,6 +603,14 @@ def test_both_rule_and_llm_value_rejection_produce_no_memory(tmp_path, monkeypat
 
     assert result.synthesis_source == "rule_fallback"
     assert result.synthesis_fallback_reason == "llm_value_rejected"
+    pipeline = MemoryPipeline(memory)
+    pipeline.initialize(
+        workspace_path=tmp_path,
+        enable_reranker=False,
+        reflection_engine=_FixedReflectionEngine(result),
+    )
+
+    assert pipeline.write("Preserve parser API", _constraint_trace()) is None
     assert all(not memory.memories[scope].entries for scope in MemoryScope)
 
 
@@ -809,6 +848,23 @@ def test_llm_reflection_skips_when_shared_budget_exhausted() -> None:
 
     assert client.call_count == 0
     assert result.synthesis_source in {"rule", "rule_fallback"}
+
+
+def test_llm_reflection_preserves_the_final_agent_model_call() -> None:
+    client = ScriptedClient([StructuredGenerationResponse(text=_llm_output())])
+    engine = _engine("llm", client)
+    budget = AgentTurnBudget(max_model_calls=1, max_total_tokens=10_000)
+
+    result = engine.reflect(
+        "Preserve parser API",
+        _constraint_trace(),
+        defer_shadow=True,
+        agent_budget=budget,
+    )
+
+    assert client.call_count == 0
+    assert result.synthesis_source in {"rule", "rule_fallback"}
+    assert budget.snapshot().used_model_calls == 0
 
 
 def test_llm_reflection_records_shared_budget_usage() -> None:

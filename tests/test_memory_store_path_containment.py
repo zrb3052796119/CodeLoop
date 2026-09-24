@@ -15,7 +15,6 @@ import minicode.memory as memory_module
 from minicode.memory import MemoryManager, MemoryScope
 from minicode.memory_store import MemoryStoreUnsafePath
 
-
 STORE_FILENAMES = ("memory.json", "MEMORY.md", "approval_audit.json")
 
 
@@ -135,14 +134,16 @@ def test_atomic_write_refuses_a_symlinked_target_on_its_own(
     """Defense in depth: every store write funnels through _atomic_write, so
     a caller that skipped scope-root validation still cannot redirect it."""
     workspace, outside = _workspace(tmp_path)
+    manager = MemoryManager(project_root=workspace)
     target_dir = workspace / ".mini-code-memory"
     target_dir.mkdir()
     escaped = outside / "escaped.json"
     escaped.write_text("original", encoding="utf-8")
-    link = target_dir / "linked.json"
+    link = target_dir / "memory.json"
     link.symlink_to(escaped)
 
-    with pytest.raises(MemoryStoreUnsafePath):
-        MemoryManager._atomic_write(link, "SENTINEL escaped content")
+    with manager._transaction_for_scopes((MemoryScope.PROJECT,)):
+        with pytest.raises(MemoryStoreUnsafePath):
+            manager._atomic_write(link, "SENTINEL escaped content")
 
     assert escaped.read_text(encoding="utf-8") == "original"

@@ -1,0 +1,71 @@
+FFF.                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_reflection_uses_supported_low_reasoning_json_controls_only_for_its_call _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x102950680>
+
+    def test_reflection_uses_supported_low_reasoning_json_controls_only_for_its_call(monkeypatch):
+        bodies = []
+        monkeypatch.setattr("minicode.openai_adapter.open_verified_url", lambda req, **kw: (bodies.append(json.loads(req.data)), Response())[1])
+        model = adapter()
+        runtime_before = dict(model.runtime)
+        messages = [{"role": "user", "content": "Return JSON."}]
+        model.next(messages)
+        client = ModelAdapterStructuredGenerationClient(model)
+        client.generate_json(messages, timeout_seconds=15, max_output_tokens=1200)
+        model.next(messages)
+    
+        assert bodies[0] == bodies[2]
+        assert "reasoning_effort" not in bodies[0]
+        assert "response_format" not in bodies[0]
+>       assert bodies[1]["reasoning_effort"] == "low"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'reasoning_effort'
+
+tests/test_reflection_generation_controls.py:59: KeyError
+_ test_compatible_syntax_does_not_enable_unadvertised_controls[glm-5.3-flash-https://example.invalid/v1] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1027af860>
+model = 'glm-5.3-flash', url = 'https://example.invalid/v1'
+
+    @pytest.mark.parametrize("model,url", [
+        ("glm-5.3-flash", "https://example.invalid/v1"),
+        ("glm-4", "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions"),
+    ])
+    def test_compatible_syntax_does_not_enable_unadvertised_controls(monkeypatch, model, url):
+        bodies = []
+        monkeypatch.setattr("minicode.openai_adapter.open_verified_url", lambda req, **kw: (bodies.append(json.loads(req.data)), Response())[1])
+        client = ModelAdapterStructuredGenerationClient(adapter(model=model, url=url))
+        client.generate_json([], timeout_seconds=5, max_output_tokens=500)
+        assert "reasoning_effort" not in bodies[0]
+        assert "response_format" not in bodies[0]
+>       assert bodies[0]["max_tokens"] == 500
+E       assert 9000 == 500
+
+tests/test_reflection_generation_controls.py:78: AssertionError
+_ test_compatible_syntax_does_not_enable_unadvertised_controls[glm-4-https://open.bigmodel.cn/api/coding/paas/v4/chat/completions] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1027aca70>
+model = 'glm-4'
+url = 'https://open.bigmodel.cn/api/coding/paas/v4/chat/completions'
+
+    @pytest.mark.parametrize("model,url", [
+        ("glm-5.3-flash", "https://example.invalid/v1"),
+        ("glm-4", "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions"),
+    ])
+    def test_compatible_syntax_does_not_enable_unadvertised_controls(monkeypatch, model, url):
+        bodies = []
+        monkeypatch.setattr("minicode.openai_adapter.open_verified_url", lambda req, **kw: (bodies.append(json.loads(req.data)), Response())[1])
+        client = ModelAdapterStructuredGenerationClient(adapter(model=model, url=url))
+        client.generate_json([], timeout_seconds=5, max_output_tokens=500)
+        assert "reasoning_effort" not in bodies[0]
+        assert "response_format" not in bodies[0]
+>       assert bodies[0]["max_tokens"] == 500
+E       assert 9000 == 500
+
+tests/test_reflection_generation_controls.py:78: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_reflection_generation_controls.py::test_reflection_uses_supported_low_reasoning_json_controls_only_for_its_call
+FAILED tests/test_reflection_generation_controls.py::test_compatible_syntax_does_not_enable_unadvertised_controls[glm-5.3-flash-https://example.invalid/v1]
+FAILED tests/test_reflection_generation_controls.py::test_compatible_syntax_does_not_enable_unadvertised_controls[glm-4-https://open.bigmodel.cn/api/coding/paas/v4/chat/completions]
+3 failed, 1 passed, 1 deselected in 0.16s

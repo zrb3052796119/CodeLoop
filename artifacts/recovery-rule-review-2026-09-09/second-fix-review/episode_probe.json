@@ -1,0 +1,67 @@
+{
+  "F4_same_interpreter_displaces_retry": {
+    "failure": "python scripts/report.py (timeout: 1)",
+    "selected_followups": [
+      "python scripts/cleanup.py",
+      "python scripts/lint.py"
+    ],
+    "actual_retry": "python scripts/report.py (timeout: 120)",
+    "actual_retry_retained": false
+  },
+  "F5_old_unrelated_checks_displace_red_side": {
+    "episode_status": "verified",
+    "parent_checks": [
+      [
+        "noise0",
+        "failed"
+      ],
+      [
+        "noise1",
+        "failed"
+      ],
+      [
+        "noise2",
+        "failed"
+      ],
+      [
+        "noise3",
+        "failed"
+      ],
+      [
+        "c1",
+        "failed"
+      ],
+      [
+        "c3",
+        "passed"
+      ]
+    ],
+    "episode_checks": [
+      [
+        "c3",
+        "passed"
+      ],
+      [
+        "noise0",
+        "failed"
+      ],
+      [
+        "noise1",
+        "failed"
+      ],
+      [
+        "noise2",
+        "failed"
+      ],
+      [
+        "noise3",
+        "failed"
+      ]
+    ],
+    "parent_valid": 1,
+    "episode_valid": 0,
+    "episode_issues": [
+      "confirmed_recovery_verification_unrelated"
+    ]
+  }
+}

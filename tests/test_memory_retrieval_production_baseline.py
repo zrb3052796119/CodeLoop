@@ -5,7 +5,6 @@ from __future__ import annotations
 # the repository owner's approval: they made every legitimate code change
 # require a full baseline re-versioning ceremony. Historical manifest
 # immutability checks are preserved.
-
 import copy
 import hashlib
 import json
@@ -13,12 +12,12 @@ import re
 import shutil
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
 from scripts.memory_retrieval_production_baseline import (
-    BaselineCertificationError,
     BASELINE_V1_ID,
     BASELINE_V2_ID,
     BASELINE_V3_ID,
@@ -52,9 +51,9 @@ from scripts.memory_retrieval_production_baseline import (
     BASELINE_V31_ID,
     BASELINE_V32_ID,
     BASELINE_V33_ID,
-    BASELINE_V39_ID,
     EXPECTED_ADDED_FILES,
     EXPECTED_CHANGED_FILES,
+    EXPECTED_V1_FILES,
     EXPECTED_V3_CHANGED_FILES,
     EXPECTED_V4_ADDED_FILES,
     EXPECTED_V4_CHANGED_FILES,
@@ -109,13 +108,7 @@ from scripts.memory_retrieval_production_baseline import (
     EXPECTED_V32_CHANGED_FILES,
     EXPECTED_V33_ADDED_FILES,
     EXPECTED_V33_CHANGED_FILES,
-    EXPECTED_V34_ADDED_FILES,
-    EXPECTED_V34_CHANGED_FILES,
-    EXPECTED_V35_ADDED_FILES,
-    EXPECTED_V35_CHANGED_FILES,
-    EXPECTED_V39_ADDED_FILES,
-    EXPECTED_V39_CHANGED_FILES,
-    EXPECTED_V1_FILES,
+    BaselineCertificationError,
     build_v2_candidate,
     build_v3_candidate,
     build_v4_candidate,
@@ -148,7 +141,6 @@ from scripts.memory_retrieval_production_baseline import (
     compare_baselines,
     load_baseline_manifest,
     validate_manifest,
-    verify_active_baseline,
     verify_manifest_version,
     write_v5_manifest,
     write_v6_manifest,
@@ -178,7 +170,6 @@ from scripts.memory_retrieval_production_baseline import (
     write_v32_manifest,
     write_v33_manifest,
 )
-
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = PROJECT_ROOT / "scripts/generate_memory_retrieval_production_baseline.py"
@@ -1861,14 +1852,17 @@ def test_explicit_writer_uses_only_the_fixed_v7_target(tmp_path: Path) -> None:
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(PROJECT_ROOT / relative, target)
 
-    target = write_v7_manifest(project_root=tmp_path)
-
-    assert target == (
+    manifest_path = (
         tmp_path / "tests/fixtures/memory_retrieval_production_freeze/v7.json"
     )
+    before = (manifest_path.read_bytes(), manifest_path.stat().st_mtime_ns)
+    target = write_v7_manifest(project_root=tmp_path)
+
+    assert target == manifest_path
     assert json.loads(target.read_text(encoding="utf-8")) == build_v7_candidate(
         project_root=tmp_path
     )
+    assert (manifest_path.read_bytes(), manifest_path.stat().st_mtime_ns) == before
 
 
 def test_explicit_writer_uses_only_the_fixed_v8_target(tmp_path: Path) -> None:
@@ -1886,14 +1880,49 @@ def test_explicit_writer_uses_only_the_fixed_v8_target(tmp_path: Path) -> None:
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(PROJECT_ROOT / relative, target)
 
-    target = write_v8_manifest(project_root=tmp_path)
-
-    assert target == (
+    manifest_path = (
         tmp_path / "tests/fixtures/memory_retrieval_production_freeze/v8.json"
     )
+    before = (manifest_path.read_bytes(), manifest_path.stat().st_mtime_ns)
+    target = write_v8_manifest(project_root=tmp_path)
+
+    assert target == manifest_path
     assert json.loads(target.read_text(encoding="utf-8")) == build_v8_candidate(
         project_root=tmp_path
     )
+    assert (manifest_path.read_bytes(), manifest_path.stat().st_mtime_ns) == before
+
+
+@pytest.mark.parametrize(
+    ("version", "writer"),
+    [("v7", write_v7_manifest), ("v8", write_v8_manifest)],
+)
+def test_v7_v8_writers_never_repair_tampered_pinned_history(
+    tmp_path: Path,
+    version: str,
+    writer: Callable[..., Path],
+) -> None:
+    manifest = load_baseline_manifest(version)
+    number = int(version[1:])
+    paths = set(manifest["files"]) | {
+        f"tests/fixtures/memory_retrieval_production_freeze/v{prior}.json"
+        for prior in range(1, number + 1)
+    }
+    for relative in paths:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(PROJECT_ROOT / relative, target)
+    manifest_path = (
+        tmp_path
+        / f"tests/fixtures/memory_retrieval_production_freeze/{version}.json"
+    )
+    tampered = manifest_path.read_bytes() + b"\n"
+    manifest_path.write_bytes(tampered)
+
+    with pytest.raises(BaselineCertificationError):
+        writer(project_root=tmp_path)
+
+    assert manifest_path.read_bytes() == tampered
 
 
 def test_explicit_writer_uses_only_the_fixed_v9_target(tmp_path: Path) -> None:

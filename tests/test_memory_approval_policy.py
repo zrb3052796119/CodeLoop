@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -264,7 +265,10 @@ def test_historical_approved_entry_defaults_to_explicit_without_migration(
         ',\n      "approval_policy": "user_explicit"',
         "",
     )
-    path.write_text(persisted, encoding="utf-8")
+    legacy = json.loads(persisted)
+    legacy.pop("schemaVersion")
+    legacy.pop("approval_audit_head")
+    path.write_text(json.dumps(legacy), encoding="utf-8")
 
     reloaded = MemoryManager(project_root=workspace)
     historical = reloaded.memories[MemoryScope.PROJECT]._id_index[entry.id]

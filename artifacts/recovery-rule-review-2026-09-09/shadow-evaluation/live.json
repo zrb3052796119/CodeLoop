@@ -1,0 +1,4001 @@
+{
+  "schema_version": 1,
+  "dataset": "recovery_lesson_shadow_v1",
+  "dataset_content_sha256": "3715f6991b3ce494db67a19f1478c0cb2e94619ee390c294605c330d731e7fc6",
+  "mode": "real_provider",
+  "synthetic_data": true,
+  "memory_writes": false,
+  "runtime": {
+    "model": "glm-5.3-flash",
+    "provider": "custom",
+    "remote": true,
+    "allow_remote_reflection": true,
+    "credentials_present": true,
+    "prompt_version": "calibrated_compact"
+  },
+  "limits": {
+    "batch_max_calls": 10,
+    "per_case_max_calls": 2,
+    "timeout_seconds": 15.0
+  },
+  "cases": [
+    {
+      "case_id": "auth-expiry",
+      "category": "verified_recovery",
+      "precheck": {
+        "matched": true,
+        "expected_episode_count": 1,
+        "actual_episode_count": 1
+      },
+      "whole_task_rule": {
+        "generated_claims": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_changed_src_auth_py_after_which_run_command_succeeded_on_python_pytest",
+            "statement": "After AssertionError: Expired token was accepted, the recovery action was: Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py. Change: src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'.",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003",
+              "event-000001",
+              "event-000004",
+              "event-000005",
+              "event-000006",
+              "event-000007"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "The recovery was checked only by targeted verification."
+            ],
+            "verification_ids": [
+              "verify-000002"
+            ],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [
+              "recovery-000001"
+            ],
+            "evidence_quotes": []
+          }
+        ],
+        "lessons": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_changed_src_auth_py_after_which_run_command_succeeded_on_python_pytest",
+            "statement": "After AssertionError: Expired token was accepted, the recovery action was: Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py. Change: src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'.",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003",
+              "event-000001",
+              "event-000004",
+              "event-000005",
+              "event-000006",
+              "event-000007"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "The recovery was checked only by targeted verification."
+            ],
+            "verification_ids": [
+              "verify-000002"
+            ],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [
+              "recovery-000001"
+            ],
+            "evidence_quotes": []
+          }
+        ],
+        "validation": {
+          "accepted": true,
+          "valid_claims": [
+            {
+              "claim_id": "claim-000001",
+              "claim_type": "recovery",
+              "semantic_key": "recovery_changed_src_auth_py_after_which_run_command_succeeded_on_python_pytest",
+              "statement": "After AssertionError: Expired token was accepted, the recovery action was: Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py. Change: src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'.",
+              "evidence_ids": [
+                "event-000002",
+                "event-000003",
+                "event-000001",
+                "event-000004",
+                "event-000005",
+                "event-000006",
+                "event-000007"
+              ],
+              "epistemic_status": "confirmed",
+              "applies_when": "When run_command fails with AssertionError.",
+              "limitations": [
+                "The recovery was checked only by targeted verification."
+              ],
+              "verification_ids": [
+                "verify-000002"
+              ],
+              "related_error_ids": [
+                "error-000001"
+              ],
+              "related_recovery_ids": [
+                "recovery-000001"
+              ],
+              "evidence_quotes": []
+            }
+          ],
+          "rejected_claim_ids": [],
+          "issues": [],
+          "rejected_claims": []
+        },
+        "value": {
+          "accepted": true,
+          "reason_codes": [
+            "accepted_durable_reflection"
+          ],
+          "durable_signals": [
+            "confirmed_error_recovery_verified",
+            "verified_solution"
+          ],
+          "accepted_claim_ids": [
+            "claim-000001"
+          ],
+          "rejected_claim_ids": []
+        }
+      },
+      "episodes": [
+        {
+          "episode_id": "episode-000001",
+          "annotation": {
+            "expected_causal_status": "verified",
+            "expected_recovery_lesson": true,
+            "allowed_scope": "Only expiry validation before lookup in this authentication flow.",
+            "forbidden_conclusions": [
+              "All token validation vulnerabilities are fixed.",
+              "This proves the sole root cause for every authentication failure."
+            ],
+            "manual_semantic_review_required": true,
+            "offline_response": {
+              "kind": "lesson",
+              "statement": "Validate expiry before token lookup when expired authentication tokens are accepted. The cited targeted authentication check passed."
+            }
+          },
+          "projected_evidence": {
+            "files_read": [],
+            "files_changed": [],
+            "referenced_files": [
+              {
+                "path": "tests/test_auth.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002",
+                  "event-000003"
+                ],
+                "call_id": "call-1",
+                "epistemic_status": "confirmed"
+              },
+              {
+                "path": "tests/test_auth.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ],
+                "call_id": "call-3",
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "tool_calls": [
+              {
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "call_event_id": "event-000001",
+                "result_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "status": "failed",
+                "invocation": "python -m pytest tests/test_auth.py"
+              },
+              {
+                "tool_name": "run_command",
+                "call_id": "call-3",
+                "call_event_id": "event-000006",
+                "result_event_ids": [
+                  "event-000007"
+                ],
+                "status": "success",
+                "invocation": "python -m pytest tests/test_auth.py"
+              }
+            ],
+            "libraries": [],
+            "errors": [
+              {
+                "error_id": "error-000001",
+                "call_id": "call-1",
+                "tool_name": "run_command",
+                "error_type": "ToolError",
+                "message": "AssertionError: Expired token was accepted",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "recoveries": [
+              {
+                "recovery_id": "recovery-000001",
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "action": "Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py",
+                "event_ids": [
+                  "event-000002",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005"
+                ],
+                "files_changed": [
+                  "src/auth.py"
+                ],
+                "epistemic_status": "confirmed",
+                "change_summary": "src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'",
+                "verification_call_ids": [
+                  "call-3"
+                ]
+              }
+            ],
+            "recovery_suggestions": [],
+            "decisions": [],
+            "verification": [
+              {
+                "verification_id": "verify-000002",
+                "tool_name": "run_command",
+                "call_id": "call-3",
+                "command_kind": "test",
+                "scope": "targeted",
+                "result": "passed",
+                "event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ],
+                "summary": "1 passed"
+              },
+              {
+                "verification_id": "verify-000001",
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "command_kind": "test",
+                "scope": "targeted",
+                "result": "failed",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002"
+                ],
+                "summary": "AssertionError: Expired token was accepted"
+              }
+            ],
+            "outcome": "success",
+            "had_errors": true,
+            "errors_recovered": true,
+            "final_summary": "",
+            "final_summary_event_ids": [],
+            "diagnostics": [],
+            "event_positions": {
+              "event-000001": 0,
+              "event-000002": 1,
+              "event-000003": 2,
+              "event-000004": 3,
+              "event-000005": 4,
+              "event-000006": 5,
+              "event-000007": 6
+            }
+          },
+          "rule_baseline": {
+            "generated_claims": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_changed_src_auth_py_after_which_run_command_succeeded_on_python_pytest",
+                "statement": "After AssertionError: Expired token was accepted, the recovery action was: Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py. Change: src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'.",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005",
+                  "event-000006",
+                  "event-000007"
+                ],
+                "epistemic_status": "confirmed",
+                "applies_when": "When run_command fails with AssertionError.",
+                "limitations": [
+                  "The recovery was checked only by targeted verification."
+                ],
+                "verification_ids": [
+                  "verify-000002"
+                ],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000001"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "lessons": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_changed_src_auth_py_after_which_run_command_succeeded_on_python_pytest",
+                "statement": "After AssertionError: Expired token was accepted, the recovery action was: Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py. Change: src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'.",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005",
+                  "event-000006",
+                  "event-000007"
+                ],
+                "epistemic_status": "confirmed",
+                "applies_when": "When run_command fails with AssertionError.",
+                "limitations": [
+                  "The recovery was checked only by targeted verification."
+                ],
+                "verification_ids": [
+                  "verify-000002"
+                ],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000001"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "validation": {
+              "accepted": true,
+              "valid_claims": [
+                {
+                  "claim_id": "claim-000001",
+                  "claim_type": "recovery",
+                  "semantic_key": "recovery_changed_src_auth_py_after_which_run_command_succeeded_on_python_pytest",
+                  "statement": "After AssertionError: Expired token was accepted, the recovery action was: Changed src/auth.py, after which run_command succeeded on python pytest tests/test_auth.py. Change: src/auth.py: 'token = [REDACTED]' -> 'check_expiry(token); token = [REDACTED]'.",
+                  "evidence_ids": [
+                    "event-000002",
+                    "event-000003",
+                    "event-000001",
+                    "event-000004",
+                    "event-000005",
+                    "event-000006",
+                    "event-000007"
+                  ],
+                  "epistemic_status": "confirmed",
+                  "applies_when": "When run_command fails with AssertionError.",
+                  "limitations": [
+                    "The recovery was checked only by targeted verification."
+                  ],
+                  "verification_ids": [
+                    "verify-000002"
+                  ],
+                  "related_error_ids": [
+                    "error-000001"
+                  ],
+                  "related_recovery_ids": [
+                    "recovery-000001"
+                  ],
+                  "evidence_quotes": []
+                }
+              ],
+              "rejected_claim_ids": [],
+              "issues": [],
+              "rejected_claims": []
+            },
+            "value": {
+              "accepted": true,
+              "reason_codes": [
+                "accepted_durable_reflection"
+              ],
+              "durable_signals": [
+                "confirmed_error_recovery_verified",
+                "verified_solution"
+              ],
+              "accepted_claim_ids": [
+                "claim-000001"
+              ],
+              "rejected_claim_ids": []
+            }
+          },
+          "outcome": {
+            "episode_id": "episode-000001",
+            "causal_status": "verified",
+            "attempted": true,
+            "model_called": true,
+            "failure_code": "provider_deadline_exceeded",
+            "outcome_available": false,
+            "generated_claims": [],
+            "lessons": [],
+            "observations": [],
+            "validation_issues": [],
+            "value_reason_codes": [],
+            "physical_call": {
+              "case_id": "auth-expiry",
+              "call_index": 1,
+              "latency_ms": 15000.4595000064,
+              "input_tokens": null,
+              "output_tokens": null,
+              "estimated_cost_usd": null,
+              "usage_source": "unavailable",
+              "raw_response_text": null,
+              "provider_failure": "ModelCallDeadlineExceeded",
+              "messages_sha256": "1410e814ff8511a9cbe8cab10e0140ea444c0fa81a0e724f7e614bd3afd9fc87",
+              "request_parameters": {
+                "timeout_seconds": 15.0,
+                "max_output_tokens": 1200
+              },
+              "episode_id": "episode-000001"
+            }
+          },
+          "semantic_review": {
+            "status": "pending",
+            "verdict": null,
+            "notes": []
+          }
+        }
+      ],
+      "execution_failure": "provider_deadline_exceeded"
+    },
+    {
+      "case_id": "bilingual-offset",
+      "category": "verified_recovery",
+      "precheck": {
+        "matched": true,
+        "expected_episode_count": 1,
+        "actual_episode_count": 1
+      },
+      "whole_task_rule": {
+        "generated_claims": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_changed_src_offset_py_after_which_run_command_succeeded_on_python_pytest",
+            "statement": "After AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected, the recovery action was: Changed src/offset.py, after which run_command succeeded on python pytest tests/test_offset.py. Change: src/offset.py: 'offset = parse_unsigned(value)' -> 'offset = parse_signed(value)'.",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003",
+              "event-000001",
+              "event-000004",
+              "event-000005",
+              "event-000006",
+              "event-000007"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "The recovery was checked only by targeted verification."
+            ],
+            "verification_ids": [
+              "verify-000002"
+            ],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [
+              "recovery-000001"
+            ],
+            "evidence_quotes": []
+          }
+        ],
+        "lessons": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_changed_src_offset_py_after_which_run_command_succeeded_on_python_pytest",
+            "statement": "After AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected, the recovery action was: Changed src/offset.py, after which run_command succeeded on python pytest tests/test_offset.py. Change: src/offset.py: 'offset = parse_unsigned(value)' -> 'offset = parse_signed(value)'.",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003",
+              "event-000001",
+              "event-000004",
+              "event-000005",
+              "event-000006",
+              "event-000007"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "The recovery was checked only by targeted verification."
+            ],
+            "verification_ids": [
+              "verify-000002"
+            ],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [
+              "recovery-000001"
+            ],
+            "evidence_quotes": []
+          }
+        ],
+        "validation": {
+          "accepted": true,
+          "valid_claims": [
+            {
+              "claim_id": "claim-000001",
+              "claim_type": "recovery",
+              "semantic_key": "recovery_changed_src_offset_py_after_which_run_command_succeeded_on_python_pytest",
+              "statement": "After AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected, the recovery action was: Changed src/offset.py, after which run_command succeeded on python pytest tests/test_offset.py. Change: src/offset.py: 'offset = parse_unsigned(value)' -> 'offset = parse_signed(value)'.",
+              "evidence_ids": [
+                "event-000002",
+                "event-000003",
+                "event-000001",
+                "event-000004",
+                "event-000005",
+                "event-000006",
+                "event-000007"
+              ],
+              "epistemic_status": "confirmed",
+              "applies_when": "When run_command fails with AssertionError.",
+              "limitations": [
+                "The recovery was checked only by targeted verification."
+              ],
+              "verification_ids": [
+                "verify-000002"
+              ],
+              "related_error_ids": [
+                "error-000001"
+              ],
+              "related_recovery_ids": [
+                "recovery-000001"
+              ],
+              "evidence_quotes": []
+            }
+          ],
+          "rejected_claim_ids": [],
+          "issues": [],
+          "rejected_claims": []
+        },
+        "value": {
+          "accepted": true,
+          "reason_codes": [
+            "accepted_durable_reflection"
+          ],
+          "durable_signals": [
+            "confirmed_error_recovery_verified",
+            "verified_solution"
+          ],
+          "accepted_claim_ids": [
+            "claim-000001"
+          ],
+          "rejected_claim_ids": []
+        }
+      },
+      "episodes": [
+        {
+          "episode_id": "episode-000001",
+          "annotation": {
+            "expected_causal_status": "verified",
+            "expected_recovery_lesson": true,
+            "allowed_scope": "Signed hour offsets in the exercised parser; no other timestamp grammar was checked.",
+            "forbidden_conclusions": [
+              "All timezone formats are supported.",
+              "Every localization bug is repaired."
+            ],
+            "manual_semantic_review_required": true,
+            "offline_response": {
+              "kind": "lesson",
+              "statement": "Parse signed hour offsets when negative UTC offsets are rejected; the cited targeted offset test passed."
+            }
+          },
+          "projected_evidence": {
+            "files_read": [],
+            "files_changed": [],
+            "referenced_files": [
+              {
+                "path": "tests/test_offset.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002",
+                  "event-000003"
+                ],
+                "call_id": "call-1",
+                "epistemic_status": "confirmed"
+              },
+              {
+                "path": "tests/test_offset.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ],
+                "call_id": "call-3",
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "tool_calls": [
+              {
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "call_event_id": "event-000001",
+                "result_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "status": "failed",
+                "invocation": "python -m pytest tests/test_offset.py"
+              },
+              {
+                "tool_name": "run_command",
+                "call_id": "call-3",
+                "call_event_id": "event-000006",
+                "result_event_ids": [
+                  "event-000007"
+                ],
+                "status": "success",
+                "invocation": "python -m pytest tests/test_offset.py"
+              }
+            ],
+            "libraries": [],
+            "errors": [
+              {
+                "error_id": "error-000001",
+                "call_id": "call-1",
+                "tool_name": "run_command",
+                "error_type": "ToolError",
+                "message": "AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "recoveries": [
+              {
+                "recovery_id": "recovery-000001",
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "action": "Changed src/offset.py, after which run_command succeeded on python pytest tests/test_offset.py",
+                "event_ids": [
+                  "event-000002",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005"
+                ],
+                "files_changed": [
+                  "src/offset.py"
+                ],
+                "epistemic_status": "confirmed",
+                "change_summary": "src/offset.py: 'offset = parse_unsigned(value)' -> 'offset = parse_signed(value)'",
+                "verification_call_ids": [
+                  "call-3"
+                ]
+              }
+            ],
+            "recovery_suggestions": [],
+            "decisions": [],
+            "verification": [
+              {
+                "verification_id": "verify-000002",
+                "tool_name": "run_command",
+                "call_id": "call-3",
+                "command_kind": "test",
+                "scope": "targeted",
+                "result": "passed",
+                "event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ],
+                "summary": "1 passed"
+              },
+              {
+                "verification_id": "verify-000001",
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "command_kind": "test",
+                "scope": "targeted",
+                "result": "failed",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002"
+                ],
+                "summary": "AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected"
+              }
+            ],
+            "outcome": "success",
+            "had_errors": true,
+            "errors_recovered": true,
+            "final_summary": "",
+            "final_summary_event_ids": [],
+            "diagnostics": [],
+            "event_positions": {
+              "event-000001": 0,
+              "event-000002": 1,
+              "event-000003": 2,
+              "event-000004": 3,
+              "event-000005": 4,
+              "event-000006": 5,
+              "event-000007": 6
+            }
+          },
+          "rule_baseline": {
+            "generated_claims": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_changed_src_offset_py_after_which_run_command_succeeded_on_python_pytest",
+                "statement": "After AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected, the recovery action was: Changed src/offset.py, after which run_command succeeded on python pytest tests/test_offset.py. Change: src/offset.py: 'offset = parse_unsigned(value)' -> 'offset = parse_signed(value)'.",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005",
+                  "event-000006",
+                  "event-000007"
+                ],
+                "epistemic_status": "confirmed",
+                "applies_when": "When run_command fails with AssertionError.",
+                "limitations": [
+                  "The recovery was checked only by targeted verification."
+                ],
+                "verification_ids": [
+                  "verify-000002"
+                ],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000001"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "lessons": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_changed_src_offset_py_after_which_run_command_succeeded_on_python_pytest",
+                "statement": "After AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected, the recovery action was: Changed src/offset.py, after which run_command succeeded on python pytest tests/test_offset.py. Change: src/offset.py: 'offset = parse_unsigned(value)' -> 'offset = parse_signed(value)'.",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005",
+                  "event-000006",
+                  "event-000007"
+                ],
+                "epistemic_status": "confirmed",
+                "applies_when": "When run_command fails with AssertionError.",
+                "limitations": [
+                  "The recovery was checked only by targeted verification."
+                ],
+                "verification_ids": [
+                  "verify-000002"
+                ],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000001"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "validation": {
+              "accepted": true,
+              "valid_claims": [
+                {
+                  "claim_id": "claim-000001",
+                  "claim_type": "recovery",
+                  "semantic_key": "recovery_changed_src_offset_py_after_which_run_command_succeeded_on_python_pytest",
+                  "statement": "After AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected, the recovery action was: Changed src/offset.py, after which run_command succeeded on python pytest tests/test_offset.py. Change: src/offset.py: 'offset = parse_unsigned(value)' -> 'offset = parse_signed(value)'.",
+                  "evidence_ids": [
+                    "event-000002",
+                    "event-000003",
+                    "event-000001",
+                    "event-000004",
+                    "event-000005",
+                    "event-000006",
+                    "event-000007"
+                  ],
+                  "epistemic_status": "confirmed",
+                  "applies_when": "When run_command fails with AssertionError.",
+                  "limitations": [
+                    "The recovery was checked only by targeted verification."
+                  ],
+                  "verification_ids": [
+                    "verify-000002"
+                  ],
+                  "related_error_ids": [
+                    "error-000001"
+                  ],
+                  "related_recovery_ids": [
+                    "recovery-000001"
+                  ],
+                  "evidence_quotes": []
+                }
+              ],
+              "rejected_claim_ids": [],
+              "issues": [],
+              "rejected_claims": []
+            },
+            "value": {
+              "accepted": true,
+              "reason_codes": [
+                "accepted_durable_reflection"
+              ],
+              "durable_signals": [
+                "confirmed_error_recovery_verified",
+                "verified_solution"
+              ],
+              "accepted_claim_ids": [
+                "claim-000001"
+              ],
+              "rejected_claim_ids": []
+            }
+          },
+          "outcome": {
+            "episode_id": "episode-000001",
+            "causal_status": "verified",
+            "attempted": true,
+            "model_called": true,
+            "failure_code": "provider_deadline_exceeded",
+            "outcome_available": false,
+            "generated_claims": [],
+            "lessons": [],
+            "observations": [],
+            "validation_issues": [],
+            "value_reason_codes": [],
+            "physical_call": {
+              "case_id": "bilingual-offset",
+              "call_index": 2,
+              "latency_ms": 15001.183167099953,
+              "input_tokens": null,
+              "output_tokens": null,
+              "estimated_cost_usd": null,
+              "usage_source": "unavailable",
+              "raw_response_text": null,
+              "provider_failure": "ModelCallDeadlineExceeded",
+              "messages_sha256": "6337c34725bf68f72dc40a6e097e89f4cacb07b8750d908cf8b119124c2bf875",
+              "request_parameters": {
+                "timeout_seconds": 15.0,
+                "max_output_tokens": 1200
+              },
+              "episode_id": "episode-000001"
+            }
+          },
+          "semantic_review": {
+            "status": "pending",
+            "verdict": null,
+            "notes": []
+          }
+        }
+      ],
+      "execution_failure": "provider_deadline_exceeded"
+    },
+    {
+      "case_id": "checksum-before-publish",
+      "category": "verified_recovery",
+      "precheck": {
+        "matched": true,
+        "expected_episode_count": 1,
+        "actual_episode_count": 1
+      },
+      "whole_task_rule": {
+        "generated_claims": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_changed_src_checksum_py_after_which_run_command_succeeded_on_python_pytest",
+            "statement": "After AssertionError: Published export had a stale checksum, the recovery action was: Changed src/checksum.py, after which run_command succeeded on python pytest tests/test_checksum.py. Change: src/checksum.py: 'publish(export)' -> 'recompute_checksum(export); publish(export)'.",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003",
+              "event-000001",
+              "event-000004",
+              "event-000005",
+              "event-000006",
+              "event-000007"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "The recovery was checked only by targeted verification."
+            ],
+            "verification_ids": [
+              "verify-000002"
+            ],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [
+              "recovery-000001"
+            ],
+            "evidence_quotes": []
+          }
+        ],
+        "lessons": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_changed_src_checksum_py_after_which_run_command_succeeded_on_python_pytest",
+            "statement": "After AssertionError: Published export had a stale checksum, the recovery action was: Changed src/checksum.py, after which run_command succeeded on python pytest tests/test_checksum.py. Change: src/checksum.py: 'publish(export)' -> 'recompute_checksum(export); publish(export)'.",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003",
+              "event-000001",
+              "event-000004",
+              "event-000005",
+              "event-000006",
+              "event-000007"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "The recovery was checked only by targeted verification."
+            ],
+            "verification_ids": [
+              "verify-000002"
+            ],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [
+              "recovery-000001"
+            ],
+            "evidence_quotes": []
+          }
+        ],
+        "validation": {
+          "accepted": true,
+          "valid_claims": [
+            {
+              "claim_id": "claim-000001",
+              "claim_type": "recovery",
+              "semantic_key": "recovery_changed_src_checksum_py_after_which_run_command_succeeded_on_python_pytest",
+              "statement": "After AssertionError: Published export had a stale checksum, the recovery action was: Changed src/checksum.py, after which run_command succeeded on python pytest tests/test_checksum.py. Change: src/checksum.py: 'publish(export)' -> 'recompute_checksum(export); publish(export)'.",
+              "evidence_ids": [
+                "event-000002",
+                "event-000003",
+                "event-000001",
+                "event-000004",
+                "event-000005",
+                "event-000006",
+                "event-000007"
+              ],
+              "epistemic_status": "confirmed",
+              "applies_when": "When run_command fails with AssertionError.",
+              "limitations": [
+                "The recovery was checked only by targeted verification."
+              ],
+              "verification_ids": [
+                "verify-000002"
+              ],
+              "related_error_ids": [
+                "error-000001"
+              ],
+              "related_recovery_ids": [
+                "recovery-000001"
+              ],
+              "evidence_quotes": []
+            }
+          ],
+          "rejected_claim_ids": [],
+          "issues": [],
+          "rejected_claims": []
+        },
+        "value": {
+          "accepted": true,
+          "reason_codes": [
+            "accepted_durable_reflection"
+          ],
+          "durable_signals": [
+            "confirmed_error_recovery_verified",
+            "verified_solution"
+          ],
+          "accepted_claim_ids": [
+            "claim-000001"
+          ],
+          "rejected_claim_ids": []
+        }
+      },
+      "episodes": [
+        {
+          "episode_id": "episode-000001",
+          "annotation": {
+            "expected_causal_status": "verified",
+            "expected_recovery_lesson": true,
+            "allowed_scope": "Checksum recomputation for this export publication path.",
+            "forbidden_conclusions": [
+              "All data corruption is prevented.",
+              "Every export format is verified."
+            ],
+            "manual_semantic_review_required": true,
+            "offline_response": {
+              "kind": "lesson",
+              "statement": "Recompute the export checksum before publication when an export exposes a stale checksum; the targeted checksum test passed."
+            }
+          },
+          "projected_evidence": {
+            "files_read": [],
+            "files_changed": [],
+            "referenced_files": [
+              {
+                "path": "tests/test_checksum.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002",
+                  "event-000003"
+                ],
+                "call_id": "call-1",
+                "epistemic_status": "confirmed"
+              },
+              {
+                "path": "tests/test_checksum.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ],
+                "call_id": "call-3",
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "tool_calls": [
+              {
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "call_event_id": "event-000001",
+                "result_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "status": "failed",
+                "invocation": "python -m pytest tests/test_checksum.py"
+              },
+              {
+                "tool_name": "run_command",
+                "call_id": "call-3",
+                "call_event_id": "event-000006",
+                "result_event_ids": [
+                  "event-000007"
+                ],
+                "status": "success",
+                "invocation": "python -m pytest tests/test_checksum.py"
+              }
+            ],
+            "libraries": [],
+            "errors": [
+              {
+                "error_id": "error-000001",
+                "call_id": "call-1",
+                "tool_name": "run_command",
+                "error_type": "ToolError",
+                "message": "AssertionError: Published export had a stale checksum",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "recoveries": [
+              {
+                "recovery_id": "recovery-000001",
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "action": "Changed src/checksum.py, after which run_command succeeded on python pytest tests/test_checksum.py",
+                "event_ids": [
+                  "event-000002",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005"
+                ],
+                "files_changed": [
+                  "src/checksum.py"
+                ],
+                "epistemic_status": "confirmed",
+                "change_summary": "src/checksum.py: 'publish(export)' -> 'recompute_checksum(export); publish(export)'",
+                "verification_call_ids": [
+                  "call-3"
+                ]
+              }
+            ],
+            "recovery_suggestions": [],
+            "decisions": [],
+            "verification": [
+              {
+                "verification_id": "verify-000002",
+                "tool_name": "run_command",
+                "call_id": "call-3",
+                "command_kind": "test",
+                "scope": "targeted",
+                "result": "passed",
+                "event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ],
+                "summary": "1 passed"
+              },
+              {
+                "verification_id": "verify-000001",
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "command_kind": "test",
+                "scope": "targeted",
+                "result": "failed",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002"
+                ],
+                "summary": "AssertionError: Published export had a stale checksum"
+              }
+            ],
+            "outcome": "success",
+            "had_errors": true,
+            "errors_recovered": true,
+            "final_summary": "",
+            "final_summary_event_ids": [],
+            "diagnostics": [],
+            "event_positions": {
+              "event-000001": 0,
+              "event-000002": 1,
+              "event-000003": 2,
+              "event-000004": 3,
+              "event-000005": 4,
+              "event-000006": 5,
+              "event-000007": 6
+            }
+          },
+          "rule_baseline": {
+            "generated_claims": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_changed_src_checksum_py_after_which_run_command_succeeded_on_python_pytest",
+                "statement": "After AssertionError: Published export had a stale checksum, the recovery action was: Changed src/checksum.py, after which run_command succeeded on python pytest tests/test_checksum.py. Change: src/checksum.py: 'publish(export)' -> 'recompute_checksum(export); publish(export)'.",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005",
+                  "event-000006",
+                  "event-000007"
+                ],
+                "epistemic_status": "confirmed",
+                "applies_when": "When run_command fails with AssertionError.",
+                "limitations": [
+                  "The recovery was checked only by targeted verification."
+                ],
+                "verification_ids": [
+                  "verify-000002"
+                ],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000001"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "lessons": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_changed_src_checksum_py_after_which_run_command_succeeded_on_python_pytest",
+                "statement": "After AssertionError: Published export had a stale checksum, the recovery action was: Changed src/checksum.py, after which run_command succeeded on python pytest tests/test_checksum.py. Change: src/checksum.py: 'publish(export)' -> 'recompute_checksum(export); publish(export)'.",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005",
+                  "event-000006",
+                  "event-000007"
+                ],
+                "epistemic_status": "confirmed",
+                "applies_when": "When run_command fails with AssertionError.",
+                "limitations": [
+                  "The recovery was checked only by targeted verification."
+                ],
+                "verification_ids": [
+                  "verify-000002"
+                ],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000001"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "validation": {
+              "accepted": true,
+              "valid_claims": [
+                {
+                  "claim_id": "claim-000001",
+                  "claim_type": "recovery",
+                  "semantic_key": "recovery_changed_src_checksum_py_after_which_run_command_succeeded_on_python_pytest",
+                  "statement": "After AssertionError: Published export had a stale checksum, the recovery action was: Changed src/checksum.py, after which run_command succeeded on python pytest tests/test_checksum.py. Change: src/checksum.py: 'publish(export)' -> 'recompute_checksum(export); publish(export)'.",
+                  "evidence_ids": [
+                    "event-000002",
+                    "event-000003",
+                    "event-000001",
+                    "event-000004",
+                    "event-000005",
+                    "event-000006",
+                    "event-000007"
+                  ],
+                  "epistemic_status": "confirmed",
+                  "applies_when": "When run_command fails with AssertionError.",
+                  "limitations": [
+                    "The recovery was checked only by targeted verification."
+                  ],
+                  "verification_ids": [
+                    "verify-000002"
+                  ],
+                  "related_error_ids": [
+                    "error-000001"
+                  ],
+                  "related_recovery_ids": [
+                    "recovery-000001"
+                  ],
+                  "evidence_quotes": []
+                }
+              ],
+              "rejected_claim_ids": [],
+              "issues": [],
+              "rejected_claims": []
+            },
+            "value": {
+              "accepted": true,
+              "reason_codes": [
+                "accepted_durable_reflection"
+              ],
+              "durable_signals": [
+                "confirmed_error_recovery_verified",
+                "verified_solution"
+              ],
+              "accepted_claim_ids": [
+                "claim-000001"
+              ],
+              "rejected_claim_ids": []
+            }
+          },
+          "outcome": {
+            "episode_id": "episode-000001",
+            "causal_status": "verified",
+            "attempted": true,
+            "model_called": true,
+            "failure_code": "provider_deadline_exceeded",
+            "outcome_available": false,
+            "generated_claims": [],
+            "lessons": [],
+            "observations": [],
+            "validation_issues": [],
+            "value_reason_codes": [],
+            "physical_call": {
+              "case_id": "checksum-before-publish",
+              "call_index": 3,
+              "latency_ms": 15001.122249988839,
+              "input_tokens": null,
+              "output_tokens": null,
+              "estimated_cost_usd": null,
+              "usage_source": "unavailable",
+              "raw_response_text": null,
+              "provider_failure": "ModelCallDeadlineExceeded",
+              "messages_sha256": "0f17b42127dc96c7fab740cb5f6e0d5095f466cc55d104505d79896c90db55b2",
+              "request_parameters": {
+                "timeout_seconds": 15.0,
+                "max_output_tokens": 1200
+              },
+              "episode_id": "episode-000001"
+            }
+          },
+          "semantic_review": {
+            "status": "pending",
+            "verdict": null,
+            "notes": []
+          }
+        }
+      ],
+      "execution_failure": "provider_deadline_exceeded"
+    },
+    {
+      "case_id": "cache-invalidation",
+      "category": "verified_recovery",
+      "precheck": {
+        "matched": true,
+        "expected_episode_count": 1,
+        "actual_episode_count": 1
+      },
+      "whole_task_rule": {
+        "generated_claims": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_changed_src_cache_py_after_which_run_command_succeeded_on_python_pytest",
+            "statement": "After AssertionError: Revoked role remained in the permission cache, the recovery action was: Changed src/cache.py, after which run_command succeeded on python pytest tests/test_cache.py. Change: src/cache.py: 'revoke(role)' -> 'revoke(role); invalidate_permission_cache(role)'.",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003",
+              "event-000001",
+              "event-000004",
+              "event-000005",
+              "event-000006",
+              "event-000007"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "The recovery was checked only by targeted verification."
+            ],
+            "verification_ids": [
+              "verify-000002"
+            ],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [
+              "recovery-000001"
+            ],
+            "evidence_quotes": []
+          }
+        ],
+        "lessons": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_changed_src_cache_py_after_which_run_command_succeeded_on_python_pytest",
+            "statement": "After AssertionError: Revoked role remained in the permission cache, the recovery action was: Changed src/cache.py, after which run_command succeeded on python pytest tests/test_cache.py. Change: src/cache.py: 'revoke(role)' -> 'revoke(role); invalidate_permission_cache(role)'.",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003",
+              "event-000001",
+              "event-000004",
+              "event-000005",
+              "event-000006",
+              "event-000007"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "The recovery was checked only by targeted verification."
+            ],
+            "verification_ids": [
+              "verify-000002"
+            ],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [
+              "recovery-000001"
+            ],
+            "evidence_quotes": []
+          }
+        ],
+        "validation": {
+          "accepted": true,
+          "valid_claims": [
+            {
+              "claim_id": "claim-000001",
+              "claim_type": "recovery",
+              "semantic_key": "recovery_changed_src_cache_py_after_which_run_command_succeeded_on_python_pytest",
+              "statement": "After AssertionError: Revoked role remained in the permission cache, the recovery action was: Changed src/cache.py, after which run_command succeeded on python pytest tests/test_cache.py. Change: src/cache.py: 'revoke(role)' -> 'revoke(role); invalidate_permission_cache(role)'.",
+              "evidence_ids": [
+                "event-000002",
+                "event-000003",
+                "event-000001",
+                "event-000004",
+                "event-000005",
+                "event-000006",
+                "event-000007"
+              ],
+              "epistemic_status": "confirmed",
+              "applies_when": "When run_command fails with AssertionError.",
+              "limitations": [
+                "The recovery was checked only by targeted verification."
+              ],
+              "verification_ids": [
+                "verify-000002"
+              ],
+              "related_error_ids": [
+                "error-000001"
+              ],
+              "related_recovery_ids": [
+                "recovery-000001"
+              ],
+              "evidence_quotes": []
+            }
+          ],
+          "rejected_claim_ids": [],
+          "issues": [],
+          "rejected_claims": []
+        },
+        "value": {
+          "accepted": true,
+          "reason_codes": [
+            "accepted_durable_reflection"
+          ],
+          "durable_signals": [
+            "confirmed_error_recovery_verified",
+            "verified_solution"
+          ],
+          "accepted_claim_ids": [
+            "claim-000001"
+          ],
+          "rejected_claim_ids": []
+        }
+      },
+      "episodes": [
+        {
+          "episode_id": "episode-000001",
+          "annotation": {
+            "expected_causal_status": "verified",
+            "expected_recovery_lesson": true,
+            "allowed_scope": "Revocation-driven invalidation in the tested permission cache.",
+            "forbidden_conclusions": [
+              "All distributed consistency failures are solved.",
+              "Root cause of every authorization failure is cache invalidation."
+            ],
+            "manual_semantic_review_required": true,
+            "offline_response": {
+              "kind": "lesson",
+              "statement": "Invalidate the permission cache after role revocation when revoked permissions remain cached; the targeted permission check passed."
+            }
+          },
+          "projected_evidence": {
+            "files_read": [],
+            "files_changed": [],
+            "referenced_files": [
+              {
+                "path": "tests/test_cache.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002",
+                  "event-000003"
+                ],
+                "call_id": "call-1",
+                "epistemic_status": "confirmed"
+              },
+              {
+                "path": "tests/test_cache.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ],
+                "call_id": "call-3",
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "tool_calls": [
+              {
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "call_event_id": "event-000001",
+                "result_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "status": "failed",
+                "invocation": "python -m pytest tests/test_cache.py"
+              },
+              {
+                "tool_name": "run_command",
+                "call_id": "call-3",
+                "call_event_id": "event-000006",
+                "result_event_ids": [
+                  "event-000007"
+                ],
+                "status": "success",
+                "invocation": "python -m pytest tests/test_cache.py"
+              }
+            ],
+            "libraries": [],
+            "errors": [
+              {
+                "error_id": "error-000001",
+                "call_id": "call-1",
+                "tool_name": "run_command",
+                "error_type": "PermissionError",
+                "message": "AssertionError: Revoked role remained in the permission cache",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "recoveries": [
+              {
+                "recovery_id": "recovery-000001",
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "action": "Changed src/cache.py, after which run_command succeeded on python pytest tests/test_cache.py",
+                "event_ids": [
+                  "event-000002",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005"
+                ],
+                "files_changed": [
+                  "src/cache.py"
+                ],
+                "epistemic_status": "confirmed",
+                "change_summary": "src/cache.py: 'revoke(role)' -> 'revoke(role); invalidate_permission_cache(role)'",
+                "verification_call_ids": [
+                  "call-3"
+                ]
+              }
+            ],
+            "recovery_suggestions": [],
+            "decisions": [],
+            "verification": [
+              {
+                "verification_id": "verify-000002",
+                "tool_name": "run_command",
+                "call_id": "call-3",
+                "command_kind": "test",
+                "scope": "targeted",
+                "result": "passed",
+                "event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ],
+                "summary": "1 passed"
+              },
+              {
+                "verification_id": "verify-000001",
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "command_kind": "test",
+                "scope": "targeted",
+                "result": "failed",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002"
+                ],
+                "summary": "AssertionError: Revoked role remained in the permission cache"
+              }
+            ],
+            "outcome": "success",
+            "had_errors": true,
+            "errors_recovered": true,
+            "final_summary": "",
+            "final_summary_event_ids": [],
+            "diagnostics": [],
+            "event_positions": {
+              "event-000001": 0,
+              "event-000002": 1,
+              "event-000003": 2,
+              "event-000004": 3,
+              "event-000005": 4,
+              "event-000006": 5,
+              "event-000007": 6
+            }
+          },
+          "rule_baseline": {
+            "generated_claims": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_changed_src_cache_py_after_which_run_command_succeeded_on_python_pytest",
+                "statement": "After AssertionError: Revoked role remained in the permission cache, the recovery action was: Changed src/cache.py, after which run_command succeeded on python pytest tests/test_cache.py. Change: src/cache.py: 'revoke(role)' -> 'revoke(role); invalidate_permission_cache(role)'.",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005",
+                  "event-000006",
+                  "event-000007"
+                ],
+                "epistemic_status": "confirmed",
+                "applies_when": "When run_command fails with AssertionError.",
+                "limitations": [
+                  "The recovery was checked only by targeted verification."
+                ],
+                "verification_ids": [
+                  "verify-000002"
+                ],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000001"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "lessons": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_changed_src_cache_py_after_which_run_command_succeeded_on_python_pytest",
+                "statement": "After AssertionError: Revoked role remained in the permission cache, the recovery action was: Changed src/cache.py, after which run_command succeeded on python pytest tests/test_cache.py. Change: src/cache.py: 'revoke(role)' -> 'revoke(role); invalidate_permission_cache(role)'.",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005",
+                  "event-000006",
+                  "event-000007"
+                ],
+                "epistemic_status": "confirmed",
+                "applies_when": "When run_command fails with AssertionError.",
+                "limitations": [
+                  "The recovery was checked only by targeted verification."
+                ],
+                "verification_ids": [
+                  "verify-000002"
+                ],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000001"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "validation": {
+              "accepted": true,
+              "valid_claims": [
+                {
+                  "claim_id": "claim-000001",
+                  "claim_type": "recovery",
+                  "semantic_key": "recovery_changed_src_cache_py_after_which_run_command_succeeded_on_python_pytest",
+                  "statement": "After AssertionError: Revoked role remained in the permission cache, the recovery action was: Changed src/cache.py, after which run_command succeeded on python pytest tests/test_cache.py. Change: src/cache.py: 'revoke(role)' -> 'revoke(role); invalidate_permission_cache(role)'.",
+                  "evidence_ids": [
+                    "event-000002",
+                    "event-000003",
+                    "event-000001",
+                    "event-000004",
+                    "event-000005",
+                    "event-000006",
+                    "event-000007"
+                  ],
+                  "epistemic_status": "confirmed",
+                  "applies_when": "When run_command fails with AssertionError.",
+                  "limitations": [
+                    "The recovery was checked only by targeted verification."
+                  ],
+                  "verification_ids": [
+                    "verify-000002"
+                  ],
+                  "related_error_ids": [
+                    "error-000001"
+                  ],
+                  "related_recovery_ids": [
+                    "recovery-000001"
+                  ],
+                  "evidence_quotes": []
+                }
+              ],
+              "rejected_claim_ids": [],
+              "issues": [],
+              "rejected_claims": []
+            },
+            "value": {
+              "accepted": true,
+              "reason_codes": [
+                "accepted_durable_reflection"
+              ],
+              "durable_signals": [
+                "confirmed_error_recovery_verified",
+                "verified_solution"
+              ],
+              "accepted_claim_ids": [
+                "claim-000001"
+              ],
+              "rejected_claim_ids": []
+            }
+          },
+          "outcome": {
+            "episode_id": "episode-000001",
+            "causal_status": "verified",
+            "attempted": true,
+            "model_called": true,
+            "failure_code": "provider_deadline_exceeded",
+            "outcome_available": false,
+            "generated_claims": [],
+            "lessons": [],
+            "observations": [],
+            "validation_issues": [],
+            "value_reason_codes": [],
+            "physical_call": {
+              "case_id": "cache-invalidation",
+              "call_index": 4,
+              "latency_ms": 15004.17345808819,
+              "input_tokens": null,
+              "output_tokens": null,
+              "estimated_cost_usd": null,
+              "usage_source": "unavailable",
+              "raw_response_text": null,
+              "provider_failure": "ModelCallDeadlineExceeded",
+              "messages_sha256": "07e23d7d4b3d724b6c25085d65a71791e6de63dd631b42ce298958f42f403938",
+              "request_parameters": {
+                "timeout_seconds": 15.0,
+                "max_output_tokens": 1200
+              },
+              "episode_id": "episode-000001"
+            }
+          },
+          "semantic_review": {
+            "status": "pending",
+            "verdict": null,
+            "notes": []
+          }
+        }
+      ],
+      "execution_failure": "provider_deadline_exceeded"
+    },
+    {
+      "case_id": "two-independent-recoveries",
+      "category": "multi_episode",
+      "precheck": {
+        "matched": true,
+        "expected_episode_count": 2,
+        "actual_episode_count": 2
+      },
+      "whole_task_rule": {
+        "generated_claims": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_changed_src_lease_py_after_which_run_command_succeeded_on_python_pytest",
+            "statement": "After AssertionError: Lease renewal used a stale fencing token, the recovery action was: Changed src/lease.py, after which run_command succeeded on python pytest tests/test_lease.py. Change: src/lease.py: 'renew(lease)' -> 'refresh_fencing_token(lease); renew(lease)'.",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003",
+              "event-000001",
+              "event-000004",
+              "event-000005",
+              "event-000006",
+              "event-000007"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "The recovery was checked only by targeted verification."
+            ],
+            "verification_ids": [
+              "verify-000002"
+            ],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [
+              "recovery-000001"
+            ],
+            "evidence_quotes": []
+          },
+          {
+            "claim_id": "claim-000002",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_changed_src_billing_py_after_which_run_command_succeeded_on_python_pytest",
+            "statement": "After AssertionError: Invoice rounding produced an incorrect total, the recovery action was: Changed src/billing.py, after which run_command succeeded on python pytest tests/test_billing.py. Change: src/billing.py: 'total = round_float(value)' -> 'total = round_decimal(value)'.",
+            "evidence_ids": [
+              "event-000009",
+              "event-000010",
+              "event-000008",
+              "event-000011",
+              "event-000012",
+              "event-000013",
+              "event-000014"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "The recovery was checked only by targeted verification."
+            ],
+            "verification_ids": [
+              "verify-000004"
+            ],
+            "related_error_ids": [
+              "error-000002"
+            ],
+            "related_recovery_ids": [
+              "recovery-000002"
+            ],
+            "evidence_quotes": []
+          }
+        ],
+        "lessons": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_changed_src_lease_py_after_which_run_command_succeeded_on_python_pytest",
+            "statement": "After AssertionError: Lease renewal used a stale fencing token, the recovery action was: Changed src/lease.py, after which run_command succeeded on python pytest tests/test_lease.py. Change: src/lease.py: 'renew(lease)' -> 'refresh_fencing_token(lease); renew(lease)'.",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003",
+              "event-000001",
+              "event-000004",
+              "event-000005",
+              "event-000006",
+              "event-000007"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "The recovery was checked only by targeted verification."
+            ],
+            "verification_ids": [
+              "verify-000002"
+            ],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [
+              "recovery-000001"
+            ],
+            "evidence_quotes": []
+          },
+          {
+            "claim_id": "claim-000002",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_changed_src_billing_py_after_which_run_command_succeeded_on_python_pytest",
+            "statement": "After AssertionError: Invoice rounding produced an incorrect total, the recovery action was: Changed src/billing.py, after which run_command succeeded on python pytest tests/test_billing.py. Change: src/billing.py: 'total = round_float(value)' -> 'total = round_decimal(value)'.",
+            "evidence_ids": [
+              "event-000009",
+              "event-000010",
+              "event-000008",
+              "event-000011",
+              "event-000012",
+              "event-000013",
+              "event-000014"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "The recovery was checked only by targeted verification."
+            ],
+            "verification_ids": [
+              "verify-000004"
+            ],
+            "related_error_ids": [
+              "error-000002"
+            ],
+            "related_recovery_ids": [
+              "recovery-000002"
+            ],
+            "evidence_quotes": []
+          }
+        ],
+        "validation": {
+          "accepted": true,
+          "valid_claims": [
+            {
+              "claim_id": "claim-000001",
+              "claim_type": "recovery",
+              "semantic_key": "recovery_changed_src_lease_py_after_which_run_command_succeeded_on_python_pytest",
+              "statement": "After AssertionError: Lease renewal used a stale fencing token, the recovery action was: Changed src/lease.py, after which run_command succeeded on python pytest tests/test_lease.py. Change: src/lease.py: 'renew(lease)' -> 'refresh_fencing_token(lease); renew(lease)'.",
+              "evidence_ids": [
+                "event-000002",
+                "event-000003",
+                "event-000001",
+                "event-000004",
+                "event-000005",
+                "event-000006",
+                "event-000007"
+              ],
+              "epistemic_status": "confirmed",
+              "applies_when": "When run_command fails with AssertionError.",
+              "limitations": [
+                "The recovery was checked only by targeted verification."
+              ],
+              "verification_ids": [
+                "verify-000002"
+              ],
+              "related_error_ids": [
+                "error-000001"
+              ],
+              "related_recovery_ids": [
+                "recovery-000001"
+              ],
+              "evidence_quotes": []
+            },
+            {
+              "claim_id": "claim-000002",
+              "claim_type": "recovery",
+              "semantic_key": "recovery_changed_src_billing_py_after_which_run_command_succeeded_on_python_pytest",
+              "statement": "After AssertionError: Invoice rounding produced an incorrect total, the recovery action was: Changed src/billing.py, after which run_command succeeded on python pytest tests/test_billing.py. Change: src/billing.py: 'total = round_float(value)' -> 'total = round_decimal(value)'.",
+              "evidence_ids": [
+                "event-000009",
+                "event-000010",
+                "event-000008",
+                "event-000011",
+                "event-000012",
+                "event-000013",
+                "event-000014"
+              ],
+              "epistemic_status": "confirmed",
+              "applies_when": "When run_command fails with AssertionError.",
+              "limitations": [
+                "The recovery was checked only by targeted verification."
+              ],
+              "verification_ids": [
+                "verify-000004"
+              ],
+              "related_error_ids": [
+                "error-000002"
+              ],
+              "related_recovery_ids": [
+                "recovery-000002"
+              ],
+              "evidence_quotes": []
+            }
+          ],
+          "rejected_claim_ids": [],
+          "issues": [],
+          "rejected_claims": []
+        },
+        "value": {
+          "accepted": true,
+          "reason_codes": [
+            "accepted_durable_reflection"
+          ],
+          "durable_signals": [
+            "confirmed_error_recovery_verified",
+            "verified_solution"
+          ],
+          "accepted_claim_ids": [
+            "claim-000001",
+            "claim-000002"
+          ],
+          "rejected_claim_ids": []
+        }
+      },
+      "episodes": [
+        {
+          "episode_id": "episode-000001",
+          "annotation": {
+            "expected_causal_status": "verified",
+            "expected_recovery_lesson": true,
+            "allowed_scope": "Lease fencing-token refresh before renewal.",
+            "forbidden_conclusions": [
+              "The billing change repaired lease renewal."
+            ],
+            "manual_semantic_review_required": true,
+            "offline_response": {
+              "kind": "lesson",
+              "statement": "Refresh the lease fencing token before renewal when a stale token is used; the targeted lease check passed."
+            }
+          },
+          "projected_evidence": {
+            "files_read": [],
+            "files_changed": [],
+            "referenced_files": [
+              {
+                "path": "tests/test_lease.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002",
+                  "event-000003"
+                ],
+                "call_id": "call-1",
+                "epistemic_status": "confirmed"
+              },
+              {
+                "path": "tests/test_lease.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ],
+                "call_id": "call-3",
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "tool_calls": [
+              {
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "call_event_id": "event-000001",
+                "result_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "status": "failed",
+                "invocation": "python -m pytest tests/test_lease.py"
+              },
+              {
+                "tool_name": "run_command",
+                "call_id": "call-3",
+                "call_event_id": "event-000006",
+                "result_event_ids": [
+                  "event-000007"
+                ],
+                "status": "success",
+                "invocation": "python -m pytest tests/test_lease.py"
+              }
+            ],
+            "libraries": [],
+            "errors": [
+              {
+                "error_id": "error-000001",
+                "call_id": "call-1",
+                "tool_name": "run_command",
+                "error_type": "ToolError",
+                "message": "AssertionError: Lease renewal used a stale fencing token",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "recoveries": [
+              {
+                "recovery_id": "recovery-000001",
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "action": "Changed src/lease.py, after which run_command succeeded on python pytest tests/test_lease.py",
+                "event_ids": [
+                  "event-000002",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005"
+                ],
+                "files_changed": [
+                  "src/lease.py"
+                ],
+                "epistemic_status": "confirmed",
+                "change_summary": "src/lease.py: 'renew(lease)' -> 'refresh_fencing_token(lease); renew(lease)'",
+                "verification_call_ids": [
+                  "call-3"
+                ]
+              }
+            ],
+            "recovery_suggestions": [],
+            "decisions": [],
+            "verification": [
+              {
+                "verification_id": "verify-000002",
+                "tool_name": "run_command",
+                "call_id": "call-3",
+                "command_kind": "test",
+                "scope": "targeted",
+                "result": "passed",
+                "event_ids": [
+                  "event-000006",
+                  "event-000007"
+                ],
+                "summary": "1 passed"
+              },
+              {
+                "verification_id": "verify-000001",
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "command_kind": "test",
+                "scope": "targeted",
+                "result": "failed",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002"
+                ],
+                "summary": "AssertionError: Lease renewal used a stale fencing token"
+              }
+            ],
+            "outcome": "success",
+            "had_errors": true,
+            "errors_recovered": true,
+            "final_summary": "",
+            "final_summary_event_ids": [],
+            "diagnostics": [],
+            "event_positions": {
+              "event-000001": 0,
+              "event-000002": 1,
+              "event-000003": 2,
+              "event-000004": 3,
+              "event-000005": 4,
+              "event-000006": 5,
+              "event-000007": 6
+            }
+          },
+          "rule_baseline": {
+            "generated_claims": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_changed_src_lease_py_after_which_run_command_succeeded_on_python_pytest",
+                "statement": "After AssertionError: Lease renewal used a stale fencing token, the recovery action was: Changed src/lease.py, after which run_command succeeded on python pytest tests/test_lease.py. Change: src/lease.py: 'renew(lease)' -> 'refresh_fencing_token(lease); renew(lease)'.",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005",
+                  "event-000006",
+                  "event-000007"
+                ],
+                "epistemic_status": "confirmed",
+                "applies_when": "When run_command fails with AssertionError.",
+                "limitations": [
+                  "The recovery was checked only by targeted verification."
+                ],
+                "verification_ids": [
+                  "verify-000002"
+                ],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000001"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "lessons": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_changed_src_lease_py_after_which_run_command_succeeded_on_python_pytest",
+                "statement": "After AssertionError: Lease renewal used a stale fencing token, the recovery action was: Changed src/lease.py, after which run_command succeeded on python pytest tests/test_lease.py. Change: src/lease.py: 'renew(lease)' -> 'refresh_fencing_token(lease); renew(lease)'.",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003",
+                  "event-000001",
+                  "event-000004",
+                  "event-000005",
+                  "event-000006",
+                  "event-000007"
+                ],
+                "epistemic_status": "confirmed",
+                "applies_when": "When run_command fails with AssertionError.",
+                "limitations": [
+                  "The recovery was checked only by targeted verification."
+                ],
+                "verification_ids": [
+                  "verify-000002"
+                ],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000001"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "validation": {
+              "accepted": true,
+              "valid_claims": [
+                {
+                  "claim_id": "claim-000001",
+                  "claim_type": "recovery",
+                  "semantic_key": "recovery_changed_src_lease_py_after_which_run_command_succeeded_on_python_pytest",
+                  "statement": "After AssertionError: Lease renewal used a stale fencing token, the recovery action was: Changed src/lease.py, after which run_command succeeded on python pytest tests/test_lease.py. Change: src/lease.py: 'renew(lease)' -> 'refresh_fencing_token(lease); renew(lease)'.",
+                  "evidence_ids": [
+                    "event-000002",
+                    "event-000003",
+                    "event-000001",
+                    "event-000004",
+                    "event-000005",
+                    "event-000006",
+                    "event-000007"
+                  ],
+                  "epistemic_status": "confirmed",
+                  "applies_when": "When run_command fails with AssertionError.",
+                  "limitations": [
+                    "The recovery was checked only by targeted verification."
+                  ],
+                  "verification_ids": [
+                    "verify-000002"
+                  ],
+                  "related_error_ids": [
+                    "error-000001"
+                  ],
+                  "related_recovery_ids": [
+                    "recovery-000001"
+                  ],
+                  "evidence_quotes": []
+                }
+              ],
+              "rejected_claim_ids": [],
+              "issues": [],
+              "rejected_claims": []
+            },
+            "value": {
+              "accepted": true,
+              "reason_codes": [
+                "accepted_durable_reflection"
+              ],
+              "durable_signals": [
+                "confirmed_error_recovery_verified",
+                "verified_solution"
+              ],
+              "accepted_claim_ids": [
+                "claim-000001"
+              ],
+              "rejected_claim_ids": []
+            }
+          },
+          "outcome": {
+            "episode_id": "episode-000001",
+            "causal_status": "verified",
+            "attempted": true,
+            "model_called": true,
+            "failure_code": "provider_deadline_exceeded",
+            "outcome_available": false,
+            "generated_claims": [],
+            "lessons": [],
+            "observations": [],
+            "validation_issues": [],
+            "value_reason_codes": [],
+            "physical_call": {
+              "case_id": "two-independent-recoveries",
+              "call_index": 5,
+              "latency_ms": 15000.275542028248,
+              "input_tokens": null,
+              "output_tokens": null,
+              "estimated_cost_usd": null,
+              "usage_source": "unavailable",
+              "raw_response_text": null,
+              "provider_failure": "ModelCallDeadlineExceeded",
+              "messages_sha256": "f0fd40a3a244eea33cc34791ca4bfb409664d35ad27a7276349ea6f7294cbb8f",
+              "request_parameters": {
+                "timeout_seconds": 15.0,
+                "max_output_tokens": 1200
+              },
+              "episode_id": "episode-000001"
+            }
+          },
+          "semantic_review": {
+            "status": "pending",
+            "verdict": null,
+            "notes": []
+          }
+        },
+        {
+          "episode_id": "episode-000002",
+          "annotation": {
+            "expected_causal_status": "verified",
+            "expected_recovery_lesson": true,
+            "allowed_scope": "Decimal rounding in the invoice calculation.",
+            "forbidden_conclusions": [
+              "The lease change repaired billing."
+            ],
+            "manual_semantic_review_required": true,
+            "offline_response": {
+              "kind": "lesson",
+              "statement": "Use decimal rounding when invoice totals are rounded incorrectly; the targeted billing check passed."
+            }
+          },
+          "projected_evidence": {
+            "files_read": [],
+            "files_changed": [],
+            "referenced_files": [
+              {
+                "path": "tests/test_lease.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002",
+                  "event-000003"
+                ],
+                "call_id": "call-1",
+                "epistemic_status": "confirmed"
+              },
+              {
+                "path": "tests/test_billing.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000008",
+                  "event-000009",
+                  "event-000010"
+                ],
+                "call_id": "call-4",
+                "epistemic_status": "confirmed"
+              },
+              {
+                "path": "tests/test_billing.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000013",
+                  "event-000014"
+                ],
+                "call_id": "call-6",
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "tool_calls": [
+              {
+                "tool_name": "run_command",
+                "call_id": "call-4",
+                "call_event_id": "event-000008",
+                "result_event_ids": [
+                  "event-000009",
+                  "event-000010"
+                ],
+                "status": "failed",
+                "invocation": "python -m pytest tests/test_billing.py"
+              },
+              {
+                "tool_name": "run_command",
+                "call_id": "call-6",
+                "call_event_id": "event-000013",
+                "result_event_ids": [
+                  "event-000014"
+                ],
+                "status": "success",
+                "invocation": "python -m pytest tests/test_billing.py"
+              },
+              {
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "call_event_id": "event-000001",
+                "result_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "status": "failed",
+                "invocation": "python -m pytest tests/test_lease.py"
+              }
+            ],
+            "libraries": [],
+            "errors": [
+              {
+                "error_id": "error-000002",
+                "call_id": "call-4",
+                "tool_name": "run_command",
+                "error_type": "ToolError",
+                "message": "AssertionError: Invoice rounding produced an incorrect total",
+                "source_event_ids": [
+                  "event-000009",
+                  "event-000010"
+                ],
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "recoveries": [
+              {
+                "recovery_id": "recovery-000002",
+                "related_error_ids": [
+                  "error-000002"
+                ],
+                "action": "Changed src/billing.py, after which run_command succeeded on python pytest tests/test_billing.py",
+                "event_ids": [
+                  "event-000009",
+                  "event-000008",
+                  "event-000011",
+                  "event-000012"
+                ],
+                "files_changed": [
+                  "src/billing.py"
+                ],
+                "epistemic_status": "confirmed",
+                "change_summary": "src/billing.py: 'total = round_float(value)' -> 'total = round_decimal(value)'",
+                "verification_call_ids": [
+                  "call-6"
+                ]
+              }
+            ],
+            "recovery_suggestions": [],
+            "decisions": [],
+            "verification": [
+              {
+                "verification_id": "verify-000004",
+                "tool_name": "run_command",
+                "call_id": "call-6",
+                "command_kind": "test",
+                "scope": "targeted",
+                "result": "passed",
+                "event_ids": [
+                  "event-000013",
+                  "event-000014"
+                ],
+                "summary": "1 passed"
+              },
+              {
+                "verification_id": "verify-000003",
+                "tool_name": "run_command",
+                "call_id": "call-4",
+                "command_kind": "test",
+                "scope": "targeted",
+                "result": "failed",
+                "event_ids": [
+                  "event-000008",
+                  "event-000009"
+                ],
+                "summary": "AssertionError: Invoice rounding produced an incorrect total"
+              },
+              {
+                "verification_id": "verify-000001",
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "command_kind": "test",
+                "scope": "targeted",
+                "result": "failed",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002"
+                ],
+                "summary": "AssertionError: Lease renewal used a stale fencing token"
+              }
+            ],
+            "outcome": "success",
+            "had_errors": true,
+            "errors_recovered": true,
+            "final_summary": "",
+            "final_summary_event_ids": [],
+            "diagnostics": [],
+            "event_positions": {
+              "event-000001": 0,
+              "event-000002": 1,
+              "event-000003": 2,
+              "event-000008": 7,
+              "event-000009": 8,
+              "event-000010": 9,
+              "event-000011": 10,
+              "event-000012": 11,
+              "event-000013": 12,
+              "event-000014": 13
+            }
+          },
+          "rule_baseline": {
+            "generated_claims": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_changed_src_billing_py_after_which_run_command_succeeded_on_python_pytest",
+                "statement": "After AssertionError: Invoice rounding produced an incorrect total, the recovery action was: Changed src/billing.py, after which run_command succeeded on python pytest tests/test_billing.py. Change: src/billing.py: 'total = round_float(value)' -> 'total = round_decimal(value)'.",
+                "evidence_ids": [
+                  "event-000009",
+                  "event-000010",
+                  "event-000008",
+                  "event-000011",
+                  "event-000012",
+                  "event-000013",
+                  "event-000014"
+                ],
+                "epistemic_status": "confirmed",
+                "applies_when": "When run_command fails with AssertionError.",
+                "limitations": [
+                  "The recovery was checked only by targeted verification."
+                ],
+                "verification_ids": [
+                  "verify-000004"
+                ],
+                "related_error_ids": [
+                  "error-000002"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000002"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "lessons": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_changed_src_billing_py_after_which_run_command_succeeded_on_python_pytest",
+                "statement": "After AssertionError: Invoice rounding produced an incorrect total, the recovery action was: Changed src/billing.py, after which run_command succeeded on python pytest tests/test_billing.py. Change: src/billing.py: 'total = round_float(value)' -> 'total = round_decimal(value)'.",
+                "evidence_ids": [
+                  "event-000009",
+                  "event-000010",
+                  "event-000008",
+                  "event-000011",
+                  "event-000012",
+                  "event-000013",
+                  "event-000014"
+                ],
+                "epistemic_status": "confirmed",
+                "applies_when": "When run_command fails with AssertionError.",
+                "limitations": [
+                  "The recovery was checked only by targeted verification."
+                ],
+                "verification_ids": [
+                  "verify-000004"
+                ],
+                "related_error_ids": [
+                  "error-000002"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000002"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "validation": {
+              "accepted": true,
+              "valid_claims": [
+                {
+                  "claim_id": "claim-000001",
+                  "claim_type": "recovery",
+                  "semantic_key": "recovery_changed_src_billing_py_after_which_run_command_succeeded_on_python_pytest",
+                  "statement": "After AssertionError: Invoice rounding produced an incorrect total, the recovery action was: Changed src/billing.py, after which run_command succeeded on python pytest tests/test_billing.py. Change: src/billing.py: 'total = round_float(value)' -> 'total = round_decimal(value)'.",
+                  "evidence_ids": [
+                    "event-000009",
+                    "event-000010",
+                    "event-000008",
+                    "event-000011",
+                    "event-000012",
+                    "event-000013",
+                    "event-000014"
+                  ],
+                  "epistemic_status": "confirmed",
+                  "applies_when": "When run_command fails with AssertionError.",
+                  "limitations": [
+                    "The recovery was checked only by targeted verification."
+                  ],
+                  "verification_ids": [
+                    "verify-000004"
+                  ],
+                  "related_error_ids": [
+                    "error-000002"
+                  ],
+                  "related_recovery_ids": [
+                    "recovery-000002"
+                  ],
+                  "evidence_quotes": []
+                }
+              ],
+              "rejected_claim_ids": [],
+              "issues": [],
+              "rejected_claims": []
+            },
+            "value": {
+              "accepted": true,
+              "reason_codes": [
+                "accepted_durable_reflection"
+              ],
+              "durable_signals": [
+                "confirmed_error_recovery_verified",
+                "verified_solution"
+              ],
+              "accepted_claim_ids": [
+                "claim-000001"
+              ],
+              "rejected_claim_ids": []
+            }
+          },
+          "outcome": {
+            "episode_id": "episode-000002",
+            "causal_status": "verified",
+            "attempted": false,
+            "model_called": false,
+            "failure_code": "case_aborted_before_episode",
+            "outcome_available": false,
+            "generated_claims": [],
+            "lessons": [],
+            "observations": [],
+            "validation_issues": [],
+            "value_reason_codes": [],
+            "physical_call": null
+          },
+          "semantic_review": {
+            "status": "pending",
+            "verdict": null,
+            "notes": []
+          }
+        }
+      ],
+      "execution_failure": "provider_deadline_exceeded"
+    },
+    {
+      "case_id": "unverified-failed",
+      "category": "candidate_negative",
+      "precheck": {
+        "matched": true,
+        "expected_episode_count": 1,
+        "actual_episode_count": 1
+      },
+      "whole_task_rule": {
+        "generated_claims": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_attempted_an_implementation_change_no_successful_verification_is_established_operation_incomplete_cause",
+            "statement": "After Operation incomplete; cause unknown, the recovery action was: Attempted an implementation change; no successful verification is established..",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003",
+              "event-000006"
+            ],
+            "epistemic_status": "inferred",
+            "applies_when": "When run_command fails with Operation incomplete; cause unknown.",
+            "limitations": [
+              "The recovery has no successful verification linked to this failure."
+            ],
+            "verification_ids": [],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [
+              "recovery-000001"
+            ],
+            "evidence_quotes": []
+          }
+        ],
+        "lessons": [],
+        "validation": {
+          "accepted": true,
+          "valid_claims": [
+            {
+              "claim_id": "claim-000001",
+              "claim_type": "recovery",
+              "semantic_key": "recovery_attempted_an_implementation_change_no_successful_verification_is_established_operation_incomplete_cause",
+              "statement": "After Operation incomplete; cause unknown, the recovery action was: Attempted an implementation change; no successful verification is established..",
+              "evidence_ids": [
+                "event-000002",
+                "event-000003",
+                "event-000006"
+              ],
+              "epistemic_status": "inferred",
+              "applies_when": "When run_command fails with Operation incomplete; cause unknown.",
+              "limitations": [
+                "The recovery has no successful verification linked to this failure."
+              ],
+              "verification_ids": [],
+              "related_error_ids": [
+                "error-000001"
+              ],
+              "related_recovery_ids": [
+                "recovery-000001"
+              ],
+              "evidence_quotes": []
+            }
+          ],
+          "rejected_claim_ids": [],
+          "issues": [],
+          "rejected_claims": []
+        },
+        "value": {
+          "accepted": false,
+          "reason_codes": [
+            "generic_error_summary",
+            "no_durable_signal"
+          ],
+          "durable_signals": [],
+          "accepted_claim_ids": [],
+          "rejected_claim_ids": []
+        }
+      },
+      "episodes": [
+        {
+          "episode_id": "episode-000001",
+          "annotation": {
+            "expected_causal_status": "candidate",
+            "expected_recovery_lesson": false,
+            "allowed_scope": "An attempted change with no successful verification; abstain or retain an uncertain observation.",
+            "forbidden_conclusions": [
+              "The operation was repaired.",
+              "A confirmed root cause was established."
+            ],
+            "manual_semantic_review_required": true,
+            "offline_response": {
+              "kind": "abstain",
+              "statement": ""
+            }
+          },
+          "projected_evidence": {
+            "files_read": [],
+            "files_changed": [],
+            "referenced_files": [
+              {
+                "path": "tests/test_pending.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002",
+                  "event-000003"
+                ],
+                "call_id": "call-1",
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "tool_calls": [
+              {
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "call_event_id": "event-000001",
+                "result_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "status": "failed",
+                "invocation": "python -m pytest tests/test_pending.py"
+              }
+            ],
+            "libraries": [],
+            "errors": [
+              {
+                "error_id": "error-000001",
+                "call_id": "call-1",
+                "tool_name": "run_command",
+                "error_type": "ToolError",
+                "message": "Operation incomplete; cause unknown.",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "recoveries": [
+              {
+                "recovery_id": "recovery-000001",
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "action": "Attempted an implementation change; no successful verification is established.",
+                "event_ids": [
+                  "event-000006"
+                ],
+                "files_changed": [],
+                "epistemic_status": "confirmed",
+                "change_summary": "",
+                "verification_call_ids": []
+              }
+            ],
+            "recovery_suggestions": [],
+            "decisions": [],
+            "verification": [],
+            "outcome": "failed",
+            "had_errors": true,
+            "errors_recovered": true,
+            "final_summary": "",
+            "final_summary_event_ids": [],
+            "diagnostics": [],
+            "event_positions": {
+              "event-000001": 0,
+              "event-000002": 1,
+              "event-000003": 2,
+              "event-000006": 5
+            }
+          },
+          "rule_baseline": {
+            "generated_claims": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_attempted_an_implementation_change_no_successful_verification_is_established_operation_incomplete_cause",
+                "statement": "After Operation incomplete; cause unknown, the recovery action was: Attempted an implementation change; no successful verification is established..",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003",
+                  "event-000006"
+                ],
+                "epistemic_status": "inferred",
+                "applies_when": "When run_command fails with Operation incomplete; cause unknown.",
+                "limitations": [
+                  "The recovery has no successful verification linked to this failure."
+                ],
+                "verification_ids": [],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000001"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "lessons": [],
+            "validation": {
+              "accepted": true,
+              "valid_claims": [
+                {
+                  "claim_id": "claim-000001",
+                  "claim_type": "recovery",
+                  "semantic_key": "recovery_attempted_an_implementation_change_no_successful_verification_is_established_operation_incomplete_cause",
+                  "statement": "After Operation incomplete; cause unknown, the recovery action was: Attempted an implementation change; no successful verification is established..",
+                  "evidence_ids": [
+                    "event-000002",
+                    "event-000003",
+                    "event-000006"
+                  ],
+                  "epistemic_status": "inferred",
+                  "applies_when": "When run_command fails with Operation incomplete; cause unknown.",
+                  "limitations": [
+                    "The recovery has no successful verification linked to this failure."
+                  ],
+                  "verification_ids": [],
+                  "related_error_ids": [
+                    "error-000001"
+                  ],
+                  "related_recovery_ids": [
+                    "recovery-000001"
+                  ],
+                  "evidence_quotes": []
+                }
+              ],
+              "rejected_claim_ids": [],
+              "issues": [],
+              "rejected_claims": []
+            },
+            "value": {
+              "accepted": false,
+              "reason_codes": [
+                "generic_error_summary",
+                "no_durable_signal"
+              ],
+              "durable_signals": [],
+              "accepted_claim_ids": [],
+              "rejected_claim_ids": []
+            }
+          },
+          "outcome": {
+            "episode_id": "episode-000001",
+            "causal_status": "candidate",
+            "attempted": true,
+            "model_called": true,
+            "failure_code": "provider_deadline_exceeded",
+            "outcome_available": false,
+            "generated_claims": [],
+            "lessons": [],
+            "observations": [],
+            "validation_issues": [],
+            "value_reason_codes": [],
+            "physical_call": {
+              "case_id": "unverified-failed",
+              "call_index": 6,
+              "latency_ms": 15000.641167047434,
+              "input_tokens": null,
+              "output_tokens": null,
+              "estimated_cost_usd": null,
+              "usage_source": "unavailable",
+              "raw_response_text": null,
+              "provider_failure": "ModelCallDeadlineExceeded",
+              "messages_sha256": "7d9dca58ccb13a73c79a891004a0cd00db312df6a37a6890ef9cd3f25eae5832",
+              "request_parameters": {
+                "timeout_seconds": 15.0,
+                "max_output_tokens": 1200
+              },
+              "episode_id": "episode-000001"
+            }
+          },
+          "semantic_review": {
+            "status": "pending",
+            "verdict": null,
+            "notes": []
+          }
+        }
+      ],
+      "execution_failure": "provider_deadline_exceeded"
+    },
+    {
+      "case_id": "retry-still-failed",
+      "category": "candidate_negative",
+      "precheck": {
+        "matched": true,
+        "expected_episode_count": 1,
+        "actual_episode_count": 1
+      },
+      "whole_task_rule": {
+        "generated_claims": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_attempted_an_implementation_change_no_successful_verification_is_established_operation_incomplete_cause",
+            "statement": "After Operation incomplete; cause unknown, the recovery action was: Attempted an implementation change; no successful verification is established..",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003",
+              "event-000006"
+            ],
+            "epistemic_status": "inferred",
+            "applies_when": "When run_command fails with Operation incomplete; cause unknown.",
+            "limitations": [
+              "The recovery has no successful verification linked to this failure."
+            ],
+            "verification_ids": [],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [
+              "recovery-000001"
+            ],
+            "evidence_quotes": []
+          },
+          {
+            "claim_id": "claim-000002",
+            "claim_type": "error_pattern",
+            "semantic_key": "error_run_command_toolerror_operation_incomplete_cause_unknown",
+            "statement": "Observed error pattern for run_command / ToolError: Operation incomplete; cause unknown",
+            "evidence_ids": [
+              "event-000008",
+              "event-000009"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with Operation incomplete; cause unknown.",
+            "limitations": [
+              "Observed in one task trace; broader recurrence is not yet established."
+            ],
+            "verification_ids": [],
+            "related_error_ids": [
+              "error-000002"
+            ],
+            "related_recovery_ids": [],
+            "evidence_quotes": []
+          }
+        ],
+        "lessons": [
+          {
+            "claim_id": "claim-000002",
+            "claim_type": "error_pattern",
+            "semantic_key": "error_run_command_toolerror_operation_incomplete_cause_unknown",
+            "statement": "Observed error pattern for run_command / ToolError: Operation incomplete; cause unknown",
+            "evidence_ids": [
+              "event-000008",
+              "event-000009"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with Operation incomplete; cause unknown.",
+            "limitations": [
+              "Observed in one task trace; broader recurrence is not yet established."
+            ],
+            "verification_ids": [],
+            "related_error_ids": [
+              "error-000002"
+            ],
+            "related_recovery_ids": [],
+            "evidence_quotes": []
+          }
+        ],
+        "validation": {
+          "accepted": true,
+          "valid_claims": [
+            {
+              "claim_id": "claim-000001",
+              "claim_type": "recovery",
+              "semantic_key": "recovery_attempted_an_implementation_change_no_successful_verification_is_established_operation_incomplete_cause",
+              "statement": "After Operation incomplete; cause unknown, the recovery action was: Attempted an implementation change; no successful verification is established..",
+              "evidence_ids": [
+                "event-000002",
+                "event-000003",
+                "event-000006"
+              ],
+              "epistemic_status": "inferred",
+              "applies_when": "When run_command fails with Operation incomplete; cause unknown.",
+              "limitations": [
+                "The recovery has no successful verification linked to this failure."
+              ],
+              "verification_ids": [],
+              "related_error_ids": [
+                "error-000001"
+              ],
+              "related_recovery_ids": [
+                "recovery-000001"
+              ],
+              "evidence_quotes": []
+            },
+            {
+              "claim_id": "claim-000002",
+              "claim_type": "error_pattern",
+              "semantic_key": "error_run_command_toolerror_operation_incomplete_cause_unknown",
+              "statement": "Observed error pattern for run_command / ToolError: Operation incomplete; cause unknown",
+              "evidence_ids": [
+                "event-000008",
+                "event-000009"
+              ],
+              "epistemic_status": "confirmed",
+              "applies_when": "When run_command fails with Operation incomplete; cause unknown.",
+              "limitations": [
+                "Observed in one task trace; broader recurrence is not yet established."
+              ],
+              "verification_ids": [],
+              "related_error_ids": [
+                "error-000002"
+              ],
+              "related_recovery_ids": [],
+              "evidence_quotes": []
+            }
+          ],
+          "rejected_claim_ids": [],
+          "issues": [],
+          "rejected_claims": []
+        },
+        "value": {
+          "accepted": true,
+          "reason_codes": [
+            "accepted_durable_reflection"
+          ],
+          "durable_signals": [
+            "reusable_error_pattern"
+          ],
+          "accepted_claim_ids": [
+            "claim-000002"
+          ],
+          "rejected_claim_ids": []
+        }
+      },
+      "episodes": [
+        {
+          "episode_id": "episode-000001",
+          "annotation": {
+            "expected_causal_status": "candidate",
+            "expected_recovery_lesson": false,
+            "allowed_scope": "An attempted change with no successful verification; abstain or retain an uncertain observation.",
+            "forbidden_conclusions": [
+              "The operation was repaired.",
+              "A confirmed root cause was established."
+            ],
+            "manual_semantic_review_required": true,
+            "offline_response": {
+              "kind": "abstain",
+              "statement": ""
+            }
+          },
+          "projected_evidence": {
+            "files_read": [],
+            "files_changed": [],
+            "referenced_files": [
+              {
+                "path": "tests/test_pending.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002",
+                  "event-000003"
+                ],
+                "call_id": "call-1",
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "tool_calls": [
+              {
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "call_event_id": "event-000001",
+                "result_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "status": "failed",
+                "invocation": "python -m pytest tests/test_pending.py"
+              }
+            ],
+            "libraries": [],
+            "errors": [
+              {
+                "error_id": "error-000001",
+                "call_id": "call-1",
+                "tool_name": "run_command",
+                "error_type": "ToolError",
+                "message": "Operation incomplete; cause unknown.",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "recoveries": [
+              {
+                "recovery_id": "recovery-000001",
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "action": "Attempted an implementation change; no successful verification is established.",
+                "event_ids": [
+                  "event-000006"
+                ],
+                "files_changed": [],
+                "epistemic_status": "confirmed",
+                "change_summary": "",
+                "verification_call_ids": []
+              }
+            ],
+            "recovery_suggestions": [],
+            "decisions": [],
+            "verification": [],
+            "outcome": "failed",
+            "had_errors": true,
+            "errors_recovered": true,
+            "final_summary": "",
+            "final_summary_event_ids": [],
+            "diagnostics": [],
+            "event_positions": {
+              "event-000001": 0,
+              "event-000002": 1,
+              "event-000003": 2,
+              "event-000006": 5
+            }
+          },
+          "rule_baseline": {
+            "generated_claims": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_attempted_an_implementation_change_no_successful_verification_is_established_operation_incomplete_cause",
+                "statement": "After Operation incomplete; cause unknown, the recovery action was: Attempted an implementation change; no successful verification is established..",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003",
+                  "event-000006"
+                ],
+                "epistemic_status": "inferred",
+                "applies_when": "When run_command fails with Operation incomplete; cause unknown.",
+                "limitations": [
+                  "The recovery has no successful verification linked to this failure."
+                ],
+                "verification_ids": [],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000001"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "lessons": [],
+            "validation": {
+              "accepted": true,
+              "valid_claims": [
+                {
+                  "claim_id": "claim-000001",
+                  "claim_type": "recovery",
+                  "semantic_key": "recovery_attempted_an_implementation_change_no_successful_verification_is_established_operation_incomplete_cause",
+                  "statement": "After Operation incomplete; cause unknown, the recovery action was: Attempted an implementation change; no successful verification is established..",
+                  "evidence_ids": [
+                    "event-000002",
+                    "event-000003",
+                    "event-000006"
+                  ],
+                  "epistemic_status": "inferred",
+                  "applies_when": "When run_command fails with Operation incomplete; cause unknown.",
+                  "limitations": [
+                    "The recovery has no successful verification linked to this failure."
+                  ],
+                  "verification_ids": [],
+                  "related_error_ids": [
+                    "error-000001"
+                  ],
+                  "related_recovery_ids": [
+                    "recovery-000001"
+                  ],
+                  "evidence_quotes": []
+                }
+              ],
+              "rejected_claim_ids": [],
+              "issues": [],
+              "rejected_claims": []
+            },
+            "value": {
+              "accepted": false,
+              "reason_codes": [
+                "generic_error_summary",
+                "no_durable_signal"
+              ],
+              "durable_signals": [],
+              "accepted_claim_ids": [],
+              "rejected_claim_ids": []
+            }
+          },
+          "outcome": {
+            "episode_id": "episode-000001",
+            "causal_status": "candidate",
+            "attempted": true,
+            "model_called": true,
+            "failure_code": "provider_deadline_exceeded",
+            "outcome_available": false,
+            "generated_claims": [],
+            "lessons": [],
+            "observations": [],
+            "validation_issues": [],
+            "value_reason_codes": [],
+            "physical_call": {
+              "case_id": "retry-still-failed",
+              "call_index": 7,
+              "latency_ms": 15002.468625083566,
+              "input_tokens": null,
+              "output_tokens": null,
+              "estimated_cost_usd": null,
+              "usage_source": "unavailable",
+              "raw_response_text": null,
+              "provider_failure": "ModelCallDeadlineExceeded",
+              "messages_sha256": "7d9dca58ccb13a73c79a891004a0cd00db312df6a37a6890ef9cd3f25eae5832",
+              "request_parameters": {
+                "timeout_seconds": 15.0,
+                "max_output_tokens": 1200
+              },
+              "episode_id": "episode-000001"
+            }
+          },
+          "semantic_review": {
+            "status": "pending",
+            "verdict": null,
+            "notes": []
+          }
+        }
+      ],
+      "execution_failure": "provider_deadline_exceeded"
+    },
+    {
+      "case_id": "unverified-modification",
+      "category": "candidate_negative",
+      "precheck": {
+        "matched": true,
+        "expected_episode_count": 1,
+        "actual_episode_count": 1
+      },
+      "whole_task_rule": {
+        "generated_claims": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "recovery",
+            "semantic_key": "recovery_attempted_an_implementation_change_no_successful_verification_is_established_operation_incomplete_cause",
+            "statement": "After Operation incomplete; cause unknown, the recovery action was: Attempted an implementation change; no successful verification is established..",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003",
+              "event-000006"
+            ],
+            "epistemic_status": "inferred",
+            "applies_when": "When run_command fails with Operation incomplete; cause unknown.",
+            "limitations": [
+              "The recovery has no successful verification linked to this failure."
+            ],
+            "verification_ids": [],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [
+              "recovery-000001"
+            ],
+            "evidence_quotes": []
+          }
+        ],
+        "lessons": [],
+        "validation": {
+          "accepted": true,
+          "valid_claims": [
+            {
+              "claim_id": "claim-000001",
+              "claim_type": "recovery",
+              "semantic_key": "recovery_attempted_an_implementation_change_no_successful_verification_is_established_operation_incomplete_cause",
+              "statement": "After Operation incomplete; cause unknown, the recovery action was: Attempted an implementation change; no successful verification is established..",
+              "evidence_ids": [
+                "event-000002",
+                "event-000003",
+                "event-000006"
+              ],
+              "epistemic_status": "inferred",
+              "applies_when": "When run_command fails with Operation incomplete; cause unknown.",
+              "limitations": [
+                "The recovery has no successful verification linked to this failure."
+              ],
+              "verification_ids": [],
+              "related_error_ids": [
+                "error-000001"
+              ],
+              "related_recovery_ids": [
+                "recovery-000001"
+              ],
+              "evidence_quotes": []
+            }
+          ],
+          "rejected_claim_ids": [],
+          "issues": [],
+          "rejected_claims": []
+        },
+        "value": {
+          "accepted": false,
+          "reason_codes": [
+            "unknown_outcome_without_durable_fact",
+            "no_durable_signal"
+          ],
+          "durable_signals": [],
+          "accepted_claim_ids": [],
+          "rejected_claim_ids": []
+        }
+      },
+      "episodes": [
+        {
+          "episode_id": "episode-000001",
+          "annotation": {
+            "expected_causal_status": "candidate",
+            "expected_recovery_lesson": false,
+            "allowed_scope": "An attempted change with no successful verification; abstain or retain an uncertain observation.",
+            "forbidden_conclusions": [
+              "The operation was repaired.",
+              "A confirmed root cause was established."
+            ],
+            "manual_semantic_review_required": true,
+            "offline_response": {
+              "kind": "abstain",
+              "statement": ""
+            }
+          },
+          "projected_evidence": {
+            "files_read": [],
+            "files_changed": [],
+            "referenced_files": [
+              {
+                "path": "tests/test_pending.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002",
+                  "event-000003"
+                ],
+                "call_id": "call-1",
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "tool_calls": [
+              {
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "call_event_id": "event-000001",
+                "result_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "status": "failed",
+                "invocation": "python -m pytest tests/test_pending.py"
+              }
+            ],
+            "libraries": [],
+            "errors": [
+              {
+                "error_id": "error-000001",
+                "call_id": "call-1",
+                "tool_name": "run_command",
+                "error_type": "ToolError",
+                "message": "Operation incomplete; cause unknown.",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "recoveries": [
+              {
+                "recovery_id": "recovery-000001",
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "action": "Attempted an implementation change; no successful verification is established.",
+                "event_ids": [
+                  "event-000006"
+                ],
+                "files_changed": [],
+                "epistemic_status": "confirmed",
+                "change_summary": "",
+                "verification_call_ids": []
+              }
+            ],
+            "recovery_suggestions": [],
+            "decisions": [],
+            "verification": [],
+            "outcome": "unknown",
+            "had_errors": true,
+            "errors_recovered": true,
+            "final_summary": "",
+            "final_summary_event_ids": [],
+            "diagnostics": [],
+            "event_positions": {
+              "event-000001": 0,
+              "event-000002": 1,
+              "event-000003": 2,
+              "event-000006": 5
+            }
+          },
+          "rule_baseline": {
+            "generated_claims": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "recovery",
+                "semantic_key": "recovery_attempted_an_implementation_change_no_successful_verification_is_established_operation_incomplete_cause",
+                "statement": "After Operation incomplete; cause unknown, the recovery action was: Attempted an implementation change; no successful verification is established..",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003",
+                  "event-000006"
+                ],
+                "epistemic_status": "inferred",
+                "applies_when": "When run_command fails with Operation incomplete; cause unknown.",
+                "limitations": [
+                  "The recovery has no successful verification linked to this failure."
+                ],
+                "verification_ids": [],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [
+                  "recovery-000001"
+                ],
+                "evidence_quotes": []
+              }
+            ],
+            "lessons": [],
+            "validation": {
+              "accepted": true,
+              "valid_claims": [
+                {
+                  "claim_id": "claim-000001",
+                  "claim_type": "recovery",
+                  "semantic_key": "recovery_attempted_an_implementation_change_no_successful_verification_is_established_operation_incomplete_cause",
+                  "statement": "After Operation incomplete; cause unknown, the recovery action was: Attempted an implementation change; no successful verification is established..",
+                  "evidence_ids": [
+                    "event-000002",
+                    "event-000003",
+                    "event-000006"
+                  ],
+                  "epistemic_status": "inferred",
+                  "applies_when": "When run_command fails with Operation incomplete; cause unknown.",
+                  "limitations": [
+                    "The recovery has no successful verification linked to this failure."
+                  ],
+                  "verification_ids": [],
+                  "related_error_ids": [
+                    "error-000001"
+                  ],
+                  "related_recovery_ids": [
+                    "recovery-000001"
+                  ],
+                  "evidence_quotes": []
+                }
+              ],
+              "rejected_claim_ids": [],
+              "issues": [],
+              "rejected_claims": []
+            },
+            "value": {
+              "accepted": false,
+              "reason_codes": [
+                "unknown_outcome_without_durable_fact",
+                "no_durable_signal"
+              ],
+              "durable_signals": [],
+              "accepted_claim_ids": [],
+              "rejected_claim_ids": []
+            }
+          },
+          "outcome": {
+            "episode_id": "episode-000001",
+            "causal_status": "candidate",
+            "attempted": true,
+            "model_called": true,
+            "failure_code": "provider_deadline_exceeded",
+            "outcome_available": false,
+            "generated_claims": [],
+            "lessons": [],
+            "observations": [],
+            "validation_issues": [],
+            "value_reason_codes": [],
+            "physical_call": {
+              "case_id": "unverified-modification",
+              "call_index": 8,
+              "latency_ms": 15000.747375073843,
+              "input_tokens": null,
+              "output_tokens": null,
+              "estimated_cost_usd": null,
+              "usage_source": "unavailable",
+              "raw_response_text": null,
+              "provider_failure": "ModelCallDeadlineExceeded",
+              "messages_sha256": "144bbd55c5e63bc2f840ad7c6bc05cc17f9d2047dc9079c6a6e349da902e4f9a",
+              "request_parameters": {
+                "timeout_seconds": 15.0,
+                "max_output_tokens": 1200
+              },
+              "episode_id": "episode-000001"
+            }
+          },
+          "semantic_review": {
+            "status": "pending",
+            "verdict": null,
+            "notes": []
+          }
+        }
+      ],
+      "execution_failure": "provider_deadline_exceeded"
+    },
+    {
+      "case_id": "report-timeout-budget",
+      "category": "business_timeout_candidate",
+      "precheck": {
+        "matched": true,
+        "expected_episode_count": 1,
+        "actual_episode_count": 1
+      },
+      "whole_task_rule": {
+        "generated_claims": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "error_pattern",
+            "semantic_key": "error_run_command_toolerror_command_timed_out_after_1_seconds_process_group_terminated",
+            "statement": "Observed error pattern for run_command / ToolError: Command timed out after 1 seconds (process group terminated)",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with Command timed out after 1 seconds (process group terminated).",
+            "limitations": [
+              "Observed in one task trace; broader recurrence is not yet established."
+            ],
+            "verification_ids": [],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [],
+            "evidence_quotes": []
+          }
+        ],
+        "lessons": [],
+        "validation": {
+          "accepted": true,
+          "valid_claims": [
+            {
+              "claim_id": "claim-000001",
+              "claim_type": "error_pattern",
+              "semantic_key": "error_run_command_toolerror_command_timed_out_after_1_seconds_process_group_terminated",
+              "statement": "Observed error pattern for run_command / ToolError: Command timed out after 1 seconds (process group terminated)",
+              "evidence_ids": [
+                "event-000002",
+                "event-000003"
+              ],
+              "epistemic_status": "confirmed",
+              "applies_when": "When run_command fails with Command timed out after 1 seconds (process group terminated).",
+              "limitations": [
+                "Observed in one task trace; broader recurrence is not yet established."
+              ],
+              "verification_ids": [],
+              "related_error_ids": [
+                "error-000001"
+              ],
+              "related_recovery_ids": [],
+              "evidence_quotes": []
+            }
+          ],
+          "rejected_claim_ids": [],
+          "issues": [],
+          "rejected_claims": []
+        },
+        "value": {
+          "accepted": false,
+          "reason_codes": [
+            "single_observation_error_pattern"
+          ],
+          "durable_signals": [],
+          "accepted_claim_ids": [],
+          "rejected_claim_ids": []
+        }
+      },
+      "episodes": [
+        {
+          "episode_id": "episode-000001",
+          "annotation": {
+            "expected_causal_status": "candidate",
+            "expected_recovery_lesson": false,
+            "allowed_scope": "The timeout changed from 1 to 120 seconds and the same report later succeeded; causation remains unproven.",
+            "forbidden_conclusions": [
+              "Increasing timeout is a confirmed root-cause fix.",
+              "All report failures are solved by a timeout of 120 seconds."
+            ],
+            "manual_semantic_review_required": true,
+            "offline_response": {
+              "kind": "abstain",
+              "statement": ""
+            }
+          },
+          "projected_evidence": {
+            "files_read": [],
+            "files_changed": [],
+            "referenced_files": [
+              {
+                "path": "scripts/report.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000001",
+                  "event-000002",
+                  "event-000003"
+                ],
+                "call_id": "call-1",
+                "epistemic_status": "confirmed"
+              },
+              {
+                "path": "scripts/report.py",
+                "role": "referenced",
+                "event_ids": [
+                  "event-000004",
+                  "event-000005"
+                ],
+                "call_id": "call-2",
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "tool_calls": [
+              {
+                "tool_name": "run_command",
+                "call_id": "call-1",
+                "call_event_id": "event-000001",
+                "result_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "status": "failed",
+                "invocation": "python scripts/report.py (cwd: /synthetic/workspace; timeout: 1)"
+              },
+              {
+                "tool_name": "run_command",
+                "call_id": "call-2",
+                "call_event_id": "event-000004",
+                "result_event_ids": [
+                  "event-000005"
+                ],
+                "status": "success",
+                "invocation": "python scripts/report.py (cwd: /synthetic/workspace; timeout: 120)"
+              }
+            ],
+            "libraries": [],
+            "errors": [
+              {
+                "error_id": "error-000001",
+                "call_id": "call-1",
+                "tool_name": "run_command",
+                "error_type": "ToolError",
+                "message": "Command timed out after 1 seconds (process group terminated).",
+                "source_event_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "epistemic_status": "confirmed"
+              }
+            ],
+            "recoveries": [],
+            "recovery_suggestions": [],
+            "decisions": [],
+            "verification": [],
+            "outcome": "success",
+            "had_errors": true,
+            "errors_recovered": false,
+            "final_summary": "",
+            "final_summary_event_ids": [],
+            "diagnostics": [],
+            "event_positions": {
+              "event-000001": 0,
+              "event-000002": 1,
+              "event-000003": 2,
+              "event-000004": 3,
+              "event-000005": 4
+            }
+          },
+          "rule_baseline": {
+            "generated_claims": [
+              {
+                "claim_id": "claim-000001",
+                "claim_type": "error_pattern",
+                "semantic_key": "error_run_command_toolerror_command_timed_out_after_1_seconds_process_group_terminated",
+                "statement": "Observed error pattern for run_command / ToolError: Command timed out after 1 seconds (process group terminated)",
+                "evidence_ids": [
+                  "event-000002",
+                  "event-000003"
+                ],
+                "epistemic_status": "confirmed",
+                "applies_when": "When run_command fails with Command timed out after 1 seconds (process group terminated).",
+                "limitations": [
+                  "Observed in one task trace; broader recurrence is not yet established."
+                ],
+                "verification_ids": [],
+                "related_error_ids": [
+                  "error-000001"
+                ],
+                "related_recovery_ids": [],
+                "evidence_quotes": []
+              }
+            ],
+            "lessons": [],
+            "validation": {
+              "accepted": true,
+              "valid_claims": [
+                {
+                  "claim_id": "claim-000001",
+                  "claim_type": "error_pattern",
+                  "semantic_key": "error_run_command_toolerror_command_timed_out_after_1_seconds_process_group_terminated",
+                  "statement": "Observed error pattern for run_command / ToolError: Command timed out after 1 seconds (process group terminated)",
+                  "evidence_ids": [
+                    "event-000002",
+                    "event-000003"
+                  ],
+                  "epistemic_status": "confirmed",
+                  "applies_when": "When run_command fails with Command timed out after 1 seconds (process group terminated).",
+                  "limitations": [
+                    "Observed in one task trace; broader recurrence is not yet established."
+                  ],
+                  "verification_ids": [],
+                  "related_error_ids": [
+                    "error-000001"
+                  ],
+                  "related_recovery_ids": [],
+                  "evidence_quotes": []
+                }
+              ],
+              "rejected_claim_ids": [],
+              "issues": [],
+              "rejected_claims": []
+            },
+            "value": {
+              "accepted": false,
+              "reason_codes": [
+                "single_observation_error_pattern"
+              ],
+              "durable_signals": [],
+              "accepted_claim_ids": [],
+              "rejected_claim_ids": []
+            }
+          },
+          "outcome": {
+            "episode_id": "episode-000001",
+            "causal_status": "candidate",
+            "attempted": true,
+            "model_called": true,
+            "failure_code": "provider_deadline_exceeded",
+            "outcome_available": false,
+            "generated_claims": [],
+            "lessons": [],
+            "observations": [],
+            "validation_issues": [],
+            "value_reason_codes": [],
+            "physical_call": {
+              "case_id": "report-timeout-budget",
+              "call_index": 9,
+              "latency_ms": 15002.071875031106,
+              "input_tokens": null,
+              "output_tokens": null,
+              "estimated_cost_usd": null,
+              "usage_source": "unavailable",
+              "raw_response_text": null,
+              "provider_failure": "ModelCallDeadlineExceeded",
+              "messages_sha256": "f304ab9622102a247d4612238d3fd325f690537d60715576db2292cf6cce265a",
+              "request_parameters": {
+                "timeout_seconds": 15.0,
+                "max_output_tokens": 1200
+              },
+              "episode_id": "episode-000001"
+            }
+          },
+          "semantic_review": {
+            "status": "pending",
+            "verdict": null,
+            "notes": []
+          }
+        }
+      ],
+      "execution_failure": "provider_deadline_exceeded"
+    },
+    {
+      "case_id": "precheck-changed-selection",
+      "category": "zero_episode_identity_conflict",
+      "precheck": {
+        "matched": true,
+        "expected_episode_count": 0,
+        "actual_episode_count": 0
+      },
+      "whole_task_rule": {
+        "generated_claims": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "error_pattern",
+            "semantic_key": "error_run_command_toolerror_assertionerror_expired_token_was_accepted",
+            "statement": "Observed error pattern for run_command / ToolError: AssertionError: Expired token was accepted",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "Observed in one task trace; broader recurrence is not yet established."
+            ],
+            "verification_ids": [],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [],
+            "evidence_quotes": []
+          }
+        ],
+        "lessons": [],
+        "validation": {
+          "accepted": true,
+          "valid_claims": [
+            {
+              "claim_id": "claim-000001",
+              "claim_type": "error_pattern",
+              "semantic_key": "error_run_command_toolerror_assertionerror_expired_token_was_accepted",
+              "statement": "Observed error pattern for run_command / ToolError: AssertionError: Expired token was accepted",
+              "evidence_ids": [
+                "event-000002",
+                "event-000003"
+              ],
+              "epistemic_status": "confirmed",
+              "applies_when": "When run_command fails with AssertionError.",
+              "limitations": [
+                "Observed in one task trace; broader recurrence is not yet established."
+              ],
+              "verification_ids": [],
+              "related_error_ids": [
+                "error-000001"
+              ],
+              "related_recovery_ids": [],
+              "evidence_quotes": []
+            }
+          ],
+          "rejected_claim_ids": [],
+          "issues": [],
+          "rejected_claims": []
+        },
+        "value": {
+          "accepted": false,
+          "reason_codes": [
+            "single_observation_error_pattern"
+          ],
+          "durable_signals": [],
+          "accepted_claim_ids": [],
+          "rejected_claim_ids": []
+        }
+      },
+      "episodes": []
+    },
+    {
+      "case_id": "precheck-version-only",
+      "category": "zero_episode_identity_conflict",
+      "precheck": {
+        "matched": true,
+        "expected_episode_count": 0,
+        "actual_episode_count": 0
+      },
+      "whole_task_rule": {
+        "generated_claims": [
+          {
+            "claim_id": "claim-000001",
+            "claim_type": "error_pattern",
+            "semantic_key": "error_run_command_toolerror_assertionerror_expired_token_was_accepted",
+            "statement": "Observed error pattern for run_command / ToolError: AssertionError: Expired token was accepted",
+            "evidence_ids": [
+              "event-000002",
+              "event-000003"
+            ],
+            "epistemic_status": "confirmed",
+            "applies_when": "When run_command fails with AssertionError.",
+            "limitations": [
+              "Observed in one task trace; broader recurrence is not yet established."
+            ],
+            "verification_ids": [],
+            "related_error_ids": [
+              "error-000001"
+            ],
+            "related_recovery_ids": [],
+            "evidence_quotes": []
+          }
+        ],
+        "lessons": [],
+        "validation": {
+          "accepted": true,
+          "valid_claims": [
+            {
+              "claim_id": "claim-000001",
+              "claim_type": "error_pattern",
+              "semantic_key": "error_run_command_toolerror_assertionerror_expired_token_was_accepted",
+              "statement": "Observed error pattern for run_command / ToolError: AssertionError: Expired token was accepted",
+              "evidence_ids": [
+                "event-000002",
+                "event-000003"
+              ],
+              "epistemic_status": "confirmed",
+              "applies_when": "When run_command fails with AssertionError.",
+              "limitations": [
+                "Observed in one task trace; broader recurrence is not yet established."
+              ],
+              "verification_ids": [],
+              "related_error_ids": [
+                "error-000001"
+              ],
+              "related_recovery_ids": [],
+              "evidence_quotes": []
+            }
+          ],
+          "rejected_claim_ids": [],
+          "issues": [],
+          "rejected_claims": []
+        },
+        "value": {
+          "accepted": false,
+          "reason_codes": [
+            "single_observation_error_pattern"
+          ],
+          "durable_signals": [],
+          "accepted_claim_ids": [],
+          "rejected_claim_ids": []
+        }
+      },
+      "episodes": []
+    }
+  ],
+  "review_rubric": [
+    "Every factual clause is supported by the cited events, including changed inputs and later results.",
+    "Causality and confidence do not exceed the observed recovery relationship.",
+    "Applicability and limitations preserve the verified target and scope.",
+    "The lesson adds an accurate usable abstraction beyond the same-episode rule baseline.",
+    "Abstention is appropriate when the evidence cannot establish a reusable lesson."
+  ],
+  "semantic_quality": {
+    "verdict": "not_established",
+    "manual_review_required": true
+  },
+  "limitations": [
+    "Scripted mode validates pipeline contracts only; it is not evidence of model quality.",
+    "Validator admission establishes structural gates, not semantic support or generalization quality.",
+    "This fixed smoke sample is too small to establish production readiness.",
+    "No changes are made to runtime configuration or durable memory."
+  ],
+  "summary": {
+    "case_count": 11,
+    "processed_case_count": 11,
+    "unprocessed_case_count": 0,
+    "episode_count": 10,
+    "provider_calls": 9,
+    "scripted_calls": 0,
+    "precheck_mismatch_count": 0,
+    "zero_episode_precheck_count": 2,
+    "budget_skipped_episode_count": 0,
+    "provider_failure_count": 9,
+    "unavailable_outcome_count": 10,
+    "case_aborted_unprocessed_episode_count": 1,
+    "parsed_response_count": 0,
+    "generated_claim_count": 0,
+    "structurally_admitted_lesson_count": 0,
+    "candidate_confirmed_recovery_count": 0,
+    "same_episode_rule_lesson_count": 6,
+    "manual_review_pending_episode_count": 9,
+    "usage": {
+      "input_tokens": {
+        "total": null,
+        "known_subtotal": null,
+        "known_count": 0,
+        "unknown_count": 9
+      },
+      "output_tokens": {
+        "total": null,
+        "known_subtotal": null,
+        "known_count": 0,
+        "unknown_count": 9
+      },
+      "estimated_cost_usd": {
+        "total": null,
+        "known_subtotal": null,
+        "known_count": 0,
+        "unknown_count": 9
+      }
+    },
+    "latency_ms": {
+      "total": 135013.14295944758,
+      "median": 15001.122249988839
+    },
+    "extraction_and_candidate_safety_passed": true,
+    "pipeline_completed": false,
+    "production_readiness": "not_established"
+  }
+}

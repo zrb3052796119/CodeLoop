@@ -1,0 +1,968 @@
+{
+  "evidence_probe.py": [
+    {
+      "name": "different_args_targets_plus_unrelated_edit",
+      "recoveries": 0,
+      "persistable_claims": [],
+      "verification": [
+        [
+          "call-1",
+          "failed"
+        ],
+        [
+          "call-3",
+          "passed"
+        ]
+      ]
+    },
+    {
+      "name": "same_basename_different_project_no_edit",
+      "recoveries": 0,
+      "persistable_claims": [],
+      "verification": [
+        [
+          "call-1",
+          "failed"
+        ],
+        [
+          "call-2",
+          "passed"
+        ]
+      ]
+    },
+    {
+      "name": "masked_fixture_error_with_mixed_passed_output",
+      "recoveries": 0,
+      "persistable_claims": [],
+      "verification": [
+        [
+          "call-1",
+          "failed"
+        ],
+        [
+          "call-2",
+          "failed"
+        ]
+      ]
+    },
+    {
+      "name": "timeout_budget_change_loses_corrective_input",
+      "recoveries": 0,
+      "persistable_claims": [],
+      "verification": []
+    }
+  ],
+  "synthesis_probe.py": {
+    "output": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/artifacts/recovery-rule-review-2026-09-09/five-issue-fix/probe-results/synthesis_probe/synthesis_probe.json",
+    "cases": {
+      "verbatim_baseline": {
+        "statement": "After Expired token was accepted, the recovery was: Moved the expiry check before lookup.",
+        "valid": true,
+        "validation_issue_codes": [],
+        "durable": true,
+        "value_reason_codes": [
+          "accepted_durable_reflection"
+        ]
+      },
+      "semantic_paraphrase": {
+        "statement": "The lookup accepted an expired token; moving expiration validation ahead of the lookup was the verified repair.",
+        "valid": false,
+        "validation_issue_codes": [
+          "claim_statement_not_grounded"
+        ],
+        "durable": false,
+        "value_reason_codes": [
+          "generic_error_summary",
+          "no_valid_claim"
+        ]
+      },
+      "verbatim_plus_unsupported_conclusion": {
+        "statement": "After Expired token was accepted, the recovery was: Moved the expiry check before lookup. The same change also resolves every clock synchronization defect in distributed databases.",
+        "valid": true,
+        "validation_issue_codes": [],
+        "durable": true,
+        "value_reason_codes": [
+          "accepted_durable_reflection"
+        ]
+      },
+      "verbatim_with_unrelated_verification": {
+        "statement": "After Expired token was accepted, the recovery was: Moved the expiry check before lookup.",
+        "valid": false,
+        "validation_issue_codes": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "durable": false,
+        "value_reason_codes": [
+          "generic_error_summary",
+          "no_valid_claim"
+        ]
+      }
+    },
+    "rule_claims_for_unrelated_verification": [
+      {
+        "claim_type": "recovery",
+        "epistemic_status": "inferred",
+        "verification_ids": []
+      }
+    ]
+  },
+  "implementation-review/identity_probe.py": [
+    {
+      "case": "shared_cwd_unrelated_tests",
+      "value_accepted": false,
+      "claims": []
+    },
+    {
+      "case": "different_cwd_same_relative_test",
+      "value_accepted": false,
+      "claims": []
+    },
+    {
+      "case": "relative_suffix_is_not_file_identity",
+      "value_accepted": false,
+      "claims": []
+    },
+    {
+      "case": "changed_filter_skips_failed_test",
+      "value_accepted": false,
+      "claims": []
+    }
+  ],
+  "implementation-review/quote_probe.py": {
+    "inferred_status_bypass": {
+      "source_status": "inferred",
+      "without_quotes": {
+        "valid": false,
+        "issues": [
+          "claim_statement_not_grounded"
+        ],
+        "persistable": false,
+        "durable_signals": []
+      },
+      "with_real_quote": {
+        "valid": false,
+        "issues": [
+          "epistemic_status_overclaim"
+        ],
+        "persistable": false,
+        "durable_signals": []
+      },
+      "verbatim_control": {
+        "valid": false,
+        "issues": [
+          "epistemic_status_overclaim"
+        ],
+        "persistable": false,
+        "durable_signals": []
+      },
+      "existing_production_engine_scripted_client": {
+        "selection_source": "rule",
+        "claims": []
+      }
+    },
+    "inferred_root_cause_bypass": {
+      "source_status": "inferred",
+      "candidate": {
+        "valid": false,
+        "issues": [
+          "epistemic_status_overclaim"
+        ],
+        "persistable": false,
+        "durable_signals": []
+      }
+    },
+    "wrong_red_green_target": {
+      "with_unrelated_earlier_failed_test": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "durable_signals": []
+      },
+      "without_failed_test": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "durable_signals": []
+      },
+      "rule_recovery_statuses": [
+        "inferred"
+      ]
+    },
+    "unrelated_quote_control": {
+      "valid": false,
+      "issues": [
+        "evidence_quote_not_grounded"
+      ],
+      "persistable": false,
+      "durable_signals": []
+    }
+  },
+  "second-fix-review/identity_probe.py": [
+    {
+      "case": "pytest_marker_changed",
+      "value_accepted": false,
+      "claims": []
+    },
+    {
+      "case": "inline_cd_is_still_a_shared_resource",
+      "value_accepted": false,
+      "claims": []
+    },
+    {
+      "case": "shared_junit_output_is_not_same_test",
+      "value_accepted": false,
+      "claims": []
+    },
+    {
+      "case": "missing_fixture_does_not_mean_missing_test_target",
+      "value_accepted": false,
+      "claims": []
+    }
+  ],
+  "second-fix-review/grounding_probe.py": {
+    "red_green_target_identity": [
+      {
+        "name": "same_target_control",
+        "failed_invocation": "pytest tests/test_auth.py (cwd: /repo/backend)",
+        "passed_invocation": "pytest tests/test_auth.py (cwd: /repo/backend)",
+        "expected_valid": true,
+        "identity_match": true,
+        "with_failed_check": {
+          "valid": true,
+          "issues": [],
+          "persistable": true,
+          "rule_recovery_statuses": [
+            "confirmed"
+          ]
+        },
+        "without_failed_check_control": {
+          "valid": false,
+          "issues": [
+            "confirmed_recovery_verification_unrelated"
+          ],
+          "persistable": false,
+          "rule_recovery_statuses": [
+            "inferred"
+          ]
+        }
+      },
+      {
+        "name": "different_target_control",
+        "failed_invocation": "pytest tests/test_auth.py",
+        "passed_invocation": "pytest tests/test_billing.py",
+        "expected_valid": false,
+        "identity_match": false,
+        "with_failed_check": {
+          "valid": false,
+          "issues": [
+            "confirmed_recovery_verification_unrelated"
+          ],
+          "persistable": false,
+          "rule_recovery_statuses": [
+            "inferred"
+          ]
+        },
+        "without_failed_check_control": {
+          "valid": false,
+          "issues": [
+            "confirmed_recovery_verification_unrelated"
+          ],
+          "persistable": false,
+          "rule_recovery_statuses": [
+            "inferred"
+          ]
+        }
+      },
+      {
+        "name": "different_cwd",
+        "failed_invocation": "pytest tests/test_auth.py (cwd: /repo/backend)",
+        "passed_invocation": "pytest tests/test_auth.py (cwd: /repo/frontend)",
+        "expected_valid": false,
+        "identity_match": false,
+        "with_failed_check": {
+          "valid": false,
+          "issues": [
+            "confirmed_recovery_verification_unrelated"
+          ],
+          "persistable": false,
+          "rule_recovery_statuses": [
+            "inferred"
+          ]
+        },
+        "without_failed_check_control": {
+          "valid": false,
+          "issues": [
+            "confirmed_recovery_verification_unrelated"
+          ],
+          "persistable": false,
+          "rule_recovery_statuses": [
+            "inferred"
+          ]
+        }
+      },
+      {
+        "name": "different_cwd_absolute_relative_false_negative",
+        "failed_invocation": "pytest /repo/backend/tests/test_auth.py",
+        "passed_invocation": "pytest tests/test_auth.py (cwd: /repo/backend)",
+        "expected_valid": true,
+        "identity_match": true,
+        "with_failed_check": {
+          "valid": true,
+          "issues": [],
+          "persistable": true,
+          "rule_recovery_statuses": [
+            "confirmed"
+          ]
+        },
+        "without_failed_check_control": {
+          "valid": false,
+          "issues": [
+            "confirmed_recovery_verification_unrelated"
+          ],
+          "persistable": false,
+          "rule_recovery_statuses": [
+            "inferred"
+          ]
+        }
+      },
+      {
+        "name": "one_side_pathless_target",
+        "failed_invocation": "pytest tests/test_auth.py",
+        "passed_invocation": "pytest smoke",
+        "expected_valid": false,
+        "identity_match": false,
+        "with_failed_check": {
+          "valid": false,
+          "issues": [
+            "confirmed_recovery_verification_unrelated"
+          ],
+          "persistable": false,
+          "rule_recovery_statuses": [
+            "inferred"
+          ]
+        },
+        "without_failed_check_control": {
+          "valid": false,
+          "issues": [
+            "confirmed_recovery_verification_unrelated"
+          ],
+          "persistable": false,
+          "rule_recovery_statuses": [
+            "inferred"
+          ]
+        }
+      },
+      {
+        "name": "dropped_failed_file",
+        "failed_invocation": "pytest tests/test_auth.py tests/test_smoke.py",
+        "passed_invocation": "pytest tests/test_smoke.py",
+        "expected_valid": false,
+        "identity_match": false,
+        "with_failed_check": {
+          "valid": false,
+          "issues": [
+            "confirmed_recovery_verification_unrelated"
+          ],
+          "persistable": false,
+          "rule_recovery_statuses": [
+            "inferred"
+          ]
+        },
+        "without_failed_check_control": {
+          "valid": false,
+          "issues": [
+            "confirmed_recovery_verification_unrelated"
+          ],
+          "persistable": false,
+          "rule_recovery_statuses": [
+            "inferred"
+          ]
+        }
+      },
+      {
+        "name": "changed_node_selector",
+        "failed_invocation": "pytest tests/test_auth.py::test_expired",
+        "passed_invocation": "pytest tests/test_auth.py::test_valid",
+        "expected_valid": false,
+        "identity_match": false,
+        "with_failed_check": {
+          "valid": false,
+          "issues": [
+            "confirmed_recovery_verification_unrelated"
+          ],
+          "persistable": false,
+          "rule_recovery_statuses": [
+            "inferred"
+          ]
+        },
+        "without_failed_check_control": {
+          "valid": false,
+          "issues": [
+            "confirmed_recovery_verification_unrelated"
+          ],
+          "persistable": false,
+          "rule_recovery_statuses": [
+            "inferred"
+          ]
+        }
+      }
+    ],
+    "unrelated_failed_check": {
+      "recovery_related_error_calls": [
+        "auth-failure"
+      ],
+      "red_check_call": "failed-call",
+      "expected_valid": false,
+      "with_unrelated_red_green": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "rule_recovery_statuses": [
+          "inferred"
+        ]
+      },
+      "without_failed_check_control": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "rule_recovery_statuses": [
+          "inferred"
+        ]
+      }
+    }
+  },
+  "second-fix-review/episode_probe.py": {
+    "F4_same_interpreter_displaces_retry": {
+      "failure": "python scripts/report.py (timeout: 1)",
+      "selected_followups": [
+        "python scripts/report.py (timeout: 120)"
+      ],
+      "actual_retry": "python scripts/report.py (timeout: 120)",
+      "actual_retry_retained": true
+    },
+    "F5_old_unrelated_checks_displace_red_side": {
+      "episode_status": "verified",
+      "parent_checks": [
+        [
+          "noise0",
+          "failed"
+        ],
+        [
+          "noise1",
+          "failed"
+        ],
+        [
+          "noise2",
+          "failed"
+        ],
+        [
+          "noise3",
+          "failed"
+        ],
+        [
+          "c1",
+          "failed"
+        ],
+        [
+          "c3",
+          "passed"
+        ]
+      ],
+      "episode_checks": [
+        [
+          "c3",
+          "passed"
+        ],
+        [
+          "c1",
+          "failed"
+        ],
+        [
+          "noise0",
+          "failed"
+        ],
+        [
+          "noise1",
+          "failed"
+        ],
+        [
+          "noise2",
+          "failed"
+        ]
+      ],
+      "parent_valid": 1,
+      "episode_valid": 1,
+      "episode_issues": []
+    }
+  },
+  "objective-contract-review/consumer_probe.py": {
+    "engine_cases": [
+      {
+        "name": "main_deriver_truncates_sixth_target",
+        "contract_match": false,
+        "value_accepted": false,
+        "persistable_statuses": []
+      },
+      {
+        "name": "main_deriver_truncates_selection",
+        "contract_match": false,
+        "value_accepted": false,
+        "persistable_statuses": []
+      },
+      {
+        "name": "generic_fallback_overrides_ambiguous_objective",
+        "contract_match": false,
+        "value_accepted": false,
+        "persistable_statuses": []
+      },
+      {
+        "name": "generic_fallback_overrides_changed_marker",
+        "contract_match": false,
+        "value_accepted": false,
+        "persistable_statuses": []
+      },
+      {
+        "name": "missing_target_default_scope_accepts_echo",
+        "contract_match": false,
+        "value_accepted": false,
+        "persistable_statuses": []
+      },
+      {
+        "name": "missing_target_relocation_discards_selection_guard",
+        "contract_match": false,
+        "value_accepted": false,
+        "persistable_statuses": []
+      },
+      {
+        "name": "real_traceback_test_path_is_not_missing_object",
+        "contract_match": false,
+        "value_accepted": false,
+        "persistable_statuses": []
+      }
+    ],
+    "episode_case": {
+      "name": "episode_rendered_cwd_not_restored",
+      "expected": "Only original backend report retry should be retained.",
+      "failed": "python scripts/report.py (cwd: /repo/backend; timeout: 1)",
+      "selected_followups": [
+        "python scripts/report.py (cwd: /repo/backend; timeout: 120)"
+      ],
+      "actual_retry": "python scripts/report.py (cwd: /repo/backend; timeout: 120)",
+      "actual_retry_retained": true,
+      "causal_status": "candidate"
+    }
+  },
+  "objective-contract-review/parser_probe.py": [
+    {
+      "case": "unrecognized_pytest_selector",
+      "failed_objective": {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [
+          "-p=no:cacheprovider"
+        ],
+        "executes_work": true
+      },
+      "passed_objective": {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [
+          "-p=no:cacheprovider",
+          "-ignore-glob=*/test_auth.py"
+        ],
+        "executes_work": true
+      },
+      "contract_match": false,
+      "value_accepted": false,
+      "claims": []
+    },
+    {
+      "case": "inline_cd_overrides_structured_cwd",
+      "failed_objective": {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/test_auth.py"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [
+          "/repo",
+          "backend"
+        ],
+        "selection": [],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [],
+        "executes_work": true
+      },
+      "passed_objective": {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/test_auth.py"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [
+          "/repo",
+          "frontend"
+        ],
+        "selection": [],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [],
+        "executes_work": true
+      },
+      "contract_match": false,
+      "value_accepted": false,
+      "claims": []
+    }
+  ],
+  "objective-contract-review/validator_episode_probe.py": {
+    "claim_controlled_red_scope": {
+      "recovery_errors": [
+        "error-auth"
+      ],
+      "passed_invocation": "pytest tests/test_billing.py",
+      "auth_only_control": {
+        "valid": false,
+        "persistable": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ]
+      },
+      "claim_adds_billing_error": {
+        "valid": false,
+        "persistable": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ]
+      },
+      "claim_omits_related_errors": {
+        "valid": false,
+        "persistable": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ]
+      },
+      "claim_replaces_with_billing_error": {
+        "valid": false,
+        "persistable": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ]
+      }
+    },
+    "unbound_error_widens_red_scope": {
+      "auth_error_call_id": null,
+      "actual_red_call_id": "failed-call",
+      "admission": {
+        "valid": false,
+        "persistable": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ]
+      },
+      "rule": {
+        "valid": false,
+        "issues": [
+          "confirmed_recovery_verification_unrelated"
+        ],
+        "persistable": false,
+        "rule_recovery_statuses": [
+          "inferred"
+        ]
+      }
+    },
+    "episode_cwd_displacement": {
+      "failed": "python scripts/report.py (cwd: /repo/backend; timeout: 1)",
+      "selected": [
+        "python scripts/report.py (cwd: /repo/backend; timeout: 120)"
+      ],
+      "real_retry": "python scripts/report.py (cwd: /repo/backend; timeout: 120)",
+      "real_retry_retained": true,
+      "causal_status": "candidate"
+    },
+    "projection_loses_fifth_check_invocation": {
+      "parent": {
+        "valid": true,
+        "persistable": true,
+        "issues": []
+      },
+      "episode": {
+        "valid": true,
+        "persistable": true,
+        "issues": []
+      },
+      "episode_verification_calls": [
+        "passed-1",
+        "passed-2",
+        "passed-3",
+        "passed-4",
+        "passed-5",
+        "failed-call"
+      ],
+      "episode_tool_calls": [
+        "failed-call",
+        "passed-1",
+        "passed-2",
+        "passed-3",
+        "passed-4",
+        "passed-5"
+      ]
+    }
+  },
+  "three-state-review/parser_probe.py": [
+    {
+      "name": "boolean_flag_swallows_first_target",
+      "relation": "conflict",
+      "objectives": [
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "tests/test_auth.py",
+            "tests/test_smoke.py"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": [],
+          "executes_work": true
+        },
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "tests/test_billing.py",
+            "tests/test_smoke.py"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": [],
+          "executes_work": true
+        }
+      ],
+      "exit_codes": [
+        1,
+        0
+      ],
+      "value_accepted": false,
+      "claims": []
+    },
+    {
+      "name": "quoted_selector_tail_disappears",
+      "relation": "conflict",
+      "objectives": [
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "tests/"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [
+            "-k=test_smoke or test_expired_auth"
+          ],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": [],
+          "executes_work": true
+        },
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "tests/"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [
+            "-k=test_smoke and not test_expired_auth"
+          ],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": [],
+          "executes_work": true
+        }
+      ],
+      "exit_codes": [
+        1,
+        0
+      ],
+      "value_accepted": false,
+      "claims": []
+    },
+    {
+      "name": "version_is_not_test_verification",
+      "relation": "conflict",
+      "objectives": [
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "tests/test_auth.py"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": [],
+          "executes_work": true
+        },
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "tests/test_auth.py"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": [
+            "-version=None"
+          ],
+          "executes_work": false
+        }
+      ],
+      "exit_codes": [
+        1,
+        0
+      ],
+      "value_accepted": false,
+      "claims": []
+    },
+    {
+      "name": "different_targets_without_leading_boolean_control",
+      "relation": "conflict",
+      "objectives": [
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "tests/test_auth.py",
+            "tests/test_smoke.py"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": [],
+          "executes_work": true
+        },
+        {
+          "executable": "pytest",
+          "input_paths": [
+            "tests/test_billing.py",
+            "tests/test_smoke.py"
+          ],
+          "output_paths": [],
+          "anchor_dirs": [],
+          "selection": [],
+          "bare_operands": [],
+          "ambiguous_selection": false,
+          "unknown_flags": [],
+          "executes_work": true
+        }
+      ],
+      "exit_codes": [
+        1,
+        0
+      ],
+      "value_accepted": false,
+      "claims": []
+    }
+  ],
+  "three-state-review/consumer_probe.py": [
+    {
+      "name": "missing_one_target_relocating_a_different_target",
+      "relation": "conflict",
+      "actual_exit_codes": [
+        4,
+        0
+      ],
+      "value_accepted": false,
+      "persistable_statuses": [],
+      "original_scope_after_success_exit_code": null,
+      "phrase_removed_control_accepted": null
+    },
+    {
+      "name": "bare_billing_target_misclassified_as_default_scope",
+      "relation": "conflict",
+      "actual_exit_codes": [
+        4,
+        0
+      ],
+      "value_accepted": false,
+      "persistable_statuses": [],
+      "original_scope_after_success_exit_code": null,
+      "phrase_removed_control_accepted": null
+    },
+    {
+      "name": "nested_usage_error_waives_valid_parent_selection_flag",
+      "relation": "conflict",
+      "actual_exit_codes": [
+        1,
+        0
+      ],
+      "value_accepted": false,
+      "persistable_statuses": [],
+      "original_scope_after_success_exit_code": 1,
+      "phrase_removed_control_accepted": false
+    }
+  ],
+  "three-state-review/multi_recovery_scope_probe.py": {
+    "timeline": {
+      "auth_recovery": 3,
+      "invoice_check_passed": 5,
+      "billing_recovery": 6
+    },
+    "independently_linked_proofs": {
+      "recovery-auth": false,
+      "recovery-billing": false
+    },
+    "auth_recovery_only": {
+      "valid": false,
+      "persistable": false,
+      "issues": [
+        "confirmed_recovery_verification_unrelated"
+      ]
+    },
+    "billing_recovery_only": {
+      "valid": false,
+      "persistable": false,
+      "issues": [
+        "confirmed_recovery_verification_unrelated"
+      ]
+    },
+    "both_recoveries": {
+      "valid": false,
+      "persistable": false,
+      "issues": [
+        "confirmed_recovery_verification_unrelated"
+      ]
+    }
+  }
+}

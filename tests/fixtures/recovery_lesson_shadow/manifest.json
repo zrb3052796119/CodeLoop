@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "dataset_id": "recovery_lesson_shadow_v1",
+  "synthetic_data": true,
+  "response_capture_allowed": true,
+  "expected_case_count": 11,
+  "expected_episode_count": 10,
+  "purpose": "Fixed synthetic runtime-shape cases for RecoveryLessonAgent contract smoke and bounded real-provider shadow review; no semantic success is inferred from validator acceptance."
+}

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 from copy import deepcopy
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -10,6 +10,12 @@ import minicode.memory as memory_mod
 from minicode.agent_reflection import ReflectionEngine, ReflectionResult
 from minicode.memory import MemoryManager, MemoryScope
 from minicode.memory_pipeline import MemoryPipeline
+from minicode.reflection_synthesis import (
+    ClaimValidationResult,
+    ReflectionCandidate,
+    ReflectionClaim,
+    ReflectionValueDecision,
+)
 
 
 @pytest.fixture
@@ -135,11 +141,129 @@ def test_safe_durable_reflection_persists_structured_claims_and_reloads(
     assert structured["value_decision"]["accepted"] is True
     assert structured["claims"][0]["claim_type"] == "recovery"
     assert "rejected_claims" not in structured["validation"]
+    assert entry.provenance["claim_type"] == "recovery"
+    assert entry.provenance["evidence_kind"] == "verified_recovery"
+    assert entry.provenance["durable_signals"] == [
+        "confirmed_error_recovery_verified",
+        "verified_solution",
+    ]
 
     reloaded = MemoryManager(project_root=Path(pipeline._workspace))
     loaded = reloaded.memories[MemoryScope.PROJECT]._id_index[entry_id]
     assert loaded.metadata["structured_reflection"] == structured
     assert loaded.approval_status == "approved"
+    assert loaded.provenance["claim_type"] == "recovery"
+    assert loaded.provenance["evidence_kind"] == "verified_recovery"
+
+
+def test_confirmed_root_cause_persists_typed_authority_and_reloads(
+    memory_pipeline: tuple[MemoryPipeline, MemoryManager],
+) -> None:
+    pipeline, manager = memory_pipeline
+    trace = _verified_recovery_trace()
+    trace.insert(
+        -1,
+        {
+            "event_id": "event-cause",
+            "type": "assistant_step",
+            "content": (
+                "Incorrect token normalization caused the parser to return "
+                "the wrong token."
+            ),
+        },
+    )
+
+    entry_id = pipeline.write("Fix and verify the parser root cause", trace)
+
+    assert entry_id is not None
+    entry = manager.memories[MemoryScope.PROJECT]._id_index[entry_id]
+    claim = entry.metadata["structured_reflection"]["claims"][0]
+    assert claim["claim_type"] == "root_cause"
+    assert entry.provenance["claim_type"] == "root_cause"
+    assert entry.provenance["evidence_kind"] == "verified_root_cause"
+    assert entry.provenance["durable_signals"] == [
+        "confirmed_error_recovery_verified"
+    ]
+
+    reloaded = MemoryManager(project_root=Path(pipeline._workspace))
+    loaded = reloaded.memories[MemoryScope.PROJECT]._id_index[entry_id]
+    assert loaded.provenance["claim_type"] == "root_cause"
+    assert loaded.provenance["evidence_kind"] == "verified_root_cause"
+
+
+def test_same_batch_decision_cannot_borrow_recovery_authority(
+    memory_pipeline: tuple[MemoryPipeline, MemoryManager],
+) -> None:
+    pipeline, manager = memory_pipeline
+    recovery = ReflectionClaim(
+        claim_id="claim-recovery",
+        claim_type="recovery",
+        semantic_key="checkout_worker_recovery",
+        statement="Reset checkout worker lease ownership after the stale error.",
+        evidence_ids=["event-error", "event-recovery", "event-verify"],
+        epistemic_status="confirmed",
+        verification_ids=["verify-1"],
+        related_error_ids=["error-1"],
+        related_recovery_ids=["recovery-1"],
+    )
+    decision = ReflectionClaim(
+        claim_id="claim-decision",
+        claim_type="decision",
+        semantic_key="checkout_worker_strategy",
+        statement="Use one checkout worker lease coordinator.",
+        evidence_ids=["event-decision"],
+        epistemic_status="confirmed",
+    )
+    claims = [recovery, decision]
+    reflection = ReflectionResult(
+        task_summary="Repair checkout worker",
+        success=True,
+        key_decisions=[],
+        errors_encountered=[],
+        lessons_learned=[],
+        suggested_improvements=[],
+        confidence=0.99,
+        reflection_candidate=ReflectionCandidate(
+            "Repair checkout worker",
+            "success",
+            claims,
+        ),
+        claim_validation=ClaimValidationResult(valid_claims=claims),
+        value_decision=ReflectionValueDecision(
+            accepted=True,
+            reason_codes=["accepted_durable_reflection"],
+            durable_signals=[
+                "confirmed_error_recovery_verified",
+                "verified_solution",
+                "key_technical_decision",
+            ],
+            accepted_claim_ids=[claim.claim_id for claim in claims],
+        ),
+        structured_claims=claims,
+    )
+
+    class StaticReflectionEngine:
+        def reflect(self, *_args, **_kwargs):
+            return reflection
+
+    pipeline._reflection = StaticReflectionEngine()
+    entry_id = pipeline.write(
+        "Repair checkout worker",
+        [{"event_id": "event-done", "type": "task_result", "status": "success"}],
+    )
+
+    assert entry_id is not None
+    entries = manager.memories[MemoryScope.PROJECT].entries
+    assert len(entries) == 2
+    by_type = {entry.provenance["claim_type"]: entry for entry in entries}
+    assert by_type["recovery"].approval_status == "approved"
+    assert by_type["recovery"].provenance["evidence_kind"] == "verified_recovery"
+    assert by_type["decision"].approval_status == "pending"
+    assert by_type["decision"].provenance["durable_signals"] == [
+        "key_technical_decision"
+    ]
+    assert by_type["decision"].provenance["approval_basis"] == "user_review"
+    assert "evidence_kind" not in by_type["decision"].provenance
 
 
 def test_suspicious_trace_routes_safe_durable_claim_to_pending(
@@ -232,11 +356,11 @@ def test_legacy_confidence_only_reflection_is_default_denied(
     assert manager.memories[MemoryScope.PROJECT].entries == []
 
 
-def test_explicit_engine_persistence_still_obeys_value_gate(
+def test_engine_with_legacy_manager_input_never_persists_directly(
     memory_pipeline: tuple[MemoryPipeline, MemoryManager],
 ) -> None:
-    pipeline, manager = memory_pipeline
-    engine = ReflectionEngine(manager, persist_reflections=True)
+    _, manager = memory_pipeline
+    engine = ReflectionEngine(manager)
 
     engine.reflect(
         "Read app",
@@ -248,15 +372,15 @@ def test_explicit_engine_persistence_still_obeys_value_gate(
     assert manager.memories[MemoryScope.PROJECT].entries == []
 
     engine.reflect("Fix and verify parser", _verified_recovery_trace())
-    assert len(manager.memories[MemoryScope.PROJECT].entries) == 1
-    assert manager.memories[MemoryScope.PROJECT].entries[0].source == "reflection"
+    assert manager.memories[MemoryScope.PROJECT].entries == []
 
 
-def test_explicit_engine_persistence_routes_suspicious_trace_to_pending(
+def test_pipeline_routes_suspicious_trace_from_injected_engine_to_pending(
     memory_pipeline: tuple[MemoryPipeline, MemoryManager],
 ) -> None:
-    _, manager = memory_pipeline
-    engine = ReflectionEngine(manager, persist_reflections=True)
+    pipeline, manager = memory_pipeline
+    engine = ReflectionEngine(manager)
+    pipeline._reflection = engine
     trace = [
         {
             "event_id": "event-1",
@@ -276,13 +400,18 @@ def test_explicit_engine_persistence_routes_suspicious_trace_to_pending(
     result = engine.reflect("Document memory safety", trace)
 
     assert result.value_decision.accepted is True
+    assert manager.memories[MemoryScope.PROJECT].entries == []
+
+    entry_id = pipeline.write("Document memory safety", trace)
+
+    assert entry_id is not None
     entries = manager.memories[MemoryScope.PROJECT].entries
     assert len(entries) == 1
     assert entries[0].approval_status == "pending"
     assert not entries[0].is_active
 
 
-def test_legacy_add_only_adapter_cannot_bypass_suspicious_trace_safety() -> None:
+def test_legacy_add_only_adapter_is_not_a_reflection_persistence_authority() -> None:
     class LegacyMemoryAdapter:
         def __init__(self) -> None:
             self.entries: list[dict] = []
@@ -291,7 +420,7 @@ def test_legacy_add_only_adapter_cannot_bypass_suspicious_trace_safety() -> None
             self.entries.append(entry)
 
     memory = LegacyMemoryAdapter()
-    engine = ReflectionEngine(memory, persist_reflections=True)  # type: ignore[arg-type]
+    engine = ReflectionEngine(memory)  # type: ignore[arg-type]
     trace = [
         {
             "event_id": "event-1",

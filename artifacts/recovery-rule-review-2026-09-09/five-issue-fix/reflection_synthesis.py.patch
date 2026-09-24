@@ -1,0 +1,57 @@
+--- before/reflection_synthesis.py
++++ after/reflection_synthesis.py
+@@ -1633,12 +1633,6 @@
+                 "Confirmed recovery/root_cause requires a recovery reference to test verification linkage.",
+             )
+             return
+-        related_errors = [
+-            indexes["errors_by_id"][item]
+-            for recovery in linked_recoveries
+-            for item in recovery.related_error_ids
+-            if item in indexes["errors_by_id"]
+-        ]
+         cited = [
+             verification
+             for verification in (
+@@ -1647,19 +1641,28 @@
+             )
+             if verification is not None and verification.result == "passed"
+         ]
+-        linked = any(
+-            verification in _passed_verifications_after_recovery(recovery, evidence)
+-            and _verification_evidence_matches_recovery(
+-                verification, recovery, related_errors, evidence
+-            )
+-            for recovery in linked_recoveries
+-            for verification in cited
+-        )
+-        if not linked:
+-            reject(
+-                "confirmed_recovery_verification_unrelated",
+-                "Cited passed verification is not linked to the referenced recovery.",
+-            )
++        for recovery in linked_recoveries:
++            # Keep the error evidence and temporal boundary within the same
++            # recovery. A union would let one recovery borrow another's
++            # error text while supplying its own earlier change boundary.
++            related_errors = [
++                indexes["errors_by_id"][item]
++                for item in recovery.related_error_ids
++                if item in indexes["errors_by_id"]
++            ]
++            passed_after = _passed_verifications_after_recovery(recovery, evidence)
++            if any(
++                verification in passed_after
++                and _verification_evidence_matches_recovery(
++                    verification, recovery, related_errors, evidence
++                )
++                for verification in cited
++            ):
++                return
++        reject(
++            "confirmed_recovery_verification_unrelated",
++            "Cited passed verification is not linked to the referenced recovery.",
++        )
+ 
+     def _validate_statement_alignment(
+         self,

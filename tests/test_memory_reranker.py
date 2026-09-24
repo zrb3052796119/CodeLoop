@@ -6,13 +6,7 @@ import json
 import pytest
 
 from minicode.memory import MemoryEntry, MemoryScope
-from minicode.memory_reranker import (
-    MemoryReranker,
-    RerankCandidate,
-    RerankResult,
-    create_reranker,
-)
-
+from minicode.memory_reranker import MemoryReranker, RerankResult, create_reranker
 
 # ── Mock model adapter ──────────────────────────────────────────────
 
@@ -208,14 +202,25 @@ class TestRerankerEdgeCases:
         )
         assert result.selected_ids == ["m1"]
 
-    def test_create_reranker_passthrough(self):
-        # Passing model=None triggers auto-creation attempt
+    def test_create_reranker_without_explicit_model_is_offline_passthrough(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        from minicode import model_registry
+
+        monkeypatch.setattr(
+            model_registry,
+            "create_model_adapter",
+            lambda **_kwargs: MockModelAdapter(selected_ids=["m1"]),
+        )
+
         reranker = create_reranker(model=None)
-        # May be enabled if model adapter creation succeeds, or disabled if not
-        assert isinstance(reranker, MemoryReranker)
+
+        assert not reranker.enabled
         candidates = _make_candidates()
         result = reranker.curate(candidates, "test", [])
-        assert len(result.selected_ids) >= 1
+        assert result.selected_ids == ["m1", "m2", "m3", "m4", "m5"]
+        assert reranker.call_count == 0
 
     def test_reranker_with_next_interface(self):
         mock = MockModelAdapter(selected_ids=["m1", "m3"])

@@ -1,0 +1,12 @@
+{
+  "buggy_root": "/private/tmp/t5-real-baseline-7jk2sgy2",
+  "source": "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/minicode/reflection_synthesis.py",
+  "source_sha256": "b0f675fb0cd67e2f503de43ff45a13d212a6e9160d5bc8ee378c2f1b8676eebb",
+  "test_command": [
+    "/Users/zhourunbo/code/coding agent/MiniCode-Python-main/.venv-acceptance/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_reflection_recovery_chain_isolation.py"
+  ]
+}

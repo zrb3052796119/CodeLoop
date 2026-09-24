@@ -1,0 +1,77 @@
+[
+  {
+    "case": "unrecognized_pytest_selector",
+    "failed_objective": {
+      "executable": "pytest",
+      "input_paths": [
+        "tests/"
+      ],
+      "output_paths": [],
+      "anchor_dirs": [],
+      "selection": [],
+      "bare_operands": [],
+      "ambiguous_selection": false,
+      "unknown_flags": [
+        "-p=no:cacheprovider"
+      ],
+      "executes_work": true
+    },
+    "passed_objective": {
+      "executable": "pytest",
+      "input_paths": [
+        "tests/"
+      ],
+      "output_paths": [],
+      "anchor_dirs": [],
+      "selection": [],
+      "bare_operands": [],
+      "ambiguous_selection": false,
+      "unknown_flags": [
+        "-p=no:cacheprovider",
+        "-ignore-glob=*/test_auth.py"
+      ],
+      "executes_work": true
+    },
+    "contract_match": false,
+    "value_accepted": false,
+    "claims": []
+  },
+  {
+    "case": "inline_cd_overrides_structured_cwd",
+    "failed_objective": {
+      "executable": "pytest",
+      "input_paths": [
+        "tests/test_auth.py"
+      ],
+      "output_paths": [],
+      "anchor_dirs": [
+        "/repo",
+        "backend"
+      ],
+      "selection": [],
+      "bare_operands": [],
+      "ambiguous_selection": false,
+      "unknown_flags": [],
+      "executes_work": true
+    },
+    "passed_objective": {
+      "executable": "pytest",
+      "input_paths": [
+        "tests/test_auth.py"
+      ],
+      "output_paths": [],
+      "anchor_dirs": [
+        "/repo",
+        "frontend"
+      ],
+      "selection": [],
+      "bare_operands": [],
+      "ambiguous_selection": false,
+      "unknown_flags": [],
+      "executes_work": true
+    },
+    "contract_match": false,
+    "value_accepted": false,
+    "claims": []
+  }
+]

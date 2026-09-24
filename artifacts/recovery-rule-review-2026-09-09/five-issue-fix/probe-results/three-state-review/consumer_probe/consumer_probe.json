@@ -1,0 +1,595 @@
+[
+  {
+    "name": "missing_one_target_relocating_a_different_target",
+    "expected": "Do not confirm: the missing tests/test_missing.py was dropped; only auth was relocated.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "-m",
+            "pytest",
+            "tests/test_auth.py",
+            "tests/test_missing.py",
+            "-q",
+            "--tb=short"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py",
+          "tests/test_missing.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "ERROR: file or directory not found: tests/test_missing.py\n\n\nno tests ran in 0.00s\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py",
+          "tests/test_missing.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "ERROR: file or directory not found: tests/test_missing.py\n\n\nno tests ran in 0.00s\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py",
+          "tests/test_missing.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "-m",
+            "pytest",
+            "backend/tests/test_auth.py",
+            "-q",
+            "--tb=short"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "backend/tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": ".                                                                        [100%]\n1 passed in 0.00s\n",
+        "files": [],
+        "referenced_files": [
+          "backend/tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "ERROR: file or directory not found: tests/test_missing.py\n\n\nno tests ran in 0.00s\n"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-2",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "passed",
+        "event_ids": [
+          "event-000004",
+          "event-000005"
+        ],
+        "summary": ".                                                                        [100%]\n1 passed in 0.00s\n"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false,
+    "raw_objectives": [
+      {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/test_auth.py",
+          "tests/test_missing.py"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [],
+        "executes_work": true
+      },
+      {
+        "executable": "pytest",
+        "input_paths": [
+          "backend/tests/test_auth.py"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [],
+        "executes_work": true
+      }
+    ],
+    "raw_objective_relation": "conflict",
+    "actual_pytest_runs": [
+      {
+        "command": "python",
+        "args": [
+          "-m",
+          "pytest",
+          "tests/test_auth.py",
+          "tests/test_missing.py",
+          "-q",
+          "--tb=short"
+        ],
+        "exit_code": 4,
+        "output": "ERROR: file or directory not found: tests/test_missing.py\n\n\nno tests ran in 0.00s\n"
+      },
+      {
+        "command": "python",
+        "args": [
+          "-m",
+          "pytest",
+          "backend/tests/test_auth.py",
+          "-q",
+          "--tb=short"
+        ],
+        "exit_code": 0,
+        "output": ".                                                                        [100%]\n1 passed in 0.00s\n"
+      }
+    ],
+    "missing_target_still_absent_after_success": true
+  },
+  {
+    "name": "bare_billing_target_misclassified_as_default_scope",
+    "expected": "Do not confirm: billing is an explicit different directory, not default-scope retry.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "-m",
+            "pytest",
+            "tests/test_auth.py",
+            "-q",
+            "--tb=short"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "ERROR: file or directory not found: tests/test_auth.py\n\n\nno tests ran in 0.00s\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "ERROR: file or directory not found: tests/test_auth.py\n\n\nno tests ran in 0.00s\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "-m",
+            "pytest",
+            "billing",
+            "-q",
+            "--tb=short"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": ".                                                                        [100%]\n1 passed in 0.00s\n",
+        "files": [],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "ERROR: file or directory not found: tests/test_auth.py\n\n\nno tests ran in 0.00s\n"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-2",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "passed",
+        "event_ids": [
+          "event-000004",
+          "event-000005"
+        ],
+        "summary": ".                                                                        [100%]\n1 passed in 0.00s\n"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false,
+    "raw_objectives": [
+      {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/test_auth.py"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [],
+        "executes_work": true
+      },
+      {
+        "executable": "pytest",
+        "input_paths": [],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [],
+        "bare_operands": [
+          "billing"
+        ],
+        "ambiguous_selection": false,
+        "unknown_flags": [],
+        "executes_work": true
+      }
+    ],
+    "raw_objective_relation": "conflict",
+    "actual_pytest_runs": [
+      {
+        "command": "python",
+        "args": [
+          "-m",
+          "pytest",
+          "tests/test_auth.py",
+          "-q",
+          "--tb=short"
+        ],
+        "exit_code": 4,
+        "output": "ERROR: file or directory not found: tests/test_auth.py\n\n\nno tests ran in 0.00s\n"
+      },
+      {
+        "command": "python",
+        "args": [
+          "-m",
+          "pytest",
+          "billing",
+          "-q",
+          "--tb=short"
+        ],
+        "exit_code": 0,
+        "output": ".                                                                        [100%]\n1 passed in 0.00s\n"
+      }
+    ]
+  },
+  {
+    "name": "nested_usage_error_waives_valid_parent_selection_flag",
+    "expected": "Do not confirm: pytest accepted --run-integration; the nested helper rejected its own input. The second run skipped the failing test.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "-m",
+            "pytest",
+            "tests/test_cli.py",
+            "--run-integration",
+            "-q",
+            "--tb=short"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_cli.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_nested_helper __________________________\n...[truncated middle]...\nh]\nnested-helper: error: unrecognized arguments: --run-integration\n=========================== short test summary info ============================\nFAILED tests/test_cli.py::test_nested_helper - SystemExit: 2\n1 failed, 1 passed in 0.03s\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_cli.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_nested_helper __________________________\n...[truncated middle]...\nh]\nnested-helper: error: unrecognized arguments: --run-integration\n=========================== short test summary info ============================\nFAILED tests/test_cli.py::test_nested_helper - SystemExit: 2\n1 failed, 1 passed in 0.03s\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_cli.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "-m",
+            "pytest",
+            "tests/test_cli.py",
+            "-q",
+            "--tb=short"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_cli.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "s.                                                                       [100%]\n1 passed, 1 skipped in 0.00s\n",
+        "files": [],
+        "referenced_files": [
+          "tests/test_cli.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_nested_helper __________________________\n...[truncated middle]...\nh]\nnested-helper: error: unrecognized arguments: --run-integration\n=========================== short test summary info ============================\nFAILED tests/test_cli.py::test_nested_helper - SystemExit: 2\n1 failed, 1 passed in 0.03s\n"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-2",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "passed",
+        "event_ids": [
+          "event-000004",
+          "event-000005"
+        ],
+        "summary": "s.                                                                       [100%]\n1 passed, 1 skipped in 0.00s\n"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false,
+    "raw_objectives": [
+      {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/test_cli.py"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [
+          "-run-integration=None"
+        ],
+        "executes_work": true
+      },
+      {
+        "executable": "pytest",
+        "input_paths": [
+          "tests/test_cli.py"
+        ],
+        "output_paths": [],
+        "anchor_dirs": [],
+        "selection": [],
+        "bare_operands": [],
+        "ambiguous_selection": false,
+        "unknown_flags": [],
+        "executes_work": true
+      }
+    ],
+    "raw_objective_relation": "conflict",
+    "actual_pytest_runs": [
+      {
+        "command": "python",
+        "args": [
+          "-m",
+          "pytest",
+          "tests/test_cli.py",
+          "--run-integration",
+          "-q",
+          "--tb=short"
+        ],
+        "exit_code": 1,
+        "output": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_nested_helper ______________________________\ntests/test_cli.py:4: in test_nested_helper\n    argparse.ArgumentParser(prog=\"nested-helper\").parse_args([\"--run-integration\"])\n/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:1908: in parse_args\n    self.error(msg)\n/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2650: in error\n    self.exit(2, _('%(prog)s: error: %(message)s\\n') % args)\n/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2637: in exit\n    _sys.exit(status)\nE   SystemExit: 2\n----------------------------- Captured stderr call -----------------------------\nusage: nested-helper [-h]\nnested-helper: error: unrecognized arguments: --run-integration\n=========================== short test summary info ============================\nFAILED tests/test_cli.py::test_nested_helper - SystemExit: 2\n1 failed, 1 passed in 0.03s\n"
+      },
+      {
+        "command": "python",
+        "args": [
+          "-m",
+          "pytest",
+          "tests/test_cli.py",
+          "-q",
+          "--tb=short"
+        ],
+        "exit_code": 0,
+        "output": "s.                                                                       [100%]\n1 passed, 1 skipped in 0.00s\n"
+      }
+    ],
+    "original_scope_after_success": {
+      "command": "python",
+      "args": [
+        "-m",
+        "pytest",
+        "tests/test_cli.py",
+        "--run-integration",
+        "-q",
+        "--tb=short"
+      ],
+      "exit_code": 1,
+      "output": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_nested_helper ______________________________\ntests/test_cli.py:4: in test_nested_helper\n    argparse.ArgumentParser(prog=\"nested-helper\").parse_args([\"--run-integration\"])\n/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:1908: in parse_args\n    self.error(msg)\n/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2650: in error\n    self.exit(2, _('%(prog)s: error: %(message)s\\n') % args)\n/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/argparse.py:2637: in exit\n    _sys.exit(status)\nE   SystemExit: 2\n----------------------------- Captured stderr call -----------------------------\nusage: nested-helper [-h]\nnested-helper: error: unrecognized arguments: --run-integration\n=========================== short test summary info ============================\nFAILED tests/test_cli.py::test_nested_helper - SystemExit: 2\n1 failed, 1 passed in 0.03s\n"
+    },
+    "phrase_removed_control": {
+      "recoveries": [],
+      "value_accepted": false,
+      "raw_objective_relation": "conflict"
+    }
+  }
+]

@@ -1,0 +1,556 @@
+[
+  {
+    "name": "shared_cwd_unrelated_tests",
+    "expected": "No confirmed recovery: the only common resource is cwd; the failed auth target was never rerun.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/test_auth.py"
+          ],
+          "cwd": "/repo/workspace",
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "AssertionError: expired auth token accepted",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "AssertionError: expired auth token accepted",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "-m",
+            "pytest",
+            "tests/test_billing.py"
+          ],
+          "cwd": "/repo/workspace",
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_billing.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "3 passed",
+        "files": [],
+        "referenced_files": [
+          "tests/test_billing.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "AssertionError: expired auth token accepted"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-2",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "passed",
+        "event_ids": [
+          "event-000004",
+          "event-000005"
+        ],
+        "summary": "3 passed"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false
+  },
+  {
+    "name": "different_cwd_same_relative_test",
+    "expected": "No confirmed recovery: identical relative paths resolve to distinct files under different cwd.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/test_config.py"
+          ],
+          "cwd": "/repo/backend",
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_config.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "AssertionError: backend config broken",
+        "files": [],
+        "referenced_files": [
+          "tests/test_config.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "AssertionError: backend config broken",
+        "files": [],
+        "referenced_files": [
+          "tests/test_config.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "-m",
+            "pytest",
+            "tests/test_config.py"
+          ],
+          "cwd": "/repo/frontend",
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_config.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "3 passed",
+        "files": [],
+        "referenced_files": [
+          "tests/test_config.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "AssertionError: backend config broken"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-2",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "passed",
+        "event_ids": [
+          "event-000004",
+          "event-000005"
+        ],
+        "summary": "3 passed"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false
+  },
+  {
+    "name": "relative_suffix_is_not_file_identity",
+    "expected": "No confirmed recovery: two relative files in the same workspace can coexist, with no rename evidence.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/test_auth.py"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "AssertionError: root auth token accepted",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "AssertionError: root auth token accepted",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "-m",
+            "pytest",
+            "backend/tests/test_auth.py"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "backend/tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "3 passed",
+        "files": [],
+        "referenced_files": [
+          "backend/tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "AssertionError: root auth token accepted"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-2",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "passed",
+        "event_ids": [
+          "event-000004",
+          "event-000005"
+        ],
+        "summary": "3 passed"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false
+  },
+  {
+    "name": "changed_filter_skips_failed_test",
+    "expected": "No confirmed recovery: successful invocation selects a different test, and documentation edit is unrelated.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/test_auth.py",
+            "-k=expired"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "AssertionError: expired token accepted",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "AssertionError: expired token accepted",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "edit_file",
+        "input": {
+          "path": "docs/README.md",
+          "search": "Foo",
+          "replace": "Bar",
+          "replace_all": false,
+          "fuzzy": false
+        },
+        "files": [
+          "docs/README.md"
+        ],
+        "files_changed": [
+          "docs/README.md"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "edit_file",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "updated",
+        "files": [
+          "docs/README.md"
+        ],
+        "files_changed": [
+          "docs/README.md"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "tool_call",
+        "step": 3,
+        "call_id": "call-3",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/test_auth.py",
+            "-k=valid"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      },
+      {
+        "type": "tool_result",
+        "step": 3,
+        "call_id": "call-3",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "1 passed, 1 deselected",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000007"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000008"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "AssertionError: expired token accepted"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-3",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "passed",
+        "event_ids": [
+          "event-000006",
+          "event-000007"
+        ],
+        "summary": "1 passed, 1 deselected"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false
+  }
+]

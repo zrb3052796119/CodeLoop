@@ -1,0 +1,53 @@
+[
+  {
+    "name": "different_args_targets_plus_unrelated_edit",
+    "recoveries": 0,
+    "persistable_claims": [],
+    "verification": [
+      [
+        "call-1",
+        "failed"
+      ],
+      [
+        "call-3",
+        "passed"
+      ]
+    ]
+  },
+  {
+    "name": "same_basename_different_project_no_edit",
+    "recoveries": 0,
+    "persistable_claims": [],
+    "verification": [
+      [
+        "call-1",
+        "failed"
+      ],
+      [
+        "call-2",
+        "passed"
+      ]
+    ]
+  },
+  {
+    "name": "masked_fixture_error_with_mixed_passed_output",
+    "recoveries": 0,
+    "persistable_claims": [],
+    "verification": [
+      [
+        "call-1",
+        "failed"
+      ],
+      [
+        "call-2",
+        "failed"
+      ]
+    ]
+  },
+  {
+    "name": "timeout_budget_change_loses_corrective_input",
+    "recoveries": 0,
+    "persistable_claims": [],
+    "verification": []
+  }
+]

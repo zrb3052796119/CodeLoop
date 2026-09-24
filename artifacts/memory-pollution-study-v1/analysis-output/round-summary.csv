@@ -1,0 +1,10 @@
+arm,round,families,outcomeSuccess,tool_calls_mean,tool_failures_mean,task_model_calls_mean,side_model_calls_mean,task_input_tokens_mean,task_output_tokens_mean,duration_ms_mean
+clean,1,6,6,1.0,0.0,2.0,0.0,15465.5,244.0,12503.67
+clean,2,6,6,1.33,0.0,2.33,0.0,18204.67,373.0,17295.5
+clean,3,6,6,1.0,0.0,2.0,0.0,15508.17,265.83,12728.83
+polluted-off,1,6,6,3.17,0.5,3.83,0.17,33244.0,1236.33,40406.33
+polluted-off,2,6,6,1.5,0.0,2.33,0.0,18682.0,627.33,19630.5
+polluted-off,3,6,6,1.17,0.0,2.17,0.0,17138.33,368.17,13669.17
+polluted-rule,1,6,6,2.0,0.17,2.67,0.17,22285.17,654.17,22604.17
+polluted-rule,2,6,6,2.67,0.33,3.5,0.17,29413.5,831.83,29831.0
+polluted-rule,3,6,6,1.0,0.0,2.0,0.0,15734.67,360.33,15529.5

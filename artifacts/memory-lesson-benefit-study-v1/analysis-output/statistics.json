@@ -1,0 +1,236 @@
+{
+  "bootstrap": {
+    "samples": 20000,
+    "seed": 202609092
+  },
+  "conditionSummary": [
+    {
+      "cells": 12,
+      "condition": "warm",
+      "duration_ms_mean": 22212.33,
+      "outcomeSuccess": 12,
+      "side_model_calls_mean": 0.0,
+      "task_input_tokens_mean": 26365.33,
+      "task_model_calls_mean": 3.25,
+      "task_output_tokens_mean": 628.08,
+      "tool_calls_mean": 2.5,
+      "tool_failures_mean": 0.08
+    },
+    {
+      "cells": 12,
+      "condition": "cold",
+      "duration_ms_mean": 26452.67,
+      "outcomeSuccess": 12,
+      "side_model_calls_mean": 0.17,
+      "task_input_tokens_mean": 43404.58,
+      "task_model_calls_mean": 5.42,
+      "task_output_tokens_mean": 564.42,
+      "tool_calls_mean": 6.67,
+      "tool_failures_mean": 0.5
+    }
+  ],
+  "learningChain": {
+    "lesson-attributed": {
+      "passed": 11,
+      "total": 12
+    },
+    "lesson-covers-target": {
+      "passed": 11,
+      "total": 12
+    },
+    "lesson-written": {
+      "passed": 12,
+      "total": 12
+    },
+    "source-failure": {
+      "passed": 12,
+      "total": 12
+    }
+  },
+  "primaryUnit": "family",
+  "reviewer": {
+    "downgradeReasons": {},
+    "reviewInputTokens": 0,
+    "reviewModelCalls": 0,
+    "reviewOutputTokens": 0,
+    "reviewSources": {},
+    "verdicts": {}
+  },
+  "suiteId": "minicode-memory-lesson-benefit-2026-09-09-v1",
+  "tests": {
+    "duration_ms:cold-minus-warm": {
+      "bootstrapCI95": [
+        -2845.75,
+        11162.666666666668
+      ],
+      "coldFamilyMeans": [
+        17778.5,
+        41184.5,
+        17973.5,
+        33774.0,
+        21386.0,
+        26619.5
+      ],
+      "differences": [
+        -9217.0,
+        17635.5,
+        -4239.0,
+        9770.5,
+        2393.5,
+        9098.5
+      ],
+      "meanCold": 26452.666666666668,
+      "meanSaving": 4240.333333333333,
+      "meanWarm": 22212.333333333332,
+      "relativeSavingPercent": 16.029889866176074,
+      "warmFamilyMeans": [
+        26995.5,
+        23549.0,
+        22212.5,
+        24003.5,
+        18992.5,
+        17521.0
+      ],
+      "wilcoxon": {
+        "n_nonzero": 6,
+        "p_two_sided": 0.4375,
+        "rank_biserial": 0.42857142857142855,
+        "statistic": 6.0,
+        "w_minus": 6.0,
+        "w_plus": 15.0
+      }
+    },
+    "task_input_tokens:cold-minus-warm": {
+      "bootstrapCI95": [
+        6915.416666666664,
+        24477.583333333332
+      ],
+      "coldFamilyMeans": [
+        31702.5,
+        57977.0,
+        31750.0,
+        48128.0,
+        43312.5,
+        47557.5
+      ],
+      "differences": [
+        -5616.0,
+        25622.0,
+        15779.0,
+        23889.0,
+        15165.0,
+        27396.5
+      ],
+      "holmP": 0.0625,
+      "meanCold": 43404.583333333336,
+      "meanSaving": 17039.25,
+      "meanWarm": 26365.333333333332,
+      "relativeSavingPercent": 39.25679891716506,
+      "warmFamilyMeans": [
+        37318.5,
+        32355.0,
+        15971.0,
+        24239.0,
+        28147.5,
+        20161.0
+      ],
+      "wilcoxon": {
+        "n_nonzero": 6,
+        "p_two_sided": 0.0625,
+        "rank_biserial": 0.9047619047619048,
+        "statistic": 1.0,
+        "w_minus": 1.0,
+        "w_plus": 20.0
+      }
+    },
+    "task_output_tokens:cold-minus-warm": {
+      "bootstrapCI95": [
+        -180.66666666666663,
+        59.16666666666674
+      ],
+      "coldFamilyMeans": [
+        480.0,
+        828.5,
+        508.0,
+        610.5,
+        502.0,
+        457.5
+      ],
+      "differences": [
+        -263.0,
+        199.0,
+        -217.0,
+        -13.5,
+        -2.5,
+        -85.0
+      ],
+      "meanCold": 564.4166666666666,
+      "meanSaving": -63.666666666666664,
+      "meanWarm": 628.0833333333334,
+      "relativeSavingPercent": -11.280082681234328,
+      "warmFamilyMeans": [
+        743.0,
+        629.5,
+        725.0,
+        624.0,
+        504.5,
+        542.5
+      ],
+      "wilcoxon": {
+        "n_nonzero": 6,
+        "p_two_sided": 0.21875,
+        "rank_biserial": -0.6190476190476191,
+        "statistic": 4.0,
+        "w_minus": 17.0,
+        "w_plus": 4.0
+      }
+    },
+    "tool_calls:cold-minus-warm": {
+      "bootstrapCI95": [
+        2.916666666666667,
+        5.166666666666667
+      ],
+      "coldFamilyMeans": [
+        5.5,
+        8.5,
+        5.5,
+        8.0,
+        6.5,
+        6.0
+      ],
+      "differences": [
+        1.5,
+        4.5,
+        4.5,
+        6.0,
+        4.0,
+        4.5
+      ],
+      "holmP": 0.0625,
+      "meanCold": 6.666666666666667,
+      "meanSaving": 4.166666666666667,
+      "meanWarm": 2.5,
+      "relativeSavingPercent": 62.5,
+      "warmFamilyMeans": [
+        4.0,
+        4.0,
+        1.0,
+        2.0,
+        2.5,
+        1.5
+      ],
+      "wilcoxon": {
+        "n_nonzero": 6,
+        "p_two_sided": 0.03125,
+        "rank_biserial": 1.0,
+        "statistic": 0.0,
+        "w_minus": 0.0,
+        "w_plus": 21.0
+      }
+    }
+  },
+  "warmCaseStatus": {
+    "failed": 1,
+    "passed": 11
+  }
+}

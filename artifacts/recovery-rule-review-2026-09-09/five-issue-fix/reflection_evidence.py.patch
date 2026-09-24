@@ -1,0 +1,545 @@
+--- before/reflection_evidence.py
++++ after/reflection_evidence.py
+@@ -904,27 +904,23 @@
+ # recorded in ``unknown_flags`` verbatim: unknown arguments whose spelling
+ # or value differs between two calls keep the pair at candidate level --
+ # "we could not classify it" must never become "it did not change scope".
+-_PRESENTATION_FLAG_NAMES = {
+-    "q",
+-    "v",
+-    "s",
+-    "quiet",
+-    "verbose",
+-    "silent",
+-    "color",
+-    "no-color",
+-    "colours",
+-    "no-colours",
+-    "tb",
+-    "showlocals",
+-    "-l",
+-    "durations",
+-    "d",
+-    "header",
+-    "no-header",
+-    "help",
+-    "version",
++# Arity belongs to the executable, not to the spelling of a flag in an
++# arbitrary tool. In particular pytest's -q/-v never consume a test path.
++_DISPLAY_SWITCHES = {
++    "pytest": {"q", "v", "s", "quiet", "verbose", "showlocals", "l", "no-header", "no-summary"},
++    "unittest": {"q", "v", "quiet", "verbose"},
++    "ruff": {"q", "v", "quiet", "verbose", "silent", "no-cache"},
+ }
++_DISPLAY_VALUES = {
++    "pytest": {"tb", "color", "durations", "durations-min", "capture"},
++    "ruff": {"output-format"},
++}
++_OPAQUE_VALUE_FLAGS = {
++    "pytest": {"p", "c", "o", "override-ini", "rootdir", "basetemp", "confcutdir", "maxfail"},
++}
++_TEST_RUNNERS = {"pytest", "unittest", "nose", "nosetests", "vitest", "jest"}
++_NON_EXECUTING_FLAGS = {"help", "version", "V", "h", "collect-only", "co"}
++_INCOMPLETE_INVOCATION_RE = re.compile(r"\.\.\.\[truncated\]|\.\.\. \d+ more items")
+ 
+ 
+ @dataclass(frozen=True)
+@@ -950,26 +946,22 @@
+     # (sorted).  Identical spellings on both sides of a pairing are treated
+     # as harmless; any difference is an unresolved scope change.
+     unknown_flags: tuple[str, ...] = ()
+-
+-
+-def _expand_command_tokens(source: str, depth: int = 0) -> list[str]:
+-    try:
+-        tokens = shlex.split(source, posix=True)
+-    except ValueError:
+-        tokens = source.split()
+-    if depth >= 2:
+-        return tokens
+-    expanded: list[str] = []
+-    for token in tokens:
+-        if any(ch.isspace() for ch in token) and token.strip():
+-            expanded.extend(_expand_command_tokens(token, depth + 1))
+-        else:
+-            expanded.append(token)
+-    return expanded
++    # Help/version/collection can exit zero without exercising any target.
++    executes_work: bool = True
++
++
++def _expand_command_tokens(source: str) -> list[str]:
++    """Decode one command layer, preserving each quoted argv element.
++
++    Only a recognized shell's -c/-lc argument may be decoded again by the
++    caller. A -k expression or a path containing spaces is already one arg.
++    """
++    return shlex.split(source, posix=True)
+ 
+ 
+ def _flag_name(token: str) -> str:
+-    return token.lstrip("-").split("=", 1)[0].lower()
++    # Flags are case-sensitive: pytest -V prints its version; -v runs tests.
++    return token.lstrip("-").split("=", 1)[0]
+ 
+ 
+ def _normalize_input_path(token: str) -> str:
+@@ -993,9 +985,15 @@
+     return None
+ 
+ 
+-def call_objective(invocation: str, *, cwd: str = "") -> CallObjective:
++def call_objective(
++    invocation: str, *, cwd: str = "", argv: Sequence[str] | None = None
++) -> CallObjective:
+     """Parse a rendered invocation (or structured-JSON tool input) by role."""
+     source = _invocation_command_source(invocation)
++    # Both the evidence renderer and the runtime trace emitter use explicit
++    # truncation markers. Lost argv elements cannot be treated as operands.
++    if _INCOMPLETE_INVOCATION_RE.search(source):
++        return CallObjective(executable="", ambiguous_selection=True)
+     anchors: set[str] = set()
+     if cwd:
+         normalized_cwd = _normalize_path(cwd).strip().lower().rstrip("/")
+@@ -1029,7 +1027,10 @@
+                 ),
+             )
+ 
+-    tokens = _expand_command_tokens(source)
++    try:
++        tokens = list(argv) if argv is not None else _expand_command_tokens(source)
++    except ValueError:
++        return CallObjective(executable="", ambiguous_selection=True)
+     inputs: list[str] = []
+     outputs: list[str] = []
+     selection: list[str] = []
+@@ -1037,6 +1038,8 @@
+     unknown: list[str] = []
+     ambiguous = False
+     executable = ""
++    executes_work = True
++    shell_depth = 0
+ 
+     index = 0
+     # Consume wrapper prefixes: ``bash -lc '...'`` keeps its inner command;
+@@ -1045,7 +1048,16 @@
+     while index < len(tokens):
+         token = tokens[index]
+         if token in _SHELL_WRAPPERS and index + 1 < len(tokens) and _flag_name(tokens[index + 1]) in {"lc", "c"}:
+-            index += 2
++            shell_depth += 1
++            if shell_depth > 3 or index + 3 != len(tokens):
++                return CallObjective(executable="", ambiguous_selection=True)
++            script = tokens[index + 2]
++            if "$" in script or "`" in script:
++                return CallObjective(executable="", ambiguous_selection=True)
++            try:
++                tokens[index:] = _expand_command_tokens(script)
++            except ValueError:
++                return CallObjective(executable="", ambiguous_selection=True)
+             continue
+         if token == "cd" and index + 1 < len(tokens):
+             directory = _normalize_input_path(tokens[index + 1])
+@@ -1075,9 +1087,8 @@
+         else:
+             executable = _EXECUTABLE_ALIASES.get(exe_basename, exe_basename)
+             index += 1
+-    runner_context = any(
+-        marker in executable for marker in ("pytest", "unittest", "nose", "vitest", "jest")
+-    )
++    runner_context = executable in _TEST_RUNNERS
++    positional_only = False
+ 
+     while index < len(tokens):
+         token = tokens[index]
+@@ -1095,14 +1106,31 @@
+                 if index < len(tokens) and tokens[index] in {"&&", ";"}:
+                     index += 1
+             continue
+-        if token.startswith("-") and len(token) > 1:
++        if token == "--":
++            positional_only = True
++            index += 1
++            continue
++        if not positional_only and token.startswith("-") and len(token) > 1:
+             flag = _flag_name(token)
+             value = token.split("=", 1)[1] if "=" in token else None
+-            # ``-k expired`` style separated values join whichever bucket the
+-            # flag belongs to; the lookahead must not swallow the next flag.
+-            if value is None and index + 1 < len(tokens) and not tokens[index + 1].startswith("-"):
++            display_switch = flag in _DISPLAY_SWITCHES.get(executable, set())
++            if executable == "pytest" and re.fullmatch(r"-[qv]+", token):
++                display_switch = True
++            display_value = flag in _DISPLAY_VALUES.get(executable, set())
++            selection_value = runner_context and bool(_SELECTION_FLAG_RE.fullmatch(f"-{flag}"))
++            output_value = runner_context and flag in _OUTPUT_FLAG_NAMES and flag != "o"
++            opaque_value = flag in _OPAQUE_VALUE_FLAGS.get(executable, set())
++            takes_value = display_value or selection_value or output_value or opaque_value
++            if value is None and takes_value and index + 1 < len(tokens) and not tokens[index + 1].startswith("-"):
+                 value = tokens[index + 1]
+                 index += 1
++            if takes_value and value is None:
++                ambiguous = True
++            if flag in _NON_EXECUTING_FLAGS:
++                executes_work = False
++                unknown.append(f"-{flag}={value}")
++                index += 1
++                continue
+             if flag == "m":
+                 if runner_context:
+                     selection.append(f"-m={value}")
+@@ -1112,21 +1140,29 @@
+                     ambiguous = True
+                 index += 1
+                 continue
+-            if _SELECTION_FLAG_RE.fullmatch(f"-{flag}") and flag != "m":
++            if selection_value:
+                 selection.append(f"-{flag}={value}")
+                 index += 1
+                 continue
+-            if flag in _OUTPUT_FLAG_NAMES:
++            if output_value:
+                 if value is not None and _looks_like_path_token(str(value)):
+                     outputs.append(_normalize_input_path(str(value)))
+                 index += 1
+                 continue
+-            if flag not in _PRESENTATION_FLAG_NAMES:
++            if not display_switch and not display_value:
+                 # Unresolved argument: kept verbatim so a later comparison can
+                 # tell "same unknown argument on both sides" (harmless) from
+                 # "the retry added, dropped, or changed one" (a possible
+                 # scope change we cannot classify -- candidate, not confirm).
+                 unknown.append(f"-{flag}={value}")
++                if not takes_value and value is None:
++                    # Unknown arity: preserve following operands as opaque
++                    # evidence as well as parsing paths below. Never guess
++                    # that the next token is a disposable option value.
++                    for operand in tokens[index + 1:]:
++                        if operand.startswith("-"):
++                            break
++                        unknown.append(f"operand:{operand}")
+             index += 1
+             continue
+         if _looks_like_path_token(token):
+@@ -1151,10 +1187,11 @@
+         input_paths=tuple(item for item in _ordered_unique(inputs) if item),
+         output_paths=tuple(item for item in _ordered_unique(outputs) if item),
+         anchor_dirs=tuple(sorted(anchors)),
+-        selection=tuple(sorted(selection)),
++        selection=tuple(selection),
+         bare_operands=tuple(sorted(set(bare))),
+         ambiguous_selection=ambiguous,
+-        unknown_flags=tuple(sorted(set(unknown))),
++        unknown_flags=tuple(unknown),
++        executes_work=executes_work,
+     )
+ 
+ 
+@@ -1187,7 +1224,9 @@
+     never overrule this.
+     """
+     return (
+-        failed.ambiguous_selection
++        not failed.executes_work
++        or not success.executes_work
++        or failed.ambiguous_selection
+         or success.ambiguous_selection
+         or failed.selection != success.selection
+         or failed.unknown_flags != success.unknown_flags
+@@ -1232,6 +1271,8 @@
+     failed: CallObjective,
+     success: CallObjective,
+     errors: list[ErrorEvidence],
++    *,
++    tool_name: str,
+ ) -> bool:
+     """The relocation/default-scope exceptions to target identity.
+ 
+@@ -1241,28 +1282,108 @@
+     unknown-argument difference -- those are conflicts by
+     ``objective_scope_conflict`` and stay conflicts.
+     """
+-    if not _is_missing_target_failure(errors):
++    if objective_scope_conflict(failed, success):
+         return False
+-    if not _missing_object_is_requested_target(errors, failed.input_paths):
++    missing_targets = _missing_requested_targets(errors, failed.input_paths)
++    if not missing_targets:
+         return False
+-    if _relocated_path_matches(
+-        set(failed.input_paths), set(success.input_paths)
++    # Only list_files defines an empty path as listing the workspace root.
++    # A command with a bare directory (``pytest billing``), or an arbitrary
++    # tool with no recognized file argument, proves no default-scope retry.
++    if (
++        tool_name == "list_files"
++        and failed.executable == success.executable == "list_files"
++        and not success.input_paths
++        and not success.bare_operands
++        and set(failed.input_paths) <= missing_targets
+     ):
+         return True
+-    # Default-scope retry: the requested object was verifiably absent and
+-    # the retry ran the same executable over its default range (e.g.
+-    # ``list_files {"path": ""}`` after a missing ``config``).
+-    return not success.input_paths
++
++    successful_paths = _anchored_objective_paths(success)
++    relocated_missing_target = False
++    for path in failed.input_paths:
++        original_paths = _anchored_objective_paths(
++            replace(failed, input_paths=(path,))
++        )
++        if original_paths <= successful_paths:
++            continue
++        # The exception may relocate only the object the error named as
++        # missing. Every other input must still be verified at its original
++        # anchored identity; any dropped input rejects the whole pairing.
++        if path not in missing_targets or not _relocated_path_matches(
++            {path}, set(success.input_paths)
++        ):
++            return False
++        relocated_missing_target = True
++    return relocated_missing_target
+ 
+ 
+ _INVALID_ARGUMENT_RE = re.compile(
+     r"(?i)(?:unrecognized (?:arguments?|options?)\s*:?\s*(.+)"
+     r"|unknown (?:option|argument)\s*[:'\"]?\s*['\"]?(-{1,2}[\w-]+))"
+ )
++_ARGUMENT_ERROR_EXECUTION_RE = re.compile(
++    r"(?im)(?:\b\d+\s+(?:failed|passed|skipped|errors?)\b|"
++    r"\bcollected\s+\d+\s+items?\b|Captured\s+(?:stderr|stdout)|"
++    r"Traceback \(most recent call last\)|^\s*(?:FAILED|ERROR)\s+\S+::|"
++    r"^\s*={2,}\s*FAILURES|\bin test_[\w]+)"
++)
++
++
++def _argument_parser_matches_objective(
++    program: str, objective: CallObjective
++) -> bool:
++    """Recognize the outer program named by an argument parser diagnostic."""
++    normalized = " ".join(program.strip().lower().split())
++    executable = objective.executable
++    if normalized.rsplit("/", 1)[-1] == executable:
++        return True
++    module = re.fullmatch(r"(?:\S*/)?python\d*(?:\.\d+)?\s+-m\s+(\S+)", normalized)
++    return bool(module and module.group(1) == executable)
++
++
++def _outer_argument_error_diagnostic(
++    message: str, objective: CallObjective
++) -> str | None:
++    """Return only a diagnostic attributable to pre-execution outer parsing.
++
++    A test may run another parser and capture its usage error. That does not
++    invalidate the same-named flag accepted by the test runner. Require a
++    standalone typed usage error, or an initial usage envelope and error
++    line naming this invocation's program; execution evidence disqualifies
++    the message even when a matching diagnostic also occurs in it.
++    """
++    if _ARGUMENT_ERROR_EXECUTION_RE.search(message):
++        return None
++    lines = [line.strip() for line in message.splitlines() if line.strip()]
++    if not lines:
++        return None
++    if len(lines) == 1:
++        typed = re.fullmatch(r"(?:UsageError|ArgumentError):\s*(.+)", lines[0])
++        if typed:
++            return typed.group(1)
++    usage = re.match(r"(?i)^(?:ERROR:\s*)?usage:\s*(.+)", lines[0])
++    if not usage:
++        return None
++    for line in lines[1:]:
++        diagnostic = re.fullmatch(r"(?i)(.+?):\s*error:\s*(.+)", line)
++        if diagnostic is None:
++            continue
++        program = diagnostic.group(1)
++        if not _argument_parser_matches_objective(program, objective):
++            continue
++        # Both the initial usage banner and the error must name the outer
++        # program. A nested parser following a different usage banner is
++        # not licensed by a coincidentally matching token elsewhere.
++        if not usage.group(1).lower().startswith(program.lower() + " "):
++            continue
++        return diagnostic.group(2)
++    return None
+ 
+ 
+ def _invalid_argument_flags_named_by(
+     errors: list[ErrorEvidence],
++    objective: CallObjective,
+ ) -> set[str]:
+     """Flags a usage error itself names as invalid, in ``-flag=value`` form.
+ 
+@@ -1271,8 +1392,13 @@
+     unclassifiable scope change.
+     """
+     named: set[str] = set()
++    if any(_ARGUMENT_ERROR_EXECUTION_RE.search(error.message) for error in errors):
++        return named
+     for error in errors:
+-        for match in _INVALID_ARGUMENT_RE.finditer(error.message):
++        diagnostic = _outer_argument_error_diagnostic(error.message, objective)
++        if diagnostic is None:
++            continue
++        for match in _INVALID_ARGUMENT_RE.finditer(diagnostic):
+             for token in match.group(0).split():
+                 if token.startswith("-") and len(token) > 1:
+                     flag = _flag_name(token)
+@@ -1284,7 +1410,7 @@
+ def _without_error_named_arguments(
+     objective: CallObjective, errors: list[ErrorEvidence]
+ ) -> CallObjective:
+-    named = _invalid_argument_flags_named_by(errors)
++    named = _invalid_argument_flags_named_by(errors, objective)
+     if not named:
+         return objective
+     remaining = [
+@@ -1400,9 +1526,15 @@
+     the requested path on its own line, which proves nothing about what was
+     missing.
+     """
+-    if not requested_paths:
+-        return False
++    return bool(_missing_requested_targets(errors, requested_paths))
++
++
++def _missing_requested_targets(
++    errors: list[ErrorEvidence], requested_paths: tuple[str, ...]
++) -> set[str]:
++    """Return the requested objects specifically identified as missing."""
+     requested = {_normalize_input_path(item) for item in requested_paths}
++    missing_targets: set[str] = set()
+     for error in errors:
+         if not _MISSING_TARGET_RE.search(error.message):
+             continue
+@@ -1410,8 +1542,8 @@
+             for match in pattern.finditer(error.message):
+                 missing = _normalize_input_path(match.group(1))
+                 if missing in requested:
+-                    return True
+-    return False
++                    missing_targets.add(missing)
++    return missing_targets
+ 
+ 
+ def _relocated_path_matches(
+@@ -1427,6 +1559,7 @@
+         path.endswith("/" + failed_path)
+         for path in successful
+         for failed_path in failed
++        if not failed_path.startswith("/")
+     )
+ 
+ 
+@@ -2519,7 +2652,8 @@
+             # an ambiguous ``dbtool -m`` both land here.
+             return False
+         if _proven_path_exception(
+-            failed_objective, success_objective, failure_errors or []
++            failed_objective, success_objective, failure_errors or [],
++            tool_name=failure.tool_name,
+         ):
+             return True
+         if failed_objective.input_paths or success_objective.input_paths:
+@@ -2608,7 +2742,8 @@
+             # the proven relocation/default-scope exception below.
+             return False
+         return _proven_path_exception(
+-            failed_objective, success_objective, failure_errors or []
++            failed_objective, success_objective, failure_errors or [],
++            tool_name=failure.tool_name,
+         )
+ 
+     @staticmethod
+@@ -2716,8 +2851,17 @@
+                     cwd = _normalize_path(
+                         sanitize_evidence_text(str(cwd_value), 120).strip()
+                     ).lower()
+-            command_source = _invocation_command_source(invocation)
+-            objective = call_objective(invocation, cwd=cwd)
++            # The tool already supplies argv. Preserve its element boundaries
++            # rather than decoding quoted option values as new command text.
++            argv = None
++            if payload is not None:
++                raw_command = _safe_get(payload, "command", "")
++                raw_args = _safe_get(payload, "args", [])
++                if isinstance(raw_command, str) and raw_command and isinstance(raw_args, list) and raw_args:
++                    argv = [sanitize_evidence_text(raw_command, 240), *(
++                        sanitize_evidence_text(value, 320) for value in raw_args[:32]
++                    )]
++            objective = call_objective(invocation, cwd=cwd, argv=argv)
+             attempts.append(
+                 _CallAttempt(
+                     call_id=event.call_id,
+@@ -2811,6 +2955,8 @@
+                     modifiers.append(f"timeout: {int(timeout_value)}")
+                 if modifiers:
+                     rendered = f"{rendered} ({'; '.join(modifiers)})"
++                if isinstance(raw_args, list) and len(raw_args) > 32:
++                    rendered += " ...[truncated]"
+                 return sanitize_evidence_text(rendered, 560)
+ 
+         structured = self._sanitize_method_input(payload)
+@@ -3276,10 +3422,16 @@
+             return "build"
+         return None
+ 
+-    def _verification_result(self, status: str, output: str) -> Literal["passed", "failed", "unknown"]:
++    def _verification_result(
++        self, status: str, output: str, *, invocation: str = ""
++    ) -> Literal["passed", "failed", "unknown"]:
+         lowered = output.lower()
+         if status in {"error", "failed", "failure"}:
+             return "failed"
++        if invocation:
++            objective = call_objective_from_rendered(invocation)
++            if not objective.executes_work or objective.ambiguous_selection or not objective.executable:
++                return "unknown"
+         # Shell pipelines can return ``tail``'s zero exit status while pytest
+         # itself failed before collection.  Such an output must never verify a
+         # recovery lesson, even when the generic tool status says success.
+@@ -3310,7 +3462,16 @@
+ 
+     def _verification_scope(self, command: str, output: str) -> Literal["targeted", "full", "unknown"]:
+         lowered = f"{command} {output}".lower()
+-        if "full suite" in lowered or re.search(r"(?:^|\s)pytest\s+-q(?:\s|$)", command.lower()):
++        objective = call_objective_from_rendered(command)
++        if objective.ambiguous_selection or not objective.executes_work:
++            return "unknown"
++        if objective.executable in _TEST_RUNNERS:
++            if objective.input_paths or objective.bare_operands or objective.selection:
++                return "targeted"
++            if objective.unknown_flags:
++                return "unknown"
++            return "full"
++        if "full suite" in lowered:
+             return "full"
+         if _command_paths(command) or re.search(
+             r"\b(?:targeted|focused|service tests?|memory tests?|consistency tests?|compatibility tests?|security fixtures?|cache consistency)\b",
+@@ -3357,9 +3518,13 @@
+             if _safe_get(result.raw, "is_error"):
+                 status = "error"
+             output = self._event_text(result)
+-            if self._verification_result(status, output) != "passed":
+-                continue
+             input_event = inputs.get(call_id)
++            invocation = self._call_invocation(
++                result.tool_name or (input_event.tool_name if input_event else ""),
++                [result, *([input_event] if input_event else [])],
++            )
++            if self._verification_result(status, output, invocation=invocation) != "passed":
++                continue
+             event_ids = (
+                 (input_event.event_id, result.event_id)
+                 if input_event is not None
+@@ -3444,7 +3609,7 @@
+                     call_id=event.call_id,
+                     command_kind=kind,
+                     scope=self._verification_scope(command, output),
+-                    result=self._verification_result(status, output),
++                    result=self._verification_result(status, output, invocation=command),
+                     event_ids=_ordered_unique(event_ids),
+                     summary=output,
+                 )

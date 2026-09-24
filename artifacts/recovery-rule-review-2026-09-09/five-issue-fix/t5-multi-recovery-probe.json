@@ -1,0 +1,32 @@
+{
+  "timeline": {
+    "auth_recovery": 3,
+    "invoice_check_passed": 5,
+    "billing_recovery": 6
+  },
+  "independently_linked_proofs": {
+    "recovery-auth": false,
+    "recovery-billing": false
+  },
+  "auth_recovery_only": {
+    "valid": false,
+    "persistable": false,
+    "issues": [
+      "confirmed_recovery_verification_unrelated"
+    ]
+  },
+  "billing_recovery_only": {
+    "valid": false,
+    "persistable": false,
+    "issues": [
+      "confirmed_recovery_verification_unrelated"
+    ]
+  },
+  "both_recoveries": {
+    "valid": false,
+    "persistable": false,
+    "issues": [
+      "confirmed_recovery_verification_unrelated"
+    ]
+  }
+}

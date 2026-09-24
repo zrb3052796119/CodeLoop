@@ -1,0 +1,338 @@
+[
+  {
+    "name": "unrecognized_pytest_selector",
+    "expected": "Unknown scope-changing flags must not silently compare equal.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/",
+            "-q",
+            "--tb=short",
+            "-p",
+            "no:cacheprovider"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_token __________________________\n...[truncated middle]...\n: expired auth token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_token - AssertionError: expired auth ...\n1 failed, 1 passed in 0.01s\n",
+        "files": [],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_token __________________________\n...[truncated middle]...\n: expired auth token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_token - AssertionError: expired auth ...\n1 failed, 1 passed in 0.01s\n",
+        "files": [],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/",
+            "-q",
+            "--tb=short",
+            "-p",
+            "no:cacheprovider",
+            "--ignore-glob=*/test_auth.py"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": ".                                                                        [100%]\n1 passed in 0.00s\n",
+        "files": [],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "unknown",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_token __________________________\n...[truncated middle]...\n: expired auth token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_token - AssertionError: expired auth ...\n1 failed, 1 passed in 0.01s\n"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-2",
+        "command_kind": "test",
+        "scope": "unknown",
+        "result": "passed",
+        "event_ids": [
+          "event-000004",
+          "event-000005"
+        ],
+        "summary": ".                                                                        [100%]\n1 passed in 0.00s\n"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false,
+    "failed_objective": {
+      "executable": "pytest",
+      "input_paths": [
+        "tests/"
+      ],
+      "output_paths": [],
+      "anchor_dirs": [],
+      "selection": [],
+      "bare_operands": [],
+      "ambiguous_selection": false,
+      "unknown_flags": [
+        "-p=no:cacheprovider"
+      ]
+    },
+    "passed_objective": {
+      "executable": "pytest",
+      "input_paths": [
+        "tests/"
+      ],
+      "output_paths": [],
+      "anchor_dirs": [],
+      "selection": [],
+      "bare_operands": [],
+      "ambiguous_selection": false,
+      "unknown_flags": [
+        "-ignore-glob=*/test_auth.py",
+        "-p=no:cacheprovider"
+      ]
+    },
+    "contract_match": false,
+    "actual_pytest_runs": [
+      {
+        "args": [
+          "tests/",
+          "-q",
+          "--tb=short",
+          "-p",
+          "no:cacheprovider"
+        ],
+        "exit_code": 1,
+        "output": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n______________________________ test_expired_token ______________________________\ntests/test_auth.py:2: in test_expired_token\n    assert False, \"expired auth token accepted\"\nE   AssertionError: expired auth token accepted\nE   assert False\n=========================== short test summary info ============================\nFAILED tests/test_auth.py::test_expired_token - AssertionError: expired auth ...\n1 failed, 1 passed in 0.01s\n"
+      },
+      {
+        "args": [
+          "tests/",
+          "-q",
+          "--tb=short",
+          "-p",
+          "no:cacheprovider",
+          "--ignore-glob=*/test_auth.py"
+        ],
+        "exit_code": 0,
+        "output": ".                                                                        [100%]\n1 passed in 0.00s\n"
+      }
+    ]
+  },
+  {
+    "name": "inline_cd_overrides_structured_cwd",
+    "expected": "Only /repo/backend and /repo/frontend are actual cwd; /repo is not an alternative execution anchor.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "bash",
+          "args": [
+            "-lc",
+            "cd backend && pytest tests/test_auth.py"
+          ],
+          "cwd": "/repo",
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "AssertionError: backend expired auth token accepted",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "AssertionError: backend expired auth token accepted",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "bash",
+          "args": [
+            "-lc",
+            "cd frontend && pytest tests/test_auth.py"
+          ],
+          "cwd": "/repo",
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "1 passed",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "unknown",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "AssertionError: backend expired auth token accepted"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-2",
+        "command_kind": "test",
+        "scope": "unknown",
+        "result": "passed",
+        "event_ids": [
+          "event-000004",
+          "event-000005"
+        ],
+        "summary": "1 passed"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false,
+    "failed_objective": {
+      "executable": "pytest",
+      "input_paths": [
+        "tests/test_auth.py"
+      ],
+      "output_paths": [],
+      "anchor_dirs": [
+        "/repo",
+        "backend"
+      ],
+      "selection": [],
+      "bare_operands": [],
+      "ambiguous_selection": false,
+      "unknown_flags": []
+    },
+    "passed_objective": {
+      "executable": "pytest",
+      "input_paths": [
+        "tests/test_auth.py"
+      ],
+      "output_paths": [],
+      "anchor_dirs": [
+        "/repo",
+        "frontend"
+      ],
+      "selection": [],
+      "bare_operands": [],
+      "ambiguous_selection": false,
+      "unknown_flags": []
+    },
+    "contract_match": false
+  }
+]

@@ -1,0 +1,548 @@
+FFFFFFFFFFFFFFFFFFF.FFF...FFF....FF........                              [100%]
+=================================== FAILURES ===================================
+_______ test_boolean_display_flags_do_not_hide_replaced_test_targets[-q] _______
+
+display = '-q'
+
+    @pytest.mark.parametrize("display", ["-q", "-v", "-s", "--quiet"])
+    def test_boolean_display_flags_do_not_hide_replaced_test_targets(display: str) -> None:
+        first = ["pytest", display, "tests/test_auth.py", "tests/test_smoke.py"]
+        second = ["pytest", display, "tests/test_billing.py", "tests/test_smoke.py"]
+>       assert objective_relation(call_objective(shlex.join(first)), call_objective(shlex.join(second))) == "conflict"
+E       AssertionError: assert 'match' == 'conflict'
+E         
+E         - conflict
+E         + match
+
+tests/test_reflection_objective_arguments.py:34: AssertionError
+_______ test_boolean_display_flags_do_not_hide_replaced_test_targets[-v] _______
+
+display = '-v'
+
+    @pytest.mark.parametrize("display", ["-q", "-v", "-s", "--quiet"])
+    def test_boolean_display_flags_do_not_hide_replaced_test_targets(display: str) -> None:
+        first = ["pytest", display, "tests/test_auth.py", "tests/test_smoke.py"]
+        second = ["pytest", display, "tests/test_billing.py", "tests/test_smoke.py"]
+>       assert objective_relation(call_objective(shlex.join(first)), call_objective(shlex.join(second))) == "conflict"
+E       AssertionError: assert 'match' == 'conflict'
+E         
+E         - conflict
+E         + match
+
+tests/test_reflection_objective_arguments.py:34: AssertionError
+_______ test_boolean_display_flags_do_not_hide_replaced_test_targets[-s] _______
+
+display = '-s'
+
+    @pytest.mark.parametrize("display", ["-q", "-v", "-s", "--quiet"])
+    def test_boolean_display_flags_do_not_hide_replaced_test_targets(display: str) -> None:
+        first = ["pytest", display, "tests/test_auth.py", "tests/test_smoke.py"]
+        second = ["pytest", display, "tests/test_billing.py", "tests/test_smoke.py"]
+>       assert objective_relation(call_objective(shlex.join(first)), call_objective(shlex.join(second))) == "conflict"
+E       AssertionError: assert 'match' == 'conflict'
+E         
+E         - conflict
+E         + match
+
+tests/test_reflection_objective_arguments.py:34: AssertionError
+____ test_boolean_display_flags_do_not_hide_replaced_test_targets[--quiet] _____
+
+display = '--quiet'
+
+    @pytest.mark.parametrize("display", ["-q", "-v", "-s", "--quiet"])
+    def test_boolean_display_flags_do_not_hide_replaced_test_targets(display: str) -> None:
+        first = ["pytest", display, "tests/test_auth.py", "tests/test_smoke.py"]
+        second = ["pytest", display, "tests/test_billing.py", "tests/test_smoke.py"]
+>       assert objective_relation(call_objective(shlex.join(first)), call_objective(shlex.join(second))) == "conflict"
+E       AssertionError: assert 'match' == 'conflict'
+E         
+E         - conflict
+E         + match
+
+tests/test_reflection_objective_arguments.py:34: AssertionError
+_____ test_complete_quoted_selection_expression_controls_admission[False] ______
+
+wrapped = False
+
+    @pytest.mark.parametrize("wrapped", [False, True])
+    def test_complete_quoted_selection_expression_controls_admission(wrapped: bool) -> None:
+        first = ["pytest", "tests/", "-k", "test_smoke or test_expired_auth"]
+        second = ["pytest", "tests/", "-k", "test_smoke and not test_expired_auth"]
+        if wrapped:
+            first, second = ["bash", "-lc", shlex.join(first)], ["bash", "-lc", shlex.join(second)]
+>       assert objective_relation(call_objective(shlex.join(first)), call_objective(shlex.join(second))) == "conflict"
+E       AssertionError: assert 'match' == 'conflict'
+E         
+E         - conflict
+E         + match
+
+tests/test_reflection_objective_arguments.py:44: AssertionError
+______ test_complete_quoted_selection_expression_controls_admission[True] ______
+
+wrapped = True
+
+    @pytest.mark.parametrize("wrapped", [False, True])
+    def test_complete_quoted_selection_expression_controls_admission(wrapped: bool) -> None:
+        first = ["pytest", "tests/", "-k", "test_smoke or test_expired_auth"]
+        second = ["pytest", "tests/", "-k", "test_smoke and not test_expired_auth"]
+        if wrapped:
+            first, second = ["bash", "-lc", shlex.join(first)], ["bash", "-lc", shlex.join(second)]
+>       assert objective_relation(call_objective(shlex.join(first)), call_objective(shlex.join(second))) == "conflict"
+E       AssertionError: assert 'match' == 'conflict'
+E         
+E         - conflict
+E         + match
+
+tests/test_reflection_objective_arguments.py:44: AssertionError
+_____ test_identical_quoted_selection_survives_wrapper_and_display_changes _____
+
+    def test_identical_quoted_selection_survives_wrapper_and_display_changes() -> None:
+        command = ["pytest", "tests/", "-k", "test_smoke or test_expired_auth"]
+        first = call_objective(shlex.join(command))
+        second = call_objective(shlex.join(["bash", "-lc", shlex.join([*command, "-q"])]))
+>       assert first.selection == ("-k=test_smoke or test_expired_auth",)
+E       AssertionError: assert ('-k=test_smoke',) == ('-k=test_smo...xpired_auth',)
+E         
+E         At index 0 diff: '-k=test_smoke' != '-k=test_smoke or test_expired_auth'
+E         Use -v to get more diff
+
+tests/test_reflection_objective_arguments.py:52: AssertionError
+_ test_non_executing_modes_do_not_supply_passing_verification[--version-pytest 9.1.1] _
+
+flag = '--version', output = 'pytest 9.1.1'
+
+    @pytest.mark.parametrize("flag,output", [
+        ("--version", "pytest 9.1.1"),
+        ("-V", "pytest 9.1.1"),
+        ("--help", "usage: pytest [options] [file_or_dir]"),
+        ("--collect-only", "1 test collected"),
+    ])
+    def test_non_executing_modes_do_not_supply_passing_verification(flag: str, output: str) -> None:
+        first = ["pytest", "tests/test_auth.py"]
+        reflection = _reflect(first, [*first, flag], output)
+>       assert not reflection.value_decision.accepted
+E       AssertionError: assert not True
+E        +  where True = ReflectionValueDecision(accepted=True, reason_codes=['accepted_durable_reflection'], durable_signals=['confirmed_error_recovery_verified', 'verified_solution'], accepted_claim_ids=['claim-000001'], rejected_claim_ids=[]).accepted
+E        +    where ReflectionValueDecision(accepted=True, reason_codes=['accepted_durable_reflection'], durable_signals=['confirmed_error_recovery_verified', 'verified_solution'], accepted_claim_ids=['claim-000001'], rejected_claim_ids=[]) = ReflectionResult(task_summary='Repair and verify authentication', success=True, key_decisions=[], errors_encountered=[...ttempted=False, gap_fill_success=False, replace_regression=False, suppressed_claim_ids=[], suppression_reason_codes={}).value_decision
+
+tests/test_reflection_objective_arguments.py:65: AssertionError
+_ test_non_executing_modes_do_not_supply_passing_verification[-V-pytest 9.1.1] _
+
+flag = '-V', output = 'pytest 9.1.1'
+
+    @pytest.mark.parametrize("flag,output", [
+        ("--version", "pytest 9.1.1"),
+        ("-V", "pytest 9.1.1"),
+        ("--help", "usage: pytest [options] [file_or_dir]"),
+        ("--collect-only", "1 test collected"),
+    ])
+    def test_non_executing_modes_do_not_supply_passing_verification(flag: str, output: str) -> None:
+        first = ["pytest", "tests/test_auth.py"]
+        reflection = _reflect(first, [*first, flag], output)
+>       assert not reflection.value_decision.accepted
+E       AssertionError: assert not True
+E        +  where True = ReflectionValueDecision(accepted=True, reason_codes=['accepted_durable_reflection'], durable_signals=['confirmed_error_recovery_verified', 'verified_solution'], accepted_claim_ids=['claim-000001'], rejected_claim_ids=[]).accepted
+E        +    where ReflectionValueDecision(accepted=True, reason_codes=['accepted_durable_reflection'], durable_signals=['confirmed_error_recovery_verified', 'verified_solution'], accepted_claim_ids=['claim-000001'], rejected_claim_ids=[]) = ReflectionResult(task_summary='Repair and verify authentication', success=True, key_decisions=[], errors_encountered=[...ttempted=False, gap_fill_success=False, replace_regression=False, suppressed_claim_ids=[], suppression_reason_codes={}).value_decision
+
+tests/test_reflection_objective_arguments.py:65: AssertionError
+_ test_non_executing_modes_do_not_supply_passing_verification[--help-usage: pytest [options] [file_or_dir]] _
+
+flag = '--help', output = 'usage: pytest [options] [file_or_dir]'
+
+    @pytest.mark.parametrize("flag,output", [
+        ("--version", "pytest 9.1.1"),
+        ("-V", "pytest 9.1.1"),
+        ("--help", "usage: pytest [options] [file_or_dir]"),
+        ("--collect-only", "1 test collected"),
+    ])
+    def test_non_executing_modes_do_not_supply_passing_verification(flag: str, output: str) -> None:
+        first = ["pytest", "tests/test_auth.py"]
+        reflection = _reflect(first, [*first, flag], output)
+>       assert not reflection.value_decision.accepted
+E       AssertionError: assert not True
+E        +  where True = ReflectionValueDecision(accepted=True, reason_codes=['accepted_durable_reflection'], durable_signals=['confirmed_error_recovery_verified', 'verified_solution'], accepted_claim_ids=['claim-000001'], rejected_claim_ids=[]).accepted
+E        +    where ReflectionValueDecision(accepted=True, reason_codes=['accepted_durable_reflection'], durable_signals=['confirmed_error_recovery_verified', 'verified_solution'], accepted_claim_ids=['claim-000001'], rejected_claim_ids=[]) = ReflectionResult(task_summary='Repair and verify authentication', success=True, key_decisions=[], errors_encountered=[...ttempted=False, gap_fill_success=False, replace_regression=False, suppressed_claim_ids=[], suppression_reason_codes={}).value_decision
+
+tests/test_reflection_objective_arguments.py:65: AssertionError
+_ test_non_executing_modes_do_not_supply_passing_verification[--collect-only-1 test collected] _
+
+flag = '--collect-only', output = '1 test collected'
+
+    @pytest.mark.parametrize("flag,output", [
+        ("--version", "pytest 9.1.1"),
+        ("-V", "pytest 9.1.1"),
+        ("--help", "usage: pytest [options] [file_or_dir]"),
+        ("--collect-only", "1 test collected"),
+    ])
+    def test_non_executing_modes_do_not_supply_passing_verification(flag: str, output: str) -> None:
+        first = ["pytest", "tests/test_auth.py"]
+        reflection = _reflect(first, [*first, flag], output)
+        assert not reflection.value_decision.accepted
+>       assert not [item for item in reflection.task_evidence.verification
+                    if item.call_id == "call-2" and item.result == "passed"]
+E       AssertionError: assert not [VerificationEvidence(verification_id='verify-000002', tool_name='run_command', call_id='call-2', command_kind='test', scope='targeted', result='passed', event_ids=('event-000004', 'event-000005'), summary='1 test collected')]
+
+tests/test_reflection_objective_arguments.py:66: AssertionError
+_______ test_unknown_tool_does_not_inherit_pytest_display_flag_semantics _______
+
+    def test_unknown_tool_does_not_inherit_pytest_display_flag_semantics() -> None:
+        first = call_objective("python scripts/report.py -q")
+        second = call_objective("python scripts/report.py")
+>       assert objective_relation(first, second) == "conflict"
+E       AssertionError: assert 'match' == 'conflict'
+E         
+E         - conflict
+E         + match
+
+tests/test_reflection_objective_arguments.py:73: AssertionError
+______ test_unknown_argument_values_and_repeated_flag_order_are_retained _______
+
+    def test_unknown_argument_values_and_repeated_flag_order_are_retained() -> None:
+        pairs = [
+            ("pytest tests/ --custom alpha", "pytest tests/ --custom beta"),
+            ("pytest tests/ --custom=alpha --custom=beta", "pytest tests/ --custom=beta --custom=alpha"),
+        ]
+        for first, second in pairs:
+>           assert objective_relation(call_objective(first), call_objective(second)) == "conflict"
+E           AssertionError: assert 'match' == 'conflict'
+E             
+E             - conflict
+E             + match
+
+tests/test_reflection_objective_arguments.py:82: AssertionError
+____________ test_malformed_shell_cannot_become_a_confirmed_target _____________
+
+    def test_malformed_shell_cannot_become_a_confirmed_target() -> None:
+        objective = call_objective("pytest tests/ -k 'unterminated")
+>       assert objective_relation(objective, objective) != "match"
+E       assert 'match' != 'match'
+E        +  where 'match' = objective_relation(CallObjective(executable='pytest', input_paths=('tests/',), output_paths=(), anchor_dirs=(), selection=("-k='unterminated",), bare_operands=(), ambiguous_selection=False, unknown_flags=()), CallObjective(executable='pytest', input_paths=('tests/',), output_paths=(), anchor_dirs=(), selection=("-k='unterminated",), bare_operands=(), ambiguous_selection=False, unknown_flags=()))
+
+tests/test_reflection_objective_arguments.py:87: AssertionError
+___ test_incomplete_invocation_cannot_supply_passing_verification[command0] ____
+
+command = ['bash', '-lc', 'pytest tests/test_auth.py --help $FLAGS']
+
+    @pytest.mark.parametrize("command", [
+        ["bash", "-lc", "pytest tests/test_auth.py --help $FLAGS"],
+        ["bash", "-lc", "pytest tests/test_auth.py -k 'unterminated"],
+        ["pytest", *(f"tests/test_{index}.py" for index in range(34))],
+    ])
+    def test_incomplete_invocation_cannot_supply_passing_verification(command: list[str]) -> None:
+        reflection = _reflect(["pytest", "tests/test_auth.py"], command, "usage: pytest --fixtures")
+>       assert not [item for item in reflection.task_evidence.verification
+                    if item.call_id == "call-2" and item.result == "passed"]
+E       AssertionError: assert not [VerificationEvidence(verification_id='verify-000002', tool_name='run_command', call_id='call-2', command_kind='test', scope='unknown', result='passed', event_ids=('event-000004', 'event-000005'), summary='usage: pytest --fixtures')]
+
+tests/test_reflection_objective_arguments.py:97: AssertionError
+___ test_incomplete_invocation_cannot_supply_passing_verification[command1] ____
+
+command = ['bash', '-lc', "pytest tests/test_auth.py -k 'unterminated"]
+
+    @pytest.mark.parametrize("command", [
+        ["bash", "-lc", "pytest tests/test_auth.py --help $FLAGS"],
+        ["bash", "-lc", "pytest tests/test_auth.py -k 'unterminated"],
+        ["pytest", *(f"tests/test_{index}.py" for index in range(34))],
+    ])
+    def test_incomplete_invocation_cannot_supply_passing_verification(command: list[str]) -> None:
+        reflection = _reflect(["pytest", "tests/test_auth.py"], command, "usage: pytest --fixtures")
+>       assert not [item for item in reflection.task_evidence.verification
+                    if item.call_id == "call-2" and item.result == "passed"]
+E       AssertionError: assert not [VerificationEvidence(verification_id='verify-000002', tool_name='run_command', call_id='call-2', command_kind='test', scope='unknown', result='passed', event_ids=('event-000004', 'event-000005'), summary='usage: pytest --fixtures')]
+
+tests/test_reflection_objective_arguments.py:97: AssertionError
+___ test_incomplete_invocation_cannot_supply_passing_verification[command2] ____
+
+command = ['pytest', 'tests/test_0.py', 'tests/test_1.py', 'tests/test_2.py', 'tests/test_3.py', 'tests/test_4.py', ...]
+
+    @pytest.mark.parametrize("command", [
+        ["bash", "-lc", "pytest tests/test_auth.py --help $FLAGS"],
+        ["bash", "-lc", "pytest tests/test_auth.py -k 'unterminated"],
+        ["pytest", *(f"tests/test_{index}.py" for index in range(34))],
+    ])
+    def test_incomplete_invocation_cannot_supply_passing_verification(command: list[str]) -> None:
+        reflection = _reflect(["pytest", "tests/test_auth.py"], command, "usage: pytest --fixtures")
+>       assert not [item for item in reflection.task_evidence.verification
+                    if item.call_id == "call-2" and item.result == "passed"]
+E       AssertionError: assert not [VerificationEvidence(verification_id='verify-000002', tool_name='run_command', call_id='call-2', command_kind='test', scope='targeted', result='passed', event_ids=('event-000004', 'event-000005'), summary='usage: pytest --fixtures')]
+
+tests/test_reflection_objective_arguments.py:97: AssertionError
+________ test_quiet_flag_does_not_declare_a_full_suite[args0-targeted] _________
+
+args = ['-q', 'tests/test_auth.py'], expected = 'targeted'
+
+    @pytest.mark.parametrize("args,expected", [
+        (["-q", "tests/test_auth.py"], "targeted"),
+        (["-q", "-k", "test_auth"], "targeted"),
+        (["-q"], "full"),
+    ])
+    def test_quiet_flag_does_not_declare_a_full_suite(args: list[str], expected: str) -> None:
+        reflection = _reflect(["pytest", "tests/test_auth.py"], ["pytest", *args], "1 passed")
+        check = next(item for item in reflection.task_evidence.verification if item.call_id == "call-2")
+>       assert check.scope == expected
+E       AssertionError: assert 'full' == 'targeted'
+E         
+E         - targeted
+E         + full
+
+tests/test_reflection_objective_arguments.py:110: AssertionError
+________ test_quiet_flag_does_not_declare_a_full_suite[args1-targeted] _________
+
+args = ['-q', '-k', 'test_auth'], expected = 'targeted'
+
+    @pytest.mark.parametrize("args,expected", [
+        (["-q", "tests/test_auth.py"], "targeted"),
+        (["-q", "-k", "test_auth"], "targeted"),
+        (["-q"], "full"),
+    ])
+    def test_quiet_flag_does_not_declare_a_full_suite(args: list[str], expected: str) -> None:
+        reflection = _reflect(["pytest", "tests/test_auth.py"], ["pytest", *args], "1 passed")
+        check = next(item for item in reflection.task_evidence.verification if item.call_id == "call-2")
+>       assert check.scope == expected
+E       AssertionError: assert 'full' == 'targeted'
+E         
+E         - targeted
+E         + full
+
+tests/test_reflection_objective_arguments.py:110: AssertionError
+_ test_relocation_must_repair_the_missing_object_and_cover_other_inputs[successful_targets0] _
+
+successful_targets = ['backend/tests/test_auth.py']
+
+    @pytest.mark.parametrize(
+        "successful_targets",
+        [
+            ["backend/tests/test_auth.py"],
+            ["backend/tests/test_missing.py"],
+        ],
+    )
+    def test_relocation_must_repair_the_missing_object_and_cover_other_inputs(
+        successful_targets: list[str],
+    ) -> None:
+        result = _reflect([
+            ("run_command", {"command": "pytest", "args": [
+                "tests/test_auth.py", "tests/test_missing.py",
+            ]}, False, "ERROR: file or directory not found: tests/test_missing.py"),
+            ("run_command", {"command": "pytest", "args": successful_targets}, True, "1 passed"),
+        ])
+    
+>       assert not result.task_evidence.recoveries
+E       AssertionError: assert not [RecoveryEvidence(recovery_id='recovery-000001', related_error_ids=('error-000001',), action='Verified recovery: use t...'event-000004'), files_changed=(), epistemic_status='confirmed', change_summary='', verification_call_ids=('call-2',))]
+E        +  where [RecoveryEvidence(recovery_id='recovery-000001', related_error_ids=('error-000001',), action='Verified recovery: use t...'event-000004'), files_changed=(), epistemic_status='confirmed', change_summary='', verification_call_ids=('call-2',))] = TaskEvidence(files_read=[], files_changed=[], referenced_files=[FileEvidence(path='tests/test_auth.py', role='referenc...ons={'event-000001': 0, 'event-000002': 1, 'event-000003': 2, 'event-000004': 3, 'event-000005': 4, 'event-000006': 5}).recoveries
+E        +    where TaskEvidence(files_read=[], files_changed=[], referenced_files=[FileEvidence(path='tests/test_auth.py', role='referenc...ons={'event-000001': 0, 'event-000002': 1, 'event-000003': 2, 'event-000004': 3, 'event-000005': 4, 'event-000006': 5}) = ReflectionResult(task_summary='Review and verify the project', success=True, key_decisions=[], errors_encountered=['ru...ttempted=False, gap_fill_success=False, replace_regression=False, suppressed_claim_ids=[], suppression_reason_codes={}).task_evidence
+
+tests/test_reflection_recovery_exception_contract.py:52: AssertionError
+_ test_relocation_must_repair_the_missing_object_and_cover_other_inputs[successful_targets1] _
+
+successful_targets = ['backend/tests/test_missing.py']
+
+    @pytest.mark.parametrize(
+        "successful_targets",
+        [
+            ["backend/tests/test_auth.py"],
+            ["backend/tests/test_missing.py"],
+        ],
+    )
+    def test_relocation_must_repair_the_missing_object_and_cover_other_inputs(
+        successful_targets: list[str],
+    ) -> None:
+        result = _reflect([
+            ("run_command", {"command": "pytest", "args": [
+                "tests/test_auth.py", "tests/test_missing.py",
+            ]}, False, "ERROR: file or directory not found: tests/test_missing.py"),
+            ("run_command", {"command": "pytest", "args": successful_targets}, True, "1 passed"),
+        ])
+    
+>       assert not result.task_evidence.recoveries
+E       AssertionError: assert not [RecoveryEvidence(recovery_id='recovery-000001', related_error_ids=('error-000001',), action='Verified recovery: use t...'event-000004'), files_changed=(), epistemic_status='confirmed', change_summary='', verification_call_ids=('call-2',))]
+E        +  where [RecoveryEvidence(recovery_id='recovery-000001', related_error_ids=('error-000001',), action='Verified recovery: use t...'event-000004'), files_changed=(), epistemic_status='confirmed', change_summary='', verification_call_ids=('call-2',))] = TaskEvidence(files_read=[], files_changed=[], referenced_files=[FileEvidence(path='tests/test_auth.py', role='referenc...ons={'event-000001': 0, 'event-000002': 1, 'event-000003': 2, 'event-000004': 3, 'event-000005': 4, 'event-000006': 5}).recoveries
+E        +    where TaskEvidence(files_read=[], files_changed=[], referenced_files=[FileEvidence(path='tests/test_auth.py', role='referenc...ons={'event-000001': 0, 'event-000002': 1, 'event-000003': 2, 'event-000004': 3, 'event-000005': 4, 'event-000006': 5}) = ReflectionResult(task_summary='Review and verify the project', success=True, key_decisions=[], errors_encountered=['ru...ttempted=False, gap_fill_success=False, replace_regression=False, suppressed_claim_ids=[], suppression_reason_codes={}).task_evidence
+
+tests/test_reflection_recovery_exception_contract.py:52: AssertionError
+__________ test_explicit_bare_directory_is_not_a_default_scope_retry ___________
+
+    def test_explicit_bare_directory_is_not_a_default_scope_retry() -> None:
+        result = _reflect([
+            ("run_command", {"command": "pytest", "args": ["tests/test_auth.py"]},
+             False, "ERROR: file or directory not found: tests/test_auth.py"),
+            ("run_command", {"command": "pytest", "args": ["billing"]}, True, "1 passed"),
+        ])
+    
+>       assert not result.task_evidence.recoveries
+E       AssertionError: assert not [RecoveryEvidence(recovery_id='recovery-000001', related_error_ids=('error-000001',), action='Verified recovery: use t...'event-000004'), files_changed=(), epistemic_status='confirmed', change_summary='', verification_call_ids=('call-2',))]
+E        +  where [RecoveryEvidence(recovery_id='recovery-000001', related_error_ids=('error-000001',), action='Verified recovery: use t...'event-000004'), files_changed=(), epistemic_status='confirmed', change_summary='', verification_call_ids=('call-2',))] = TaskEvidence(files_read=[], files_changed=[], referenced_files=[FileEvidence(path='tests/test_auth.py', role='referenc...ons={'event-000001': 0, 'event-000002': 1, 'event-000003': 2, 'event-000004': 3, 'event-000005': 4, 'event-000006': 5}).recoveries
+E        +    where TaskEvidence(files_read=[], files_changed=[], referenced_files=[FileEvidence(path='tests/test_auth.py', role='referenc...ons={'event-000001': 0, 'event-000002': 1, 'event-000003': 2, 'event-000004': 3, 'event-000005': 4, 'event-000006': 5}) = ReflectionResult(task_summary='Review and verify the project', success=True, key_decisions=[], errors_encountered=['ru...ttempted=False, gap_fill_success=False, replace_regression=False, suppressed_claim_ids=[], suppression_reason_codes={}).task_evidence
+
+tests/test_reflection_recovery_exception_contract.py:63: AssertionError
+_ test_nested_or_executed_argument_error_cannot_waive_parent_scope[F. [100%]\n=== FAILURES ===\ntests/test_cli.py:4: in test_nested_helper\nE SystemExit: 2\n--- Captured stderr call ---\nusage: nested-helper [-h]\nnested-helper: error: unrecognized arguments: --run-integration\nFAILED tests/test_cli.py::test_nested_helper - SystemExit: 2\n1 failed, 1 passed] _
+
+failure_output = 'F. [100%]\n=== FAILURES ===\ntests/test_cli.py:4: in test_nested_helper\nE SystemExit: 2\n--- Captured stderr call --...ognized arguments: --run-integration\nFAILED tests/test_cli.py::test_nested_helper - SystemExit: 2\n1 failed, 1 passed'
+
+    @pytest.mark.parametrize("failure_output", [
+        "F. [100%]\n=== FAILURES ===\n"
+        "tests/test_cli.py:4: in test_nested_helper\nE SystemExit: 2\n"
+        "--- Captured stderr call ---\nusage: nested-helper [-h]\n"
+        "nested-helper: error: unrecognized arguments: --run-integration\n"
+        "FAILED tests/test_cli.py::test_nested_helper - SystemExit: 2\n1 failed, 1 passed",
+        "usage: nested-helper [-h]\n"
+        "nested-helper: error: unrecognized arguments: --run-integration",
+        "UsageError: unrecognized arguments: --run-integration\n1 failed, 1 passed",
+    ])
+    def test_nested_or_executed_argument_error_cannot_waive_parent_scope(
+        failure_output: str,
+    ) -> None:
+        result = _reflect([
+            ("run_command", {"command": "pytest", "args": [
+                "tests/test_cli.py", "--run-integration",
+            ]}, False, failure_output),
+            ("run_command", {"command": "pytest", "args": ["tests/test_cli.py"]},
+             True, "1 passed, 1 skipped"),
+        ])
+    
+>       assert not result.task_evidence.recoveries
+E       AssertionError: assert not [RecoveryEvidence(recovery_id='recovery-000001', related_error_ids=('error-000001',), action='Verified recovery: use t...'event-000004'), files_changed=(), epistemic_status='confirmed', change_summary='', verification_call_ids=('call-2',))]
+E        +  where [RecoveryEvidence(recovery_id='recovery-000001', related_error_ids=('error-000001',), action='Verified recovery: use t...'event-000004'), files_changed=(), epistemic_status='confirmed', change_summary='', verification_call_ids=('call-2',))] = TaskEvidence(files_read=[], files_changed=[], referenced_files=[FileEvidence(path='tests/test_cli.py', role='reference...ons={'event-000001': 0, 'event-000002': 1, 'event-000003': 2, 'event-000004': 3, 'event-000005': 4, 'event-000006': 5}).recoveries
+E        +    where TaskEvidence(files_read=[], files_changed=[], referenced_files=[FileEvidence(path='tests/test_cli.py', role='reference...ons={'event-000001': 0, 'event-000002': 1, 'event-000003': 2, 'event-000004': 3, 'event-000005': 4, 'event-000006': 5}) = ReflectionResult(task_summary='Review and verify the project', success=True, key_decisions=[], errors_encountered=['ru...ttempted=False, gap_fill_success=False, replace_regression=False, suppressed_claim_ids=[], suppression_reason_codes={}).task_evidence
+
+tests/test_reflection_recovery_exception_contract.py:113: AssertionError
+_ test_nested_or_executed_argument_error_cannot_waive_parent_scope[usage: nested-helper [-h]\nnested-helper: error: unrecognized arguments: --run-integration] _
+
+failure_output = 'usage: nested-helper [-h]\nnested-helper: error: unrecognized arguments: --run-integration'
+
+    @pytest.mark.parametrize("failure_output", [
+        "F. [100%]\n=== FAILURES ===\n"
+        "tests/test_cli.py:4: in test_nested_helper\nE SystemExit: 2\n"
+        "--- Captured stderr call ---\nusage: nested-helper [-h]\n"
+        "nested-helper: error: unrecognized arguments: --run-integration\n"
+        "FAILED tests/test_cli.py::test_nested_helper - SystemExit: 2\n1 failed, 1 passed",
+        "usage: nested-helper [-h]\n"
+        "nested-helper: error: unrecognized arguments: --run-integration",
+        "UsageError: unrecognized arguments: --run-integration\n1 failed, 1 passed",
+    ])
+    def test_nested_or_executed_argument_error_cannot_waive_parent_scope(
+        failure_output: str,
+    ) -> None:
+        result = _reflect([
+            ("run_command", {"command": "pytest", "args": [
+                "tests/test_cli.py", "--run-integration",
+            ]}, False, failure_output),
+            ("run_command", {"command": "pytest", "args": ["tests/test_cli.py"]},
+             True, "1 passed, 1 skipped"),
+        ])
+    
+>       assert not result.task_evidence.recoveries
+E       AssertionError: assert not [RecoveryEvidence(recovery_id='recovery-000001', related_error_ids=('error-000001',), action='Verified recovery: use t...'event-000004'), files_changed=(), epistemic_status='confirmed', change_summary='', verification_call_ids=('call-2',))]
+E        +  where [RecoveryEvidence(recovery_id='recovery-000001', related_error_ids=('error-000001',), action='Verified recovery: use t...'event-000004'), files_changed=(), epistemic_status='confirmed', change_summary='', verification_call_ids=('call-2',))] = TaskEvidence(files_read=[], files_changed=[], referenced_files=[FileEvidence(path='tests/test_cli.py', role='reference...ons={'event-000001': 0, 'event-000002': 1, 'event-000003': 2, 'event-000004': 3, 'event-000005': 4, 'event-000006': 5}).recoveries
+E        +    where TaskEvidence(files_read=[], files_changed=[], referenced_files=[FileEvidence(path='tests/test_cli.py', role='reference...ons={'event-000001': 0, 'event-000002': 1, 'event-000003': 2, 'event-000004': 3, 'event-000005': 4, 'event-000006': 5}) = ReflectionResult(task_summary='Review and verify the project', success=True, key_decisions=[], errors_encountered=['ru...ttempted=False, gap_fill_success=False, replace_regression=False, suppressed_claim_ids=[], suppression_reason_codes={}).task_evidence
+
+tests/test_reflection_recovery_exception_contract.py:113: AssertionError
+_ test_nested_or_executed_argument_error_cannot_waive_parent_scope[UsageError: unrecognized arguments: --run-integration\n1 failed, 1 passed] _
+
+failure_output = 'UsageError: unrecognized arguments: --run-integration\n1 failed, 1 passed'
+
+    @pytest.mark.parametrize("failure_output", [
+        "F. [100%]\n=== FAILURES ===\n"
+        "tests/test_cli.py:4: in test_nested_helper\nE SystemExit: 2\n"
+        "--- Captured stderr call ---\nusage: nested-helper [-h]\n"
+        "nested-helper: error: unrecognized arguments: --run-integration\n"
+        "FAILED tests/test_cli.py::test_nested_helper - SystemExit: 2\n1 failed, 1 passed",
+        "usage: nested-helper [-h]\n"
+        "nested-helper: error: unrecognized arguments: --run-integration",
+        "UsageError: unrecognized arguments: --run-integration\n1 failed, 1 passed",
+    ])
+    def test_nested_or_executed_argument_error_cannot_waive_parent_scope(
+        failure_output: str,
+    ) -> None:
+        result = _reflect([
+            ("run_command", {"command": "pytest", "args": [
+                "tests/test_cli.py", "--run-integration",
+            ]}, False, failure_output),
+            ("run_command", {"command": "pytest", "args": ["tests/test_cli.py"]},
+             True, "1 passed, 1 skipped"),
+        ])
+    
+>       assert not result.task_evidence.recoveries
+E       AssertionError: assert not [RecoveryEvidence(recovery_id='recovery-000001', related_error_ids=('error-000001',), action='Verified recovery: use t...'event-000004'), files_changed=(), epistemic_status='confirmed', change_summary='', verification_call_ids=('call-2',))]
+E        +  where [RecoveryEvidence(recovery_id='recovery-000001', related_error_ids=('error-000001',), action='Verified recovery: use t...'event-000004'), files_changed=(), epistemic_status='confirmed', change_summary='', verification_call_ids=('call-2',))] = TaskEvidence(files_read=[], files_changed=[], referenced_files=[FileEvidence(path='tests/test_cli.py', role='reference...ons={'event-000001': 0, 'event-000002': 1, 'event-000003': 2, 'event-000004': 3, 'event-000005': 4, 'event-000006': 5}).recoveries
+E        +    where TaskEvidence(files_read=[], files_changed=[], referenced_files=[FileEvidence(path='tests/test_cli.py', role='reference...ons={'event-000001': 0, 'event-000002': 1, 'event-000003': 2, 'event-000004': 3, 'event-000005': 4, 'event-000006': 5}) = ReflectionResult(task_summary='Review and verify the project', success=True, key_decisions=[], errors_encountered=['ru...ttempted=False, gap_fill_success=False, replace_regression=False, suppressed_claim_ids=[], suppression_reason_codes={}).task_evidence
+
+tests/test_reflection_recovery_exception_contract.py:113: AssertionError
+_ test_errors_and_temporal_boundaries_cannot_be_borrowed_across_recoveries[recovery_ids2] _
+
+recovery_ids = ['recovery-auth', 'recovery-billing']
+
+    @pytest.mark.parametrize(
+        "recovery_ids",
+        [
+            ["recovery-auth"],
+            ["recovery-billing"],
+            ["recovery-auth", "recovery-billing"],
+            ["recovery-billing", "recovery-auth"],
+        ],
+    )
+    def test_errors_and_temporal_boundaries_cannot_be_borrowed_across_recoveries(
+        recovery_ids: list[str],
+    ) -> None:
+        validation, value = _admission(_separate_recovery_chains(), recovery_ids)
+    
+>       assert validation.valid_claims == []
+E       AssertionError: assert [ReflectionCl...ce_quotes=[])] == []
+E         
+E         Left contains one more item: ReflectionClaim(claim_id='llm-claim-000001', claim_type='recovery', semantic_key='expiry_and_rounding', statement='Aft...or_ids=['error-auth', 'error-billing'], related_recovery_ids=['recovery-auth', 'recovery-billing'], evidence_quotes=[])
+E         Use -v to get more diff
+
+tests/test_reflection_recovery_chain_isolation.py:144: AssertionError
+_ test_errors_and_temporal_boundaries_cannot_be_borrowed_across_recoveries[recovery_ids3] _
+
+recovery_ids = ['recovery-billing', 'recovery-auth']
+
+    @pytest.mark.parametrize(
+        "recovery_ids",
+        [
+            ["recovery-auth"],
+            ["recovery-billing"],
+            ["recovery-auth", "recovery-billing"],
+            ["recovery-billing", "recovery-auth"],
+        ],
+    )
+    def test_errors_and_temporal_boundaries_cannot_be_borrowed_across_recoveries(
+        recovery_ids: list[str],
+    ) -> None:
+        validation, value = _admission(_separate_recovery_chains(), recovery_ids)
+    
+>       assert validation.valid_claims == []
+E       AssertionError: assert [ReflectionCl...ce_quotes=[])] == []
+E         
+E         Left contains one more item: ReflectionClaim(claim_id='llm-claim-000001', claim_type='recovery', semantic_key='expiry_and_rounding', statement='Aft...or_ids=['error-auth', 'error-billing'], related_recovery_ids=['recovery-billing', 'recovery-auth'], evidence_quotes=[])
+E         Use -v to get more diff
+
+tests/test_reflection_recovery_chain_isolation.py:144: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_reflection_objective_arguments.py::test_boolean_display_flags_do_not_hide_replaced_test_targets[-q]
+FAILED tests/test_reflection_objective_arguments.py::test_boolean_display_flags_do_not_hide_replaced_test_targets[-v]
+FAILED tests/test_reflection_objective_arguments.py::test_boolean_display_flags_do_not_hide_replaced_test_targets[-s]
+FAILED tests/test_reflection_objective_arguments.py::test_boolean_display_flags_do_not_hide_replaced_test_targets[--quiet]
+FAILED tests/test_reflection_objective_arguments.py::test_complete_quoted_selection_expression_controls_admission[False]
+FAILED tests/test_reflection_objective_arguments.py::test_complete_quoted_selection_expression_controls_admission[True]
+FAILED tests/test_reflection_objective_arguments.py::test_identical_quoted_selection_survives_wrapper_and_display_changes
+FAILED tests/test_reflection_objective_arguments.py::test_non_executing_modes_do_not_supply_passing_verification[--version-pytest 9.1.1]
+FAILED tests/test_reflection_objective_arguments.py::test_non_executing_modes_do_not_supply_passing_verification[-V-pytest 9.1.1]
+FAILED tests/test_reflection_objective_arguments.py::test_non_executing_modes_do_not_supply_passing_verification[--help-usage: pytest [options] [file_or_dir]]
+FAILED tests/test_reflection_objective_arguments.py::test_non_executing_modes_do_not_supply_passing_verification[--collect-only-1 test collected]
+FAILED tests/test_reflection_objective_arguments.py::test_unknown_tool_does_not_inherit_pytest_display_flag_semantics
+FAILED tests/test_reflection_objective_arguments.py::test_unknown_argument_values_and_repeated_flag_order_are_retained
+FAILED tests/test_reflection_objective_arguments.py::test_malformed_shell_cannot_become_a_confirmed_target
+FAILED tests/test_reflection_objective_arguments.py::test_incomplete_invocation_cannot_supply_passing_verification[command0]
+FAILED tests/test_reflection_objective_arguments.py::test_incomplete_invocation_cannot_supply_passing_verification[command1]
+FAILED tests/test_reflection_objective_arguments.py::test_incomplete_invocation_cannot_supply_passing_verification[command2]
+FAILED tests/test_reflection_objective_arguments.py::test_quiet_flag_does_not_declare_a_full_suite[args0-targeted]
+FAILED tests/test_reflection_objective_arguments.py::test_quiet_flag_does_not_declare_a_full_suite[args1-targeted]
+FAILED tests/test_reflection_recovery_exception_contract.py::test_relocation_must_repair_the_missing_object_and_cover_other_inputs[successful_targets0]
+FAILED tests/test_reflection_recovery_exception_contract.py::test_relocation_must_repair_the_missing_object_and_cover_other_inputs[successful_targets1]
+FAILED tests/test_reflection_recovery_exception_contract.py::test_explicit_bare_directory_is_not_a_default_scope_retry
+FAILED tests/test_reflection_recovery_exception_contract.py::test_nested_or_executed_argument_error_cannot_waive_parent_scope[F. [100%]\n=== FAILURES ===\ntests/test_cli.py:4: in test_nested_helper\nE SystemExit: 2\n--- Captured stderr call ---\nusage: nested-helper [-h]\nnested-helper: error: unrecognized arguments: --run-integration\nFAILED tests/test_cli.py::test_nested_helper - SystemExit: 2\n1 failed, 1 passed]
+FAILED tests/test_reflection_recovery_exception_contract.py::test_nested_or_executed_argument_error_cannot_waive_parent_scope[usage: nested-helper [-h]\nnested-helper: error: unrecognized arguments: --run-integration]
+FAILED tests/test_reflection_recovery_exception_contract.py::test_nested_or_executed_argument_error_cannot_waive_parent_scope[UsageError: unrecognized arguments: --run-integration\n1 failed, 1 passed]
+FAILED tests/test_reflection_recovery_chain_isolation.py::test_errors_and_temporal_boundaries_cannot_be_borrowed_across_recoveries[recovery_ids2]
+FAILED tests/test_reflection_recovery_chain_isolation.py::test_errors_and_temporal_boundaries_cannot_be_borrowed_across_recoveries[recovery_ids3]
+27 failed, 16 passed in 0.58s

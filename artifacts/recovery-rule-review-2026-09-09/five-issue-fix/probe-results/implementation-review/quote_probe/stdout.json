@@ -1,0 +1,73 @@
+{
+  "inferred_status_bypass": {
+    "source_status": "inferred",
+    "without_quotes": {
+      "valid": false,
+      "issues": [
+        "claim_statement_not_grounded"
+      ],
+      "persistable": false,
+      "durable_signals": []
+    },
+    "with_real_quote": {
+      "valid": false,
+      "issues": [
+        "epistemic_status_overclaim"
+      ],
+      "persistable": false,
+      "durable_signals": []
+    },
+    "verbatim_control": {
+      "valid": false,
+      "issues": [
+        "epistemic_status_overclaim"
+      ],
+      "persistable": false,
+      "durable_signals": []
+    },
+    "existing_production_engine_scripted_client": {
+      "selection_source": "rule",
+      "claims": []
+    }
+  },
+  "inferred_root_cause_bypass": {
+    "source_status": "inferred",
+    "candidate": {
+      "valid": false,
+      "issues": [
+        "epistemic_status_overclaim"
+      ],
+      "persistable": false,
+      "durable_signals": []
+    }
+  },
+  "wrong_red_green_target": {
+    "with_unrelated_earlier_failed_test": {
+      "valid": false,
+      "issues": [
+        "confirmed_recovery_verification_unrelated"
+      ],
+      "persistable": false,
+      "durable_signals": []
+    },
+    "without_failed_test": {
+      "valid": false,
+      "issues": [
+        "confirmed_recovery_verification_unrelated"
+      ],
+      "persistable": false,
+      "durable_signals": []
+    },
+    "rule_recovery_statuses": [
+      "inferred"
+    ]
+  },
+  "unrelated_quote_control": {
+    "valid": false,
+    "issues": [
+      "evidence_quote_not_grounded"
+    ],
+    "persistable": false,
+    "durable_signals": []
+  }
+}

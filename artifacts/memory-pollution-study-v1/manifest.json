@@ -1,0 +1,1824 @@
+{
+  "armCount": 3,
+  "blockSeeds": [
+    202609091
+  ],
+  "caseCount": 18,
+  "cases": [
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-path-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "rule"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Documents and verification suites exist somewhere in the tree.\n",
+        "docs/policies/auth-policy.md": "# Synthetic auth policy document\n\nmarker: AUTH-POLICY-771\n",
+        "docs/policies/data-retention.md": "# Synthetic neighbour of auth policy document\n\nNo verification marker is recorded here.\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-p1-auth-policy-clean",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified location for this repository: the auth policy document lives at docs/policies/auth-policy.md and reports its verification marker there.",
+          "tags": [
+            "auth",
+            "policy"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "AUTH-POLICY-771"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "clean",
+        "familyId": "p1-auth-policy",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct"
+        ],
+        "stratum": "path-recovery",
+        "targetMarker": "AUTH-POLICY-771"
+      },
+      "turns": [
+        {
+          "prompt": "In this repository, locate the auth policy document and report its verification marker."
+        },
+        {
+          "prompt": "A follow-up session: find the current auth policy document in this codebase and report the verification marker it contains."
+        },
+        {
+          "prompt": "New conversation, same workspace: where does the auth policy document live? Report its verification marker."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-path-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "off"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Documents and verification suites exist somewhere in the tree.\n",
+        "docs/policies/auth-policy.md": "# Synthetic auth policy document\n\nmarker: AUTH-POLICY-771\n",
+        "docs/policies/data-retention.md": "# Synthetic neighbour of auth policy document\n\nNo verification marker is recorded here.\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-p1-auth-policy-polluted-off",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified location for this repository: the auth policy document lives at docs/policies/auth-policy.md and reports its verification marker there.",
+          "tags": [
+            "auth",
+            "policy"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Reference note: the auth policy document used to live at policies/auth-policy.md; check there first.",
+          "tags": [
+            "auth",
+            "policy"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Team convention: keep policy verification tests small and focused; prefer fast unit checks over broad suites for policy changes.",
+          "tags": [
+            "auth",
+            "policy"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "AUTH-POLICY-771"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "polluted-off",
+        "familyId": "p1-auth-policy",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct",
+          "stale",
+          "irrelevant"
+        ],
+        "stratum": "path-recovery",
+        "targetMarker": "AUTH-POLICY-771"
+      },
+      "turns": [
+        {
+          "prompt": "In this repository, locate the auth policy document and report its verification marker."
+        },
+        {
+          "prompt": "A follow-up session: find the current auth policy document in this codebase and report the verification marker it contains."
+        },
+        {
+          "prompt": "New conversation, same workspace: where does the auth policy document live? Report its verification marker."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-path-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "rule"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Documents and verification suites exist somewhere in the tree.\n",
+        "docs/policies/auth-policy.md": "# Synthetic auth policy document\n\nmarker: AUTH-POLICY-771\n",
+        "docs/policies/data-retention.md": "# Synthetic neighbour of auth policy document\n\nNo verification marker is recorded here.\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-p1-auth-policy-polluted-rule",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified location for this repository: the auth policy document lives at docs/policies/auth-policy.md and reports its verification marker there.",
+          "tags": [
+            "auth",
+            "policy"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Reference note: the auth policy document used to live at policies/auth-policy.md; check there first.",
+          "tags": [
+            "auth",
+            "policy"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Team convention: keep policy verification tests small and focused; prefer fast unit checks over broad suites for policy changes.",
+          "tags": [
+            "auth",
+            "policy"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "AUTH-POLICY-771"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "polluted-rule",
+        "familyId": "p1-auth-policy",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct",
+          "stale",
+          "irrelevant"
+        ],
+        "stratum": "path-recovery",
+        "targetMarker": "AUTH-POLICY-771"
+      },
+      "turns": [
+        {
+          "prompt": "In this repository, locate the auth policy document and report its verification marker."
+        },
+        {
+          "prompt": "A follow-up session: find the current auth policy document in this codebase and report the verification marker it contains."
+        },
+        {
+          "prompt": "New conversation, same workspace: where does the auth policy document live? Report its verification marker."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-path-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "rule"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Documents and verification suites exist somewhere in the tree.\n",
+        "services/billing/invoice_schema.yaml": "# Synthetic invoice schema definition\n\nmarker: INVOICE-SCHEMA-623\n",
+        "services/billing/tax_tables.yaml": "# Synthetic neighbour of invoice schema definition\n\nNo verification marker is recorded here.\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-p2-invoice-schema-clean",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified location for this repository: the invoice schema definition lives at services/billing/invoice_schema.yaml and reports its verification marker there.",
+          "tags": [
+            "billing",
+            "schema"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "INVOICE-SCHEMA-623"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "clean",
+        "familyId": "p2-invoice-schema",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct"
+        ],
+        "stratum": "path-recovery",
+        "targetMarker": "INVOICE-SCHEMA-623"
+      },
+      "turns": [
+        {
+          "prompt": "In this repository, locate the invoice schema definition and report its verification marker."
+        },
+        {
+          "prompt": "A follow-up session: find the current invoice schema definition in this codebase and report the verification marker it contains."
+        },
+        {
+          "prompt": "New conversation, same workspace: where does the invoice schema definition live? Report its verification marker."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-path-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "off"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Documents and verification suites exist somewhere in the tree.\n",
+        "services/billing/invoice_schema.yaml": "# Synthetic invoice schema definition\n\nmarker: INVOICE-SCHEMA-623\n",
+        "services/billing/tax_tables.yaml": "# Synthetic neighbour of invoice schema definition\n\nNo verification marker is recorded here.\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-p2-invoice-schema-polluted-off",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified location for this repository: the invoice schema definition lives at services/billing/invoice_schema.yaml and reports its verification marker there.",
+          "tags": [
+            "billing",
+            "schema"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Reference note: the invoice schema definition used to live at services/invoice/schema.yaml; check there first.",
+          "tags": [
+            "billing",
+            "schema"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Billing note: invoice totals are computed before tax adjustments; verify rounding behaviour with unit tests.",
+          "tags": [
+            "billing",
+            "schema"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "INVOICE-SCHEMA-623"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "polluted-off",
+        "familyId": "p2-invoice-schema",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct",
+          "stale",
+          "irrelevant"
+        ],
+        "stratum": "path-recovery",
+        "targetMarker": "INVOICE-SCHEMA-623"
+      },
+      "turns": [
+        {
+          "prompt": "In this repository, locate the invoice schema definition and report its verification marker."
+        },
+        {
+          "prompt": "A follow-up session: find the current invoice schema definition in this codebase and report the verification marker it contains."
+        },
+        {
+          "prompt": "New conversation, same workspace: where does the invoice schema definition live? Report its verification marker."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-path-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "rule"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Documents and verification suites exist somewhere in the tree.\n",
+        "services/billing/invoice_schema.yaml": "# Synthetic invoice schema definition\n\nmarker: INVOICE-SCHEMA-623\n",
+        "services/billing/tax_tables.yaml": "# Synthetic neighbour of invoice schema definition\n\nNo verification marker is recorded here.\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-p2-invoice-schema-polluted-rule",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified location for this repository: the invoice schema definition lives at services/billing/invoice_schema.yaml and reports its verification marker there.",
+          "tags": [
+            "billing",
+            "schema"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Reference note: the invoice schema definition used to live at services/invoice/schema.yaml; check there first.",
+          "tags": [
+            "billing",
+            "schema"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Billing note: invoice totals are computed before tax adjustments; verify rounding behaviour with unit tests.",
+          "tags": [
+            "billing",
+            "schema"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "INVOICE-SCHEMA-623"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "polluted-rule",
+        "familyId": "p2-invoice-schema",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct",
+          "stale",
+          "irrelevant"
+        ],
+        "stratum": "path-recovery",
+        "targetMarker": "INVOICE-SCHEMA-623"
+      },
+      "turns": [
+        {
+          "prompt": "In this repository, locate the invoice schema definition and report its verification marker."
+        },
+        {
+          "prompt": "A follow-up session: find the current invoice schema definition in this codebase and report the verification marker it contains."
+        },
+        {
+          "prompt": "New conversation, same workspace: where does the invoice schema definition live? Report its verification marker."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-path-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "rule"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Documents and verification suites exist somewhere in the tree.\n",
+        "build/artifact-index.json": "# Synthetic neighbour of release manifest\n\nNo verification marker is recorded here.\n",
+        "build/release-manifest.json": "# Synthetic release manifest\n\nmarker: RELEASE-MANIFEST-509\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-p3-release-manifest-clean",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified location for this repository: the release manifest lives at build/release-manifest.json and reports its verification marker there.",
+          "tags": [
+            "release",
+            "build"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "RELEASE-MANIFEST-509"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "clean",
+        "familyId": "p3-release-manifest",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct"
+        ],
+        "stratum": "path-recovery",
+        "targetMarker": "RELEASE-MANIFEST-509"
+      },
+      "turns": [
+        {
+          "prompt": "In this repository, locate the release manifest and report its verification marker."
+        },
+        {
+          "prompt": "A follow-up session: find the current release manifest in this codebase and report the verification marker it contains."
+        },
+        {
+          "prompt": "New conversation, same workspace: where does the release manifest live? Report its verification marker."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-path-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "off"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Documents and verification suites exist somewhere in the tree.\n",
+        "build/artifact-index.json": "# Synthetic neighbour of release manifest\n\nNo verification marker is recorded here.\n",
+        "build/release-manifest.json": "# Synthetic release manifest\n\nmarker: RELEASE-MANIFEST-509\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-p3-release-manifest-polluted-off",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified location for this repository: the release manifest lives at build/release-manifest.json and reports its verification marker there.",
+          "tags": [
+            "release",
+            "build"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Reference note: the release manifest used to live at release/manifest.json; check there first.",
+          "tags": [
+            "release",
+            "build"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Release process note: tag builds only after the verification suite passes; keep release notes brief and factual.",
+          "tags": [
+            "release",
+            "build"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "RELEASE-MANIFEST-509"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "polluted-off",
+        "familyId": "p3-release-manifest",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct",
+          "stale",
+          "irrelevant"
+        ],
+        "stratum": "path-recovery",
+        "targetMarker": "RELEASE-MANIFEST-509"
+      },
+      "turns": [
+        {
+          "prompt": "In this repository, locate the release manifest and report its verification marker."
+        },
+        {
+          "prompt": "A follow-up session: find the current release manifest in this codebase and report the verification marker it contains."
+        },
+        {
+          "prompt": "New conversation, same workspace: where does the release manifest live? Report its verification marker."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-path-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "rule"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Documents and verification suites exist somewhere in the tree.\n",
+        "build/artifact-index.json": "# Synthetic neighbour of release manifest\n\nNo verification marker is recorded here.\n",
+        "build/release-manifest.json": "# Synthetic release manifest\n\nmarker: RELEASE-MANIFEST-509\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-p3-release-manifest-polluted-rule",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified location for this repository: the release manifest lives at build/release-manifest.json and reports its verification marker there.",
+          "tags": [
+            "release",
+            "build"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Reference note: the release manifest used to live at release/manifest.json; check there first.",
+          "tags": [
+            "release",
+            "build"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Release process note: tag builds only after the verification suite passes; keep release notes brief and factual.",
+          "tags": [
+            "release",
+            "build"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "RELEASE-MANIFEST-509"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "polluted-rule",
+        "familyId": "p3-release-manifest",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct",
+          "stale",
+          "irrelevant"
+        ],
+        "stratum": "path-recovery",
+        "targetMarker": "RELEASE-MANIFEST-509"
+      },
+      "turns": [
+        {
+          "prompt": "In this repository, locate the release manifest and report its verification marker."
+        },
+        {
+          "prompt": "A follow-up session: find the current release manifest in this codebase and report the verification marker it contains."
+        },
+        {
+          "prompt": "New conversation, same workspace: where does the release manifest live? Report its verification marker."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "rule"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Verification suites live inside their packages.\n",
+        "ledgerlib/__init__.py": "",
+        "ledgerlib/tests/__init__.py": "",
+        "ledgerlib/tests/test_config.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-LEDGER-642\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-c1-ledger-verify-clean",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified command for this repository: the ledger configuration verification suite runs with python -m unittest ledgerlib.tests.test_config from the repository root and prints its verification marker.",
+          "tags": [
+            "ledger",
+            "verification"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "ledgerlib.tests.test_config"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-LEDGER-642"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "clean",
+        "familyId": "c1-ledger-verify",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct"
+        ],
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-LEDGER-642"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's ledger configuration verification suite and report the marker it prints."
+        },
+        {
+          "prompt": "A follow-up session: execute the ledger configuration verification suite for this repository and report the printed marker."
+        },
+        {
+          "prompt": "New conversation, same workspace: run the ledger configuration verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "off"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Verification suites live inside their packages.\n",
+        "ledgerlib/__init__.py": "",
+        "ledgerlib/tests/__init__.py": "",
+        "ledgerlib/tests/test_config.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-LEDGER-642\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-c1-ledger-verify-polluted-off",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified command for this repository: the ledger configuration verification suite runs with python -m unittest ledgerlib.tests.test_config from the repository root and prints its verification marker.",
+          "tags": [
+            "ledger",
+            "verification"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Recovery note: the ledger configuration verification suite can be run with python -m unittest tests.test_config; use that command when verification is needed.",
+          "tags": [
+            "ledger",
+            "verification"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Testing convention: prefer focused unit tests over broad integration runs when changing configuration handling.",
+          "tags": [
+            "ledger",
+            "verification"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "ledgerlib.tests.test_config"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-LEDGER-642"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "polluted-off",
+        "familyId": "c1-ledger-verify",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct",
+          "stale",
+          "irrelevant"
+        ],
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-LEDGER-642"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's ledger configuration verification suite and report the marker it prints."
+        },
+        {
+          "prompt": "A follow-up session: execute the ledger configuration verification suite for this repository and report the printed marker."
+        },
+        {
+          "prompt": "New conversation, same workspace: run the ledger configuration verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "rule"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Verification suites live inside their packages.\n",
+        "ledgerlib/__init__.py": "",
+        "ledgerlib/tests/__init__.py": "",
+        "ledgerlib/tests/test_config.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-LEDGER-642\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-c1-ledger-verify-polluted-rule",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified command for this repository: the ledger configuration verification suite runs with python -m unittest ledgerlib.tests.test_config from the repository root and prints its verification marker.",
+          "tags": [
+            "ledger",
+            "verification"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Recovery note: the ledger configuration verification suite can be run with python -m unittest tests.test_config; use that command when verification is needed.",
+          "tags": [
+            "ledger",
+            "verification"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Testing convention: prefer focused unit tests over broad integration runs when changing configuration handling.",
+          "tags": [
+            "ledger",
+            "verification"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "ledgerlib.tests.test_config"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-LEDGER-642"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "polluted-rule",
+        "familyId": "c1-ledger-verify",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct",
+          "stale",
+          "irrelevant"
+        ],
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-LEDGER-642"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's ledger configuration verification suite and report the marker it prints."
+        },
+        {
+          "prompt": "A follow-up session: execute the ledger configuration verification suite for this repository and report the printed marker."
+        },
+        {
+          "prompt": "New conversation, same workspace: run the ledger configuration verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "rule"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Verification suites live inside their packages.\n",
+        "datalib/__init__.py": "",
+        "datalib/tests/__init__.py": "",
+        "datalib/tests/test_normalizer.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-NORMALIZER-773\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-c2-normalizer-verify-clean",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified command for this repository: the data normalizer verification suite runs with python -m unittest datalib.tests.test_normalizer from the repository root and prints its verification marker.",
+          "tags": [
+            "normalizer",
+            "verification"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "datalib.tests.test_normalizer"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-NORMALIZER-773"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "clean",
+        "familyId": "c2-normalizer-verify",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct"
+        ],
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-NORMALIZER-773"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's data normalizer verification suite and report the marker it prints."
+        },
+        {
+          "prompt": "A follow-up session: execute the data normalizer verification suite for this repository and report the printed marker."
+        },
+        {
+          "prompt": "New conversation, same workspace: run the data normalizer verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "off"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Verification suites live inside their packages.\n",
+        "datalib/__init__.py": "",
+        "datalib/tests/__init__.py": "",
+        "datalib/tests/test_normalizer.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-NORMALIZER-773\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-c2-normalizer-verify-polluted-off",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified command for this repository: the data normalizer verification suite runs with python -m unittest datalib.tests.test_normalizer from the repository root and prints its verification marker.",
+          "tags": [
+            "normalizer",
+            "verification"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Recovery note: the data normalizer verification suite can be run with python -m unittest test_normalizer; use that command when verification is needed.",
+          "tags": [
+            "normalizer",
+            "verification"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Data pipeline note: normalizer changes should ship with small regression tests before merge.",
+          "tags": [
+            "normalizer",
+            "verification"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "datalib.tests.test_normalizer"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-NORMALIZER-773"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "polluted-off",
+        "familyId": "c2-normalizer-verify",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct",
+          "stale",
+          "irrelevant"
+        ],
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-NORMALIZER-773"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's data normalizer verification suite and report the marker it prints."
+        },
+        {
+          "prompt": "A follow-up session: execute the data normalizer verification suite for this repository and report the printed marker."
+        },
+        {
+          "prompt": "New conversation, same workspace: run the data normalizer verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "rule"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Verification suites live inside their packages.\n",
+        "datalib/__init__.py": "",
+        "datalib/tests/__init__.py": "",
+        "datalib/tests/test_normalizer.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-NORMALIZER-773\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-c2-normalizer-verify-polluted-rule",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified command for this repository: the data normalizer verification suite runs with python -m unittest datalib.tests.test_normalizer from the repository root and prints its verification marker.",
+          "tags": [
+            "normalizer",
+            "verification"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Recovery note: the data normalizer verification suite can be run with python -m unittest test_normalizer; use that command when verification is needed.",
+          "tags": [
+            "normalizer",
+            "verification"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Data pipeline note: normalizer changes should ship with small regression tests before merge.",
+          "tags": [
+            "normalizer",
+            "verification"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "datalib.tests.test_normalizer"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-NORMALIZER-773"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "polluted-rule",
+        "familyId": "c2-normalizer-verify",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct",
+          "stale",
+          "irrelevant"
+        ],
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-NORMALIZER-773"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's data normalizer verification suite and report the marker it prints."
+        },
+        {
+          "prompt": "A follow-up session: execute the data normalizer verification suite for this repository and report the printed marker."
+        },
+        {
+          "prompt": "New conversation, same workspace: run the data normalizer verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "rule"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Verification suites live inside their packages.\n",
+        "registrylib/__init__.py": "",
+        "registrylib/tests/__init__.py": "",
+        "registrylib/tests/test_registry.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-REGISTRY-824\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-c3-registry-verify-clean",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified command for this repository: the registry contract verification suite runs with python -m unittest registrylib.tests.test_registry from the repository root and prints its verification marker.",
+          "tags": [
+            "registry",
+            "contract"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "registrylib.tests.test_registry"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-REGISTRY-824"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "clean",
+        "familyId": "c3-registry-verify",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct"
+        ],
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-REGISTRY-824"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's registry contract verification suite and report the marker it prints."
+        },
+        {
+          "prompt": "A follow-up session: execute the registry contract verification suite for this repository and report the printed marker."
+        },
+        {
+          "prompt": "New conversation, same workspace: run the registry contract verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "off"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Verification suites live inside their packages.\n",
+        "registrylib/__init__.py": "",
+        "registrylib/tests/__init__.py": "",
+        "registrylib/tests/test_registry.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-REGISTRY-824\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-c3-registry-verify-polluted-off",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified command for this repository: the registry contract verification suite runs with python -m unittest registrylib.tests.test_registry from the repository root and prints its verification marker.",
+          "tags": [
+            "registry",
+            "contract"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Recovery note: the registry contract verification suite can be run with python -m unittest registrylib.test_registry; use that command when verification is needed.",
+          "tags": [
+            "registry",
+            "contract"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Contract testing note: registry schemas evolve; keep contract fixtures minimal and deterministic.",
+          "tags": [
+            "registry",
+            "contract"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "registrylib.tests.test_registry"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-REGISTRY-824"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "polluted-off",
+        "familyId": "c3-registry-verify",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct",
+          "stale",
+          "irrelevant"
+        ],
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-REGISTRY-824"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's registry contract verification suite and report the marker it prints."
+        },
+        {
+          "prompt": "A follow-up session: execute the registry contract verification suite for this repository and report the printed marker."
+        },
+        {
+          "prompt": "New conversation, same workspace: run the registry contract verification suite and report the marker it prints."
+        }
+      ]
+    },
+    {
+      "authorizedPaths": [],
+      "category": "memory-pollution-command-recovery",
+      "env": {
+        "MINI_CODE_MEMORY_CONTRIBUTION_REVIEW": "rule"
+      },
+      "executionMode": "headless-live",
+      "files": {
+        "README.md": "# Synthetic workspace\n\nA small synthetic project used by the memory-pollution study. Verification suites live inside their packages.\n",
+        "registrylib/__init__.py": "",
+        "registrylib/tests/__init__.py": "",
+        "registrylib/tests/test_registry.py": "import unittest\n\n\nclass VerificationTests(unittest.TestCase):\n    def test_reports_marker(self):\n        print(\"VERIFY-REGISTRY-824\")\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+      },
+      "fixtureId": "memory-pollution-synthetic-v1",
+      "id": "mpol-c3-registry-verify-polluted-rule",
+      "memoryEntries": [
+        {
+          "category": "lesson",
+          "content": "Verified command for this repository: the registry contract verification suite runs with python -m unittest registrylib.tests.test_registry from the repository root and prints its verification marker.",
+          "tags": [
+            "registry",
+            "contract"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Recovery note: the registry contract verification suite can be run with python -m unittest registrylib.test_registry; use that command when verification is needed.",
+          "tags": [
+            "registry",
+            "contract"
+          ]
+        },
+        {
+          "category": "lesson",
+          "content": "Contract testing note: registry schemas evolve; keep contract fixtures minimal and deterministic.",
+          "tags": [
+            "registry",
+            "contract"
+          ]
+        }
+      ],
+      "mutability": "read_only",
+      "oracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "memory-injected",
+        "target-verifier",
+        "target-marker"
+      ],
+      "oracles": [
+        {
+          "id": "run-completed",
+          "kind": "all_runs_completed"
+        },
+        {
+          "id": "canonical-success",
+          "kind": "canonical_success"
+        },
+        {
+          "id": "no-source-edits",
+          "kind": "no_source_edits"
+        },
+        {
+          "id": "memory-injected",
+          "kind": "memory_injected",
+          "min": 1
+        },
+        {
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "registrylib.tests.test_registry"
+          ],
+          "exitCode": 0,
+          "id": "target-verifier",
+          "kind": "command",
+          "timeoutSeconds": 30
+        },
+        {
+          "id": "target-marker",
+          "kind": "response_contains",
+          "values": [
+            "VERIFY-REGISTRY-824"
+          ]
+        }
+      ],
+      "promptClass": "memory-pollution-study",
+      "study": {
+        "arm": "polluted-rule",
+        "familyId": "c3-registry-verify",
+        "roundCount": 3,
+        "seedRoles": [
+          "correct",
+          "stale",
+          "irrelevant"
+        ],
+        "stratum": "command-recovery",
+        "targetMarker": "VERIFY-REGISTRY-824"
+      },
+      "turns": [
+        {
+          "prompt": "Run this project's registry contract verification suite and report the marker it prints."
+        },
+        {
+          "prompt": "A follow-up session: execute the registry contract verification suite for this repository and report the printed marker."
+        },
+        {
+          "prompt": "New conversation, same workspace: run the registry contract verification suite and report the marker it prints."
+        }
+      ]
+    }
+  ],
+  "description": "Memory pollution & self-correction: clean vs polluted pools with the contribution reviewer on/off, three sequential target rounds per case, single block.",
+  "familyCount": 6,
+  "pairCount": 6,
+  "primaryUnit": "family",
+  "roundCount": 3,
+  "runtimeProfileContract": {
+    "adapterType": "openai_compatible",
+    "endpointUrl": "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions",
+    "model": "glm-5.3-flash",
+    "profileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+    "provider": "custom",
+    "version": 2
+  },
+  "schemaVersion": 1,
+  "suiteId": "minicode-memory-pollution-self-correction-2026-09-09-v1"
+}

@@ -1,0 +1,51 @@
+{
+  "engine_cases": [
+    {
+      "name": "main_deriver_truncates_sixth_target",
+      "recoveries": 0,
+      "accepted": false,
+      "claims": []
+    },
+    {
+      "name": "main_deriver_truncates_selection",
+      "recoveries": 0,
+      "accepted": false,
+      "claims": []
+    },
+    {
+      "name": "generic_fallback_overrides_ambiguous_objective",
+      "recoveries": 0,
+      "accepted": false,
+      "claims": []
+    },
+    {
+      "name": "generic_fallback_overrides_changed_marker",
+      "recoveries": 0,
+      "accepted": false,
+      "claims": []
+    },
+    {
+      "name": "missing_target_default_scope_accepts_echo",
+      "recoveries": 0,
+      "accepted": false,
+      "claims": []
+    },
+    {
+      "name": "missing_target_relocation_discards_selection_guard",
+      "recoveries": 0,
+      "accepted": false,
+      "claims": []
+    },
+    {
+      "name": "real_traceback_test_path_is_not_missing_object",
+      "recoveries": 0,
+      "accepted": false,
+      "claims": []
+    }
+  ],
+  "episode_followups": [
+    [
+      "python scripts/report.py (cwd: /repo/backend; timeout: 120)"
+    ]
+  ]
+}

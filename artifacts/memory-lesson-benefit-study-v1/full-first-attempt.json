@@ -1,0 +1,756 @@
+{
+  "completedCaseCount": 24,
+  "manifestCaseCount": 24,
+  "manifestSha256": "41d94c69e5a64710e83160de24ebabff4fcdcea1ab14c40b00264270a2cc5bd8",
+  "recordedAt": "2026-09-09T14:29:53Z",
+  "results": [
+    {
+      "caseContractSha256": "efa6dc672380c12c7b86084c559a8f2fd8bb6ac4242a023a0ded10d56c8fdabe",
+      "durationMs": 15066,
+      "evidenceSha256": "4e20acb18bb8095895657643d48005ddd50c310789424a9b9b4b81640d45e950",
+      "id": "lb-b1-c1-ledger-verify-cold",
+      "inputTokens": 31454,
+      "memoryPool": {
+        "entryCount": 0,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 4,
+      "outputTokens": 270,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "runId": "run_128c40e17fed4d5c9b55b39782094e54",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "03ac2cd2461861a529edb1e45d1886f3429c99fc468df553e774389bbbcad13a",
+      "durationMs": 72348,
+      "evidenceSha256": "f70d3d7995f0ed167ee0e780c9a88cd3c147f78fc047152e2f36f5479b5e4fa4",
+      "id": "lb-b1-c1-ledger-verify-warm",
+      "inputTokens": 108260,
+      "memoryPool": {
+        "entryCount": 3,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 13,
+      "outputTokens": 2082,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "relatedRunIds": [
+        "run_554c8910fd6c4b8aa6bb7ec6b0a7faf4"
+      ],
+      "runId": "run_22f9945ddad643fa97fdc9dc955a833f",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "52408f4f965ba20423f3a0e8de3050b5d6b641272e993c7e318589936838fbf7",
+      "durationMs": 83652,
+      "evidenceSha256": "1f0d11f4d0eea10bc42ca2b0b881f434d1c90b55e7c92b785e5caec2581b7804",
+      "id": "lb-b1-c2-normalizer-verify-warm",
+      "inputTokens": 84926,
+      "memoryPool": {
+        "entryCount": 1,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 11,
+      "outputTokens": 2420,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "relatedRunIds": [
+        "run_52da2c2f53744f9e90f6baaeab8f799b"
+      ],
+      "runId": "run_e5daeea7d5c342988499df3d9d5f2d4b",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "f84be3db928476d28a5cb8ad4ffae982770d659de7e0894076409fcfa21a0a93",
+      "durationMs": 43786,
+      "evidenceSha256": "3fb63f98863b5da9d0186be3dcb979020e7b0b73e2638db8d118f8df0f8fdbd9",
+      "id": "lb-b1-c2-normalizer-verify-cold",
+      "inputTokens": 50910,
+      "memoryPool": {
+        "entryCount": 2,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 6,
+      "outputTokens": 1053,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "runId": "run_34d14285fd804fa19f026b52a3be0807",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "85767c6bdb653ac83ebac83157cb0bdbe42a688393373fd5defb6868afe11d20",
+      "durationMs": 16725,
+      "evidenceSha256": "e9872a873369403729e571314bfb65fc3420b1cd75b41933f672a6beeb9d7411",
+      "id": "lb-b1-c3-registry-verify-cold",
+      "inputTokens": 31711,
+      "memoryPool": {
+        "entryCount": 0,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 4,
+      "outputTokens": 484,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "runId": "run_28a431643e2e4212960c57f9a41eb875",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "27b23e8a3a62bc8b8e177f0c1387a9b9922b6cfdfbe9527d0cb10b21872cbef1",
+      "durationMs": 61975,
+      "evidenceSha256": "c428ac0b1f8141ad404da1864f057346ab44091f1bff18e9028f43db45a7e685",
+      "id": "lb-b1-c3-registry-verify-warm",
+      "inputTokens": 74873,
+      "memoryPool": {
+        "entryCount": 1,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 10,
+      "outputTokens": 1840,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "relatedRunIds": [
+        "run_35a455e960bb4c73b1042b4718be0d73"
+      ],
+      "runId": "run_018608b6f607444cbc7c4e6fad2d69ea",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "dd8f14bd667a2f214a677bdca58714fcc93189292a028a50611ff58a39ea38e6",
+      "durationMs": 57433,
+      "evidenceSha256": "fef43cdf85be6c80aa01a8d70541a96205d1c1bf8fcce144cd64529ee5e54b9d",
+      "id": "lb-b1-c4-session-verify-warm",
+      "inputTokens": 51152,
+      "memoryPool": {
+        "entryCount": 1,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 7,
+      "outputTokens": 1899,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "relatedRunIds": [
+        "run_581de5aa3c4a45bda1e238f7302afefe"
+      ],
+      "runId": "run_9f85f173b57042c2b88602959d0c9e16",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "8e665ffc82e4ce0f89bac22717dbed910a3e7998287758c094dc2954b5fb8eb1",
+      "durationMs": 42224,
+      "evidenceSha256": "46657c2cc22cde04ab1d4d5d3c34419b4546e2526e7977f47191e6bd3d074376",
+      "id": "lb-b1-c4-session-verify-cold",
+      "inputTokens": 55348,
+      "memoryPool": {
+        "entryCount": 1,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 8,
+      "outputTokens": 667,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "runId": "run_b3fafb7c3dfa4d8b8cb497997b8511db",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "5fc4546229d59a9524de40df0607a00fb29c1d95656ce911a9d3d62f50bcaa82",
+      "durationMs": 24831,
+      "evidenceSha256": "810710b6561f7380caba1d6531f93793d5aa5e02a27631f47464193ea87ab0f9",
+      "id": "lb-b1-c5-schema-verify-cold",
+      "inputTokens": 47537,
+      "memoryPool": {
+        "entryCount": 0,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 6,
+      "outputTokens": 637,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "runId": "run_6db36a710e464a039c99e79b970b9e55",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "63c7b32c71bcd5eaec3a8e4a76f08eef3ad7d351becd21046bd8cd682d767d0b",
+      "durationMs": 51815,
+      "evidenceSha256": "9cadc3f9d4af831598b2736ce0ff538cb1e4932081fefa1be61dee92b80ab9fb",
+      "id": "lb-b1-c5-schema-verify-warm",
+      "inputTokens": 60021,
+      "memoryPool": {
+        "entryCount": 2,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 8,
+      "outputTokens": 1798,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "relatedRunIds": [
+        "run_b285d261ab4546458c69d705b1db2edf"
+      ],
+      "runId": "run_26d806f6b16943dd8499a1bef5524231",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "cb4363b77cc03dfc3e3cc2249d0df380af6749d6ef05e3061004423b82f87ca9",
+      "durationMs": 59569,
+      "evidenceSha256": "b7513cd0d1536d00478fa9b7abe61f6541e12b4b9a127114fdad842f28b923ea",
+      "id": "lb-b1-c6-invoice-verify-warm",
+      "inputTokens": 81616,
+      "memoryPool": {
+        "entryCount": 1,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 10,
+      "outputTokens": 1862,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "relatedRunIds": [
+        "run_d6fadf9271ae45af88b20a3164dc9a19"
+      ],
+      "runId": "run_ea245c53c40041989cffc21a0a8b295e",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "0c1a0ef38cdefa9a121b9efc0d6c14d9ea746f37c0fae55a4f652fc116aff4c1",
+      "durationMs": 36830,
+      "evidenceSha256": "dc2c9104360563d0f0ac72d4fa68119daca30eeb6681b11a171881e1b78ef9d8",
+      "id": "lb-b1-c6-invoice-verify-cold",
+      "inputTokens": 51601,
+      "memoryPool": {
+        "entryCount": 1,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 7,
+      "outputTokens": 1246,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "runId": "run_95ad5bb9dcc4412e95829c7135c1b90b",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "d6c120050ddc5fe1347836da051bed7aec7aae3262250df606532e714a039524",
+      "durationMs": 42186,
+      "evidenceSha256": "1b203da95ad8e6bcc5587f2b9d9a225c21d9c038a3b008ae6a022e4938c13280",
+      "id": "lb-b2-c1-ledger-verify-warm",
+      "inputTokens": 50397,
+      "memoryPool": {
+        "entryCount": 1,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 7,
+      "outputTokens": 1626,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "relatedRunIds": [
+        "run_dd1f0174875c41428055566582a270b7"
+      ],
+      "runId": "run_192e6409886545a6ab24b17d7bc00afe",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "55c4ab6f05ed9061f8af9adf752d98ff4683aaa78ba8e2f3ebda3183daf7f089",
+      "durationMs": 20791,
+      "evidenceSha256": "2f727de6cfc16298a9142f0d7e24d62c30dc6a4a31ad51c760c07c033a25c48e",
+      "id": "lb-b2-c1-ledger-verify-cold",
+      "inputTokens": 31951,
+      "memoryPool": {
+        "entryCount": 0,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 4,
+      "outputTokens": 690,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "runId": "run_7713b2a66c11485c8ac081c2462234f9",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "ec23783eb3f2bd28ce22385d290d4a1645b07b80e71e40c7513eae0863bca35f",
+      "durationMs": 38619,
+      "evidenceSha256": "c25851a9698af7fcf8e10e73489cf964f0b7823ab148031f41484ffe7d4ab466",
+      "id": "lb-b2-c2-normalizer-verify-cold",
+      "inputTokens": 68797,
+      "memoryPool": {
+        "entryCount": 2,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 9,
+      "outputTokens": 1164,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "runId": "run_f03cb084e0884df4b47741af07c1fb5a",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "6dcf8765e8c901ece0f60d560c184141e1b9b1dd0c0bad2f8438bee1c26cea2c",
+      "durationMs": 76492,
+      "evidenceSha256": "28a6727eb63b3f41785c9ec48575acbaf8d3013c5616918fcaedaf664d230933",
+      "id": "lb-b2-c2-normalizer-verify-warm",
+      "inputTokens": 79972,
+      "memoryPool": {
+        "entryCount": 1,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 11,
+      "outputTokens": 1843,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written"
+      ],
+      "relatedRunIds": [
+        "run_363b644189294c04aadefae2b030f5da"
+      ],
+      "runId": "run_ca724a8ec53849a3933a6ff276e5f587",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    },
+    {
+      "caseContractSha256": "12b56207e2eca2e1941dd291974ac5d3fb7a832184b6dcf86463525184c8fb27",
+      "durationMs": 61521,
+      "evidenceSha256": "9fc80ab06fc95d5f699065d9943980ee7aff4077e8a8d470b67e122bf7fa9ee6",
+      "id": "lb-b2-c3-registry-verify-warm",
+      "inputTokens": 59324,
+      "memoryPool": {
+        "entryCount": 1,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 8,
+      "outputTokens": 2451,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "relatedRunIds": [
+        "run_4f8509bbc12e46f4a40f7ad773c14ec8"
+      ],
+      "runId": "run_9a8e2a27955f4f8cbc3b1060de7fb311",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "78e65d4fb5d430dbe18524c931da0d8e5675ae64639991494c116de228899c20",
+      "durationMs": 19260,
+      "evidenceSha256": "fb229db1c7620ece16f20ea19d7ee81bb2afa5ade8ca3f903447989d8317973f",
+      "id": "lb-b2-c3-registry-verify-cold",
+      "inputTokens": 31789,
+      "memoryPool": {
+        "entryCount": 0,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 4,
+      "outputTokens": 532,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "runId": "run_c5c0cdb7e7404ce0982ec0e2fd55f02c",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "789fcd9bbb2da186dfef92bfc58c0ad8f04c6fea1acd59a779f803cdf73f53e9",
+      "durationMs": 25361,
+      "evidenceSha256": "0b7878a2b257e187027c8109ab4f769e97687e958d3b9b35af160617a7d63cef",
+      "id": "lb-b2-c4-session-verify-cold",
+      "inputTokens": 40908,
+      "memoryPool": {
+        "entryCount": 0,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 5,
+      "outputTokens": 554,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "runId": "run_1d0c09a815d343ea82c894e46b7b858a",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "ce588603f84516cb4048720d36c6052f67538c1763019157e815e4b3367d1bc4",
+      "durationMs": 56029,
+      "evidenceSha256": "e0a04552f931544393894fa32c586daf632fd772b60fd2b629706a40d11e96b9",
+      "id": "lb-b2-c4-session-verify-warm",
+      "inputTokens": 67575,
+      "memoryPool": {
+        "entryCount": 1,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 9,
+      "outputTokens": 1860,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "relatedRunIds": [
+        "run_1a05d89236254eaab3c2845f5afbaf39"
+      ],
+      "runId": "run_6973e4a8f2304a0a9c98f669490a78c3",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "fe12a712bba6d30124e19db8f878af5d85238149c8dedc2ff687a76f82ba2462",
+      "durationMs": 62207,
+      "evidenceSha256": "86a50a135f8630fd5f82b84c6affabff711a0d65c3caf54f47460161bf065184",
+      "id": "lb-b2-c5-schema-verify-warm",
+      "inputTokens": 80083,
+      "memoryPool": {
+        "entryCount": 1,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 11,
+      "outputTokens": 1299,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "relatedRunIds": [
+        "run_77d3d501d3404eb4a23dfe9c240ef6b9"
+      ],
+      "runId": "run_63ca9dcb9d80425da232e08f4801819d",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "098a01fd987fd8319651db5af8cad151932b9cf987d835dd4dbbe40634853421",
+      "durationMs": 17979,
+      "evidenceSha256": "6effff9fba8991f31e789f22743001e56e436425a497a2902a884e50733b576e",
+      "id": "lb-b2-c5-schema-verify-cold",
+      "inputTokens": 39088,
+      "memoryPool": {
+        "entryCount": 0,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 5,
+      "outputTokens": 367,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "runId": "run_ef5aafcb8e544ddfa8de43ea9a952c3d",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "5323029914cf7a7be54bb86298787eba97e0466290e4e27b8d603a877c836134",
+      "durationMs": 16446,
+      "evidenceSha256": "09db5aa6a79e96e6a8669e5fefc03e5f1012d0e396a2e7141d95a7743969fd2d",
+      "id": "lb-b2-c6-invoice-verify-cold",
+      "inputTokens": 46455,
+      "memoryPool": {
+        "entryCount": 0,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 6,
+      "outputTokens": 356,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker"
+      ],
+      "runId": "run_f90ccca8217a4fbfadf55418598fe157",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    },
+    {
+      "caseContractSha256": "3a0199ce41c7337f436d42ddae905d2c5f9608fbcc758aa067882a3bbaa19939",
+      "durationMs": 59793,
+      "evidenceSha256": "04d7c20b20153b664b0bb60bd4cf65ed583208e6f2a34db19d5aa1fafeb8e5ab",
+      "id": "lb-b2-c6-invoice-verify-warm",
+      "inputTokens": 76248,
+      "memoryPool": {
+        "entryCount": 1,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 10,
+      "outputTokens": 2350,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-covers-target",
+        "lesson-attributed"
+      ],
+      "relatedRunIds": [
+        "run_a51211927056410ab92bf49a1fe0f0a3"
+      ],
+      "runId": "run_121ae813f8614bb9960d727512f16e37",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "passed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": true
+    }
+  ],
+  "runtimeProfile": {
+    "adapterType": "openai_compatible",
+    "endpointUrl": "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions",
+    "model": "glm-5.3-flash",
+    "profileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+    "provider": "custom"
+  },
+  "schemaVersion": 1,
+  "selectedCaseIds": [
+    "lb-b1-c1-ledger-verify-cold",
+    "lb-b1-c1-ledger-verify-warm",
+    "lb-b1-c2-normalizer-verify-warm",
+    "lb-b1-c2-normalizer-verify-cold",
+    "lb-b1-c3-registry-verify-cold",
+    "lb-b1-c3-registry-verify-warm",
+    "lb-b1-c4-session-verify-warm",
+    "lb-b1-c4-session-verify-cold",
+    "lb-b1-c5-schema-verify-cold",
+    "lb-b1-c5-schema-verify-warm",
+    "lb-b1-c6-invoice-verify-warm",
+    "lb-b1-c6-invoice-verify-cold",
+    "lb-b2-c1-ledger-verify-warm",
+    "lb-b2-c1-ledger-verify-cold",
+    "lb-b2-c2-normalizer-verify-cold",
+    "lb-b2-c2-normalizer-verify-warm",
+    "lb-b2-c3-registry-verify-warm",
+    "lb-b2-c3-registry-verify-cold",
+    "lb-b2-c4-session-verify-cold",
+    "lb-b2-c4-session-verify-warm",
+    "lb-b2-c5-schema-verify-warm",
+    "lb-b2-c5-schema-verify-cold",
+    "lb-b2-c6-invoice-verify-cold",
+    "lb-b2-c6-invoice-verify-warm"
+  ],
+  "selectionComplete": true,
+  "selectionStatus": "failed",
+  "sourceCodeSha256": "2aab6649813f92d283407e6172f94155c02ada4d7b1b9ed052843dbef93d47f1",
+  "sourceReport": "artifacts/memory-lesson-benefit-study-v1/manifest.json",
+  "suiteComplete": true,
+  "suiteFinalized": true,
+  "suiteId": "minicode-memory-lesson-benefit-2026-09-09-v1",
+  "suiteStatus": "failed"
+}

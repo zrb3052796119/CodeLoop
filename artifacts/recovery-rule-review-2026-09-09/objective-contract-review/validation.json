@@ -1,0 +1,16 @@
+{
+  "focused_tests": {
+    "passed": 359,
+    "modules": 16
+  },
+  "old_probes": "identity, grounding, episode preserved expected behavior",
+  "consumer_contract_rejected_but_value_accepted": 7,
+  "parser_real_test_skip_accepted": true,
+  "source_sha256": {
+    "minicode/reflection_evidence.py": "4c30d397d7d695342d45f7fe27aa978a6f1cbe7e035211134bda0d022ad1e921",
+    "minicode/reflection_synthesis.py": "15700020db9e7af0c49e5a41e82bbd972fee721bb2c9e33382715b8cd4157d00",
+    "minicode/reflection_llm.py": "b615f3428b0627fb31a615dfa93a6d6540cd41379dbe2ecbc0cd43fa4a00c86f",
+    "minicode/recovery_lesson.py": "138cdac8ce27f349fd740c9b2db4efea4bfc5712387fee95208a6bad841d1ef6"
+  },
+  "review_links_exist": true
+}

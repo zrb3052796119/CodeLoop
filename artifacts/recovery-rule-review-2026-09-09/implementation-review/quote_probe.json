@@ -1,0 +1,93 @@
+{
+  "inferred_status_bypass": {
+    "source_status": "inferred",
+    "without_quotes": {
+      "valid": false,
+      "issues": [
+        "claim_statement_not_grounded"
+      ],
+      "persistable": false,
+      "durable_signals": []
+    },
+    "with_real_quote": {
+      "valid": true,
+      "issues": [],
+      "persistable": true,
+      "durable_signals": [
+        "key_technical_decision"
+      ]
+    },
+    "verbatim_control": {
+      "valid": false,
+      "issues": [
+        "epistemic_status_overclaim"
+      ],
+      "persistable": false,
+      "durable_signals": []
+    },
+    "existing_production_engine_scripted_client": {
+      "selection_source": "llm_gap_fill",
+      "claims": [
+        {
+          "claim_id": "llm-claim-000001",
+          "claim_type": "decision",
+          "semantic_key": "expiry_order",
+          "statement": "Expiry validation after looking up an account is the identified defect.",
+          "evidence_ids": [
+            "decision-event"
+          ],
+          "epistemic_status": "confirmed",
+          "applies_when": "When checking authentication tokens.",
+          "limitations": [],
+          "verification_ids": [],
+          "related_error_ids": [],
+          "related_recovery_ids": [],
+          "evidence_quotes": [
+            "The root cause is checking token expiry after account lookup."
+          ]
+        }
+      ]
+    }
+  },
+  "inferred_root_cause_bypass": {
+    "source_status": "inferred",
+    "candidate": {
+      "valid": true,
+      "issues": [],
+      "persistable": true,
+      "durable_signals": [
+        "confirmed_error_recovery_verified"
+      ]
+    }
+  },
+  "wrong_red_green_target": {
+    "with_unrelated_earlier_failed_test": {
+      "valid": true,
+      "issues": [],
+      "persistable": true,
+      "durable_signals": [
+        "confirmed_error_recovery_verified",
+        "verified_solution"
+      ]
+    },
+    "without_failed_test": {
+      "valid": false,
+      "issues": [
+        "confirmed_recovery_verification_unrelated"
+      ],
+      "persistable": false,
+      "durable_signals": []
+    },
+    "rule_recovery_statuses": [
+      "confirmed"
+    ]
+  },
+  "unrelated_quote_control": {
+    "valid": false,
+    "issues": [
+      "evidence_quote_not_grounded"
+    ],
+    "persistable": false,
+    "durable_signals": []
+  }
+}

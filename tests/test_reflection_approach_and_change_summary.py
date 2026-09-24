@@ -135,6 +135,34 @@ class TestApproachClaim:
         assert [claim["claim_type"] for claim in claims] == ["approach"]
         assert "context manager" in entry.content
 
+    def test_external_provenance_cannot_lend_recovery_authority_to_approach(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        mgr = MemoryManager(project_root=tmp_path)
+        pipeline = MemoryPipeline(mgr)
+        pipeline.initialize(None, str(tmp_path))
+
+        entry_id = pipeline.write(
+            "Fix the file handle leak in parse_config",
+            _success_trace(),
+            provenance={
+                "claim_type": "recovery",
+                "evidence_kind": "verified_recovery",
+                "durable_signals": ["verified_solution"],
+                "approval_basis": "verified_solution",
+                "producer": "test",
+            },
+        )
+
+        assert entry_id is not None
+        entry = mgr.memories[MemoryScope.PROJECT]._id_index[entry_id]
+        assert entry.provenance["claim_type"] == "approach"
+        assert "evidence_kind" not in entry.provenance
+        assert entry.provenance["durable_signals"] == ["verified_approach"]
+        assert entry.provenance["approval_basis"] == "verified_approach"
+        assert entry.provenance["producer"] == "test"
+
 
 class TestRecoveryChangeSummary:
     def test_recovery_claim_carries_edit_excerpt(self) -> None:

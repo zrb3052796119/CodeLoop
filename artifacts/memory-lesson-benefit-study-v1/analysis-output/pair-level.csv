@@ -1,0 +1,13 @@
+familyId,block,tool_calls_warm,tool_calls_cold,task_input_tokens_warm,task_input_tokens_cold,task_output_tokens_warm,task_output_tokens_cold,duration_warm,duration_cold,warm_success,cold_success
+c1-ledger-verify,1,7,5,58924,31454,1147,270,40296,14782,True,True
+c1-ledger-verify,2,1,6,15713,31951,339,690,13695,20775,True,True
+c2-normalizer-verify,1,3,7,33036,50910,845,1053,35345,43768,True,True
+c2-normalizer-verify,2,5,10,31674,65044,414,604,11753,38601,True,True
+c3-registry-verify,1,1,5,15772,31711,496,484,19521,16707,True,True
+c3-registry-verify,2,1,6,16170,31789,954,532,24904,19240,True,True
+c4-session-verify,1,1,10,15952,55348,628,667,19772,42206,True,True
+c4-session-verify,2,3,6,32526,40908,620,554,28235,25342,True,True
+c5-schema-verify,1,1,7,15653,47537,240,637,14755,24812,True,True
+c5-schema-verify,2,4,6,40642,39088,769,367,23230,17960,True,True
+c6-invoice-verify,1,1,6,16150,48660,485,559,13977,36812,True,True
+c6-invoice-verify,2,2,6,24172,46455,600,356,21065,16427,True,True

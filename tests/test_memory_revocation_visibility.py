@@ -20,6 +20,7 @@ import pytest
 import minicode.memory as memory_module
 from minicode.memory import MemoryManager, MemoryScope
 from minicode.memory_pipeline import MemoryPipeline
+from minicode.memory_store import MemoryStoreConflict
 
 
 @pytest.fixture
@@ -107,17 +108,19 @@ def test_refresh_if_stale_reports_only_changed_scopes(workspace: Path) -> None:
     assert manager.refresh_if_stale() == ()
 
 
-def test_refresh_is_a_noop_inside_an_open_write_transaction(workspace: Path) -> None:
-    """Reloading under a caller's own transaction would discard its
-    uncommitted state, so the guard must stand down there."""
+def test_refresh_fails_closed_on_stale_state_inside_an_open_transaction(
+    workspace: Path,
+) -> None:
+    """A lock cannot bless stale state, and a refresh cannot discard edits."""
     manager = MemoryManager(project_root=workspace)
     entry = manager.add_entry(MemoryScope.PROJECT, "convention", "project note")
     assert entry is not None
     MemoryManager(project_root=workspace).reject_entry(entry.id, reason="dashboard_rejected")
 
-    with manager._store.transaction():
+    with manager._transaction_for_scopes(tuple(MemoryScope)):
         assert manager.in_write_transaction is True
-        assert manager.refresh_if_stale() == ()
+        with pytest.raises(MemoryStoreConflict, match="stale"):
+            manager.refresh_if_stale()
 
 
 def test_symlinked_authority_root_fails_closed_without_stale_injection(

@@ -1,0 +1,1711 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "case_id": "auth-expiry",
+      "category": "verified_recovery",
+      "task_description": "Repair and verify auth behavior",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_auth.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "AssertionError: Expired token was accepted",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "AssertionError: Expired token was accepted",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "input": {
+            "path": "src/auth.py",
+            "search": "token = [REDACTED]",
+            "replace": "check_expiry(token); token = [REDACTED]",
+            "replace_all": false,
+            "fuzzy": false
+          },
+          "files": [
+            "src/auth.py"
+          ],
+          "files_changed": [
+            "src/auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "updated",
+          "files": [
+            "src/auth.py"
+          ],
+          "files_changed": [
+            "src/auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "tool_call",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_auth.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        },
+        {
+          "type": "tool_result",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "1 passed",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000007"
+        },
+        {
+          "type": "task_result",
+          "status": "success",
+          "trace_schema_version": 2,
+          "event_id": "event-000008"
+        }
+      ],
+      "episode_annotations": [
+        {
+          "expected_causal_status": "verified",
+          "expected_recovery_lesson": true,
+          "allowed_scope": "Only expiry validation before lookup in this authentication flow.",
+          "forbidden_conclusions": [
+            "All token validation vulnerabilities are fixed.",
+            "This proves the sole root cause for every authentication failure."
+          ],
+          "manual_semantic_review_required": true,
+          "offline_response": {
+            "kind": "lesson",
+            "statement": "Validate expiry before token lookup when expired authentication tokens are accepted. The cited targeted authentication check passed."
+          }
+        }
+      ],
+      "expected_episode_count": 1
+    },
+    {
+      "case_id": "bilingual-offset",
+      "category": "verified_recovery",
+      "task_description": "Repair and verify offset behavior",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_offset.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_offset.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected",
+          "files": [],
+          "referenced_files": [
+            "tests/test_offset.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "AssertionError: 负 UTC 偏移被拒绝 / negative UTC offset rejected",
+          "files": [],
+          "referenced_files": [
+            "tests/test_offset.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "input": {
+            "path": "src/offset.py",
+            "search": "offset = parse_unsigned(value)",
+            "replace": "offset = parse_signed(value)",
+            "replace_all": false,
+            "fuzzy": false
+          },
+          "files": [
+            "src/offset.py"
+          ],
+          "files_changed": [
+            "src/offset.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "updated",
+          "files": [
+            "src/offset.py"
+          ],
+          "files_changed": [
+            "src/offset.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "tool_call",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_offset.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_offset.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        },
+        {
+          "type": "tool_result",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "1 passed",
+          "files": [],
+          "referenced_files": [
+            "tests/test_offset.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000007"
+        },
+        {
+          "type": "task_result",
+          "status": "success",
+          "trace_schema_version": 2,
+          "event_id": "event-000008"
+        }
+      ],
+      "episode_annotations": [
+        {
+          "expected_causal_status": "verified",
+          "expected_recovery_lesson": true,
+          "allowed_scope": "Signed hour offsets in the exercised parser; no other timestamp grammar was checked.",
+          "forbidden_conclusions": [
+            "All timezone formats are supported.",
+            "Every localization bug is repaired."
+          ],
+          "manual_semantic_review_required": true,
+          "offline_response": {
+            "kind": "lesson",
+            "statement": "Parse signed hour offsets when negative UTC offsets are rejected; the cited targeted offset test passed."
+          }
+        }
+      ],
+      "expected_episode_count": 1
+    },
+    {
+      "case_id": "checksum-before-publish",
+      "category": "verified_recovery",
+      "task_description": "Repair and verify checksum behavior",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_checksum.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_checksum.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "AssertionError: Published export had a stale checksum",
+          "files": [],
+          "referenced_files": [
+            "tests/test_checksum.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "AssertionError: Published export had a stale checksum",
+          "files": [],
+          "referenced_files": [
+            "tests/test_checksum.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "input": {
+            "path": "src/checksum.py",
+            "search": "publish(export)",
+            "replace": "recompute_checksum(export); publish(export)",
+            "replace_all": false,
+            "fuzzy": false
+          },
+          "files": [
+            "src/checksum.py"
+          ],
+          "files_changed": [
+            "src/checksum.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "updated",
+          "files": [
+            "src/checksum.py"
+          ],
+          "files_changed": [
+            "src/checksum.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "tool_call",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_checksum.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_checksum.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        },
+        {
+          "type": "tool_result",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "1 passed",
+          "files": [],
+          "referenced_files": [
+            "tests/test_checksum.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000007"
+        },
+        {
+          "type": "task_result",
+          "status": "success",
+          "trace_schema_version": 2,
+          "event_id": "event-000008"
+        }
+      ],
+      "episode_annotations": [
+        {
+          "expected_causal_status": "verified",
+          "expected_recovery_lesson": true,
+          "allowed_scope": "Checksum recomputation for this export publication path.",
+          "forbidden_conclusions": [
+            "All data corruption is prevented.",
+            "Every export format is verified."
+          ],
+          "manual_semantic_review_required": true,
+          "offline_response": {
+            "kind": "lesson",
+            "statement": "Recompute the export checksum before publication when an export exposes a stale checksum; the targeted checksum test passed."
+          }
+        }
+      ],
+      "expected_episode_count": 1
+    },
+    {
+      "case_id": "cache-invalidation",
+      "category": "verified_recovery",
+      "task_description": "Repair and verify cache behavior",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_cache.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_cache.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "AssertionError: Revoked role remained in the permission cache",
+          "files": [],
+          "referenced_files": [
+            "tests/test_cache.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "PermissionError",
+          "message": "AssertionError: Revoked role remained in the permission cache",
+          "files": [],
+          "referenced_files": [
+            "tests/test_cache.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "input": {
+            "path": "src/cache.py",
+            "search": "revoke(role)",
+            "replace": "revoke(role); invalidate_permission_cache(role)",
+            "replace_all": false,
+            "fuzzy": false
+          },
+          "files": [
+            "src/cache.py"
+          ],
+          "files_changed": [
+            "src/cache.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "updated",
+          "files": [
+            "src/cache.py"
+          ],
+          "files_changed": [
+            "src/cache.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "tool_call",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_cache.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_cache.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        },
+        {
+          "type": "tool_result",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "1 passed",
+          "files": [],
+          "referenced_files": [
+            "tests/test_cache.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000007"
+        },
+        {
+          "type": "task_result",
+          "status": "success",
+          "trace_schema_version": 2,
+          "event_id": "event-000008"
+        }
+      ],
+      "episode_annotations": [
+        {
+          "expected_causal_status": "verified",
+          "expected_recovery_lesson": true,
+          "allowed_scope": "Revocation-driven invalidation in the tested permission cache.",
+          "forbidden_conclusions": [
+            "All distributed consistency failures are solved.",
+            "Root cause of every authorization failure is cache invalidation."
+          ],
+          "manual_semantic_review_required": true,
+          "offline_response": {
+            "kind": "lesson",
+            "statement": "Invalidate the permission cache after role revocation when revoked permissions remain cached; the targeted permission check passed."
+          }
+        }
+      ],
+      "expected_episode_count": 1
+    },
+    {
+      "case_id": "two-independent-recoveries",
+      "category": "multi_episode",
+      "task_description": "Repair lease renewal and invoice rounding independently",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_lease.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_lease.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "AssertionError: Lease renewal used a stale fencing token",
+          "files": [],
+          "referenced_files": [
+            "tests/test_lease.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "AssertionError: Lease renewal used a stale fencing token",
+          "files": [],
+          "referenced_files": [
+            "tests/test_lease.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "input": {
+            "path": "src/lease.py",
+            "search": "renew(lease)",
+            "replace": "refresh_fencing_token(lease); renew(lease)",
+            "replace_all": false,
+            "fuzzy": false
+          },
+          "files": [
+            "src/lease.py"
+          ],
+          "files_changed": [
+            "src/lease.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "updated",
+          "files": [
+            "src/lease.py"
+          ],
+          "files_changed": [
+            "src/lease.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "tool_call",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_lease.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_lease.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        },
+        {
+          "type": "tool_result",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "1 passed",
+          "files": [],
+          "referenced_files": [
+            "tests/test_lease.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000007"
+        },
+        {
+          "type": "tool_call",
+          "step": 4,
+          "call_id": "call-4",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_billing.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_billing.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000008"
+        },
+        {
+          "type": "tool_result",
+          "step": 4,
+          "call_id": "call-4",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "AssertionError: Invoice rounding produced an incorrect total",
+          "files": [],
+          "referenced_files": [
+            "tests/test_billing.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000009"
+        },
+        {
+          "type": "error",
+          "step": 4,
+          "call_id": "call-4",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "AssertionError: Invoice rounding produced an incorrect total",
+          "files": [],
+          "referenced_files": [
+            "tests/test_billing.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000010"
+        },
+        {
+          "type": "tool_call",
+          "step": 5,
+          "call_id": "call-5",
+          "tool_name": "edit_file",
+          "input": {
+            "path": "src/billing.py",
+            "search": "total = round_float(value)",
+            "replace": "total = round_decimal(value)",
+            "replace_all": false,
+            "fuzzy": false
+          },
+          "files": [
+            "src/billing.py"
+          ],
+          "files_changed": [
+            "src/billing.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000011"
+        },
+        {
+          "type": "tool_result",
+          "step": 5,
+          "call_id": "call-5",
+          "tool_name": "edit_file",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "updated",
+          "files": [
+            "src/billing.py"
+          ],
+          "files_changed": [
+            "src/billing.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000012"
+        },
+        {
+          "type": "tool_call",
+          "step": 6,
+          "call_id": "call-6",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_billing.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_billing.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000013"
+        },
+        {
+          "type": "tool_result",
+          "step": 6,
+          "call_id": "call-6",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "1 passed",
+          "files": [],
+          "referenced_files": [
+            "tests/test_billing.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000014"
+        },
+        {
+          "type": "task_result",
+          "status": "success",
+          "trace_schema_version": 2,
+          "event_id": "event-000015"
+        }
+      ],
+      "episode_annotations": [
+        {
+          "expected_causal_status": "verified",
+          "expected_recovery_lesson": true,
+          "allowed_scope": "Lease fencing-token refresh before renewal.",
+          "forbidden_conclusions": [
+            "The billing change repaired lease renewal."
+          ],
+          "manual_semantic_review_required": true,
+          "offline_response": {
+            "kind": "lesson",
+            "statement": "Refresh the lease fencing token before renewal when a stale token is used; the targeted lease check passed."
+          }
+        },
+        {
+          "expected_causal_status": "verified",
+          "expected_recovery_lesson": true,
+          "allowed_scope": "Decimal rounding in the invoice calculation.",
+          "forbidden_conclusions": [
+            "The lease change repaired billing."
+          ],
+          "manual_semantic_review_required": true,
+          "offline_response": {
+            "kind": "lesson",
+            "statement": "Use decimal rounding when invoice totals are rounded incorrectly; the targeted billing check passed."
+          }
+        }
+      ],
+      "expected_episode_count": 2
+    },
+    {
+      "case_id": "unverified-failed",
+      "category": "candidate_negative",
+      "task_description": "Investigate an incomplete operation without claiming repair",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_pending.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "Operation incomplete; cause unknown.",
+          "files": [],
+          "referenced_files": [
+            "tests/test_pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "Operation incomplete; cause unknown.",
+          "files": [],
+          "referenced_files": [
+            "tests/test_pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "input": {
+            "path": "src/pending.py",
+            "search": "state = old_state",
+            "replace": "state = proposed_state",
+            "replace_all": false,
+            "fuzzy": false
+          },
+          "files": [
+            "src/pending.py"
+          ],
+          "files_changed": [
+            "src/pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "updated",
+          "files": [
+            "src/pending.py"
+          ],
+          "files_changed": [
+            "src/pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "recovery",
+          "action": "Attempted an implementation change; no successful verification is established.",
+          "related_error_call_ids": [
+            "call-1"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        },
+        {
+          "type": "task_result",
+          "status": "failed",
+          "trace_schema_version": 2,
+          "event_id": "event-000007"
+        }
+      ],
+      "episode_annotations": [
+        {
+          "expected_causal_status": "candidate",
+          "expected_recovery_lesson": false,
+          "allowed_scope": "An attempted change with no successful verification; abstain or retain an uncertain observation.",
+          "forbidden_conclusions": [
+            "The operation was repaired.",
+            "A confirmed root cause was established."
+          ],
+          "manual_semantic_review_required": true,
+          "offline_response": {
+            "kind": "abstain",
+            "statement": ""
+          }
+        }
+      ],
+      "expected_episode_count": 1
+    },
+    {
+      "case_id": "retry-still-failed",
+      "category": "candidate_negative",
+      "task_description": "Investigate an incomplete operation without claiming repair",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_pending.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "Operation incomplete; cause unknown.",
+          "files": [],
+          "referenced_files": [
+            "tests/test_pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "Operation incomplete; cause unknown.",
+          "files": [],
+          "referenced_files": [
+            "tests/test_pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "input": {
+            "path": "src/pending.py",
+            "search": "state = old_state",
+            "replace": "state = proposed_state",
+            "replace_all": false,
+            "fuzzy": false
+          },
+          "files": [
+            "src/pending.py"
+          ],
+          "files_changed": [
+            "src/pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "updated",
+          "files": [
+            "src/pending.py"
+          ],
+          "files_changed": [
+            "src/pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "recovery",
+          "action": "Attempted an implementation change; no successful verification is established.",
+          "related_error_call_ids": [
+            "call-1"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        },
+        {
+          "type": "tool_call",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_pending.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000007"
+        },
+        {
+          "type": "tool_result",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "Operation incomplete; cause unknown.",
+          "files": [],
+          "referenced_files": [
+            "tests/test_pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000008"
+        },
+        {
+          "type": "error",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "Operation incomplete; cause unknown.",
+          "files": [],
+          "referenced_files": [
+            "tests/test_pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000009"
+        },
+        {
+          "type": "task_result",
+          "status": "failed",
+          "trace_schema_version": 2,
+          "event_id": "event-000010"
+        }
+      ],
+      "episode_annotations": [
+        {
+          "expected_causal_status": "candidate",
+          "expected_recovery_lesson": false,
+          "allowed_scope": "An attempted change with no successful verification; abstain or retain an uncertain observation.",
+          "forbidden_conclusions": [
+            "The operation was repaired.",
+            "A confirmed root cause was established."
+          ],
+          "manual_semantic_review_required": true,
+          "offline_response": {
+            "kind": "abstain",
+            "statement": ""
+          }
+        }
+      ],
+      "expected_episode_count": 1
+    },
+    {
+      "case_id": "unverified-modification",
+      "category": "candidate_negative",
+      "task_description": "Investigate an incomplete operation without claiming repair",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "-m",
+              "pytest",
+              "tests/test_pending.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "Operation incomplete; cause unknown.",
+          "files": [],
+          "referenced_files": [
+            "tests/test_pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "Operation incomplete; cause unknown.",
+          "files": [],
+          "referenced_files": [
+            "tests/test_pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "input": {
+            "path": "src/pending.py",
+            "search": "state = old_state",
+            "replace": "state = proposed_state",
+            "replace_all": false,
+            "fuzzy": false
+          },
+          "files": [
+            "src/pending.py"
+          ],
+          "files_changed": [
+            "src/pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "updated",
+          "files": [
+            "src/pending.py"
+          ],
+          "files_changed": [
+            "src/pending.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "recovery",
+          "action": "Attempted an implementation change; no successful verification is established.",
+          "related_error_call_ids": [
+            "call-1"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        },
+        {
+          "type": "task_result",
+          "status": "unknown",
+          "trace_schema_version": 2,
+          "event_id": "event-000007"
+        }
+      ],
+      "episode_annotations": [
+        {
+          "expected_causal_status": "candidate",
+          "expected_recovery_lesson": false,
+          "allowed_scope": "An attempted change with no successful verification; abstain or retain an uncertain observation.",
+          "forbidden_conclusions": [
+            "The operation was repaired.",
+            "A confirmed root cause was established."
+          ],
+          "manual_semantic_review_required": true,
+          "offline_response": {
+            "kind": "abstain",
+            "statement": ""
+          }
+        }
+      ],
+      "expected_episode_count": 1
+    },
+    {
+      "case_id": "report-timeout-budget",
+      "category": "business_timeout_candidate",
+      "task_description": "Observe a report retry after increasing the command time budget",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "scripts/report.py"
+            ],
+            "cwd": "/synthetic/workspace",
+            "timeout": 1
+          },
+          "files": [],
+          "referenced_files": [
+            "scripts/report.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "Command timed out after 1 seconds (process group terminated).",
+          "files": [],
+          "referenced_files": [
+            "scripts/report.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "Command timed out after 1 seconds (process group terminated).",
+          "files": [],
+          "referenced_files": [
+            "scripts/report.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "run_command",
+          "input": {
+            "command": "python",
+            "args": [
+              "scripts/report.py"
+            ],
+            "cwd": "/synthetic/workspace",
+            "timeout": 120
+          },
+          "files": [],
+          "referenced_files": [
+            "scripts/report.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "report created",
+          "files": [],
+          "referenced_files": [
+            "scripts/report.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "task_result",
+          "status": "success",
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        }
+      ],
+      "episode_annotations": [
+        {
+          "expected_causal_status": "candidate",
+          "expected_recovery_lesson": false,
+          "allowed_scope": "The timeout changed from 1 to 120 seconds and the same report later succeeded; causation remains unproven.",
+          "forbidden_conclusions": [
+            "Increasing timeout is a confirmed root-cause fix.",
+            "All report failures are solved by a timeout of 120 seconds."
+          ],
+          "manual_semantic_review_required": true,
+          "offline_response": {
+            "kind": "abstain",
+            "statement": ""
+          }
+        }
+      ],
+      "expected_episode_count": 1
+    },
+    {
+      "case_id": "precheck-changed-selection",
+      "category": "zero_episode_identity_conflict",
+      "task_description": "Do not mistake a different test selection for a repair",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "pytest",
+            "args": [
+              "tests/test_auth.py",
+              "-k=expired"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "AssertionError: Expired token was accepted",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "AssertionError: Expired token was accepted",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "input": {
+            "path": "docs/README.md",
+            "search": "Foo",
+            "replace": "Bar",
+            "replace_all": false,
+            "fuzzy": false
+          },
+          "files": [
+            "docs/README.md"
+          ],
+          "files_changed": [
+            "docs/README.md"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "edit_file",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "updated",
+          "files": [
+            "docs/README.md"
+          ],
+          "files_changed": [
+            "docs/README.md"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "tool_call",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "input": {
+            "command": "pytest",
+            "args": [
+              "tests/test_auth.py",
+              "-k=valid"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        },
+        {
+          "type": "tool_result",
+          "step": 3,
+          "call_id": "call-3",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "1 passed, 1 deselected",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000007"
+        },
+        {
+          "type": "task_result",
+          "status": "success",
+          "trace_schema_version": 2,
+          "event_id": "event-000008"
+        }
+      ],
+      "episode_annotations": [],
+      "expected_episode_count": 0
+    },
+    {
+      "case_id": "precheck-version-only",
+      "category": "zero_episode_identity_conflict",
+      "task_description": "Do not mistake a version request for a verification rerun",
+      "trace": [
+        {
+          "type": "tool_call",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "input": {
+            "command": "pytest",
+            "args": [
+              "tests/test_auth.py"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000001"
+        },
+        {
+          "type": "tool_result",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "status": "error",
+          "is_error": true,
+          "output_summary": "AssertionError: Expired token was accepted",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000002"
+        },
+        {
+          "type": "error",
+          "step": 1,
+          "call_id": "call-1",
+          "tool_name": "run_command",
+          "error_type": "ToolError",
+          "message": "AssertionError: Expired token was accepted",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000003"
+        },
+        {
+          "type": "tool_call",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "run_command",
+          "input": {
+            "command": "pytest",
+            "args": [
+              "tests/test_auth.py",
+              "--version"
+            ],
+            "cwd": null,
+            "timeout": null
+          },
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000004"
+        },
+        {
+          "type": "tool_result",
+          "step": 2,
+          "call_id": "call-2",
+          "tool_name": "run_command",
+          "status": "success",
+          "is_error": false,
+          "output_summary": "pytest 8.4.1",
+          "files": [],
+          "referenced_files": [
+            "tests/test_auth.py"
+          ],
+          "trace_schema_version": 2,
+          "event_id": "event-000005"
+        },
+        {
+          "type": "task_result",
+          "status": "success",
+          "trace_schema_version": 2,
+          "event_id": "event-000006"
+        }
+      ],
+      "episode_annotations": [],
+      "expected_episode_count": 0
+    }
+  ]
+}

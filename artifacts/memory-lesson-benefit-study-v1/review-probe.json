@@ -1,0 +1,59 @@
+{
+  "completedCaseCount": 1,
+  "manifestCaseCount": 24,
+  "manifestSha256": "41d94c69e5a64710e83160de24ebabff4fcdcea1ab14c40b00264270a2cc5bd8",
+  "recordedAt": "2026-09-09T14:36:37Z",
+  "results": [
+    {
+      "caseContractSha256": "03ac2cd2461861a529edb1e45d1886f3429c99fc468df553e774389bbbcad13a",
+      "durationMs": 57983,
+      "evidenceSha256": "0402e25d2bba2eb1d132a5cf6f97f9b2a5beac97c29438affd04ab8e1a2c2e70",
+      "id": "lb-b1-c1-ledger-verify-warm",
+      "inputTokens": 59817,
+      "memoryPool": {
+        "entryCount": 1,
+        "quarantinedCount": 0
+      },
+      "modelCalls": 9,
+      "outputTokens": 2387,
+      "passedOracleIds": [
+        "run-completed",
+        "canonical-success",
+        "no-source-edits",
+        "target-verifier",
+        "target-marker",
+        "source-failure",
+        "lesson-written",
+        "lesson-attributed"
+      ],
+      "relatedRunIds": [
+        "run_8212e75e05334059b502874904c66948"
+      ],
+      "runId": "run_e0ada6e3ecbb4ac185ebc079c91fd726",
+      "runtimeProfileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+      "status": "failed",
+      "unsafeActionCount": 0,
+      "userInterventionCount": 0,
+      "verificationPassed": false
+    }
+  ],
+  "runtimeProfile": {
+    "adapterType": "openai_compatible",
+    "endpointUrl": "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions",
+    "model": "glm-5.3-flash",
+    "profileSha256": "52f00559cb100637ac97877a59f6f1a35384bca223d07332492451435f61c2fb",
+    "provider": "custom"
+  },
+  "schemaVersion": 1,
+  "selectedCaseIds": [
+    "lb-b1-c1-ledger-verify-warm"
+  ],
+  "selectionComplete": true,
+  "selectionStatus": "failed",
+  "sourceCodeSha256": "24d4bd766d994a1bb3ee3158cd31686daef09d78e7370165d78b80a7c156bb68",
+  "sourceReport": "artifacts/memory-lesson-benefit-study-v1/manifest.json",
+  "suiteComplete": false,
+  "suiteFinalized": true,
+  "suiteId": "minicode-memory-lesson-benefit-2026-09-09-v1",
+  "suiteStatus": "failed"
+}

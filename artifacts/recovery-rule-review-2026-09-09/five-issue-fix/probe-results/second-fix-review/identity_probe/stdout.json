@@ -1,0 +1,22 @@
+[
+  {
+    "case": "pytest_marker_changed",
+    "value_accepted": false,
+    "claims": []
+  },
+  {
+    "case": "inline_cd_is_still_a_shared_resource",
+    "value_accepted": false,
+    "claims": []
+  },
+  {
+    "case": "shared_junit_output_is_not_same_test",
+    "value_accepted": false,
+    "claims": []
+  },
+  {
+    "case": "missing_fixture_does_not_mean_missing_test_target",
+    "value_accepted": false,
+    "claims": []
+  }
+]

@@ -1,0 +1,115 @@
+........F.....FFFFF.                                                     [100%]
+=================================== FAILURES ===================================
+_ test_non_executing_modes_do_not_supply_passing_verification[-V-pytest 9.1.1] _
+
+flag = '-V', output = 'pytest 9.1.1'
+
+    @pytest.mark.parametrize("flag,output", [
+        ("--version", "pytest 9.1.1"),
+        ("-V", "pytest 9.1.1"),
+        ("--help", "usage: pytest [options] [file_or_dir]"),
+        ("--collect-only", "1 test collected"),
+    ])
+    def test_non_executing_modes_do_not_supply_passing_verification(flag: str, output: str) -> None:
+        first = ["pytest", "tests/test_auth.py"]
+        reflection = _reflect(first, [*first, flag], output)
+>       assert not reflection.value_decision.accepted
+E       AssertionError: assert not True
+E        +  where True = ReflectionValueDecision(accepted=True, reason_codes=['accepted_durable_reflection'], durable_signals=['confirmed_error_recovery_verified', 'verified_solution'], accepted_claim_ids=['claim-000001'], rejected_claim_ids=[]).accepted
+E        +    where ReflectionValueDecision(accepted=True, reason_codes=['accepted_durable_reflection'], durable_signals=['confirmed_error_recovery_verified', 'verified_solution'], accepted_claim_ids=['claim-000001'], rejected_claim_ids=[]) = ReflectionResult(task_summary='Repair and verify authentication', success=True, key_decisions=[], errors_encountered=[...ttempted=False, gap_fill_success=False, replace_regression=False, suppressed_claim_ids=[], suppression_reason_codes={}).value_decision
+
+tests/test_reflection_objective_arguments.py:65: AssertionError
+___ test_incomplete_invocation_cannot_supply_passing_verification[command0] ____
+
+command = ['bash', '-lc', 'pytest tests/test_auth.py --help $FLAGS']
+
+    @pytest.mark.parametrize("command", [
+        ["bash", "-lc", "pytest tests/test_auth.py --help $FLAGS"],
+        ["bash", "-lc", "pytest tests/test_auth.py -k 'unterminated"],
+        ["pytest", *(f"tests/test_{index}.py" for index in range(34))],
+    ])
+    def test_incomplete_invocation_cannot_supply_passing_verification(command: list[str]) -> None:
+        reflection = _reflect(["pytest", "tests/test_auth.py"], command, "usage: pytest --fixtures")
+>       assert not [item for item in reflection.task_evidence.verification
+                    if item.call_id == "call-2" and item.result == "passed"]
+E       AssertionError: assert not [VerificationEvidence(verification_id='verify-000002', tool_name='run_command', call_id='call-2', command_kind='test', scope='unknown', result='passed', event_ids=('event-000004', 'event-000005'), summary='usage: pytest --fixtures')]
+
+tests/test_reflection_objective_arguments.py:97: AssertionError
+___ test_incomplete_invocation_cannot_supply_passing_verification[command1] ____
+
+command = ['bash', '-lc', "pytest tests/test_auth.py -k 'unterminated"]
+
+    @pytest.mark.parametrize("command", [
+        ["bash", "-lc", "pytest tests/test_auth.py --help $FLAGS"],
+        ["bash", "-lc", "pytest tests/test_auth.py -k 'unterminated"],
+        ["pytest", *(f"tests/test_{index}.py" for index in range(34))],
+    ])
+    def test_incomplete_invocation_cannot_supply_passing_verification(command: list[str]) -> None:
+        reflection = _reflect(["pytest", "tests/test_auth.py"], command, "usage: pytest --fixtures")
+>       assert not [item for item in reflection.task_evidence.verification
+                    if item.call_id == "call-2" and item.result == "passed"]
+E       AssertionError: assert not [VerificationEvidence(verification_id='verify-000002', tool_name='run_command', call_id='call-2', command_kind='test', scope='unknown', result='passed', event_ids=('event-000004', 'event-000005'), summary='usage: pytest --fixtures')]
+
+tests/test_reflection_objective_arguments.py:97: AssertionError
+___ test_incomplete_invocation_cannot_supply_passing_verification[command2] ____
+
+command = ['pytest', 'tests/test_0.py', 'tests/test_1.py', 'tests/test_2.py', 'tests/test_3.py', 'tests/test_4.py', ...]
+
+    @pytest.mark.parametrize("command", [
+        ["bash", "-lc", "pytest tests/test_auth.py --help $FLAGS"],
+        ["bash", "-lc", "pytest tests/test_auth.py -k 'unterminated"],
+        ["pytest", *(f"tests/test_{index}.py" for index in range(34))],
+    ])
+    def test_incomplete_invocation_cannot_supply_passing_verification(command: list[str]) -> None:
+        reflection = _reflect(["pytest", "tests/test_auth.py"], command, "usage: pytest --fixtures")
+>       assert not [item for item in reflection.task_evidence.verification
+                    if item.call_id == "call-2" and item.result == "passed"]
+E       AssertionError: assert not [VerificationEvidence(verification_id='verify-000002', tool_name='run_command', call_id='call-2', command_kind='test', scope='targeted', result='passed', event_ids=('event-000004', 'event-000005'), summary='usage: pytest --fixtures')]
+
+tests/test_reflection_objective_arguments.py:97: AssertionError
+________ test_quiet_flag_does_not_declare_a_full_suite[args0-targeted] _________
+
+args = ['-q', 'tests/test_auth.py'], expected = 'targeted'
+
+    @pytest.mark.parametrize("args,expected", [
+        (["-q", "tests/test_auth.py"], "targeted"),
+        (["-q", "-k", "test_auth"], "targeted"),
+        (["-q"], "full"),
+    ])
+    def test_quiet_flag_does_not_declare_a_full_suite(args: list[str], expected: str) -> None:
+        reflection = _reflect(["pytest", "tests/test_auth.py"], ["pytest", *args], "1 passed")
+        check = next(item for item in reflection.task_evidence.verification if item.call_id == "call-2")
+>       assert check.scope == expected
+E       AssertionError: assert 'full' == 'targeted'
+E         
+E         - targeted
+E         + full
+
+tests/test_reflection_objective_arguments.py:110: AssertionError
+________ test_quiet_flag_does_not_declare_a_full_suite[args1-targeted] _________
+
+args = ['-q', '-k', 'test_auth'], expected = 'targeted'
+
+    @pytest.mark.parametrize("args,expected", [
+        (["-q", "tests/test_auth.py"], "targeted"),
+        (["-q", "-k", "test_auth"], "targeted"),
+        (["-q"], "full"),
+    ])
+    def test_quiet_flag_does_not_declare_a_full_suite(args: list[str], expected: str) -> None:
+        reflection = _reflect(["pytest", "tests/test_auth.py"], ["pytest", *args], "1 passed")
+        check = next(item for item in reflection.task_evidence.verification if item.call_id == "call-2")
+>       assert check.scope == expected
+E       AssertionError: assert 'full' == 'targeted'
+E         
+E         - targeted
+E         + full
+
+tests/test_reflection_objective_arguments.py:110: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_reflection_objective_arguments.py::test_non_executing_modes_do_not_supply_passing_verification[-V-pytest 9.1.1]
+FAILED tests/test_reflection_objective_arguments.py::test_incomplete_invocation_cannot_supply_passing_verification[command0]
+FAILED tests/test_reflection_objective_arguments.py::test_incomplete_invocation_cannot_supply_passing_verification[command1]
+FAILED tests/test_reflection_objective_arguments.py::test_incomplete_invocation_cannot_supply_passing_verification[command2]
+FAILED tests/test_reflection_objective_arguments.py::test_quiet_flag_does_not_declare_a_full_suite[args0-targeted]
+FAILED tests/test_reflection_objective_arguments.py::test_quiet_flag_does_not_declare_a_full_suite[args1-targeted]
+6 failed, 14 passed in 0.38s

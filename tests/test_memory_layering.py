@@ -11,12 +11,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
+from minicode.agent_reflection import ReflectionResult
 from minicode.memory import MemoryManager, MemoryScope
 from minicode.memory_pipeline import MemoryPipeline
 from minicode.project_facts import ProjectFactsStore
 from minicode.reflection_evidence import TraceEvidenceExtractor, append_trace_event
-from minicode.agent_reflection import ReflectionResult
 from minicode.reflection_synthesis import (
     ClaimValidationResult,
     ReflectionCandidate,
@@ -285,9 +284,12 @@ class TestDependencyLayering:
         assert libraries["pytest"] == "confirmed"
         assert "inventory" not in libraries
 
-    def test_normative_policy_read_is_persisted_and_auto_approved(
+    def test_normative_policy_read_is_persisted_pending_user_review(
         self, tmp_path: Path
     ) -> None:
+        # Reading a repo-local policy file is not independent verification,
+        # so constraint claims derived from it queue for human review instead
+        # of auto-approving into injectable authority.
         trace = [
             {
                 "event_id": "e1",
@@ -318,8 +320,8 @@ class TestDependencyLayering:
 
         assert entry_id is not None
         entry = manager.memories[MemoryScope.PROJECT]._id_index[entry_id]
-        assert entry.approval_status == "approved"
-        assert entry.is_active
+        assert entry.approval_status == "pending"
+        assert not entry.is_active
         assert "YYYY-MM-DD" in entry.content
         claim_metadata = entry.metadata["structured_reflection"]["claims"][0]
         expected_content = claim_metadata["statement"]
@@ -352,8 +354,25 @@ class TestDependencyLayering:
             messages,
         )
 
-        assert "YYYY-MM-DD" in injected[0]["content"]
-        assert entry_id in reloaded_pipeline._last_injected_ids
+        # Pending lessons are never injectable, even across a reload.
+        assert "YYYY-MM-DD" not in injected[0]["content"]
+        assert entry_id not in reloaded_pipeline._last_injected_ids
+
+        # Human approval restores injectability through the review flow. A
+        # fresh pipeline mirrors production, where each turn builds a new one
+        # and the adaptive cooldown never spans turns.
+        decision = reloaded_manager.decide_pending_entry(
+            entry_id, "approve", actor="user", reason="test review"
+        )
+        assert decision.status == "approved"
+        post_approval_pipeline = MemoryPipeline(reloaded_manager)
+        post_approval_pipeline.initialize(None, str(tmp_path))
+        after_approval = post_approval_pipeline.inject(
+            "What public date format is required by the project policy?",
+            [],
+            messages,
+        )
+        assert "YYYY-MM-DD" in after_approval[0]["content"]
 
     def test_completed_policy_claim_supersedes_truncated_same_subject(
         self, tmp_path: Path
@@ -401,7 +420,10 @@ class TestDependencyLayering:
         new = manager.memories[MemoryScope.PROJECT]._id_index[new_id]
         assert old.lifecycle_status == "superseded"
         assert old.approval_status == "rejected"
-        assert new.is_active
+        # The corrected claim still awaits review; it must not become
+        # injectable authority merely by superseding a pending predecessor.
+        assert new.approval_status == "pending"
+        assert not new.is_active
         assert new.metadata["supersedes"] == [old.id]
         assert (
             old.metadata["claim_identity"]["semantic_key"]
@@ -557,6 +579,10 @@ class TestApprovalLayering:
         assert len(entries) == 2
         assert representative_id == pipeline.last_written_ids[0]
         assert set(pipeline.last_written_ids) == {entry.id for entry in entries}
+        assert set(pipeline.last_written_versions) == {
+            (entry.id, entry.approval_content_hash)
+            for entry in entries
+        }
         by_key = {
             entry.metadata["claim_identity"]["semantic_key"]: entry
             for entry in entries
@@ -611,7 +637,8 @@ class TestApprovalLayering:
         assert old.lifecycle_status == "superseded"
         assert old.approval_status == "rejected"
         assert old.metadata["superseded_by"] == new.id
-        assert new.is_active
+        assert new.approval_status == "pending"
+        assert not new.is_active
         assert new.metadata["supersedes"] == [old.id]
 
 
@@ -652,8 +679,11 @@ class TestRetentionTransactions:
             approval_policy=MemoryApprovalPolicy.AUTO_APPROVE_VERIFIED,
         )
         assert first is not None and second is not None
-        second.related_to = [first.id]
-        memory_file._rebuild_indices()
+        assert manager.set_related_memories(
+            MemoryScope.PROJECT,
+            second.id,
+            [first.id],
+        )
 
         third = manager.add_entry(
             scope=MemoryScope.PROJECT,
@@ -695,8 +725,11 @@ class TestRetentionTransactions:
             approval_policy=MemoryApprovalPolicy.AUTO_APPROVE_VERIFIED,
         )
         assert first is not None and second is not None
-        second.related_to = [first.id]
-        manager.memories[MemoryScope.PROJECT]._rebuild_indices()
+        assert manager.set_related_memories(
+            MemoryScope.PROJECT,
+            second.id,
+            [first.id],
+        )
 
         assert manager.delete_entry(MemoryScope.PROJECT, first.id) is True
         assert second.id in manager.memories[MemoryScope.PROJECT]._id_index

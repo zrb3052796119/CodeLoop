@@ -15,19 +15,19 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from minicode.agent_loop import run_agent_turn
 from minicode.memory import (
     MemoryManager,
     MemoryScope,
-    inject_memory_into_prompt,
     _tokenize,
+    inject_memory_into_prompt,
 )
-from minicode.agent_loop import run_agent_turn
+from minicode.memory_store import MemoryStoreConflict
 from minicode.mock_model import MockModelAdapter
 from minicode.permissions import PermissionManager
-from minicode.tools import create_default_tool_registry
 from minicode.prompt import build_system_prompt
+from minicode.tools import create_default_tool_registry
 from minicode.types import AgentStep
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -861,7 +861,7 @@ class TestMemoryCorruptionRecoveryE2E:
             "scope": "project",
             "entries": [
                 {"id": "valid-1", "scope": "project", "category": "test", "content": "Valid entry 1: Uses FastAPI"},
-                {"id": "bad-scope", "scope": "invalid_scope", "category": "test", "content": "Bad scope entry"},
+                {"id": "bad-scope", "scope": "project", "category": 42, "content": "Bad category entry"},
                 {"id": "valid-2", "scope": "project", "category": "test", "content": "Valid entry 2: Use snake_case"},
                 "not_a_dict_at_all",
                 {"id": "valid-3", "scope": "project", "category": "test", "content": "Valid entry 3: Use pytest"},
@@ -881,30 +881,23 @@ class TestMemoryCorruptionRecoveryE2E:
         backup = memory_json.with_suffix(".json.bak")
         assert backup.exists()
 
-    def test_totally_corrupt_json_recovers_gracefully(
+    def test_totally_corrupt_json_fails_closed_without_overwrite(
         self, tmp_workspace,
     ):
         memory_dir = tmp_workspace / ".mini-code-memory"
         memory_dir.mkdir()
         memory_json = memory_dir / "memory.json"
 
-        memory_json.write_text("NOT VALID JSON {{{", encoding="utf-8")
+        corrupt = b"NOT VALID JSON {{{"
+        memory_json.write_bytes(corrupt)
 
-        mm = MemoryManager(project_root=tmp_workspace)
+        with pytest.raises(MemoryStoreConflict, match="Memory authority is invalid"):
+            MemoryManager(project_root=tmp_workspace)
 
-        assert len(mm.memories[MemoryScope.PROJECT].entries) == 0
+        assert memory_json.read_bytes() == corrupt
+        assert not memory_json.with_suffix(".json.bak").exists()
 
-        mm.add_entry(
-            MemoryScope.PROJECT,
-            "test",
-            "New entry after corruption",
-        )
-
-        entries = mm.memories[MemoryScope.PROJECT].entries
-        assert len(entries) == 1
-        assert "New entry after corruption" in entries[0].content
-
-    def test_empty_json_file_recovers_gracefully(
+    def test_empty_json_file_fails_closed_without_overwrite(
         self, tmp_workspace,
     ):
         memory_dir = tmp_workspace / ".mini-code-memory"
@@ -913,9 +906,11 @@ class TestMemoryCorruptionRecoveryE2E:
 
         memory_json.write_text("", encoding="utf-8")
 
-        mm = MemoryManager(project_root=tmp_workspace)
+        with pytest.raises(MemoryStoreConflict, match="Memory authority is invalid"):
+            MemoryManager(project_root=tmp_workspace)
 
-        assert len(mm.memories[MemoryScope.PROJECT].entries) == 0
+        assert memory_json.read_bytes() == b""
+        assert not memory_json.with_suffix(".json.bak").exists()
 
     def test_partial_json_with_valid_entries_recovers(
         self, tmp_workspace,
@@ -942,7 +937,7 @@ class TestMemoryCorruptionRecoveryE2E:
         assert "Good entry two" in contents
         assert "Empty id entry" not in contents
 
-    def test_local_memory_corruption_independent_of_project(
+    def test_local_malformed_authority_fails_closed_without_touching_project(
         self, tmp_workspace,
     ):
         mm1 = MemoryManager(project_root=tmp_workspace)
@@ -958,13 +953,16 @@ class TestMemoryCorruptionRecoveryE2E:
         )
 
         local_json = tmp_workspace / ".mini-code-memory-local" / "memory.json"
-        local_json.write_text("corrupted data here", encoding="utf-8")
+        corrupt = b"corrupted data here"
+        local_json.write_bytes(corrupt)
+        project_json = tmp_workspace / ".mini-code-memory" / "memory.json"
+        project_before = project_json.read_bytes()
 
-        mm2 = MemoryManager(project_root=tmp_workspace)
+        with pytest.raises(MemoryStoreConflict, match="Memory authority is invalid"):
+            MemoryManager(project_root=tmp_workspace)
 
-        project_entries = mm2.memories[MemoryScope.PROJECT].entries
-        assert len(project_entries) >= 1
-        assert any("Project entry should survive" in e.content for e in project_entries)
+        assert local_json.read_bytes() == corrupt
+        assert project_json.read_bytes() == project_before
 
     def test_recovery_preserves_file_after_re_save(
         self, tmp_workspace,
@@ -982,7 +980,7 @@ class TestMemoryCorruptionRecoveryE2E:
             "scope": "project",
             "entries": [
                 {"id": "valid-1", "scope": "project", "category": "arch", "content": "Valid architecture entry"},
-                {"id": "bad-1", "scope": "invalid", "category": "test", "content": "Bad scope"},
+                {"id": "bad-1", "scope": "project", "category": 42, "content": "Bad category"},
             ],
         }
         memory_json.write_text(json.dumps(corrupted), encoding="utf-8")

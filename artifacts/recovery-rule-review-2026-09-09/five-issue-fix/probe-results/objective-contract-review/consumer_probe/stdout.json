@@ -1,0 +1,57 @@
+{
+  "engine_cases": [
+    {
+      "name": "main_deriver_truncates_sixth_target",
+      "contract_match": false,
+      "value_accepted": false,
+      "persistable_statuses": []
+    },
+    {
+      "name": "main_deriver_truncates_selection",
+      "contract_match": false,
+      "value_accepted": false,
+      "persistable_statuses": []
+    },
+    {
+      "name": "generic_fallback_overrides_ambiguous_objective",
+      "contract_match": false,
+      "value_accepted": false,
+      "persistable_statuses": []
+    },
+    {
+      "name": "generic_fallback_overrides_changed_marker",
+      "contract_match": false,
+      "value_accepted": false,
+      "persistable_statuses": []
+    },
+    {
+      "name": "missing_target_default_scope_accepts_echo",
+      "contract_match": false,
+      "value_accepted": false,
+      "persistable_statuses": []
+    },
+    {
+      "name": "missing_target_relocation_discards_selection_guard",
+      "contract_match": false,
+      "value_accepted": false,
+      "persistable_statuses": []
+    },
+    {
+      "name": "real_traceback_test_path_is_not_missing_object",
+      "contract_match": false,
+      "value_accepted": false,
+      "persistable_statuses": []
+    }
+  ],
+  "episode_case": {
+    "name": "episode_rendered_cwd_not_restored",
+    "expected": "Only original backend report retry should be retained.",
+    "failed": "python scripts/report.py (cwd: /repo/backend; timeout: 1)",
+    "selected_followups": [
+      "python scripts/report.py (cwd: /repo/backend; timeout: 120)"
+    ],
+    "actual_retry": "python scripts/report.py (cwd: /repo/backend; timeout: 120)",
+    "actual_retry_retained": true,
+    "causal_status": "candidate"
+  }
+}

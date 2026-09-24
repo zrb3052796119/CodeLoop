@@ -18,8 +18,7 @@ from minicode.memory import (
     persistence_text_contains_secret,
     sanitize_for_persistence,
 )
-from minicode.memory_pipeline import assess_trace_memory_safety
-from minicode.memory_pipeline import MemoryPipeline
+from minicode.memory_pipeline import MemoryPipeline, assess_trace_memory_safety
 from minicode.memory_retrieval import CanonicalMemoryRetriever, MemoryRetrievalRequest
 from minicode.memory_store import MemoryStoreConflict
 from minicode.project_facts import ProjectFactsStore
@@ -212,7 +211,7 @@ def test_readonly_load_does_not_repair_a_derived_projection(
     assert memory_md.read_text(encoding="utf-8") == stale
 
 
-def test_malformed_json_authority_never_promotes_markdown_projection(
+def test_malformed_json_authority_fails_closed_without_promoting_or_writing(
     isolated_manager: tuple[MemoryManager, Path],
 ) -> None:
     manager, workspace = isolated_manager
@@ -226,17 +225,12 @@ def test_malformed_json_authority_never_promotes_markdown_projection(
     memory_json.write_text(malformed_authority, encoding="utf-8")
     memory_md.write_text(stale_projection, encoding="utf-8")
 
-    reloaded = MemoryManager(
-        project_root=workspace,
-        data_root=manager._data_root,
-    )
-    result = CanonicalMemoryRetriever(reloaded).retrieve(
-        MemoryRetrievalRequest(query="attacker supplied release bypass")
-    )
+    with pytest.raises(MemoryStoreConflict, match="Memory authority is invalid"):
+        MemoryManager(
+            project_root=workspace,
+            data_root=manager._data_root,
+        )
 
-    assert reloaded.memories[MemoryScope.PROJECT].entries == []
-    assert result.rendered_ids == ()
-    assert stale_lesson not in result.prompt_text
     assert memory_json.read_text(encoding="utf-8") == malformed_authority
     assert memory_md.read_text(encoding="utf-8") == stale_projection
 
@@ -324,7 +318,10 @@ def test_sanitized_legacy_fields_invalidate_the_old_approval_hash(
             ensure_ascii=False,
             separators=(",", ":"),
         ).encode("utf-8")
-    ).hexdigest()
+        ).hexdigest()
+    raw["authority_state_digest"] = (
+        memory_module._authority_state_digest_for_data(raw)
+    )
     memory_json.write_text(
         json.dumps(authority, ensure_ascii=False),
         encoding="utf-8",

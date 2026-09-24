@@ -1,0 +1,529 @@
+[
+  {
+    "name": "different_args_targets_plus_unrelated_edit",
+    "expected": "No recovery: billing was tested after a documentation edit; auth was never retested.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/test_auth.py",
+            "-q"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "AssertionError: bad auth token",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "AssertionError: bad auth token",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "edit_file",
+        "input": {
+          "path": "docs/README.md",
+          "search": "Foo",
+          "replace": "Bar",
+          "replace_all": false,
+          "fuzzy": false
+        },
+        "files": [
+          "docs/README.md"
+        ],
+        "files_changed": [
+          "docs/README.md"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "edit_file",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "updated",
+        "files": [
+          "docs/README.md"
+        ],
+        "files_changed": [
+          "docs/README.md"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "tool_call",
+        "step": 3,
+        "call_id": "call-3",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/test_billing.py",
+            "-q"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_billing.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      },
+      {
+        "type": "tool_result",
+        "step": 3,
+        "call_id": "call-3",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "3 passed",
+        "files": [],
+        "referenced_files": [
+          "tests/test_billing.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000007"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000008"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "AssertionError: bad auth token"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-3",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "passed",
+        "event_ids": [
+          "event-000006",
+          "event-000007"
+        ],
+        "summary": "3 passed"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false
+  },
+  {
+    "name": "same_basename_different_project_no_edit",
+    "expected": "No recovery: backend and frontend test files are distinct targets.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "backend/tests/test_config.py",
+            "-q"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "backend/tests/test_config.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "AssertionError: bad backend config",
+        "files": [],
+        "referenced_files": [
+          "backend/tests/test_config.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "AssertionError: bad backend config",
+        "files": [],
+        "referenced_files": [
+          "backend/tests/test_config.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "-m",
+            "pytest",
+            "frontend/tests/test_config.py",
+            "-q"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "frontend/tests/test_config.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "3 passed",
+        "files": [],
+        "referenced_files": [
+          "frontend/tests/test_config.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "AssertionError: bad backend config"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-2",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "passed",
+        "event_ids": [
+          "event-000004",
+          "event-000005"
+        ],
+        "summary": "3 passed"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false
+  },
+  {
+    "name": "masked_fixture_error_with_mixed_passed_output",
+    "expected": "Verification must not be passed: the pipeline's zero status masks a fixture error.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "pytest",
+          "args": [
+            "tests/test_auth.py",
+            "--bad-option"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "UsageError: unrecognized arguments: --bad-option",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "UsageError: unrecognized arguments: --bad-option",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "bash",
+          "args": [
+            "-lc",
+            "pytest tests/test_auth.py -q | tail -20"
+          ],
+          "cwd": null,
+          "timeout": null
+        },
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "1 passed, 1 error in 0.15s",
+        "files": [],
+        "referenced_files": [
+          "tests/test_auth.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      }
+    ],
+    "recoveries": [],
+    "verification": [
+      {
+        "verification_id": "verify-000001",
+        "tool_name": "run_command",
+        "call_id": "call-1",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "failed",
+        "event_ids": [
+          "event-000001",
+          "event-000002"
+        ],
+        "summary": "UsageError: unrecognized arguments: --bad-option"
+      },
+      {
+        "verification_id": "verify-000002",
+        "tool_name": "run_command",
+        "call_id": "call-2",
+        "command_kind": "test",
+        "scope": "targeted",
+        "result": "failed",
+        "event_ids": [
+          "event-000004",
+          "event-000005"
+        ],
+        "summary": "1 passed, 1 error in 0.15s"
+      }
+    ],
+    "persistable_claims": [],
+    "value_accepted": false
+  },
+  {
+    "name": "timeout_budget_change_loses_corrective_input",
+    "expected": "Keep as a candidate for semantic assessment, not causal proof: timeout is a real changed input but absent from the invocation projection, and transient failures are blanket-excluded.",
+    "trace": [
+      {
+        "type": "tool_call",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "scripts/report.py"
+          ],
+          "cwd": null,
+          "timeout": 1
+        },
+        "files": [],
+        "referenced_files": [
+          "scripts/report.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000001"
+      },
+      {
+        "type": "tool_result",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "status": "error",
+        "is_error": true,
+        "output_summary": "Command timed out after 1 seconds (process group terminated).",
+        "files": [],
+        "referenced_files": [
+          "scripts/report.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000002"
+      },
+      {
+        "type": "error",
+        "step": 1,
+        "call_id": "call-1",
+        "tool_name": "run_command",
+        "error_type": "ToolError",
+        "message": "Command timed out after 1 seconds (process group terminated).",
+        "files": [],
+        "referenced_files": [
+          "scripts/report.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000003"
+      },
+      {
+        "type": "tool_call",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "input": {
+          "command": "python",
+          "args": [
+            "scripts/report.py"
+          ],
+          "cwd": null,
+          "timeout": 120
+        },
+        "files": [],
+        "referenced_files": [
+          "scripts/report.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000004"
+      },
+      {
+        "type": "tool_result",
+        "step": 2,
+        "call_id": "call-2",
+        "tool_name": "run_command",
+        "status": "success",
+        "is_error": false,
+        "output_summary": "report created",
+        "files": [],
+        "referenced_files": [
+          "scripts/report.py"
+        ],
+        "trace_schema_version": 2,
+        "event_id": "event-000005"
+      },
+      {
+        "type": "task_result",
+        "status": "success",
+        "trace_schema_version": 2,
+        "event_id": "event-000006"
+      }
+    ],
+    "recoveries": [],
+    "verification": [],
+    "persistable_claims": [],
+    "value_accepted": false
+  }
+]

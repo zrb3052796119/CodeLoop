@@ -1,0 +1,6 @@
+unrelated_followup: {"failed": "python scripts/report.py (timeout: 1)", "selected_followup": "python scripts/report.py (timeout: 120)", "real_retry": "python scripts/report.py (timeout: 120)"}
+red_green_projection: {"episode_status": "verified", "parent_checks": [["c1", "failed"], ["c3", "passed"]], "sub_checks": [["c3", "passed"], ["c1", "failed"]], "parent_valid": 1, "sub_valid": 1, "sub_issues": []}
+candidate_observation: {"valid_claims": 1, "value_accepted": false, "reason_codes": ["single_observation_error_pattern"], "lessons": 0, "persistable_outcome": 0, "outcome": {"episode_id": "episode-000001", "causal_status": "candidate", "attempted": true, "model_called": true, "failure_code": null, "claim_count": 1, "persistable_claim_ids": [], "validation_issues": [], "value_reason_codes": ["single_observation_error_pattern"]}}
+outcome_accepted_claims: {"lessons": 1, "outcome_claim_count": 1, "outcome_persistable_claims": 1}
+episode_claim_ids: {"episodes": 2, "lessons": 2, "ids": ["episode-000001:llm-claim-000001", "episode-000002:llm-claim-000001"], "semantic_keys": ["expiry_check_before_lookup_case_0", "expiry_check_before_lookup_case_1"], "pipeline_valid_by_id_count": 2}
+budget_call_count: {"client_calls": 0, "reported_llm_called": 0, "failure_code": "agent_budget_exhausted"}

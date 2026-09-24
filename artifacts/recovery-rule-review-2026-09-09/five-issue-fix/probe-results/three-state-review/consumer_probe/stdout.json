@@ -1,0 +1,38 @@
+[
+  {
+    "name": "missing_one_target_relocating_a_different_target",
+    "relation": "conflict",
+    "actual_exit_codes": [
+      4,
+      0
+    ],
+    "value_accepted": false,
+    "persistable_statuses": [],
+    "original_scope_after_success_exit_code": null,
+    "phrase_removed_control_accepted": null
+  },
+  {
+    "name": "bare_billing_target_misclassified_as_default_scope",
+    "relation": "conflict",
+    "actual_exit_codes": [
+      4,
+      0
+    ],
+    "value_accepted": false,
+    "persistable_statuses": [],
+    "original_scope_after_success_exit_code": null,
+    "phrase_removed_control_accepted": null
+  },
+  {
+    "name": "nested_usage_error_waives_valid_parent_selection_flag",
+    "relation": "conflict",
+    "actual_exit_codes": [
+      1,
+      0
+    ],
+    "value_accepted": false,
+    "persistable_statuses": [],
+    "original_scope_after_success_exit_code": 1,
+    "phrase_removed_control_accepted": false
+  }
+]
