@@ -1,0 +1,34 @@
+{
+  "caseFile": "tests/fixtures/explore_turn_ab_cases.json",
+  "configs": {
+    "8": {
+      "cases": [
+        {
+          "caseId": "map-module",
+          "contractStatus": "unavailable",
+          "error": "error[sub_agent_failed]: the nested Agent ended without a successful typed outcome.\n\nModel API error (RuntimeError): Access to model denied. Please make sure you are eligible for using the model.",
+          "model_turns": null,
+          "ok": false,
+          "partial": false,
+          "repeat": 0,
+          "tool_calls": null
+        }
+      ],
+      "summary": {
+        "caseCount": 1,
+        "fallbackRate": 0.0,
+        "meanModelTurns": null,
+        "meanToolCalls": null,
+        "partialRate": 0.0,
+        "successRate": 0.0
+      }
+    }
+  },
+  "mode": "live",
+  "notes": "successRate counts task-tool ok; partialRate counts soft-landed results; fallbackRate counts contractStatus=fallback. live mode spends API quota.",
+  "repeats": 1,
+  "schemaVersion": 1,
+  "turnsCompared": [
+    8
+  ]
+}
