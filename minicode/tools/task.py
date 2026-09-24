@@ -1357,7 +1357,9 @@ def _written_memory_recorder(context):
 
 def _subagent_result_instruction(result_key: str) -> str:
     return (
-        "\n\nBefore your final response, call subagent_note_write with result "
+        "\n\nMANDATORY FINAL STEP — a run that finishes without this note "
+        "is recorded as non-compliant. Before your final response, call "
+        "subagent_note_write with result "
         f"mailbox key `{result_key}` and content containing ONLY one JSON "
         "object with this exact shape: "
         '{"resultVersion":1,"summary":"...","files":'
@@ -2626,6 +2628,8 @@ def _run(input_data: dict, context) -> ToolResult:
     journal_tool_calls = 0
     journal_result_truncated = False
     journal_partial = False
+    contract_recovered = False
+    contract_reminder_sent = False
     structured_result: dict[str, object] | None = None
     try:
         try:
@@ -2750,6 +2754,95 @@ def _run(input_data: dict, context) -> ToolResult:
             journal_model_turns = model_turns
             journal_tool_calls = tool_calls_count
             journal_partial = final_partial
+            # Live models routinely finish without the typed note (the
+            # 2026-09-25 A/B: 20/20 fallback). Give exactly one bounded
+            # closing reminder when the note is missing and the turn budget
+            # was not exhausted; a model that still refuses keeps the
+            # fallback synthesis, visibly marked in the result header.
+            if (
+                mailbox is not None
+                and not final_partial
+                and _read_subagent_report(mailbox, result_key) is None
+            ):
+                contract_reminder_sent = True
+                try:
+                    reminder_messages = [
+                        {"role": "system", "content": sub_messages[0]["content"]},
+                        *sub_messages[1:],
+                        {
+                            "role": "user",
+                            "content": (
+                                "Your run is about to close, but the "
+                                "MANDATORY typed result note is missing. "
+                                "Call subagent_note_write NOW with mailbox "
+                                f"key `{result_key}` and content containing "
+                                "ONLY the required JSON object "
+                                '({"resultVersion":1,"summary":...,'
+                                '"files":[...],"risks":[...],'
+                                '"verification":{...}}), then give your '
+                                "final response. A run that finishes without "
+                                "this note is recorded as non-compliant."
+                            ),
+                        },
+                    ]
+                    from minicode.context_manager import ContextManager
+
+                    reminder_context_manager = ContextManager(
+                        model=model_runtime.get("model", "default")
+                    )
+                    reminder_context_manager.messages = reminder_messages
+                    remediation_capture = AgentOutcomeCapture()
+                    remediation_messages = run_agent_turn(
+                        model=model,
+                        tools=tools,
+                        messages=reminder_messages,
+                        cwd=context.cwd,
+                        permissions=sub_permissions,
+                        max_steps=2,
+                        max_steps_soft_landing=False,
+                        on_tool_start=sub_on_tool_start,
+                        on_tool_result=sub_on_tool_result,
+                        runtime=model_runtime,
+                        context_manager=reminder_context_manager,
+                        memory_manager=sub_memory,
+                        on_memory_written=_written_memory_recorder(context),
+                        event_sink=sub_event_sink,
+                        agent_budget=attributed_budget,
+                        budget_exhausted_policy="raise",
+                        abandoned_event=getattr(context, "_tool_abandoned", None),
+                        subagent_mailbox=mailbox,
+                        subagent_lifecycle=None,
+                        cancellation_token=getattr(
+                            context, "_cancellation_token", None
+                        ),
+                        deadline_monotonic=getattr(
+                            context, "_task_deadline_monotonic", None
+                        ),
+                        agent_depth=depth + 1,
+                        outcome_capture=remediation_capture,
+                        required_skill_names=required_skill_names_for_routing(
+                            sub_skill_routing
+                        ),
+                        skill_load_policy=effective_skill_load_policy,
+                        allow_user_interaction=False,
+                        parsed_intent=sub_parsed_intent,
+                    )
+                    if _read_subagent_report(mailbox, result_key) is not None:
+                        contract_recovered = True
+                        result_messages = remediation_messages
+                        for msg in reversed(result_messages):
+                            if (
+                                msg.get("role") == "assistant"
+                                and msg.get("content", "").strip()
+                            ):
+                                final_message = msg["content"]
+                                break
+                except TurnCancellationRequested:
+                    raise
+                except Exception:  # noqa: BLE001 - reminder is best-effort
+                    # The main run already succeeded; a failed reminder
+                    # degrades to the visible fallback, never to an error.
+                    pass
             structured_result = project_subagent_result(
                 _read_subagent_report(mailbox, result_key),
                 subagent_id=subagent_id,
@@ -2922,6 +3015,15 @@ def _run(input_data: dict, context) -> ToolResult:
         header += (
             "  Result: PARTIAL — the model-turn limit was reached; the "
             "summary below reflects incomplete exploration.\n"
+        )
+    if contract_recovered:
+        header += (
+            "  Result contract: recovered via closing reminder.\n"
+        )
+    elif contract_reminder_sent:
+        header += (
+            "  Result contract: note not submitted despite one closing "
+            "reminder; result synthesized from the free-text summary.\n"
         )
     if agent_type in ("explore", "plan") and scheduler_role is None:
         header += (
