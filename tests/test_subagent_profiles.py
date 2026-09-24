@@ -369,3 +369,111 @@ def test_registry_uses_dynamic_task_tool(tmp_path):
         task_tool_definition=task_module.build_task_tool_for_project(str(tmp_path)),
     )
     assert "test-locator" in registry.find("task").description
+
+
+# ---------------------------------------------------------------------------
+# Task 5: end-to-end — real filtered registry and loop boundaries
+# ---------------------------------------------------------------------------
+
+
+def test_custom_type_filtered_registry_has_only_whitelisted_tools(tmp_path):
+    _dispatch_imports()
+    from minicode.tools import create_default_tool_registry
+
+    _write(tmp_path, "test-locator.md", _VALID_FRONTMATTER)
+    merged = resolve_agent_types(tmp_path)
+    allowed = merged["test-locator"]["allowed_tools"]
+    full_tools = create_default_tool_registry(str(tmp_path), include_mcp=False)
+    child = full_tools.filtered(lambda tool: tool.name in allowed)
+    names = {tool.name for tool in child.list()}
+    assert {"grep_files", "read_file"} <= names
+    assert "edit_file" not in names
+    assert "write_file" not in names
+    assert "task" not in names
+
+
+def test_spawn_rejected_for_custom_type(tmp_path):
+    _dispatch_imports()
+    _write(tmp_path, "test-locator.md", _VALID_FRONTMATTER)
+    with pytest.raises(ValueError, match="read-only explore or plan"):
+        task_module._validate(
+            {
+                "action": "spawn",
+                "description": "locate tests",
+                "prompt": "find tests",
+                "agent_type": "test-locator",
+            }
+        )
+
+
+def test_continuation_rejected_for_custom_type(tmp_path):
+    _dispatch_imports()
+    _write(tmp_path, "test-locator.md", _VALID_FRONTMATTER)
+    with pytest.raises(ValueError, match="read-only"):
+        task_module._validate(
+            {
+                "description": "follow-up",
+                "prompt": "which test?",
+                "agent_type": "test-locator",
+                "continue_subagent_id": "sub_" + "1" * 32,
+            }
+        )
+
+
+def test_custom_type_real_loop_round_trip(tmp_path, monkeypatch):
+    _dispatch_imports()
+    from minicode.tools.task import _run as task_run
+
+    _write(tmp_path, "test-locator.md", _VALID_FRONTMATTER)
+    (tmp_path / "needle.txt").write_text("found-it", encoding="utf-8")
+
+    class _ScriptedModel:
+        def __init__(self, steps):
+            self._steps = steps
+            self.calls = 0
+
+        def next(self, messages, on_stream_chunk=None):
+            step = self._steps[self.calls]
+            self.calls += 1
+            return step
+
+    from minicode.types import AgentStep
+
+    model = _ScriptedModel(
+        [
+            AgentStep(
+                type="tool_calls",
+                calls=[
+                    {
+                        "id": "1",
+                        "toolName": "grep_files",
+                        "input": {"pattern": "found-it", "path": "."},
+                    }
+                ],
+            ),
+            AgentStep(
+                type="assistant",
+                content="<final> needle.txt contains found-it",
+            ),
+        ]
+    )
+
+    import minicode.subagent_model_routing as routing_module
+
+    monkeypatch.setattr(
+        routing_module,
+        "create_subagent_model_adapter",
+        lambda runtime, agent_type, *, tools: model,
+    )
+    result = task_run(
+        {
+            "description": "locate tests",
+            "prompt": "grep for found-it",
+            "agent_type": "test-locator",
+        },
+        ToolContext(cwd=str(tmp_path), _runtime={"model": "fake"}),
+    )
+    assert result.ok, result.output
+    assert "Type: test-locator" in result.output
+    assert "needle.txt contains found-it" in result.output
+    assert "=== SUBAGENT RESULT v1 ===" in result.output
