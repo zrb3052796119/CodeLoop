@@ -330,6 +330,7 @@ def build_system_prompt(
         "- agent_type='general' is a deprecated legacy-embedder compatibility route and is rejected by the production Agent Loop\n"
         "- A committed workflow completes that child task; continue any remaining user-requested work, collect owned async results, and summarize without repeating committed changes\n"
         "Do NOT use the task tool for simple lookups — use read_file/grep_files directly.\n"
+        "If you did delegate exploration to a sub-agent, do not repeat that search yourself in the main context — wait for its result and build on it.\n"
         "Do NOT use the task tool just to avoid work — use it when it genuinely improves efficiency.\n"
         "Structured workflow roles do not negotiate or exchange free-form notes; they read only scheduler-assigned artifacts and write one exact result artifact. "
         "For structured roles the note tools transport only authorized artifacts; independent explore/plan agents may use them for bounded shared notes.\n"
