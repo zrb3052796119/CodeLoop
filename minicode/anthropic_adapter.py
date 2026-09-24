@@ -701,6 +701,50 @@ def _to_anthropic_messages(messages: list[dict[str, Any]]) -> tuple[str, list[di
     return system, converted
 
 
+def _apply_prompt_cache_markers(body: dict[str, Any]) -> bool:
+    """Mark the stable system block and the last tool as cache breakpoints.
+
+    Returns whether anything was marked. The serialized-tool cache is never
+    mutated: the last tool is copied before the marker is attached.
+    """
+    marked = False
+    system = body.get("system")
+    if isinstance(system, str) and system:
+        body["system"] = [
+            {
+                "type": "text",
+                "text": system,
+                "cache_control": {"type": "ephemeral"},
+            }
+        ]
+        marked = True
+    tools = body.get("tools")
+    if isinstance(tools, list) and tools:
+        body["tools"] = [
+            *tools[:-1],
+            {**tools[-1], "cache_control": {"type": "ephemeral"}},
+        ]
+        marked = True
+    return marked
+
+
+def _strip_prompt_cache_markers(body: dict[str, Any]) -> None:
+    """Revert to the plain pre-marker body shape (fallback retry)."""
+    system = body.get("system")
+    if isinstance(system, list):
+        body["system"] = "\n\n".join(
+            block.get("text", "")
+            for block in system
+            if isinstance(block, dict)
+        )
+    tools = body.get("tools")
+    if isinstance(tools, list):
+        body["tools"] = [
+            {key: value for key, value in tool.items() if key != "cache_control"}
+            for tool in tools
+        ]
+
+
 class AnthropicModelAdapter:
     def __init__(self, runtime: dict[str, Any], tools) -> None:
         self.runtime = runtime
@@ -727,6 +771,20 @@ class AnthropicModelAdapter:
             ]
             self._tools_cache_key = current_key
         return self._cached_tools_json
+
+    def _prompt_cache_enabled(self) -> bool:
+        """Prompt-cache markers are on unless explicitly disabled.
+
+        The runtime key ``promptCache`` (default true) carries the host
+        decision; the ``MINI_CODE_PROMPT_CACHE=0`` environment variable is
+        an operator kill-switch that wins over the runtime. A provider that
+        rejects the markers still gets one marker-free retry below, so an
+        unknown gateway cannot break the model call outright.
+        """
+        kill = os.environ.get("MINI_CODE_PROMPT_CACHE", "1").strip().lower()
+        if kill in {"0", "false", "no", "off"}:
+            return False
+        return bool(self.runtime.get("promptCache", True))
 
     def next(
         self,
@@ -810,20 +868,32 @@ class AnthropicModelAdapter:
         if on_stream_chunk:
             request_body["stream"] = True
 
-        request = urllib.request.Request(
-            url=self.runtime["baseUrl"].rstrip("/") + "/v1/messages",
-            data=json.dumps(request_body).encode("utf-8"),
-            headers={
-                "content-type": "application/json",
-                "anthropic-version": "2023-06-01",
-                **(
-                    {"x-api-key": self.runtime["apiKey"]}
-                    if self.runtime.get("apiKey")
-                    else {"Authorization": f"Bearer {self.runtime['authToken']}"}
-                ),
-            },
-            method="POST",
+        # Prompt-cache breakpoints on the two stable, resent-every-step
+        # blocks: the system prompt and the tool catalog. Bigmodel's
+        # Anthropic-compatible endpoint honors them (verified 2026-09-24);
+        # a gateway that rejects them gets one marker-free retry.
+        prompt_cache_active = (
+            self._prompt_cache_enabled()
+            and _apply_prompt_cache_markers(request_body)
         )
+
+        def _build_request(body: dict[str, Any]) -> urllib.request.Request:
+            return urllib.request.Request(
+                url=self.runtime["baseUrl"].rstrip("/") + "/v1/messages",
+                data=json.dumps(body).encode("utf-8"),
+                headers={
+                    "content-type": "application/json",
+                    "anthropic-version": "2023-06-01",
+                    **(
+                        {"x-api-key": self.runtime["apiKey"]}
+                        if self.runtime.get("apiKey")
+                        else {"Authorization": f"Bearer {self.runtime['authToken']}"}
+                    ),
+                },
+                method="POST",
+            )
+
+        request = _build_request(request_body)
 
         max_retries = (
             max_retries_override
@@ -912,9 +982,43 @@ class AnthropicModelAdapter:
             )
             status = getattr(response, "status", getattr(response, "code", 200))
             if status >= 400:
-                if store:
-                    store.set_state(record_api_error())
-                raise RuntimeError(_extract_error_message(data, status))
+                error_message = _extract_error_message(data, status)
+                if (
+                    status == 400
+                    and prompt_cache_active
+                    and "cache_control" in error_message.lower()
+                ):
+                    # The gateway rejected the prompt-cache markers, not the
+                    # request itself. Degrade once to a marker-free body
+                    # instead of failing the model call.
+                    _strip_prompt_cache_markers(request_body)
+                    prompt_cache_active = False
+                    _close_response_safely(response)
+                    response = _open_verified_url_controlled(
+                        _build_request(request_body),
+                        timeout=response_read_timeout,
+                        cancellation_token=cancellation_token,
+                        deadline_monotonic=deadline_monotonic,
+                    )
+                    data = _read_json_body(
+                        response,
+                        maximum_bytes=(
+                            max_response_bytes_override
+                            if max_response_bytes_override is not None
+                            else DEFAULT_MAX_RESPONSE_BYTES
+                        ),
+                        read_timeout_seconds=response_read_timeout,
+                        cancellation_token=cancellation_token,
+                        deadline_monotonic=deadline_monotonic,
+                    )
+                    status = getattr(
+                        response, "status", getattr(response, "code", 200)
+                    )
+                    error_message = _extract_error_message(data, status)
+                if status >= 400:
+                    if store:
+                        store.set_state(record_api_error())
+                    raise RuntimeError(error_message)
     
             provider_usage = data.get("usage") if isinstance(data, dict) else None
             if isinstance(provider_usage, dict) and (
