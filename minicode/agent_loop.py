@@ -57,6 +57,7 @@ from minicode.run_events import (
 )
 from minicode.state import Store, AppState, increment_tool_calls, set_busy, set_idle
 from minicode.subagent_mailbox import SubagentMailbox
+from minicode.subagent_sessions import SubagentSessionStore
 from minicode.subagent_lifecycle import AsyncSubagentLifecycle
 from minicode.task_ledger import TaskLedger
 from minicode.turn_completion import TurnCompletionPolicy
@@ -797,6 +798,7 @@ def _execute_single_tool(
     agent_budget: Any | None = None,
     subagent_mailbox: Any | None = None,
     subagent_lifecycle: Any | None = None,
+    subagent_sessions: Any | None = None,
     allow_user_interaction: bool = True,
     deadline_monotonic: float | None = None,
     skill_load_policy: SkillLoadPolicy | None = None,
@@ -883,6 +885,7 @@ def _execute_single_tool(
                     _tool_abandoned=abandoned_event,
                     _subagent_mailbox=subagent_mailbox,
                     _subagent_lifecycle=subagent_lifecycle,
+                    _subagent_sessions=subagent_sessions,
                     _skill_load_policy=skill_load_policy,
                 ),
             )
@@ -1970,6 +1973,10 @@ def run_agent_turn(
         agent_budget = AgentTurnBudget.from_runtime(runtime)
     if subagent_mailbox is None:
         subagent_mailbox = SubagentMailbox()
+    # Sibling of the mailbox: turn-scoped continuation sessions for finished
+    # read-only sub-agents. Created fresh even when a caller supplied a
+    # mailbox because nested loops have no `task` tool to consult it.
+    subagent_sessions = SubagentSessionStore()
     if budget_exhausted_policy not in {"fallback", "raise"}:
         budget_exhausted_policy = "fallback"
     tool_abandoned = False
@@ -4034,6 +4041,7 @@ def run_agent_turn(
                     agent_budget,
                     subagent_mailbox,
                     subagent_lifecycle,
+                    subagent_sessions,
                     allow_user_interaction,
                     deadline_monotonic,
                     skill_load_policy,
@@ -4374,6 +4382,7 @@ def run_agent_turn(
                             agent_budget,
                             subagent_mailbox,
                             subagent_lifecycle,
+                            subagent_sessions,
                             allow_user_interaction,
                             deadline_monotonic,
                             skill_load_policy,

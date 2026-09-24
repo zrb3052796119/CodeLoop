@@ -843,6 +843,16 @@ class ToolContext:
         repr=False,
         compare=False,
     )
+    # Turn-scoped, bounded store of finished read-only sub-agent
+    # conversations. The `task` tool saves completed explore/plan runs here
+    # so the model can resume one via continue_subagent_id instead of
+    # paying for a fresh exploration. Absence disables continuation
+    # fail-closed.
+    _subagent_sessions: Any | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
 
 
 Validator = Callable[[Any], Any]
