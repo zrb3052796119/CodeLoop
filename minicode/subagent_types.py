@@ -130,6 +130,12 @@ _MAX_TURNS_ENV_NAMES = {
 # An override above this ceiling is treated as a typo, not a real budget.
 _MAX_TURNS_OVERRIDE_CEILING = 200
 
+# The closed universe of tools a project-defined read-only agent profile
+# may reference: the union of the built-in explore and plan tool sets.
+READ_ONLY_TOOL_WHITELIST = frozenset(
+    AGENT_TYPES["explore"]["allowed_tools"]
+) | frozenset(AGENT_TYPES["plan"]["allowed_tools"])
+
 
 def _read_max_turns_override(env_name: str) -> str | None:
     """Read one override from the process env, then the private user env store.
@@ -180,4 +186,9 @@ def resolve_max_turns(agent_type: str) -> int:
     return value
 
 
-__all__ = ("AGENT_TYPES", "MAX_AGENT_DEPTH", "resolve_max_turns")
+__all__ = (
+    "AGENT_TYPES",
+    "MAX_AGENT_DEPTH",
+    "READ_ONLY_TOOL_WHITELIST",
+    "resolve_max_turns",
+)
