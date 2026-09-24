@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import concurrent.futures
+import copy
 import json
 import re
 import sys
@@ -21,7 +22,9 @@ from minicode.concurrent_tool_terminal import (
     project_concurrent_tool_terminal,
 )
 from minicode.context_manager import ContextManager, estimate_message_tokens
+from minicode.curator_schedule import curator_completion_id
 from minicode.logging_config import get_logger
+from minicode.memory_provenance import MemoryProvenanceBatch
 from minicode.model_call_control import (
     ModelCallDeadlineExceeded,
     call_model_next,
@@ -48,13 +51,17 @@ from minicode.run_events import (
     new_model_operation_id,
     project_model_duration_ms,
     project_model_usage,
+    record_memory_provenance_safely,
     record_written_memory_ids_safely,
+    record_written_memory_versions_safely,
 )
 from minicode.state import Store, AppState, increment_tool_calls, set_busy, set_idle
 from minicode.subagent_mailbox import SubagentMailbox
 from minicode.subagent_lifecycle import AsyncSubagentLifecycle
 from minicode.task_ledger import TaskLedger
+from minicode.turn_completion import TurnCompletionPolicy
 from minicode.tooling import (
+    SkillLoadPolicy,
     ToolContext,
     ToolExecutionAbandoned,
     ToolRegistry,
@@ -67,6 +74,10 @@ from minicode.turn_cancellation import (
     raise_if_cancelled,
 )
 from minicode.types import AgentStep, ChatMessage, ModelAdapter
+from minicode.user_evidence import (
+    TrustedUserEvidenceSeed,
+    bind_trusted_user_evidence_to_prompt,
+)
 from minicode.verification_observation import (
     VERIFICATION_EVENT_TYPE,
     normalize_tool_verification,
@@ -82,11 +93,10 @@ from minicode.recovery_control import RecoveryGuard
 from minicode.working_memory import get_working_memory, protect_context
 
 # Work chain integration
-from minicode.intent_parser import parse_intent
+from minicode.intent_parser import ParsedIntent, parse_intent
 from minicode.task_object import build_task, TaskObject, TaskState
 from minicode.task_outcome import AgentOutcomeCapture, canonicalize_task_outcome
 from minicode.pipeline_engine import get_pipeline_engine
-from minicode.capability_registry import register_tool_capabilities
 from minicode.layered_context import ContextBuilder, LayeredContext
 from minicode.decision_audit import get_auditor, DecisionOutcome
 
@@ -121,6 +131,7 @@ from minicode.reflection_evidence import (
 from minicode.context_compactor import (
     ContextCompactor,
     AutoCompactConfig,
+    strip_historical_session_memory,
 )
 from minicode.context_cybernetics import ContextCyberneticsOrchestrator
 from minicode.cost_control import CostControlLoop
@@ -172,6 +183,18 @@ RESUME_AFTER_PAUSE = (
 RESUME_AFTER_MAX_TOKENS = (
     "Your previous response was cut short by the token limit. Resume immediately "
     "with the next concrete action — pick up where you left off."
+)
+
+# Soft-landing instruction appended when a bounded nested run (a task
+# sub-agent) exhausts its step limit: one closing model turn, with tool use
+# declined, converts the work already done into a partial summary instead of
+# discarding it as a hard failure.
+MAX_STEPS_SOFT_LANDING_PROMPT = (
+    "Your tool budget for this task is exhausted: the maximum number of steps "
+    "has been reached. Do NOT call any more tools — they will not be executed. "
+    "Based only on the findings you have already gathered, provide your final "
+    "answer now: a concise summary of what you found, clearly marking what "
+    "remains unverified or unexplored. End with <final>."
 )
 
 _TRACE_MAX_EVENTS = 500
@@ -700,12 +723,15 @@ def _extract_task_description(messages: list[ChatMessage]) -> str:
     return "Unknown task"
 
 
-def _build_work_chain_task(messages: list[ChatMessage]) -> tuple[TaskObject | None, dict]:
+def _build_work_chain_task(
+    messages: list[ChatMessage],
+    parsed_intent: ParsedIntent | None = None,
+) -> tuple[TaskObject | None, dict]:
     """Build TaskObject from conversation messages and return it with metadata."""
     raw_input = _extract_task_description(messages)
     if raw_input == "Unknown task":
         return None, {}
-    intent = parse_intent(raw_input)
+    intent = parsed_intent if parsed_intent is not None else parse_intent(raw_input)
     task = build_task(intent, raw_input)
     metadata = {
         "intent_type": intent.intent_type.value,
@@ -751,11 +777,6 @@ def _build_layered_context(
     return context, builder
 
 
-def _register_tool_capabilities(tools: ToolRegistry) -> None:
-    """Register existing tools as capabilities in the registry."""
-    register_tool_capabilities(tools)
-
-
 def _execute_single_tool(
     call: dict,
     tools: ToolRegistry,
@@ -777,6 +798,8 @@ def _execute_single_tool(
     subagent_mailbox: Any | None = None,
     subagent_lifecycle: Any | None = None,
     allow_user_interaction: bool = True,
+    deadline_monotonic: float | None = None,
+    skill_load_policy: SkillLoadPolicy | None = None,
 ) -> ToolResult:
     """Execute a single tool call with hooks, state updates, and crash protection.
     
@@ -832,6 +855,11 @@ def _execute_single_tool(
             verifier_backend, verifier_executables = (
                 resolve_verifier_host_capabilities(runtime)
             )
+            from minicode.verifier_sandbox import (
+                user_registered_trusted_executables,
+            )
+
+            verifier_explicit = user_registered_trusted_executables()
             executed = tools.execute(
                 tool_name, tool_input,
                 ToolContext(
@@ -840,17 +868,22 @@ def _execute_single_tool(
                     _runtime=runtime,
                     _verifier_sandbox_backend=verifier_backend,
                     _verifier_trusted_executables=verifier_executables,
+                    _verifier_explicit_trusted_executables=(
+                        verifier_explicit or None
+                    ),
                     _central_workflow_v2_enforced=True,
                     _event_sink=event_sink,
                     _step=step,
                     _skill_usage_tracker=skill_usage_tracker,
                     _cancellation_token=cancellation_token,
+                    _task_deadline_monotonic=deadline_monotonic,
                     _agent_depth=agent_depth,
                     _presentation=presentation,
                     _agent_budget=agent_budget,
                     _tool_abandoned=abandoned_event,
                     _subagent_mailbox=subagent_mailbox,
                     _subagent_lifecycle=subagent_lifecycle,
+                    _skill_load_policy=skill_load_policy,
                 ),
             )
             if not executed._must_deliver:
@@ -886,6 +919,7 @@ def _execute_single_tool(
                     result = ToolResult(
                         ok=False,
                         output=f"Tool '{tool_name}' timed out after {TOOL_TIMEOUT}s",
+                        _termination_reason=ToolTerminationReason.DEADLINE_EXCEEDED,
                     )
             finally:
                 # Only side-effect-free work may outlive this timeout. Writers
@@ -1246,6 +1280,98 @@ def _new_context_operation_observation(
         return None
 
 
+def _strict_memory_authority_versions(
+    value: object,
+) -> tuple[tuple[str, str], ...] | None:
+    """Normalize trusted pipeline output without accepting a valid subset."""
+    if not isinstance(value, (list, tuple)):
+        return None
+    normalized: list[tuple[str, str]] = []
+    for version in value:
+        if (
+            not isinstance(version, (list, tuple))
+            or len(version) != 2
+            or not all(isinstance(item, str) for item in version)
+        ):
+            return None
+        normalized.append((version[0], version[1]))
+    return tuple(normalized)
+
+
+def _reflection_memory_operation_id(
+    provenance: dict[str, Any],
+) -> str | None:
+    """Derive one opaque retry identity from trusted Run/Turn identities."""
+    stable_identity = {
+        key: value
+        for key, value in provenance.items()
+        if key in {"run_id", "subagent_id", "turn_id"}
+        and isinstance(value, str)
+        and value
+    }
+    if not stable_identity:
+        return None
+    stable_identity["agent_depth"] = provenance.get("agent_depth", 0)
+    encoded = json.dumps(
+        {
+            "schema": "reflection_memory_operation_v1",
+            **stable_identity,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return f"memoryop_{uuid.uuid5(uuid.NAMESPACE_OID, encoded).hex}"
+
+
+def _memory_provenance_batch(
+    *,
+    effect: str,
+    origin: str,
+    authority_versions: object,
+    effect_observed: bool,
+    receipt_id: object = None,
+    context_operation_id: object = None,
+) -> MemoryProvenanceBatch | None:
+    """Build exact provenance or an explicit unknown marker, never a subset."""
+    normalized = _strict_memory_authority_versions(authority_versions)
+    safe_receipt_id = (
+        receipt_id
+        if isinstance(receipt_id, str)
+        and re.fullmatch(r"[0-9a-f]{32}", receipt_id)
+        else None
+    )
+    safe_context_operation_id = (
+        context_operation_id
+        if isinstance(context_operation_id, str)
+        and re.fullmatch(r"ctxop_[0-9a-f]{32}", context_operation_id)
+        else None
+    )
+    if normalized:
+        try:
+            return MemoryProvenanceBatch(
+                effect=effect,
+                origin=origin,
+                authority_versions=normalized,
+                receipt_id=safe_receipt_id,
+                context_operation_id=safe_context_operation_id,
+                coverage="complete",
+            )
+        except (TypeError, ValueError):
+            # The effect is real but one or more authority values are not
+            # representable under the strict transport contract.
+            pass
+    if not effect_observed:
+        return None
+    return MemoryProvenanceBatch(
+        effect=effect,
+        origin=origin,
+        authority_versions=(),
+        receipt_id=safe_receipt_id,
+        context_operation_id=safe_context_operation_id,
+        coverage="unknown",
+    )
+
+
 def _emit_failed_context_compaction(
     event_sink: AgentEventSink | None,
     result: object | None,
@@ -1253,6 +1379,7 @@ def _emit_failed_context_compaction(
     *,
     path: str,
     step: int | None = None,
+    context_operation_id: str | None = None,
 ) -> None:
     """Observe a real ineffective attempt, excluding cheap policy skips."""
     if event_sink is None or result is None or context_compactor is None:
@@ -1264,7 +1391,9 @@ def _emit_failed_context_compaction(
         "Compaction circuit breaker is open",
     }:
         return
-    operation_id = _new_context_operation_observation(event_sink)
+    operation_id = context_operation_id or _new_context_operation_observation(
+        event_sink
+    )
     if operation_id is None:
         return
     dispatcher = context_compactor.auto_compact
@@ -1277,6 +1406,249 @@ def _emit_failed_context_compaction(
         consecutive_failures=dispatcher.consecutive_failures,
         circuit_breaker_tripped=dispatcher.is_tripped,
     )
+
+
+def _commit_materialized_compaction_memory(
+    result: object | None,
+    memory_pipeline: object | None,
+    materialize: Callable[[], None],
+    rollback: Callable[[], None] | None = None,
+    *,
+    event_sink: AgentEventSink | None = None,
+    context_operation_id: str | None = None,
+) -> tuple[bool, tuple[str, ...]]:
+    """Atomically validate/install compaction Memory, then account for it."""
+    if (
+        result is None
+        or not bool(getattr(result, "effective", False))
+    ):
+        return False, ()
+    receipt = getattr(result, "memory_receipt", None)
+    if receipt is None:
+        materialize()
+        return True, ()
+    if memory_pipeline is None:
+        return False, ()
+    guard = getattr(memory_pipeline, "materialize_prompt_receipt", None)
+    if not callable(guard):
+        return False, ()
+    if not callable(rollback):
+        logger.warning(
+            "Compaction Memory materialization refused without rollback"
+        )
+        return False, ()
+    try:
+        guarded = bool(guard(receipt, materialize, rollback))
+    except TurnCancellationRequested:
+        raise
+    except ModelCallDeadlineExceeded as exc:
+        raise AgentTurnDeadlineExceeded(str(exc)) from exc
+    except Exception:
+        # Store contention/corruption must reject this candidate, not abort an
+        # entire agent turn.  The materializer only runs after a valid fence.
+        logger.warning(
+            "Compaction Memory authority guard failed safely",
+            exc_info=True,
+        )
+        # Canonical MemoryPipeline already rolls back.  Repeat defensively for
+        # compatibility guards that may raise after invoking the callback.
+        try:
+            rollback()
+        except Exception:
+            logger.critical(
+                "Compaction Memory rollback failed after guard error",
+                exc_info=True,
+            )
+        return False, ()
+    if not guarded:
+        try:
+            rollback()
+        except Exception:
+            logger.critical(
+                "Compaction Memory rollback failed after guard rejection",
+                exc_info=True,
+            )
+        logger.info(
+            "Compaction Memory authority changed before materialization"
+        )
+        return False, ()
+
+    # The model-visible mutation has completed at this point.  Record the
+    # exact receipt version independently of durable injection counters: a
+    # later counter-write failure must not erase what influenced the model.
+    provenance = _memory_provenance_batch(
+        effect="rendered",
+        origin="context_compaction",
+        authority_versions=getattr(receipt, "rendered_versions", ()),
+        effect_observed=True,
+        receipt_id=getattr(receipt, "receipt_id", None),
+        context_operation_id=context_operation_id,
+    )
+    if provenance is not None:
+        record_memory_provenance_safely(event_sink, provenance)
+
+    commit = getattr(memory_pipeline, "commit_prompt_receipt", None)
+    if not callable(commit):
+        return True, ()
+    before_ids = set(
+        getattr(memory_pipeline, "injected_memory_ids", ()) or ()
+    )
+    try:
+        return True, tuple(commit(receipt))
+    except Exception:
+        logger.warning(
+            "Compaction Memory receipt commit failed safely",
+            exc_info=True,
+        )
+        after_ids = tuple(
+            getattr(memory_pipeline, "injected_memory_ids", ()) or ()
+        )
+        return True, tuple(
+            entry_id for entry_id in after_ids if entry_id not in before_ids
+        )
+
+
+def _finalize_compaction_materialization_state(
+    result: Any,
+    context_compactor: object | None,
+    *,
+    installed: bool,
+    original_messages: list[dict[str, Any]],
+    context_cybernetics: object | None = None,
+) -> None:
+    """Finalize deferred dispatcher/dedup/PID state for one candidate."""
+    if not installed:
+        result.success = False
+    expected_state = "installed" if installed else "rejected"
+    control_state_terminal = (
+        str(getattr(getattr(result, "materialization_state", None), "value", ""))
+        == expected_state
+    )
+    if context_compactor is not None:
+        method_name = (
+            "confirm_materialized"
+            if installed
+            else "discard_unmaterialized"
+        )
+        finalize = getattr(context_compactor, method_name, None)
+        if callable(finalize):
+            try:
+                if installed:
+                    finalize(result)
+                else:
+                    finalize(result, original_messages)
+                control_state_terminal = (
+                    str(
+                        getattr(
+                            getattr(result, "materialization_state", None),
+                            "value",
+                            "",
+                        )
+                    )
+                    == expected_state
+                )
+            except Exception:
+                control_state_terminal = False
+                logger.warning(
+                    "Compaction control-state finalization failed safely",
+                    exc_info=True,
+                )
+    if context_cybernetics is not None and control_state_terminal:
+        finalize_feedback = getattr(
+            context_cybernetics,
+            "finalize_materialization",
+            None,
+        )
+        if callable(finalize_feedback):
+            try:
+                finalize_feedback(result, installed=installed)
+            except Exception:
+                logger.warning(
+                    "Cybernetic compaction feedback finalization failed safely",
+                    exc_info=True,
+                )
+
+
+def _deliver_memory_quality_feedback(
+    *,
+    orch: Any,
+    canonical_outcome: Any,
+    tool_abandoned: bool,
+    verification_passed: int,
+    verification_failed: int,
+    event_sink: Any,
+    task_description: str | None = None,
+    execution_trace: list[dict[str, Any]] | None = None,
+    agent_budget: Any = None,
+) -> None:
+    """Deliver end-of-turn memory utility feedback on every finalization path.
+
+    The reduced authority path (step-budget exhaustion / soft landing)
+    returns from inside ``finally`` before the full finalization section, so
+    it must deliver this feedback explicitly: a turn that exhausted its
+    budget right after a compaction install would otherwise never teach the
+    Memory layer how its injected entries fared.
+
+    When ``execution_trace`` is available, a per-memory contribution review
+    runs first: whole-turn feedback spreads one outcome boolean over every
+    rendered entry, while the review cites concrete memory/tool-event
+    evidence per entry (task success alone never counts as help).
+    """
+    if tool_abandoned or orch is None:
+        return
+    pipeline = getattr(orch, "memory_pipeline", None)
+    if pipeline is None:
+        return
+    feedback_observation_id = getattr(
+        event_sink,
+        "feedback_observation_id",
+        None,
+    )
+    if not feedback_observation_id:
+        feedback_observation_id = getattr(event_sink, "run_id", None)
+    if (
+        isinstance(execution_trace, list)
+        and execution_trace
+        and task_description is not None
+    ):
+        review = getattr(pipeline, "review_injected_memories", None)
+        if callable(review):
+            try:
+                review(
+                    task_description,
+                    execution_trace,
+                    observation_id=(
+                        feedback_observation_id
+                        if isinstance(feedback_observation_id, str)
+                        and feedback_observation_id.strip()
+                        else None
+                    ),
+                    agent_budget=agent_budget,
+                    event_sink=event_sink,
+                )
+            except TurnCancellationRequested:
+                raise
+            except Exception:  # noqa: BLE001 - review stays best-effort
+                logger.debug(
+                    "Memory contribution review delivery failed", exc_info=True
+                )
+    try:
+        learning_success = getattr(canonical_outcome, "learning_success", None)
+        memory_feedback_outcome = (
+            learning_success if learning_success is not None else "unknown"
+        )
+        memory_feedback_kwargs: dict[str, object] = {
+            "verification_passed": verification_passed,
+            "verification_failed": verification_failed,
+        }
+        if (
+            isinstance(feedback_observation_id, str)
+            and feedback_observation_id.strip()
+        ):
+            memory_feedback_kwargs["observation_id"] = feedback_observation_id
+        pipeline.feedback(memory_feedback_outcome, **memory_feedback_kwargs)
+    except Exception:  # noqa: BLE001 - feedback stays best-effort
+        logger.debug("Memory quality feedback delivery failed", exc_info=True)
 
 
 def _looks_like_context_overflow(error_str: str) -> bool:
@@ -1444,6 +1816,10 @@ def _apply_control_signal(
                     context_compactor,
                     path="feedback_forced",
                 )
+        except TurnCancellationRequested:
+            raise
+        except ModelCallDeadlineExceeded as exc:
+            raise AgentTurnDeadlineExceeded(str(exc)) from exc
         except Exception as exc:
             logger.warning("FeedbackController: forced compaction failed: %s", exc)
 
@@ -1467,6 +1843,61 @@ def _preemptive_step_cap(
             _REQUIRED_SKILL_MIN_STEPS,
         )
     return min(max_steps, effective_recommendation)
+
+
+_PENDING_MEMORY_NOTICE_MARK = "[memory:pending-notice]"
+
+
+def _count_pending_written_memories(
+    orch: Any, written_memory_ids: tuple[str, ...]
+) -> int:
+    """Count how many of this turn's written entries await user review."""
+
+    pipeline = getattr(orch, "memory_pipeline", None)
+    manager = getattr(pipeline, "_memory", None)
+    if manager is None:
+        return 0
+    pending = 0
+    for entry_id in written_memory_ids:
+        try:
+            scope, entry = manager._find_entry_by_id(entry_id)
+        except Exception:  # noqa: BLE001 - notice is observational only
+            continue
+        if entry is not None and getattr(entry, "approval_status", "") == "pending":
+            pending += 1
+    return pending
+
+
+def _append_pending_memory_notice(
+    current_messages: list[dict], pending_count: int, event_sink: Any
+) -> None:
+    """Surface awaiting-review lessons on the turn's final assistant message.
+
+    Pending entries are invisible to retrieval, so without this footer the
+    lesson backlog is silent until the user happens to run a memory command.
+    """
+
+    if pending_count <= 0:
+        return
+    notice = (
+        f"\n\n{_PENDING_MEMORY_NOTICE_MARK} 本轮产生 {pending_count} 条待审教训："
+        f"输入 /memory pending 查看列表，/memory review <id> 审核。"
+    )
+    for message in reversed(current_messages):
+        if message.get("role") == "assistant" and isinstance(
+            message.get("content"), str
+        ):
+            if _PENDING_MEMORY_NOTICE_MARK not in message["content"]:
+                message["content"] = message["content"] + notice
+            break
+    emit_event_safely(
+        event_sink,
+        "memory.pending_notice",
+        payload={
+            "pendingWrittenCount": pending_count,
+            "notice": notice.strip(),
+        },
+    )
 
 
 def run_agent_turn(
@@ -1504,9 +1935,22 @@ def run_agent_turn(
     presentation: Any | None = None,
     outcome_capture: AgentOutcomeCapture | None = None,
     required_skill_names: list[str] | None = None,
+    skill_load_policy: SkillLoadPolicy | None = None,
     allow_user_interaction: bool = True,
+    max_steps_soft_landing: bool = False,
+    enable_bounded_completion: bool = False,
+    parsed_intent: ParsedIntent | None = None,
+    trusted_user_evidence: tuple[TrustedUserEvidenceSeed, ...] = (),
+    defer_curator_maintenance: bool = False,
 ) -> list[ChatMessage]:
-    current_messages = list(messages)
+    # Entry points opt the primary Agent into bounded completion. Keep the
+    # caller's hard ceiling separate from feedforward's task recommendation.
+    caller_max_steps = max_steps
+    # Session Memory is current-Turn prompt material, not conversation
+    # history. Every UI and nested-agent entrypoint converges here, so remove
+    # old material before task parsing and let canonical retrieval decide what
+    # is relevant for this Turn.
+    current_messages = strip_historical_session_memory(list(messages))
     task_ledger = TaskLedger.from_messages(current_messages)
 
     def reconcile_task_ledger(
@@ -1532,6 +1976,8 @@ def run_agent_turn(
     saw_tool_result = False
     empty_response_retry_count = 0
     recoverable_thinking_retry_count = 0
+    model_timeout_retry_count = 0
+    model_timeout_retry_pending = False
     unfinished_action_retry_count = 0
     tool_error_count = 0
     recovery_guard = RecoveryGuard()
@@ -1546,6 +1992,71 @@ def run_agent_turn(
     step = 0
     turn_outcome = "unknown"
     execution_trace: list[dict[str, Any]] = []
+    current_user_message = next(
+        (
+            message.get("content")
+            for message in reversed(current_messages)
+            if message.get("role") == "user"
+            and isinstance(message.get("content"), str)
+            and not message.get("_task_ledger")
+        ),
+        "",
+    )
+    current_turn_id = next(
+        (
+            message.get("_conversation_turn_id")
+            for message in reversed(current_messages)
+            if message.get("role") == "user"
+            and isinstance(message.get("_conversation_turn_id"), str)
+        ),
+        None,
+    )
+    current_run_id = getattr(event_sink, "run_id", None)
+    run_only_curator_completion_id = curator_completion_id(current_run_id)
+    event_sink_curator_completion_id = getattr(
+        event_sink,
+        "curator_completion_id",
+        None,
+    )
+    current_curator_completion_id = (
+        event_sink_curator_completion_id
+        if event_sink_curator_completion_id == run_only_curator_completion_id
+        and event_sink_curator_completion_id is not None
+        else curator_completion_id(current_run_id, current_turn_id)
+    )
+    normalized_user_evidence = bind_trusted_user_evidence_to_prompt(
+        trusted_user_evidence,
+        current_user_message,
+        agent_depth=agent_depth,
+        current_turn_id=current_turn_id,
+        current_run_id=current_run_id,
+    )
+    for trusted_seed in normalized_user_evidence:
+        if trusted_seed.kind == "followup_correction" and (
+            trusted_seed.current_turn_id != current_turn_id
+            or trusted_seed.current_run_id != current_run_id
+        ):
+            continue
+        if trusted_seed.kind == "stable_constraint" and (
+            trusted_seed.current_turn_id is not None
+            and (
+                trusted_seed.current_turn_id != current_turn_id
+                or trusted_seed.current_run_id != current_run_id
+            )
+        ):
+            continue
+        safe_statement = _redact_trace_text(
+            trusted_seed.statement,
+            _TRACE_MAX_FIELD_CHARS,
+        )
+        # A redacted correction/constraint no longer proves the exact user
+        # statement bound by the seed digest. Drop it instead of persisting a
+        # partially rewritten strong claim.
+        if safe_statement != trusted_seed.statement:
+            continue
+        trace_event = trusted_seed.to_trace_event()
+        trace_event["content"] = safe_statement
+        _append_trace_event(execution_trace, trace_event)
     memory_mgr = memory_manager
 
     tool_scheduler = ToolScheduler(metrics_collector=metrics_collector)
@@ -1697,20 +2208,21 @@ def run_agent_turn(
     progress_controller: Any = None
     model_selection_ctrl: Any = None
     smart_router: Any = None
-    reflection_engine: Any = None
     model_switcher: Any = None
     context_compactor: ContextCompactor | None = None
     context_cybernetics: ContextCyberneticsOrchestrator | None = None
     cost_control: CostControlLoop | None = None
 
     if enable_work_chain:
-        task, task_metadata = _build_work_chain_task(current_messages)
+        task, task_metadata = (
+            _build_work_chain_task(current_messages)
+            if parsed_intent is None
+            else _build_work_chain_task(current_messages, parsed_intent)
+        )
         layered_context, context_builder = _build_layered_context(
             current_messages, system_prompt, project_context, task,
         )
         get_pipeline_engine()
-        _register_tool_capabilities(tools)
-
         # 初始化所有工程控制论控制器（通过 Orchestrator 统一管理）
         orch = CyberneticOrchestrator()
         orch._workspace = cwd
@@ -1725,7 +2237,6 @@ def run_agent_turn(
         progress_controller = orch.progress
         model_selection_ctrl = orch.model_ctrl
         smart_router = orch.smart_router
-        reflection_engine = orch.reflection
         model_switcher = orch.model_switcher
         logger.info("CyberneticOrchestrator: %d controllers initialized", 15)
         if smart_router and task:
@@ -1804,8 +2315,6 @@ def run_agent_turn(
         # 初始化上下文管理器 (Claude Code-style + Engineering Cybernetics)
         # 必须在 SelfHealingEngine 之前初始化，因为自愈引擎需要委托压缩操作
         if memory_mgr is not None:
-            if reflection_engine:
-                reflection_engine.memory = memory_mgr
             if orch:
                 orch._last_model = model
                 orch._workspace = cwd
@@ -1814,6 +2323,12 @@ def run_agent_turn(
                     try:
                         task_desc = task.raw_input if hasattr(task, "raw_input") else ""
                         current_files = list(getattr(task, "relevant_files", []) or [])
+                        if context_manager:
+                            # Dashboard/TUI pass a fresh or session-owned
+                            # manager whose cached messages may still describe
+                            # the previous Turn. Hydrate the actual sanitized
+                            # Session before pressure-sensitive Memory routing.
+                            context_manager.messages = list(current_messages)
                         context_usage = (
                             context_manager.get_stats().usage_percentage / 100.0
                             if context_manager
@@ -1830,9 +2345,26 @@ def run_agent_turn(
                             deadline_monotonic=deadline_monotonic,
                         )
                         if event_sink is not None:
+                            receipt = (
+                                orch.memory_pipeline.last_committed_prompt_receipt
+                            )
+                            provenance = (
+                                _memory_provenance_batch(
+                                    effect="rendered",
+                                    origin="task_start",
+                                    authority_versions=(
+                                        receipt.rendered_versions
+                                    ),
+                                    effect_observed=True,
+                                    receipt_id=receipt.receipt_id,
+                                )
+                                if receipt is not None
+                                else None
+                            )
                             emit_memory_result_safely(
                                 event_sink,
                                 orch.memory_pipeline.last_retrieval_result,
+                                provenance_batch=provenance,
                             )
                     except ModelCallDeadlineExceeded as exc:
                         raise AgentTurnDeadlineExceeded(str(exc)) from exc
@@ -1875,9 +2407,16 @@ def run_agent_turn(
                 if hasattr(context_compactor, "_auto_compact"):
                     from minicode.context_compactor import LLMSummaryGenerator
 
-                    context_compactor._auto_compact._memory = memory_mgr
+                    compaction_memory_source = (
+                        getattr(orch, "memory_pipeline", None)
+                        if orch is not None
+                        else None
+                    ) or memory_mgr
+                    context_compactor._auto_compact._memory = (
+                        compaction_memory_source
+                    )
                     context_compactor._auto_compact._session_memory_engine._memory = (
-                        memory_mgr
+                        compaction_memory_source
                     )
                     context_compactor._auto_compact._summary_generator = (
                         LLMSummaryGenerator(
@@ -1905,7 +2444,11 @@ def run_agent_turn(
                 context_compactor = ContextCompactor(
                     context_window=context_manager.context_window,
                     workspace=cwd,
-                    memory_manager=memory_mgr,
+                    memory_manager=(
+                        getattr(orch, "memory_pipeline", None)
+                        if orch is not None
+                        else None
+                    ) or memory_mgr,
                     estimate_fn=estimate_message_tokens,
                     config=compact_config,
                     # Model-generated summaries when compacting, with the
@@ -1938,7 +2481,7 @@ def run_agent_turn(
                     "predictive guard"
                 )
             if task and hasattr(task, 'parsed_intent') and task.parsed_intent:
-                context_cybernetics.set_intent(str(task.parsed_intent.intent_type))
+                context_cybernetics.set_intent(task.parsed_intent.intent_type.value)
             if orch:
                 orch.context_compactor = context_compactor
                 orch.context_cybernetics = context_cybernetics
@@ -1991,94 +2534,467 @@ def run_agent_turn(
                         adj.budget_multiplier, adj.reason,
                     )
 
+            context_operation_id = _new_context_operation_observation(
+                event_sink
+            )
             context_messages_before = (
                 observable_message_count(current_messages)
-                if event_sink is not None
+                if context_operation_id is not None
                 else None
             )
-            cyber_messages, cyber_result, cyber_action = context_cybernetics.run_cycle(
-                current_messages,
-                error_rate=float(tool_error_count) / max(step, 1) if step > 0 else 0.0,
-                avg_latency=last_step_duration_seconds,
-                turn_id=step,
-            )
+            try:
+                cyber_messages, cyber_result, cyber_action = context_cybernetics.run_cycle(
+                    current_messages,
+                    error_rate=float(tool_error_count) / max(step, 1) if step > 0 else 0.0,
+                    avg_latency=last_step_duration_seconds,
+                    turn_id=step,
+                )
+            except ModelCallDeadlineExceeded as exc:
+                raise AgentTurnDeadlineExceeded(str(exc)) from exc
             if cyber_result and cyber_result.effective:
-                current_messages = reconcile_task_ledger(cyber_messages)
-                context_manager.messages = current_messages
-                context_operation_id = _new_context_operation_observation(event_sink)
-                if (
-                    context_operation_id is not None
-                    and context_messages_before is not None
-                ):
-                    emit_context_compaction_safely(
+                original_messages = list(current_messages)
+                compacted_messages = reconcile_task_ledger(cyber_messages)
+                installed, _memory_ids = _commit_materialized_compaction_memory(
+                    cyber_result,
+                    getattr(orch, "memory_pipeline", None) if orch else None,
+                    lambda: current_messages.__setitem__(
+                        slice(None),
+                        compacted_messages,
+                    ),
+                    lambda: current_messages.__setitem__(
+                        slice(None),
+                        original_messages,
+                    ),
+                    event_sink=event_sink,
+                    context_operation_id=context_operation_id,
+                )
+                if not installed:
+                    fallback_messages = (
+                        context_compactor.rejection_fallback_messages(
+                            cyber_result,
+                            original_messages,
+                        )
+                    )
+                    fallback_messages = reconcile_task_ledger(
+                        fallback_messages
+                    )
+                    cyber_result.memory_free_fallback = fallback_messages
+                    current_messages[:] = fallback_messages
+                _finalize_compaction_materialization_state(
+                    cyber_result,
+                    context_compactor,
+                    installed=installed,
+                    original_messages=original_messages,
+                    context_cybernetics=context_cybernetics,
+                )
+                if installed:
+                    context_manager.messages = current_messages
+                    if (
+                        context_operation_id is not None
+                        and context_messages_before is not None
+                    ):
+                        emit_context_compaction_safely(
+                            event_sink,
+                            cyber_result,
+                            context_operation_id=context_operation_id,
+                            path="pre_request_cybernetic",
+                            messages_before=context_messages_before,
+                            messages_after=observable_message_count(
+                                current_messages
+                            ),
+                        )
+                    logger.info(
+                        "Cybernetics[%s]: %s intensity=%.2f freed=%d tokens [%s]",
+                        cyber_action.reason if cyber_action else "unknown",
+                        cyber_result.strategy.value,
+                        (
+                            cyber_action.compaction_intensity
+                            if cyber_action
+                            else 0
+                        ),
+                        cyber_result.tokens_freed,
+                        (
+                            cyber_result.summary_text[:80]
+                            if cyber_result.summary_text
+                            else ""
+                        ),
+                    )
+                else:
+                    context_manager.messages = current_messages
+                    cyber_result.success = False
+                    cyber_result.error = (
+                        "Memory authority changed before compaction install"
+                    )
+                    _emit_failed_context_compaction(
                         event_sink,
                         cyber_result,
-                        context_operation_id=context_operation_id,
                         path="pre_request_cybernetic",
-                        messages_before=context_messages_before,
-                        messages_after=observable_message_count(current_messages),
+                        context_compactor=context_compactor,
+                        context_operation_id=context_operation_id,
                     )
-                logger.info(
-                    "Cybernetics[%s]: %s intensity=%.2f freed=%d tokens [%s]",
-                    cyber_action.reason if cyber_action else "unknown",
-                    cyber_result.strategy.value,
-                    cyber_action.compaction_intensity if cyber_action else 0,
-                    cyber_result.tokens_freed,
-                    cyber_result.summary_text[:80] if cyber_result.summary_text else "",
-                )
             elif cyber_result is not None:
                 _emit_failed_context_compaction(
                     event_sink,
                     cyber_result,
                     context_compactor,
                     path="pre_request_cybernetic",
+                    context_operation_id=context_operation_id,
                 )
         elif context_compactor:
+            context_operation_id = _new_context_operation_observation(
+                event_sink
+            )
             context_messages_before = (
                 observable_message_count(current_messages)
-                if event_sink is not None
+                if context_operation_id is not None
                 else None
             )
-            compaction_result = context_compactor.process_request(current_messages)
+            try:
+                compaction_result = context_compactor.process_request(
+                    current_messages
+                )
+            except ModelCallDeadlineExceeded as exc:
+                raise AgentTurnDeadlineExceeded(str(exc)) from exc
             if compaction_result.effective:
-                current_messages = reconcile_task_ledger(
+                original_messages = list(current_messages)
+                compacted_messages = reconcile_task_ledger(
                     compaction_result.messages
                 )
-                context_manager.messages = current_messages
-                context_operation_id = _new_context_operation_observation(event_sink)
-                if (
-                    context_operation_id is not None
-                    and context_messages_before is not None
-                ):
-                    emit_context_compaction_safely(
+                installed, _memory_ids = _commit_materialized_compaction_memory(
+                    compaction_result,
+                    getattr(orch, "memory_pipeline", None) if orch else None,
+                    lambda: current_messages.__setitem__(
+                        slice(None),
+                        compacted_messages,
+                    ),
+                    lambda: current_messages.__setitem__(
+                        slice(None),
+                        original_messages,
+                    ),
+                    event_sink=event_sink,
+                    context_operation_id=context_operation_id,
+                )
+                if not installed:
+                    fallback_messages = (
+                        context_compactor.rejection_fallback_messages(
+                            compaction_result,
+                            original_messages,
+                        )
+                    )
+                    fallback_messages = reconcile_task_ledger(
+                        fallback_messages
+                    )
+                    compaction_result.memory_free_fallback = fallback_messages
+                    current_messages[:] = fallback_messages
+                _finalize_compaction_materialization_state(
+                    compaction_result,
+                    context_compactor,
+                    installed=installed,
+                    original_messages=original_messages,
+                )
+                if installed:
+                    context_manager.messages = current_messages
+                    if (
+                        context_operation_id is not None
+                        and context_messages_before is not None
+                    ):
+                        emit_context_compaction_safely(
+                            event_sink,
+                            compaction_result,
+                            context_operation_id=context_operation_id,
+                            path="pre_request_compactor",
+                            messages_before=context_messages_before,
+                            messages_after=observable_message_count(
+                                current_messages
+                            ),
+                        )
+                    logger.info(
+                        "ContextCompactor: %s freed %d tokens [%s]",
+                        compaction_result.strategy.value,
+                        compaction_result.tokens_freed,
+                        compaction_result.summary_text[:80],
+                    )
+                else:
+                    context_manager.messages = current_messages
+                    compaction_result.success = False
+                    compaction_result.error = (
+                        "Memory authority changed before compaction install"
+                    )
+                    _emit_failed_context_compaction(
                         event_sink,
                         compaction_result,
-                        context_operation_id=context_operation_id,
                         path="pre_request_compactor",
-                        messages_before=context_messages_before,
-                        messages_after=observable_message_count(current_messages),
+                        context_compactor=context_compactor,
+                        context_operation_id=context_operation_id,
                     )
-                logger.info(
-                    "ContextCompactor: %s freed %d tokens [%s]",
-                    compaction_result.strategy.value,
-                    compaction_result.tokens_freed,
-                    compaction_result.summary_text[:80],
-                )
             else:
                 _emit_failed_context_compaction(
                     event_sink,
                     context_compactor.last_result,
                     context_compactor,
                     path="pre_request_compactor",
+                    context_operation_id=context_operation_id,
                 )
 
     owns_subagent_lifecycle = subagent_lifecycle is None
     if subagent_lifecycle is None:
         subagent_lifecycle = AsyncSubagentLifecycle()
     authority_delivery_ready = False
+    committed_child_batches: list[tuple[ChatMessage, ...]] = []
+
+    def restore_committed_child_receipts() -> None:
+        """Keep exact receipts deliverable even if continuation compacted them."""
+        for batch in committed_child_batches:
+            if all(message in current_messages for message in batch):
+                continue
+            call_ids = {message.get("toolUseId") for message in batch}
+            current_messages[:] = [
+                message for message in current_messages
+                if message.get("toolUseId") not in call_ids
+            ]
+            insert_at = len(current_messages)
+            if current_messages and current_messages[-1].get("role") == "assistant":
+                insert_at -= 1
+            current_messages[insert_at:insert_at] = copy.deepcopy(list(batch))
+
+    def interrupted_parent_message(reason: str) -> None:
+        restore_committed_child_receipts()
+        content = (
+            "Earlier workflow changes are already committed; remaining work "
+            f"is incomplete because {reason}. The committed receipts are retained above."
+        )
+        current_messages.append({"role": "assistant", "content": content})
+        if on_assistant_message:
+            try:
+                on_assistant_message(content)
+            except BaseException:  # committed receipts must remain deliverable
+                logger.warning("Failed to present interrupted parent status", exc_info=True)
+
+    def _revalidate_model_visible_memory() -> None:
+        """Apply the latest Memory authority immediately before a model call."""
+        pipeline = (
+            getattr(orch, "memory_pipeline", None)
+            if orch is not None
+            else None
+        )
+        revalidate = getattr(pipeline, "revalidate_prompt_messages", None)
+        if not callable(revalidate):
+            return
+        sanitized = revalidate(current_messages)
+        if sanitized == current_messages:
+            return
+        current_messages[:] = sanitized
+        if context_manager is not None:
+            context_manager.messages = list(current_messages)
+
+    completion_policy = (
+        TurnCompletionPolicy(
+            hard_limit=caller_max_steps, soft_limit=max_steps, cwd=cwd
+        )
+        if enable_bounded_completion
+        and agent_depth == 0
+        and not max_steps_soft_landing
+        and max_steps is not None
+        else None
+    )
+    if completion_policy is not None:
+        max_steps = completion_policy.work_limit
+    completion_hard_limit = caller_max_steps
+    completion_notice_limit = None
+
+    def _attempt_max_steps_soft_landing(
+        *,
+        prompt: str = MAX_STEPS_SOFT_LANDING_PROMPT,
+        closing_step_index: int | None = None,
+        content_prefix: str = "",
+    ) -> bool:
+        """Spend one tool-free closing turn on a partial-summary hand-back.
+
+        Used when a bounded nested run (a task sub-agent) exhausts its step
+        limit mid-survey: instead of failing hard and discarding the work,
+        the model gets a single closing turn whose tool calls are declined
+        (never executed). Returns True only when usable final text landed;
+        the caller then marks the run partial. Cancellation and deadline
+        expiry still propagate — they are the parent Turn's control flow.
+        Budget/provider/empty-content failures return False and the caller
+        keeps the original hard-failure semantics.
+        """
+        current_messages.append(
+            {"role": "user", "content": prompt}
+        )
+        if closing_step_index is None:
+            closing_step_index = step + 1
+        closing_operation_id = (
+            new_model_operation_id() if event_sink is not None else ""
+        )
+        closing_started_at = (
+            _start_model_observation_clock() if event_sink is not None else None
+        )
+        closing_reservation = None
+        closing_model_started = False
+
+        def closing_failed(kind: str, *, charge_estimate: bool = False) -> None:
+            _fail_agent_budget_reservation(
+                agent_budget, closing_reservation, charge_estimate=charge_estimate
+            )
+            if event_sink is not None and closing_model_started:
+                emit_event_safely(
+                    event_sink,
+                    "model.failed",
+                    step=closing_step_index,
+                    payload=_model_event_duration(
+                        {"operationId": closing_operation_id, "failureKind": kind},
+                        _finish_model_observation_clock(closing_started_at),
+                    ),
+                )
+
+        try:
+            raise_if_cancelled(cancellation_token)
+            raise_if_deadline_exceeded()
+            _revalidate_model_visible_memory()
+            if agent_budget is not None:
+                closing_reservation = agent_budget.reserve_model_call(
+                    _estimated_context_tokens(current_messages)
+                )
+            if event_sink is not None:
+                emit_event_safely(
+                    event_sink,
+                    "model.started",
+                    step=closing_step_index,
+                    payload={"operationId": closing_operation_id},
+                )
+            closing_model_started = True
+            closing_step = _model_next(
+                model,
+                current_messages,
+                on_stream_chunk=None,
+                store=store,
+                cancellation_token=cancellation_token,
+                deadline_monotonic=deadline_monotonic,
+            )
+            raise_if_cancelled(cancellation_token)
+            raise_if_deadline_exceeded()
+        except TurnCancellationRequested:
+            closing_failed("cancelled")
+            raise
+        except AgentTurnDeadlineExceeded:
+            closing_failed("timeout", charge_estimate=closing_model_started)
+            raise
+        except (KeyboardInterrupt, SystemExit):
+            closing_failed("interrupted")
+            raise
+        except Exception as exc:  # noqa: BLE001 - degrade to the hard failure
+            closing_failed(
+                "timeout" if isinstance(exc, TimeoutError)
+                else "network" if isinstance(exc, ConnectionError)
+                else "provider_error",
+                charge_estimate=isinstance(exc, TimeoutError) and closing_model_started,
+            )
+            logger.warning("Max-steps soft landing failed: %s", type(exc).__name__)
+            return False
+        closing_usage = _model_usage_observation(closing_step)
+        _record_agent_budget_usage(
+            agent_budget,
+            closing_step,
+            reservation=closing_reservation,
+            model=model,
+            usage_observation=closing_usage,
+            cost_payload=None,
+        )
+        if context_compactor is not None and closing_usage:
+            closing_reported = closing_usage.get("inputTokens")
+            if isinstance(closing_reported, int) and closing_reported > 0:
+                try:
+                    context_compactor.record_usage_observation(
+                        closing_reported,
+                        _estimated_context_tokens(current_messages),
+                    )
+                except Exception:  # noqa: BLE001 - calibration is advisory
+                    pass
+        if event_sink is not None:
+            emit_event_safely(
+                event_sink,
+                "model.completed",
+                step=closing_step_index,
+                payload=_model_event_duration(
+                    {
+                        "operationId": closing_operation_id,
+                        "resultType": "assistant",
+                        "contentPresent": bool(closing_step.content),
+                        # Declined by construction: soft-landing tool calls
+                        # are discarded without executing.
+                        "toolCallCount": 0,
+                        "usage": closing_usage,
+                    },
+                    _finish_model_observation_clock(closing_started_at),
+                ),
+            )
+        content = str(getattr(closing_step, "content", "") or "").strip()
+        if not content:
+            return False
+        content = content_prefix + content
+        if on_assistant_message:
+            on_assistant_message(content)
+        current_messages.append(
+            {
+                "role": "assistant",
+                "content": content,
+                # Typed marker for the dispatch layer: this final answer is a
+                # partial summary produced after the step limit fired.
+                "_partial": True,
+            }
+        )
+        _append_trace_event(execution_trace, {
+            "type": "assistant_step",
+            "step": closing_step_index,
+            "content_kind": "soft_landing",
+            "content": _redact_trace_text(content),
+        })
+        return True
+
+    def finish_bounded_completion(
+        reason: str,
+        closing_step_index: int,
+        *,
+        allow_model_summary: bool = True,
+    ) -> None:
+        nonlocal turn_outcome, authority_delivery_ready
+        assert completion_policy is not None
+        raise_if_cancelled(cancellation_token)
+        raise_if_deadline_exceeded()
+        landed = (
+            allow_model_summary
+            and closing_step_index <= completion_hard_limit
+            and _attempt_max_steps_soft_landing(
+                prompt=completion_policy.closing_prompt(reason),
+                closing_step_index=closing_step_index,
+                content_prefix=(
+                    f"Partial result: {reason}. "
+                    "Overall task completion is not confirmed.\n\n"
+                ),
+            )
+        )
+        if not landed:
+            raise_if_cancelled(cancellation_token)
+            raise_if_deadline_exceeded()
+            content = completion_policy.summary(reason)
+            current_messages.append(
+                {"role": "assistant", "content": content, "_partial": True}
+            )
+            if on_assistant_message:
+                on_assistant_message(content)
+        # A readable hand-back is not evidence that the user's goal was met.
+        turn_outcome = "unknown"
+        authority_delivery_ready = True
+        emit_event_safely(
+            event_sink,
+            "execution.completion_limited",
+            step=step,
+            payload={"reason": reason, "partial": True, "modelSummary": landed},
+        )
 
     try:
-        while max_steps is None or step < max_steps:
+        while True:
             raise_if_cancelled(cancellation_token)
             raise_if_deadline_exceeded()
             if abandoned_event is not None and abandoned_event.is_set():
@@ -2087,6 +3003,44 @@ def run_agent_turn(
                 raise ToolExecutionAbandoned(
                     "tool execution was abandoned after timeout"
                 )
+            if max_steps is not None and step >= max_steps:
+                extended_limit = (
+                    completion_policy.extend(
+                        step=step,
+                        current_limit=max_steps,
+                        healthy=(
+                            last_step_tool_error_count == 0
+                            and recovery_guard.consecutive_failed_steps == 0
+                            and recovery_guard.stop_decision() is None
+                        ),
+                    )
+                    if completion_policy is not None else max_steps
+                )
+                if extended_limit <= max_steps:
+                    break
+                emit_event_safely(
+                    event_sink,
+                    "execution.steps_extended",
+                    step=step,
+                    payload={"previousLimit": max_steps, "newLimit": extended_limit},
+                )
+                max_steps = extended_limit
+            if (
+                completion_policy is not None
+                and max_steps - step <= 2
+                and completion_notice_limit != max_steps
+            ):
+                current_messages.append({
+                    "role": "user",
+                    "content": (
+                        "The current execution window is nearly exhausted. "
+                        "Finish essential verification and summarize completed work, "
+                        "checks and remaining issues. Avoid repeating checks or "
+                        "starting unrelated work. Further steps require new progress "
+                        "and remain bounded by the caller's hard limit."
+                    ),
+                })
+                completion_notice_limit = max_steps
             step += 1
             step_started_at = time.perf_counter()
 
@@ -2095,7 +3049,7 @@ def run_agent_turn(
 
             # 高级控制论闭环（每个 step 开始时执行）
             if enable_work_chain and orch:
-                orch.step_start(
+                predictive_action = orch.step_start(
                     context_manager=context_manager,
                     step=step,
                     tool_error_count=tool_error_count,
@@ -2104,6 +3058,61 @@ def run_agent_turn(
                     recent_tool_error_count=last_step_tool_error_count,
                     recent_tool_call_count=last_step_tool_call_count,
                 )
+                if predictive_action is not None:
+                    try:
+                        recommended_action = getattr(
+                            predictive_action,
+                            "recommended_action",
+                            "",
+                        )
+                        if (
+                            recommended_action == "trigger_compaction"
+                            and context_compactor is not None
+                        ):
+                            compacted = context_compactor.compact_messages(
+                                current_messages,
+                                force=True,
+                            )
+                            if (
+                                compacted is not None
+                                and len(compacted) < len(current_messages)
+                            ):
+                                previous_count = len(current_messages)
+                                current_messages[:] = reconcile_task_ledger(
+                                    compacted
+                                )
+                                if context_manager is not None:
+                                    context_manager.messages = list(
+                                        current_messages
+                                    )
+                                logger.info(
+                                    "Predictive: compaction applied %d -> %d messages",
+                                    previous_count,
+                                    len(compacted),
+                                )
+                        elif recommended_action == "enable_safe_mode":
+                            logger.info(
+                                "Predictive: safe_mode recommended "
+                                "(reduce concurrency, extend timeouts)"
+                            )
+                        elif recommended_action == "reduce_concurrency":
+                            logger.info(
+                                "Predictive: reduce_concurrency recommended"
+                            )
+                    except TurnCancellationRequested:
+                        raise
+                    except ModelCallDeadlineExceeded as exc:
+                        raise AgentTurnDeadlineExceeded(str(exc)) from exc
+                    except Exception as exc:
+                        logger.warning(
+                            "Predictive action %s failed: %s",
+                            getattr(
+                                predictive_action,
+                                "recommended_action",
+                                "unknown",
+                            ),
+                            exc,
+                        )
             elif enable_work_chain:
                 # 状态观测：通过可测量输出估计系统内部状态
                 if state_observer:
@@ -2197,6 +3206,10 @@ def run_agent_turn(
                             if handler:
                                 try:
                                     handler()
+                                except TurnCancellationRequested:
+                                    raise
+                                except ModelCallDeadlineExceeded as exc:
+                                    raise AgentTurnDeadlineExceeded(str(exc)) from exc
                                 except Exception as exc:
                                     logger.warning(
                                         "Predictive action %s failed: %s",
@@ -2236,9 +3249,11 @@ def run_agent_turn(
             try:
                 raise_if_cancelled(cancellation_token)
                 raise_if_deadline_exceeded()
+                _revalidate_model_visible_memory()
                 if agent_budget is not None:
                     model_budget_reservation = agent_budget.reserve_model_call(
-                        _estimated_context_tokens(current_messages)
+                        _estimated_context_tokens(current_messages),
+                        **({"preserve_model_calls": 1} if completion_policy else {}),
                     )
                 if event_sink is not None:
                     emit_event_safely(
@@ -2258,6 +3273,7 @@ def run_agent_turn(
                 )
                 raise_if_cancelled(cancellation_token)
                 raise_if_deadline_exceeded()
+                model_timeout_retry_pending = False
                 if abandoned_event is not None and abandoned_event.is_set():
                     turn_outcome = "failed"
                     tool_abandoned = True
@@ -2279,6 +3295,14 @@ def run_agent_turn(
                 if budget_exhausted_policy == "raise":
                     turn_outcome = "failed"
                     raise
+                if completion_policy is not None:
+                    if metrics_collector:
+                        metrics_collector.end_turn(total_tokens=0)
+                    finish_bounded_completion(
+                        f"turn_budget_exceeded: {error.reason}", step,
+                        allow_model_summary=not model_timeout_retry_pending,
+                    )
+                    return current_messages
                 fallback = (
                     f"error[turn_budget_exceeded]: {error.reason}. "
                     "The shared turn budget is exhausted; simplify the task "
@@ -2363,7 +3387,6 @@ def run_agent_turn(
                     model_budget_reservation,
                     charge_estimate=True,
                 )
-                raise_if_cancelled(cancellation_token)
                 model_duration_ms = (
                     _finish_model_observation_clock(model_started_at)
                     if event_sink is not None
@@ -2382,6 +3405,33 @@ def run_agent_turn(
                             model_duration_ms,
                         ),
                     )
+                raise_if_cancelled(cancellation_token)
+                raise_if_deadline_exceeded()
+                if completion_policy is not None:
+                    model_timeout_retry_pending = True
+                    if metrics_collector:
+                        metrics_collector.end_turn(total_tokens=0)
+                    if (
+                        model_timeout_retry_count == 0
+                        and step < max_steps
+                        and recovery_guard.stop_decision() is None
+                    ):
+                        model_timeout_retry_count += 1
+                        logger.warning(
+                            "Model transport timed out; retrying once within turn limits"
+                        )
+                        # The failed response produced no tool batch. Re-enter
+                        # normal admission with the completed tools' messages
+                        # intact; never replay those tools or reset this quota.
+                        continue
+                    finish_bounded_completion(
+                        "model transport timeout; automatic retry unavailable or exhausted",
+                        step,
+                        # A failing provider must not receive a third request
+                        # merely to describe its second timeout.
+                        allow_model_summary=False,
+                    )
+                    return current_messages
                 turn_outcome = "failed"
                 fallback = f"Model API timeout: {error}"
                 logger.error("Model API timeout: %s", error)
@@ -2617,6 +3667,20 @@ def run_agent_turn(
                 usage_observation=usage_observation,
                 cost_payload=cost_payload,
             )
+            # Reconcile provider-reported input tokens with the local
+            # estimate that drives the compaction high-water policy.
+            # current_messages is still the exact request payload here —
+            # the response is appended later.
+            if context_compactor is not None and usage_observation:
+                reported_input = usage_observation.get("inputTokens")
+                if isinstance(reported_input, int) and reported_input > 0:
+                    try:
+                        context_compactor.record_usage_observation(
+                            reported_input,
+                            _estimated_context_tokens(current_messages),
+                        )
+                    except Exception:  # noqa: BLE001 - calibration is advisory
+                        pass
             if event_sink is not None:
                 emit_event_safely(
                     event_sink,
@@ -2872,6 +3936,13 @@ def run_agent_turn(
             # --- Concurrent tool execution ---
             # Classify calls into concurrent-safe (read-only) vs serial (writes/commands)
             calls = next_step.calls
+            completion_before = {}
+            if completion_policy is not None:
+                try:
+                    completion_before = completion_policy.capture_before(calls)
+                except Exception:  # progress observation cannot own execution
+                    completion_policy.lower_limit(max_steps)
+                    logger.warning("Completion progress capture unavailable")
             assistant_tool_turn_id = f"tool-turn-{uuid.uuid4().hex}"
             _results: list[tuple[dict, ToolResult]] = []
             concurrent_call_ids: set[str] = set()
@@ -2888,6 +3959,58 @@ def run_agent_turn(
                 _results.append(
                     (call, ToolResult(ok=False, output=suppression.message))
                 )
+
+            # --- Skill load barrier: a batch containing a load_skill for a
+            # not-yet-loaded skill must execute only the loads; every other
+            # call is deferred so the model can read the skill body before
+            # acting on it. ---
+            if any(
+                call.get("toolName") == "load_skill" for call in executable_calls
+            ):
+                loaded_skill_names = {
+                    str(item.get("qualifiedName") or "")
+                    for item in skill_usage_tracker.snapshot()[0]
+                }
+                has_new_load = any(
+                    # Model arguments can be valid JSON without being an
+                    # object. Let normal tool validation report that error;
+                    # an invalid load must not crash this preflight or let
+                    # sibling actions run before the model corrects it.
+                    not isinstance(call.get("input"), dict)
+                    or str(call["input"].get("name") or "").strip()
+                    not in loaded_skill_names
+                    for call in executable_calls
+                    if call.get("toolName") == "load_skill"
+                )
+                if has_new_load:
+                    deferred_calls = [
+                        call
+                        for call in executable_calls
+                        if call.get("toolName") != "load_skill"
+                    ]
+                    if deferred_calls:
+                        deferred_ids = {call["id"] for call in deferred_calls}
+                        executable_calls = [
+                            call
+                            for call in executable_calls
+                            if call["id"] not in deferred_ids
+                        ]
+                        for call in deferred_calls:
+                            suppressed_call_ids.add(call["id"])
+                            _results.append(
+                                (
+                                    call,
+                                    ToolResult(
+                                        ok=False,
+                                        output=(
+                                            "error[deferred_until_skill_loaded]: "
+                                            "not executed in this batch; "
+                                            "re-propose after reading the skill "
+                                            "body"
+                                        ),
+                                    ),
+                                )
+                            )
 
             if len(executable_calls) == 1:
                 # Single call — no benefit from concurrency, run directly
@@ -2912,6 +4035,8 @@ def run_agent_turn(
                     subagent_mailbox,
                     subagent_lifecycle,
                     allow_user_interaction,
+                    deadline_monotonic,
+                    skill_load_policy,
                 )
                 _results.append((call, result))
                 if metrics_collector:
@@ -3021,6 +4146,8 @@ def run_agent_turn(
                                     subagent_mailbox,
                                     subagent_lifecycle,
                                     allow_user_interaction,
+                                    deadline_monotonic,
+                                    skill_load_policy,
                                 )
                             except TurnCancellationRequested as exc:
                                 batch_cancellation = exc
@@ -3248,6 +4375,8 @@ def run_agent_turn(
                             subagent_mailbox,
                             subagent_lifecycle,
                             allow_user_interaction,
+                            deadline_monotonic,
+                            skill_load_policy,
                         )
                         _results.append((call, result))
                         if metrics_collector:
@@ -3310,12 +4439,23 @@ def run_agent_turn(
             # Process all results and build messages (preserve original call order)
             call_order = {call["id"]: idx for idx, call in enumerate(calls)}
             _results.sort(key=lambda pair: call_order.get(pair[0]["id"], 999))
+            if completion_policy is not None:
+                try:
+                    completion_policy.observe_results(
+                        [pair for pair in _results if pair[0]["id"] not in suppressed_call_ids],
+                        completion_before,
+                        step=step,
+                    )
+                except Exception:  # retain authoritative committed receipts below
+                    completion_policy.lower_limit(max_steps)
+                    logger.warning("Completion progress observation unavailable")
             executed_outcomes: list[bool] = []
             if must_deliver_result:
                 # A finalized state change takes a dedicated authority path.
                 # Only balance the provider tool protocol and project every
                 # result byte-for-byte; all mutable telemetry and control
                 # sidecars are deliberately bypassed.
+                receipt_start = len(current_messages)
                 for result_index, (call, result) in enumerate(_results):
                     suppressed = call["id"] in suppressed_call_ids
                     if not suppressed:
@@ -3352,6 +4492,41 @@ def run_agent_turn(
                 turn_outcome = (
                     "success" if all(executed_outcomes) else "failed"
                 )
+                continue_parent = all(
+                    result._continue_parent and result.ok and not result.awaitUser
+                    for _call, result in _results
+                    if result._must_deliver
+                )
+                if continue_parent:
+                    try:
+                        raise_if_cancelled(cancellation_token)
+                        raise_if_deadline_exceeded()
+                        if abandoned_event is not None and abandoned_event.is_set():
+                            continue_parent = False
+                    except (TurnCancellationRequested, AgentTurnDeadlineExceeded):
+                        continue_parent = False
+                if continue_parent:
+                    # Commit authority belongs to this child, not to the
+                    # whole user goal. Keep its receipt exact and resume the
+                    # parent so remaining tasks and owned async results pass
+                    # through the ordinary completion barriers.
+                    committed_child_batches.append(
+                        tuple(copy.deepcopy(current_messages[receipt_start:]))
+                    )
+                    current_messages.append(
+                        {
+                            "role": "user",
+                            "content": (
+                                "The workflow changes above are already committed. "
+                                "Preserve that receipt and do not repeat the committed "
+                                "work. Continue any remaining user-requested tasks, "
+                                "collect owned sub-agent results, and then summarize. "
+                                "Any calls marked skipped have not executed."
+                            ),
+                        }
+                    )
+                    turn_outcome = "unknown"
+                    continue
                 authority_delivery_ready = True
                 return current_messages
 
@@ -3557,7 +4732,13 @@ def run_agent_turn(
                     {
                         "type": "recovery_strategy_switch",
                         "step": step,
-                        "reason": "consecutive_tool_failures",
+                        "reason": (
+                            "consecutive_command_failures"
+                            if strategy_switch_nudge.startswith(
+                                "error[command_strategy_switch_required]"
+                            )
+                            else "consecutive_tool_failures"
+                        ),
                     },
                 )
 
@@ -3619,24 +4800,105 @@ def run_agent_turn(
                 and context_compactor is not None
                 and context_compactor.auto_compact.should_trigger(current_messages)
             ):
+                context_operation_id = _new_context_operation_observation(
+                    event_sink
+                )
+                context_messages_before = (
+                    observable_message_count(current_messages)
+                    if context_operation_id is not None
+                    else None
+                )
                 try:
                     in_loop_result = context_compactor.process_request(
                         current_messages,
                         enable_tool_budget=False,
-                        enable_read_dedup=False,
                     )
                     if in_loop_result.effective:
-                        current_messages = reconcile_task_ledger(
+                        original_messages = list(current_messages)
+                        compacted_messages = reconcile_task_ledger(
                             in_loop_result.messages
                         )
-                        if context_manager is not None:
-                            context_manager.messages = current_messages
-                        logger.info(
-                            "InLoopCompact[%d]: freed %d tokens [%s]",
-                            step,
-                            in_loop_result.tokens_freed,
-                            in_loop_result.strategy.value,
+                        installed, _memory_ids = (
+                            _commit_materialized_compaction_memory(
+                                in_loop_result,
+                                (
+                                    getattr(orch, "memory_pipeline", None)
+                                    if orch
+                                    else None
+                                ),
+                                lambda target=current_messages,
+                                candidate=compacted_messages: target.__setitem__(
+                                    slice(None),
+                                    candidate,
+                                ),
+                                lambda target=current_messages,
+                                original=original_messages: target.__setitem__(
+                                    slice(None),
+                                    original,
+                                ),
+                                event_sink=event_sink,
+                                context_operation_id=context_operation_id,
+                            )
                         )
+                        if not installed:
+                            fallback_messages = (
+                                context_compactor.rejection_fallback_messages(
+                                    in_loop_result,
+                                    original_messages,
+                                )
+                            )
+                            fallback_messages = reconcile_task_ledger(
+                                fallback_messages
+                            )
+                            in_loop_result.memory_free_fallback = (
+                                fallback_messages
+                            )
+                            current_messages[:] = fallback_messages
+                        _finalize_compaction_materialization_state(
+                            in_loop_result,
+                            context_compactor,
+                            installed=installed,
+                            original_messages=original_messages,
+                        )
+                        if installed:
+                            if context_manager is not None:
+                                context_manager.messages = current_messages
+                            if (
+                                context_operation_id is not None
+                                and context_messages_before is not None
+                            ):
+                                emit_context_compaction_safely(
+                                    event_sink,
+                                    in_loop_result,
+                                    step=step,
+                                    context_operation_id=context_operation_id,
+                                    path="in_loop_compactor",
+                                    messages_before=context_messages_before,
+                                    messages_after=observable_message_count(
+                                        current_messages
+                                    ),
+                                )
+                            logger.info(
+                                "InLoopCompact[%d]: freed %d tokens [%s]",
+                                step,
+                                in_loop_result.tokens_freed,
+                                in_loop_result.strategy.value,
+                            )
+                        else:
+                            if context_manager is not None:
+                                context_manager.messages = current_messages
+                            in_loop_result.success = False
+                            in_loop_result.error = (
+                                "Memory authority changed before compaction install"
+                            )
+                            _emit_failed_context_compaction(
+                                event_sink,
+                                in_loop_result,
+                                context_compactor,
+                                path="in_loop_compactor",
+                                step=step,
+                                context_operation_id=context_operation_id,
+                            )
                     else:
                         _emit_failed_context_compaction(
                             event_sink,
@@ -3644,7 +4906,12 @@ def run_agent_turn(
                             context_compactor,
                             path="in_loop_compactor",
                             step=step,
+                            context_operation_id=context_operation_id,
                         )
+                except TurnCancellationRequested:
+                    raise
+                except ModelCallDeadlineExceeded as exc:
+                    raise AgentTurnDeadlineExceeded(str(exc)) from exc
                 except Exception as exc:  # noqa: BLE001 - never break the loop
                     logger.warning("In-loop compaction failed safely: %s", exc)
 
@@ -3691,6 +4958,7 @@ def run_agent_turn(
                         ),
                         tests_passed=tests_passed,
                     )
+                    previous_step_limit = max_steps
                     max_steps = _apply_control_signal(
                         control_signal=step_summary.get("control_signal"),
                         system_state=step_summary.get("system_state"),
@@ -3703,6 +4971,10 @@ def run_agent_turn(
                         context_manager=context_manager,
                         event_sink=event_sink,
                     )
+                    if completion_policy is not None and max_steps < previous_step_limit:
+                        completion_hard_limit = min(completion_hard_limit, max_steps)
+                        max_steps = max(0, completion_hard_limit - 1)
+                        completion_policy.lower_limit(max_steps)
                     current_messages = reconcile_task_ledger(current_messages)
                     if context_manager is not None:
                         context_manager.messages = list(current_messages)
@@ -3763,12 +5035,36 @@ def run_agent_turn(
             raise_if_cancelled(cancellation_token)
             continue
 
+        # The while loop only falls through when the step limit fired (every
+        # other exit returns or raises). A caller that opted into soft landing
+        # — the task sub-agent dispatch — gets one tool-free closing turn to
+        # convert the partial survey into a marked partial summary instead of
+        # a discarded hard failure.
+        if completion_policy is not None:
+            finish_bounded_completion(
+                "execution step limit reached", step + 1,
+                allow_model_summary=not model_timeout_retry_pending,
+            )
+            return current_messages
+        if max_steps_soft_landing and max_steps is not None:
+            if _attempt_max_steps_soft_landing():
+                turn_outcome = "success"
+                # A soft landing still ends through a normal assistant
+                # message, so the finalized trace (including how the budget
+                # was spent) stays eligible for reflection and feedback.
+                authority_delivery_ready = True
+                return current_messages
+
         fallback = "Reached the maximum tool step limit for this turn."
         raise_if_cancelled(cancellation_token)
         if on_assistant_message:
             on_assistant_message(fallback)
         current_messages.append({"role": "assistant", "content": fallback})
         turn_outcome = "failed"
+        # Budget exhaustion is a complete, finalized trace — the richest
+        # lesson source — so it must reach reflection like any failed turn
+        # instead of silently skipping the finalization authority.
+        authority_delivery_ready = True
         return current_messages
     except AgentTurnDeadlineExceeded:
         turn_outcome = "failed"
@@ -3776,12 +5072,58 @@ def run_agent_turn(
         # memories in the finalization path.
         tool_abandoned = True
         enable_work_chain = False
+        if committed_child_batches:
+            authority_delivery_ready = True
+            interrupted_parent_message("the deadline was exceeded")
+            return current_messages
         raise
     except TurnCancellationRequested:
         turn_outcome = "cancelled"
         enable_work_chain = False
+        if committed_child_batches:
+            authority_delivery_ready = True
+            interrupted_parent_message("the turn was cancelled")
+            return current_messages
         raise
+    except (AgentBudgetExceeded, ToolExecutionAbandoned) as error:
+        turn_outcome = "failed"
+        enable_work_chain = False
+        if committed_child_batches:
+            authority_delivery_ready = True
+            interrupted_parent_message(
+                "the shared turn budget was exhausted"
+                if isinstance(error, AgentBudgetExceeded)
+                else "tool execution was abandoned"
+            )
+            return current_messages
+        raise
+    except BaseException as error:
+        if not committed_child_batches:
+            raise
+        turn_outcome = "failed"
+        enable_work_chain = False
+        authority_delivery_ready = True
+        interrupted_parent_message(f"continuation failed ({type(error).__name__})")
+        return current_messages
     finally:
+        restore_committed_child_receipts()
+        if committed_child_batches:
+            # Once a child has committed, later observers cannot replace the
+            # parent's answer or erase the receipt, even on a normal exit.
+            authority_delivery_ready = True
+            if turn_outcome != "success" and current_messages:
+                final_message = current_messages[-1]
+                content = final_message.get("content")
+                if (
+                    final_message.get("role") == "assistant"
+                    and isinstance(content, str)
+                    and not content.startswith("Earlier workflow changes are already committed;")
+                ):
+                    final_message["content"] = (
+                        "Earlier workflow changes are already committed; remaining work "
+                        "is incomplete. The committed receipts are retained above.\n\n"
+                        + content
+                    )
         if authority_delivery_ready:
             if owns_subagent_lifecycle:
                 try:
@@ -3833,6 +5175,27 @@ def run_agent_turn(
                         "Failed to emit finalized task telemetry",
                         exc_info=True,
                     )
+            if orch and not defer_curator_maintenance:
+                try:
+                    orch.task_end(
+                        record_only=True,
+                        completion_id=(
+                            current_curator_completion_id
+                            if agent_depth == 0
+                            else None
+                        ),
+                        agent_depth=agent_depth,
+                        agent_budget=agent_budget,
+                        event_sink=event_sink,
+                        cancellation_token=cancellation_token,
+                        deadline_monotonic=deadline_monotonic,
+                    )
+                except BaseException:  # finalized authority always wins
+                    logger.warning(
+                        "Failed to advance curator scheduling after state "
+                        "finalization",
+                        exc_info=True,
+                    )
             try:
                 fire_hook_sync(
                     HookEvent.AGENT_STOP,
@@ -3860,6 +5223,23 @@ def run_agent_turn(
                         "Failed to close metrics after state finalization",
                         exc_info=True,
                     )
+            # 记忆质量反馈在缩短的权威终结路径上同样必须送达：
+            # 预算耗尽的轮次可能刚完成一次压缩安装。
+            _deliver_memory_quality_feedback(
+                orch=orch,
+                canonical_outcome=canonical_outcome,
+                tool_abandoned=tool_abandoned,
+                verification_passed=verification_passed_count,
+                verification_failed=verification_failed_count,
+                event_sink=event_sink,
+                task_description=(
+                    task.raw_input
+                    if task is not None and hasattr(task, "raw_input")
+                    else None
+                ),
+                execution_trace=execution_trace or None,
+                agent_budget=agent_budget,
+            )
             return current_messages
         if owns_subagent_lifecycle:
             try:
@@ -3950,28 +5330,40 @@ def run_agent_turn(
             })
             if orch and task and not tool_abandoned:
                 try:
+                    reflection_provenance = {
+                        "run_id": (
+                            getattr(event_sink, "parent_run_id", None)
+                            or getattr(event_sink, "run_id", None)
+                        ),
+                        "subagent_id": getattr(
+                            event_sink,
+                            "subagent_id",
+                            None,
+                        ),
+                        "turn_id": next(
+                            (
+                                message.get("_conversation_turn_id")
+                                for message in reversed(current_messages)
+                                if message.get("role") == "user"
+                                and message.get("_conversation_turn_id")
+                            ),
+                            None,
+                        ),
+                        "agent_depth": agent_depth,
+                    }
                     written_memory_id = orch.reflect_on_task(
                         task_description=task.raw_input if hasattr(task, 'raw_input') else str(task.id),
                         step=step,
                         tool_error_count=tool_error_count,
                         execution_trace=structured_trace,
+                        operation_id=_reflection_memory_operation_id(
+                            reflection_provenance
+                        ),
                         agent_budget=agent_budget,
                         event_sink=event_sink,
                         cancellation_token=cancellation_token,
                         deadline_monotonic=deadline_monotonic,
-                        provenance={
-                            "run_id": getattr(event_sink, "run_id", None),
-                            "turn_id": next(
-                                (
-                                    message.get("_conversation_turn_id")
-                                    for message in reversed(current_messages)
-                                    if message.get("role") == "user"
-                                    and message.get("_conversation_turn_id")
-                                ),
-                                None,
-                            ),
-                            "agent_depth": agent_depth,
-                        },
+                        provenance=reflection_provenance,
                     )
                     written_memory_ids = tuple(
                         dict.fromkeys(
@@ -3986,75 +5378,91 @@ def run_agent_turn(
                     )
                     if not written_memory_ids and isinstance(written_memory_id, str):
                         written_memory_ids = (written_memory_id,)
-                    # Bind the lesson to this Run so a later "this was wrong"
-                    # from the user can reach it. Purely observational: it
-                    # must never affect the turn's outcome. Nested loops pass
-                    # an explicit recorder because forwarding their event sink
-                    # would inject their lifecycle events into the parent Run.
+                    raw_written_memory_versions = getattr(
+                        getattr(orch, "memory_pipeline", None),
+                        "last_written_versions",
+                        (),
+                    )
+                    written_memory_versions = (
+                        _strict_memory_authority_versions(
+                            raw_written_memory_versions
+                        )
+                        or ()
+                    )
+                    # Publish the exact content authority independently of the
+                    # legacy ID callback.  A nested sink binds this batch to
+                    # its parent-assigned sub-agent identity; it never merges
+                    # nested lifecycle events into the root Run stream.
+                    written_provenance = _memory_provenance_batch(
+                        effect="written",
+                        origin="reflection",
+                        authority_versions=raw_written_memory_versions,
+                        effect_observed=(
+                            bool(written_memory_ids)
+                            or (
+                                isinstance(
+                                    raw_written_memory_versions,
+                                    (list, tuple),
+                                )
+                                and len(raw_written_memory_versions) > 0
+                            )
+                        ),
+                    )
+                    if written_provenance is not None:
+                        record_memory_provenance_safely(
+                            event_sink,
+                            written_provenance,
+                        )
+
+                    # Keep the narrow ID/version bridges for old embedders.
+                    # They remain purely observational and cannot change the
+                    # turn outcome.
                     if on_memory_written is not None:
                         for entry_id in written_memory_ids:
                             on_memory_written(entry_id)
                     else:
+                        record_written_memory_versions_safely(
+                            event_sink,
+                            written_memory_versions,
+                        )
                         record_written_memory_ids_safely(
                             event_sink, written_memory_ids
                         )
-                except TurnCancellationRequested:
-                    raise
-                except Exception:
-                    pass
-            elif reflection_engine and task and not tool_abandoned:
-                try:
-                    reflection = reflection_engine.reflect(
-                        task_description=task.raw_input if hasattr(task, 'raw_input') else str(task.id),
-                        execution_trace=structured_trace,
-                        agent_budget=agent_budget,
-                        event_sink=event_sink,
-                        cancellation_token=cancellation_token,
-                        deadline_monotonic=deadline_monotonic,
-                    )
-                    logger.info(
-                        "AgentReflection: success=%s confidence=%.2f lessons=%d improvements=%d",
-                        reflection.success, reflection.confidence,
-                        len(reflection.lessons_learned), len(reflection.suggested_improvements),
-                    )
-                except TurnCancellationRequested:
-                    raise
-                except Exception:
-                    pass
-
-            # 记忆质量反馈：只反馈给本轮实际注入的 entry_id。
-            if (
-                not tool_abandoned
-                and orch
-                and getattr(orch, "memory_pipeline", None) is not None
-            ):
-                try:
-                    memory_feedback_outcome = (
-                        canonical_outcome.learning_success
-                        if canonical_outcome.learning_success is not None
-                        else "unknown"
-                    )
-                    memory_feedback_kwargs: dict[str, object] = {
-                        "verification_passed": verification_passed_count,
-                        "verification_failed": verification_failed_count,
-                    }
-                    feedback_observation_id = getattr(
+                    _append_pending_memory_notice(
+                        current_messages,
+                        _count_pending_written_memories(
+                            orch, written_memory_ids
+                        ),
                         event_sink,
-                        "run_id",
-                        None,
                     )
-                    if isinstance(feedback_observation_id, str) and (
-                        feedback_observation_id.strip()
-                    ):
-                        memory_feedback_kwargs["observation_id"] = (
-                            feedback_observation_id
-                        )
-                    orch.memory_pipeline.feedback(
-                        memory_feedback_outcome,
-                        **memory_feedback_kwargs,
-                    )
+                except TurnCancellationRequested:
+                    raise
                 except Exception:
                     pass
+            # 记忆质量反馈：只反馈给本轮实际注入的 entry_id。
+            _deliver_memory_quality_feedback(
+                orch=orch,
+                canonical_outcome=canonical_outcome,
+                tool_abandoned=tool_abandoned,
+                verification_passed=verification_passed_count,
+                verification_failed=verification_failed_count,
+                event_sink=event_sink,
+                task_description=(
+                    task.raw_input
+                    if task is not None and hasattr(task, "raw_input")
+                    else None
+                ),
+                execution_trace=structured_trace,
+                agent_budget=agent_budget,
+            )
+            # End-of-turn TTL sweep for persisted tool results: long idle
+            # sessions never run the compaction pipeline, so the gated
+            # cleanup would otherwise never fire for them.
+            if context_compactor is not None:
+                try:
+                    context_compactor.tool_budget.maybe_cleanup_expired()
+                except Exception:  # noqa: BLE001 - cleanup stays best-effort
+                    logger.debug("Tool-result TTL sweep failed", exc_info=True)
 
             # 路由反馈学习：记录任务结果以优化未来路由
             routing_model_id = getattr(model, "model_id", None)
@@ -4091,9 +5499,15 @@ def run_agent_turn(
                 except Exception:
                     pass
 
-            if orch:
+            if orch and not defer_curator_maintenance:
                 try:
                     orch.task_end(
+                        completion_id=(
+                            current_curator_completion_id
+                            if agent_depth == 0
+                            else None
+                        ),
+                        agent_depth=agent_depth,
                         agent_budget=agent_budget,
                         event_sink=event_sink,
                         cancellation_token=cancellation_token,
@@ -4314,6 +5728,10 @@ def run_agent_turn(
                                 path="feedback_forced",
                                 step=step,
                             )
+                    except TurnCancellationRequested:
+                        raise
+                    except ModelCallDeadlineExceeded as exc:
+                        raise AgentTurnDeadlineExceeded(str(exc)) from exc
                     except Exception as exc:
                         logger.warning("FeedbackController: forced compaction failed: %s", exc)
 

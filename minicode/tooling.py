@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import copy
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Protocol
+from types import MappingProxyType
+from typing import TYPE_CHECKING, Any, Literal, Protocol
 
+from minicode.capability_contracts import CapabilityClassifier, CapabilityProfile
 from minicode.logging_config import get_logger
 
 _logger = get_logger("tooling")
+_CAPABILITY_ARGUMENTS_UNSET = object()
 
 
 class ToolExecutionAbandoned(RuntimeError):
@@ -25,6 +29,7 @@ class ToolTerminationReason(str, Enum):
 
     ABANDONED = "abandoned"
     TURN_CANCELLED = "turn_cancelled"
+    DEADLINE_EXCEEDED = "deadline_exceeded"
 
 
 if TYPE_CHECKING:
@@ -52,10 +57,7 @@ _TOOL_OUTPUT_LIMITS: dict[str, int] = {
     "file_tree": 15_000,
     "code_review": 20_000,
     "diff_viewer": 20_000,
-    "db_explorer": 20_000,
-    "docker_helper": 20_000,
     "test_runner": 25_000,
-    "api_tester": 15_000,
     # SKILL.md is executable instruction context, not diagnostic output. Keep
     # it whole up to a deliberately bounded ceiling instead of generic
     # head/tail truncation that can remove the operative middle section.
@@ -244,11 +246,18 @@ class ToolResult:
     backgroundTask: BackgroundTaskResult | None = None
     awaitUser: bool = False
     verification: dict[str, object] | None = None
+    # Descriptive invocation evidence. This never authorizes or blocks a call.
+    capability: dict[str, Any] | None = field(default=None, kw_only=True)
     # A stateful tool sets this only after an irreversible mutation has
     # completed and its result has been finalized.  The Agent Loop must retain
     # that truthful result even if cancellation raced with the finalization
     # boundary; ordinary tool results keep the default cancellation behavior.
     _must_deliver: bool = field(default=False, repr=False, compare=False)
+    # A fully finalized child workflow may return control to its parent after
+    # the immutable receipt is delivered. Cancellation or uncertain commit
+    # state still takes the terminal authority path. This is host-owned and
+    # never inferred from model text or the tool's display output.
+    _continue_parent: bool = field(default=False, repr=False, compare=False, kw_only=True)
     # Lifecycle control must never parse ``output``.  Human-readable error
     # wording can evolve independently while this closed marker remains the
     # authoritative internal signal.
@@ -256,6 +265,403 @@ class ToolResult:
         default=None,
         repr=False,
         compare=False,
+    )
+
+
+_SKILL_LOAD_POLICY_IDENTITY_RE = re.compile(
+    r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}"
+    r"(?:/[A-Za-z0-9][A-Za-z0-9._-]{0,127})?"
+)
+_SKILL_LOAD_POLICY_SOURCES = frozenset(
+    {"project", "user", "compat_project", "compat_user"}
+)
+_SKILL_LOAD_POLICY_DIGEST_RE = re.compile(r"[0-9a-f]{64}")
+_SKILL_LOAD_POLICY_REASON_RE = re.compile(r"[a-z0-9][a-z0-9._-]{0,63}")
+_SKILL_LOAD_POLICY_PAYLOAD_VERSION = 3
+_SKILL_LOAD_POLICY_LEGACY_PAYLOAD_VERSION = 2
+MAX_SKILL_LOAD_POLICY_BINDINGS = 128
+_SKILL_LOAD_BINDING_PAYLOAD_FIELDS = frozenset(
+    {
+        "qualified_name",
+        "source",
+        "content_digest",
+        "routing_identity_digest",
+    }
+)
+_SKILL_LOAD_POLICY_LEGACY_PAYLOAD_FIELDS = frozenset(
+    {
+        "version",
+        "allowed_bindings",
+        "denied_qualified_names",
+        "reason_code",
+    }
+)
+_SKILL_LOAD_POLICY_PAYLOAD_FIELDS = (
+    _SKILL_LOAD_POLICY_LEGACY_PAYLOAD_FIELDS | {"allow_catalog_scope"}
+)
+
+
+@dataclass(frozen=True, slots=True)
+class SkillLoadBinding:
+    """Immutable identity of the exact Skill version authorized to load."""
+
+    qualified_name: str
+    source: str
+    content_digest: str
+    routing_identity_digest: str
+
+    def __post_init__(self) -> None:
+        if (
+            not isinstance(self.qualified_name, str)
+            or self.qualified_name != self.qualified_name.strip()
+            or _SKILL_LOAD_POLICY_IDENTITY_RE.fullmatch(self.qualified_name)
+            is None
+            or ".." in self.qualified_name
+        ):
+            raise ValueError("Skill binding qualified_name is invalid")
+        if (
+            not isinstance(self.source, str)
+            or self.source not in _SKILL_LOAD_POLICY_SOURCES
+        ):
+            raise ValueError("Skill binding source is invalid")
+        for field_name in ("content_digest", "routing_identity_digest"):
+            value = getattr(self, field_name)
+            if (
+                not isinstance(value, str)
+                or _SKILL_LOAD_POLICY_DIGEST_RE.fullmatch(value) is None
+            ):
+                raise ValueError(f"Skill binding {field_name} is invalid")
+
+
+def skill_load_binding_from_value(value: object) -> SkillLoadBinding | None:
+    """Project a routed/catalog Skill value into its executable binding."""
+    if isinstance(value, SkillLoadBinding):
+        return value
+    if isinstance(value, Mapping):
+        getter = value.get
+    else:
+        getter = lambda name, default=None: getattr(value, name, default)
+    try:
+        qualified_name = getter("qualified_name")
+        if not qualified_name:
+            qualified_name = getter("qualifiedName")
+        if not qualified_name:
+            qualified_name = getter("name")
+        source = getter("source")
+        content_digest = getter("content_digest")
+        routing_identity_digest = getter("routing_identity_digest")
+        if not all(
+            isinstance(item, str)
+            for item in (
+                qualified_name,
+                source,
+                content_digest,
+                routing_identity_digest,
+            )
+        ):
+            return None
+        return SkillLoadBinding(
+            qualified_name=qualified_name,
+            source=source,
+            content_digest=content_digest,
+            routing_identity_digest=routing_identity_digest,
+        )
+    except (TypeError, ValueError):
+        return None
+
+
+@dataclass(frozen=True, slots=True)
+class SkillLoadPolicy:
+    """Host-owned authority for loading exact executable Skill versions.
+
+    Inventory fallback is represented by the complete route-time catalog
+    binding set. An empty set blocks every Skill. Name denials are exact
+    qualified identities and always win. ``allow_catalog_scope`` instead
+    states name-level intent over the turn's whole catalog snapshot:
+    ``allowed_bindings`` must stay empty and every catalog binding not
+    explicitly denied is permitted.
+    """
+
+    allowed_bindings: frozenset[SkillLoadBinding] = field(
+        default_factory=frozenset
+    )
+    denied_qualified_names: frozenset[str] = field(default_factory=frozenset)
+    reason_code: str = "inventory-fallback"
+    allow_catalog_scope: bool = False
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.allow_catalog_scope, bool):
+            raise TypeError("allow_catalog_scope must be a bool")
+        if not isinstance(self.allowed_bindings, frozenset) or not all(
+            isinstance(binding, SkillLoadBinding)
+            for binding in self.allowed_bindings
+        ):
+            raise TypeError(
+                "allowed_bindings must be a frozenset of SkillLoadBinding"
+            )
+        if self.allow_catalog_scope and self.allowed_bindings:
+            raise ValueError(
+                "a catalog-scoped policy cannot enumerate allowed_bindings"
+            )
+        if len(self.allowed_bindings) > MAX_SKILL_LOAD_POLICY_BINDINGS:
+            raise ValueError("allowed_bindings exceeds the binding limit")
+        qualified_names = {
+            binding.qualified_name for binding in self.allowed_bindings
+        }
+        if len(qualified_names) != len(self.allowed_bindings):
+            raise ValueError(
+                "allowed_bindings cannot authorize multiple versions of one Skill"
+            )
+        if not isinstance(self.denied_qualified_names, frozenset) or not all(
+            isinstance(name, str)
+            and name == name.strip()
+            and _SKILL_LOAD_POLICY_IDENTITY_RE.fullmatch(name) is not None
+            and ".." not in name
+            for name in self.denied_qualified_names
+        ):
+            raise TypeError(
+                "denied_qualified_names must be safe qualified identities"
+            )
+        if len(self.denied_qualified_names) > MAX_SKILL_LOAD_POLICY_BINDINGS:
+            raise ValueError("denied_qualified_names exceeds the identity limit")
+        if (
+            not isinstance(self.reason_code, str)
+            or _SKILL_LOAD_POLICY_REASON_RE.fullmatch(self.reason_code) is None
+        ):
+            raise ValueError("Skill load policy reason_code is invalid")
+
+    def permits(self, binding: SkillLoadBinding) -> bool:
+        if not isinstance(binding, SkillLoadBinding):
+            return False
+        if binding.qualified_name in self.denied_qualified_names:
+            return False
+        if self.allow_catalog_scope:
+            return True
+        return binding in self.allowed_bindings
+
+
+def intersect_skill_load_policies(
+    parent: SkillLoadPolicy | None,
+    child: SkillLoadPolicy | None,
+) -> SkillLoadPolicy | None:
+    """Compose nested Skill authority without allowing privilege expansion.
+
+    A missing child policy means child routing failed before it could make a
+    decision and always closes Skill loading, even under inventory fallback.
+    """
+    if child is None:
+        return SkillLoadPolicy(
+            allowed_bindings=frozenset(),
+            denied_qualified_names=(
+                parent.denied_qualified_names
+                if isinstance(parent, SkillLoadPolicy)
+                else frozenset()
+            ),
+            reason_code="child-routing-unavailable",
+        )
+    if parent is not None and not isinstance(parent, SkillLoadPolicy):
+        return SkillLoadPolicy(
+            allowed_bindings=frozenset(),
+            reason_code="invalid-parent-policy",
+        )
+    if child is not None and not isinstance(child, SkillLoadPolicy):
+        return SkillLoadPolicy(
+            allowed_bindings=frozenset(),
+            denied_qualified_names=(
+                parent.denied_qualified_names
+                if isinstance(parent, SkillLoadPolicy)
+                else frozenset()
+            ),
+            reason_code="invalid-child-policy",
+        )
+    if parent is None:
+        return child
+
+    # A catalog-scoped side contributes the whole catalog; intersecting with
+    # it therefore keeps the other side's enumerated set (or scope) verbatim.
+    denied = parent.denied_qualified_names | child.denied_qualified_names
+    if parent.allow_catalog_scope and child.allow_catalog_scope:
+        allowed = frozenset()
+        allow_catalog_scope = True
+    elif parent.allow_catalog_scope:
+        allowed = child.allowed_bindings
+        allow_catalog_scope = False
+    elif child.allow_catalog_scope:
+        allowed = parent.allowed_bindings
+        allow_catalog_scope = False
+    else:
+        allowed = parent.allowed_bindings.intersection(child.allowed_bindings)
+        allow_catalog_scope = False
+    if len(denied) > MAX_SKILL_LOAD_POLICY_BINDINGS:
+        return SkillLoadPolicy(
+            allowed_bindings=frozenset(),
+            reason_code="nested-denial-overflow",
+        )
+    return SkillLoadPolicy(
+        allowed_bindings=allowed,
+        denied_qualified_names=denied,
+        reason_code="nested-policy-intersection",
+        allow_catalog_scope=allow_catalog_scope,
+    )
+
+
+def _validated_skill_load_policy_denials(
+    value: object,
+    *,
+    field_name: str,
+ ) -> frozenset[str]:
+    if value is None:
+        raise ValueError(f"{field_name} must be a list")
+    if not isinstance(value, list):
+        raise TypeError(f"{field_name} must be a list")
+    if len(value) > MAX_SKILL_LOAD_POLICY_BINDINGS:
+        raise ValueError(f"{field_name} exceeds the identity limit")
+
+    normalized: set[str] = set()
+    for identity in value:
+        if (
+            not isinstance(identity, str)
+            or identity != identity.strip()
+            or _SKILL_LOAD_POLICY_IDENTITY_RE.fullmatch(identity) is None
+            or ".." in identity
+        ):
+            raise ValueError(f"{field_name} contains an invalid identity")
+        if identity in normalized:
+            raise ValueError(f"{field_name} contains a duplicate identity")
+        normalized.add(identity)
+    return frozenset(normalized)
+
+
+def _skill_load_binding_to_payload(
+    binding: SkillLoadBinding,
+) -> dict[str, str]:
+    return {
+        "qualified_name": binding.qualified_name,
+        "source": binding.source,
+        "content_digest": binding.content_digest,
+        "routing_identity_digest": binding.routing_identity_digest,
+    }
+
+
+def _validated_skill_load_policy_bindings(
+    value: object,
+) -> frozenset[SkillLoadBinding]:
+    if value is None:
+        raise ValueError("allowed_bindings must be a list")
+    if not isinstance(value, list):
+        raise TypeError("allowed_bindings must be a list or null")
+    if len(value) > MAX_SKILL_LOAD_POLICY_BINDINGS:
+        raise ValueError("allowed_bindings exceeds the binding limit")
+    bindings: set[SkillLoadBinding] = set()
+    qualified_names: set[str] = set()
+    for item in value:
+        if (
+            not isinstance(item, dict)
+            or frozenset(item) != _SKILL_LOAD_BINDING_PAYLOAD_FIELDS
+        ):
+            raise ValueError("allowed_bindings contains invalid fields")
+        if not all(
+            isinstance(item[field_name], str)
+            for field_name in _SKILL_LOAD_BINDING_PAYLOAD_FIELDS
+        ):
+            raise TypeError("allowed_bindings fields must be strings")
+        binding = skill_load_binding_from_value(item)
+        if binding is None:
+            raise ValueError("allowed_bindings contains an invalid binding")
+        if binding in bindings:
+            raise ValueError("allowed_bindings contains a duplicate binding")
+        if binding.qualified_name in qualified_names:
+            raise ValueError(
+                "allowed_bindings contains multiple versions of one Skill"
+            )
+        bindings.add(binding)
+        qualified_names.add(binding.qualified_name)
+    return frozenset(bindings)
+
+
+def serialize_skill_load_policy(
+    policy: SkillLoadPolicy | None,
+) -> dict[str, object] | None:
+    """Project a policy into the strict, bounded subprocess JSON contract."""
+    if policy is None:
+        return None
+    if not isinstance(policy, SkillLoadPolicy):
+        raise TypeError("skill load policy must be a SkillLoadPolicy")
+    allowed = [
+        _skill_load_binding_to_payload(binding)
+        for binding in sorted(
+            policy.allowed_bindings,
+            key=lambda item: (
+                item.qualified_name,
+                item.source,
+                item.content_digest,
+                item.routing_identity_digest,
+            ),
+        )
+    ]
+    denied = sorted(policy.denied_qualified_names)
+    _validated_skill_load_policy_bindings(allowed)
+    _validated_skill_load_policy_denials(
+        denied,
+        field_name="denied_qualified_names",
+    )
+    if (
+        not isinstance(policy.reason_code, str)
+        or _SKILL_LOAD_POLICY_REASON_RE.fullmatch(policy.reason_code) is None
+    ):
+        raise ValueError("skill load policy reason_code is invalid")
+    return {
+        "version": _SKILL_LOAD_POLICY_PAYLOAD_VERSION,
+        "allowed_bindings": allowed,
+        "denied_qualified_names": denied,
+        "reason_code": policy.reason_code,
+        "allow_catalog_scope": policy.allow_catalog_scope,
+    }
+
+
+def deserialize_skill_load_policy(payload: object) -> SkillLoadPolicy | None:
+    """Validate and rebuild one policy from the subprocess JSON contract."""
+    if payload is None:
+        return None
+    if not isinstance(payload, dict):
+        raise TypeError("skill load policy payload must be an object or null")
+    fields = frozenset(payload)
+    if fields == _SKILL_LOAD_POLICY_PAYLOAD_FIELDS:
+        expected_version = _SKILL_LOAD_POLICY_PAYLOAD_VERSION
+        allow_catalog_scope = payload.get("allow_catalog_scope")
+        if not isinstance(allow_catalog_scope, bool):
+            raise TypeError("allow_catalog_scope must be a bool")
+    elif fields == _SKILL_LOAD_POLICY_LEGACY_PAYLOAD_FIELDS:
+        # v2 payloads predate catalog scoping; absence defaults to False.
+        expected_version = _SKILL_LOAD_POLICY_LEGACY_PAYLOAD_VERSION
+        allow_catalog_scope = False
+    else:
+        raise ValueError("skill load policy payload fields are invalid")
+    version = payload.get("version")
+    if (
+        not isinstance(version, int)
+        or isinstance(version, bool)
+        or version != expected_version
+    ):
+        raise ValueError("skill load policy payload version is unsupported")
+    allowed = _validated_skill_load_policy_bindings(
+        payload.get("allowed_bindings")
+    )
+    denied = _validated_skill_load_policy_denials(
+        payload.get("denied_qualified_names"),
+        field_name="denied_qualified_names",
+    )
+    reason = payload.get("reason_code")
+    if (
+        not isinstance(reason, str)
+        or _SKILL_LOAD_POLICY_REASON_RE.fullmatch(reason) is None
+    ):
+        raise ValueError("skill load policy reason_code is invalid")
+    return SkillLoadPolicy(
+        allowed_bindings=allowed,
+        denied_qualified_names=denied,
+        reason_code=reason,
+        allow_catalog_scope=allow_catalog_scope,
     )
 
 
@@ -362,6 +768,14 @@ class ToolContext:
         repr=False,
         compare=False,
     )
+    # The subset registered explicitly by the host user (env channel). These
+    # paths are exempt from the verifier's default $HOME untrusted root but
+    # never from the workspace rejection.
+    _verifier_explicit_trusted_executables: dict[str, str] | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
     # Host/UI-owned one-time approval provider for high-risk workflows.
     # Public task JSON and Worker output cannot manufacture this capability.
     _workflow_human_approval_provider: Any | None = field(
@@ -373,6 +787,15 @@ class ToolContext:
     # WorkflowRequest.v1 and the Central Scheduler. Direct tests/legacy
     # embedders may leave this false while migrating.
     _central_workflow_v2_enforced: bool = field(
+        default=False,
+        repr=False,
+        compare=False,
+    )
+    # Explicit non-production waiver: allow a structured workflow to commit
+    # without a persisted commit-ready record. Missing recorders fail closed
+    # unless this is set; the waiver is recorded as commitReadyStatus=waived.
+    # Production hosts never set it; it cannot override the enforced mode.
+    _workflow_commit_audit_waived: bool = field(
         default=False,
         repr=False,
         compare=False,
@@ -412,10 +835,51 @@ class ToolContext:
         repr=False,
         compare=False,
     )
+    # Skill files contain executable model instructions. The canonical router
+    # projects its allow/deny decision into this host-owned field so a model
+    # cannot bypass routing by calling ``load_skill`` with a guessed name.
+    _skill_load_policy: SkillLoadPolicy | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
 
 
 Validator = Callable[[Any], Any]
 Runner = Callable[[Any, ToolContext], ToolResult]
+
+ToolCapabilityDomain = Literal[
+    "file",
+    "code",
+    "search",
+    "web",
+    "system",
+    "memory",
+    "communication",
+    "analysis",
+    "execution",
+    "unknown",
+]
+ToolCapabilityScope = Literal["readonly", "write", "destructive", "external"]
+
+_TOOL_CAPABILITY_DOMAINS = frozenset({
+    "file",
+    "code",
+    "search",
+    "web",
+    "system",
+    "memory",
+    "communication",
+    "analysis",
+    "execution",
+    "unknown",
+})
+_TOOL_CAPABILITY_SCOPES = frozenset({
+    "readonly",
+    "write",
+    "destructive",
+    "external",
+})
 
 
 @dataclass(slots=True)
@@ -432,6 +896,45 @@ class ToolDefinition:
     # can write files and raise permission prompts. Returning False for a
     # given call sends only that call to the serial batch.
     concurrency_safe_for: Callable[[Any], bool] | None = None
+    # Routing-only classification. These values help match Skills to tools;
+    # they never grant execution permission or change mutation safeguards.
+    # Legacy and dynamically discovered tools may leave both values unset and
+    # use CapabilityRegistry's explicitly unverified compatibility fallback.
+    capability_domain: ToolCapabilityDomain | None = None
+    capability_scope: ToolCapabilityScope | None = None
+    capability_profile: CapabilityProfile | None = None
+    capability_for: CapabilityClassifier | None = None
+
+    def __post_init__(self) -> None:
+        if self.capability_profile is not None and not isinstance(
+            self.capability_profile, CapabilityProfile
+        ):
+            raise TypeError("capability_profile must be CapabilityProfile")
+        if self.capability_for is not None and not callable(self.capability_for):
+            raise TypeError("capability_for must be callable")
+        if (self.capability_domain is None) != (self.capability_scope is None):
+            raise ValueError(
+                "capability_domain and capability_scope must be declared together"
+            )
+        if (
+            self.capability_domain is not None
+            and self.capability_domain not in _TOOL_CAPABILITY_DOMAINS
+        ):
+            raise ValueError(f"Unknown capability domain: {self.capability_domain}")
+        if (
+            self.capability_scope is not None
+            and self.capability_scope not in _TOOL_CAPABILITY_SCOPES
+        ):
+            raise ValueError(f"Unknown capability scope: {self.capability_scope}")
+        if (
+            self.capability_profile is not None
+            and self.capability_domain is not None
+            and (
+                self.capability_profile.domain.value != self.capability_domain
+                or self.capability_profile.scope.value != self.capability_scope
+            )
+        ):
+            raise ValueError("capability_profile must match explicit domain/scope")
 
     def call_is_concurrency_safe(self, call_input: Any) -> bool:
         """Whether this specific invocation may run in the concurrent batch."""
@@ -461,14 +964,30 @@ class ToolDefinition:
         return self.is_read_only
 
 
-# Heuristic: tool names that are known to be read-only
+# Heuristic: tool names that are known to be read-only. Only real, currently
+# registered tools belong here — a stale name would silently grant its future
+# namesake concurrent, abandon-on-timeout treatment.
 _READ_ONLY_TOOL_NAMES: frozenset[str] = frozenset({
     "read_file", "list_files", "grep_files", "file_tree",
     "find_symbols", "find_references", "get_ast_info",
-    "code_review", "diff_viewer", "db_explorer",
-    "web_fetch", "web_search", "api_tester",
-    "ask_user", "todo_write",
+    "code_review", "diff_viewer",
+    "web_fetch", "web_search",
+    "browse_skill_directory", "search_skills",
 })
+
+
+RegistryCapabilityProvider = Callable[[], Any]
+RegistryBoundToolFactory = Callable[
+    [RegistryCapabilityProvider],
+    ToolDefinition,
+]
+
+
+@dataclass(frozen=True, slots=True)
+class _RegistrySnapshot:
+    tools: tuple[ToolDefinition, ...]
+    index: Mapping[str, ToolDefinition]
+    skills: tuple[dict[str, Any], ...]
 
 
 class ToolRegistry:
@@ -479,30 +998,178 @@ class ToolRegistry:
         mcp_servers: list[dict[str, Any]] | None = None,
         disposer: Callable[[], Any] | None = None,
         mcp_current_state_registry: McpCurrentStateRegistry | None = None,
+        registry_bound_tool_factories: list[RegistryBoundToolFactory] | None = None,
+        skill_catalog_factory: Callable[
+            [], tuple[list[dict[str, Any]], list[ToolDefinition]]
+        ] | None = None,
     ) -> None:
-        self._tools = tools
-        self._skills = skills or []
-        self._mcp_servers = mcp_servers or []
+        self._skill_catalog_factory = skill_catalog_factory
+        self._mcp_servers = list(mcp_servers or [])
         self._disposer = disposer
         self._mcp_current_state_registry = mcp_current_state_registry
-        # 工具查找缓存 - O(1) 查找代替 O(n) 遍历
-        self._tool_index: dict[str, ToolDefinition] = {t.name: t for t in tools}
+        factories = list(registry_bound_tool_factories or [])
+        self._registry_bound_tool_factories: dict[
+            str,
+            RegistryBoundToolFactory,
+        ] = {}
+        capability_snapshot_holder: dict[str, Any] = {}
+
+        def capability_registry_provider() -> Any:
+            snapshot = capability_snapshot_holder.get("snapshot")
+            if snapshot is None:
+                raise RuntimeError(
+                    "ToolRegistry capability snapshot is not initialized"
+                )
+            return snapshot
+
+        try:
+            bound_tools: list[ToolDefinition] = []
+            existing_names = {tool.name for tool in tools}
+            for factory in factories:
+                tool = factory(capability_registry_provider)
+                if not isinstance(tool, ToolDefinition):
+                    raise TypeError(
+                        "registry-bound tool factory must return ToolDefinition"
+                    )
+                if tool.name in existing_names:
+                    raise ValueError(
+                        f"registry-bound tool duplicates existing tool: {tool.name}"
+                    )
+                existing_names.add(tool.name)
+                bound_tools.append(tool)
+                self._registry_bound_tool_factories[tool.name] = factory
+
+            all_tools = tuple([*tools, *bound_tools])
+            self._snapshot = _RegistrySnapshot(
+                tools=all_tools,
+                index=MappingProxyType({tool.name: tool for tool in all_tools}),
+                skills=tuple(copy.deepcopy(skills or [])),
+            )
+            if factories:
+                # Import lazily to keep the foundational tooling module free of
+                # a module-import cycle. The snapshot is built only after the
+                # final tool collection exists, so every bound tool observes
+                # exactly this registry's surface.
+                from minicode.capability_registry import (
+                    build_tool_capability_snapshot,
+                )
+
+                capability_snapshot_holder["snapshot"] = build_tool_capability_snapshot(
+                    self
+                )
+        except BaseException:
+            # MCP discovery may already have started child processes before
+            # registry-bound tools are assembled. A failed binding must not
+            # strand those resources merely because no registry is returned.
+            if disposer is not None:
+                try:
+                    disposer()
+                except BaseException as cleanup_error:  # noqa: BLE001
+                    _logger.warning(
+                        "ToolRegistry binding cleanup failed: %s",
+                        type(cleanup_error).__name__,
+                    )
+            raise
 
     def list(self) -> list[ToolDefinition]:
-        return list(self._tools)
+        return list(self._snapshot.tools)
 
     def list_all(self) -> list[str]:
-        return list(self._tool_index.keys())
+        return list(self._snapshot.index)
 
     def get_skills(self) -> list[dict[str, Any]]:
-        return list(self._skills)
+        return copy.deepcopy(list(self._snapshot.skills))
 
     def get_mcp_servers(self) -> list[dict[str, Any]]:
         return list(self._mcp_servers)
 
     def find(self, name: str) -> ToolDefinition | None:
         # O(1) lookup via cached index
-        return self._tool_index.get(name)
+        return self._snapshot.index.get(name)
+
+    def refresh_skill_catalog(self) -> bool | None:
+        """Replace Skill discovery tools together, only between owner turns.
+
+        MCP connections and ordinary tools keep their identities. A filtered
+        registry and any previously captured tool keep their original snapshot.
+        The owner must not call this while its agent turn is still running.
+        None means the registry does not own a refreshable Skill catalog.
+        """
+        if self._skill_catalog_factory is None:
+            return None
+        skills, replacements = self._skill_catalog_factory()
+        if skills == list(self._snapshot.skills):
+            return False
+        replacement_index = {tool.name: tool for tool in replacements}
+        if len(replacement_index) != len(replacements) or not set(
+            replacement_index
+        ).issubset(self._snapshot.index):
+            raise ValueError("Skill refresh must replace existing unique tools")
+        # Build and validate the whole replacement before publishing it. Bound
+        # capability tools must capture the new registry's actual tool surface.
+        staged = ToolRegistry(
+            [
+                replacement_index.get(tool.name, tool)
+                for tool in self._snapshot.tools
+                if tool.name not in self._registry_bound_tool_factories
+            ],
+            skills=skills,
+            mcp_servers=self._mcp_servers,
+            mcp_current_state_registry=self._mcp_current_state_registry,
+            registry_bound_tool_factories=list(
+                self._registry_bound_tool_factories.values()
+            ),
+        )
+        self._snapshot = staged._snapshot
+        return True
+
+    def filtered(
+        self,
+        predicate: Callable[[ToolDefinition], bool],
+        *,
+        skills: list[dict[str, Any]] | None = None,
+    ) -> ToolRegistry:
+        """Return a non-owning filtered registry with fresh bound-tool state.
+
+        Registry-bound tools are recreated rather than copied so their
+        capability providers describe the final filtered collection. The
+        returned registry borrows MCP-backed definitions from this registry;
+        this registry remains their lifecycle owner and must outlive it.
+        """
+        selected_tools: list[ToolDefinition] = []
+        selected_factories: list[RegistryBoundToolFactory] = []
+        for tool in self._snapshot.tools:
+            if not predicate(tool):
+                continue
+            factory = self._registry_bound_tool_factories.get(tool.name)
+            if factory is None:
+                selected_tools.append(tool)
+            else:
+                selected_factories.append(factory)
+        return ToolRegistry(
+            selected_tools,
+            skills=self.get_skills() if skills is None else skills,
+            mcp_servers=self._mcp_servers,
+            mcp_current_state_registry=self._mcp_current_state_registry,
+            registry_bound_tool_factories=selected_factories,
+        )
+
+    def describe_capability(
+        self, tool_name: str, arguments: object = _CAPABILITY_ARGUMENTS_UNSET
+    ) -> CapabilityProfile | None:
+        """Inspect static or invocation-specific effects without running a tool."""
+        from minicode.capability_registry import (
+            describe_capability_call,
+            describe_tool_capability,
+        )
+
+        tool = self.find(tool_name)
+        if tool is None:
+            return None
+        profile = describe_tool_capability(tool)
+        if arguments is _CAPABILITY_ARGUMENTS_UNSET:
+            return profile
+        return describe_capability_call(profile, tool.capability_for, arguments)
 
     def execute(self, tool_name: str, input_data: Any, context: ToolContext) -> ToolResult:
         """Execute a tool with comprehensive error protection.
@@ -552,10 +1219,12 @@ class ToolRegistry:
                         is not None
                     ):
                         return ToolResult(ok=False, output=projected)
+                # Raw input can carry file contents or secrets a previous
+                # turn exfiltrated into arguments; echo only the validator's
+                # own message, never the input itself.
                 return ToolResult(
                     ok=False,
-                    output=f"Input validation error in {tool_name}: {ve}\n"
-                           f"Input was: {str(input_data)[:200]}"
+                    output=f"Input validation error in {tool_name}: {ve}",
                 )
             
             # Phase 2: Execution (with crash protection)
@@ -563,7 +1232,25 @@ class ToolRegistry:
                 raise ToolExecutionAbandoned(
                     "owning tool execution was abandoned before execution"
                 )
+            # Classification is descriptive audit output, not a permission or
+            # scheduling gate. Do not let metadata failures replace a tool result.
+            capability_payload = None
+            try:
+                profile = self.describe_capability(tool_name, input_data)
+                if profile is not None:
+                    capability_payload = profile.to_dict()
+            except Exception:  # noqa: BLE001 - preserve completed tool effects
+                _logger.debug("Capability description unavailable for %s", tool_name)
+            # The owner may have abandoned execution while metadata was being
+            # described. Keep this checkpoint adjacent to the real dispatch.
+            abandoned = context._tool_abandoned
+            if abandoned is not None and abandoned.is_set():
+                raise ToolExecutionAbandoned(
+                    "owning tool execution was abandoned before execution"
+                )
             result = tool.run(parsed, context)
+            if capability_payload is not None:
+                result.capability = capability_payload
             if getattr(result, "_must_deliver", False) is True:
                 return result
             
@@ -638,5 +1325,11 @@ class ToolRegistry:
             )
 
     def dispose(self) -> None:
+        # Background shells are process-owned rather than tied to one MCP
+        # client. Every runtime entry point disposes its registry, making this
+        # the shared idempotent application-shutdown boundary.
+        from minicode.background_tasks import shutdown_background_tasks
+
+        shutdown_background_tasks()
         if self._disposer is not None:
             self._disposer()

@@ -1,10 +1,157 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime
 from pathlib import Path
 
 from minicode.memory_retrieval import MEMORY_USE_POLICY
 from minicode.prompt_pipeline import PromptPipeline, read_file_cached
+
+
+def _directory_card_ref(digests: list[str]) -> str:
+    """Short aggregate hash over a directory's child content digests.
+
+    SKILL_DIR.md has no version field; the sorted-digest hash is the stable
+    snapshot identifier quoted on directory cards instead.
+    """
+    payload = "\n".join(sorted(digest for digest in digests if digest))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
+
+
+def _hierarchical_skill_lines(skills: list) -> list[str]:
+    """Directory cards plus fully-described root-level skills."""
+    by_directory: dict[str, dict] = {}
+    root_skills: list[dict] = []
+    for skill in skills:
+        directory = str(skill.get("directory") or "")
+        if directory:
+            card = by_directory.setdefault(
+                directory,
+                {
+                    "description": str(
+                        skill.get("directory_description") or ""
+                    ),
+                    "count": 0,
+                    "digests": [],
+                },
+            )
+            card["count"] += 1
+            card["digests"].append(str(skill.get("content_digest") or ""))
+        else:
+            root_skills.append(skill)
+    lines = ["Available skill directories:"]
+    for directory in sorted(by_directory):
+        card = by_directory[directory]
+        description = f": {card['description']}" if card["description"] else ""
+        lines.append(
+            f"- {directory}{description} "
+            f"({card['count']} skills, ref {_directory_card_ref(card['digests'])})"
+        )
+    if root_skills:
+        lines.extend(["", "Undirectoried skills:"])
+        for skill in root_skills:
+            name = skill.get("qualified_name") or skill.get("name", "")
+            lines.append(f"- {name}: {skill.get('description', '')}")
+    lines.extend(
+        [
+            "",
+            "SKILL USAGE GUIDE:",
+            "- Match skills to the current task stage and the system being worked on. For conditional requests, establish the condition before choosing a later-stage workflow.",
+            "- Call browse_skill_directory with one or several directory names to expand their skill descriptions; batched expansion is allowed.",
+            "- Compare the descriptions of plausible skills before loading. Directory names are organizational hints; related skills may live elsewhere.",
+            "- Call search_skills with a query for cross-directory lexical search over all authorized skills.",
+            "- Both tools return descriptions only; call load_skill with the exact qualified name for the full skill body.",
+            "- An empty page does not prove a directory has no match: paginate with offset or search instead.",
+            "- You may inspect project files to clarify the task, then return to skill discovery. Read an applicable skill before carrying out its specialized workflow.",
+            "- Load the smallest sufficient set of skills. Similar names do not imply the same scope; a later task stage can discover and load more skills.",
+            "- Choosing zero skills is also valid; proceed with normal tools and reasoning.",
+        ]
+    )
+    return lines
+
+
+def _record_catalog_prompt_chars(skill_routing, text: str) -> None:
+    """Make the rendered catalog size observable on the routing result."""
+    if isinstance(skill_routing, dict):
+        skill_routing["catalog_prompt_chars"] = len(text)
+    elif skill_routing is not None:
+        try:
+            skill_routing.catalog_prompt_chars = len(text)
+        except AttributeError:
+            pass
+
+
+def _intent_hint_lines(skill_routing) -> list[str]:
+    """Render the advisory intent-hint block for hierarchical discovery.
+
+    Experiment arm B: everything here is derived from automated intent
+    parsing and is explicitly labeled correctable; the original request in
+    the conversation stays authoritative. Returns [] when no payload exists
+    (flag off, flat mode, or non-dict hints), so output is unchanged.
+    """
+    if isinstance(skill_routing, dict):
+        hints = skill_routing.get("intent_hints")
+    elif skill_routing is not None:
+        hints = getattr(skill_routing, "intent_hints", None)
+    else:
+        hints = None
+    if not isinstance(hints, dict):
+        return []
+
+    lines = [
+        "Task clues (advisory - derived from automated intent parsing, "
+        "may be wrong; the user's original request is authoritative):",
+        "These partial clues may omit task order, conditions, or context. "
+        "They are not an execution plan; resolve the current stage from the original request.",
+    ]
+    stages = hints.get("stages") or []
+    if stages:
+        lines.append("Recognized operations (partial, not ordered stages):")
+        for index, stage in enumerate(stages, 1):
+            if isinstance(stage, dict):
+                operation = str(stage.get("operation") or "")
+                evidence = str(stage.get("evidence") or "")
+            else:
+                operation = str(stage)
+                evidence = ""
+            line = f"  {index}. {operation}"
+            if evidence:
+                line += f' (evidence: "{evidence}")'
+            lines.append(line)
+    entities = [str(entity) for entity in hints.get("entities") or []]
+    if entities:
+        lines.append("Entities: " + ", ".join(entities))
+    constraints = [str(item) for item in hints.get("constraints") or []]
+    if constraints:
+        lines.append("Constraints (explicitly ruled out): " + "; ".join(constraints))
+    suggested = [str(name) for name in hints.get("suggested_directories") or []]
+    if suggested:
+        lines.append("Suggested starting directories: " + ", ".join(suggested))
+    prefetched_directory = str(hints.get("prefetched_directory") or "")
+    prefetched_skills = [
+        str(line) for line in hints.get("prefetched_skills") or []
+    ]
+    prefetched_page = hints.get("prefetched_page")
+    if isinstance(prefetched_page, str) and prefetched_page:
+        # The producer budgets this complete block, including its heading and
+        # pagination marker. Do not add another unbudgeted wrapper here.
+        lines.append(prefetched_page)
+    elif prefetched_directory and prefetched_skills:
+        lines.append(
+            f'Prefetched descriptions for directory "{prefetched_directory}" '
+            "(partial, first page):"
+        )
+        lines.extend(prefetched_skills)
+        if hints.get("prefetch_truncated"):
+            try:
+                next_offset = int(hints.get("prefetch_next_offset"))
+            except (TypeError, ValueError):
+                next_offset = len(prefetched_skills)
+            lines.append(
+                "TRUNCATED: yes - call browse_skill_directory again "
+                f"with offset {next_offset}"
+            )
+    return lines
 
 
 def _maybe_read(path: Path) -> str | None:
@@ -178,12 +325,14 @@ def build_system_prompt(
         "You have access to the 'task' tool which can spawn sub-agents for complex work. Use it when:\n"
         "- You need to explore a large codebase without bloating the main context (agent_type='explore')\n"
         "- You need thorough analysis of a codebase area before acting (agent_type='plan')\n"
-        "- You need production state-changing or multi-step work: use agent_type='workflow' with a complete WorkflowRequest.v1; the central scheduler owns routing, verification, review, and commit\n"
+        "- Small low-risk edits (a few non-sensitive files, bounded diff): edit directly with edit_file/write_file and verify with run_command; the direct-edit budget escalates to the workflow route automatically once exceeded\n"
+        "- Larger, risky, sensitive, or multi-step state-changing work: use agent_type='workflow' with write_paths and verification_commands (the scheduler constructs WorkflowRequest.v1 for you) or an explicit workflow_request; the central scheduler owns routing, verification, review, and commit; narrow fully-verified scopes take the cheap Executor->Verifier route automatically\n"
         "- agent_type='general' is a deprecated legacy-embedder compatibility route and is rejected by the production Agent Loop\n"
+        "- A committed workflow completes that child task; continue any remaining user-requested work, collect owned async results, and summarize without repeating committed changes\n"
         "Do NOT use the task tool for simple lookups — use read_file/grep_files directly.\n"
         "Do NOT use the task tool just to avoid work — use it when it genuinely improves efficiency.\n"
         "Structured workflow roles do not negotiate or exchange free-form notes; they read only scheduler-assigned artifacts and write one exact result artifact. "
-        "The note tools exist only for deprecated legacy routes.\n"
+        "For structured roles the note tools transport only authorized artifacts; independent explore/plan agents may use them for bounded shared notes.\n"
         "\n"
         "Structured response protocol:\n"
         "- When you are still working and will continue with more tool calls, start your text with <progress>.\n"
@@ -191,6 +340,23 @@ def build_system_prompt(
         f"{structured_interaction_rule}\n"
         "- Do not stop after a progress update. After a <progress> message, continue the task in the next step.\n"
         "- Plain assistant text without <progress> is treated as a completed assistant message for this turn.",
+    )
+
+    pipeline.register_static(
+        "coding_verification",
+        "## Coding verification scope\n"
+        "- Start with tests relevant to the changed behavior and the project's applicable lint/type checks. "
+        "Expand verification for a concrete unresolved risk, failure, cross-module impact, or an explicit project/user requirement. "
+        "Honor user-requested full-suite runs; focused checks do not replace them.\n"
+        "- If verification cannot run because dependencies are missing, inspect the project's development dependencies and configured environment first. "
+        "When authorized, make one justified dependency/environment repair and retry the blocked check. "
+        "If repair is unavailable or the retry remains blocked, report that check as unverified with the blocker; continue independent work.\n"
+        "- Do not repeatedly add --ignore, skip tests, or narrow collection merely to obtain a passing result. "
+        "Report any exclusions and their effect on the requested verification scope.\n"
+        "- Once a check passes, do not repeat it without new changes, a relevant environment change, or concrete unresolved evidence that requires another run. "
+        "Choose verification tools and their order to fit the task.\n"
+        "- Before the final answer, summarize completed work, verification evidence (commands, scope, and results), "
+        "and anything incomplete or unverified with its reason. Do not claim full verification from partial checks.",
     )
 
     pipeline.register_static(
@@ -213,20 +379,57 @@ def build_system_prompt(
 
     # Skills section with conditional injection
     skills = extras.get("skills", [])
-    if skills:
-        skill_routing = extras.get("skill_routing")
+    skill_routing = extras.get("skill_routing")
+    if isinstance(skill_routing, dict):
+        routing_prompt_mode = str(skill_routing.get("prompt_mode", ""))
+    else:
+        routing_prompt_mode = str(
+            getattr(skill_routing, "prompt_mode", "") or ""
+        )
+    if routing_prompt_mode == "suppressed":
+        pipeline.register_dynamic(
+            "skills_suppressed",
+            lambda: (
+                "Skill routing is suppressed for this turn by the user's "
+                "explicit instruction. Do not load, infer, or suggest a Skill."
+            ),
+        )
+    elif skills:
         def _build_skills():
             used_fallback = False
             selected_directories = []
+            outcome = ""
             if isinstance(skill_routing, dict):
                 used_fallback = bool(skill_routing.get("used_fallback", False))
                 selected_directories = skill_routing.get("selected_directories", [])
+                outcome = str(skill_routing.get("turn_outcome", ""))
             elif skill_routing is not None:
                 used_fallback = bool(getattr(skill_routing, "used_fallback", False))
                 selected_directories = getattr(skill_routing, "selected_directories", [])
+                outcome = str(getattr(skill_routing, "turn_outcome", ""))
+
+            if routing_prompt_mode == "hierarchical":
+                # Budget escalation of model-first selection: directoried
+                # skills collapse into cards, root-level skills keep full
+                # descriptions, and bodies/descriptions beyond the cards are
+                # discovered via browse_skill_directory/search_skills.
+                lines = _hierarchical_skill_lines(skills)
+                hint_lines = _intent_hint_lines(skill_routing)
+                if hint_lines:
+                    lines.extend(["", *hint_lines])
+                text = "\n".join(lines)
+                _record_catalog_prompt_chars(skill_routing, text)
+                return text
 
             abstained = skill_routing is not None and used_fallback
-            if skill_routing is not None and not used_fallback:
+            clarify = outcome == "clarify"
+            model_catalog = routing_prompt_mode == "model"
+            if model_catalog:
+                # Model-first selection: the whole authorized catalog is
+                # listed with full descriptions and the model itself decides
+                # which skills, if any, to load.
+                lines = ["Available skills:"]
+            elif skill_routing is not None and not used_fallback:
                 if isinstance(skill_routing, dict):
                     intent_type = skill_routing.get("intent_type", "unknown")
                     action_type = skill_routing.get("action_type", "unknown")
@@ -253,6 +456,10 @@ def build_system_prompt(
                             dir_description = getattr(directory, "description", "")
                         lines.append(f"- {dir_name}: {dir_description}")
                 lines.extend(["", "Routed skills:"])
+            elif clarify:
+                lines = [
+                    "Available skills (clarification required; names only):"
+                ]
             elif abstained:
                 # Router abstained: keep a compact name-only inventory so the
                 # model still knows Skills exist, without spending the context
@@ -266,7 +473,9 @@ def build_system_prompt(
                 skill_name = skill.get("qualified_name") or skill.get("name", "")
                 skill_description = skill.get("description", "")
                 tools = skill.get("tools") or []
-                if skill_routing is not None and not used_fallback:
+                if model_catalog:
+                    lines.append(f"- {skill_name}: {skill_description}")
+                elif skill_routing is not None and not used_fallback:
                     lines.append(f"- {skill_name}: {skill_description}")
                     if tools:
                         lines.append("  likely tools: " + ", ".join(str(tool) for tool in tools))
@@ -274,7 +483,26 @@ def build_system_prompt(
                     lines.append(f"- {skill_name}")
                 else:
                     lines.append(f"- {skill_name}: {skill_description}")
-            if skill_routing is not None and not used_fallback:
+            if model_catalog:
+                lines.extend([
+                    "",
+                    "SKILL USAGE GUIDE:",
+                    "- You decide which of the listed skills apply to this task: zero, one, or several.",
+                    "- To use a skill, call load_skill with its exact qualified name before following it.",
+                    "- Multi-stage tasks may load further skills as the work progresses; you do not need to choose them all up front.",
+                    "- For conditional tasks, establish the condition before choosing a later-stage workflow. Inspect project context when needed and load only the smallest sufficient set of applicable skills.",
+                    "- Names not listed above are not available and will be rejected.",
+                    "- If no skill applies, proceed with normal tools and reasoning.",
+                ])
+            elif clarify:
+                lines.extend([
+                    "",
+                    "SKILL USAGE GUIDE:",
+                    "- The requested Skill or referent could not be resolved safely.",
+                    "- Ask one concise clarifying question before choosing or loading a Skill.",
+                    "- Do not silently substitute a different Skill.",
+                ])
+            elif skill_routing is not None and not used_fallback:
                 lines.extend([
                     "",
                     "SKILL USAGE GUIDE:",
@@ -297,7 +525,10 @@ def build_system_prompt(
                     "- If a listed skill matches the task, call load_skill with its name before following it.",
                     "- If none applies, proceed with normal tools and reasoning.",
                 ])
-            return "\n".join(lines)
+            text = "\n".join(lines)
+            if model_catalog:
+                _record_catalog_prompt_chars(skill_routing, text)
+            return text
 
         pipeline.register_dynamic("skills", _build_skills)
     else:
