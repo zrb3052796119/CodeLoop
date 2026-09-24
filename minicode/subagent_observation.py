@@ -21,6 +21,14 @@ from minicode.run_events import emit_event_safely
 SUBAGENT_EVENT_TYPE = "subagent.completed"
 
 _AGENT_TYPES = frozenset({"explore", "plan", "general", "workflow"})
+
+
+def _is_known_agent_type(agent_type: str) -> bool:
+    """Built-in agent types plus valid project-profile type names."""
+    from minicode.subagent_profiles import AGENT_NAME_RE
+
+    return agent_type in _AGENT_TYPES or AGENT_NAME_RE.fullmatch(agent_type) is not None
+
 _OUTCOMES = frozenset(
     {
         "completed",
@@ -125,7 +133,7 @@ def _normalize_v1(payload: Mapping[str, object]) -> dict[str, object] | None:
     result_truncated = payload.get("resultTruncated")
     counts = (model_turns, tool_calls, duration_ms, max_turns)
     if (
-        agent_type not in _AGENT_TYPES
+        not _is_known_agent_type(agent_type)
         or outcome not in _OUTCOMES
         or any(
             isinstance(value, bool)
@@ -241,7 +249,7 @@ def _normalize_v3(payload: Mapping[str, object]) -> dict[str, object] | None:
     if (
         not isinstance(subagent_id, str)
         or _SUBAGENT_ID_RE.fullmatch(subagent_id) is None
-        or agent_type not in _AGENT_TYPES
+        or not _is_known_agent_type(agent_type)
         or outcome not in _OUTCOMES
         or any(
             isinstance(value, bool)
@@ -321,7 +329,7 @@ def _normalize_v4(payload: Mapping[str, object]) -> dict[str, object] | None:
     if (
         not isinstance(subagent_id, str)
         or _SUBAGENT_ID_RE.fullmatch(subagent_id) is None
-        or agent_type not in _AGENT_TYPES
+        or not _is_known_agent_type(agent_type)
         or outcome not in _OUTCOMES
         or any(
             isinstance(value, bool)

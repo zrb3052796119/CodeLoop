@@ -13,6 +13,14 @@ from urllib.parse import urlparse
 
 
 _AGENT_TYPES = frozenset({"explore", "plan", "general"})
+
+
+def _is_known_agent_type(agent_type: str) -> bool:
+    """Built-in agent types plus valid project-profile type names."""
+    from minicode.subagent_profiles import AGENT_NAME_RE
+
+    return agent_type in _AGENT_TYPES or AGENT_NAME_RE.fullmatch(agent_type) is not None
+
 _OPENAI_COMPATIBLE = "openai-compatible"
 
 
@@ -35,7 +43,7 @@ def resolve_subagent_model_route(
 ) -> SubagentModelRoute:
     """Resolve one child route without inheriting a credential implicitly."""
     normalized_type = str(agent_type).strip().lower()
-    if normalized_type not in _AGENT_TYPES:
+    if not _is_known_agent_type(normalized_type):
         raise SubagentModelRoutingError("subagent_type_unsupported")
 
     if not bool(runtime.get("subagentRoutingEnabled", False)):

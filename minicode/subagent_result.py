@@ -18,6 +18,14 @@ SUBAGENT_RESULT_MARKER = "=== SUBAGENT RESULT v1 ==="
 
 _SUBAGENT_ID_RE = re.compile(r"^sub_[0-9a-f]{32}$")
 _AGENT_TYPES = frozenset({"explore", "plan", "general", "workflow"})
+
+
+def _is_known_agent_type(agent_type: str) -> bool:
+    """Built-in agent types plus valid project-profile type names."""
+    from minicode.subagent_profiles import AGENT_NAME_RE
+
+    return agent_type in _AGENT_TYPES or AGENT_NAME_RE.fullmatch(agent_type) is not None
+
 _OUTCOMES = frozenset(
     {"completed", "failed", "depth_rejected", "budget_exceeded"}
 )
@@ -157,7 +165,7 @@ def project_subagent_result(
     """
     if _SUBAGENT_ID_RE.fullmatch(subagent_id) is None:
         raise ValueError("sub-agent id is invalid")
-    if agent_type not in _AGENT_TYPES:
+    if not _is_known_agent_type(agent_type):
         raise ValueError("agent type is invalid")
     if outcome not in _OUTCOMES:
         raise ValueError("sub-agent outcome is invalid")
@@ -209,7 +217,7 @@ def _normalize_projected_result(value: object) -> dict[str, object] | None:
     if (
         not isinstance(identity, str)
         or _SUBAGENT_ID_RE.fullmatch(identity) is None
-        or agent_type not in _AGENT_TYPES
+        or not _is_known_agent_type(agent_type)
         or outcome not in _OUTCOMES
         or contract_status not in {"reported", "fallback", "derived"}
         or not isinstance(partial, bool)

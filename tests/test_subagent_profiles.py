@@ -192,3 +192,64 @@ def test_agent_name_re_shape():
     assert AGENT_NAME_RE.fullmatch("Test") is None
     assert AGENT_NAME_RE.fullmatch("a") is None  # 总长至少 2
     assert AGENT_NAME_RE.fullmatch("bad name") is None
+
+
+# ---------------------------------------------------------------------------
+# Task 2: closed typed contracts accept project-defined agent types
+# ---------------------------------------------------------------------------
+
+
+def test_result_contract_accepts_custom_agent_type():
+    from minicode.subagent_result import project_subagent_result
+
+    result = project_subagent_result(
+        None,
+        subagent_id="sub_" + "1" * 32,
+        agent_type="test-locator",
+        outcome="completed",
+        fallback_summary="found it",
+        partial=False,
+    )
+    assert result["contractStatus"] == "fallback"
+
+
+def test_result_contract_still_rejects_bad_type_names():
+    from minicode.subagent_result import project_subagent_result
+
+    with pytest.raises(ValueError):
+        project_subagent_result(
+            None,
+            subagent_id="sub_" + "1" * 32,
+            agent_type="bad name; drop",
+            outcome="completed",
+            fallback_summary="x",
+            partial=False,
+        )
+
+
+def test_model_routing_inherits_for_custom_type():
+    from minicode.subagent_model_routing import resolve_subagent_model_route
+
+    route = resolve_subagent_model_route(
+        {"model": "parent-model"}, "test-locator"
+    )
+    assert route.provider == "inherit"
+    assert route.model == "parent-model"
+
+
+def test_observation_payload_accepts_custom_agent_type():
+    from minicode.subagent_observation import project_subagent_event
+
+    payload = project_subagent_event(
+        subagent_id="sub_" + "1" * 32,
+        agent_type="test-locator",
+        outcome="completed",
+        model_turns=3,
+        tool_calls=5,
+        duration_ms=1200,
+        max_turns=8,
+        result_contract_status="reported",
+        result_truncated=False,
+    )
+    assert payload is not None
+    assert payload["agentType"] == "test-locator"
