@@ -253,3 +253,87 @@ def test_observation_payload_accepts_custom_agent_type():
     )
     assert payload is not None
     assert payload["agentType"] == "test-locator"
+
+
+# ---------------------------------------------------------------------------
+# Task 3: task dispatch accepts project-defined types
+# ---------------------------------------------------------------------------
+
+_IMPORTS_DONE = False
+
+
+def _dispatch_imports():
+    global _IMPORTS_DONE
+    if not _IMPORTS_DONE:
+        import minicode.tools.task as task_mod
+        from minicode.task_outcome import canonicalize_task_outcome
+        from minicode.tooling import ToolContext
+        from minicode.tools.task import task_tool
+
+        globals()["task_module"] = task_mod
+        globals()["canonicalize_task_outcome"] = canonicalize_task_outcome
+        globals()["ToolContext"] = ToolContext
+        globals()["task_tool"] = task_tool
+        _IMPORTS_DONE = True
+
+
+def test_run_dispatches_custom_profile_type(tmp_path, monkeypatch):
+    _dispatch_imports()
+    _write(tmp_path, "test-locator.md", _VALID_FRONTMATTER)
+    captured: dict = {}
+
+    def fake_run_agent_turn(**kwargs):
+        captured["messages"] = kwargs["messages"]
+        captured["max_steps"] = kwargs["max_steps"]
+        kwargs["outcome_capture"].record(
+            canonicalize_task_outcome("success", 0)
+        )
+        return [{"role": "assistant", "content": "located tests"}]
+
+    monkeypatch.setattr(task_module, "run_agent_turn", fake_run_agent_turn)
+    result = task_tool.run(
+        {
+            "description": "locate tests",
+            "prompt": "find the tests covering billing",
+            "agent_type": "test-locator",
+        },
+        ToolContext(cwd=str(tmp_path), _runtime={"model": "fake"}),
+    )
+    assert result.ok, result.output
+    assert captured["max_steps"] == 8
+    system = captured["messages"][0]["content"].lower()
+    assert "test-locator agent" in system
+
+
+def test_unknown_type_lists_available_and_load_errors(tmp_path):
+    _dispatch_imports()
+    _write(tmp_path, "broken.md", "no frontmatter")
+    result = task_module._run(
+        {"description": "x", "prompt": "y", "agent_type": "ghost"},
+        ToolContext(cwd=str(tmp_path), _runtime={"model": "fake"}),
+    )
+    assert not result.ok
+    assert "ghost" in result.output
+    assert "broken.md" in result.output
+
+
+def test_validate_rejects_malformed_type_name():
+    _dispatch_imports()
+    with pytest.raises(ValueError):
+        task_module._validate(
+            {"description": "x", "prompt": "y", "agent_type": "Bad Name"}
+        )
+
+
+def test_custom_type_is_concurrency_safe_and_read_only():
+    _dispatch_imports()
+    assert task_module._call_is_concurrency_safe(
+        {"agent_type": "test-locator"}
+    )
+    assert not task_module._call_is_concurrency_safe(
+        {"agent_type": "general"}
+    )
+    profile = task_module._capability_for(
+        {"description": "x", "prompt": "y", "agent_type": "test-locator"}
+    )
+    assert profile.effects.read_only is True
