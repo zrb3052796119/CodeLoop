@@ -18,3 +18,10 @@ def test_system_prompt_forbids_duplicating_delegated_search() -> None:
 
     text = build_system_prompt("/tmp", [], {"skills": []})
     assert "do not repeat that search yourself" in text
+
+
+def test_explore_system_prompt_defines_breadth_levels() -> None:
+    text = AGENT_TYPES["explore"]["system_prompt"]
+    assert "very thorough" in text
+    assert "alternate naming" in text
+    assert "medium" in text
