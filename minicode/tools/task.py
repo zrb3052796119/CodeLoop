@@ -2706,9 +2706,18 @@ def _run(input_data: dict, context) -> ToolResult:
             )
             # Real loops emit one model.started/tool.started event per provider
             # or tool call. Keep the message projections only as compatibility
-            # fallbacks for injected test doubles and older alternate loops.
-            model_turns = sub_event_sink.model_turns or message_model_turns
-            tool_calls_count = sub_event_sink.tool_calls or tool_calls_from_messages
+            # fallbacks for injected test doubles and older alternate loops —
+            # and never for continuations: a resumed run's message history
+            # carries the inherited conversation, so the projection would
+            # bill this run for the earlier survey's calls.
+            if prior_messages is not None:
+                model_turns = sub_event_sink.model_turns
+                tool_calls_count = sub_event_sink.tool_calls
+            else:
+                model_turns = sub_event_sink.model_turns or message_model_turns
+                tool_calls_count = (
+                    sub_event_sink.tool_calls or tool_calls_from_messages
+                )
             typed_outcome = outcome_capture.outcome
             if typed_outcome is None or typed_outcome.status != "success":
                 status = (

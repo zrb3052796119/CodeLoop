@@ -116,3 +116,49 @@ def test_journal_still_rejects_invalid_type_names(tmp_path):
             max_turns=8,
             budget=None,
         )
+
+
+# ---------------------------------------------------------------------------
+# Task 2: deterministic continuation-savings benchmark
+# ---------------------------------------------------------------------------
+
+
+def test_continuation_savings_benchmark_produces_report(tmp_path):
+    import importlib
+
+    script = importlib.import_module("scripts.evaluate_continuation_savings")
+    report = script.main(out_root=tmp_path)
+
+    assert report["initial"]["tool_calls"] == 3
+    assert report["initial"]["model_turns"] == 4
+    assert report["continuation"]["tool_calls"] == 0
+    assert report["continuation"]["model_turns"] == 1
+    assert report["fresh"]["tool_calls"] == report["initial"]["tool_calls"]
+    assert report["savingsRatio"]["tool_calls"] > 0.5
+    assert (tmp_path / "report.json").exists()
+
+
+def test_continuation_benchmark_marks_continuation_run(tmp_path):
+    import importlib
+
+    script = importlib.import_module("scripts.evaluate_continuation_savings")
+    events: list[tuple[str, object]] = []
+
+    class RecordingSink:
+        def emit(self, event_type, *, step=None, payload=None):
+            events.append((event_type, payload))
+
+    from minicode.subagent_sessions import SubagentSessionStore
+    from minicode.tooling import ToolContext
+
+    context = ToolContext(
+        cwd=str(script.build_fixture_repo(tmp_path / "repo")),
+        _runtime={"model": "fake"},
+        _event_sink=RecordingSink(),
+        _subagent_sessions=SubagentSessionStore(),
+    )
+    report = script.run_scenario(context)
+    completed = [p for t, p in events if t == "subagent.completed"]
+    versions = [p.get("subagentVersion") for p in completed]
+    assert 5 in versions  # the continuation run carries the v5 marker
+    assert report["continuation"]["is_continuation"] is True

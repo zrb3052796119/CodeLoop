@@ -1,0 +1,25 @@
+{
+  "continuation": {
+    "continued_from": "sub_ce218336c18c40068fbbdeaf0c2542d0",
+    "is_continuation": true,
+    "model_turns": 1,
+    "tool_calls": 0
+  },
+  "fresh": {
+    "is_continuation": false,
+    "model_turns": 4,
+    "tool_calls": 3
+  },
+  "initial": {
+    "is_continuation": false,
+    "model_turns": 4,
+    "tool_calls": 3
+  },
+  "mode": "offline-deterministic",
+  "notes": "model_turns/tool_calls parsed from real task-tool result headers; tokens are not applicable with the scripted model",
+  "savingsRatio": {
+    "model_turns": 0.75,
+    "tool_calls": 1.0
+  },
+  "schemaVersion": 1
+}
