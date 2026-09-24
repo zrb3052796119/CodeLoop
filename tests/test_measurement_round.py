@@ -210,3 +210,45 @@ def test_adoption_analyzer_over_sample_journal(tmp_path):
     assert report["adoptionRate"] == 0.25
     assert report["meanModelTurns"]["continuation"] == 2.0
     assert report["meanModelTurns"]["nonContinuation"] == 7.0
+
+
+# ---------------------------------------------------------------------------
+# Task 4: explore turn-count A/B harness
+# ---------------------------------------------------------------------------
+
+
+def test_explore_turn_ab_scripted_pipeline(tmp_path):
+    import importlib
+
+    harness = importlib.import_module("scripts.run_explore_turn_ab")
+    cases_path = Path(__file__).parent / "fixtures" / "explore_turn_ab_cases.json"
+    out_dir = tmp_path / "report"
+
+    report = harness.main(
+        [
+            "--turns", "2,3",
+            "--cases", str(cases_path),
+            "--limit", "2",
+            "--scripted",
+            "--out", str(out_dir),
+        ]
+    )
+
+    assert sorted(report["configs"]) == ["2", "3"]
+    for turns, config in report["configs"].items():
+        assert len(config["cases"]) == 2
+        summary = config["summary"]
+        for key in (
+            "caseCount",
+            "successRate",
+            "fallbackRate",
+            "partialRate",
+            "meanModelTurns",
+            "meanToolCalls",
+        ):
+            assert key in summary
+    # The scripted explorer needs 3 turns: with a 2-turn cap it must
+    # soft-land as partial; with 3 it succeeds.
+    assert report["configs"]["2"]["summary"]["partialRate"] == 1.0
+    assert report["configs"]["3"]["summary"]["partialRate"] == 0.0
+    assert (out_dir / "report.json").exists()

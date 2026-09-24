@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "description": "Prompts for the explore turn-count A/B harness. Each case is a real exploration ask; the harness runs each under different MINI_CODE_SUBAGENT_EXPLORE_MAX_TURNS values and compares success/partial/fallback rates and cost. Run scripts/run_explore_turn_ab.py --live to spend API quota; --scripted validates the pipeline only.",
+  "cases": [
+    {
+      "id": "map-module",
+      "prompt": "Map the billing module: which files exist, what does each own, and how do they interact? Return the file list with one-line responsibilities."
+    },
+    {
+      "id": "trace-call-flow",
+      "prompt": "Trace how an invoice gets created end to end: from the HTTP entry point through the service layer to persistence. Name every function in the chain."
+    },
+    {
+      "id": "find-config-owners",
+      "prompt": "Find every place application configuration is read or written, and which one is authoritative for the database URL."
+    },
+    {
+      "id": "enumerate-error-handling",
+      "prompt": "Enumerate all custom exception classes and every place they are raised. The complete list, not a sample."
+    },
+    {
+      "id": "test-inventory",
+      "prompt": "Inventory the test suite: which modules have tests, which have none, and where are the integration tests configured?"
+    },
+    {
+      "id": "dependency-surface",
+      "prompt": "Which third-party packages does the web layer depend on directly, and which files import them? List per-package importers."
+    },
+    {
+      "id": "entrypoints-and-cli",
+      "prompt": "List every entry point (CLI commands, scripts, HTTP routes) with the file and function that implements it."
+    },
+    {
+      "id": "concurrency-usage",
+      "prompt": "Find all uses of threads, locks, and async primitives. For each, note what shared state it protects."
+    },
+    {
+      "id": "schema-drift",
+      "prompt": "Compare the persisted record shapes written by the storage layer against the dataclasses that represent them; list every field mismatch."
+    },
+    {
+      "id": "dead-code-candidates",
+      "prompt": "Identify functions defined in the project that no test, script, or module references. Very thorough: check alternate naming conventions before concluding."
+    }
+  ]
+}
