@@ -702,10 +702,14 @@ def _to_anthropic_messages(messages: list[dict[str, Any]]) -> tuple[str, list[di
 
 
 def _apply_prompt_cache_markers(body: dict[str, Any]) -> bool:
-    """Mark the stable system block and the last tool as cache breakpoints.
+    """Mark the stable system block, the last tool, and the conversation
+    tip as cache breakpoints.
 
-    Returns whether anything was marked. The serialized-tool cache is never
-    mutated: the last tool is copied before the marker is attached.
+    Returns whether anything was marked. The serialized-tool cache and the
+    converted messages are never mutated: marked blocks are copies. The
+    message marker rides the LAST content block of the LAST message, so
+    each step of a growing conversation caches its full prefix for the
+    next step to read at cache price.
     """
     marked = False
     system = body.get("system")
@@ -725,6 +729,19 @@ def _apply_prompt_cache_markers(body: dict[str, Any]) -> bool:
             {**tools[-1], "cache_control": {"type": "ephemeral"}},
         ]
         marked = True
+    messages = body.get("messages")
+    if isinstance(messages, list) and messages:
+        last = messages[-1]
+        blocks = last.get("content")
+        if isinstance(blocks, list) and blocks:
+            messages[-1] = {
+                **last,
+                "content": [
+                    *blocks[:-1],
+                    {**blocks[-1], "cache_control": {"type": "ephemeral"}},
+                ],
+            }
+            marked = True
     return marked
 
 
@@ -743,6 +760,30 @@ def _strip_prompt_cache_markers(body: dict[str, Any]) -> None:
             {key: value for key, value in tool.items() if key != "cache_control"}
             for tool in tools
         ]
+    messages = body.get("messages")
+    if isinstance(messages, list):
+        plain_messages: list[dict[str, Any]] = []
+        for message in messages:
+            blocks = message.get("content")
+            if isinstance(blocks, list):
+                plain_messages.append(
+                    {
+                        **message,
+                        "content": [
+                            {
+                                block_key: block_value
+                                for block_key, block_value in block.items()
+                                if block_key != "cache_control"
+                            }
+                            if isinstance(block, dict)
+                            else block
+                            for block in blocks
+                        ],
+                    }
+                )
+            else:
+                plain_messages.append(message)
+        body["messages"] = plain_messages
 
 
 class AnthropicModelAdapter:

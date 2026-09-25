@@ -395,3 +395,165 @@ def test_anthropic_adapter_retries_retryable_http_error(monkeypatch) -> None:
     assert len(attempts) == 2
     assert step.type == "assistant"
     assert step.content == "after retry"
+
+
+# ---------------------------------------------------------------------------
+# Message-level cache breakpoints (growing-conversation caching)
+# ---------------------------------------------------------------------------
+
+
+def _count_markers(body: dict) -> int:
+    count = 0
+    if isinstance(body.get("system"), list):
+        count += sum(
+            1
+            for block in body["system"]
+            if isinstance(block, dict) and "cache_control" in block
+        )
+    for tool in body.get("tools", []):
+        if "cache_control" in tool:
+            count += 1
+    for message in body.get("messages", []):
+        for block in message.get("content", []):
+            if isinstance(block, dict) and "cache_control" in block:
+                count += 1
+    return count
+
+
+def test_message_marker_lands_on_last_block(monkeypatch) -> None:
+    captured: list[dict] = []
+    monkeypatch.setattr(
+        "urllib.request.urlopen",
+        _capturing_urlopen(_END_TURN_PAYLOAD, captured),
+    )
+    adapter = AnthropicModelAdapter(
+        {"model": "claude", "baseUrl": "https://api.anthropic.com", "authToken": "x"},
+        _tool_registry(),
+    )
+
+    adapter.next(
+        [
+            {"role": "system", "content": "sys"},
+            {"role": "user", "content": "hello"},
+            {"role": "assistant", "content": "hi"},
+            {"role": "user", "content": "one more thing"},
+        ]
+    )
+
+    body = captured[0]
+    last_message = body["messages"][-1]
+    assert last_message["content"][-1]["cache_control"] == {"type": "ephemeral"}
+    # Only the final block of the final message carries the marker.
+    flat_blocks = [
+        block
+        for message in body["messages"]
+        for block in message["content"]
+    ]
+    marked = [b for b in flat_blocks if "cache_control" in b]
+    assert len(marked) == 1
+    assert _count_markers(body) == 3  # system + last tool + last message
+
+
+def test_two_step_growth_keeps_prefix_bytes_stable(monkeypatch) -> None:
+    captured: list[dict] = []
+    monkeypatch.setattr(
+        "urllib.request.urlopen",
+        _capturing_urlopen(_END_TURN_PAYLOAD, captured),
+    )
+    adapter = AnthropicModelAdapter(
+        {"model": "claude", "baseUrl": "https://api.anthropic.com", "authToken": "x"},
+        _tool_registry(),
+    )
+
+    first_messages = [
+        {"role": "system", "content": "sys"},
+        {"role": "user", "content": "find the tests"},
+        {"role": "assistant", "content": "looking now"},
+    ]
+    adapter.next(first_messages)
+
+    second_messages = [
+        *first_messages,
+        {"role": "user", "content": "tool result: found 3 files"},
+        {"role": "assistant", "content": "summary ready"},
+    ]
+    adapter.next(second_messages)
+
+    first_body, second_body = captured
+    # Hard prerequisite for a cache hit: the previous request's message
+    # prefix is content-identical inside the next request. cache_control is
+    # breakpoint metadata, not content — the provider excludes it from the
+    # prefix match — so compare with markers stripped.
+    def _strip_markers(messages):
+        return [
+            {
+                **message,
+                "content": [
+                    {
+                        key: value
+                        for key, value in block.items()
+                        if key != "cache_control"
+                    }
+                    for block in message["content"]
+                ],
+            }
+            for message in messages
+        ]
+
+    assert (
+        _strip_markers(second_body["messages"][: len(first_body["messages"])])
+        == _strip_markers(first_body["messages"])
+    )
+    # The marker moved forward to the NEW last message.
+    marked_first = [
+        block
+        for message in first_body["messages"]
+        for block in message["content"]
+        if "cache_control" in block
+    ]
+    marked_second = [
+        block
+        for message in second_body["messages"]
+        for block in message["content"]
+        if "cache_control" in block
+    ]
+    assert marked_first[0]["text"] == "looking now"
+    assert marked_second[0]["text"] == "summary ready"
+
+
+def test_tool_result_last_block_gets_marker(monkeypatch) -> None:
+    captured: list[dict] = []
+    monkeypatch.setattr(
+        "urllib.request.urlopen",
+        _capturing_urlopen(_END_TURN_PAYLOAD, captured),
+    )
+    adapter = AnthropicModelAdapter(
+        {"model": "claude", "baseUrl": "https://api.anthropic.com", "authToken": "x"},
+        _tool_registry(),
+    )
+
+    adapter.next(
+        [
+            {"role": "system", "content": "sys"},
+            {"role": "user", "content": "run it"},
+            {
+                "role": "assistant_tool_call",
+                "toolUseId": "tu-1",
+                "toolName": "read_file",
+                "input": {"path": "a.py"},
+                "content": "",
+                "assistantTurnId": "t1",
+            },
+            {
+                "role": "user_tool_result",
+                "toolUseId": "tu-1",
+                "content": "file body",
+                "isError": False,
+            },
+        ]
+    )
+
+    body = captured[0]
+    last_block = body["messages"][-1]["content"][-1]
+    assert last_block["type"] == "tool_result"
+    assert last_block["cache_control"] == {"type": "ephemeral"}
