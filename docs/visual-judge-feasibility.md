@@ -1,5 +1,20 @@
 # Visual-judge feasibility (2026-09-25 research)
 
+> **Status update (same day, later): IMPLEMENTED.** `inspect_image` shipped
+> (`minicode/tools/inspect_image.py`: magic-number + extension + size +
+> workspace-path validation, network URLs rejected, explicit vision-model
+> configuration with no text-model fallback) and this repository carries a
+> working example profile at `.mini-code/agents/visual-judge.md`.
+> **Live smoke: attempted and blocked by model availability** — the
+> configured DashScope route returned `404: Model not exist` for
+> `qwen-vl-max`, `qwen-vl-plus`, and `qwen2.5-vl-32b-instruct` (three
+> free-of-charge refusals; the tool surfaced each cleanly). Path-boundary
+> and fail-closed behavior were verified live in the same run: an
+> out-of-workspace image was rejected with `error[path_denied]`. **To
+> activate**: add a vision model your DashScope account actually serves,
+> e.g. `"visionModel": "<your-vl-model>"` (or `subagentModels.visual`) in
+> the runtime config, then re-run the smoke snippet from the plan file.
+
 Question: can MiniCode borrow ZCode's "visual judge" pattern — a read-only
 sub-agent that looks at rendered artifacts (chart/dashboard page images,
 exported PDFs) and returns one strict per-page verdict (pass/fail +

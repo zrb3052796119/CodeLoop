@@ -951,6 +951,11 @@
       "scope": "destructive"
     },
     {
+      "name": "browse_skill_directory",
+      "domain": "system",
+      "scope": "readonly"
+    },
+    {
       "name": "code_review",
       "domain": "analysis",
       "scope": "readonly"
@@ -1001,6 +1006,11 @@
       "scope": "readonly"
     },
     {
+      "name": "inspect_image",
+      "domain": "analysis",
+      "scope": "external"
+    },
+    {
       "name": "list_files",
       "domain": "file",
       "scope": "readonly"
@@ -1029,6 +1039,11 @@
       "name": "run_command",
       "domain": "execution",
       "scope": "destructive"
+    },
+    {
+      "name": "search_skills",
+      "domain": "system",
+      "scope": "readonly"
     },
     {
       "name": "subagent_note_list",
@@ -1074,16 +1089,6 @@
       "name": "write_file",
       "domain": "file",
       "scope": "write"
-    },
-    {
-      "name": "browse_skill_directory",
-      "domain": "system",
-      "scope": "readonly"
-    },
-    {
-      "name": "search_skills",
-      "domain": "system",
-      "scope": "readonly"
     }
   ],
   "cases": [
