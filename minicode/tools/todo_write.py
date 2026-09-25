@@ -5,10 +5,12 @@ import time
 
 from minicode.tooling import ToolDefinition, ToolResult
 
-# Process-global compatibility storage. Calls are serialized, but moving this
-# state into a session-owned context remains separate architectural work.
+# Process-global fallback storage for callers that construct a bare
+# ToolContext (embedders, direct script use). Agent loops own a per-loop
+# state dict instead, so a sub-agent's list never clobbered the parent's
+# or a sibling's — see ToolContext._todo_state.
 _tasks = []
-_task_id_counter = 0
+_globals_holder = {"counter": 0}
 _tasks_lock = threading.Lock()
 
 
@@ -28,20 +30,26 @@ def _validate(input_data: dict) -> dict:
 
 
 def _run_locked(input_data: dict, context) -> ToolResult:
-    global _task_id_counter
-
     todos = input_data["todos"]
 
-    # Preserve the previous complete-list snapshot long enough to carry stable
-    # identity and timestamps into the replacement list.
-    previous_tasks = list(_tasks)
-    _tasks.clear()
+    # Loop-scoped state when the caller provides one; the process-global
+    # list remains the fallback for bare-ToolContext calls. Both share the
+    # same replace-the-whole-list semantics.
+    state = getattr(context, "_todo_state", None)
+    if isinstance(state, dict) and isinstance(state.get("tasks"), list):
+        tasks = state["tasks"]
+    else:
+        state = _globals_holder
+        tasks = _tasks
+
+    previous_tasks = list(tasks)
+    tasks.clear()
 
     for todo in todos:
         # Prefer an item already selected into this replacement (deduplicating
         # repeated content), then fall back to the previous snapshot.
         existing = next(
-            (task for task in _tasks if task["content"] == todo["content"]),
+            (task for task in tasks if task["content"] == todo["content"]),
             None,
         )
         if existing is None:
@@ -59,24 +67,23 @@ def _run_locked(input_data: dict, context) -> ToolResult:
             existing["status"] = todo.get("status", existing["status"])
             if todo.get("status") == "completed" and not existing.get("completed_at"):
                 existing["completed_at"] = time.time()
-            if existing not in _tasks:
-                _tasks.append(existing)
+            if existing not in tasks:
+                tasks.append(existing)
         else:
-            # Create new task
-            _task_id_counter += 1
+            state["counter"] = state.get("counter", 0) + 1
             new_task = {
-                "id": _task_id_counter,
+                "id": state["counter"],
                 "content": todo["content"],
                 "status": todo.get("status", "pending"),
                 "created_at": time.time(),
                 "completed_at": time.time() if todo.get("status") == "completed" else None,
             }
-            _tasks.append(new_task)
+            tasks.append(new_task)
 
     # Format output
     lines = ["Task list updated:", ""]
 
-    for task in _tasks:
+    for task in tasks:
         status_icon = {
             "pending": "○",
             "in_progress": "◐",
@@ -88,10 +95,10 @@ def _run_locked(input_data: dict, context) -> ToolResult:
     lines.append("")
 
     # Summary
-    pending = sum(1 for t in _tasks if t["status"] == "pending")
-    in_progress = sum(1 for t in _tasks if t["status"] == "in_progress")
-    completed = sum(1 for t in _tasks if t["status"] == "completed")
-    total = len(_tasks)
+    pending = sum(1 for t in tasks if t["status"] == "pending")
+    in_progress = sum(1 for t in tasks if t["status"] == "in_progress")
+    completed = sum(1 for t in tasks if t["status"] == "completed")
+    total = len(tasks)
 
     lines.extend([
         f"Total: {total} | Pending: {pending} | In Progress: {in_progress} | Completed: {completed}",
@@ -101,9 +108,9 @@ def _run_locked(input_data: dict, context) -> ToolResult:
 
 
 def _run(input_data: dict, context) -> ToolResult:
-    # The tool replaces one process-global list. ToolRegistry now classifies
-    # it as serial, and the lock also protects direct callers or independent
-    # registries from interleaving clear/append operations.
+    # ToolRegistry classifies the tool as serial; the lock also protects
+    # direct callers or independent registries from interleaving
+    # clear/append operations on the fallback list.
     with _tasks_lock:
         return _run_locked(input_data, context)
 

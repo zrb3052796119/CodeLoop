@@ -853,6 +853,15 @@ class ToolContext:
         repr=False,
         compare=False,
     )
+    # Loop-scoped todo list state ({"tasks": [...], "counter": int}).
+    # Each agent loop owns one so a sub-agent's todo_write can never
+    # clobber the parent's or a sibling's list; absence falls back to the
+    # tool's process-global list for bare-ToolContext embedder calls.
+    _todo_state: Any | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
 
 
 Validator = Callable[[Any], Any]

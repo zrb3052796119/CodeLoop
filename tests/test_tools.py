@@ -1010,7 +1010,7 @@ def test_todo_write_preserves_identity_across_complete_list_updates(
     tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(todo_write_module, "_tasks", [])
-    monkeypatch.setattr(todo_write_module, "_task_id_counter", 0)
+    monkeypatch.setattr(todo_write_module, "_globals_holder", {"counter": 0})
     timestamps = iter((10.0, 20.0, 30.0))
     monkeypatch.setattr(todo_write_module.time, "time", lambda: next(timestamps))
     context = ToolContext(cwd=str(tmp_path), permissions=None)

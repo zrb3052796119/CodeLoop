@@ -799,6 +799,7 @@ def _execute_single_tool(
     subagent_mailbox: Any | None = None,
     subagent_lifecycle: Any | None = None,
     subagent_sessions: Any | None = None,
+    todo_state: Any | None = None,
     allow_user_interaction: bool = True,
     deadline_monotonic: float | None = None,
     skill_load_policy: SkillLoadPolicy | None = None,
@@ -886,6 +887,7 @@ def _execute_single_tool(
                     _subagent_mailbox=subagent_mailbox,
                     _subagent_lifecycle=subagent_lifecycle,
                     _subagent_sessions=subagent_sessions,
+                    _todo_state=todo_state,
                     _skill_load_policy=skill_load_policy,
                 ),
             )
@@ -1977,6 +1979,10 @@ def run_agent_turn(
     # read-only sub-agents. Created fresh even when a caller supplied a
     # mailbox because nested loops have no `task` tool to consult it.
     subagent_sessions = SubagentSessionStore()
+    # Loop-scoped todo state: this loop's todo_write target. Sub-agent
+    # loops create their own below at recursion, so a child's list never
+    # touches the parent's.
+    todo_state: dict = {"tasks": [], "counter": 0}
     if budget_exhausted_policy not in {"fallback", "raise"}:
         budget_exhausted_policy = "fallback"
     tool_abandoned = False
@@ -4042,6 +4048,7 @@ def run_agent_turn(
                     subagent_mailbox,
                     subagent_lifecycle,
                     subagent_sessions,
+                    todo_state,
                     allow_user_interaction,
                     deadline_monotonic,
                     skill_load_policy,
@@ -4383,6 +4390,7 @@ def run_agent_turn(
                             subagent_mailbox,
                             subagent_lifecycle,
                             subagent_sessions,
+                            todo_state,
                             allow_user_interaction,
                             deadline_monotonic,
                             skill_load_policy,
