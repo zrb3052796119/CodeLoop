@@ -214,3 +214,52 @@ def test_http_error_surfaces_cleanly(tmp_path, monkeypatch):
     )
     assert not result.ok
     assert "boom" in result.output or "500" in result.output
+
+
+# ---------------------------------------------------------------------------
+# Task 2: whitelist, registration, and the visual-judge profile
+# ---------------------------------------------------------------------------
+
+
+def test_read_only_whitelist_includes_inspect_image():
+    from minicode.subagent_types import READ_ONLY_TOOL_WHITELIST
+
+    assert "inspect_image" in READ_ONLY_TOOL_WHITELIST
+
+
+def test_core_registry_exposes_inspect_image(tmp_path):
+    from minicode.tools import create_default_tool_registry
+
+    registry = create_default_tool_registry(str(tmp_path), include_mcp=False)
+    assert registry.find("inspect_image") is not None
+
+
+def test_visual_judge_profile_loads_from_this_repo():
+    from pathlib import Path
+
+    from minicode.subagent_profiles import load_agent_profiles, resolve_agent_types
+
+    repo_root = Path(__file__).resolve().parents[1]
+    profiles, errors = load_agent_profiles(repo_root)
+    assert errors == []
+    assert "visual-judge" in profiles
+    assert "inspect_image" in profiles["visual-judge"]["allowed_tools"]
+    merged = resolve_agent_types(repo_root)
+    assert merged["visual-judge"]["max_turns"] == 8
+
+
+def test_visual_judge_child_registry_has_vision_tool(tmp_path):
+    from pathlib import Path
+
+    from minicode.subagent_profiles import resolve_agent_types
+    from minicode.tools import create_default_tool_registry
+
+    repo_root = Path(__file__).resolve().parents[1]
+    # A child registry built from THIS repo's definitions exposes the tool
+    # to the judge type exactly as dispatch would.
+    merged = resolve_agent_types(repo_root)
+    allowed = merged["visual-judge"]["allowed_tools"]
+    registry = create_default_tool_registry(str(tmp_path), include_mcp=False)
+    child = registry.filtered(lambda tool: tool.name in allowed)
+    assert child.find("inspect_image") is not None
+    assert child.find("write_file") is None

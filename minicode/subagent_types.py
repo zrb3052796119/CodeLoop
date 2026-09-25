@@ -133,10 +133,14 @@ _MAX_TURNS_ENV_NAMES = {
 _MAX_TURNS_OVERRIDE_CEILING = 200
 
 # The closed universe of tools a project-defined read-only agent profile
-# may reference: the union of the built-in explore and plan tool sets.
-READ_ONLY_TOOL_WHITELIST = frozenset(
-    AGENT_TYPES["explore"]["allowed_tools"]
-) | frozenset(AGENT_TYPES["plan"]["allowed_tools"])
+# may reference: the union of the built-in explore and plan tool sets, plus
+# the read-only vision tool (referenced by judge profiles, not part of the
+# general explorers' default sets).
+READ_ONLY_TOOL_WHITELIST = (
+    frozenset(AGENT_TYPES["explore"]["allowed_tools"])
+    | frozenset(AGENT_TYPES["plan"]["allowed_tools"])
+    | frozenset({"inspect_image"})
+)
 
 
 def _read_max_turns_override(env_name: str) -> str | None:

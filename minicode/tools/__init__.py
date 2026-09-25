@@ -52,6 +52,7 @@ from minicode.tools.subagent_notes import (
 from minicode.tools.task import task_tool
 from minicode.tools.test_runner import test_runner_tool
 from minicode.tools.todo_write import todo_write_tool
+from minicode.tools.inspect_image import inspect_image_tool
 from minicode.tools.web_fetch import web_fetch_tool
 from minicode.tools.web_search import web_search_tool
 from minicode.tools.write_file import write_file_tool
@@ -128,6 +129,8 @@ _CORE_TOOLS = [
     _with_capability(web_search_tool, "search", "external"),
     # Task management
     _with_capability(todo_write_tool, "system", "write"),
+    # Vision (local images via the configured vision model; external call)
+    _with_capability(inspect_image_tool, "analysis", "external"),
     # Sub-agent
     _with_capability(
         task_tool, "execution", "external",

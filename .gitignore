@@ -52,11 +52,15 @@ Thumbs.db
 *.bak
 
 # MiniCode specific. Runtime indexes/version state stay local, while project
-# Skill source is configuration and must survive a clean checkout.
+# Skill source and project agent profiles are configuration and must survive
+# a clean checkout.
 .mini-code/*
 !.mini-code/skills/
 !.mini-code/skills/**
 .mini-code/skills/**/.DS_Store
+!.mini-code/agents/
+!.mini-code/agents/**
+.mini-code/agents/**/.DS_Store
 .minicode-memory-authority.lock
 minicode_session/
 # Project-local / session runtime state is never versioned by design.
