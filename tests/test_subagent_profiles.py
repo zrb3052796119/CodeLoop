@@ -195,6 +195,77 @@ def test_agent_name_re_shape():
 
 
 # ---------------------------------------------------------------------------
+# User-level profile directory (project wins on collision)
+# ---------------------------------------------------------------------------
+
+
+def _write_user(root: Path, name: str, content: str) -> Path:
+    # user_root is the HOME directory: profiles live under
+    # <home>/.mini-code/agents, mirroring the project layout.
+    target = root / ".mini-code" / "agents" / name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(content, encoding="utf-8")
+    return target
+
+
+def test_user_level_profile_loads(tmp_path):
+    user_root = tmp_path / "home"
+    _write_user(user_root, "audit-explorer.md", _VALID_FRONTMATTER.replace(
+        "name: test-locator", "name: audit-explorer"
+    ))
+    loaded, errors = load_agent_profiles(tmp_path, user_root=user_root)
+    assert errors == []
+    assert set(loaded) == {"audit-explorer"}
+    merged = resolve_agent_types(tmp_path, user_root=user_root)
+    assert merged["audit-explorer"]["max_turns"] == 8
+
+
+def test_project_wins_over_user_on_same_name(tmp_path):
+    user_root = tmp_path / "home"
+    _write_user(user_root, "shared-type.md", _VALID_FRONTMATTER.replace(
+        "name: test-locator", "name: shared-type"
+    ).replace("max_turns: 8", "max_turns: 5"))
+    _write(tmp_path, "shared-type.md", _VALID_FRONTMATTER.replace(
+        "name: test-locator", "name: shared-type"
+    ))
+    loaded, errors = load_agent_profiles(tmp_path, user_root=user_root)
+    assert errors == []
+    assert loaded["shared-type"]["max_turns"] == 8  # project value
+
+
+def test_errors_carry_origin_prefix(tmp_path):
+    user_root = tmp_path / "home"
+    _write_user(user_root, "broken.md", "no frontmatter")
+    loaded, errors = load_agent_profiles(tmp_path, user_root=user_root)
+    assert loaded == {}
+    assert len(errors) == 1
+    assert "user:broken.md" in errors[0]
+
+
+def test_both_roots_merge(tmp_path):
+    user_root = tmp_path / "home"
+    _write_user(user_root, "user-type.md", _VALID_FRONTMATTER.replace(
+        "name: test-locator", "name: user-type"
+    ))
+    _write(tmp_path, "project-type.md", _VALID_FRONTMATTER.replace(
+        "name: test-locator", "name: project-type"
+    ))
+    loaded, errors = load_agent_profiles(tmp_path, user_root=user_root)
+    assert errors == []
+    assert set(loaded) == {"user-type", "project-type"}
+
+
+def test_default_user_root_is_home(tmp_path, monkeypatch):
+    monkeypatch.setattr("minicode.subagent_profiles.Path.home", lambda: tmp_path)
+    _write_user(tmp_path, "home-type.md", _VALID_FRONTMATTER.replace(
+        "name: test-locator", "name: home-type"
+    ))
+    loaded, errors = load_agent_profiles(tmp_path)
+    assert errors == []
+    assert set(loaded) == {"home-type"}
+
+
+# ---------------------------------------------------------------------------
 # Task 2: closed typed contracts accept project-defined agent types
 # ---------------------------------------------------------------------------
 

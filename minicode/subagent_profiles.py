@@ -75,20 +75,85 @@ def _directory_signature(directory: Path) -> tuple:
     )
 
 
+def _parse_profile_file(path: Path, origin: str) -> tuple[str, dict]:
+    """Parse and validate one profile file; raises on any malformation.
+
+    Returns the dispatch key (slug name) and the agent-type entry.
+    """
+    fields, body = _parse_frontmatter(path.read_text(encoding="utf-8"))
+    name = fields["name"]
+    if AGENT_NAME_RE.fullmatch(name) is None:
+        raise ValueError(f"invalid agent name {name!r}")
+    if name in RESERVED_AGENT_NAMES:
+        raise ValueError(
+            f"{name!r} is a reserved built-in and cannot be overridden"
+        )
+    tools = frozenset(
+        tool
+        for tool in (
+            token.strip()
+            for token in re.split(r"[,\s]+", fields["allowed_tools"])
+        )
+        if tool
+    )
+    if not tools:
+        raise ValueError("allowed_tools must be non-empty")
+    outside = tools - READ_ONLY_TOOL_WHITELIST
+    if outside:
+        raise ValueError(
+            "tools outside the read-only whitelist: " + ", ".join(sorted(outside))
+        )
+    try:
+        max_turns = int(fields["max_turns"], 10)
+    except ValueError as error:
+        raise ValueError(
+            f"max_turns must be an integer: {fields['max_turns']!r}"
+        ) from error
+    if not 1 <= max_turns <= _MAX_TURNS_CEILING:
+        raise ValueError(f"max_turns must be 1..{_MAX_TURNS_CEILING}")
+    if not body:
+        raise ValueError("system prompt body is empty")
+    description = fields["description"]
+    if not description or len(description) > _MAX_DESCRIPTION_CHARS:
+        raise ValueError(f"description must be 1..{_MAX_DESCRIPTION_CHARS} chars")
+    return (
+        name,
+        {
+            "name": name.replace("-", " ").title(),
+            "description": description,
+            "system_prompt": body,
+            "allowed_tools": tools,
+            "max_turns": max_turns,
+            "source": f"{origin}-profile",
+        },
+    )
+
+
 def load_agent_profiles(
     project_root: str | Path,
+    *,
+    user_root: str | Path | None = None,
 ) -> tuple[dict[str, dict], list[str]]:
-    """Load valid project profiles plus per-file rejection reasons.
+    """Load valid profiles from the project and user directories.
 
-    The result is cached on the directory's (name, mtime_ns, size)
-    signature so a long-running process picks up edits between turns
-    without re-reading unchanged files on every dispatch.
+    Project profiles (``<project>/.mini-code/agents``) win over user
+    profiles (``~/.mini-code/agents``) on a name collision — the closer
+    definition to the code being worked on is authoritative. Results are
+    cached on each directory's (name, mtime_ns, size) signature so a
+    long-running process picks up edits between turns.
     """
-    root = Path(project_root)
-    directory = root.joinpath(*_PROFILE_DIR)
-    if not directory.is_dir():
-        return ({}, [])
-    key = (str(root), _directory_signature(directory))
+    project_dir = Path(project_root).joinpath(*_PROFILE_DIR)
+    user_home = Path(user_root) if user_root is not None else Path.home()
+    user_dir = user_home.joinpath(*_PROFILE_DIR)
+    roots = (
+        (project_dir, "project"),
+        (user_dir, "user"),
+    )
+    signatures = tuple(
+        _directory_signature(directory) if directory.is_dir() else ()
+        for directory, _origin in roots
+    )
+    key = (str(project_dir), str(user_dir), signatures)
     with _cache_lock:
         cached = _cache.get(key)
     if cached is not None:
@@ -96,73 +161,34 @@ def load_agent_profiles(
 
     profiles: dict[str, dict] = {}
     errors: list[str] = []
-    for path in sorted(directory.glob("*.md")):
-        try:
-            fields, body = _parse_frontmatter(path.read_text(encoding="utf-8"))
-            name = fields["name"]
-            if AGENT_NAME_RE.fullmatch(name) is None:
-                raise ValueError(f"invalid agent name {name!r}")
-            if name in RESERVED_AGENT_NAMES:
-                raise ValueError(
-                    f"{name!r} is a reserved built-in and cannot be overridden"
-                )
-            tools = frozenset(
-                tool
-                for tool in (
-                    token.strip()
-                    for token in re.split(r"[,\s]+", fields["allowed_tools"])
-                )
-                if tool
-            )
-            if not tools:
-                raise ValueError("allowed_tools must be non-empty")
-            outside = tools - READ_ONLY_TOOL_WHITELIST
-            if outside:
-                raise ValueError(
-                    "tools outside the read-only whitelist: "
-                    + ", ".join(sorted(outside))
-                )
-            try:
-                max_turns = int(fields["max_turns"], 10)
-            except ValueError as error:
-                raise ValueError(
-                    f"max_turns must be an integer: {fields['max_turns']!r}"
-                ) from error
-            if not 1 <= max_turns <= _MAX_TURNS_CEILING:
-                raise ValueError(
-                    f"max_turns must be 1..{_MAX_TURNS_CEILING}"
-                )
-            if not body:
-                raise ValueError("system prompt body is empty")
-            description = fields["description"]
-            if not description or len(description) > _MAX_DESCRIPTION_CHARS:
-                raise ValueError(
-                    f"description must be 1..{_MAX_DESCRIPTION_CHARS} chars"
-                )
-        except (OSError, ValueError) as error:
-            errors.append(f"{path.name}: {error}")
+    for (directory, origin), _signature in zip(roots, signatures):
+        if not directory.is_dir():
             continue
-        profiles[name] = {
-            "name": name.replace("-", " ").title(),
-            "description": description,
-            "system_prompt": body,
-            "allowed_tools": tools,
-            "max_turns": max_turns,
-            "source": "project-profile",
-        }
+        for path in sorted(directory.glob("*.md")):
+            try:
+                slug, profile = _parse_profile_file(path, origin)
+            except (OSError, ValueError) as error:
+                errors.append(f"{origin}:{path.name}: {error}")
+                continue
+            # Project precedence: an earlier (project) definition wins.
+            profiles.setdefault(slug, profile)
     result = (profiles, errors)
     with _cache_lock:
         _cache[key] = result
     return result
 
 
-def resolve_agent_types(project_root: str | Path) -> dict[str, dict[str, Any]]:
+def resolve_agent_types(
+    project_root: str | Path,
+    *,
+    user_root: str | Path | None = None,
+) -> dict[str, dict[str, Any]]:
     """Built-in agent types merged with this project's valid profiles.
 
     Built-ins are authoritative: reserved names are rejected at load time,
     so the merge can never let a project file shadow a built-in type.
     """
-    profiles, _errors = load_agent_profiles(project_root)
+    profiles, _errors = load_agent_profiles(project_root, user_root=user_root)
     return {**AGENT_TYPES, **profiles}
 
 
