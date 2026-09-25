@@ -263,3 +263,20 @@ def test_visual_judge_child_registry_has_vision_tool(tmp_path):
     child = registry.filtered(lambda tool: tool.name in allowed)
     assert child.find("inspect_image") is not None
     assert child.find("write_file") is None
+
+
+def test_vision_model_from_env_config(monkeypatch, tmp_path):
+    """MINI_CODE_VISION_MODEL flows into the runtime the tool reads."""
+    monkeypatch.setenv("MINI_CODE_VISION_MODEL", "qwen3.8-flash")
+    from minicode.config import load_runtime_config
+
+    runtime = load_runtime_config(str(tmp_path))
+    assert runtime.get("visionModel") == "qwen3.8-flash"
+
+
+def test_vision_model_defaults_to_unset(monkeypatch, tmp_path):
+    monkeypatch.delenv("MINI_CODE_VISION_MODEL", raising=False)
+    from minicode.config import load_runtime_config
+
+    runtime = load_runtime_config(str(tmp_path))
+    assert not runtime.get("visionModel")

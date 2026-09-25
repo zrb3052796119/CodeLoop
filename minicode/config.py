@@ -100,6 +100,7 @@ USER_MODEL_ENV_KEYS = frozenset(
         "MINI_CODE_SUBAGENT_EXPLORE_MAX_TURNS",
         "MINI_CODE_SUBAGENT_PLAN_MAX_TURNS",
         "MINI_CODE_SUBAGENT_GENERAL_MAX_TURNS",
+        "MINI_CODE_VISION_MODEL",
         "MINI_CODE_MEMORY_HYBRID_ENABLED",
         "MINI_CODE_MEMORY_HYBRID_EMBEDDING_PROVIDER",
         "MINI_CODE_ALLOW_REMOTE_MEMORY_EMBEDDING",
@@ -1042,6 +1043,13 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
         ).strip().rstrip("/"),
         "subagentApiKey": subagent_api_key,
         "subagentModels": subagent_models,
+        # Explicit vision model for inspect_image; unset means the tool
+        # fails closed rather than sending images to a text model.
+        "visionModel": str(
+            subagent_env_value("MINI_CODE_VISION_MODEL")
+            or subagent_settings.get("visionModel")
+            or ""
+        ).strip() or None,
         "memoryHybridEnabled": _as_bool(enabled_value),
         "memoryHybridEmbeddingProvider": memory_hybrid_embedding_provider,
         "allowRemoteMemoryEmbedding": _as_bool(

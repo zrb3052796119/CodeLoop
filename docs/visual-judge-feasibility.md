@@ -1,19 +1,23 @@
 # Visual-judge feasibility (2026-09-25 research)
 
-> **Status update (same day, later): IMPLEMENTED.** `inspect_image` shipped
+> **Status: SHIPPED AND LIVE-VERIFIED.** `inspect_image` shipped
 > (`minicode/tools/inspect_image.py`: magic-number + extension + size +
 > workspace-path validation, network URLs rejected, explicit vision-model
 > configuration with no text-model fallback) and this repository carries a
 > working example profile at `.mini-code/agents/visual-judge.md`.
-> **Live smoke: attempted and blocked by model availability** — the
-> configured DashScope route returned `404: Model not exist` for
-> `qwen-vl-max`, `qwen-vl-plus`, and `qwen2.5-vl-32b-instruct` (three
-> free-of-charge refusals; the tool surfaced each cleanly). Path-boundary
-> and fail-closed behavior were verified live in the same run: an
-> out-of-workspace image was rejected with `error[path_denied]`. **To
-> activate**: add a vision model your DashScope account actually serves,
-> e.g. `"visionModel": "<your-vl-model>"` (or `subagentModels.visual`) in
-> the runtime config, then re-run the smoke snippet from the plan file.
+> **Live verification (2026-09-25, final)**: with
+> `MINI_CODE_VISION_MODEL=qwen3.8-flash` persisted in the user config
+> (plumbed through `load_runtime_config` as runtime `visionModel`), the
+> full chain — real config → tool → DashScope vision call — answered
+> correctly on a generated test image ("A red circle.", 190 vision
+> tokens). Earlier refusals (`qwen-vl-max`/`qwen-vl-plus`/
+> `qwen2.5-vl-32b-instruct` → 404 "Model not exist") were account
+> availability, not tool defects; out-of-workspace images are rejected
+> with `error[path_denied]` (verified live).
+>
+> Configuration: set `MINI_CODE_VISION_MODEL` (env or `~/.mini-code/.env`)
+> or `subagentModels.visual` to a vision-capable model your route serves;
+> endpoint/credentials reuse the sub-agent route fields.
 
 Question: can MiniCode borrow ZCode's "visual judge" pattern — a read-only
 sub-agent that looks at rendered artifacts (chart/dashboard page images,
