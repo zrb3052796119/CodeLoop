@@ -4,12 +4,19 @@ A project can define additional read-only sub-agent types without touching
 code. One Markdown file per type: a closed-key frontmatter block declares
 the metadata, and the body becomes that type's system prompt.
 
+Profiles load from **two roots**: the project
+(`<project>/.mini-code/agents`, authoritative) and the user
+(`~/.mini-code/agents`, personal types available in every project). On a
+name collision the project definition wins — the definition closer to the
+code being worked on is the one that applies. Load errors carry an origin
+prefix (`project:…` / `user:…`).
+
 ```
 ---
 name: test-locator
 description: Locate failing tests and their fixtures.
 max_turns: 8
-allowed_tools: read_file, list_files, grep_files, find_symbols
+allowed_tools: read_file, list_files, grep_files, find_symbols, todo_write
 ---
 You are a test-locator agent. Find the test and fixture paths for a
 reported failure and return them with the exact symbols to run.
@@ -26,7 +33,7 @@ the project root at call time, so edits apply between turns.
 | `name` | `^[a-z][a-z0-9-]{1,31}$`; must not be a reserved built-in |
 | `description` | 1–400 chars; shown in the task tool's type menu |
 | `max_turns` | integer 1–200 |
-| `allowed_tools` | non-empty subset of the read-only whitelist (explore ∪ plan tool set), comma/space separated |
+| `allowed_tools` | non-empty subset of the read-only whitelist (explore ∪ plan tool set, including `todo_write`), comma/space separated |
 | body | non-empty; becomes the system prompt |
 
 Reserved built-ins — `explore`, `plan`, `general`, `workflow` — **cannot be
