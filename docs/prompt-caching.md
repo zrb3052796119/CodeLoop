@@ -2,23 +2,29 @@
 
 ## What ships
 
-`AnthropicModelAdapter` now sends Anthropic-style prompt-cache breakpoints on
-the two blocks that are resent on every model call of a turn and never
-change within it:
+`AnthropicModelAdapter` sends Anthropic-style prompt-cache breakpoints on
+the three blocks that dominate a growing turn:
 
-1. the **system prompt** — sent as a single text block with
-   `cache_control: {"type": "ephemeral"}`;
+1. the **system prompt** — one text block with `cache_control: ephemeral`;
 2. the **tool catalog** — the last serialized tool carries the marker (the
-   provider caches the prefix up to a breakpoint, so one marker on the last
-   tool covers system + all tools).
+   provider caches the prefix up to a breakpoint, so one marker covers
+   system + all tools);
+3. the **conversation tip** — the last content block of the last message.
+   Each step of a multi-step run caches its full conversation prefix; the
+   next step (whose history grew by one exchange) reads that prefix at
+   cache price and only pays full input for the new tail. The longer the
+   task, the bigger the saving — this is the breakpoint that matters for
+   8–12-step explore runs.
 
-Within one agent turn (parent or sub-agent), every step re-sends both
-blocks; from the second step on, the provider serves them from cache at the
-cache-read price instead of full input price. The receive side was already
-in place — `ModelUsage.cache_read_tokens` /
-`cache_creation_tokens` are parsed from provider usage, flow onto
-`AgentStep.usage`, and `cost_tracker` already has per-model cache-read
-pricing tiers. Only the send side was missing.
+In plain terms: without message breakpoints, an N-step run re-pays full
+input price for its history N times. With them, step k reads steps
+1..k-1's prefix at the (much cheaper) cache-read rate.
+
+Total markers per request: 3 of the provider's 4 allowed — headroom kept.
+The receive side was already in place (`ModelUsage.cache_read_tokens` /
+`cache_creation_tokens` flow onto `AgentStep.usage`; `cost_tracker` has
+per-model cache-read tiers). Marker placement never mutates the
+serialized-tool cache or the converted messages (blocks are copied).
 
 ## Verified support
 
@@ -45,17 +51,17 @@ to the plain body once.
 
 Provider usage fields arrive on every step: `usage.cache_read_tokens` /
 `usage.cache_creation_tokens` on the `AgentStep`, reflected in token
-attribution and the cost tracker's cache-read tiers. A live session shows
-cache reads > 0 from the second model call of a turn onward.
+attribution and the cost tracker's cache-read tiers. In a live multi-step
+run, `cache_read_tokens` should dominate `input_tokens` from the second
+model call onward.
 
 ## Not in this round (deliberate)
 
-- **Message-level breakpoints** (conversation-prefix caching): needs a
-  moving breakpoint policy on the message list; system+tools are the
-  stable bulk, conversation caching is the next increment.
 - **OpenAI adapter**: the configured Aliyun v1 gateway does not support
   prompt caching; revisit if the route changes.
 - **Sub-agent prompt cross-sibling reordering**: sibling sub-agents embed
   task-specific routing in their system prompts, so their systems differ
   by design; within one sub-agent's own multi-step run the system is
-  constant and already benefits from the system breakpoint.
+  constant and the message breakpoint covers the growing history.
+- **Prefix-stability telemetry**: a live-run report of cache hit rates;
+  observable now via usage fields, worth a dashboard later.
