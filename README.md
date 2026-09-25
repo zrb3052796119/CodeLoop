@@ -73,7 +73,7 @@ First, the contract surface for the four tracks and their support layer:
 
 | System evidence | Result | What it does—and does not—show |
 | --- | ---: | --- |
-| [Repository regression suite](./.github/workflows/ci.yml) | **4,482 passed, 2 skipped** | Local Python 3.12 release run on 2026-08-25; protects implemented behavior, not general agent intelligence. CI reruns the suite on a 3-OS × 2-Python matrix after push. |
+| [Repository regression suite](./.github/workflows/ci.yml) | **10,440 passed, 2 skipped** | Local Python 3.13 release run on 2026-09-25; protects implemented behavior, not general agent intelligence. CI reruns the suite on a 3-OS × 2-Python matrix after push. |
 | [Skill-routing gate](./docs/agent-quality-gates.md) | **60/60 legacy; 96/96 joined routing decisions** | The joined production-shaped development set also records 84/96 full cases; its 12 residuals are intent/context labels, not Skill decisions. Both are offline with `remoteCallCount=0`, not live Qwen, a blind production holdout, or an external benchmark. |
 | [Repeated-compaction gate](./docs/agent-quality-gates.md) | **12/12 gate + 60/60 stress** | Forced one-to-five-round cases cover summary chains, rejected approaches, the task ledger, latest instruction, loaded Skill, and tool turns across four history scales and three marker layouts. Proves the frozen contract, not zero drift in every long conversation. |
 | [Paired context-compaction study](./docs/context-compaction-experiment-study.md) | **12/12 pairs complete; 24 cases** | Canonical/control provider input tokens were 4,288,270 vs 6,011,480 (**-28.7% aggregate; 22.7% median paired**, exact `p=0.00537`). Strict success was 9/12 vs 10/12 because five cases hit remote `IncompleteRead`; all executable tests and protected markers still passed. This supports token efficiency, not a quality-neutrality claim. |
@@ -138,7 +138,7 @@ flowchart LR
     Obs --> Loop
 
     Loop --> TaskAPI["Task API"]
-    TaskAPI --> Children["explore / plan / general / workflow"]
+    TaskAPI --> Children["explore / plan / project profiles / workflow"]
     RoleRoute["Per-role model route"] --> Children
     Children --> Result["Structured result + subagentId"]
     Result --> Loop
@@ -231,43 +231,61 @@ and [quality-gate contract](./docs/agent-quality-gates.md).
 
 ### 3. Bounded multi-agent collaboration
 
-Production supports three task entry points and retains one legacy entry:
+Delegation starts from the task tool's own description, which carries the
+working heuristics: delegate when answering means reading across several
+files; search directly for a single known fact; never repeat a search you
+already delegated; every prompt must be self-contained. Read-only agents
+accept a caller-stated breadth (`medium` / `very thorough`) and adapt their
+sweep accordingly.
 
-| Role | Typical work | Lifecycle |
+The measured routing ladder (each tier benchmark-verified) escalates with
+risk, not habit: small low-risk edits go through the parent's fast-edit
+path (zero agents, bounded per-diff/per-turn budgets), scoped verified
+changes take a 2-agent Executor→Verifier route, and anything larger,
+riskier, or multi-step enters the full Analyst→Executor→Reviewer chain —
+with an Adjudicator on conflicting reviews and a 3-way parallel explore
+fan-out when breadth demands it. Escalation from the fast-edit path is
+automatic once its budgets are exceeded.
+
+| Entry point | Typical work | Lifecycle |
 | --- | --- | --- |
-| `explore` | Read-only repository discovery | May run asynchronously with `spawn` / `poll` / `cancel`. |
-| `plan` | Read-only analysis and implementation planning | May run asynchronously with the same lifecycle. |
-| `workflow` | Schedules Analyst, Executor, Reviewer, and Adjudicator as needed | Synchronous orchestration and verification; the parent continues remaining work after promotion. |
-| `general` | Legacy embedder compatibility and the Executor's underlying model route | Direct delegation is rejected by the production Agent Loop. |
+| `explore` | Read-only repository discovery; parallel-safe | May run asynchronously with `spawn` / `poll` / `cancel`; several issued in one step run concurrently. |
+| `plan` | Read-only analysis and design | Same async lifecycle. |
+| Project profiles | Additional read-only specialists defined as data — `.mini-code/agents/*.md` | Loaded fail-closed (reserved built-in names cannot be overridden, tools restricted to the read-only whitelist); synchronous only. |
+| `workflow` | Schedules Analyst, Executor, Reviewer, and Adjudicator as needed | Synchronous orchestration, deterministic verification, isolated snapshot workspace; the parent continues remaining work after promotion. |
+| `general` | Legacy embedder compatibility; the Executor's underlying model route | Direct delegation is rejected by the production Agent Loop. |
 
-The host binds role permissions and access to frozen evidence. A successful
-workflow returns control to the parent to finish remaining tasks and synthesize
-asynchronous results. Cancellation, deadlines, or model failure during that
-continuation preserve committed receipts and report incomplete remaining work.
-Promotion rechecks the complete parent snapshot under a cross-process lock;
-candidates with changed dependencies must rerun. Synchronous `run` and
-asynchronous `spawn` share a read-only delegation circuit breaker that stops
-further delegation after two consecutive failures in a turn.
+Guardrails stay deterministic: role permissions bind to frozen evidence,
+promotion rechecks the parent snapshot under a cross-process lock, one
+implementation repair by default (host policy 0–2), and a read-only
+delegation circuit breaker stops further delegation after two consecutive
+failures in a turn. Every child shares the parent turn budget; write-capable
+`general` runs in a killable subprocess with budget leases.
 
-Structured change workflows allow one implementation repair by default; host
-policy can set a limit of zero to two. Only completed failing checks or eligible
-Reviewer change requests return to the Executor. A revised patch must pass fresh
-verification and any required review. Each revision retains its own evidence
-and revokes the previous patch's promotion capability. Permission gates, human
-confirmation, infrastructure failures, and insufficient evidence still stop
-the workflow. Repairs share the original budget and deadline.
+Results come back as a typed `summary / files / risks / verification`
+envelope with a stable `subagentId`. Because live models sometimes finish
+without submitting the typed note, the tool enforces it: an imperative
+instruction up front, then one bounded closing reminder (≤2 steps) that
+recovers the note; the result header states verbatim whether the contract
+was reported, recovered, or refused. Telemetry stays content-free —
+journal and completion events carry counts, ids, and closed enums only.
 
-Every child shares the parent turn budget. General results use a structured
-`summary / files / risks / verification` envelope and completion events carry
-a stable `subagentId`. Cancellation is cooperative: it stops queued/future
-work, but it cannot forcibly kill a Python thread already blocked inside a
-provider socket call.
+**Continuation**: a finished read-only run can be resumed with
+`continue_subagent_id` instead of re-exploring. The deterministic
+benchmark measures the follow-up saving at **100% of tool calls and 75% of
+model turns** versus a fresh run; adoption is measurable from journals
+(content-free marker, `scripts/analyze_continuation_adoption.py`). See
+[sub-agent continuation](./docs/subagent-continuation.md) and
+[project agent profiles](./docs/subagent-profiles.md).
 
-An optional dedicated OpenAI-compatible route can send child roles to a
-lighter model such as `qwen3.6-flash` while the parent keeps the primary model.
-That model name is an illustrative configuration, not the route covered by the
-checked-in live acceptance, which used `qwen3.7-plus` and `qwen3.7-max`.
-See [sub-agent model routing](./docs/subagent-model-routing.md).
+The default explore turn ceiling (12) was kept after a live 8-vs-12 A/B:
+two frozen cases genuinely needed 9 turns, and most finish in 5–6 either
+way (`docs/measurement-round.md`). An optional dedicated
+OpenAI-compatible route sends child roles to a lighter model while the
+parent keeps the primary model ([sub-agent model routing](./docs/subagent-model-routing.md));
+the Anthropic adapter adds three prompt-cache breakpoints (system, tool
+catalog, conversation tip) with a kill-switch and a marker-free fallback
+retry ([prompt caching](./docs/prompt-caching.md)).
 
 ### 4. Persistent lessons with a real evidence chain
 

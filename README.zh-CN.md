@@ -96,7 +96,7 @@ task/子 Agent 工具。这些不能被描述成 CodeLoop 从零新增的模块�
 | --- | --- | --- |
 | Skill 多层路由 | 在基线已有目录/Skill 确定性评分器之上，新增上下文复合操作、operation×topic 车道、真正弃权/澄清、双语意图与 alias、可选 Qwen/OpenAI-compatible embedding、严格显式点名语法、候选幅度门、digest 绑定加载，以及只对已独立准入候选生效的跨 Run 有界重排。 | 冻结的 60 例 router 门禁 + 96 例 parse-to-prompt joined 开发集，以及 semantic cache/degradation、权限、digest loader 和 evidence tests。 |
 | 上下文保真 | summary-of-summary 摘要链；保存目标/显式约束/typed fact/失败码的压缩免疫账本；原子 provider 工具轮次、usage 校准、未变化状态重试身份；让强制路径遵守基线已有熔断器。 | 重复压缩门禁和大文件回放。 |
-| 多 Agent Runtime | 面向只读 `explore/plan` 的异步 `spawn` / `poll` / `cancel`、结构化结果、`subagentId` 日志 join、共享 Turn 预算、deadline 与按角色模型路由。 | 生命周期、取消、结果协议、路由、日志与预算测试。 |
+| 多 Agent Runtime | 面向只读 `explore/plan` 的异步 `spawn` / `poll` / `cancel`、结构化结果与收尾提醒挽回、`subagentId` 日志 join、`continue_subagent_id` 续聊（追问省 100% 工具调用/75% 模型轮数，采用率可从无内容标记统计）、`.mini-code/agents/*.md` 项目自定义只读类型、共享 Turn 预算、deadline、按角色模型路由与三断点提示缓存。 | 生命周期、取消、结果协议（含 v5 续聊标记）、续聊/Profile/缓存单测、路由、日志与预算测试，以及 live 8v12 与契约遵从对比报告。 |
 | 持久化经验 | 在基线已有存储、通用恢复合成、sanitizer、审批、词法检索/重排、内容哈希和渲染反馈之上，强化 corroborated/idempotent 反馈、隔离与投影卫生、操作恢复、canonical Hybrid 检索和验收归因。 | warm/cold 配对实验、V1–V5 确定性合同（V5 live/provider 运行待执行）和 Memory 回归矩阵。 |
 | 横向工程支撑（非第五条能力主线） | 在基线已有 3 OS × 2 Python CI、CLI/TUI/Dashboard 和权限流上，增加全局凭据边界、隐私安全失败投影、确定性质量档位、冻结 manifest、外部 oracle，并持续修复 Windows/并发/期限问题。 | CI、本地全量验证、clean-checkout 和 live 路由检查。 |
 
@@ -123,7 +123,7 @@ flowchart LR
     Obs --> Loop
 
     Loop --> TaskAPI["Task API"]
-    TaskAPI --> Children["explore / plan / general / workflow"]
+    TaskAPI --> Children["explore / plan / 项目自定义 / workflow"]
     RoleRoute["按角色模型路由"] --> Children
     Children --> Result["结构化结果 + subagentId"]
     Result --> Loop
@@ -189,34 +189,48 @@ CodeLoop 使用一条 canonical 压缩路径。它不会拆开 provider 原生�
 
 ### 3. 有边界的多 Agent 协作
 
-生产环境支持三个 task 入口，并保留一个旧版兼容入口：
+委派的判断依据写在 task 工具自身的描述里：回答需要跨多个文件阅读才委派；
+已知道位置的单点查询直接搜；委派过的搜索不要自己重复做；每次委派的
+prompt 必须自包含。只读 Agent 接受调用方声明的广度档位（`medium` /
+`very thorough`）并据此调整搜索范围。
 
-| 角色 | 典型工作 | 生命周期 |
+路由阶梯按风险而非习惯升级（每一档都有基准数据背书）：小而低风险的修改走
+父 Agent 快速直改路径（零子 Agent，每 diff / 每 turn 有界预算）；范围明确的
+可验证修改走 2-Agent 的 Executor→Verifier 路线；更大、更敏感或多步的改动
+进入完整 Analyst→Executor→Reviewer 链——评审冲突时加 Adjudicator，
+需要广度时加三路并行 explore。直改预算一旦超限，自动升级到 workflow 路线。
+
+| 入口 | 典型工作 | 生命周期 |
 | --- | --- | --- |
-| `explore` | 只读探索仓库 | 可通过 `spawn` / `poll` / `cancel` 异步运行。 |
-| `plan` | 只读分析与实现计划 | 可使用同一套异步生命周期。 |
-| `workflow` | 按需调度 Analyst、Executor、Reviewer、Adjudicator | 同步运行确定性调度和验证；通过后回写，父 Agent 继续剩余工作与结果汇总。 |
-| `general` | 旧版嵌入调用兼容；也是 Executor 的底层模型路由 | 生产主循环拒绝直接委派。 |
+| `explore` | 只读探索仓库；可并行 | 可通过 `spawn` / `poll` / `cancel` 异步运行；同一步发出的多个并行执行。 |
+| `plan` | 只读分析与设计 | 同一套异步生命周期。 |
+| 项目自定义类型 | 用数据定义的额外只读专家——`.mini-code/agents/*.md` | fail-closed 加载（保留名不可覆盖、工具限定只读白名单）；仅同步运行。 |
+| `workflow` | 按需调度 Analyst、Executor、Reviewer、Adjudicator | 同步编排、确定性验证、隔离快照工作区；通过后回写，父 Agent 继续剩余工作。 |
+| `general` | 旧版嵌入兼容；Executor 的底层模型路由 | 生产主循环拒绝直接委派。 |
 
-Workflow 的角色权限和证据读取由宿主绑定；裁决者只能读取明确授权的路径和冻结证据。
-成功回写不代表整个用户目标完成，父 Agent 仍须处理剩余任务和异步结果；后续取消、
-超时或模型失败会保留提交回执，并说明剩余工作未完成。
-并发候选晋升时会在跨进程锁内复核完整父工作区基线，依赖已变化的候选必须重新执行。
-同步 `run` 和异步 `spawn` 共享只读委派失败熔断；两次连续失败后，本轮停止继续委派。
+护栏保持确定性：角色权限绑定冻结证据，晋升在跨进程锁内复核父工作区基线，
+默认允许一次实现修复（宿主可设 0–2 次），只读委派连续失败两次即熔断本轮
+委派。每个子 Agent 与父 Agent 共享同一份 Turn 预算；可写的 `general`
+跑在可强杀的子进程里并持有预算租约。
 
-结构化写入流程默认允许一次实现修复，宿主策略可设为 0–2 次。只有已完成的检查失败
-或满足条件的 Reviewer 修改意见才会回到 Executor；新补丁必须重新经过验证和所需审查。
-每轮保留独立证据，并撤销旧补丁的回写资格。权限、人工确认、基础设施故障和证据不足
-仍会停止流程；所有修复继续消耗同一份预算并服从原截止时间。
+结果以 `summary / files / risks / verification` 类型化信封返回，携带稳定的
+`subagentId`。针对真实模型偶尔不交回执的问题，工具会强制执行：前置强制性
+指令 + 一次有界收尾提醒（≤2 步）挽回回执，结果头部逐字标注契约是已上报、
+已挽回还是被拒绝。遥测保持无内容——journal 与完成事件只携带计数、id 和
+封闭枚举。
 
-每个子 Agent 与父 Agent 共享同一份 Turn 预算。通用结果使用
-`summary / files / risks / verification` 结构，完成事件携带稳定
-`subagentId`，便于日志、结果和父任务三方 join。取消是协作式的：它能阻止排队中和后续工作，但不能强杀一个已经阻塞在 provider socket 内的 Python 线程。
+**续聊**：已完成的只读运行可用 `continue_subagent_id` 恢复会话继续追问，
+无需重新探索。确定性基准测得追问环节节省 **100% 工具调用、75% 模型轮数**；
+采用率可从 journal 统计（无内容标记 + `scripts/analyze_continuation_adoption.py`）。
+详见[子 Agent 续聊](./docs/subagent-continuation.md)与
+[项目 Agent Profile](./docs/subagent-profiles.md)。
 
-可选的 OpenAI-compatible 独立路由可以让子 Agent 使用 `qwen3.6-flash`
-等轻量模型，同时父 Agent 保留更强主模型。该名称是配置示例；仓库公开的 live
-验收覆盖的是 `qwen3.7-plus` 与 `qwen3.7-max`，不是这个示例。详见
-[子 Agent 模型路由](./docs/subagent-model-routing.md)。
+explore 默认轮数上限（12）在一次 live 8 vs 12 对比后保持不变：两个冻结用例
+确实需要 9 轮，而大多数用例两种上限下都在 5–6 轮完成
+（`docs/measurement-round.md`）。可选的 OpenAI-compatible 独立路由让子 Agent
+使用轻量模型、父 Agent 保留主模型（[子 Agent 模型路由](./docs/subagent-model-routing.md)）；
+Anthropic 适配器加了三个提示缓存断点（系统提示、工具清单、对话末端），
+带一键关闭与去标记降级重试（[提示缓存](./docs/prompt-caching.md)）。
 
 ### 4. 有真实证据链的持久化经验
 
