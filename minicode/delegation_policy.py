@@ -88,10 +88,25 @@ class DelegationDecision:
 
 @dataclass(frozen=True)
 class ParentDelegationGate:
-    """One coaching result before the parent edits a collaborative change."""
+    """Hold parent writes until a workflow call for this change succeeds."""
 
     pending: bool
     message: str
+    write_paths: tuple[str, ...] = ()
+
+
+_PARENT_WRITE_TOOLS = frozenset({
+    "edit_file",
+    "write_file",
+    "patch_file",
+    "modify_file",
+    "executor_test",
+})
+_SHELLS = frozenset({"bash", "sh", "node", "powershell", "pwsh", "cmd"})
+_PACKAGE_MUTATORS = frozenset({
+    "pip", "pip3", "npm", "make", "cmake", "cargo", "go", "dotnet",
+})
+_READONLY_GIT = frozenset({"status", "diff", "log", "show", "rev-parse"})
 
 
 def source_paths(task_text: str) -> tuple[str, ...]:
@@ -219,8 +234,87 @@ def delegation_coach_message(decision: DelegationDecision) -> str:
         f"write_paths={path_arg}, "
         'verification_commands=[["<the command that checks this change>"]])\n'
         "Do not also start a plan or explore agent for this change. "
-        "A later edit is allowed if that workflow cannot run."
+        "edit_file, write_file, and shell writes stay blocked until this "
+        "workflow call succeeds."
     )
+
+
+def _path_key(path: str) -> str:
+    cleaned = path.strip().replace("\\", "/")
+    while cleaned.startswith("./"):
+        cleaned = cleaned[2:]
+    return cleaned
+
+
+def _union_paths(existing: object, required: tuple[str, ...]) -> list[str]:
+    paths: list[str] = []
+    seen: set[str] = set()
+    if isinstance(existing, list):
+        for item in existing:
+            if not isinstance(item, str):
+                continue
+            cleaned = item.strip()
+            key = _path_key(cleaned)
+            if cleaned and key not in seen:
+                paths.append(cleaned)
+                seen.add(key)
+    for path in required:
+        key = _path_key(path)
+        if key and key not in seen:
+            paths.append(path)
+            seen.add(key)
+    return paths
+
+
+def complete_workflow_write_paths(tool_input: dict, required: tuple[str, ...]) -> None:
+    """Authorize every source file the user named, without dropping the model's paths.
+
+    An explicit workflow_request is updated in place. Convenience write_paths
+    are filled when that request is absent. The two shapes stay mutually exclusive.
+    """
+
+    if tool_input.get("agent_type") != "workflow" or not required:
+        return
+    request = tool_input.get("workflow_request")
+    if isinstance(request, dict):
+        scope = request.get("scope")
+        if not isinstance(scope, dict):
+            scope = {}
+            request["scope"] = scope
+        scope["writePaths"] = _union_paths(scope.get("writePaths"), required)
+        return
+    tool_input["write_paths"] = _union_paths(tool_input.get("write_paths"), required)
+
+
+def handoff_blocks_tool(tool_name: str, tool_input: object) -> bool:
+    """True when this call could write source before the workflow handoff."""
+
+    if tool_name in _PARENT_WRITE_TOOLS:
+        return True
+    if tool_name != "run_command" or not isinstance(tool_input, dict):
+        return False
+    command = str(tool_input.get("command") or "").strip()
+    raw_args = tool_input.get("args")
+    args = raw_args if isinstance(raw_args, list) else []
+    blob = " ".join([command, *[str(arg) for arg in args]])
+    if ">" in blob:
+        return True
+    if command in _SHELLS or command in _PACKAGE_MUTATORS:
+        return True
+    if command in {"python", "python3"}:
+        return not (
+            len(args) >= 2
+            and str(args[0]) == "-m"
+            and str(args[1]) in {"pytest", "unittest"}
+        )
+    if command == "git":
+        subcommand = str(args[0]) if args else ""
+        return subcommand not in _READONLY_GIT
+    if command == "sed" and any(
+        str(arg) == "-i" or str(arg).startswith("-i") for arg in args
+    ):
+        return True
+    return False
 
 
 def parent_delegation_gate(
@@ -241,7 +335,9 @@ def parent_delegation_gate(
     )
     if decision.mode != "workflow":
         return ParentDelegationGate(False, "")
-    return ParentDelegationGate(True, delegation_coach_message(decision))
+    return ParentDelegationGate(
+        True, delegation_coach_message(decision), decision.write_paths,
+    )
 
 
 def task_text_from_messages(messages: list) -> str:

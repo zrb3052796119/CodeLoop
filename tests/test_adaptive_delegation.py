@@ -8,8 +8,10 @@ from pathlib import Path
 
 from minicode.agent_loop import run_agent_turn
 from minicode.delegation_policy import (
+    complete_workflow_write_paths,
     decide_delegation,
     delegation_prompt_note,
+    handoff_blocks_tool,
     parent_delegation_gate,
 )
 from minicode.prompt import build_system_prompt
@@ -47,7 +49,7 @@ def _final() -> AgentStep:
     return AgentStep(type="assistant", content="<final>done")
 
 
-def _turn(tmp_path: Path, model, *, runtime=None, agent_depth=0, tools=None, messages=None):
+def _turn(tmp_path: Path, model, *, runtime=None, agent_depth=0, tools=None, messages=None, max_steps=4):
     return run_agent_turn(
         model=model,
         tools=tools or ToolRegistry([write_file_tool]),
@@ -56,7 +58,7 @@ def _turn(tmp_path: Path, model, *, runtime=None, agent_depth=0, tools=None, mes
         runtime=runtime or {"subagentRoutingEnabled": True},
         enable_work_chain=False,
         defer_curator_maintenance=True,
-        max_steps=4,
+        max_steps=max_steps,
         agent_depth=agent_depth,
     )
 
@@ -167,13 +169,119 @@ def test_routed_parent_is_coached_off_the_first_multi_file_edit(tmp_path: Path) 
     assert not (tmp_path / "stock.py").exists()
 
 
-def test_coach_lets_a_later_edit_through_when_workflow_cannot_run(tmp_path: Path) -> None:
-    _turn(tmp_path, Script([
+def test_repeated_edits_stay_blocked_until_workflow_succeeds(tmp_path: Path) -> None:
+    messages = _turn(tmp_path, Script([
         _write("1", "x = 1\n"),
         _write("2", "x = 2\n"),
         _final(),
     ]))
-    assert (tmp_path / "stock.py").read_text() == "x = 2\n"
+    blob = "\n".join(str(message.get("content")) for message in messages)
+    assert blob.count("stay blocked until this workflow call succeeds") == 2
+    assert not (tmp_path / "stock.py").exists()
+
+
+def test_shell_write_cannot_bypass_the_handoff(tmp_path: Path) -> None:
+    def explode(_input, _context):
+        raise AssertionError("python3 must not run before workflow")
+
+    shell = ToolDefinition(
+        name="run_command",
+        description="shell",
+        input_schema={"type": "object"},
+        validator=lambda value: value,
+        run=explode,
+    )
+    messages = _turn(
+        tmp_path,
+        Script([
+            AgentStep(type="tool_calls", calls=[{
+                "id": "1",
+                "toolName": "run_command",
+                "input": {
+                    "command": "python3",
+                    "args": ["-c", "open('stock.py','w').write('solo')"],
+                },
+            }]),
+            _final(),
+        ]),
+        tools=ToolRegistry([shell, write_file_tool]),
+    )
+    blob = "\n".join(str(message.get("content")) for message in messages)
+    assert "stay blocked until this workflow call succeeds" in blob
+    assert not (tmp_path / "stock.py").exists()
+    assert handoff_blocks_tool(
+        "run_command", {"command": "pytest", "args": ["-q"]},
+    ) is False
+
+
+def test_failed_workflow_call_does_not_unlock_writes(tmp_path: Path) -> None:
+    def reject(_input, _context):
+        return ToolResult(ok=False, output="workflow rejected")
+
+    task = ToolDefinition(
+        name="task", description="workflow", input_schema={"type": "object"},
+        validator=lambda value: value, run=reject,
+    )
+    _turn(
+        tmp_path,
+        Script([
+            AgentStep(type="tool_calls", calls=[{
+                "id": "1", "toolName": "task",
+                "input": {"agent_type": "workflow", "prompt": "implement", "write_paths": ["stock.py"]},
+            }]),
+            _write("2", "x = 1\n"),
+            _final(),
+        ]),
+        tools=ToolRegistry([task, write_file_tool]),
+    )
+    assert not (tmp_path / "stock.py").exists()
+
+
+def test_workflow_call_keeps_every_named_file(tmp_path: Path) -> None:
+    seen = []
+
+    def accept(input_data, _context):
+        seen.append(dict(input_data))
+        return ToolResult(ok=True, output="workflow accepted")
+
+    task = ToolDefinition(
+        name="task", description="workflow", input_schema={"type": "object"},
+        validator=lambda value: value, run=accept,
+    )
+    messages = _turn(
+        tmp_path,
+        Script([
+            _write("1", "before\n"),
+            AgentStep(type="tool_calls", calls=[{
+                "id": "2", "toolName": "task",
+                "input": {
+                    "agent_type": "workflow",
+                    "prompt": "implement hold and release",
+                    "write_paths": ["stock.py"],
+                },
+            }]),
+            _write("3", "after\n"),
+            _final(),
+        ]),
+        tools=ToolRegistry([task, write_file_tool]),
+        max_steps=5,
+    )
+    blob = "\n".join(str(message.get("content")) for message in messages)
+    assert "stay blocked until this workflow call succeeds" in blob
+    assert seen[0]["write_paths"] == ["stock.py", "test_public.py"]
+    assert (tmp_path / "stock.py").read_text() == "after\n"
+
+
+def test_named_paths_fill_an_explicit_workflow_request() -> None:
+    payload = {
+        "agent_type": "workflow",
+        "workflow_request": {"scope": {"writePaths": ["stock.py"]}},
+    }
+    complete_workflow_write_paths(payload, ("stock.py", "test_public.py"))
+    assert payload["workflow_request"]["scope"]["writePaths"] == [
+        "stock.py", "test_public.py",
+    ]
+    assert "write_paths" not in payload
 
 
 def test_single_file_edit_is_not_coached(tmp_path: Path) -> None:
@@ -300,6 +408,33 @@ def test_offline_demo_script_prints_solo_and_workflow() -> None:
     assert "\tsolo\t" in completed.stdout
     assert "\tworkflow\t" in completed.stdout
     assert "no model call" in completed.stdout
+
+
+def test_host_owned_implementation_still_writes_when_routing_is_on(tmp_path: Path) -> None:
+    from minicode.deterministic_verifier import VerificationCheck
+    from minicode.implementation_execution import ImplementationSpec
+
+    spec = ImplementationSpec(
+        ("stock.py",),
+        (VerificationCheck(
+            "public", "tests", ("python3", "-m", "pytest", "-q", "test_public.py"), 20,
+        ),),
+        "Implement hold and release in stock.py and test_public.py.",
+    )
+    run_agent_turn(
+        model=Script([_write("1", "owned\n"), _final()]),
+        tools=ToolRegistry([write_file_tool]),
+        messages=[{"role": "user", "content": spec.objective}],
+        cwd=str(tmp_path),
+        runtime={"subagentRoutingEnabled": True},
+        implementation_task=True,
+        implementation_spec=spec,
+        enable_implementation_phases=False,
+        enable_work_chain=False,
+        defer_curator_maintenance=True,
+        max_steps=3,
+    )
+    assert (tmp_path / "stock.py").read_text() == "owned\n"
 
 
 def test_nested_worker_is_not_coached(tmp_path: Path) -> None:
