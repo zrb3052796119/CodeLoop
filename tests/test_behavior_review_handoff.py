@@ -6,8 +6,6 @@ failure during review retries and still finishes.
 """
 
 import json
-from pathlib import Path
-import subprocess
 import sys
 from urllib.error import URLError
 
@@ -71,11 +69,14 @@ def _tool(identity, name, **values):
 def _install_verifier(monkeypatch):
     import minicode.workflow_runner as runner
 
-    def command(argv, **kwargs):
-        return subprocess.run([sys.executable, *argv[1:]], **kwargs)
+    class Sandbox:
+        def wrap_command(self, *, argv, cwd, **kwargs):
+            return argv
 
     monkeypatch.setattr(runner, "_deterministic_verifier_for_context",
-                        lambda *_args, **_kwargs: DeterministicVerifier(command_runner=command))
+                        lambda *_args, **_kwargs: DeterministicVerifier(
+                            sandbox_backend=Sandbox(),
+                            explicit_trusted_executables={"python3": sys.executable}))
     monkeypatch.setattr(PermissionManager, "ensure_command", lambda *_args, **_kwargs: None)
 
 
@@ -123,7 +124,7 @@ class _Script:
         ))
 
 
-def _run(tmp_path, monkeypatch, *, transport_failure=False):
+def _run(tmp_path, monkeypatch, *, transport_failure=False, max_model_calls=12):
     _install_verifier(monkeypatch)
     (tmp_path / "stock.py").write_text(INITIAL)
     (tmp_path / "test_public.py").write_text("def test_ready():\n    assert True\n")
@@ -140,7 +141,7 @@ def _run(tmp_path, monkeypatch, *, transport_failure=False):
         model=script, tools=ToolRegistry([edit_file_tool, write_file_tool]),
         messages=[{"role": "user", "content": OBJECTIVE}], cwd=str(tmp_path),
         implementation_task=True, implementation_spec=_spec(), enable_work_chain=False,
-        max_steps=None, agent_budget=AgentTurnBudget(max_model_calls=12),
+        max_steps=None, agent_budget=AgentTurnBudget(max_model_calls=max_model_calls),
         outcome_capture=capture, event_sink=Sink(), defer_curator_maintenance=True,
         enable_implementation_phases=False)
     return messages, events, capture, script
@@ -176,9 +177,9 @@ def test_one_transport_failure_mid_review_still_completes(tmp_path, monkeypatch)
     assert all(event.get("canContinue") is not False for event in events)
 
 
-def _direct(tmp_path, monkeypatch, model):
+def _direct(tmp_path, monkeypatch, model, *, product=BOTH, agent_budget=None):
     _install_verifier(monkeypatch)
-    (tmp_path / "stock.py").write_text(BOTH)
+    (tmp_path / "stock.py").write_text(product)
     (tmp_path / "test_public.py").write_text(PUBLIC)
     review = BehaviorReview(_spec())
     context = ToolContext(cwd=str(tmp_path), permissions=PermissionManager(str(tmp_path), prompt=None))
@@ -187,7 +188,8 @@ def _direct(tmp_path, monkeypatch, model):
     assert checks["status"] == "passed"
 
     def assess(**kwargs):
-        return review.assess(model=model, tools=None, context=context, agent_budget=None,
+        return review.assess(model=model, tools=None, context=context,
+                             agent_budget=kwargs.pop("agent_budget", agent_budget),
                              event_sink=None, cancellation_token=None, deadline_monotonic=None,
                              checks_receipt=checks, **kwargs)
 
@@ -267,3 +269,82 @@ def test_repair_cap_hands_to_a_human_and_transport_keeps_probes(tmp_path, monkey
     assert paused["canContinue"] is True
     assert paused["repairProbes"] == kept
     assert paused["reason"] != "failure_adjudication_inconclusive"
+
+
+def test_collection_or_import_error_is_a_host_retry_not_a_behavior_gap(tmp_path, monkeypatch):
+    def unavailable(**_kwargs):
+        return {
+            "status": "inconclusive",
+            "reason": "review_probe_collection_or_runtime_unavailable",
+            "evidence": {"exitCode": 1, "stderr": {
+                "preview": 'ImportError: Error importing plugin "_minicode_pytest_x": No module named _minicode_pytest_x',
+            }},
+        }
+
+    monkeypatch.setattr("minicode.behavior_review.run_isolated_review_probe", unavailable)
+
+    class Model:
+        calls = 0
+
+        def next(self, _messages, **_kwargs):
+            self.calls += 1
+            return AgentStep(type="assistant", kind="final",
+                             content=_verdict("fail", ["release does not add the requested amount."], RELEASE_PROBE))
+
+    review, assess = _direct(tmp_path, monkeypatch, Model())
+    first = assess()
+    assert first["status"] == "inconclusive"
+    assert first["reason"] == "review_host_retry"
+    assert first["canContinue"] is True
+    assert first["repairProbes"] == []
+    assert review.repair_rounds == 0
+    second = assess()
+    assert second["status"] == "inconclusive" and second["reason"] == "review_host_retry"
+    assert review.repair_rounds == 0
+
+
+def test_assertion_failure_is_still_a_behavior_gap(tmp_path, monkeypatch):
+    class Model:
+        def next(self, _messages, **_kwargs):
+            return AgentStep(type="assistant", kind="final",
+                             content=_verdict("fail", ["release does not add the requested amount."], RELEASE_PROBE))
+
+    review, assess = _direct(tmp_path, monkeypatch, Model(), product=HOLD)
+    result = assess()
+    assert result["status"] == "changes_required"
+    assert result["reason"] == "behavior_gap"
+    assert result["canContinue"] is True
+    assert result["repairProbes"][0]["code"] == RELEASE_PROBE
+    assert review.repair_rounds == 1
+
+
+def test_reviewer_calls_count_and_an_exhausted_budget_hands_to_a_human(tmp_path, monkeypatch):
+    budget = AgentTurnBudget(max_model_calls=1)
+
+    class Model:
+        calls = 0
+
+        def next(self, _messages, **_kwargs):
+            self.calls += 1
+            return AgentStep(type="assistant", kind="final", content=_verdict("pass", [], RELEASE_PROBE))
+
+    model = Model()
+    review, assess = _direct(tmp_path, monkeypatch, model, agent_budget=budget)
+    admitted = assess()
+    assert admitted["status"] == "approved"
+    assert model.calls == 1
+    assert budget.snapshot().used_model_calls == 1
+    stopped = assess()
+    assert stopped["status"] == "needs_human"
+    assert stopped["reason"] == "review_call_budget"
+    assert stopped["canContinue"] is False
+    assert model.calls == 1
+    assert review.repair_rounds == 0
+    assert budget.snapshot().used_model_calls == 1
+
+    messages, events, _capture, script = _run(tmp_path, monkeypatch, max_model_calls=2)
+    assert script.reviews == []
+    assert events[-1]["status"] == "needs_human"
+    assert events[-1]["reason"] == "review_call_budget"
+    assert events[-1]["canContinue"] is False
+    assert "review call budget is exhausted" in json.dumps(messages)

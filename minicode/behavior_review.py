@@ -12,6 +12,7 @@ import difflib
 import json
 from pathlib import Path
 
+from minicode.agent_budget import AgentBudgetExceeded
 from minicode.implementation_execution import implementation_candidate_digest
 from minicode.review_probe_execution import run_isolated_review_probe, select_review_probe_check
 from minicode.reviewer_verification import ReviewerProbe
@@ -31,21 +32,27 @@ _TRANSPORT = (TimeoutError, ConnectionError, OSError)
 
 
 def _probe_status(result):
-    """Pytest's exit code is the demo-path evidence.
+    """A gap is an assertion failure from a probe that actually ran.
 
-    The heavy review path also requires a behavior witness. This path does not:
-    exit 0 passes, exit 1 is a gap, and a missing process result is a host retry.
+    Collection, plugin import, and a missing interpreter all surface as
+    review_probe_collection_or_runtime_unavailable, and pytest exits 1 for
+    those too. That exit code is not a behavior result and must not spend a
+    repair round. A clean exit still counts as a pass: this path does not
+    require a behavior witness.
     """
+    if result.get("reason") == "review_probe_collection_or_runtime_unavailable":
+        code = (result.get("evidence") or {}).get("exitCode")
+        if code == 0:
+            return "passed"
+        return "inconclusive"
     status = result.get("status")
     if status in {"passed", "failed"}:
         return status
-    if result.get("reason") != "review_probe_collection_or_runtime_unavailable":
+    if result.get("reason"):
         return "inconclusive"
     code = (result.get("evidence") or {}).get("exitCode")
     if code == 0:
         return "passed"
-    if code == 1:
-        return "failed"
     return "inconclusive"
 
 
@@ -98,26 +105,29 @@ class BehaviorReview:
 
     def assess(self, *, model, tools, context, agent_budget, event_sink,
                cancellation_token, deadline_monotonic, checks_receipt, executor_note=None):
-        del tools, agent_budget, event_sink, cancellation_token
+        del tools, event_sink, cancellation_token
         digest = implementation_candidate_digest(self.spec, context)
         if (not isinstance(checks_receipt, dict) or checks_receipt.get("status") != "passed"
                 or checks_receipt.get("patchDigest") != digest):
             return self._inconclusive(digest, "review_host_retry",
                                       ["Public checks were not current, so the review did not start."])
         packet = self._packet(context, checks_receipt, executor_note)
-        parsed, transport = self._solicit(model, packet, deadline_monotonic)
-        if transport:
-            return self._inconclusive(digest, "review_transport_retry",
-                                      ["The review transport failed and will be retried from this checkpoint."])
-        if parsed is None:
-            parsed, transport = self._solicit(
-                model, packet + "\nFormat error: reply with the JSON object only.\n", deadline_monotonic)
+        try:
+            parsed, transport = self._solicit(model, packet, agent_budget)
             if transport:
                 return self._inconclusive(digest, "review_transport_retry",
                                           ["The review transport failed and will be retried from this checkpoint."])
             if parsed is None:
-                return self._inconclusive(digest, "review_format_retry",
-                                          ["The review reply was not usable and will be requested again."])
+                parsed, transport = self._solicit(
+                    model, packet + "\nFormat error: reply with the JSON object only.\n", agent_budget)
+                if transport:
+                    return self._inconclusive(digest, "review_transport_retry",
+                                              ["The review transport failed and will be retried from this checkpoint."])
+                if parsed is None:
+                    return self._inconclusive(digest, "review_format_retry",
+                                              ["The review reply was not usable and will be requested again."])
+        except AgentBudgetExceeded:
+            return self._budget_stop(digest)
         executed = self._run_probes(parsed["probes"], context, deadline_monotonic)
         if executed is None or any(row["status"] == "inconclusive" for row in executed):
             return self._inconclusive(digest, "review_host_retry",
@@ -144,6 +154,12 @@ class BehaviorReview:
         return {"completionReviewVersion": 1, "status": "changes_required", "patchDigest": digest,
                 "findings": gaps, "files": files, "repairProbes": failing, "requirements": [],
                 "reason": "behavior_gap", "canContinue": True}
+
+    def _budget_stop(self, digest):
+        return {"completionReviewVersion": 1, "status": "needs_human", "patchDigest": digest,
+                "findings": ["The shared review call budget is exhausted."],
+                "files": [], "repairProbes": list(self.repair_probes), "requirements": [],
+                "reason": "review_call_budget", "canContinue": False}
 
     def _inconclusive(self, digest, reason, findings):
         return {"completionReviewVersion": 1, "status": "inconclusive", "patchDigest": digest,
@@ -182,16 +198,29 @@ class BehaviorReview:
                     row.get("code", "") for row in self.repair_probes))
         return "\n\n".join(lines)
 
-    def _solicit(self, model, packet, deadline_monotonic):
-        del deadline_monotonic
+    def _solicit(self, model, packet, agent_budget):
         messages = [{"role": "system", "content": _SYSTEM}, {"role": "user", "content": packet}]
         last = None
         for _attempt in range(2):
+            reservation = None
             try:
+                if agent_budget is not None:
+                    reservation = agent_budget.reserve_model_call(0)
                 step = model.next(messages, disable_tools=True, json_object_override=True)
+            except AgentBudgetExceeded:
+                raise
             except _TRANSPORT as error:
+                if reservation is not None:
+                    agent_budget.fail_model_call(reservation)
                 last = error
                 continue
+            except Exception:
+                if reservation is not None:
+                    agent_budget.fail_model_call(reservation)
+                raise
+            else:
+                if reservation is not None:
+                    agent_budget.record_model_call(reservation=reservation)
             parsed, _error = _parse_verdict(getattr(step, "content", None))
             if parsed is not None:
                 return parsed, False

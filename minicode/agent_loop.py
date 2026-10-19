@@ -3815,8 +3815,12 @@ def run_agent_turn(
                                  if isinstance(probe, dict))
             files = ", ".join(decision.get("files") or [])
             if decision.get("status") == "needs_human":
-                lead = ("Repair cap reached (2 rounds). A human must continue this same "
-                        "implementation session. This is not a failed task verdict.")
+                if decision.get("reason") == "review_call_budget":
+                    lead = ("The shared review call budget is exhausted. A human must continue "
+                            "this same implementation session. This is not a failed task verdict.")
+                else:
+                    lead = ("Repair cap reached (2 rounds). A human must continue this same "
+                            "implementation session. This is not a failed task verdict.")
             elif decision.get("status") == "inconclusive":
                 lead = ("The review did not finish. Retry it from this checkpoint. "
                         "Do not change the product because of this review failure.")
