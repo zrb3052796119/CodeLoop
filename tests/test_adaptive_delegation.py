@@ -176,7 +176,7 @@ def test_repeated_edits_stay_blocked_until_workflow_succeeds(tmp_path: Path) -> 
         _final(),
     ]))
     blob = "\n".join(str(message.get("content")) for message in messages)
-    assert blob.count("stay blocked until this workflow call succeeds") == 2
+    assert blob.count("stay blocked until this workflow call returns") == 2
     assert not (tmp_path / "stock.py").exists()
 
 
@@ -207,14 +207,14 @@ def test_shell_write_cannot_bypass_the_handoff(tmp_path: Path) -> None:
         tools=ToolRegistry([shell, write_file_tool]),
     )
     blob = "\n".join(str(message.get("content")) for message in messages)
-    assert "stay blocked until this workflow call succeeds" in blob
+    assert "stay blocked until this workflow call returns" in blob
     assert not (tmp_path / "stock.py").exists()
     assert handoff_blocks_tool(
         "run_command", {"command": "pytest", "args": ["-q"]},
     ) is False
 
 
-def test_failed_workflow_call_does_not_unlock_writes(tmp_path: Path) -> None:
+def test_failed_workflow_call_unlocks_a_solo_edit(tmp_path: Path) -> None:
     def reject(_input, _context):
         return ToolResult(ok=False, output="workflow rejected")
 
@@ -222,18 +222,78 @@ def test_failed_workflow_call_does_not_unlock_writes(tmp_path: Path) -> None:
         name="task", description="workflow", input_schema={"type": "object"},
         validator=lambda value: value, run=reject,
     )
-    _turn(
-        tmp_path,
-        Script([
-            AgentStep(type="tool_calls", calls=[{
-                "id": "1", "toolName": "task",
-                "input": {"agent_type": "workflow", "prompt": "implement", "write_paths": ["stock.py"]},
-            }]),
-            _write("2", "x = 1\n"),
-            _final(),
-        ]),
-        tools=ToolRegistry([task, write_file_tool]),
+    script = Script([
+        AgentStep(type="tool_calls", calls=[{
+            "id": "1", "toolName": "task",
+            "input": {"agent_type": "workflow", "prompt": "implement", "write_paths": ["stock.py"]},
+        }]),
+        _write("2", "x = 1\n"),
+        _final(),
+    ])
+    messages = _turn(tmp_path, script, tools=ToolRegistry([task, write_file_tool]))
+    blob = "\n".join(str(message.get("content")) for message in messages)
+    assert "workflow rejected" in blob
+    assert "Finish the change yourself" in blob
+    assert "stock.py" in blob and "test_public.py" in blob
+    assert "Do not call task(workflow) again" in blob
+    assert script.calls == 3
+    assert (tmp_path / "stock.py").read_text() == "x = 1\n"
+
+
+def test_chinese_prompts_use_the_same_split() -> None:
+    multi = decide_delegation(
+        "实现 hold 和 release，修改 stock.py 和 test_public.py。",
+        routing_enabled=True, implementation_owned=False,
     )
+    assert multi.mode == "workflow"
+    assert multi.write_paths == ("stock.py", "test_public.py")
+
+    named = decide_delegation(
+        "请更新「模块/库存.py」和 test_public.py。",
+        routing_enabled=True, implementation_owned=False,
+    )
+    assert named.mode == "workflow"
+    assert named.write_paths == ("模块/库存.py", "test_public.py")
+
+    trivial = decide_delegation(
+        "只改一个文件：修复 stock.py 里的一个函数。",
+        routing_enabled=True, implementation_owned=False,
+    )
+    assert trivial.mode == "solo" and trivial.reason == "trivial edit"
+
+    typo = decide_delegation(
+        "修复 stock.py 和 test_public.py 的错别字。",
+        routing_enabled=True, implementation_owned=False,
+    )
+    assert typo.mode == "solo"
+
+    explained = decide_delegation(
+        "不要改 stock.py 和 test_public.py，只解释区别。",
+        routing_enabled=True, implementation_owned=False,
+    )
+    assert explained.mode == "solo" and explained.reason == "read-only question"
+
+    question = decide_delegation(
+        "怎么改 stock.py 和 test_public.py？",
+        routing_enabled=True, implementation_owned=False,
+    )
+    assert question.mode == "solo"
+
+    survey = decide_delegation(
+        "整个代码库是怎么组织的？",
+        routing_enabled=True, implementation_owned=False,
+    )
+    assert survey.mode == "explore"
+
+
+def test_chinese_multi_file_request_blocks_the_first_edit(tmp_path: Path) -> None:
+    messages = _turn(
+        tmp_path,
+        Script([_write("1", "x = 1\n"), _final()]),
+        messages=[{"role": "user", "content": "实现 hold，修改 stock.py 和 test_public.py。"}],
+    )
+    blob = "\n".join(str(message.get("content")) for message in messages)
+    assert "delegate it before editing" in blob
     assert not (tmp_path / "stock.py").exists()
 
 
@@ -267,7 +327,7 @@ def test_workflow_call_keeps_every_named_file(tmp_path: Path) -> None:
         max_steps=5,
     )
     blob = "\n".join(str(message.get("content")) for message in messages)
-    assert "stay blocked until this workflow call succeeds" in blob
+    assert "stay blocked until this workflow call returns" in blob
     assert seen[0]["write_paths"] == ["stock.py", "test_public.py"]
     assert (tmp_path / "stock.py").read_text() == "after\n"
 

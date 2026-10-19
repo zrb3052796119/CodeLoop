@@ -8,7 +8,7 @@ one-function fix stays with the parent too. Routing that is off, and a
 host-owned implementation spec, stay with the parent: there is no separate
 child model to hand the work to, or the parent loop already owns the review.
 
-The cues are lexical. They are not a parse of the task.
+The cues are lexical, in English and Simplified Chinese. They are not a parse of the task.
 """
 
 from __future__ import annotations
@@ -17,22 +17,30 @@ import json
 import re
 from dataclasses import dataclass
 
+_PATH_ATOM = r"[\w.\-\u4e00-\u9fff]{1,80}"
 _CODE_PATH = re.compile(
-    r"(?<![\w./-])((?:[\w.-]{1,80}/){0,8}[\w.-]{1,80}\."
-    r"(?:py|ts|tsx|js|jsx|go|rs|java|rb|c|cc|cpp|h|hpp))\b"
+    r"(?:^|(?<=[\s'\"`（(「『【，,：:、]))"
+    r"((?:" + _PATH_ATOM + r"/){0,8}" + _PATH_ATOM +
+    r"\.(?:py|ts|tsx|js|jsx|go|rs|java|rb|c|cc|cpp|h|hpp))"
+    r"(?![\w\u4e00-\u9fff])"
 )
+_EN_CHANGE = (
+    r"implement|fix|add|change|update|modify|write|refactor|create|edit|"
+    r"redesign|rewrite|overhaul|re-architect|rearchitect"
+)
+_ZH_CHANGE = r"实现|修复|修改|改一下|更新|重构|重写|新增|创建"
 _CHANGE = re.compile(
-    r"\b(implement|fix|add|change|update|modify|write|refactor|create|edit|"
-    r"redesign|rewrite|overhaul|re-architect|rearchitect)\b",
+    rf"(?:\b(?:{_EN_CHANGE})\b|{_ZH_CHANGE})",
     re.IGNORECASE,
 )
 _REDESIGN = re.compile(
-    r"\b(redesign|rewrite|overhaul|re-architect|rearchitect)\b",
+    r"(?:\b(?:redesign|rewrite|overhaul|re-architect|rearchitect)\b|重写|重构|重设计)",
     re.IGNORECASE,
 )
 # A second behavior, not the redesign verb alone. "Rewrite hold()" stays solo.
 _REDESIGN_SCOPE = re.compile(
-    r"\b(then|invariants?|edge cases?|state machine|multiple steps|several steps)\b",
+    r"(?:\b(?:then|invariants?|edge cases?|state machine|multiple steps|several steps)\b"
+    r"|然后|不变量|边界情况|状态机|多步)",
     re.IGNORECASE,
 )
 _HOW_TO_CHANGE = re.compile(
@@ -44,8 +52,7 @@ _HOW_TO_CHANGE = re.compile(
     re.IGNORECASE,
 )
 _LEADING_CHANGE = re.compile(
-    r"^\s*(?:please\s+)?(?:implement|fix|add|change|update|modify|write|"
-    r"refactor|create|edit|redesign|rewrite|overhaul)\b",
+    rf"^\s*(?:please\s+)?(?:(?:{_EN_CHANGE})\b|(?:请)?(?:{_ZH_CHANGE}))",
     re.IGNORECASE,
 )
 _READONLY_CUE = re.compile(
@@ -61,12 +68,16 @@ _READONLY_CUE = re.compile(
     r"|read-?only"
     r"|just\s+(?:explain|tell|show|read|answer)"
     r"|no changes"
+    r"|不要改|不要修改|别改|只解释|仅解释|只读|怎么改"
     r")",
     re.IGNORECASE,
 )
 _BROAD_SURVEY = re.compile(
-    r"\b(codebase|repository|across the (?:repo|project|codebase)|"
-    r"all modules|whole project)\b",
+    r"(?:"
+    r"\b(?:codebase|repository|across the (?:repo|project|codebase)|"
+    r"all modules|whole project)\b"
+    r"|代码库|整个仓库|整个项目|所有模块|全库"
+    r")",
     re.IGNORECASE,
 )
 _EXPLICIT_COLLABORATION = re.compile(
@@ -74,7 +85,10 @@ _EXPLICIT_COLLABORATION = re.compile(
     re.IGNORECASE,
 )
 _TRIVIAL = re.compile(
-    r"\b(typo|one function|single function|single file|one file|docstring)\b",
+    r"(?:"
+    r"\b(?:typo|one function|single function|single file|one file|docstring)\b"
+    r"|只改一个文件|单文件|一个函数|错别字|文档字符串"
+    r")",
     re.IGNORECASE,
 )
 
@@ -118,7 +132,8 @@ def _is_readonly(text: str) -> bool:
 
     if _HOW_TO_CHANGE.search(text) or _LEADING_CHANGE.search(text):
         return False
-    if text.rstrip().endswith("?"):
+    stripped = text.rstrip()
+    if stripped.endswith(("?", "？", "吗")):
         return True
     return _READONLY_CUE.search(text) is not None
 
@@ -235,7 +250,19 @@ def delegation_coach_message(decision: DelegationDecision) -> str:
         'verification_commands=[["<the command that checks this change>"]])\n'
         "Do not also start a plan or explore agent for this change. "
         "edit_file, write_file, and shell writes stay blocked until this "
-        "workflow call succeeds."
+        "workflow call returns. If it fails, finish the edit yourself "
+        "instead of calling workflow again."
+    )
+
+
+def workflow_failure_solo_message(write_paths: tuple[str, ...]) -> str:
+    """One note after a failed handoff. The parent edits; the loop does not retry."""
+
+    shown = ", ".join(write_paths) or "the files named in the request"
+    return (
+        "Workflow failed, so this handoff is closed. "
+        f"Finish the change yourself on {shown}: edit the files and run "
+        "verification. Do not call task(workflow) again for this turn."
     )
 
 

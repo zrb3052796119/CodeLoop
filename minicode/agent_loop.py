@@ -911,6 +911,31 @@ def _execute_single_tool(
                 pass
 
     evidence_recorder = getattr(event_sink, "record_tool_evidence", None)
+
+    def release_workflow_handoff(executed: ToolResult) -> None:
+        """Open parent edits after one workflow attempt, success or failure.
+
+        A failure appends a solo-finish note. The loop does not call
+        workflow again by itself.
+        """
+
+        if not (
+            tool_name == "task"
+            and isinstance(tool_input, dict)
+            and tool_input.get("agent_type") == "workflow"
+            and delegation_coach
+            and delegation_coach.get("pending")
+        ):
+            return
+        if not executed.ok:
+            from minicode.delegation_policy import workflow_failure_solo_message
+
+            note = workflow_failure_solo_message(
+                tuple(delegation_coach.get("write_paths") or ()),
+            )
+            executed.output = f"{executed.output}\n{note}" if executed.output else note
+        delegation_coach["pending"] = False
+
     try:
         raise_if_cancelled(cancellation_token)
         if callable(evidence_recorder):
@@ -940,6 +965,7 @@ def _execute_single_tool(
             if tool_scheduler and hasattr(tool_scheduler, '_force_tool_timeout')
             else _base_timeout
         )
+
         def execute_tool() -> ToolResult:
             from minicode.verifier_sandbox import resolve_verifier_host_capabilities
 
@@ -1033,8 +1059,7 @@ def _execute_single_tool(
                     executed.ok = False
                     executed.verification = None
                     executed.output += f"\nerror[{decision.code}]: {decision.message}"
-            if workflow_call and executed.ok:
-                coach["pending"] = False
+            release_workflow_handoff(executed)
             return executed
 
         tool_definition = tools.find(tool_name)
@@ -1159,6 +1184,7 @@ def _execute_single_tool(
                    f"Traceback:\n{tb_excerpt}"
         )
         record_private_result(result if result is not None else failed)
+        release_workflow_handoff(failed)
         return failed
     except BaseException:
         if result is not None and result._must_deliver:
