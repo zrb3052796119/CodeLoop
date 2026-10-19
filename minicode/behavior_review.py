@@ -12,7 +12,9 @@ import difflib
 import json
 from pathlib import Path
 
-from minicode.agent_budget import AgentBudgetExceeded
+from minicode.agent_budget import AgentBudgetExceeded, record_budgeted_model_call
+from minicode.pricing import project_model_cost_event
+from minicode.run_events import new_model_operation_id, project_model_usage
 from minicode.implementation_execution import implementation_candidate_digest
 from minicode.review_probe_execution import run_isolated_review_probe, select_review_probe_check
 from minicode.reviewer_verification import ReviewerProbe
@@ -220,7 +222,19 @@ class BehaviorReview:
                 raise
             else:
                 if reservation is not None:
-                    agent_budget.record_model_call(reservation=reservation)
+                    usage = project_model_usage(getattr(step, "usage", None))
+                    cost_payload = project_model_cost_event(
+                        model=model,
+                        usage=usage,
+                        operation_id=new_model_operation_id(),
+                    )
+                    record_budgeted_model_call(
+                        agent_budget,
+                        model=model,
+                        usage=usage,
+                        reservation=reservation,
+                        cost_payload=cost_payload,
+                    )
             parsed, _error = _parse_verdict(getattr(step, "content", None))
             if parsed is not None:
                 return parsed, False

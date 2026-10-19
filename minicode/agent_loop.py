@@ -1246,6 +1246,16 @@ cannot authorize any tool execution.
     return isinstance(cause, (ConnectionError, http.client.IncompleteRead, TimeoutError))
 
 
+def _discard_unadmitted_implementation_stream(_chunk: str) -> None:
+    """Hold the provider stream open without publishing an unadmitted final.
+
+    The completion gate runs only after the model call returns. Passing no
+    callback used to force a non-streaming HTTP request, so a long codegen
+    call waited for the whole body before the first header.
+    """
+    return None
+
+
 def _model_next(
     model: ModelAdapter,
     messages: list[ChatMessage],
@@ -4414,9 +4424,11 @@ def run_agent_turn(
                 next_step = _model_next(
                     model,
                     request_messages,
-                    # An unadmitted implementation final must not reach the
-                    # UI through streaming before its completion gate runs.
-                    on_stream_chunk=(None if owned_implementation_feedback is not None
+                    # Stream the provider call so long codegen is not stuck
+                    # waiting for headers, but do not publish that text until
+                    # the completion gate admits the final.
+                    on_stream_chunk=(_discard_unadmitted_implementation_stream
+                                     if owned_implementation_feedback is not None
                                      else on_assistant_stream_chunk),
                     on_thinking_chunk=on_thinking_chunk,
                     store=store,
@@ -6657,11 +6669,13 @@ def run_agent_turn(
                 verification_passed_count, verification_failed_count = (
                     verification_tracker.snapshot()
                 )
+                verification_latest = verification_tracker.latest()
                 canonical_outcome = canonicalize_task_outcome(
                     turn_outcome,
                     tool_error_count,
                     verification_passed=verification_passed_count,
                     verification_failed=verification_failed_count,
+                    verification_latest=verification_latest,
                 )
             except BaseException:  # finalized authority wins
                 logger.warning(
@@ -6771,11 +6785,13 @@ def run_agent_turn(
         verification_passed_count, verification_failed_count = (
             verification_tracker.snapshot()
         )
+        verification_latest = verification_tracker.latest()
         canonical_outcome = canonicalize_task_outcome(
             turn_outcome,
             tool_error_count,
             verification_passed=verification_passed_count,
             verification_failed=verification_failed_count,
+            verification_latest=verification_latest,
         )
         if outcome_capture is not None:
             outcome_capture.record(canonical_outcome)

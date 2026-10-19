@@ -124,11 +124,13 @@ class _Script:
         ))
 
 
-def _run(tmp_path, monkeypatch, *, transport_failure=False, max_model_calls=12):
+def _run(tmp_path, monkeypatch, *, transport_failure=False, max_model_calls=12,
+         model=None, tools=None, on_assistant_stream_chunk=None, initial_public=None):
     _install_verifier(monkeypatch)
     (tmp_path / "stock.py").write_text(INITIAL)
-    (tmp_path / "test_public.py").write_text("def test_ready():\n    assert True\n")
-    script = _Script(tmp_path, transport_failure=transport_failure)
+    (tmp_path / "test_public.py").write_text(
+        initial_public or "def test_ready():\n    assert True\n")
+    script = model or _Script(tmp_path, transport_failure=transport_failure)
     events = []
 
     class Sink:
@@ -138,12 +140,13 @@ def _run(tmp_path, monkeypatch, *, transport_failure=False, max_model_calls=12):
 
     capture = AgentOutcomeCapture()
     messages = run_agent_turn(
-        model=script, tools=ToolRegistry([edit_file_tool, write_file_tool]),
+        model=script, tools=tools or ToolRegistry([edit_file_tool, write_file_tool]),
         messages=[{"role": "user", "content": OBJECTIVE}], cwd=str(tmp_path),
         implementation_task=True, implementation_spec=_spec(), enable_work_chain=False,
         max_steps=None, agent_budget=AgentTurnBudget(max_model_calls=max_model_calls),
         outcome_capture=capture, event_sink=Sink(), defer_curator_maintenance=True,
-        enable_implementation_phases=False)
+        enable_implementation_phases=False,
+        on_assistant_stream_chunk=on_assistant_stream_chunk)
     return messages, events, capture, script
 
 
@@ -348,3 +351,93 @@ def test_reviewer_calls_count_and_an_exhausted_budget_hands_to_a_human(tmp_path,
     assert events[-1]["reason"] == "review_call_budget"
     assert events[-1]["canContinue"] is False
     assert "review call budget is exhausted" in json.dumps(messages)
+
+
+def test_reviewer_usage_is_charged_to_the_turn_budget(tmp_path, monkeypatch):
+    from decimal import Decimal
+
+    from minicode.cost_tracker import calculate_cost
+    from minicode.types import ModelUsage
+
+    usage = ModelUsage(input_tokens=1200, output_tokens=340, source="provider")
+
+    class Model:
+        def next(self, _messages, **_kwargs):
+            return AgentStep(type="assistant", kind="final",
+                             content=_verdict("pass", [], RELEASE_PROBE), usage=usage)
+
+    budget = AgentTurnBudget(max_model_calls=2)
+    _review, assess = _direct(tmp_path, monkeypatch, Model(), agent_budget=budget)
+    result = assess()
+    snapshot = budget.snapshot()
+    assert result["status"] == "approved"
+    assert snapshot.used_model_calls == 1
+    assert snapshot.used_input_tokens == 1200
+    assert snapshot.used_output_tokens == 340
+    assert Decimal(snapshot.used_cost_usd) == Decimal(str(calculate_cost(
+        "default", input_tokens=1200, output_tokens=340)))
+    assert Decimal(snapshot.used_cost_usd) > 0
+
+
+def test_implementation_turns_stream_without_publishing_unadmitted_text(tmp_path, monkeypatch):
+    from minicode.agent_loop import _discard_unadmitted_implementation_stream
+
+    ui = []
+
+    class Watching(_Script):
+        def __init__(self, root):
+            super().__init__(root)
+            self.executor_callbacks = []
+
+        def next(self, messages, on_stream_chunk=None, **kwargs):
+            reviewing = bool(messages and messages[0].get("role") == "system"
+                             and "BEHAVIOR_REVIEW" in str(messages[0].get("content", "")))
+            if not reviewing:
+                self.executor_callbacks.append(on_stream_chunk)
+                if on_stream_chunk is not None:
+                    on_stream_chunk("unadmitted draft")
+            return super().next(messages, on_stream_chunk=on_stream_chunk, **kwargs)
+
+    script = Watching(tmp_path)
+    _messages, events, _capture, script = _run(
+        tmp_path, monkeypatch, model=script, on_assistant_stream_chunk=ui.append)
+    assert events[-1]["status"] == "approved"
+    assert script.executor_callbacks
+    assert all(callback is _discard_unadmitted_implementation_stream
+               for callback in script.executor_callbacks)
+    assert "unadmitted draft" not in ui
+
+
+def test_repaired_mid_turn_verification_failure_still_achieves_the_goal(tmp_path, monkeypatch):
+    from minicode.tools.run_command import run_command_tool
+
+    class MissThenFix(_Script):
+        def __init__(self, root):
+            super().__init__(root)
+            self.ran_miss = False
+
+        def next(self, messages, **kwargs):
+            reviewing = bool(messages and messages[0].get("role") == "system"
+                             and "BEHAVIOR_REVIEW" in str(messages[0].get("content", "")))
+            if not reviewing and not self.ran_miss:
+                self.ran_miss = True
+                return AgentStep(type="tool_calls", calls=[
+                    _tool("run-miss", "run_command", command="python3",
+                          args=["-m", "pytest", "-q", "test_public.py"]),
+                ])
+            return super().next(messages, **kwargs)
+
+    script = MissThenFix(tmp_path)
+    _messages, events, capture, script = _run(
+        tmp_path, monkeypatch, model=script,
+        tools=ToolRegistry([edit_file_tool, write_file_tool, run_command_tool]),
+        initial_public="def test_miss():\n    assert False\n",
+    )
+    assert script.ran_miss
+    assert events[-1]["status"] == "approved"
+    assert events[-1]["reason"] == "behavior_review_passed"
+    assert capture.outcome.status == "success"
+    assert capture.outcome.verification_failed_count >= 1
+    assert capture.outcome.verification_passed_count >= 1
+    assert capture.outcome.verification_status == "verified"
+    assert capture.outcome.goal_achieved is True

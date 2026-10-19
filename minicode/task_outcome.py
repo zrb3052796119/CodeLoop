@@ -41,8 +41,15 @@ def canonicalize_task_outcome(
     *,
     verification_passed: int = 0,
     verification_failed: int = 0,
+    verification_latest: str | None = None,
 ) -> CanonicalTaskOutcome:
-    """Resolve completion separately from independently verified success."""
+    """Resolve completion separately from independently verified success.
+
+    ``verification_latest`` is the last observation that actually ran. A
+    repaired mid-turn failure does not keep the goal failed once a later
+    check passed. When the caller has no order, any historical failure still
+    wins.
+    """
     for name, value in (
         ("tool_error_count", tool_error_count),
         ("verification_passed", verification_passed),
@@ -50,12 +57,16 @@ def canonicalize_task_outcome(
     ):
         if isinstance(value, bool) or not isinstance(value, int) or value < 0:
             raise ValueError(f"{name} must be a non-negative integer")
+    if verification_latest not in {None, "passed", "failed"}:
+        raise ValueError("verification_latest must be passed, failed, or omitted")
 
     status = turn_outcome if turn_outcome in _TASK_OUTCOMES else "unknown"
     completion_succeeded = status == "success"
-    if verification_failed > 0:
+    if verification_latest == "failed" or (
+        verification_latest is None and verification_failed > 0
+    ):
         verification_status = "failed"
-    elif verification_passed > 0:
+    elif verification_latest == "passed" or verification_passed > 0:
         verification_status = "verified"
     else:
         verification_status = "unverified"
