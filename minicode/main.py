@@ -504,17 +504,27 @@ def main() -> None:
                             parsed_intent=parsed_intent,
                             refresh_catalog=False,
                         )
+                        from minicode.delegation_policy import delegation_prompt_note
+
+                        prompt_extras = {
+                            "skills": routed_skills,
+                            "skill_routing": skill_routing,
+                            "mcpServers": tools.get_mcp_servers(),
+                            "memory_context": "",
+                        }
+                        delegation_note = delegation_prompt_note(
+                            user_input,
+                            routing_enabled=bool((runtime or {}).get("subagentRoutingEnabled")),
+                            implementation_owned=False,
+                        )
+                        if delegation_note:
+                            prompt_extras["delegation_note"] = delegation_note
                         messages[0] = {
                             "role": "system",
                             "content": build_system_prompt(
                                 cwd,
                                 permissions.get_summary(),
-                                {
-                                    "skills": routed_skills,
-                                    "skill_routing": skill_routing,
-                                    "mcpServers": tools.get_mcp_servers(),
-                                    "memory_context": "",
-                                },
+                                prompt_extras,
                             ),
                         }
                         emit_skill_routing_safely(observation, skill_routing)

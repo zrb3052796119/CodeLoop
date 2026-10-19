@@ -262,7 +262,7 @@ def build_system_prompt(
         "You have access to the 'task' tool which can spawn sub-agents for complex work. Use it when:\n"
         "- You need to explore a large codebase without bloating the main context (agent_type='explore')\n"
         "- You need an analysis-only answer or must resolve a specific design uncertainty (agent_type='plan'); give it a bounded question, not a request to understand the entire repository\n"
-        "- Small low-risk edits (a few non-sensitive files, bounded diff): edit directly with edit_file/write_file and verify with run_command; if a permission decision requires workflow, delegate the remaining work through that route\n"
+        "- Adaptive delegation when child models are routed: two or more source files to change, or an explicit request for a separate implementer and reviewer, goes to agent_type='workflow' before you edit those files. A single-file or single-function change stays with you. Do not add a plan or explore agent to a change you already know how to make. If a permission decision requires workflow, delegate the remaining work through that route\n"
         "- For delegated changes, call agent_type='workflow' directly with write_paths and verification_commands (the scheduler constructs WorkflowRequest.v1 for you) or an explicit workflow_request. Do not routinely run Plan first: the scheduler selects Analyst when the scope and risk require it, and narrow fully-verified scopes use Executor->Verifier. Verification, approval, review, and commit gates remain scheduler-owned\n"
         "- Keep the workflow prompt within 3800 characters: state the objective, observed failure, constraints, and acceptance outcome; put authorized paths and verification argv in their dedicated fields. Do not paste source files or exploration transcripts. Preserve essential requirements when shortening the handoff\n"
         "- Once the relevant code and expected behavior are clear, make or delegate the smallest supported change. Read more only to resolve a concrete uncertainty; if scope, evidence, or permission blocks the change, report that blocker accurately\n"
@@ -311,6 +311,14 @@ def build_system_prompt(
     # (never static) so it stays behind the prompt-cache boundary, and with
     # cache_ttl=0 so a clock section can never serve a stale value.
     pipeline.register_dynamic("current_date", _current_date_section, cache_ttl=0.0)
+
+    delegation_note = str(extras.get("delegation_note") or "").strip()
+    if delegation_note:
+        pipeline.register_dynamic(
+            "delegation",
+            lambda: "## This turn's delegation\n" + delegation_note,
+            cache_ttl=0.0,
+        )
 
     # Permission context
     if permission_summary:

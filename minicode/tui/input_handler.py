@@ -743,17 +743,27 @@ def _handle_input(
                 intent = turn_routing.intent
                 skill_routing = turn_routing.routing
                 skills_for_prompt = list(turn_routing.prompt_skills)
+                from minicode.delegation_policy import delegation_prompt_note
+
+                prompt_extras = {
+                    "skills": skills_for_prompt,
+                    "skill_routing": skill_routing.to_dict(),
+                    "mcpServers": args.tools.get_mcp_servers(),
+                    "memory_context": "",
+                }
+                delegation_note = delegation_prompt_note(
+                    input_text,
+                    routing_enabled=bool((args.runtime or {}).get("subagentRoutingEnabled")),
+                    implementation_owned=False,
+                )
+                if delegation_note:
+                    prompt_extras["delegation_note"] = delegation_note
                 turn_messages[0] = {
                     "role": "system",
                     "content": build_system_prompt(
                         args.cwd,
                         args.permissions.get_summary(),
-                        {
-                            "skills": skills_for_prompt,
-                            "skill_routing": skill_routing.to_dict(),
-                            "mcpServers": args.tools.get_mcp_servers(),
-                            "memory_context": "",
-                        },
+                        prompt_extras,
                     ),
                 }
                 emit_skill_routing_safely(observation, skill_routing)

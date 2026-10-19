@@ -3553,7 +3553,12 @@ def _capability_for(call_input: Mapping[str, object]) -> CapabilityProfile:
 task_tool = ToolDefinition(
     name="task",
     description=(
-        "Run or manage a sub-agent for a complex task. Choose agent_type by "
+        "Run or manage a sub-agent for a complex task. When sub-agent routing "
+        "is enabled, two or more source files to change, or an explicit "
+        "request for a separate implementer and reviewer, uses 'workflow' "
+        "before the parent edits those files. A single-file or single-function "
+        "change stays with the parent. Do not add 'plan' or 'explore' to a "
+        "change that is already specified. Choose agent_type by "
         "the work, not by habit: a task that creates or modifies files -> "
         "'workflow' (pass write_paths and verification_commands and the "
         "scheduler constructs WorkflowRequest.v1 for you, or provide an "

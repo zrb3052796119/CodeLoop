@@ -553,16 +553,26 @@ def create_agent_turn_runtime(
         intent = turn_routing.intent
         skill_routing = turn_routing.routing
         skills_for_prompt = list(turn_routing.prompt_skills)
+        from minicode.delegation_policy import delegation_prompt_note
+
+        prompt_extras = {
+            "skills": skills_for_prompt,
+            "skill_routing": skill_routing.to_dict(),
+            "mcpServers": tools.get_mcp_servers(),
+            "memory_context": "",
+            "user_interaction_available": allow_user_interaction,
+        }
+        delegation_note = delegation_prompt_note(
+            prompt,
+            routing_enabled=bool((runtime or {}).get("subagentRoutingEnabled")),
+            implementation_owned=implementation_spec is not None,
+        )
+        if delegation_note:
+            prompt_extras["delegation_note"] = delegation_note
         system_prompt = build_system_prompt(
             str(resolved),
             permissions.get_summary(),
-            {
-                "skills": skills_for_prompt,
-                "skill_routing": skill_routing.to_dict(),
-                "mcpServers": tools.get_mcp_servers(),
-                "memory_context": "",
-                "user_interaction_available": allow_user_interaction,
-            },
+            prompt_extras,
         )
         return AgentTurnRuntime(
             workspace=resolved,

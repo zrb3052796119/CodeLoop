@@ -879,6 +879,7 @@ def _execute_single_tool(
     parent_handoff_preserve_tokens: int = 0,
     workflow_delivery: TurnWorkflowDelivery | None = None,
     workflow_user_request: str | None = None,
+    delegation_coach: dict | None = None,
 ) -> ToolResult:
     """Execute a single tool call with hooks, state updates, and crash protection.
     
@@ -952,6 +953,26 @@ def _execute_single_tool(
                         "the result through the assistant final response."
                     ),
                 )
+            coach = delegation_coach or {}
+            if (
+                tool_name == "task"
+                and isinstance(tool_input, dict)
+                and tool_input.get("agent_type") == "workflow"
+            ):
+                # The parent handed the change off. Do not coach a later edit.
+                coach["pending"] = False
+            elif (
+                coach.get("pending")
+                and tool_name == "task"
+                and isinstance(tool_input, dict)
+                and tool_input.get("agent_type") in {"plan", "explore"}
+            ):
+                # Keep the handoff pending. A survey agent does not implement
+                # the change and would only repeat work the workflow owns.
+                return ToolResult(ok=False, output=str(coach.get("message") or ""))
+            elif coach.get("pending") and tool_name in {"edit_file", "write_file"}:
+                coach["pending"] = False
+                return ToolResult(ok=False, output=str(coach.get("message") or ""))
             verifier_backend, verifier_executables = (
                 resolve_verifier_host_capabilities(runtime)
             )
@@ -2188,6 +2209,7 @@ def run_agent_turn(
         or not any(tool is host_native_result_tool for tool in tools.list())
     ):
         raise ValueError("native result capability must be the bound Reviewer tool")
+    delegation_coach = {"pending": False, "message": ""}
     native_handoff_only = False
     native_handoff_attempted = False
     native_handoff_rejected = False
@@ -3214,6 +3236,16 @@ def run_agent_turn(
             current_messages.append({"role": "user", "content": packet, "_implementation_context": True})
             if context_manager is not None:
                 context_manager.messages = list(current_messages)
+    from minicode.delegation_policy import parent_delegation_gate, task_text_from_messages
+
+    gate = parent_delegation_gate(
+        task_text_from_messages(messages),
+        routing_enabled=bool((runtime or {}).get("subagentRoutingEnabled")),
+        implementation_owned=implementation_spec is not None,
+        agent_depth=agent_depth,
+    )
+    delegation_coach["pending"] = gate.pending
+    delegation_coach["message"] = gate.message
     from minicode.executor_verification import ExecutorCheckCapability
     from minicode.executor_result_submission import ExecutorResultChannel
 
@@ -5322,6 +5354,7 @@ def run_agent_turn(
                     parent_handoff_preserve_tokens=parent_handoff_preserve_tokens,
                     workflow_delivery=workflow_delivery,
                     workflow_user_request=(current_user_message if agent_depth == 0 else None),
+                    delegation_coach=delegation_coach,
                 )
                 _results.append((call, result))
                 observe_implementation_tool_result(call, result)
@@ -5693,6 +5726,7 @@ def run_agent_turn(
                                 ),
                                 workflow_delivery=workflow_delivery,
                                 workflow_user_request=(current_user_message if agent_depth == 0 else None),
+                                delegation_coach=delegation_coach,
                             )
                         finally:
                             if (write_feedback_batch is not None and
