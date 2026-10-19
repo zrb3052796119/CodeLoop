@@ -299,6 +299,26 @@ def _append_trace_event(trace: list[dict[str, Any]], event: dict[str, Any]) -> N
     append_trace_event(trace, event, max_events=_TRACE_MAX_EVENTS)
 
 
+def _parent_visible_tool_output(call: dict, result: ToolResult, text: str) -> str:
+    """Prefix a workflow result with the compact scheduler handoff.
+
+    The body is unchanged, including a committed receipt. The prefix is how
+    the parent model and a later short preview see that CentralScheduler ran.
+    """
+
+    tool_input = call.get("input")
+    if (
+        call.get("toolName") != "task"
+        or not isinstance(tool_input, dict)
+        or tool_input.get("agent_type") != "workflow"
+        or tool_input.get("action") not in {None, "run"}
+    ):
+        return text
+    from minicode.scheduler_trace import attach_parent_workflow_handoff
+
+    return attach_parent_workflow_handoff(text, tool_ok=result.ok)
+
+
 def _append_tool_trace_events(
     trace: list[dict[str, Any]],
     call: dict,
@@ -331,7 +351,10 @@ def _append_tool_trace_events(
         # Use the tool's own output, not the model-facing result_output: the
         # latter may carry an appended "[System note: ...]" retry nudge, which
         # must never leak into persisted trace summaries or reflection claims.
-        "output_summary": _redact_trace_text(result.output, 500),
+        "output_summary": _redact_trace_text(
+            _parent_visible_tool_output(call, result, result.output),
+            500,
+        ),
         "files": files,
         **role_fields,
     })
@@ -5918,7 +5941,9 @@ def run_agent_turn(
                             "role": "tool_result",
                             "toolUseId": call["id"],
                             "toolName": call["toolName"],
-                            "content": result.output,
+                            "content": _parent_visible_tool_output(
+                                call, result, result.output,
+                            ),
                             "isError": not result.ok,
                         }
                     )
@@ -6151,7 +6176,9 @@ def run_agent_turn(
                         "role": "tool_result",
                         "toolUseId": call["id"],
                         "toolName": call["toolName"],
-                        "content": result_output,
+                        "content": _parent_visible_tool_output(
+                            call, result, result_output,
+                        ),
                         "isError": not result.ok,
                         **({"_implementation_checks_failed": result._implementation_checks_failed}
                            if not suppressed and type(result._implementation_checks_failed) is bool else {}),

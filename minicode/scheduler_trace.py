@@ -20,6 +20,8 @@ from minicode.workflow_repair import (
 
 SCHEDULER_TRACE_VERSION = 1
 SCHEDULER_TRACE_MARKER = "=== SCHEDULER TRACE v1 ==="
+PARENT_WORKFLOW_HANDOFF_MARKER = "=== SCHEDULER HANDOFF v1 ==="
+_SOLO_FALLBACK_LEAD = "Workflow failed, so this handoff is closed."
 
 _ID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{1,127}$")
 _RULE_RE = re.compile(r"^route\.[a-z][a-z0-9_]{0,63}$")
@@ -1013,6 +1015,98 @@ def render_scheduler_trace(trace: Mapping[str, object]) -> str:
     )
 
 
+def _phase_highlights(trace: Mapping[str, object]) -> list[str]:
+    raw = trace.get("transitions")
+    if not isinstance(raw, list):
+        return []
+    phases: list[str] = []
+    for item in raw:
+        if not isinstance(item, dict) or item.get("outcome") == "dispatched":
+            continue
+        stage = item.get("stage")
+        outcome = item.get("outcome")
+        if not isinstance(stage, str) or not isinstance(outcome, str):
+            continue
+        label = f"{stage}:{outcome}"
+        if not phases or phases[-1] != label:
+            phases.append(label)
+        if len(phases) == 8:
+            break
+    return phases
+
+
+def parent_workflow_handoff(output: str, *, tool_ok: bool) -> dict[str, object]:
+    """Compact facts a parent can read without the full transition log."""
+
+    trace = extract_scheduler_trace(output)
+    solo = _SOLO_FALLBACK_LEAD in (output or "")
+    if trace is None:
+        return {
+            "committed": False,
+            "ok": bool(tool_ok),
+            "phases": [],
+            "ran": False,
+            "ruleId": None,
+            "scheduler": "central",
+            "soloFallback": solo,
+            "status": "unavailable",
+            "terminalReason": "trace_unavailable",
+        }
+    return {
+        "committed": bool(trace.get("committed")),
+        "ok": bool(tool_ok),
+        "phases": _phase_highlights(trace),
+        "ran": True,
+        "ruleId": trace.get("ruleId"),
+        "scheduler": "central",
+        "soloFallback": solo,
+        "status": trace.get("status"),
+        "terminalReason": trace.get("terminalReason"),
+    }
+
+
+def render_parent_workflow_handoff(output: str, *, tool_ok: bool) -> str:
+    payload = parent_workflow_handoff(output, tool_ok=tool_ok)
+    return PARENT_WORKFLOW_HANDOFF_MARKER + "\n" + json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
+def attach_parent_workflow_handoff(output: str, *, tool_ok: bool) -> str:
+    """Put the compact handoff, and any solo-fallback note, at the front.
+
+    The full scheduler trace stays in the body. ``extract_scheduler_trace``
+    still reads that trace. A later preview that keeps only the head therefore
+    still shows whether CentralScheduler ran, the rule, and the verdict.
+    """
+
+    text = output or ""
+    if text.startswith(PARENT_WORKFLOW_HANDOFF_MARKER):
+        return text
+    note = ""
+    lead_at = text.find(_SOLO_FALLBACK_LEAD)
+    if lead_at >= 0:
+        note_and_after = text[lead_at:]
+        note, separator, after = note_and_after.partition("\n\n")
+        text = text[:lead_at].rstrip()
+        if separator:
+            text = (text + "\n\n" + after).strip()
+        note = note.strip()
+    summary = render_parent_workflow_handoff(
+        (text + "\n" + note).strip(),
+        tool_ok=tool_ok,
+    )
+    parts = [summary]
+    if note:
+        parts.append(note)
+    if text.strip():
+        parts.append(text.strip())
+    return "\n\n".join(parts)
+
+
 def extract_scheduler_trace(output: object) -> dict[str, object] | None:
     """Extract a rendered trace even when a result artifact follows it."""
     if not isinstance(output, str):
@@ -1031,9 +1125,13 @@ def extract_scheduler_trace(output: object) -> dict[str, object] | None:
 
 
 __all__ = [
+    "PARENT_WORKFLOW_HANDOFF_MARKER",
     "SCHEDULER_TRACE_MARKER",
     "SCHEDULER_TRACE_VERSION",
+    "attach_parent_workflow_handoff",
     "extract_scheduler_trace",
+    "parent_workflow_handoff",
     "project_scheduler_trace",
+    "render_parent_workflow_handoff",
     "render_scheduler_trace",
 ]

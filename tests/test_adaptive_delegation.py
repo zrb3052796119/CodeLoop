@@ -233,6 +233,14 @@ def test_failed_workflow_call_unlocks_a_solo_edit(tmp_path: Path) -> None:
     messages = _turn(tmp_path, script, tools=ToolRegistry([task, write_file_tool]))
     blob = "\n".join(str(message.get("content")) for message in messages)
     assert "workflow rejected" in blob
+    handoff = next(
+        message["content"] for message in messages
+        if message.get("role") == "tool_result" and message.get("toolName") == "task"
+    )
+    assert handoff.startswith("=== SCHEDULER HANDOFF v1 ===")
+    assert '"ran":false' in handoff and '"ok":false' in handoff
+    assert '"scheduler":"central"' in handoff
+    assert handoff.index("Finish the change yourself") < handoff.index("workflow rejected")
     assert "Finish the change yourself" in blob
     assert "stock.py" in blob and "test_public.py" in blob
     assert "Do not call task(workflow) again" in blob
@@ -495,6 +503,151 @@ def test_host_owned_implementation_still_writes_when_routing_is_on(tmp_path: Pat
         max_steps=3,
     )
     assert (tmp_path / "stock.py").read_text() == "owned\n"
+
+
+def _rendered_scheduler_trace() -> tuple[str, str]:
+    from minicode.central_scheduler import (
+        CentralScheduler,
+        DispatchStage,
+        StageResult,
+        TaskKind,
+        TaskProfile,
+        TaskRisk,
+    )
+    from minicode.scheduler_trace import project_scheduler_trace, render_scheduler_trace
+
+    scheduler = CentralScheduler()
+    profile = TaskProfile(
+        task_id="task_parent_handoff",
+        kind=TaskKind.CHANGE,
+        risk=TaskRisk.LOW,
+        scope_clear=True,
+        acceptance_executable=True,
+    )
+    plan = scheduler.plan(profile)
+    transitions: list = []
+
+    def run_worker(assignment):
+        if assignment.stage is DispatchStage.EXECUTOR:
+            return StageResult(
+                status="completed",
+                artifact_id="artifact_executor",
+                patch_digest="sha256:parent-handoff",
+            )
+        if assignment.stage is DispatchStage.REVIEWER:
+            return StageResult(
+                status="completed",
+                artifact_id="artifact_review",
+                patch_digest="sha256:parent-handoff",
+                approved=True,
+            )
+        return StageResult(status="completed", artifact_id="artifact_other")
+
+    def run_verifier(_assignment):
+        return StageResult(
+            status="completed",
+            artifact_id="verification_parent",
+            patch_digest="sha256:parent-handoff",
+        )
+
+    outcome = scheduler.execute(
+        profile,
+        workflow_id="wf_parent_handoff",
+        run_worker=run_worker,
+        run_verifier=run_verifier,
+        commit=lambda _request: True,
+        on_transition=transitions.append,
+    )
+    trace = project_scheduler_trace(plan, outcome, transitions)
+    return str(plan.rule_id), render_scheduler_trace(trace)
+
+
+def test_parent_workflow_result_carries_a_compact_handoff(tmp_path: Path) -> None:
+    from minicode.context_compactor import ToolResultBudgetManager
+    from minicode.scheduler_trace import extract_scheduler_trace
+
+    rule_id, rendered = _rendered_scheduler_trace()
+
+    def accept(_input, _context):
+        return ToolResult(
+            ok=True,
+            output="executor wrote the files\n" + ("detail\n" * 40) + "\n" + rendered,
+        )
+
+    task = ToolDefinition(
+        name="task", description="workflow", input_schema={"type": "object"},
+        validator=lambda value: value, run=accept,
+    )
+    messages = _turn(
+        tmp_path,
+        Script([
+            AgentStep(type="tool_calls", calls=[{
+                "id": "1", "toolName": "task",
+                "input": {
+                    "agent_type": "workflow",
+                    "prompt": "implement hold and release",
+                    "write_paths": ["stock.py", "test_public.py"],
+                },
+            }]),
+            _final(),
+        ]),
+        tools=ToolRegistry([task, write_file_tool]),
+    )
+    content = next(
+        message["content"] for message in messages
+        if message.get("role") == "tool_result" and message.get("toolName") == "task"
+    )
+    assert content.startswith("=== SCHEDULER HANDOFF v1 ===")
+    assert f'"ruleId":"{rule_id}"' in content
+    assert '"ran":true' in content and '"ok":true' in content
+    assert '"status":"completed"' in content
+    assert '"scheduler":"central"' in content
+    assert extract_scheduler_trace(content)["ruleId"] == rule_id
+
+    huge = content + ("\n" + ("x" * 200)) * 30
+    previewed, _saved = ToolResultBudgetManager(tmp_path / "preview").check_and_replace([
+        {"role": "tool_result", "toolName": "task", "toolUseId": "1", "content": huge},
+    ])
+    preview = previewed[0]["content"]
+    assert "=== SCHEDULER HANDOFF v1 ===" in preview
+    assert f'"ruleId":"{rule_id}"' in preview
+    assert '"ran":true' in preview
+
+
+def test_failed_workflow_handoff_keeps_the_rule_beside_the_solo_note(tmp_path: Path) -> None:
+    rule_id, rendered = _rendered_scheduler_trace()
+
+    def reject(_input, _context):
+        return ToolResult(ok=False, output="workflow rejected\n\n" + rendered)
+
+    task = ToolDefinition(
+        name="task", description="workflow", input_schema={"type": "object"},
+        validator=lambda value: value, run=reject,
+    )
+    messages = _turn(
+        tmp_path,
+        Script([
+            AgentStep(type="tool_calls", calls=[{
+                "id": "1", "toolName": "task",
+                "input": {"agent_type": "workflow", "prompt": "implement", "write_paths": ["stock.py"]},
+            }]),
+            _write("2", "x = 1\n"),
+            _final(),
+        ]),
+        tools=ToolRegistry([task, write_file_tool]),
+    )
+    content = next(
+        message["content"] for message in messages
+        if message.get("role") == "tool_result" and message.get("toolName") == "task"
+    )
+    assert content.startswith("=== SCHEDULER HANDOFF v1 ===")
+    head, _rest = content.split("\n\n", 1)
+    assert f'"ruleId":"{rule_id}"' in head
+    assert '"ran":true' in head and '"ok":false' in head
+    assert content.index("=== SCHEDULER HANDOFF v1 ===") < content.index("Finish the change yourself")
+    assert content.index("Finish the change yourself") < content.index("workflow rejected")
+    assert content.index("Finish the change yourself") < content.index("=== SCHEDULER TRACE v1 ===")
+    assert (tmp_path / "stock.py").read_text() == "x = 1\n"
 
 
 def test_nested_worker_is_not_coached(tmp_path: Path) -> None:
