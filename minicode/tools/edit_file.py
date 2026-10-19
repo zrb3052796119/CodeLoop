@@ -176,7 +176,7 @@ def _run(input_data: dict, context) -> ToolResult:
     if not matches:
         # No match found — provide helpful diagnostic
         diagnostic = _format_mismatch_diagnostic(content, input_data["search"])
-        return ToolResult(ok=False, output=diagnostic)
+        return ToolResult(ok=False, output=diagnostic, _edit_anchor_failed=True)
     
     if len(matches) > 1 and not input_data["replace_all"]:
         # Multiple matches — report them with line numbers
@@ -193,6 +193,7 @@ def _run(input_data: dict, context) -> ToolResult:
         
         return ToolResult(
             ok=False,
+            _edit_anchor_failed=True,
             output=(
                 f"Found {len(matches)} matches for the search string. "
                 f"Use replace_all=true to replace all occurrences, or provide more context to make the match unique.\n"

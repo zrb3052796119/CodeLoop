@@ -8,9 +8,11 @@ from __future__ import annotations
 import fnmatch
 import os
 import re
+import stat
 from pathlib import Path
 from typing import Any
 
+from minicode.permissions import PermissionDeniedError
 from minicode.tooling import ToolDefinition, ToolResult
 from minicode.workspace import resolve_tool_path
 
@@ -42,6 +44,7 @@ BINARY_EXTENSIONS = frozenset({
 MAX_FILES = 5000
 MAX_RESULTS = 200
 MAX_RESULT_SIZE = 50_000  # chars
+MAX_CONTEXT_LINES = 20
 
 
 # ---------------------------------------------------------------------------
@@ -98,7 +101,11 @@ def _search_file(
     except OSError:
         return None
     
-    lines = content.splitlines()
+    # Text I/O already normalizes CRLF/CR. Use the same LF line boundaries as
+    # read_file: splitlines() also splits form-feed and Unicode string data.
+    lines = content.split("\n")
+    if lines[-1] == "":
+        lines.pop()
     matches = []
     
     for line_num, line in enumerate(lines, start=1):
@@ -150,31 +157,32 @@ def _format_results(
         
         rel_path = file_path.relative_to(root).as_posix()
         
-        for match in matches:
-            if total_matches >= max_results:
-                break
-            total_matches += 1
-            
-            # Context before
-            for ctx in match.get("context_before", []):
-                output_parts.append(
-                    f"{rel_path}:{ctx['line']}:  {ctx['text']}"
-                )
-            
-            # Match line
-            output_parts.append(
-                f"{rel_path}:{match['line']}: {match['text']}"
-            )
-            
-            # Context after
-            for ctx in match.get("context_after", []):
-                output_parts.append(
-                    f"{rel_path}:{ctx['line']}:  {ctx['text']}"
-                )
-            
-            # Separator between matches
-            if len(matches) > 1 or match.get("context_before") or match.get("context_after"):
+        selected = matches[:max_results - total_matches]
+        total_matches += len(selected)
+        if not any(m.get("context_before") or m.get("context_after") for m in selected):
+            # Preserve the established no-context layout exactly.
+            for match in selected:
+                output_parts.append(f"{rel_path}:{match['line']}: {match['text']}")
+                if len(matches) > 1:
+                    output_parts.append("")
+            continue
+        # Merge overlapping/adjacent windows while retaining every actual match
+        # marker. A match that first appeared as another match's context must
+        # not be downgraded to a context-only line.
+        visible: dict[int, dict[str, Any]] = {}
+        for match in selected:
+            for item in [*match.get("context_before", []), match, *match.get("context_after", [])]:
+                previous = visible.get(item["line"])
+                if previous is None or item.get("is_match"):
+                    visible[item["line"]] = item
+        previous_line = None
+        for number, item in sorted(visible.items()):
+            if previous_line is not None and number > previous_line + 1:
                 output_parts.append("")
+            gap = "" if item.get("is_match") else " "
+            output_parts.append(f"{rel_path}:{number}: {gap}{item['text']}")
+            previous_line = number
+        output_parts.append("")
     
     return "\n".join(output_parts)
 
@@ -211,19 +219,59 @@ def _validate(input_data: dict) -> dict:
         exclude = []
     elif not isinstance(exclude, list):
         exclude = []
+
+    context_lines = input_data.get("context_lines", 0)
+    if type(context_lines) is not int or not 0 <= context_lines <= MAX_CONTEXT_LINES:
+        raise ValueError(f"context_lines must be an integer between 0 and {MAX_CONTEXT_LINES}")
     
     return {
         "pattern": pattern,
         "path": input_data.get("path", "."),
         "include": include,
         "exclude": exclude,
-        "context_lines": min(int(input_data.get("context_lines", 0)), 5),
+        "context_lines": context_lines,
         "case_sensitive": bool(input_data.get("case_sensitive", False)),
     }
 
 
 def _run(input_data: dict, context) -> ToolResult:
-    root = resolve_tool_path(context, input_data["path"], "search")
+    try:
+        root = resolve_tool_path(context, input_data["path"], "search")
+        mode = root.stat().st_mode
+    except (FileNotFoundError, NotADirectoryError):
+        return ToolResult(
+            ok=False,
+            output=(
+                "error[not_found]: Search path does not exist. "
+                f"({input_data['path']})"
+            ),
+        )
+    except (PermissionError, PermissionDeniedError):
+        return ToolResult(
+            ok=False,
+            output="error[permission_denied]: Search path is not accessible.",
+        )
+    except OSError:
+        return ToolResult(
+            ok=False,
+            output=(
+                "error[unreadable]: Search path could not be inspected. "
+                f"({input_data['path']})"
+            ),
+        )
+    single_file = root if stat.S_ISREG(mode) else None
+    if single_file is not None:
+        # Use the containing directory as the relative root, so glob matching,
+        # line numbers and formatting use the same path as a directory search.
+        root = single_file.parent
+    elif not stat.S_ISDIR(mode):
+        return ToolResult(
+            ok=False,
+            output=(
+                "error[not_searchable]: Path is not a file or directory. "
+                f"({input_data['path']})"
+            ),
+        )
     
     # Compile regex
     flags = 0 if input_data.get("case_sensitive", False) else re.IGNORECASE
@@ -240,24 +288,38 @@ def _run(input_data: dict, context) -> ToolResult:
     # walk. rglob("*") materializes the entire tree — node_modules and .git
     # included — before any filter runs, so a large repo paid full traversal
     # cost regardless of MAX_FILES.
+    def permitted_path(path: Path) -> Path | None:
+        # Root permission does not authorize every descendant: Assignment
+        # exclusions and symlinks must be checked before traversal or reading.
+        # Cancellation/deadline exceptions deliberately propagate.
+        try:
+            return resolve_tool_path(context, str(path), "search")
+        except (PermissionError, PermissionDeniedError, OSError):
+            return None
+
     all_files: list[Path] = []
-    try:
-        for dirpath, dirnames, filenames in os.walk(root):
-            dirnames[:] = [
-                name
-                for name in dirnames
-                if name not in SKIP_DIRS and not name.startswith(".")
-            ]
-            for filename in filenames:
-                if filename.startswith("."):
-                    continue
-                all_files.append(Path(dirpath) / filename)
-            if len(all_files) >= MAX_FILES:
-                break
-    except PermissionError:
-        return ToolResult(ok=False, output=f"Permission denied: {root}")
-    except OSError as e:
-        return ToolResult(ok=False, output=f"Cannot read directory: {e}")
+    if single_file is not None:
+        all_files.append(single_file)
+    else:
+        try:
+            for dirpath, dirnames, filenames in os.walk(root):
+                dirnames[:] = [
+                    name
+                    for name in dirnames
+                    if name not in SKIP_DIRS
+                    and not name.startswith(".")
+                    and permitted_path(Path(dirpath) / name) is not None
+                ]
+                for filename in filenames:
+                    if filename.startswith("."):
+                        continue
+                    all_files.append(Path(dirpath) / filename)
+                if len(all_files) >= MAX_FILES:
+                    break
+        except PermissionError:
+            return ToolResult(ok=False, output=f"Permission denied: {root}")
+        except OSError as e:
+            return ToolResult(ok=False, output=f"Cannot read directory: {e}")
     all_files.sort()
 
     # Search
@@ -267,9 +329,6 @@ def _run(input_data: dict, context) -> ToolResult:
     total_matches = 0
 
     for file_path in all_files:
-        if not file_path.is_file():
-            continue
-
         # File limit
         if file_count >= MAX_FILES:
             break
@@ -279,11 +338,18 @@ def _run(input_data: dict, context) -> ToolResult:
         if not _matches_glob(rel_path, include_globs, exclude_globs if exclude_globs else None):
             skipped += 1
             continue
+
+        resolved_file = permitted_path(file_path)
+        if resolved_file is None:
+            skipped += 1
+            continue
+        if not resolved_file.is_file():
+            continue
         
         file_count += 1
         
         # Search file
-        matches = _search_file(file_path, regex, context_lines, root)
+        matches = _search_file(resolved_file, regex, context_lines, root)
         if matches:
             results.append((file_path, matches))
             total_matches += len(matches)
@@ -296,16 +362,16 @@ def _run(input_data: dict, context) -> ToolResult:
     
     output = _format_results(results, root)
     
-    # Truncate if too large
-    if len(output) > MAX_RESULT_SIZE:
-        output = output[:MAX_RESULT_SIZE] + f"\n\n... (truncated, showing first {MAX_RESULT_SIZE} chars)"
-    
     # Add summary
-    output += f"\n\n{total_matches} match(es) in {len(results)} file(s)"
+    summary = f"\n\n{total_matches} match(es) in {len(results)} file(s)"
     if file_count >= MAX_FILES:
-        output += f" (search stopped at {MAX_FILES} files)"
+        summary += f" (search stopped at {MAX_FILES} files)"
     if skipped > 0:
-        output += f" ({skipped} file(s) skipped)"
+        summary += f" ({skipped} file(s) skipped)"
+    if len(output) + len(summary) > MAX_RESULT_SIZE:
+        notice = f"\n\n... (truncated, maximum output {MAX_RESULT_SIZE} chars)"
+        output = output[:MAX_RESULT_SIZE - len(notice) - len(summary)] + notice
+    output += summary
     
     return ToolResult(ok=True, output=output)
 
@@ -313,9 +379,10 @@ def _run(input_data: dict, context) -> ToolResult:
 grep_files_tool = ToolDefinition(
     name="grep_files",
     description=(
-        "Search UTF-8 text files under a directory using a regex pattern. "
+        "Search a UTF-8 text file or files under a directory using a regex pattern. "
         "Supports glob-based include/exclude filtering and context lines. "
-        "Results are formatted as path:line:content with optional surrounding context."
+        "Results are formatted as path:line:content; overlapping context is shown once. "
+        "Use read_file start_line/end_line to inspect a matched line range."
     ),
     input_schema={
         "type": "object",
@@ -326,7 +393,11 @@ grep_files_tool = ToolDefinition(
             },
             "path": {
                 "type": "string",
-                "description": "Directory to search in (default: current directory)",
+                "description": (
+                    "File or directory to search (default: current directory). "
+                    "For a file, glob filters and result paths are relative "
+                    "to its parent directory."
+                ),
             },
             "include": {
                 "oneOf": [
@@ -344,9 +415,10 @@ grep_files_tool = ToolDefinition(
             },
             "context_lines": {
                 "type": "integer",
-                "description": "Number of context lines before and after each match (0-5, default: 0)",
+                "description": "Number of context lines before and after each match (0-20, default: 0). Out-of-range values are rejected, not silently shortened.",
                 "minimum": 0,
-                "maximum": 5,
+                "maximum": MAX_CONTEXT_LINES,
+                "default": 0,
             },
             "case_sensitive": {
                 "type": "boolean",

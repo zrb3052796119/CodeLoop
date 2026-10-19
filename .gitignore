@@ -100,6 +100,21 @@ out.txt
 /artifacts/**/workspace/
 /artifacts/**/memory-store.lock
 
+# Bulky generated traces and frozen copies must stay out of automatic Git
+# checkpoints. Keep curated reports and source changes available to version.
+/artifacts/**/private/
+/artifacts/**/frozen-code.zip
+/artifacts/**/tasks.json
+/artifacts/**/native-evidence-*/
+/artifacts/**/native-pending-roundtrip/
+/artifacts/**/generic-scale-fixture/
+/artifacts/disk-cleanup-*/
+/artifacts/cleanup-audit-*/
+
+# Local retirement records and editor backup; keep them out of source pushes.
+/docs/archive/multi-agent-retired-2026-10-19/
+/minicode/agent_loop.py.orig
+
 # Real-request intent evaluation keeps linkable Session locators local-only.
 /.design-work/intent-semantic-production-evaluation/build_pilot_manifests.py
 /.design-work/intent-semantic-production-evaluation/artifacts/private/

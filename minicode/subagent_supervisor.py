@@ -13,6 +13,7 @@ terminal state with a late success.
 from __future__ import annotations
 
 import json
+import math
 import os
 import shutil
 import signal
@@ -151,6 +152,7 @@ def run_subagent_process(
     command: Sequence[str] | None = None,
     poll_interval_seconds: float = 0.05,
     kill_grace_seconds: float = 1.0,
+    on_tool_evidence=None,
 ) -> SubagentProcessOutcome:
     """Run one sub-agent worker process and return its single terminal state.
 
@@ -158,12 +160,20 @@ def run_subagent_process(
     argv (``--request``/``--result`` paths are appended); it exists for tests
     and embedders that need a different interpreter or wrapper.
     """
+    if deadline_monotonic is not None and (
+        isinstance(deadline_monotonic, bool)
+        or not isinstance(deadline_monotonic, (int, float))
+        or not math.isfinite(deadline_monotonic)
+    ):
+        raise ValueError("deadline_monotonic must be finite or None")
     started_at = time.monotonic()
     workdir_path = Path(tempfile.mkdtemp(prefix="minicode-subagent-"))
     request_path = workdir_path / "request.json"
     result_path = workdir_path / "result.json"
     stdout_path = workdir_path / "stdout.log"
     stderr_path = workdir_path / "stderr.log"
+    from minicode.subagent_tool_evidence import open_transport_directory, replay_tool_evidence
+    evidence_directory = open_transport_directory(workdir_path)
 
     def finish(
         status: str,
@@ -172,6 +182,9 @@ def run_subagent_process(
         error: str | None = None,
         pid: int | None = None,
     ) -> SubagentProcessOutcome:
+        # A killed child's terminal result remains untrusted. Already flushed
+        # diagnostics have no outcome authority and may still be retained.
+        replay_tool_evidence(evidence_directory, on_tool_evidence)
         return SubagentProcessOutcome(
             status=status,
             result=result,
@@ -260,6 +273,8 @@ def run_subagent_process(
                 pid=process.pid,
             )
     finally:
+        if evidence_directory is not None:
+            os.close(evidence_directory)
         shutil.rmtree(workdir_path, ignore_errors=True)
 
 

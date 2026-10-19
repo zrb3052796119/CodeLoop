@@ -262,10 +262,18 @@ def test_partial_stream_before_timeout_does_not_become_a_successful_final(tmp_pa
     {"enable_bounded_completion": False},
     {"agent_depth": 1, "max_steps_soft_landing": True},
 ])
-def test_legacy_and_subagent_timeout_behavior_is_unchanged(tmp_path, options):
-    model = Model([TimeoutError("transport timeout")])
+def test_non_bounded_primary_and_child_share_transport_recovery(tmp_path, monkeypatch, options):
+    # Only the explicit bounded primary completion policy retains its historic
+    # one-retry limit. Child and non-bounded loops share the connection burst.
+    monkeypatch.setattr(loop, "controlled_retry_sleep", lambda *_args, **_kwargs: None)
+    model = Model([TimeoutError("transport timeout"),
+                   AgentStep(type="assistant", kind="final", content="Here are the findings.")])
     capture = AgentOutcomeCapture()
-    messages = run(tmp_path, model, outcome_capture=capture, **options)
-    assert model.calls == 1
-    assert "Model API timeout" in messages[-1]["content"]
-    assert capture.outcome.status == "failed"
+    budget = AgentTurnBudget(max_model_calls=5)
+    messages = run(tmp_path, model, outcome_capture=capture, agent_budget=budget, **options)
+    assert model.calls == budget.snapshot().used_model_calls == 2
+    assert messages[-1]["content"] == "Here are the findings."
+    assert not messages[-1].get("_partial")
+    assert any(m.get("_model_transport_failure") for m in model.inputs[-1])
+    assert budget.snapshot().limit_model_calls == 5
+    assert budget.snapshot().usage_uncertain and budget.snapshot().reserved_total_tokens == 0

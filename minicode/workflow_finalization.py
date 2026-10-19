@@ -37,6 +37,7 @@ from minicode.subagent_result import (
 from minicode.tooling import ToolResult
 from minicode.turn_cancellation import TurnCancellationRequested
 from minicode.verification_observation import project_verification
+from minicode.workflow_delivery import issue_workflow_delivery, issue_workflow_failure
 
 __all__ = ("finalize_workflow",)
 
@@ -1177,6 +1178,9 @@ def _project_final_tool_result(
             and not failed
             and not result.awaitUser
         ),
+        _workflow_delivery_receipt=(issue_workflow_delivery(snapshot, state)
+                                    if result.ok and not failed and not result.awaitUser
+                                    else issue_workflow_failure(snapshot, state)),
     )
 
 

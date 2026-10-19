@@ -7,13 +7,15 @@ import re
 from collections.abc import Mapping
 
 from minicode.central_scheduler import (
-    SCHEDULER_POLICY_VERSION,
+    SUPPORTED_SCHEDULER_POLICY_VERSIONS,
     DispatchPlan,
     DispatchStage,
     SchedulerTransition,
     WorkflowExecutionOutcome,
 )
-from minicode.workflow_repair import MAX_IMPLEMENTATION_REPAIRS, REPAIR_TRANSITION_ERROR
+from minicode.workflow_repair import (
+    CONTINUATION_TRANSITION_ERROR, MAX_IMPLEMENTATION_REPAIRS, REPAIR_TRANSITION_ERROR,
+)
 
 
 SCHEDULER_TRACE_VERSION = 1
@@ -74,6 +76,7 @@ _RULE_STAGE_ORDER = {
     "route.parent_only": ("parent",),
     "route.single_analyst": ("analyst",),
     "route.scoped_change": ("executor", "verifier", "commit"),
+    "route.verified_change": ("executor", "verifier", "commit"),
     "route.critical_read_only_human_gate": ("analyst", "human"),
     "route.critical_human_gate": (
         "analyst",
@@ -102,6 +105,7 @@ _RULE_STAGE_ORDER = {
 _COMMIT_RULES = frozenset(
     {
         "route.scoped_change",
+        "route.verified_change",
         "route.reviewed_change",
         "route.critical_human_gate",
         "route.high_risk_human_gate",
@@ -120,7 +124,7 @@ _ATTEMPT_TERMINALS = frozenset(
 )
 _PREDISPATCH_TERMINALS = frozenset({"timed_out", "waiting_human"})
 _IMPLEMENTATION_STAGES = frozenset({"executor", "verifier", "reviewer"})
-_REPAIR_RULES = frozenset({"route.scoped_change", "route.reviewed_change"})
+_REPAIR_RULES = frozenset({"route.scoped_change", "route.reviewed_change", "route.verified_change"})
 
 
 def _validate_repair_boundaries(
@@ -142,7 +146,9 @@ def _validate_repair_boundaries(
         if item.get("outcome") != "repairing":
             continue
         repairs += 1
-        if rule_id not in _REPAIR_RULES or repairs > MAX_IMPLEMENTATION_REPAIRS or not 0 < index < len(transitions) - 1:
+        if (rule_id not in _REPAIR_RULES or not 0 < index < len(transitions) - 1
+                or item.get("errorCode") == REPAIR_TRANSITION_ERROR
+                and repairs > MAX_IMPLEMENTATION_REPAIRS):
             return False
         previous, following = transitions[index - 1], transitions[index + 1]
         if (
@@ -152,7 +158,7 @@ def _validate_repair_boundaries(
                 "stage", "assignmentId", "attemptId", "agentRunId", "artifactId"
             ))
             or item.get("artifactId") is None
-            or item.get("errorCode") != REPAIR_TRANSITION_ERROR
+            or item.get("errorCode") not in {REPAIR_TRANSITION_ERROR, CONTINUATION_TRANSITION_ERROR}
             or following.get("stage") != "executor"
             or following.get("outcome") not in {"dispatched", "timed_out"}
         ):
@@ -639,7 +645,7 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
     transitions = value.get("transitions")
     if (
         type(policy_version) is not int
-        or policy_version != SCHEDULER_POLICY_VERSION
+        or policy_version not in SUPPORTED_SCHEDULER_POLICY_VERSIONS
         or type(committed) is not bool
         or status not in _STATUSES
         or not isinstance(transitions, list)
@@ -667,6 +673,13 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
     rule_id = value.get("ruleId")
     if not isinstance(rule_id, str) or rule_id not in _RULE_STAGE_ORDER:
         return None
+    if rule_id == "route.verified_change" and policy_version < 5:
+        return None
+    ordered_stages = (
+        ("executor", "verifier", "reviewer", "commit")
+        if rule_id == "route.scoped_change" and policy_version >= 4
+        else _RULE_STAGE_ORDER[rule_id]
+    )
     if (
         (status == "completed" and terminal_reason is not None)
         or (status != "completed" and terminal_reason is None)
@@ -682,7 +695,7 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
     parent_decision_id: str | None = None
     decision_ids: set[str] = set()
     stage_order = {
-        stage: index for index, stage in enumerate(_RULE_STAGE_ORDER[rule_id])
+        stage: index for index, stage in enumerate(ordered_stages)
     }
     last_stage_index = -1
     commit_completed = False
@@ -870,7 +883,7 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
     ]
     if not _valid_global_lifecycle(
         normalized_events,
-        ordered_stages=_RULE_STAGE_ORDER[rule_id],
+        ordered_stages=ordered_stages,
         committed=committed,
     ):
         return None
@@ -887,7 +900,7 @@ def _normalize_scheduler_trace(value: object) -> dict[str, object] | None:
         "waiting_human": frozenset({"waiting_human"}),
     }
     completed_stage_names = _effective_completed_stages(normalized_transitions)
-    required_completed_stages = set(_RULE_STAGE_ORDER[rule_id])
+    required_completed_stages = set(ordered_stages)
     commit_requested = any(
         transition["stage"] == "commit"
         and transition["outcome"] == "commit_requested"

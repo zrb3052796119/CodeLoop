@@ -1,12 +1,10 @@
 """Incremental workspace digest caching contracts.
 
 A structured workflow hashes workspace trees roughly ten times.  The shared
-process-lifetime cache keys each file's content digest by
-``(relative_path, size, mtime_ns)`` — the same stat identity git's index
-relies on — so repeated walks and ``copystat``-preserving copies stop
-re-reading unchanged bytes.  Correctness invariants: an unchanged tree
-digests identically, a modified file always flips the digest, and the env
-kill-switch restores always-rehash behavior.
+process-lifetime cache reuses the same filesystem file identity and change
+metadata. Unproven copies are independently hashed. An unchanged tree
+digests identically, changed bytes flip the digest, and the env kill-switch
+forces fresh reads without changing tree identity.
 """
 
 from __future__ import annotations
@@ -57,7 +55,7 @@ def test_repeated_walk_reuses_cached_file_digests(tmp_path: Path) -> None:
     assert hits_after - hits_before == 40
 
 
-def test_stat_preserving_tree_copy_is_an_almost_pure_cache_hit(
+def test_stat_preserving_tree_copy_rehashes_distinct_file_identities(
     tmp_path: Path,
 ) -> None:
     root = tmp_path / "repo"
@@ -68,15 +66,15 @@ def test_stat_preserving_tree_copy_is_an_almost_pure_cache_hit(
     _digest(root)
     _hits, misses_before = cache.statistics
 
-    # Workflow copies preserve mtime via copystat, so walking the copy
-    # must not rehash any unchanged file.
+    # Preserved timestamps do not prove that two filesystem objects have
+    # the same bytes. Unknown copies each require their own initial read.
     copy_root = tmp_path / "copy"
     shutil.copytree(root, copy_root, copy_function=shutil.copy2)
     _digest(copy_root)
 
     _hits2, misses_after = cache.statistics
-    assert misses_after == misses_before
-    assert _hits2 - _hits == 40
+    assert misses_after - misses_before == 40
+    assert _hits2 == _hits
 
 
 def test_modified_file_flips_digest_with_exactly_one_rehash(

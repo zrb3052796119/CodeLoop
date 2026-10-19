@@ -45,6 +45,7 @@ _SUBAGENT_ID_RE = re.compile(r"^sub_[0-9a-f]{32}$")
 _RESULT_CONTRACT_STATUSES = frozenset(
     {"reported", "fallback", "derived", "unavailable"}
 )
+_UNSET_TURN_LIMIT = object()
 _V1_FIELDS = frozenset(
     {
         "subagentVersion",
@@ -138,7 +139,7 @@ def _normalize_v1(payload: Mapping[str, object]) -> dict[str, object] | None:
     duration_ms = payload.get("durationMs")
     max_turns = payload.get("maxTurns")
     result_truncated = payload.get("resultTruncated")
-    counts = (model_turns, tool_calls, duration_ms, max_turns)
+    counts = (model_turns, tool_calls, duration_ms)
     if (
         not _is_known_agent_type(agent_type)
         or outcome not in _OUTCOMES
@@ -148,7 +149,11 @@ def _normalize_v1(payload: Mapping[str, object]) -> dict[str, object] | None:
             or value < 0
             for value in counts
         )
-        or any(value > _MAX_COUNT for value in (model_turns, tool_calls, max_turns))
+        or (max_turns is not None and (
+            isinstance(max_turns, bool) or not isinstance(max_turns, int)
+            or not 0 <= max_turns <= _MAX_COUNT
+        ))
+        or any(value > _MAX_COUNT for value in (model_turns, tool_calls))
         or duration_ms > _MAX_DURATION_MS
         or not isinstance(result_truncated, bool)
     ):
@@ -388,6 +393,8 @@ def _normalize_v4(payload: Mapping[str, object]) -> dict[str, object] | None:
 
 
 def _normalize_v5(payload: Mapping[str, object]) -> dict[str, object] | None:
+    if set(payload) != _V5_FIELDS:
+        return None
     subagent_id = payload.get("subagentId")
     agent_type = payload.get("agentType")
     outcome = payload.get("outcome")
@@ -479,7 +486,7 @@ def project_subagent_event(
     model_turns: int,
     tool_calls: int,
     duration_ms: int,
-    max_turns: int | None = None,
+    max_turns: int | None | object = _UNSET_TURN_LIMIT,
     model_turn_limit: int | None = None,
     phase_count: int | None = None,
     max_phases: int | None = None,
@@ -504,13 +511,13 @@ def project_subagent_event(
             return None
         is_workflow = phase_count is not None or max_phases is not None
         if is_workflow:
-            if phase_count is None or max_phases is None or max_turns is not None:
+            if phase_count is None or max_phases is None or max_turns not in (None, _UNSET_TURN_LIMIT):
                 return None
             projected_phase_count = phase_count
             projected_max_phases = max_phases
             projected_model_limit = model_turn_limit
         else:
-            if max_turns is None or model_turn_limit is not None:
+            if max_turns is _UNSET_TURN_LIMIT or model_turn_limit is not None:
                 return None
             projected_phase_count = 1 if outcome == "completed" else 0
             projected_max_phases = 1
@@ -555,7 +562,7 @@ def project_subagent_event(
             )
         return normalize_subagent_payload(v3_payload)
     if phase_count is not None or max_phases is not None:
-        if phase_count is None or max_phases is None or max_turns is not None:
+        if phase_count is None or max_phases is None or max_turns not in (None, _UNSET_TURN_LIMIT):
             return None
         return normalize_subagent_payload(
             {
@@ -571,7 +578,7 @@ def project_subagent_event(
                 "resultTruncated": result_truncated,
             }
         )
-    if max_turns is None or model_turn_limit is not None:
+    if max_turns is _UNSET_TURN_LIMIT or model_turn_limit is not None:
         return None
     return normalize_subagent_payload(
         {

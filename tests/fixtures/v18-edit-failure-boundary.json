@@ -1,0 +1,394 @@
+{
+  "fixtureVersion": 1,
+  "purpose": "Real V18 boundary: ambiguous edit followed by submit-only. This is a controller regression fixture, not a claim that the whole original failed task is repaired.",
+  "source": {
+    "trial": "real-remediation-context-r1-explicit",
+    "directory": "artifacts/implementation-progress-2026-10-15/persistent-executor/live-v18/private/real-remediation-context-r1-explicit",
+    "files": {
+      "calls.jsonl": {
+        "sha256": "b67c50e324cc1d5e11d894e81ae1240049174c22ab86bcbe1705c98fb5b00110"
+      },
+      "execution.json": {
+        "sha256": "c597ae684415bd1086c3610682c027c2a34aadb9c49f522f4818c31753c37345"
+      },
+      "execution-start.json": {
+        "sha256": "cf42b0551f8ebd2d6df381e0de829ec4f2a96d229ef5ce3cd13c09b01f992b3b"
+      },
+      "journal/dashboard/workspaces/ws_6f49a12b73dcac5d/runs/run_2607c766aa9c440db109737b8345b647/subagent-runs/sub_f1862b938bb52ba56bc776f44cb06a44.jsonl": {
+        "sha256": "2c8ad1a675bae2eeef65153905cfb6473b77b49f21107b5da48392150ad1ec7f"
+      },
+      "journal/dashboard/workspaces/ws_6f49a12b73dcac5d/runs/run_2607c766aa9c440db109737b8345b647/subagent-runs/tool-evidence/sub_f1862b938bb52ba56bc776f44cb06a44.tools.jsonl": {
+        "sha256": "e659c0ebda489b0670e03382d9fd652645206aa100c594fff3805a70911f52d9"
+      }
+    }
+  },
+  "contract": {
+    "model": "glm-5.3-flash",
+    "limitModelCalls": 40,
+    "limitTotalTokens": 500000,
+    "executionSeconds": 600,
+    "requestMaxOutputTokens": 8192,
+    "parentDeadlineEpoch": 1792065915.254408,
+    "workerDeadlineEpoch": 1792065859.1537142,
+    "readRoots": [
+      "."
+    ],
+    "writePaths": [
+      "minicode/tools/task.py",
+      "tests/test_eval_regression.py"
+    ],
+    "verificationCommands": [
+      [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_subagent_continuation.py"
+      ],
+      [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_eval_regression.py"
+      ]
+    ]
+  },
+  "workerStart": {
+    "agentType": "general",
+    "budgetAtStart": {
+      "limitCostUsd": "5",
+      "limitModelCalls": 39,
+      "limitTotalTokens": 480548,
+      "reservedTotalTokens": 0,
+      "usedCostUsd": "0.0639066",
+      "usedInputTokens": 11916,
+      "usedModelCalls": 2,
+      "usedOutputTokens": 1771,
+      "usedTotalTokens": 13687
+    },
+    "journalVersion": 1,
+    "limitKind": "model_turns",
+    "maxTurns": 36,
+    "parentRunId": "run_2607c766aa9c440db109737b8345b647",
+    "recordType": "start",
+    "startedAt": 1792065354.066166,
+    "subagentId": "sub_f1862b938bb52ba56bc776f44cb06a44"
+  },
+  "phaseEvents": [
+    {
+      "journalVersion": 1,
+      "payload": {
+        "deadlineMonotonic": 201336.14856025,
+        "handoffCallLimit": 3,
+        "investigationCallLimit": 6,
+        "localCallLimit": 36,
+        "phase": "investigate"
+      },
+      "recordType": "event",
+      "sequence": 1,
+      "step": 1,
+      "timestamp": 1792065368.741787,
+      "type": "execution.phase_changed"
+    },
+    {
+      "journalVersion": 1,
+      "payload": {
+        "estimatedRequestsLeft": 15,
+        "inspectionBatches": 4,
+        "reasonCode": "inspection_without_delivery",
+        "remainingSeconds": 436.14203768142033,
+        "remainingTokens": 390760
+      },
+      "recordType": "event",
+      "sequence": 28,
+      "step": 5,
+      "timestamp": 1792065423.010653,
+      "type": "execution.progress_checkpoint"
+    },
+    {
+      "journalVersion": 1,
+      "payload": {
+        "nextPhase": "implement"
+      },
+      "recordType": "event",
+      "sequence": 31,
+      "step": 5,
+      "timestamp": 1792065466.840524,
+      "type": "execution.phase_call_timeout"
+    },
+    {
+      "journalVersion": 1,
+      "payload": {
+        "deadlineMonotonic": 201569.230221541,
+        "handoffCallLimit": 3,
+        "investigationCallLimit": 6,
+        "localCallLimit": 36,
+        "phase": "implement"
+      },
+      "recordType": "event",
+      "sequence": 32,
+      "step": 6,
+      "timestamp": 1792065466.841702,
+      "type": "execution.phase_changed"
+    },
+    {
+      "journalVersion": 1,
+      "payload": {
+        "deadlineMonotonic": 201676.10389744473,
+        "handoffCallLimit": 2,
+        "investigationCallLimit": 6,
+        "localCallLimit": 36,
+        "phase": "finalize"
+      },
+      "recordType": "event",
+      "sequence": 86,
+      "step": 14,
+      "timestamp": 1792065648.277094,
+      "type": "execution.phase_changed"
+    },
+    {
+      "journalVersion": 1,
+      "payload": {
+        "nextPhase": "finalize"
+      },
+      "recordType": "event",
+      "sequence": 89,
+      "step": 14,
+      "timestamp": 1792065678.288934,
+      "type": "execution.phase_call_timeout"
+    },
+    {
+      "journalVersion": 1,
+      "payload": {
+        "estimatedRequestsLeft": 2,
+        "inspectionBatches": 0,
+        "reasonCode": "implementation_deadline_pressure",
+        "remainingSeconds": 139.41954768143478,
+        "remainingTokens": 96034
+      },
+      "recordType": "event",
+      "sequence": 97,
+      "step": 16,
+      "timestamp": 1792065719.734184,
+      "type": "execution.progress_checkpoint"
+    }
+  ],
+  "calls": [
+    {
+      "call": 17,
+      "role": "executor",
+      "actorId": "sub_f1862b938bb52ba56bc776f44cb06a44",
+      "event": "completed",
+      "estimatedInputTokens": 24578,
+      "maxOutputTokens": 4096,
+      "reservedTokens": 28674,
+      "chargedTokens": 32854,
+      "usage": {
+        "input_tokens": 31986,
+        "output_tokens": 868,
+        "cache_read_tokens": 31936,
+        "cache_creation_tokens": null,
+        "source": "provider"
+      },
+      "startedEpoch": 1792065678.295079,
+      "requestDeadlineEpoch": 1792065768.7218266,
+      "seconds": 35.28930191701511,
+      "toolNames": [
+        "executor_submit",
+        "write_file",
+        "edit_file",
+        "executor_check",
+        "executor_test"
+      ],
+      "workerStep": 15,
+      "toolCalls": [
+        {
+          "name": "edit_file",
+          "status": null
+        }
+      ]
+    },
+    {
+      "call": 18,
+      "role": "executor",
+      "actorId": "sub_f1862b938bb52ba56bc776f44cb06a44",
+      "event": "completed",
+      "estimatedInputTokens": 26572,
+      "maxOutputTokens": 4096,
+      "reservedTokens": 30668,
+      "chargedTokens": 35222,
+      "usage": {
+        "input_tokens": 35061,
+        "output_tokens": 161,
+        "cache_read_tokens": 31936,
+        "cache_creation_tokens": null,
+        "source": "provider"
+      },
+      "startedEpoch": 1792065719.7363892,
+      "requestDeadlineEpoch": 1792065789.4438822,
+      "seconds": 7.49974937501247,
+      "toolNames": [
+        "executor_submit",
+        "write_file",
+        "edit_file",
+        "executor_check",
+        "executor_test"
+      ],
+      "workerStep": 16,
+      "toolCalls": [
+        {
+          "name": "edit_file",
+          "arguments": {
+            "new": "                model_turns = (\n                    sub_event_sink.model_turns\n                    or (message_model_turns + reminder_model_turns)\n                )",
+            "old": "                model_turns = sub_event_sink.model_turns or message_model_turns",
+            "path": "minicode/tools/task.py"
+          }
+        }
+      ]
+    },
+    {
+      "call": 19,
+      "role": "executor",
+      "actorId": "sub_f1862b938bb52ba56bc776f44cb06a44",
+      "event": "completed",
+      "estimatedInputTokens": 25971,
+      "maxOutputTokens": 2048,
+      "reservedTokens": 28019,
+      "chargedTokens": 35070,
+      "usage": {
+        "input_tokens": 34687,
+        "output_tokens": 383,
+        "cache_read_tokens": 0,
+        "cache_creation_tokens": null,
+        "source": "provider"
+      },
+      "startedEpoch": 1792065727.250096,
+      "requestDeadlineEpoch": 1792065859.1537142,
+      "seconds": 15.04028004099382,
+      "toolNames": [
+        "executor_submit"
+      ],
+      "workerStep": 17,
+      "toolCalls": [
+        {
+          "name": "executor_submit",
+          "status": "blocked"
+        }
+      ]
+    }
+  ],
+  "failedEditEvents": [
+    {
+      "evidenceVersion": 1,
+      "input": {
+        "new": "                model_turns = (\n                    sub_event_sink.model_turns\n                    or (message_model_turns + reminder_model_turns)\n                )",
+        "old": "                model_turns = sub_event_sink.model_turns or message_model_turns",
+        "path": "minicode/tools/task.py"
+      },
+      "invocationId": "tool-29",
+      "subagentId": "sub_f1862b938bb52ba56bc776f44cb06a44",
+      "timestamp": 1792065727.238104,
+      "toolName": "edit_file",
+      "type": "tool.started"
+    },
+    {
+      "evidenceVersion": 1,
+      "invocationId": "tool-29",
+      "isError": true,
+      "output": "Found 2 matches for the search string. Use replace_all=true to replace all occurrences, or provide more context to make the match unique.\nMatches at lines: 2735, 2879",
+      "outputTruncated": false,
+      "subagentId": "sub_f1862b938bb52ba56bc776f44cb06a44",
+      "timestamp": 1792065727.2417972,
+      "toolName": "edit_file",
+      "type": "tool.finished"
+    }
+  ],
+  "lastImplementationChecks": [
+    {
+      "checkId": "check1",
+      "status": "passed",
+      "exitCode": 0,
+      "durationMs": 948,
+      "summary": "11 passed in 0.73s"
+    },
+    {
+      "checkId": "check2",
+      "status": "failed",
+      "exitCode": 1,
+      "durationMs": 868,
+      "summary": "4 failed, 1 passed in 0.73s",
+      "failures": [
+        "test_reminder_seeded_from_completed_transcript",
+        "test_reminder_rejects_malformed_recovered_note",
+        "test_strict_workflow_role_never_gets_reminder",
+        "test_reminder_attempts_are_counted_once"
+      ]
+    }
+  ],
+  "productionBudget": {
+    "parentPreserveTokens": 19452,
+    "parentPreserveCalls": 1,
+    "workerLimitTotalTokens": 480548,
+    "workerLimitModelCalls": 39,
+    "beforeCall18": {
+      "usedTotalTokens": 384514,
+      "usedModelCalls": 17,
+      "remainingWorkerTokens": 96034,
+      "source": "Direct step16 progress checkpoint, worker limit minus remainingTokens."
+    },
+    "beforeCall19": {
+      "usedTotalTokens": 419736,
+      "usedInputTokens": 410315,
+      "usedOutputTokens": 9421,
+      "reservedTotalTokens": 0,
+      "usedModelCalls": 18,
+      "remainingSharedTokens": 80264,
+      "remainingWorkerTokens": 60812,
+      "remainingWorkerSeconds": 131.9036180973053,
+      "remainingParentSeconds": 188.00431180000305,
+      "controllerCalls": 16,
+      "controllerFinalCalls": 3,
+      "controllerPhase": "finalize",
+      "verificationFailed": true,
+      "source": "Direct step16 checkpoint plus known provider R18 usage; independently matches worker finish budget minus known provider R19 usage."
+    },
+    "workerFinish": {
+      "limitCostUsd": "5",
+      "limitModelCalls": 39,
+      "limitTotalTokens": 480548,
+      "reservedTotalTokens": 0,
+      "usedCostUsd": "1.3947804",
+      "usedInputTokens": 445002,
+      "usedModelCalls": 19,
+      "usedOutputTokens": 9804,
+      "usedTotalTokens": 454806
+    },
+    "transportCumulativeChargedBeforeCall19": 419792,
+    "accountingCaveat": "Transport cumulative admission charges differ from production budget by 56 tokens after two usage-unavailable requests. Use the production journal snapshot for controller replay; do not substitute transport estimates or label unknown usage as zero.",
+    "usageUnavailableRequests": {
+      "calls": [
+        7,
+        16
+      ],
+      "productionEstimatedChargeCombined": 52084,
+      "transportEstimatedChargeCombined": 52140,
+      "perRequestProductionEstimate": "not retained; do not assume the 56-token difference splits evenly"
+    }
+  },
+  "admissionAnalysis": {
+    "previousProviderInput": 35061,
+    "nextWireInputEstimate": 25971,
+    "currentWorkerRemainingTokens": 60812,
+    "minimumExistingTwoRequestTailTokens": 80362,
+    "formula": "35061 + (4096 + (35061 + 2048) + max(observed_growth, 4096)); lower bound uses growth=4096. Parent floor is already removed from the worker remainder.",
+    "conclusion": "Keeping the full ~35k provider context cannot safely admit correction plus structured handoff under the remaining worker allowance. A regression must demonstrate a real context-size reduction (or replay an earlier budget decision), retain the 19452 parent floor, and recharge both new requests. Simply toggling the failure flag or supplying tiny scripted usage does not reproduce this failure boundary.",
+    "timeDoesNotExplainSubmitOnly": true,
+    "notes": [
+      "R17 host check failure already set verificationFailed=true; rolling repair was already enabled.",
+      "R18 edit failed before any mutation: two matches, lines 2735 and 2879.",
+      "R19 toolNames contained only executor_submit; blocked was accepted as a declaration, not passed verification or writeback.",
+      "The original candidate also had four failed tests. Repairing the ambiguous edit alone cannot establish original-task success."
+    ]
+  }
+}

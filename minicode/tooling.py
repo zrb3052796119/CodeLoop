@@ -30,6 +30,7 @@ class ToolTerminationReason(str, Enum):
     ABANDONED = "abandoned"
     TURN_CANCELLED = "turn_cancelled"
     DEADLINE_EXCEEDED = "deadline_exceeded"
+    BUDGET_EXCEEDED = "budget_exceeded"
 
 
 if TYPE_CHECKING:
@@ -90,6 +91,17 @@ def _smart_truncate_output(output: str, tool_name: str, max_chars: int | None = 
     # Calculate how many lines we can keep (rough estimate)
     avg_line_len = total_chars / max(1, total_lines)
     max_lines = int(limit / max(40, avg_line_len))
+
+    if max_lines < 2:
+        # One large JSON/log line cannot be selected as both head and tail.
+        # Reserve marker space and take disjoint character ranges instead.
+        marker = f"\n... [characters omitted (output too large: {total_chars:,} chars)] ...\n"
+        if len(marker) >= limit:
+            return output[:max(0, limit - 1)] + "…"
+        remaining = limit - len(marker)
+        head_chars = (remaining + 1) // 2
+        tail_chars = remaining - head_chars
+        return output[:head_chars] + marker + (output[-tail_chars:] if tail_chars else "")
     
     if tool_name == "read_file":
         # Keep head + tail — most important for understanding file structure
@@ -246,6 +258,14 @@ class ToolResult:
     backgroundTask: BackgroundTaskResult | None = None
     awaitUser: bool = False
     verification: dict[str, object] | None = None
+    # Set only by the host's atomic file writer. Prose cannot trigger checks.
+    _file_changed: bool = field(default=False, kw_only=True, repr=False)
+    # Actual host check feedback, never inferred from model-controlled prose.
+    # None means no conclusive set of public implementation checks ran.
+    _implementation_checks_failed: bool | None = field(default=None, kw_only=True, repr=False)
+    # Only edit_file's unmatched/ambiguous anchor failures set this. Permission
+    # denials, cancellation and arbitrary error prose cannot reopen repair.
+    _edit_anchor_failed: bool = field(default=False, kw_only=True, repr=False)
     # Descriptive invocation evidence. This never authorizes or blocks a call.
     capability: dict[str, Any] | None = field(default=None, kw_only=True)
     # A stateful tool sets this only after an irreversible mutation has
@@ -258,6 +278,21 @@ class ToolResult:
     # state still takes the terminal authority path. This is host-owned and
     # never inferred from model text or the tool's display output.
     _continue_parent: bool = field(default=False, repr=False, compare=False, kw_only=True)
+    # Ephemeral current-invocation workflow authority; never read from output.
+    _workflow_delivery_receipt: object | None = field(default=None, repr=False, compare=False, kw_only=True)
+    # A strict worker declaration was accepted. This is neither verification
+    # nor a commit receipt; it only ends this worker's implementation loop.
+    _implementation_submitted: bool = field(default=False, repr=False, compare=False, kw_only=True)
+    # A bound Reviewer capability rejected only the semantic declaration.
+    # The loop must also verify the capability/channel identity before retrying.
+    _review_submission_rejected: bool = field(default=False, repr=False, compare=False, kw_only=True)
+    _review_evidence_incomplete: bool = field(default=False, repr=False, compare=False, kw_only=True)
+    # Host-owned acknowledgement of an ephemeral result. The Agent Loop calls
+    # this only after appending the result to its own transcript; worker
+    # completion or a timed-out tool thread does not prove delivery.
+    _delivery_ack: Callable[[], None] | None = field(
+        default=None, repr=False, compare=False, kw_only=True
+    )
     # Lifecycle control must never parse ``output``.  Human-readable error
     # wording can evolve independently while this closed marker remains the
     # authoritative internal signal.
@@ -669,6 +704,10 @@ def deserialize_skill_load_policy(payload: object) -> SkillLoadPolicy | None:
 class ToolContext:
     cwd: str = "."
     permissions: Any | None = None
+    _implementation_candidate_guard: Any | None = field(default=None, repr=False, compare=False, kw_only=True)
+    _implementation_analysis_complete: bool = field(default=False, repr=False, compare=False, kw_only=True)
+    _logical_agent_max_total_tokens: int | None = field(default=None, repr=False, compare=False, kw_only=True)
+    _logical_agent_preserve_total_tokens: int = field(default=0, repr=False, compare=False, kw_only=True)
     _runtime: dict | None = None
     _event_sink: "AgentEventSink | None" = None
     _step: int | None = None
@@ -776,6 +815,9 @@ class ToolContext:
         repr=False,
         compare=False,
     )
+    # Original top-level user message captured by Agent Loop, before model
+    # delegation. Only used to preserve explicit independent review requests.
+    _workflow_user_request: str | None = field(default=None, repr=False, compare=False, kw_only=True)
     # Host/UI-owned one-time approval provider for high-risk workflows.
     # Public task JSON and Worker output cannot manufacture this capability.
     _workflow_human_approval_provider: Any | None = field(
@@ -812,6 +854,14 @@ class ToolContext:
     # this internal marker narrows a physical `general` worker into a bounded
     # Executor without exposing a second direct write entry point.
     _logical_agent_role: str | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    # Physical model-call ceiling sealed in the scheduler Assignment. One
+    # call is included for tool-disabled closing; public task input cannot set
+    # this value or grant additional shared calls/tokens/time.
+    _logical_agent_max_model_calls: int | None = field(
         default=None,
         repr=False,
         compare=False,
@@ -1025,6 +1075,7 @@ class ToolRegistry:
         self._skill_catalog_factory = skill_catalog_factory
         self._mcp_servers = list(mcp_servers or [])
         self._disposer = disposer
+        self._owns_runtime_resources = True
         self._mcp_current_state_registry = mcp_current_state_registry
         factories = list(registry_bound_tool_factories or [])
         self._registry_bound_tool_factories: dict[
@@ -1165,13 +1216,59 @@ class ToolRegistry:
                 selected_tools.append(tool)
             else:
                 selected_factories.append(factory)
-        return ToolRegistry(
+        filtered = ToolRegistry(
             selected_tools,
             skills=self.get_skills() if skills is None else skills,
             mcp_servers=self._mcp_servers,
             mcp_current_state_registry=self._mcp_current_state_registry,
             registry_bound_tool_factories=selected_factories,
         )
+        filtered._owns_runtime_resources = False
+        return filtered
+
+    def overlay(
+        self,
+        replacements: list[ToolDefinition],
+        *,
+        remove_names: frozenset[str] = frozenset(),
+    ) -> ToolRegistry:
+        """Borrow this registry with replacements and fresh capability bindings.
+
+        Replacements override same-name tools and append new names. Removals
+        apply to the base surface, so a replacement can reinstall that name.
+        Catalog refresh remains available without resurrecting removed tools
+        or replacing an explicit override. This registry retains ownership of
+        shared runtime resources and must outlive the returned overlay.
+        """
+        if any(not isinstance(tool, ToolDefinition) for tool in replacements):
+            raise TypeError("registry overlay requires ToolDefinition replacements")
+        overrides = {tool.name: tool for tool in replacements}
+        if len(overrides) != len(replacements):
+            raise ValueError("registry overlay has duplicate replacement names")
+        removed = frozenset(remove_names)
+        excluded = removed | overrides.keys()
+        tools = [tool for tool in self._snapshot.tools
+                 if tool.name not in excluded
+                 and tool.name not in self._registry_bound_tool_factories]
+        factories = [factory for name, factory in self._registry_bound_tool_factories.items()
+                     if name not in excluded]
+        catalog_factory = self._skill_catalog_factory
+        refresh = None
+        if catalog_factory is not None:
+            def refresh() -> tuple[list[dict[str, Any]], list[ToolDefinition]]:
+                skills, refreshed_tools = catalog_factory()
+                return skills, [overrides.get(tool.name, tool) for tool in refreshed_tools
+                                if tool.name not in removed or tool.name in overrides]
+
+        overlay = ToolRegistry(
+            [*tools, *replacements], skills=self.get_skills(),
+            mcp_servers=self._mcp_servers,
+            mcp_current_state_registry=self._mcp_current_state_registry,
+            registry_bound_tool_factories=factories,
+            skill_catalog_factory=refresh,
+        )
+        overlay._owns_runtime_resources = False
+        return overlay
 
     def describe_capability(
         self, tool_name: str, arguments: object = _CAPABILITY_ARGUMENTS_UNSET
@@ -1344,6 +1441,8 @@ class ToolRegistry:
             )
 
     def dispose(self) -> None:
+        if not self._owns_runtime_resources:
+            return
         # Background shells are process-owned rather than tied to one MCP
         # client. Every runtime entry point disposes its registry, making this
         # the shared idempotent application-shutdown boundary.

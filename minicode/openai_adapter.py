@@ -702,6 +702,13 @@ def _parse_assistant_text(content: str) -> tuple[str, str | None]:
     return trimmed, None
 
 
+def serialize_function_tools(tool_definitions) -> list[dict[str, Any]]:
+    """Project a registry to the function schemas sent by this adapter."""
+    return [{"type": "function", "function": {
+        "name": tool.name, "description": tool.description, "parameters": tool.input_schema,
+    }} for tool in tool_definitions]
+
+
 class OpenAIModelAdapter:
     """Model adapter for OpenAI-compatible APIs."""
     
@@ -737,24 +744,28 @@ class OpenAIModelAdapter:
             )
         )
     
-    def _get_serialized_tools(self) -> list[dict[str, Any]]:
+    def request_tool_schemas(self, *, tools_override=None, disable_tools=False,
+                             json_object_override=False, response_schema_override=None):
+        """Return the final tool payload shared by admission and provider calls."""
+        if disable_tools or json_object_override or response_schema_override is not None:
+            return []
+        if tools_override is not None:
+            return self._get_serialized_tools(tools_override)
+        supplied = self.runtime.get("_openrouter_params", {}).get("tools")
+        if supplied is not None:
+            return supplied
+        return self._get_serialized_tools()
+
+    def _get_serialized_tools(self, tools_override=None) -> list[dict[str, Any]]:
         """Get serialized tool list in OpenAI function format with caching."""
+        if tools_override is not None:
+            return serialize_function_tools(tools_override.list())
         if self.tools is None:
             return []
         current_tools = self.tools.list()
         current_key = hash(tuple((t.name, t.description) for t in current_tools))
         if self._cached_tools_json is None or current_key != self._tools_cache_key:
-            self._cached_tools_json = [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": tool.name,
-                        "description": tool.description,
-                        "parameters": tool.input_schema,
-                    },
-                }
-                for tool in current_tools
-            ]
+            self._cached_tools_json = serialize_function_tools(current_tools)
             self._tools_cache_key = current_key
         return self._cached_tools_json
     
@@ -767,6 +778,7 @@ class OpenAIModelAdapter:
         cancellation_token: Any = None,
         deadline_monotonic: float | None = None,
         disable_tools: bool = False,
+        tools_override=None,
         max_output_tokens_override: int | None = None,
         max_response_bytes_override: int | None = None,
         temperature_override: float | None = None,
@@ -873,7 +885,9 @@ class OpenAIModelAdapter:
             "messages": converted_messages,
         }
         if not disable_tools:
-            serialized_tools = self._get_serialized_tools()
+            serialized_tools = self.request_tool_schemas(tools_override=tools_override,
+                disable_tools=disable_tools, json_object_override=json_object_override,
+                response_schema_override=response_schema_override)
             if serialized_tools:
                 request_body["tools"] = serialized_tools
         
@@ -916,6 +930,25 @@ class OpenAIModelAdapter:
         # Per-call controls intentionally win over provider/runtime defaults.
         # Structured side calls can therefore remain tool-free and tightly
         # bounded while normal Agent calls retain their existing configuration.
+        if tools_override is not None:
+            effective_tools = self.request_tool_schemas(
+                tools_override=tools_override, disable_tools=disable_tools,
+                json_object_override=json_object_override,
+                response_schema_override=response_schema_override,
+            )
+            if effective_tools:
+                request_body["tools"] = effective_tools
+                choice = request_body.get("tool_choice")
+                if isinstance(choice, dict) and choice.get("type") == "function":
+                    function = choice.get("function")
+                    chosen = function.get("name") if isinstance(function, dict) else None
+                    available = {tool["function"]["name"] for tool in effective_tools}
+                    if chosen not in available:
+                        request_body.pop("tool_choice", None)
+            else:
+                request_body.pop("tools", None)
+                request_body.pop("tool_choice", None)
+                request_body.pop("parallel_tool_calls", None)
         if disable_tools:
             request_body.pop("tools", None)
             request_body.pop("tool_choice", None)

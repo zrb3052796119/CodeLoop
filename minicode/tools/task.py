@@ -6,8 +6,8 @@ with its own context window, isolated from the main conversation.
 The sub-agent runs a full agent loop (model + tools) with:
 - Its own system prompt tailored to the task type
 - A filtered tool set based on the agent type
-- A turn limit to prevent runaway execution (host-overridable via
-  MINI_CODE_SUBAGENT_<TYPE>_MAX_TURNS); exhausting it soft-lands into a
+- An optional explicit turn limit via MINI_CODE_SUBAGENT_<TYPE>_MAX_TURNS;
+  exhausting a configured limit soft-lands into a
   tool-free closing turn whose summary is returned marked ``partial``
   instead of being discarded as a failure
 - Result summarized back into the parent context
@@ -26,9 +26,6 @@ from collections.abc import Callable, Mapping
 from dataclasses import replace
 
 from minicode.agent_budget import (
-    DEFAULT_MAX_COST_USD,
-    DEFAULT_MAX_MODEL_CALLS,
-    DEFAULT_MAX_TOTAL_TOKENS,
     AgentBudgetExceeded,
     AgentTurnBudget,
     SubprocessBudgetLease,
@@ -178,7 +175,7 @@ def _readonly_delegation_failure(result: ToolResult) -> bool:
 
 def _readonly_delegation_mailbox(input_data: dict, context) -> object | None:
     if (
-        input_data.get("agent_type") in {"explore", "plan"}
+        _is_read_only_agent_type(input_data.get("agent_type"))
         and not getattr(context, "_workflow_phase", False)
     ):
         return getattr(context, "_subagent_mailbox", None)
@@ -261,8 +258,12 @@ def _is_read_only_agent_type(agent_type: object) -> bool:
 _EXECUTOR_ALLOWED_TOOLS = frozenset(
     {
         "edit_file",
+        "executor_submit",
+        "executor_check",
+        "executor_test",
         "file_line_count",
         "get_ast_info",
+        "grep_files",
         "list_files",
         "patch_file",
         "read_file",
@@ -386,6 +387,7 @@ def _auto_construct_workflow_request(
     paths); there is no bypass.
     """
     from minicode.verification_observation import project_command_verification
+    from minicode.workflow_prompt_criteria import criteria_from_prompt
 
     write_paths = input_data.get("write_paths") or []
     commands = input_data.get("verification_commands") or []
@@ -400,6 +402,11 @@ def _auto_construct_workflow_request(
             "write_paths to run the fail-closed legacy route.\n\n"
             + _workflow_request_guidance()
         )
+    try:
+        criteria = criteria_from_prompt(input_data.get("prompt"))
+    except ValueError as exc:
+        return None, f"error[workflow_request_invalid]: {exc}"
+    criterion_ids = [criterion["id"] for criterion in criteria]
     checks: list[dict[str, object]] = []
     seen_argvs: set[tuple[str, ...]] = set()
     for command in commands:
@@ -424,7 +431,9 @@ def _auto_construct_workflow_request(
                 "checkId": f"check{len(checks) + 1}",
                 "kind": str(projected["kind"]),
                 "argv": list(argv),
-                "criterionIds": ["c1"],
+                # These are verification obligations, not evidence that the
+                # command semantically covers or has satisfied each clause.
+                "criterionIds": list(criterion_ids),
             }
         )
     request: dict[str, object] = {
@@ -446,9 +455,7 @@ def _auto_construct_workflow_request(
             "writePaths": list(write_paths),
             "forbiddenPaths": [".git", ".env"],
         },
-        "criteria": [
-            {"id": "c1", "kind": "behavior", "text": input_data["description"]}
-        ],
+        "criteria": criteria,
         "verificationChecks": checks,
     }
     try:
@@ -653,16 +660,20 @@ def _validate(input_data: dict) -> dict:
     return validated
 
 
-def _sub_agent_progress_callbacks(context, agent_type: str):
+def _sub_agent_progress_callbacks(
+    context, agent_type: str, *,
+    subagent_id: str | None = None, logical_role: str | None = None,
+    journal_sink: _SubagentJournalSink | None = None,
+):
     """Live tool progress for the parent UI, or ``(None, None)``.
 
-    Routed to the presentation channel only — never to the Run journal or the
-    approval session, whose tool tracking belongs to the parent Turn. Names
-    are prefixed with the agent type so concurrent read-only sub-agents stay
-    distinguishable in an interleaved stream.
+    UI uses the presentation channel. The loop's invocation boundary owns
+    private evidence separately from presentation callbacks. Names
+    include the logical workflow role and a short run ID so parallel runs
+    and role stages remain distinguishable in an interleaved stream.
     """
     presentation = getattr(context, "_presentation", None)
-    if presentation is None:
+    if presentation is None and journal_sink is None:
         return None, None
 
     from minicode.conversation_presentation import (
@@ -670,12 +681,16 @@ def _sub_agent_progress_callbacks(context, agent_type: str):
         emit_tool_started_safely,
     )
 
+    label = logical_role if logical_role in {role.value for role in WorkerRole} else agent_type
+    if isinstance(subagent_id, str) and re.fullmatch(r"sub_[0-9a-f]{32}", subagent_id):
+        label += ":" + subagent_id[4:12]
+
     def on_start(tool_name: str, _tool_input: object) -> None:
-        emit_tool_started_safely(presentation, f"{agent_type}▸{tool_name}")
+        emit_tool_started_safely(presentation, f"{label}▸{tool_name}")
 
     def on_result(tool_name: str, _output: object, is_error: bool) -> None:
         emit_tool_finished_safely(
-            presentation, f"{agent_type}▸{tool_name}", is_error=is_error
+            presentation, f"{label}▸{tool_name}", is_error=is_error
         )
 
     return on_start, on_result
@@ -1113,6 +1128,7 @@ class _SubagentJournalSink:
         trusted_parent_run_id: str | None = None,
         capture_semantic_intent_events: bool = False,
         semantic_observation_active: bool = False,
+        tool_evidence_recorder=None,
     ) -> None:
         if (
             not isinstance(subagent_id, str)
@@ -1139,6 +1155,8 @@ class _SubagentJournalSink:
         self._memory_provenance_seen: set[MemoryProvenanceBatch] = set()
         self._memory_provenance_forwarded: set[MemoryProvenanceBatch] = set()
         self._memory_provenance_overflowed = False
+        self._tool_evidence_sequence = 0
+        self._tool_evidence_recorder = tool_evidence_recorder
         self._lock = threading.Lock()
         self.model_turns = 0
         self.tool_calls = 0
@@ -1329,6 +1347,35 @@ class _SubagentJournalSink:
             else:
                 self._standard_events += 1
 
+    def record_tool_evidence(
+        self, *, tool_name: str, phase: str, tool_input: object = None,
+        output: object = "", is_error: bool = False, invocation_id: str | None = None,
+    ) -> str:
+        """Called at actual child tool boundaries, including headless failures."""
+        with self._lock:
+            if invocation_id is None:
+                self._tool_evidence_sequence += 1
+                invocation_id = f"tool-{self._tool_evidence_sequence}"
+        self.emit("tool." + phase, payload={"toolName": tool_name, "isError": is_error})
+        if callable(self._tool_evidence_recorder):
+            try:
+                self._tool_evidence_recorder(tool_name=tool_name, phase=phase,
+                    tool_input=tool_input, output=output, is_error=is_error,
+                    invocation_id=invocation_id)
+            except Exception:  # A broken transport cannot change tool execution.
+                pass
+        if self._journal is not None:
+            try:
+                self._journal.append_tool_evidence(
+                    self._subagent_id, invocation_id=invocation_id,
+                    tool_name=tool_name, phase=phase, tool_input=tool_input,
+                    output=output if isinstance(output, str) else "[NON-TEXT OUTPUT OMITTED]",
+                    is_error=is_error,
+                )
+            except Exception:  # noqa: BLE001 - diagnostics cannot change execution
+                pass
+        return invocation_id
+
 
 def _written_memory_recorder(context):
     """Bind a nested loop's written lesson to the parent Run, if possible.
@@ -1503,8 +1550,8 @@ def _run_general_in_subprocess(
     agent_budget,
     start_time: float,
     task_prompt: str,
-    effective_deadline: float,
-    effective_timeout: float,
+    effective_deadline: float | None,
+    effective_timeout: float | None,
 ) -> ToolResult:
     """Run a write-capable ``general`` sub-agent behind a killable boundary.
 
@@ -1542,18 +1589,17 @@ def _run_general_in_subprocess(
     except (TypeError, ValueError):
         serialized_runtime = None
 
-    # A child process cannot share the parent's lock. Reserve one finite
-    # allowance atomically before spawn; all sibling and parent admissions
-    # see it until this function settles it in the terminal finally block.
+    # A child process cannot share the parent's lock. Reserve configured
+    # finite dimensions atomically; null dimensions stay unlimited only if
+    # the parent also has no corresponding limit.
     configured_budget = AgentTurnBudget.from_runtime(runtime)
-    requested_tokens = (
-        configured_budget.max_total_tokens or DEFAULT_MAX_TOTAL_TOKENS
-    )
-    requested_calls = min(
-        max_turns + 3,  # semantic + Skill routing + loop + soft landing
-        configured_budget.max_model_calls or DEFAULT_MAX_MODEL_CALLS,
-    )
-    requested_cost = configured_budget.max_cost_usd or DEFAULT_MAX_COST_USD
+    requested_tokens = configured_budget.max_total_tokens
+    call_bounds = [value for value in (
+        max_turns + 3 if max_turns is not None else None,
+        configured_budget.max_model_calls,
+    ) if value is not None]
+    requested_calls = min(call_bounds) if call_bounds else None
+    requested_cost = configured_budget.max_cost_usd
     reserve_lease = getattr(agent_budget, "reserve_subprocess_lease", None)
     if not callable(reserve_lease):
         lease_error = "parent budget cannot issue a subprocess lease"
@@ -1601,6 +1647,7 @@ def _run_general_in_subprocess(
                 pass
         return ToolResult(
             ok=False,
+            _termination_reason=ToolTerminationReason.BUDGET_EXCEEDED,
             output=(
                 f"error[agent_budget_exceeded]: {lease_error}. "
                 "The parent turn cannot reserve a finite child-process "
@@ -1635,7 +1682,7 @@ def _run_general_in_subprocess(
             "timeout_seconds": max(
                 0.001,
                 effective_deadline - time.monotonic(),
-            ),
+            ) if effective_deadline is not None else None,
             "runtime": serialized_runtime,
             "inject_memory": True,
             # A child result can only become durable model telemetry when the
@@ -1649,6 +1696,7 @@ def _run_general_in_subprocess(
         }
         outcome = run_subagent_process(
             request,
+            on_tool_evidence=sub_event_sink.record_tool_evidence,
             deadline_monotonic=effective_deadline,
             cancellation_token=getattr(context, "_cancellation_token", None),
         )
@@ -1673,7 +1721,8 @@ def _run_general_in_subprocess(
             and worker_result.get("status") == status
             and isinstance(reported_model_turns, int)
             and not isinstance(reported_model_turns, bool)
-            and 0 <= reported_model_turns <= lease.max_model_calls
+            and reported_model_turns >= 0
+            and (lease.max_model_calls is None or reported_model_turns <= lease.max_model_calls)
         )
         reported_usage_valid = (
             status
@@ -1777,8 +1826,9 @@ def _run_general_in_subprocess(
                 ok=False,
                 output=(
                     "error[sub_agent_timed_out]: the sub-agent process was "
-                    f"killed after exceeding its {effective_timeout:g}s "
-                    "deadline; a killed process cannot write late results."
+                    "killed after exceeding its "
+                    + (f"{effective_timeout:g}s " if effective_timeout is not None else "")
+                    + "deadline; a killed process cannot write late results."
                 ),
             )
         if status == "budget_exceeded":
@@ -1797,6 +1847,7 @@ def _run_general_in_subprocess(
             )
             return ToolResult(
                 ok=False,
+                _termination_reason=ToolTerminationReason.BUDGET_EXCEEDED,
                 output=(
                     f"error[agent_budget_exceeded]: {outcome.error}. "
                     "The sub-agent's configured budget was exhausted; simplify "
@@ -2021,6 +2072,17 @@ def _run(input_data: dict, context) -> ToolResult:
             )
     scheduler_executor = scheduler_role is WorkerRole.EXECUTOR
     scheduler_read_worker = scheduler_role is not None and not scheduler_executor
+    executor_session = input_data.get("_executor_session")
+    executor_session_owner = input_data.get("_executor_session_owner")
+    if executor_session is not None:
+        from minicode.executor_session import ExecutorSession
+
+        if not isinstance(executor_session, ExecutorSession) or not scheduler_executor:
+            return ToolResult(ok=False, output="error[executor_session_invalid]: host Executor capability required")
+        try:
+            executor_session.validate(owner=executor_session_owner, context=context)
+        except ValueError as error:
+            return ToolResult(ok=False, output=f"error[executor_session_invalid]: {error}")
     agent_def = dict(agent_types[agent_type])
     if scheduler_executor:
         agent_def.update(
@@ -2055,10 +2117,34 @@ def _run(input_data: dict, context) -> ToolResult:
             }
         )
     if agent_type in AGENT_TYPES and agent_type != "workflow":
-        # Host-overridable ceiling (MINI_CODE_SUBAGENT_<TYPE>_MAX_TURNS);
-        # invalid values fail closed to the calibrated default. Project
+        # Optional host ceiling (MINI_CODE_SUBAGENT_<TYPE>_MAX_TURNS). Project
         # profiles carry their own bounded max_turns from the loader.
         agent_def["max_turns"] = resolve_max_turns(agent_type)
+    elif agent_type not in AGENT_TYPES:
+        # Publishing a run's result is part of its transport contract. It
+        # does not grant filesystem writes; its mailbox capability is scoped
+        # to this invocation independently of the profile's investigation tools.
+        agent_def["allowed_tools"] = frozenset(agent_def["allowed_tools"]) | {
+            "subagent_note_write"
+        }
+
+    assignment_model_calls = getattr(context, "_logical_agent_max_model_calls", None)
+    if scheduler_role is not None:
+        if assignment_model_calls is not None and (
+            type(assignment_model_calls) is not int or assignment_model_calls < 2
+        ):
+            return ToolResult(
+                ok=False,
+                output=(
+                    "error[worker_budget_insufficient]: "
+                    "need one work call and one closing call"
+                ),
+            )
+        # This immutable physical-call cap was allocated at dispatch. Do not
+        # re-resolve an env default and silently truncate the Assignment; the
+        # scheduler budget view also charges retries/closing against this cap.
+        agent_def["max_turns"] = (assignment_model_calls - 1
+                                  if assignment_model_calls is not None else None)
 
     # Continuation resolves the stored session before any expensive child
     # setup so every failure mode is a cheap, explicit error — never a
@@ -2153,19 +2239,15 @@ def _run(input_data: dict, context) -> ToolResult:
     # workflow discovery, snapshotting, isolated phases, verification and
     # promotion. Nested tokens may shorten, but never extend, a parent.
     timeout_seconds = _task_timeout_seconds(context)
-    own_deadline = time.monotonic() + timeout_seconds
+    own_deadline = time.monotonic() + timeout_seconds if timeout_seconds is not None else None
     parent_deadline = getattr(context, "_task_deadline_monotonic", None)
-    effective_deadline = (
-        min(own_deadline, float(parent_deadline))
-        if isinstance(parent_deadline, (int, float))
-        else own_deadline
-    )
+    deadlines = [value for value in (own_deadline, parent_deadline)
+                 if isinstance(value, (int, float)) and not isinstance(value, bool)]
+    effective_deadline = min(deadlines) if deadlines else None
     parent_timeout = getattr(context, "_task_timeout_seconds", None)
-    effective_timeout = (
-        min(timeout_seconds, float(parent_timeout))
-        if isinstance(parent_timeout, (int, float))
-        else timeout_seconds
-    )
+    timeouts = [value for value in (timeout_seconds, parent_timeout)
+                if isinstance(value, (int, float)) and not isinstance(value, bool)]
+    effective_timeout = min(timeouts) if timeouts else None
     context = replace(
         context,
         _task_deadline_monotonic=effective_deadline,
@@ -2334,7 +2416,18 @@ def _run(input_data: dict, context) -> ToolResult:
         runtime=runtime,
         **registry_kwargs,
     )
+    result_channel = None
+    executor_session_started = False
     try:
+        if executor_session is not None:
+            prior_messages = executor_session.begin(owner=executor_session_owner, context=context)
+            executor_session_started = True
+            sub_event_sink.emit("execution.executor_session", payload={
+                "sessionId": executor_session.session_id,
+                "resumed": prior_messages is not None,
+                "modelReused": executor_session.model is not None,
+                "priorMessageCount": len(prior_messages or []),
+            })
         allowed = agent_def["allowed_tools"]
         # Registry-bound tools (notably propose_skill) must be rebound after
         # filtering so their capability snapshot describes the child's real
@@ -2354,11 +2447,63 @@ def _run(input_data: dict, context) -> ToolResult:
             mcp_current_state_registry=current_state_registry,
         )
 
-        model = create_subagent_model_adapter(
-            runtime,
-            agent_type,
-            tools=tools,
-        )
+        executor_submit = input_data.get("_executor_submit_tool")
+        if scheduler_executor and executor_submit is not None:
+            if not isinstance(executor_submit, ToolDefinition) or executor_submit.name != "executor_submit":
+                raise ValueError("invalid scheduler-owned Executor submission tool")
+            from minicode.tooling import ToolRegistry
+
+            # Executor's filtered surface contains local file and note tools;
+            # it has no registry-bound Skill/MCP factories to rebind here.
+            tools = ToolRegistry(
+                [*tools.list(), executor_submit],
+                skills=[],
+                mcp_servers=tools.get_mcp_servers(),
+                mcp_current_state_registry=current_state_registry,
+            )
+
+        executor_check = input_data.get("_executor_check_capability")
+        if scheduler_executor and executor_check is not None:
+            from minicode.executor_verification import ExecutorCheckCapability
+
+            if not isinstance(executor_check, ExecutorCheckCapability):
+                raise ValueError("invalid scheduler-owned Executor check capability")
+            tools = executor_check.bind_registry(tools)
+
+        review_submit = input_data.get("_review_submit_tool")
+        review_check = input_data.get("_review_check_capability")
+        if scheduler_role is WorkerRole.REVIEWER and review_check is not None:
+            from minicode.reviewer_verification import ReviewerCheckCapability
+
+            if not isinstance(review_check, ReviewerCheckCapability):
+                raise ValueError("invalid scheduler-owned Reviewer check capability")
+            tools = tools.overlay([review_check.tool, review_check.read_tool])
+        verification_output_access = input_data.get("_verification_output_access")
+        if scheduler_role is WorkerRole.REVIEWER and verification_output_access is not None:
+            from minicode.verification_output_tool import VerificationOutputAccess
+
+            if not isinstance(verification_output_access, VerificationOutputAccess):
+                raise ValueError("invalid scheduler-owned verification output access")
+            tools = tools.overlay([verification_output_access.tool])
+        if scheduler_role is WorkerRole.REVIEWER and review_submit is not None:
+            if not isinstance(review_submit, ToolDefinition) or review_submit.name != "review_submit":
+                raise ValueError("invalid scheduler-owned Reviewer submission tool")
+            from minicode.tooling import ToolRegistry
+            from minicode.reviewer_result_submission import bind_reviewer_legacy_submission_tool
+
+            tools = ToolRegistry(
+                [*(bind_reviewer_legacy_submission_tool(review_submit, tool)
+                   if tool.name == "subagent_note_write" else tool
+                   for tool in tools.list()), review_submit], skills=[],
+                mcp_servers=tools.get_mcp_servers(),
+                mcp_current_state_registry=current_state_registry,
+            )
+
+        def model_factory():
+            return create_subagent_model_adapter(runtime, agent_type, tools=tools)
+
+        model = (executor_session.bind_model(model_factory, tools=tools)
+                 if executor_session is not None else model_factory())
         model_runtime = dict(getattr(model, "runtime", runtime) or runtime)
 
         from minicode.intent_parser import parse_intent
@@ -2516,7 +2661,15 @@ def _run(input_data: dict, context) -> ToolResult:
             )
             else f"subagent_result_{subagent_id}"
         )
+        from minicode.subagent_mailbox import SubagentMailbox
+
         mailbox = getattr(context, "_subagent_mailbox", None)
+        worker_mailbox = mailbox
+        if scheduler_role is None and isinstance(mailbox, SubagentMailbox):
+            result_channel = mailbox.create_result_channel(
+                result_key, author=subagent_id,
+            )
+            worker_mailbox = result_channel
         custom_result_instruction = input_data.get("_result_instruction")
         result_instruction = ""
         if mailbox is not None:
@@ -2527,7 +2680,7 @@ def _run(input_data: dict, context) -> ToolResult:
                 else _subagent_result_instruction(result_key)
             )
         fresh_user_prompt = task_prompt
-        if prior_messages is not None:
+        if prior_messages is not None and executor_session is None:
             fresh_user_prompt = (
                 f"[continuation of sub-agent {continue_id}; its earlier "
                 f"conversation is preserved above — answer the follow-up "
@@ -2554,10 +2707,14 @@ def _run(input_data: dict, context) -> ToolResult:
         # grows the prompt until the provider rejects it.
         from minicode.context_manager import ContextManager
 
-        sub_context_manager = ContextManager(
-            model=model_runtime.get("model", "default")
+        sub_context_manager = (
+            executor_session.context_manager
+            if executor_session is not None and executor_session.context_manager is not None
+            else ContextManager(model=model_runtime.get("model", "default"))
         )
         sub_context_manager.messages = sub_messages
+        if executor_session is not None:
+            executor_session.context_manager = sub_context_manager
 
         # Share the project's memory store. Injection is a clear win — the
         # sub-agent otherwise re-derives conventions the project already
@@ -2586,6 +2743,10 @@ def _run(input_data: dict, context) -> ToolResult:
 
         max_turns = agent_def["max_turns"]
     except BaseException as error:
+        if executor_session_started:
+            executor_session.finish(outcome="failed")
+        if result_channel is not None:
+            result_channel.close()
         try:
             full_tools.dispose()
         except BaseException:
@@ -2631,10 +2792,14 @@ def _run(input_data: dict, context) -> ToolResult:
     contract_recovered = False
     contract_reminder_sent = False
     structured_result: dict[str, object] | None = None
+    result_messages = None
     try:
         try:
             sub_on_tool_start, sub_on_tool_result = _sub_agent_progress_callbacks(
-                context, agent_type
+                context, agent_type,
+                subagent_id=subagent_id,
+                logical_role=logical_role,
+                journal_sink=sub_event_sink,
             )
             if sub_skill_routing is not None:
                 emit_skill_routing_safely(sub_event_sink, sub_skill_routing)
@@ -2659,7 +2824,7 @@ def _run(input_data: dict, context) -> ToolResult:
                 agent_budget=attributed_budget,
                 budget_exhausted_policy="raise",
                 abandoned_event=getattr(context, "_tool_abandoned", None),
-                subagent_mailbox=getattr(context, "_subagent_mailbox", None),
+                subagent_mailbox=worker_mailbox,
                 # The parent lifecycle owns this turn's async jobs.  Passing
                 # it into the child loop makes the child's final barrier
                 # observe (and wait on) the parent's pending workers — and
@@ -2683,6 +2848,15 @@ def _run(input_data: dict, context) -> ToolResult:
                 skill_load_policy=effective_skill_load_policy,
                 allow_user_interaction=False,
                 parsed_intent=sub_parsed_intent,
+                implementation_task=True if scheduler_executor else None,
+                implementation_analysis_complete=getattr(
+                    context, "_implementation_analysis_complete", False,
+                ),
+                implementation_spec=(executor_check.spec if scheduler_executor and executor_check is not None else None),
+                implementation_context_seed=(executor_session is None or prior_messages is None),
+                implementation_request_state=(executor_session.request_view()
+                                              if executor_session is not None else None),
+                host_native_result_tool=(review_submit if scheduler_role is WorkerRole.REVIEWER else None),
             )
             _raise_task_deadline(context)
             # Extract final message and counts before the finally block runs,
@@ -2751,29 +2925,36 @@ def _run(input_data: dict, context) -> ToolResult:
                     ),
                 )
             journal_outcome = "completed"
-            journal_model_turns = model_turns
-            journal_tool_calls = tool_calls_count
             journal_partial = final_partial
             # Live models routinely finish without the typed note (the
             # 2026-09-25 A/B: 20/20 fallback). Give exactly one bounded
-            # closing reminder when the note is missing and the turn budget
-            # was not exhausted; a model that still refuses keeps the
-            # fallback synthesis, visibly marked in the result header.
+            # closing reminder for a missing or malformed generic report.
+            # Strict scheduler roles own their report/repair protocol and must
+            # never receive this generic schema or overwrite a write-once key.
+            structured_result = project_subagent_result(
+                _read_subagent_report(mailbox, result_key),
+                subagent_id=subagent_id,
+                agent_type=agent_type,
+                outcome="completed",
+                fallback_summary=final_message,
+                partial=final_partial,
+            )
             if (
                 mailbox is not None
                 and not final_partial
-                and _read_subagent_report(mailbox, result_key) is None
+                and scheduler_role is None
+                and not custom_result_instruction
+                and structured_result["contractStatus"] == "fallback"
             ):
                 contract_reminder_sent = True
                 try:
                     reminder_messages = [
-                        {"role": "system", "content": sub_messages[0]["content"]},
-                        *sub_messages[1:],
+                        *result_messages,
                         {
                             "role": "user",
                             "content": (
                                 "Your run is about to close, but the "
-                                "MANDATORY typed result note is missing. "
+                                "MANDATORY typed result note is missing or invalid. "
                                 "Call subagent_note_write NOW with mailbox "
                                 f"key `{result_key}` and content containing "
                                 "ONLY the required JSON object "
@@ -2810,7 +2991,7 @@ def _run(input_data: dict, context) -> ToolResult:
                         agent_budget=attributed_budget,
                         budget_exhausted_policy="raise",
                         abandoned_event=getattr(context, "_tool_abandoned", None),
-                        subagent_mailbox=mailbox,
+                        subagent_mailbox=worker_mailbox,
                         subagent_lifecycle=None,
                         cancellation_token=getattr(
                             context, "_cancellation_token", None
@@ -2826,18 +3007,29 @@ def _run(input_data: dict, context) -> ToolResult:
                         skill_load_policy=effective_skill_load_policy,
                         allow_user_interaction=False,
                         parsed_intent=sub_parsed_intent,
+                        implementation_task=True if scheduler_executor else None,
                     )
-                    if _read_subagent_report(mailbox, result_key) is not None:
-                        contract_recovered = True
-                        result_messages = remediation_messages
-                        for msg in reversed(result_messages):
-                            if (
-                                msg.get("role") == "assistant"
-                                and msg.get("content", "").strip()
-                            ):
-                                final_message = msg["content"]
-                                break
-                except TurnCancellationRequested:
+                    # Alternate/test loops may not emit counters. Account only
+                    # for their new messages, never rebill the seeded survey.
+                    if prior_messages is None:
+                        model_turns += max(0, sum(
+                            m.get("role") in {"assistant", "assistant_tool_call"}
+                            for m in remediation_messages
+                        ) - sum(
+                            m.get("role") in {"assistant", "assistant_tool_call"}
+                            for m in reminder_messages
+                        ))
+                        tool_calls_count += max(0, sum(
+                            m.get("role") == "assistant_tool_call"
+                            for m in remediation_messages
+                        ) - sum(
+                            m.get("role") == "assistant_tool_call"
+                            for m in reminder_messages
+                        ))
+                    result_messages = remediation_messages
+                    # The reminder's final may merely say "note submitted".
+                    # Keep the completed survey as the human hand-back.
+                except (TurnCancellationRequested, ToolExecutionAbandoned):
                     raise
                 except Exception:  # noqa: BLE001 - reminder is best-effort
                     # The main run already succeeded; a failed reminder
@@ -2851,6 +3043,16 @@ def _run(input_data: dict, context) -> ToolResult:
                 fallback_summary=final_message,
                 partial=final_partial,
             )
+            contract_recovered = (
+                contract_reminder_sent
+                and structured_result["contractStatus"] == "reported"
+            )
+            # The same sink accounts for the survey and all attempted closing
+            # calls, including reminders that raised or refused the report.
+            model_turns = sub_event_sink.model_turns or model_turns
+            tool_calls_count = sub_event_sink.tool_calls or tool_calls_count
+            journal_model_turns = model_turns
+            journal_tool_calls = tool_calls_count
             # Persist the finished read-only conversation for same-turn
             # follow-ups. Scheduler workers are excluded: their transcripts
             # belong to frozen Assignments, not to the parent model.
@@ -2870,6 +3072,9 @@ def _run(input_data: dict, context) -> ToolResult:
         except TurnCancellationRequested:
             # Cooperative cancellation is the parent Turn's decision, not a
             # sub-agent failure — let it propagate so the parent unwinds.
+            journal_outcome = "cancelled"
+            journal_model_turns = sub_event_sink.model_turns
+            journal_tool_calls = sub_event_sink.tool_calls
             raise
         except ToolExecutionAbandoned as e:
             # The parent tool timeout has already returned a result; this
@@ -2937,6 +3142,7 @@ def _run(input_data: dict, context) -> ToolResult:
             )
             return ToolResult(
                 ok=False,
+                _termination_reason=ToolTerminationReason.BUDGET_EXCEEDED,
                 output=(
                     f"error[agent_budget_exceeded]: {e.reason}. "
                     "The shared turn budget was exhausted; simplify the task "
@@ -2966,6 +3172,13 @@ def _run(input_data: dict, context) -> ToolResult:
                 ),
             )
     finally:
+        if executor_session_started:
+            # On interruption run_agent_turn's finally publishes its retained
+            # messages to the existing ContextManager. A return value exists
+            # only for an ended invocation, never proof of verified delivery.
+            executor_session.finish(messages=result_messages, outcome=journal_outcome)
+        if result_channel is not None:
+            result_channel.close()
         sub_event_sink.flush_memory_provenance(final=True)
         try:
             full_tools.dispose()
@@ -3087,9 +3300,9 @@ def _run(input_data: dict, context) -> ToolResult:
             header
             + "\n"
             + result_text
+            + detail_section
             + "\n\n"
             + render_subagent_result(structured_result)
-            + detail_section
         ),
     )
 
@@ -3110,7 +3323,7 @@ def build_task_tool_for_project(cwd: str) -> ToolDefinition:
     snapshots stay immutable and parallel turns cannot cross-contaminate.
     """
     profiles, errors = load_agent_profiles(cwd)
-    if not profiles:
+    if not profiles and not errors:
         return task_tool
     agent_types = resolve_agent_types(cwd)
     names = sorted(agent_types)
@@ -3254,9 +3467,17 @@ def _dispatch(input_data: dict, context) -> ToolResult:
             ok=False,
             output=f"error[sub_agent_lifecycle_rejected]: {exc}",
         )
+    acknowledge = getattr(lifecycle, "acknowledge_delivery", None)
+    delivery_ack = None
+    if snapshot.get("terminal") is True and callable(acknowledge):
+        delivered_ids = (str(snapshot["subagentId"]),)
+
+        def delivery_ack() -> None:
+            acknowledge(delivered_ids)
     return ToolResult(
         ok=True,
         output=json.dumps(snapshot, ensure_ascii=False, sort_keys=True),
+        _delivery_ack=delivery_ack,
     )
 
 
@@ -3354,8 +3575,8 @@ task_tool = ToolDefinition(
         "'explore'/'plan', then 'poll' or 'cancel' with the returned ID, "
         "when the parent should continue working concurrently. "
         "The sub-agent runs in its own isolated context with a turn limit. "
-        "'workflow' runs a centrally scheduled, typed "
-        "Analyst -> Executor -> Verifier -> Reviewer flow. 'general' is a "
+        "'workflow' runs a centrally scheduled Executor -> Verifier flow, "
+        "with Analyst and Reviewer when host policy requires them. 'general' is a "
         "legacy-embedder compatibility type and the production Agent Loop "
         "rejects it. 'general' and 'workflow' always run one at "
         "a time. All sub-agents share the current turn's "
@@ -3406,7 +3627,10 @@ task_tool = ToolDefinition(
                     "Full, self-contained task description for the sub-agent. "
                     "The sub-agent runs in a fresh context and cannot see this "
                     "conversation, so include every file path, constraint, and "
-                    "piece of background it needs."
+                    "piece of background it needs. For agent_type='workflow', "
+                    f"the prompt must be at most {_WORKFLOW_PROMPT_MAX_CHARS} "
+                    "characters after trimming whitespace; summarize findings "
+                    "and acceptance criteria instead of pasting source or patches."
                 ),
             },
             "continue_subagent_id": {

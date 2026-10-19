@@ -1,7 +1,7 @@
 """Project-defined read-only sub-agent profiles loaded from Markdown files.
 
 A profile is one ``.md`` file under ``<project>/.mini-code/agents``: a
-closed-key frontmatter block (name, description, max_turns, allowed_tools)
+closed-key frontmatter block (name, description, allowed_tools, optional max_turns)
 followed by a body that becomes the agent type's system prompt. Loading is
 fail-closed per file — any malformed file is rejected with a readable
 error and never silently narrows the declared tool set or turns.
@@ -24,12 +24,12 @@ from minicode.subagent_types import AGENT_TYPES, READ_ONLY_TOOL_WHITELIST
 AGENT_NAME_RE = re.compile(r"[a-z][a-z0-9-]{1,31}")
 RESERVED_AGENT_NAMES = frozenset({"explore", "plan", "general", "workflow"})
 _FRONTMATTER_KEYS = ("name", "description", "max_turns", "allowed_tools")
-_MAX_TURNS_CEILING = 200
 _MAX_DESCRIPTION_CHARS = 400
 _PROFILE_DIR = (".mini-code", "agents")
+_MAX_CACHED_ROOTS = 32
 
 _cache_lock = threading.Lock()
-_cache: dict[tuple, tuple[dict[str, dict], list[str]]] = {}
+_cache: dict[tuple[str, str], tuple[tuple, dict[str, dict], list[str]]] = {}
 
 
 def _parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
@@ -61,7 +61,8 @@ def _parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
         fields[key] = value.strip()
     if closing_index is None:
         raise ValueError("frontmatter block is not closed with '---'")
-    missing = [key for key in _FRONTMATTER_KEYS if not fields.get(key)]
+    missing = [key for key in _FRONTMATTER_KEYS
+               if key != "max_turns" and not fields.get(key)]
     if missing:
         raise ValueError("missing frontmatter keys: " + ", ".join(missing))
     body = "\n".join(lines[closing_index + 1 :]).strip()
@@ -69,10 +70,24 @@ def _parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
 
 
 def _directory_signature(directory: Path) -> tuple:
-    return tuple(
-        (path.name, path.stat().st_mtime_ns, path.stat().st_size)
-        for path in sorted(directory.glob("*.md"))
-    )
+    signature = []
+    try:
+        paths = sorted(directory.glob("*.md"))
+    except OSError as error:
+        return (("directory_unreadable", error.errno),)
+    for path in paths:
+        try:
+            metadata = path.stat()
+        except OSError as error:
+            # Parsing will report this individual file; a broken symlink
+            # must not prevent the built-in task menu from being created.
+            signature.append((path.name, "unreadable", error.errno))
+            continue
+        signature.append((
+            path.name, metadata.st_dev, metadata.st_ino, metadata.st_size,
+            metadata.st_mtime_ns, metadata.st_ctime_ns,
+        ))
+    return tuple(signature)
 
 
 def _parse_profile_file(path: Path, origin: str) -> tuple[str, dict]:
@@ -103,14 +118,17 @@ def _parse_profile_file(path: Path, origin: str) -> tuple[str, dict]:
         raise ValueError(
             "tools outside the read-only whitelist: " + ", ".join(sorted(outside))
         )
-    try:
-        max_turns = int(fields["max_turns"], 10)
-    except ValueError as error:
-        raise ValueError(
-            f"max_turns must be an integer: {fields['max_turns']!r}"
-        ) from error
-    if not 1 <= max_turns <= _MAX_TURNS_CEILING:
-        raise ValueError(f"max_turns must be 1..{_MAX_TURNS_CEILING}")
+    max_turns = None
+    if "max_turns" in fields:
+        try:
+            configured_turns = int(fields["max_turns"], 10)
+        except ValueError as error:
+            raise ValueError(
+                f"max_turns must be a non-negative integer: {fields['max_turns']!r}"
+            ) from error
+        if configured_turns < 0:
+            raise ValueError("max_turns must be a non-negative integer")
+        max_turns = configured_turns or None
     if not body:
         raise ValueError("system prompt body is empty")
     description = fields["description"]
@@ -139,7 +157,7 @@ def load_agent_profiles(
     Project profiles (``<project>/.mini-code/agents``) win over user
     profiles (``~/.mini-code/agents``) on a name collision — the closer
     definition to the code being worked on is authoritative. Results are
-    cached on each directory's (name, mtime_ns, size) signature so a
+    cached on each directory's file identity/change signature so a
     long-running process picks up edits between turns.
     """
     project_dir = Path(project_root).joinpath(*_PROFILE_DIR)
@@ -153,18 +171,23 @@ def load_agent_profiles(
         _directory_signature(directory) if directory.is_dir() else ()
         for directory, _origin in roots
     )
-    key = (str(project_dir), str(user_dir), signatures)
+    key = (str(project_dir), str(user_dir))
     with _cache_lock:
         cached = _cache.get(key)
-    if cached is not None:
-        return cached
+    if cached is not None and cached[0] == signatures:
+        return cached[1], cached[2]
 
     profiles: dict[str, dict] = {}
     errors: list[str] = []
     for (directory, origin), _signature in zip(roots, signatures):
         if not directory.is_dir():
             continue
-        for path in sorted(directory.glob("*.md")):
+        try:
+            paths = sorted(directory.glob("*.md"))
+        except OSError as error:
+            errors.append(f"{origin}:profile directory: {error}")
+            continue
+        for path in paths:
             try:
                 slug, profile = _parse_profile_file(path, origin)
             except (OSError, ValueError) as error:
@@ -172,10 +195,11 @@ def load_agent_profiles(
                 continue
             # Project precedence: an earlier (project) definition wins.
             profiles.setdefault(slug, profile)
-    result = (profiles, errors)
     with _cache_lock:
-        _cache[key] = result
-    return result
+        if key not in _cache and len(_cache) >= _MAX_CACHED_ROOTS:
+            _cache.pop(next(iter(_cache)))
+        _cache[key] = (signatures, profiles, errors)
+    return profiles, errors
 
 
 def resolve_agent_types(

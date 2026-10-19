@@ -22,7 +22,11 @@ def _run(input_data: dict, context) -> ToolResult:
             output=f"File {input_data['path']} appears to be binary. Cannot count lines as text.",
         )
 
-    lines = content.splitlines()
+    # Text I/O already normalizes CRLF/CR. Use the same LF line boundaries as
+    # read_file: splitlines() also splits form-feed and Unicode string data.
+    lines = content.split("\n")
+    if lines[-1] == "":
+        lines.pop()
     total = len(lines)
     non_empty = sum(1 for line in lines if line.strip())
     empty = total - non_empty

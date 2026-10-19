@@ -1,3 +1,4 @@
+import json
 import re
 from dataclasses import dataclass
 from enum import Enum
@@ -253,6 +254,14 @@ class ErrorClassifier:
     @classmethod
     def classify(cls, error_message: str, tool_name: str = "") -> ClassifiedError:
         """Classify an error message and recommend a strategy."""
+        if tool_name == "completion_coverage_audit_submit":
+            try:
+                structured = json.JSONDecoder().raw_decode(error_message)[0]
+            except (ValueError, TypeError):
+                structured = None
+            if isinstance(structured, dict) and structured.get("errorCode") == "coverage_audit_invalid":
+                return ClassifiedError(category=ErrorCategory.LOGIC, strategy=RecoveryStrategy.FALLBACK_ALTERNATIVE,
+                    confidence=1.0, context={"tool_name": tool_name, "error_snippet": error_message[:200]})
         diagnostics, test_failed = cls._diagnostics(error_message)
         best_category = ErrorCategory.TEST_FAILURE if test_failed else ErrorCategory.UNKNOWN
         confidence = 0.85 if test_failed else 0.3

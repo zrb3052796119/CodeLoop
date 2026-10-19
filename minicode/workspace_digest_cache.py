@@ -5,33 +5,42 @@ freeze reconciliation, verification clones, promote validation).  Each walk
 re-reads and re-hashes every file even though the overwhelmingly common case
 is that the bytes never changed between two walks.
 
-This module caches the per-file content digest keyed by
-``(relative_path, size, mtime_ns)``.  That key assumes content identity when
-all three stat components match — the same assumption git's index makes to
-skip hashing unchanged files.  Tree copies inside one workflow preserve
-``mtime_ns`` via ``shutil.copystat``, so the cache also hits across the
-snapshot -> frozen-container -> verification-clone chain, not only across
-repeated walks of one tree.
+Reuse is limited to the same filesystem file identity and change metadata.
+Copied files and different project roots are independently hashed, even when
+relative paths, sizes and preserved timestamps match. Authoritative workflow
+gates request a fresh read regardless of this performance cache.
 
-The assumption is safe within the documented subprocess threat model (worker
-runtime code is trusted; a same-UID process forging nanosecond-stat-identical
-replacements is out of scope).  ``MINI_CODE_WORKSPACE_DIGEST_CACHE=0``
-restores the legacy always-rehash behavior, including the legacy tree-digest
-byte stream.
+``MINI_CODE_WORKSPACE_DIGEST_CACHE=0`` disables reuse without changing the
+tree-digest encoding.
 """
 
 from __future__ import annotations
 
 import hashlib
 import os
+import stat
 import threading
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import Callable
 
 _CACHE_ENV_NAME = "MINI_CODE_WORKSPACE_DIGEST_CACHE"
 _DEFAULT_ENTRY_LIMIT = 100_000
 _CHUNK_BYTES = 1024 * 1024
+_FileIdentity = tuple[str, int, int, int, int, int]
+
+
+def _file_identity(path: Path) -> _FileIdentity:
+    metadata = path.stat(follow_symlinks=False)
+    if not stat.S_ISREG(metadata.st_mode):
+        raise OSError(f"workspace digest requires a regular file: {path}")
+    return (
+        str(path.resolve(strict=True)),
+        metadata.st_dev,
+        metadata.st_ino,
+        metadata.st_size,
+        metadata.st_mtime_ns,
+        metadata.st_ctime_ns,
+    )
 
 
 def _resolve_enabled(env: Mapping[str, str] | None = None) -> bool:
@@ -60,7 +69,7 @@ class WorkspaceDigestCache:
         self._explicit_enabled = None if enabled is None else bool(enabled)
         self._env = env
         self._lock = threading.Lock()
-        self._entries: dict[tuple[str, int, int], bytes] = {}
+        self._entries: dict[_FileIdentity, bytes] = {}
         self._hits = 0
         self._misses = 0
 
@@ -90,43 +99,35 @@ class WorkspaceDigestCache:
         size: int,
         mtime_ns: int,
         checkpoint: Callable[[], None] | None = None,
+        use_cache: bool = True,
     ) -> bytes:
         """Return the 32-byte SHA-256 of one regular file's content.
 
-        A mid-read modification would poison the cache entry, so the file's
-        stat is re-checked after hashing and the read retried once when the
-        file moved underneath the reader.
+        Caller-supplied path/size/mtime hints are retained for compatibility;
+        actual file identity and ctime determine reuse. A changed or missing
+        file during hashing must never populate the cache or supply unstable
+        evidence. Safety gates set ``use_cache=False`` to read actual bytes.
         """
 
-        key = (relative_posix, size, mtime_ns)
-        cached = self._lookup(key)
-        if cached is not None:
-            return cached
+        cache_enabled = use_cache and self.enabled
+        key = _file_identity(path)
+        if cache_enabled:
+            cached = self._lookup(key)
+            if cached is not None:
+                return cached
         for attempt in range(2):
             digest = self._hash_file(path, checkpoint)
-            try:
-                final_stat = path.stat(follow_symlinks=False)
-            except OSError:
-                final_stat = None
-            if final_stat is None:
-                # The file vanished mid-hash; the tree walk will fail on the
-                # entry anyway.  Do not cache anything unreadable.
-                return digest
-            final_key = (
-                relative_posix,
-                final_stat.st_size,
-                final_stat.st_mtime_ns,
-            )
-            if final_key == key or attempt == 1:
-                if final_key == key:
+            final_key = _file_identity(path)
+            if final_key == key:
+                if cache_enabled:
                     self._store(final_key, digest)
                 return digest
-            # The stat moved underneath the reader: rehash against the new
-            # state before deciding what to cache.
+            if attempt == 1:
+                raise OSError(f"workspace file changed while hashing: {path}")
             key = final_key
         raise AssertionError("unreachable digest retry loop")
 
-    def _lookup(self, key: tuple[str, int, int]) -> bytes | None:
+    def _lookup(self, key: _FileIdentity) -> bytes | None:
         with self._lock:
             cached = self._entries.get(key)
         if cached is not None:
@@ -134,7 +135,7 @@ class WorkspaceDigestCache:
                 self._hits += 1
         return cached
 
-    def _store(self, key: tuple[str, int, int], digest: bytes) -> None:
+    def _store(self, key: _FileIdentity, digest: bytes) -> None:
         with self._lock:
             self._misses += 1
             if len(self._entries) >= self._entry_limit:

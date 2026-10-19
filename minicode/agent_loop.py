@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import concurrent.futures
 import copy
+import hashlib
+import http.client
 import json
+import os
 import re
 import sys
 import time
 import uuid
+import urllib.error
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
@@ -16,6 +20,7 @@ from minicode.agent_budget import (
     AgentTurnBudget,
     record_budgeted_model_call,
 )
+from minicode.api_retry import MAX_RETRIES, ErrorCategory, calculate_backoff
 from minicode.concurrent_tool_terminal import (
     CONCURRENT_TOOL_TERMINAL_EVENT_TYPE,
     MAX_CONCURRENT_TOOL_TERMINAL_EVENTS,
@@ -28,6 +33,8 @@ from minicode.memory_provenance import MemoryProvenanceBatch
 from minicode.model_call_control import (
     ModelCallDeadlineExceeded,
     call_model_next,
+    estimate_budgeted_request_input,
+    controlled_retry_sleep,
 )
 from minicode.permissions import PermissionManager
 from minicode.pricing import (
@@ -60,10 +67,18 @@ from minicode.subagent_mailbox import SubagentMailbox
 from minicode.subagent_sessions import SubagentSessionStore
 from minicode.subagent_lifecycle import AsyncSubagentLifecycle
 from minicode.task_ledger import TaskLedger
-from minicode.turn_completion import TurnCompletionPolicy
+from minicode.turn_completion import TurnCompletionPolicy, workflow_delivery_summary
+from minicode.workflow_delivery import TurnWorkflowDelivery, invoke_with_delivery
+from minicode.coding_progress import (
+    CodingProgressTracker, SOURCE_READ_TOOLS, is_implementation_task,
+)
+from minicode.implementation_phases import (
+    ImplementationPhaseController, PhaseCallDeadlineExceeded,
+)
 from minicode.tooling import (
     SkillLoadPolicy,
     ToolContext,
+    ToolDefinition,
     ToolExecutionAbandoned,
     ToolRegistry,
     ToolResult,
@@ -778,6 +793,63 @@ def _build_layered_context(
     return context, builder
 
 
+def _parent_handoff_token_floor(
+    messages: list[dict], calls: list[dict], *,
+    assistant_content: str = "", reasoning_content: str | None = None,
+    closing_prompt: str = "",
+    completed_results: list[tuple[dict, ToolResult]] | None = None,
+) -> int:
+    """Price one parent hand-back before its workflow children spend tokens.
+
+    This is an admission floor, not a second reservation or allowance. Every
+    sibling uses the same floor against the shared atomic reservation; nested
+    parents retain their ancestors' floors through the existing budget views.
+    Receipt allowance covers the 8000-char authority projection, 3000-char
+    implementation diagnostics, workspace receipt and bounded routing notes.
+    CJK weighting gives an upper bound for our existing text estimator, not
+    a guarantee about a provider's tokenizer or unknown failed-call usage.
+    """
+    workflows = [call for call in calls if call.get("toolName") == "task"
+                 and isinstance(call.get("input"), dict)
+                 and call["input"].get("agent_type") == "workflow"
+                 and call["input"].get("action", "run") in {"run", "spawn"}]
+    if not workflows:
+        return 0
+    from minicode.context_manager import estimate_message_tokens
+    from minicode.tooling import _DEFAULT_MAX_OUTPUT, _LARGE_OUTPUT_THRESHOLD, _TOOL_OUTPUT_LIMITS
+    from minicode.workflow_finalization import _WORKFLOW_OUTPUT_MAX_CHARS
+    from minicode.workflow_runner import _EXECUTOR_OBSERVATION_MAX_CHARS
+
+    pending = []
+    for index, call in enumerate(calls):
+        message = {"role": "assistant_tool_call", "input": call.get("input", {})}
+        if index == 0:
+            message["content"] = assistant_content or ""
+            message["reasoningContent"] = reasoning_content or ""
+        pending.append(message)
+    input_tokens = _estimated_context_tokens(messages + pending)
+    input_tokens += estimate_message_tokens({"role": "user", "content": closing_prompt})
+    observed = {call["id"]: result.output for call, result in completed_results or []}
+    workflow_ids = {call["id"] for call in workflows}
+    receipt_tokens = 0
+    for call in calls:
+        if call["id"] in observed:
+            # Serial siblings that already finished contribute their actual
+            # text, avoiding a speculative large allowance for a tiny todo.
+            receipt_tokens += estimate_message_tokens({"role": "tool_result", "content": observed[call["id"]]})
+        else:
+            if call["id"] in workflow_ids:
+                chars = (_WORKFLOW_OUTPUT_MAX_CHARS + _EXECUTOR_OBSERVATION_MAX_CHARS
+                         + 512 + 1024)  # workspace state + markers/routing/nudge
+            else:
+                # Mixed batches are legal. Reuse the registry's existing
+                # projection thresholds; no output limit is changed here.
+                chars = max(_LARGE_OUTPUT_THRESHOLD,
+                            _TOOL_OUTPUT_LIMITS.get(call.get("toolName", ""), _DEFAULT_MAX_OUTPUT)) + 1024
+            receipt_tokens += chars * 2 // 3 + 6
+    return input_tokens + receipt_tokens + 2048
+
+
 def _execute_single_tool(
     call: dict,
     tools: ToolRegistry,
@@ -803,6 +875,10 @@ def _execute_single_tool(
     allow_user_interaction: bool = True,
     deadline_monotonic: float | None = None,
     skill_load_policy: SkillLoadPolicy | None = None,
+    implementation_candidate_guard: Any | None = None,
+    parent_handoff_preserve_tokens: int = 0,
+    workflow_delivery: TurnWorkflowDelivery | None = None,
+    workflow_user_request: str | None = None,
 ) -> ToolResult:
     """Execute a single tool call with hooks, state updates, and crash protection.
     
@@ -817,9 +893,30 @@ def _execute_single_tool(
     tool_name = call["toolName"]
     tool_input = call["input"]
     result: ToolResult | None = None
-    
+    evidence_id = None
+    evidence_finished = False
+
+    def record_private_result(observed: ToolResult) -> None:
+        nonlocal evidence_finished
+        if evidence_finished:
+            return
+        evidence_finished = True
+        if callable(evidence_recorder):
+            try:
+                evidence_recorder(tool_name=tool_name, phase="finished",
+                    output=observed.output, is_error=not observed.ok,
+                    invocation_id=evidence_id)
+            except BaseException:  # Private diagnostics never replace control flow.
+                pass
+
+    evidence_recorder = getattr(event_sink, "record_tool_evidence", None)
     try:
         raise_if_cancelled(cancellation_token)
+        if callable(evidence_recorder):
+            try:
+                evidence_id = evidence_recorder(tool_name=tool_name, phase="started", tool_input=tool_input)
+            except BaseException:  # Observation must not prevent actual execution.
+                pass
         # Pre-tool hooks and UI (only for serial execution)
         if on_tool_start:
             on_tool_start(tool_name, tool_input)
@@ -863,18 +960,25 @@ def _execute_single_tool(
             )
 
             verifier_explicit = user_registered_trusted_executables()
-            executed = tools.execute(
+            candidate_before = (
+                implementation_candidate_guard.capture_before([call], mutation_epoch=step)
+                if implementation_candidate_guard is not None and tool_name in {"test_runner", "run_command"}
+                else None
+            )
+            executed = invoke_with_delivery(workflow_delivery, call, lambda: tools.execute(
                 tool_name, tool_input,
                 ToolContext(
                     cwd=cwd,
                     permissions=permissions,
                     _runtime=runtime,
+                    _implementation_candidate_guard=implementation_candidate_guard,
                     _verifier_sandbox_backend=verifier_backend,
                     _verifier_trusted_executables=verifier_executables,
                     _verifier_explicit_trusted_executables=(
                         verifier_explicit or None
                     ),
                     _central_workflow_v2_enforced=True,
+                    _workflow_user_request=workflow_user_request,
                     _event_sink=event_sink,
                     _step=step,
                     _skill_usage_tracker=skill_usage_tracker,
@@ -883,6 +987,7 @@ def _execute_single_tool(
                     _agent_depth=agent_depth,
                     _presentation=presentation,
                     _agent_budget=agent_budget,
+                    _logical_agent_preserve_total_tokens=parent_handoff_preserve_tokens,
                     _tool_abandoned=abandoned_event,
                     _subagent_mailbox=subagent_mailbox,
                     _subagent_lifecycle=subagent_lifecycle,
@@ -890,22 +995,32 @@ def _execute_single_tool(
                     _todo_state=todo_state,
                     _skill_load_policy=skill_load_policy,
                 ),
-            )
-            if not executed._must_deliver:
-                raise_if_cancelled(cancellation_token)
+            ))
+            if candidate_before is not None:
+                decision = implementation_candidate_guard.observe_results(
+                    [(call, executed)], candidate_before, mutation_epoch=step,
+                )
+                if not decision.allowed and not executed._must_deliver:
+                    executed.ok = False
+                    executed.verification = None
+                    executed.output += f"\nerror[{decision.code}]: {decision.message}"
             return executed
 
         tool_definition = tools.find(tool_name)
-        abandon_safe = bool(
-            tool_definition is not None
-            and (
-                tool_definition.is_read_only
-                or (
-                    tool_name == "task"
-                    and tool_definition.call_is_concurrency_safe(tool_input)
-                )
+        if tool_name == "task":
+            # Workspace-read-only tasks still spend shared model budget and
+            # publish mailbox/session/lifecycle state. Concurrency-safe is not
+            # abandon-safe: run/spawn stay in their current batch worker and
+            # inherit Task's deadline/cancellation controls. Only poll merely
+            # observes existing work; its result is acknowledged by the owner
+            # after delivery, so a timed-out poll can safely be discarded.
+            abandon_safe = (
+                isinstance(tool_input, dict) and tool_input.get("action") == "poll"
             )
-        )
+        else:
+            abandon_safe = bool(
+                tool_definition is not None and tool_definition.is_read_only
+            )
         if not abandon_safe:
             # Python cannot kill a running thread. Returning a timeout while a
             # write-capable tool continues would let it mutate files/Memory
@@ -934,6 +1049,12 @@ def _execute_single_tool(
         # re-raised below, everything else is converted to an error result by
         # the outer safety net. (The previous blind `execute_tool()` fallback
         # re-ran tools with side effects a second time.)
+
+        # The owning invocation observes the returned value before cancellation
+        # can suppress public delivery. IDs are local to this call, not its name.
+        record_private_result(result)
+        if not result._must_deliver:
+            raise_if_cancelled(cancellation_token)
 
         verification = normalize_tool_verification(
             tool_name,
@@ -1001,11 +1122,13 @@ def _execute_single_tool(
             except Exception:
                 pass
         
-        return ToolResult(
+        failed = ToolResult(
             ok=False,
             output=f"[{error_type}] Tool execution pipeline crashed: {exc}\n"
                    f"Traceback:\n{tb_excerpt}"
         )
+        record_private_result(result if result is not None else failed)
+        return failed
     except BaseException:
         if result is not None and result._must_deliver:
             logger.exception(
@@ -1018,6 +1141,18 @@ def _execute_single_tool(
                     pass
             return result
         raise
+
+
+def _acknowledge_tool_delivery(result: ToolResult) -> bool:
+    """Settle delivery only on the owning loop after transcript insertion."""
+    if not callable(result._delivery_ack):
+        return True
+    try:
+        result._delivery_ack()
+        return True
+    except Exception:  # unread results remain eligible for barrier redelivery
+        logger.warning("Tool delivery acknowledgement failed", exc_info=True)
+        return False
 
 
 def _format_diagnostics(stop_reason: str | None, block_types: list[str] | None, ignored_block_types: list[str] | None) -> str:
@@ -1079,6 +1214,38 @@ def _should_treat_assistant_as_progress(
     return unfinished_retry_count < 2 and _looks_like_unfinished_action(content)
 
 
+def _phase_reasoning_options(model: ModelAdapter, *, implementation: bool = False) -> dict[str, str]:
+    # Never assume a model/provider supports this control. Factory-owned
+    # adapters advertise the exact route capability; otherwise leave it alone.
+    if {"low", "high"}.issubset(getattr(model, "supported_reasoning_efforts", ()) or ()):
+        return {"reasoning_effort_override": "high" if implementation else "low"}
+    return {}
+
+
+def _is_transient_model_transport_error(error: Exception) -> bool:
+    """Retry interrupted exchanges, never infer retry authority from prose.
+
+Authentication/certificate failures and invalid requests remain terminal.
+A URLError is only a wrapper here; its typed underlying connection failure or
+exact stdlib CONNECT gateway status must independently qualify.
+Partial response bytes are not an AgentStep and
+cannot authorize any tool execution.
+"""
+    if isinstance(error, urllib.error.HTTPError):
+        return False
+    cause = error.reason if isinstance(error, urllib.error.URLError) else error
+    # http.client._tunnel exposes CONNECT's HTTP status only in this exact
+    # OSError format; urllib preserves that typed exception as reason. Do not
+    # classify arbitrary exception strings, authentication or TLS errors this way.
+    if isinstance(error, urllib.error.URLError) and type(cause) is OSError:
+        tunnel_status = re.fullmatch(r"Tunnel connection failed: (502|503|504)(?: [^\r\n]*)?", str(cause))
+        if cause.errno is None and tunnel_status is not None:
+            return True
+    if isinstance(cause, (ModelCallDeadlineExceeded, PhaseCallDeadlineExceeded)):
+        return False
+    return isinstance(cause, (ConnectionError, http.client.IncompleteRead, TimeoutError))
+
+
 def _model_next(
     model: ModelAdapter,
     messages: list[ChatMessage],
@@ -1088,6 +1255,8 @@ def _model_next(
     store: Store[AppState] | None,
     cancellation_token: TurnCancellationToken | None = None,
     deadline_monotonic: float | None = None,
+    global_deadline_monotonic: float | None = None,
+    request_options: dict[str, Any] | None = None,
 ) -> AgentStep:
     """Call provider adapters with store/thinking support while preserving test doubles."""
     try:
@@ -1098,18 +1267,39 @@ def _model_next(
                 "on_stream_chunk": on_stream_chunk,
                 "on_thinking_delta": on_thinking_chunk,
                 "store": store,
+                **(request_options or {}),
             },
             cancellation_token=cancellation_token,
             deadline_monotonic=deadline_monotonic,
         )
     except ModelCallDeadlineExceeded as error:
+        if (deadline_monotonic is not None
+                and (global_deadline_monotonic is None
+                     or deadline_monotonic < global_deadline_monotonic)) and (
+            global_deadline_monotonic is None or time.monotonic() < global_deadline_monotonic
+        ):
+            raise PhaseCallDeadlineExceeded(str(error)) from error
         raise AgentTurnDeadlineExceeded(str(error)) from error
+    except TimeoutError as error:
+        # Socket/header/idle timeouts are transport failures, even when the
+        # request carries an Executor or native-only tool view. Only an elapsed
+        # absolute control deadline makes this a phase/owner deadline failure.
+        now = time.monotonic()
+        if global_deadline_monotonic is not None and now >= global_deadline_monotonic:
+            raise AgentTurnDeadlineExceeded(str(error)) from error
+        if (deadline_monotonic is not None
+                and (global_deadline_monotonic is None
+                     or deadline_monotonic < global_deadline_monotonic)
+                and now >= deadline_monotonic):
+            raise PhaseCallDeadlineExceeded(str(error)) from error
+        raise
 
 
 def _record_context_token_observation(
     context_manager: ContextManager | None,
     current_messages: list[dict],
     next_step: Any,
+    *, request_messages: list[dict] | None = None,
 ) -> None:
     """Feed provider-reported input tokens back into the context estimator.
 
@@ -1128,8 +1318,11 @@ def _record_context_token_observation(
             and not isinstance(observed, bool)
             and observed > 0
         ):
-            context_manager.messages = current_messages
-            context_manager.record_observed_tokens(observed)
+            context_manager.messages = request_messages if request_messages is not None else current_messages
+            try:
+                context_manager.record_observed_tokens(observed)
+            finally:
+                context_manager.messages = current_messages
     except Exception as exc:  # noqa: BLE001 - calibration is optional
         logger.warning(
             "Context token calibration skipped: %s",
@@ -1836,11 +2029,13 @@ _REQUIRED_SKILL_MIN_STEPS = 15
 
 def _preemptive_step_cap(
     *,
-    max_steps: int,
+    max_steps: int | None,
     recommended_steps: int,
     required_skill_count: int,
-) -> int:
+) -> int | None:
     """Keep Skill load-and-apply work from being classified into starvation."""
+    if max_steps is None:
+        return None
     effective_recommendation = recommended_steps
     if required_skill_count > 0:
         effective_recommendation = max(
@@ -1913,7 +2108,7 @@ def run_agent_turn(
     cwd: str,
     permissions: PermissionManager | None = None,
     store: Store[AppState] | None = None,
-    max_steps: int = 50,
+    max_steps: int | None = None,
     on_tool_start: Callable[[str, dict], None] | None = None,
     on_tool_result: Callable[[str, str, bool], None] | None = None,
     on_assistant_message: Callable[[str], None] | None = None,
@@ -1945,9 +2140,55 @@ def run_agent_turn(
     max_steps_soft_landing: bool = False,
     enable_bounded_completion: bool = False,
     parsed_intent: ParsedIntent | None = None,
+    implementation_task: bool | None = None,
+    implementation_analysis_complete: bool = False,
+    implementation_spec: Any | None = None,
+    implementation_continuation: Any | None = None,
+    implementation_checkpoint_sink: Callable[[dict, list], None] | None = None,
+    context_checkpoint_sink: Callable[[list[ChatMessage]], None] | None = None,
+    implementation_context_seed: bool = True,
+    implementation_request_state: Any | None = None,
+    enable_implementation_phases: bool = True,
+    bounded_implementation_phases: bool = False,
     trusted_user_evidence: tuple[TrustedUserEvidenceSeed, ...] = (),
     defer_curator_maintenance: bool = False,
+    host_native_result_tool: ToolDefinition | None = None,
 ) -> list[ChatMessage]:
+    restored_completion_review = None
+    if implementation_continuation is not None:
+        from minicode.implementation_continuation import HostImplementationContinuation
+
+        if not isinstance(implementation_continuation, HostImplementationContinuation):
+            raise ValueError("continuation must be a host-bound capability")
+        if (not {"edit_file", "write_file"}.intersection(tools.list_all())
+                or getattr(tools, "_implementation_feedback", None) is not None
+                or "executor_submit" in tools.list_all()):
+            raise ValueError("continuation requires the original direct implementation owner")
+        implementation_continuation.validate(spec=implementation_spec, messages=messages,
+            context=ToolContext(cwd=cwd, permissions=permissions))
+        restored_budget = agent_budget or AgentTurnBudget.from_runtime(runtime or {})
+        if restored_budget.has_limits:
+            raise ValueError("finite-budget continuation requires restoring its consumed budget")
+        restored_completion_review = implementation_continuation.restore_review(implementation_spec)
+        implementation_context_seed = False
+    # Only the scheduler can bind this capability. A name in model-visible
+    # messages or a generic note tool never grants a native closing path.
+    if host_native_result_tool is not None and (
+        host_native_result_tool.name != "review_submit"
+        or not any(tool is host_native_result_tool for tool in tools.list())
+    ):
+        raise ValueError("native result capability must be the bound Reviewer tool")
+    native_handoff_only = False
+    native_handoff_attempted = False
+    native_handoff_rejected = False
+    native_handoff_prompt_sent = False
+    seen_submission_rejections: set[str] = set()
+    native_handoff_prompt = (
+        "The remaining allowance is reserved for the assigned review conclusion. "
+        "Submit review_submit using the evidence already available. If it does not "
+        "establish a verdict, submit inconclusive with unknown criteria; do not "
+        "invent findings or approval. No further inspection tools are available."
+    )
     # Entry points opt the primary Agent into bounded completion. Keep the
     # caller's hard ceiling separate from feedforward's task recommendation.
     caller_max_steps = max_steps
@@ -1956,16 +2197,51 @@ def run_agent_turn(
     # old material before task parsing and let canonical retrieval decide what
     # is relevant for this Turn.
     current_messages = strip_historical_session_memory(list(messages))
-    task_ledger = TaskLedger.from_messages(current_messages)
+    completion_evidence_views = None
+    if (implementation_spec is not None
+            and {"edit_file", "write_file"}.intersection(tools.list_all())
+            and getattr(tools, "_implementation_feedback", None) is None
+            and "executor_submit" not in tools.list_all()):
+        from minicode.completion_feedback_view import CompletionFeedbackViews
+
+        completion_evidence_views = CompletionFeedbackViews()
+        # Restore only after native owner/context validation above, but before
+        # compaction can copy a multi-megabyte host receipt into another request.
+        # Host-only metadata retains exact originals for the next checkpoint.
+        if implementation_continuation is not None:
+            current_messages = [completion_evidence_views.project_message(message)
+                                for message in current_messages]
+        tools = tools.overlay([completion_evidence_views.tool_definition()])
+    # A bound implementation keeps its original requirement authority even
+    # when the latest user-role message is a host source packet or receipt.
+    from minicode.implementation_execution import ImplementationSpec
+    ledger_messages = ([{"role": "user", "content": implementation_spec.objective}]
+        if isinstance(implementation_spec, ImplementationSpec) else current_messages)
+    task_ledger = TaskLedger.from_messages(ledger_messages)
+    implementation_completion_feedback = (implementation_continuation.feedback
+        if implementation_continuation is not None else None)
+    if implementation_completion_feedback is not None and completion_evidence_views is not None:
+        implementation_completion_feedback = completion_evidence_views.project_message(
+            implementation_completion_feedback)
 
     def reconcile_task_ledger(
         candidate: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
-        return (
+        result = (
             task_ledger.reconcile(candidate)
             if task_ledger is not None
             else list(candidate)
         )
+        if (implementation_completion_feedback is not None
+                and implementation_completion_feedback not in result):
+            # Restore compacted state ahead of retained history. A previously
+            # delivered decision must never move behind its subsequent results.
+            result = [message for message in result if not message.get("_implementation_completion_feedback")]
+            insert_at = 0
+            while insert_at < len(result) and result[insert_at].get("role") == "system":
+                insert_at += 1
+            result.insert(insert_at, implementation_completion_feedback)
+        return result
 
     def observable_message_count(candidate: list[dict[str, Any]]) -> int:
         return sum(not message.get("_task_ledger") for message in candidate)
@@ -1991,6 +2267,7 @@ def run_agent_turn(
     recoverable_thinking_retry_count = 0
     model_timeout_retry_count = 0
     model_timeout_retry_pending = False
+    model_transport_retry_count = 0
     unfinished_action_retry_count = 0
     tool_error_count = 0
     recovery_guard = RecoveryGuard()
@@ -2015,6 +2292,33 @@ def run_agent_turn(
         ),
         "",
     )
+    # This is feedback, never authorization. Read-only role registries cannot
+    # be turned into executors by a quoted "fix" inside their assignment.
+    progress_capable = (
+        bool({"edit_file", "write_file", "task"}.intersection(tools.list_all()))
+        and getattr(getattr(permissions, "auto_checker", None), "mode", None) != "plan"
+    )
+    progress_intent = parsed_intent
+    # Host-bound roles already specify whether they implement. In particular,
+    # a read-only review's source/receipt packet is evidence, not a new user
+    # instruction to classify. Parse only when the progress tracker actually
+    # needs to infer its enabled state; retain the complete model context.
+    if (progress_capable and implementation_task is None
+            and progress_intent is None and current_user_message):
+        progress_intent = parse_intent(current_user_message)
+    coding_progress = CodingProgressTracker(enabled=(
+        progress_capable and (
+            implementation_task if implementation_task is not None
+            else is_implementation_task(progress_intent)
+        )
+    ))
+    source_read_names = {
+        tool.name for tool in tools.list()
+        if tool.name in SOURCE_READ_TOOLS and tool.is_read_only
+    }
+    delivered_read_ids: set[str] = set()
+    delivered_source_paths: dict[str, str] = {}
+    invalidated_read_ids: set[str] = set()
     current_turn_id = next(
         (
             message.get("_conversation_turn_id")
@@ -2197,6 +2501,14 @@ def run_agent_turn(
                 ),
             }
         )
+        acknowledge = getattr(subagent_lifecycle, "acknowledge_delivery", None)
+        if isinstance(completed, list) and completed and callable(acknowledge):
+            try:
+                acknowledge(tuple(str(item["subagentId"]) for item in completed))
+            except Exception:
+                logger.warning(
+                    "Async result delivery acknowledgement failed", exc_info=True
+                )
         return True
 
     # Initialize work chain if enabled
@@ -2292,7 +2604,7 @@ def run_agent_turn(
                     required_skill_count=len(required_skills),
                 )
                 logger.info(
-                    "Feedforward: max_steps=%d model=%s timeout=%.1fs",
+                    "Feedforward: max_steps=%s model=%s timeout=%.1fs",
                     max_steps,
                     preemptive_config.recommended_model,
                     preemptive_config.tool_timeout_seconds,
@@ -2754,6 +3066,53 @@ def run_agent_turn(
         subagent_lifecycle = AsyncSubagentLifecycle()
     authority_delivery_ready = False
     committed_child_batches: list[tuple[ChatMessage, ...]] = []
+    workflow_delivery = TurnWorkflowDelivery()
+
+    def observe_workflow_delivery(call, result, *, suppressed: bool, acknowledged: bool) -> None:
+        definition = tools.find(call.get("toolName", ""))
+        workflow_delivery.observe(call, result, suppressed=suppressed, acknowledged=acknowledged,
+                                  read_only=bool(definition and definition.is_read_only))
+
+    def committed_delivery_remaining() -> list[str]:
+        remaining = list(workflow_delivery.remaining)
+        if any(item.get("status") != "completed" for item in todo_state.get("tasks", [])):
+            remaining.append("The parent task list contains unfinished work.")
+        barrier = getattr(subagent_lifecycle, "finalization_barrier", None)
+        if callable(barrier):
+            try:
+                try:
+                    state = barrier(wait_seconds=0)
+                except TypeError:
+                    state = barrier()
+                if not state.get("ready"):
+                    remaining.append("Owned sub-agent results are pending or have not been acknowledged.")
+            except Exception:
+                remaining.append("Owned sub-agent completion could not be verified.")
+        return list(dict.fromkeys(remaining))
+
+    def finish_workflow_delivery(reason: str, *, interruption: bool = False) -> bool:
+        nonlocal turn_outcome, authority_delivery_ready
+        if not workflow_delivery.receipts:
+            return False
+        remaining = committed_delivery_remaining()
+        if interruption:
+            remaining.append(reason)
+        content, delivery_metadata = workflow_delivery_summary(workflow_delivery.receipts, remaining=remaining, reason=reason)
+        current_messages.append({"role": "assistant", "content": content,
+                                 "_partial": bool(remaining), "_workflow_delivery_receipt_summary": True,
+                                 "_workflow_delivery": delivery_metadata})
+        # Scoped delivery does not establish coverage of an arbitrary user goal.
+        turn_outcome = "unknown"
+        authority_delivery_ready = True
+        if on_assistant_message:
+            try:
+                on_assistant_message(content)
+            except BaseException:
+                logger.warning("Failed to present workflow delivery receipt", exc_info=True)
+        emit_event_safely(event_sink, "execution.completion_limited", step=step,
+                          payload={"reason": reason, "partial": bool(remaining), "modelSummary": False,
+                                   "delivery": "partial" if remaining else "delivered", "overallGoal": "not_assessed"})
+        return True
 
     def restore_committed_child_receipts() -> None:
         """Keep exact receipts deliverable even if continuation compacted them."""
@@ -2772,6 +3131,8 @@ def run_agent_turn(
 
     def interrupted_parent_message(reason: str) -> None:
         restore_committed_child_receipts()
+        if finish_workflow_delivery(reason, interruption=True):
+            return
         content = (
             "Earlier workflow changes are already committed; remaining work "
             f"is incomplete because {reason}. The committed receipts are retained above."
@@ -2814,6 +3175,205 @@ def run_agent_turn(
         max_steps = completion_policy.work_limit
     completion_hard_limit = caller_max_steps
     completion_notice_limit = None
+    # Reuse byte-based observation even in headless/child loops. A successful
+    # read, a todo update or a no-op edit must not count as changed output.
+    mutation_observer = completion_policy or (
+        TurnCompletionPolicy(hard_limit=max_steps or 50, soft_limit=max_steps or 50, cwd=cwd)
+        if coding_progress.enabled else None
+    )
+    owned_implementation_feedback = None
+    direct_implementation_checks_failed = False
+    implementation_feedback = getattr(tools, "_implementation_feedback", None)
+    if implementation_spec is not None and {"edit_file", "write_file"}.intersection(tools.list_all()):
+        from minicode.implementation_execution import ImplementationSpec, direct_verification_capability
+        from minicode.implementation_context import build_implementation_context
+
+        if not isinstance(implementation_spec, ImplementationSpec):
+            raise ValueError("implementation_spec must be a host-bound ImplementationSpec")
+        if implementation_feedback is None and {"edit_file", "write_file"}.intersection(tools.list_all()):
+            owned_implementation_feedback = direct_verification_capability(implementation_spec)
+            implementation_feedback = owned_implementation_feedback
+            tools = implementation_feedback.bind_registry(tools)
+        # A continuing Executor already owns its source packet and subsequent
+        # observations. Re-seeding would duplicate the whole investigation and
+        # consume the repair budget before it can act on the failed checks.
+        packet = (build_implementation_context(cwd, implementation_spec.write_paths,
+            implementation_spec.checks, implementation_spec.objective, permissions)
+            if implementation_context_seed else None)
+        if packet:
+            current_messages.append({"role": "user", "content": packet, "_implementation_context": True})
+            if context_manager is not None:
+                context_manager.messages = list(current_messages)
+    from minicode.executor_verification import ExecutorCheckCapability
+    from minicode.executor_result_submission import ExecutorResultChannel
+
+    has_checked_source_completion = (
+        isinstance(implementation_feedback, ExecutorCheckCapability)
+        and implementation_feedback.has_automatic_write_checks
+    )
+    has_structured_handoff = any(tool.name == "executor_submit" for tool in tools.list())
+    direct_completion_review = restored_completion_review
+    direct_migration_state = (implementation_continuation.migration_state
+        if implementation_continuation is not None else None)
+    direct_completion_accepted = False
+    direct_completion_owner = (implementation_continuation.executor_id
+        if implementation_continuation is not None else "implementation_" + uuid.uuid4().hex)
+    direct_completion_attempt = (implementation_continuation.attempt
+        if implementation_continuation is not None else 0)
+    implementation_observation_context = ToolContext(cwd=cwd, _subagent_mailbox=subagent_mailbox)
+
+    def observe_implementation_tool_result(call, result):
+        if (isinstance(implementation_feedback, ExecutorCheckCapability)
+                and (implementation_feedback.supports_conditional_submit
+                     or owned_implementation_feedback is not None)):
+            # Registry validation, permission checks and phase suppression can
+            # fail before the wrapped writer runs. Observe that real failure
+            # before a later submit in this response can accept old evidence.
+            implementation_feedback.observe_tool_result(
+                call.get("toolName"), call.get("input"), result,
+                context=implementation_observation_context,
+            )
+
+    def submission_correction_progress(call, result):
+        """Recognize live protocol feedback, without changing a tool's failure.
+
+        A different rejected declaration can be corrected in this session.
+        Identical/cycling declarations still enter the ordinary no-progress
+        circuit. Permission errors, closed channels and arbitrary tool names
+        never acquire this treatment from their displayed error text.
+        """
+        from minicode.reviewer_result_submission import reviewer_submission_rejected
+        from minicode.executor_result_submission import executor_submit_channel
+
+        if result.ok or result._termination_reason is not None:
+            return False
+        recognized = (host_native_result_tool is not None
+            and call.get("toolName") == host_native_result_tool.name
+            and reviewer_submission_rejected(host_native_result_tool, result))
+        if not recognized and call.get("toolName") == "executor_submit":
+            submit = next((tool for tool in tools.list() if tool.name == "executor_submit"), None)
+            channel = executor_submit_channel(submit) if submit is not None else None
+            if (channel is None and isinstance(implementation_feedback, ExecutorCheckCapability)
+                    and implementation_feedback.supports_conditional_submit):
+                # bind_registry wraps the registered native tool to attach the
+                # current-candidate guard; the capability retains its owner.
+                channel = implementation_feedback._submission_channel
+            if (isinstance(channel, ExecutorResultChannel) and channel is subagent_mailbox
+                    and channel.validation_errors and not channel._written):
+                with channel._store._lock:
+                    live = channel._store._assignment_writes.get(channel._write_authority) == channel.write_key
+                diagnostic = channel.validation_errors[-1]
+                recognized = live and result.output in {
+                    f"Input validation error in executor_submit: {diagnostic}",
+                    f"error[executor_submit_invalid]: {diagnostic}",
+                }
+        if not recognized:
+            return False
+        fingerprint = hashlib.sha256(json.dumps(
+            [call.get("toolName"), call.get("input"), result.output],
+            ensure_ascii=False, sort_keys=True, default=str,
+        ).encode("utf-8")).hexdigest()
+        progress = fingerprint not in seen_submission_rejections
+        seen_submission_rejections.add(fingerprint)
+        emit_event_safely(event_sink, "execution.submission_correction", step=step, payload={
+            "tool": call.get("toolName"), "newRejectedDeclaration": progress,
+        })
+        return progress
+    implementation_phases = (
+        ImplementationPhaseController(
+            bounded=bounded_implementation_phases,
+            snapshot=agent_budget.snapshot() if agent_budget is not None else None,
+            max_steps=completion_hard_limit - 1 if completion_policy is not None else max_steps,
+            now=time.monotonic(), deadline=deadline_monotonic,
+            final_response_calls=int(completion_policy is not None),
+            allow_test_completion=any(tool.name == "executor_test" for tool in tools.list()),
+            allow_checked_source_completion=has_checked_source_completion,
+            allow_conditional_handoff=(
+                isinstance(implementation_feedback, ExecutorCheckCapability)
+                and implementation_feedback.supports_conditional_submit
+            ),
+            require_structured_handoff=has_structured_handoff,
+            analysis_complete=implementation_analysis_complete is True,
+            output_limit=(runtime or {}).get("maxOutputTokens", 8192),
+            request_timeout_seconds=((runtime or {}).get("modelTimeoutSeconds")
+                                     or os.environ.get("MINICODE_MODEL_TIMEOUT")),
+        )
+        if enable_implementation_phases and coding_progress.enabled
+        and {"edit_file", "write_file"}.intersection(tools.list_all())
+        else None
+    )
+    if (bounded_implementation_phases and isinstance(implementation_feedback, ExecutorCheckCapability)
+            and deadline_monotonic is not None):
+        # Model generation and feedback share one committed handoff boundary.
+        # The controller updates it once when finalization actually begins;
+        # repeated failed checks cannot move it closer to the hard deadline.
+        feedback_deadline = (implementation_phases.handoff_start
+                             if implementation_phases is not None else
+                             deadline_monotonic - min(45.0,
+                                 max(0.0, deadline_monotonic - time.monotonic()) * 0.1))
+        implementation_feedback.reserve_handoff_time(feedback_deadline)
+    implementation_candidate_guard = None
+    if implementation_phases is not None and callable(getattr(permissions, "ensure_path_access", None)):
+        from minicode.implementation_candidate import ImplementationCandidateGuard
+        implementation_candidate_guard = ImplementationCandidateGuard(cwd, permissions=permissions)
+    phase_observed_input = 0
+    previous_model_input_estimate = 0
+    from minicode.implementation_recovery import (
+        InputTokenCalibration, project_implementation_progress_messages,
+        project_recovery_messages,
+    )
+
+    if implementation_request_state is not None:
+        from minicode.executor_session import ExecutorRequestViewState
+
+        if not isinstance(implementation_request_state, ExecutorRequestViewState):
+            raise ValueError("implementation request state requires the host Executor session")
+        implementation_request_state.bind_observer(model=model, observer=mutation_observer)
+    repair_input_calibration = (implementation_request_state.calibration
+                                if implementation_request_state is not None else InputTokenCalibration())
+    recovery_view_active = (implementation_request_state.recovery_view_active
+                            if implementation_request_state is not None else False)
+    progress_view_announced = False
+
+    def progress_view_paths():
+        if implementation_phases is None or mutation_observer is None:
+            return frozenset()
+        return (implementation_request_state.changed_paths if implementation_request_state is not None
+                else mutation_observer.observed_changed_paths)
+
+    def implementation_request_messages():
+        if recovery_view_active:
+            return project_recovery_messages(current_messages, changed_paths=progress_view_paths())
+        paths = progress_view_paths()
+        return (project_implementation_progress_messages(current_messages, changed_paths=paths)
+                if paths else current_messages)
+
+    def implementation_view_active():
+        return recovery_view_active or bool(progress_view_paths())
+
+    from minicode.context_compactor import ToolResultBudgetManager
+
+    read_history_budget = (
+        context_compactor.tool_budget if context_compactor is not None
+        else ToolResultBudgetManager(workspace=cwd)
+    )
+
+    def configured_output_limit() -> int:
+        # The adapter owns the actual request cap; caller runtime is fallback.
+        for configured in (getattr(model, "runtime", None), runtime):
+            if isinstance(configured, dict):
+                value = configured.get("maxOutputTokens")
+                if type(value) is int and value > 0:
+                    return value
+        return 8192
+
+    def completion_input_estimate() -> int:
+        if implementation_view_active():
+            return repair_input_calibration.estimate(
+                _estimated_context_tokens(implementation_request_messages()))
+        estimated = _estimated_context_tokens(current_messages)
+        return max(estimated, phase_observed_input + max(
+            0, estimated - previous_model_input_estimate))
 
     def _attempt_max_steps_soft_landing(
         *,
@@ -2835,6 +3395,8 @@ def run_agent_turn(
         current_messages.append(
             {"role": "user", "content": prompt}
         )
+        if context_checkpoint_sink is not None:
+            context_checkpoint_sink(current_messages)
         if closing_step_index is None:
             closing_step_index = step + 1
         closing_operation_id = (
@@ -2845,6 +3407,12 @@ def run_agent_turn(
         )
         closing_reservation = None
         closing_model_started = False
+        closing_output_limit = 2048
+        for configured in (runtime, getattr(model, "runtime", None)):
+            if isinstance(configured, dict):
+                limit = configured.get("maxOutputTokens")
+                if type(limit) is int and limit > 0:
+                    closing_output_limit = min(closing_output_limit, limit)
 
         def closing_failed(kind: str, *, charge_estimate: bool = False) -> None:
             _fail_agent_budget_reservation(
@@ -2865,9 +3433,25 @@ def run_agent_turn(
             raise_if_cancelled(cancellation_token)
             raise_if_deadline_exceeded()
             _revalidate_model_visible_memory()
+            closing_messages = implementation_request_messages()
+            closing_options = ({
+                "disable_tools": True,
+                "max_output_tokens_override": closing_output_limit,
+                "max_retries_override": 0,
+                **_phase_reasoning_options(model),
+            } if implementation_phases is not None or completion_policy is not None
+               else {"tools_override": tools})
             if agent_budget is not None:
+                closing_input = (completion_input_estimate() if completion_policy is not None
+                    else (repair_input_calibration.estimate(_estimated_context_tokens(closing_messages))
+                          if implementation_view_active() else _estimated_context_tokens(closing_messages)))
+                closing_input = estimate_budgeted_request_input(model, closing_messages,
+                    agent_budget=agent_budget, estimated_input=closing_input,
+                    optional_kwargs=closing_options, default_tools=tools)
                 closing_reservation = agent_budget.reserve_model_call(
-                    _estimated_context_tokens(current_messages)
+                    closing_input,
+                    **({"preserve_total_tokens": closing_output_limit}
+                       if completion_policy is not None else {}),
                 )
             if event_sink is not None:
                 emit_event_safely(
@@ -2879,11 +3463,13 @@ def run_agent_turn(
             closing_model_started = True
             closing_step = _model_next(
                 model,
-                current_messages,
+                closing_messages,
                 on_stream_chunk=None,
                 store=store,
                 cancellation_token=cancellation_token,
                 deadline_monotonic=deadline_monotonic,
+                global_deadline_monotonic=deadline_monotonic,
+                request_options=closing_options,
             )
             raise_if_cancelled(cancellation_token)
             raise_if_deadline_exceeded()
@@ -2920,7 +3506,7 @@ def run_agent_turn(
                 try:
                     context_compactor.record_usage_observation(
                         closing_reported,
-                        _estimated_context_tokens(current_messages),
+                        _estimated_context_tokens(closing_messages),
                     )
                 except Exception:  # noqa: BLE001 - calibration is advisory
                     pass
@@ -2975,6 +3561,8 @@ def run_agent_turn(
         assert completion_policy is not None
         raise_if_cancelled(cancellation_token)
         raise_if_deadline_exceeded()
+        if finish_workflow_delivery(reason):
+            return
         landed = (
             allow_model_summary
             and closing_step_index <= completion_hard_limit
@@ -3006,7 +3594,242 @@ def run_agent_turn(
             payload={"reason": reason, "partial": True, "modelSummary": landed},
         )
 
+    write_feedback_batch = None
+    write_feedback_group = None
+    batch_feedback_messages = []
+    batch_feedback_by_call = {}
+    direct_implementation_batch_status = None
+
+    def observe_batch_feedback(document):
+        nonlocal direct_implementation_checks_failed, direct_implementation_batch_status
+        # Inconclusive feedback cannot preserve a previous candidate's pass.
+        failed = document["status"] != "passed"
+        if owned_implementation_feedback is not None:
+            direct_implementation_checks_failed = failed
+            direct_implementation_batch_status = document["status"]
+        if implementation_phases is not None:
+            implementation_phases.observe_verification(failed=failed)
+
+    def flush_write_feedback_batch():
+        nonlocal write_feedback_batch, write_feedback_group
+        batch = write_feedback_batch
+        write_feedback_batch = None
+        write_feedback_group = None
+        if batch is None:
+            return
+        document, control_error = batch.finish()
+        if document is not None:
+            observe_batch_feedback(document)
+            batch_feedback_by_call[batch.call_id] = document
+            batch_feedback_messages.append({
+                "role": "user", "_implementation_batch_feedback": True,
+                "content": "=== IMPLEMENTATION BATCH CHECK FEEDBACK ===\n"
+                    + json.dumps(document, ensure_ascii=False, sort_keys=True),
+            })
+        # Cleanup must never replace the original tool/cancellation exception.
+        if control_error is not None and sys.exception() is None:
+            raise control_error
+
+    def deliver_batch_feedback():
+        current_messages.extend(batch_feedback_messages)
+        batch_feedback_messages.clear()
+
+    def supersede_completion_feedback():
+        for index, message in enumerate(current_messages):
+            if message.get("_implementation_completion_feedback"):
+                historical = dict(message)
+                historical.pop("_implementation_completion_feedback", None)
+                historical["_superseded_completion_feedback"] = True
+                current_messages[index] = historical
+
+    def enforce_implementation_completion_before_final(content, *, resuming_review=False):
+        """Keep the implementation owner alive until current evidence admits final.
+
+        This is a state transition in this loop, not another implementation task.
+        The rejected final is never presented as a completed user delivery.
+        """
+        nonlocal direct_completion_review, direct_completion_accepted, direct_completion_attempt
+        nonlocal implementation_completion_feedback, direct_implementation_checks_failed
+        nonlocal direct_implementation_batch_status, direct_migration_state
+        if owned_implementation_feedback is None or has_structured_handoff:
+            return "ok"
+        from minicode.implementation_completion_review import ImplementationCompletionReview
+        from minicode.implementation_execution import implementation_candidate_digest
+        from minicode.verifier_sandbox import (
+            resolve_verifier_host_capabilities, user_registered_trusted_executables,
+        )
+
+        flush_write_feedback_batch()
+        deliver_batch_feedback()
+        raise_if_cancelled(cancellation_token)
+        raise_if_deadline_exceeded()
+        backend, executables = resolve_verifier_host_capabilities(runtime)
+        context = ToolContext(cwd=cwd, permissions=permissions, _runtime=runtime,
+            _event_sink=event_sink, _step=step, _agent_budget=agent_budget,
+            _cancellation_token=cancellation_token, _task_deadline_monotonic=deadline_monotonic,
+            _subagent_mailbox=subagent_mailbox, _subagent_lifecycle=subagent_lifecycle,
+            _agent_depth=agent_depth, _tool_abandoned=abandoned_event, _presentation=presentation,
+            _verifier_sandbox_backend=backend, _verifier_trusted_executables=executables,
+            _verifier_explicit_trusted_executables=user_registered_trusted_executables() or None)
+        prior_completion_attempt = direct_completion_attempt
+        direct_completion_attempt += 1
+        checks = owned_implementation_feedback.ensure_completion_checks(context)
+        if (direct_migration_state is not None
+                and direct_migration_state["state"]["candidateDigest"] != checks.get("patchDigest")):
+            emit_event_safely(event_sink, "implementation.migration_checkpoint_stale", step=step,
+                payload={"executorId": direct_completion_owner, "reason": "candidate_changed"})
+            direct_migration_state = None
+        direct_implementation_batch_status = checks["status"]
+        direct_implementation_checks_failed = checks["status"] != "passed"
+        if checks["status"] != "passed":
+            decision = {"status": "changes_required", "reason": "public_checks_not_current_and_passed",
+                        "patchDigest": checks.get("patchDigest"), "checks": checks}
+            if checks.get("reason") == "completion_checks_unavailable":
+                decision["canContinue"] = False
+        else:
+            if direct_completion_review is None:
+                direct_completion_review = ImplementationCompletionReview(implementation_spec)
+            if resuming_review and implementation_continuation is not None:
+                from minicode.completion_repair_decision import delivered_repair_matches
+
+                # A stored slot is not enough: checks, actual source anchors
+                # and the current candidate must still validate before reuse.
+                retained = direct_completion_review._accepted_repair_for_candidate(
+                    checks.get("patchDigest"), context)
+                if (retained is not None
+                        and implementation_candidate_digest(implementation_spec, context) == checks.get("patchDigest")
+                        and delivered_repair_matches(implementation_continuation.feedback, retained,
+                            executor_id=direct_completion_owner, candidate_digest=checks.get("patchDigest"),
+                            objective=implementation_spec.objective)):
+                    # The authenticated checkpoint already delivered this exact
+                    # decision. Keep its original place before later results;
+                    # neither another review event nor a new attempt occurred.
+                    direct_completion_attempt = prior_completion_attempt
+                    return "retry"
+            if on_progress_message:
+                on_progress_message("Checking the requested behaviors and their evidence before delivery.")
+            emit_event_safely(event_sink, "implementation.completion_review_started", step=step,
+                payload={"executorId": direct_completion_owner, "attempt": direct_completion_attempt,
+                         "patchDigest": checks.get("patchDigest")})
+            decision = None
+            pending_migration = direct_completion_review.state.get("pendingLegacyResolution")
+            if (direct_completion_review.has_legacy_probes and not (
+                    isinstance(pending_migration, dict)
+                    and pending_migration.get("candidateDigest") == checks.get("patchDigest"))):
+                from minicode.completion_probe_migration import CompletionProbeMigration
+
+                def retain_migration_checkpoint(state):
+                    nonlocal direct_migration_state
+                    from copy import deepcopy
+                    direct_migration_state = deepcopy(state)
+
+                migration = CompletionProbeMigration(implementation_spec).assess(
+                    legacy_state=direct_completion_review.state,
+                    continuation_state=direct_migration_state, checkpoint_sink=retain_migration_checkpoint,
+                    model=model, tools=tools, context=context, agent_budget=agent_budget,
+                    event_sink=event_sink, cancellation_token=cancellation_token,
+                    deadline_monotonic=deadline_monotonic)
+                if migration.get("status") == "resolved":
+                    direct_completion_review.queue_legacy_resolution(migration["resolution"])
+                    direct_migration_state = None
+                else:
+                    # An unchanged ambiguous classification cannot be repaired
+                    # by another implementation rewrite or repeated final.
+                    decision = {"status": "inconclusive", "reason": "legacy_probe_purpose_unresolved",
+                        "patchDigest": checks.get("patchDigest"), "canContinue": False,
+                        "migrationEvidence": migration}
+            if decision is None:
+                decision = direct_completion_review.assess(model=model, tools=tools, context=context,
+                    agent_budget=agent_budget, event_sink=event_sink,
+                    cancellation_token=cancellation_token, deadline_monotonic=deadline_monotonic,
+                    checks_receipt=checks)
+            raise_if_cancelled(cancellation_token)
+            raise_if_deadline_exceeded()
+            current_digest = implementation_candidate_digest(implementation_spec, context)
+            if (not isinstance(decision, dict) or decision.get("patchDigest") != current_digest
+                    or checks.get("patchDigest") != current_digest):
+                decision = {"status": "inconclusive", "reason": "completion_candidate_changed",
+                            "patchDigest": current_digest}
+        unresolved_probe_failure = decision.get("reason") == "failure_adjudication_inconclusive"
+        pending_coverage_audit = decision.get("reason") == "coverage_audit_interrupted"
+        if unresolved_probe_failure:
+            # An uncertain test does not authorize a product change. Preserve
+            # the independent review for resumption instead of dispatching the
+            # old assertion as a repair request to this owner.
+            decision = {**decision, "canContinue": False}
+        direct_completion_accepted = decision.get("status") == "approved"
+        receipt = {"completionVersion": 1, "executorId": direct_completion_owner,
+                   "attempt": direct_completion_attempt,
+                   "continuesSameExecutor": not direct_completion_accepted and decision.get("canContinue") is not False,
+                   **decision}
+        emit_event_safely(event_sink, "implementation.completion_decided", step=step, payload=receipt)
+        _append_trace_event(execution_trace, {"type": "implementation_completion", "step": step, **receipt})
+        if direct_completion_accepted:
+            # These are actual current-candidate verifier executions. Ordinary
+            # model completion text never contributes verification observations.
+            for check_receipt in checks["checks"]:
+                verification_tracker.record({"outcome": check_receipt["status"]})
+            implementation_completion_feedback = None
+            if resuming_review:
+                # A resumed review may have disproved the old repair request.
+                # Keep its text as historical evidence, but replace its active
+                # authority before exposing write tools to the implementer.
+                supersede_completion_feedback()
+                status_message = {"role": "system", "_implementation_completion_status": True,
+                    "content": "Current host completion decision (supersedes prior repair feedback):\n"
+                        + json.dumps(receipt, ensure_ascii=False, sort_keys=True)}
+                current_messages.append(completion_evidence_views.project_message(status_message)
+                    if completion_evidence_views is not None else status_message)
+                if context_manager is not None:
+                    context_manager.messages = list(current_messages)
+            return "ok"
+        if not resuming_review:
+            current_messages.append({"role": "assistant_progress", "content": content,
+                                     "_rejected_completion": True})
+        else:
+            supersede_completion_feedback()
+        implementation_completion_feedback = {
+            "role": "user", "_implementation_completion_feedback": True,
+            "content": (("Host completion decision: the independent coverage audit is paused. "
+                "Its original context, delivered evidence and unaccepted drafts are retained for the same owner. "
+                "Resume that audit before deciding completion; no product repair is inferred.\n" if pending_coverage_audit else
+                "Host completion decision: independent failure adjudication remains unresolved. "
+                "Existing candidate, context and tool results are retained. No product repair is inferred "
+                "from this unresolved evidence.\n" if unresolved_probe_failure else
+                "Host completion decision: delivery is not accepted. Continue in this same "
+                "implementation session with the existing candidate, source context and tool results. "
+                "Repair the evidenced gaps, update regression tests and rerun checks; no work was reverted.\n")
+                + "Original public request (unchanged):\n" + implementation_spec.objective
+                + "\nCompletion evidence:\n" + json.dumps(receipt, ensure_ascii=False, sort_keys=True)),
+        }
+        if completion_evidence_views is not None:
+            implementation_completion_feedback = completion_evidence_views.project_message(
+                implementation_completion_feedback)
+        # Only a new host decision creates a new feedback turn. Routine ledger
+        # maintenance preserves this position as the same Executor continues.
+        current_messages[:] = [message for message in current_messages
+            if not message.get("_implementation_completion_feedback")]
+        current_messages.append(implementation_completion_feedback)
+        current_messages[:] = reconcile_task_ledger(current_messages)
+        if context_manager is not None:
+            context_manager.messages = list(current_messages)
+        return "stop" if decision.get("canContinue") is False else "retry"
+
     try:
+        if (implementation_continuation is not None and direct_completion_review is not None
+                and (implementation_continuation.requires_revalidation
+                     or direct_completion_review.has_accepted_repair_decision(
+                         implementation_continuation.document["candidateDigest"])
+                     or direct_completion_review.has_pending_coverage_audit(
+                         implementation_continuation.document["candidateDigest"])
+                     or direct_completion_review.needs_failure_adjudication(
+                         implementation_continuation.document["candidateDigest"]))):
+            # A historical failed probe may itself be wrong. Resolve that
+            # unfinished host review before the same owner can act on its old
+            # repair instruction; do not fabricate an implementer response.
+            if enforce_implementation_completion_before_final(None, resuming_review=True) == "stop":
+                turn_outcome = "unknown"
+                return current_messages
         while True:
             raise_if_cancelled(cancellation_token)
             raise_if_deadline_exceeded()
@@ -3016,6 +3839,18 @@ def run_agent_turn(
                 raise ToolExecutionAbandoned(
                     "tool execution was abandoned after timeout"
                 )
+            if implementation_phases is not None and implementation_phases.exhausted:
+                if completion_policy is not None:
+                    break
+                current_messages.append({"role": "assistant", "_partial": True, "content":
+                    "The executable handoff allowance ended. Unsubmitted or unverified work remains incomplete."})
+                turn_outcome = "failed"
+                return current_messages
+            if native_handoff_attempted:
+                # A valid native call already returned below. An invalid or
+                # missing verdict cannot turn into a tool-free success reply.
+                # Only an actual live, host-bound rejection rearms this below.
+                break
             if max_steps is not None and step >= max_steps:
                 extended_limit = (
                     completion_policy.extend(
@@ -3029,15 +3864,31 @@ def run_agent_turn(
                     )
                     if completion_policy is not None else max_steps
                 )
-                if extended_limit <= max_steps:
+                retry_snapshot = (agent_budget.snapshot() if native_handoff_rejected
+                                  and agent_budget is not None else None)
+                if (host_native_result_tool is not None and max_steps_soft_landing
+                        and native_handoff_rejected
+                        and retry_snapshot is not None
+                        and retry_snapshot.limit_model_calls is not None):
+                    # The soft step boundary does not discard a real rejected
+                    # declaration. Its correction still needs a fresh atomic
+                    # admission under the original physical-call/token cap.
+                    native_handoff_only = True
+                elif (host_native_result_tool is not None and max_steps_soft_landing
+                        and step == max_steps):
+                    # Use the existing nested-worker closing slot, inside its
+                    # immutable physical-call cap, for the actual capability.
+                    native_handoff_only = True
+                elif extended_limit <= max_steps:
                     break
-                emit_event_safely(
-                    event_sink,
-                    "execution.steps_extended",
-                    step=step,
-                    payload={"previousLimit": max_steps, "newLimit": extended_limit},
-                )
-                max_steps = extended_limit
+                if extended_limit > max_steps:
+                    emit_event_safely(
+                        event_sink,
+                        "execution.steps_extended",
+                        step=step,
+                        payload={"previousLimit": max_steps, "newLimit": extended_limit},
+                    )
+                    max_steps = extended_limit
             if (
                 completion_policy is not None
                 and max_steps - step <= 2
@@ -3237,6 +4088,10 @@ def run_agent_turn(
                                 if healing_actions:
                                     logger.info("Self-healing: %s", healing_actions[0].strategy)
 
+            # Required host persistence is part of request admission, not a
+            # best-effort UI event. Fail before charging or calling a provider.
+            if context_checkpoint_sink is not None:
+                context_checkpoint_sink(current_messages)
             if metrics_collector:
                 metrics_collector.start_turn(step)
 
@@ -3259,15 +4114,243 @@ def run_agent_turn(
                 else None
             )
             model_budget_reservation = None
+            phase_request = None
+            phase_tool_view = None
+            admission_input_estimate = None
+            preserve_tokens = 0
             try:
                 raise_if_cancelled(cancellation_token)
                 raise_if_deadline_exceeded()
                 _revalidate_model_visible_memory()
-                if agent_budget is not None:
+                request_messages = current_messages
+                if implementation_phases is not None:
+                    if (isinstance(implementation_feedback, ExecutorCheckCapability)
+                            and implementation_feedback.completion_pending):
+                        # A rejected/unchecked write cannot become submit-only
+                        # merely because an earlier check passed. This state is
+                        # owned by the bound evidence gate, not model prose.
+                        implementation_phases.observe_verification(failed=True)
+                    phase_snapshot = agent_budget.snapshot() if agent_budget is not None else None
+                    if progress_view_paths() and not progress_view_announced:
+                        progress_view_announced = True
+                        emit_event_safely(event_sink, "execution.implementation_context_projected", step=step, payload={
+                            "canonicalInputEstimate": _estimated_context_tokens(current_messages),
+                            "projectedInputEstimate": _estimated_context_tokens(implementation_request_messages()),
+                            "changedPathCount": len(progress_view_paths()),
+                        })
+                    if (not recovery_view_active and implementation_phases.repair_pending
+                            and ((implementation_phases.verification_repair_pending and progress_view_paths())
+                                 or implementation_phases.preview(phase_snapshot,
+                                     estimated_input=completion_input_estimate(),
+                                     now=time.monotonic()).handoff_only)):
+                        # Keep the canonical transcript and raw tool evidence.
+                        # Actual changed work with an unpassed check can retire
+                        # older read windows before each repeated input spends
+                        # the repair allowance. Unique old windows may leave
+                        # this view; canonical evidence and current read tools
+                        # remain governed by their existing phase/scope rules.
+                        # Anchor-only errors retain the closing-boundary trigger.
+                        recovery_view_active = True
+                        if implementation_request_state is not None:
+                            implementation_request_state.recovery_view_active = True
+                        projected = implementation_request_messages()
+                        emit_event_safely(event_sink, "execution.repair_context_projected", step=step, payload={
+                            "canonicalInputEstimate": _estimated_context_tokens(current_messages),
+                            "projectedInputEstimate": _estimated_context_tokens(projected),
+                            "calibratedInputEstimate": repair_input_calibration.estimate(_estimated_context_tokens(projected)),
+                        })
+                    request_messages = implementation_request_messages()
+                progress_notice = coding_progress.before_request(
+                    agent_budget.snapshot() if agent_budget is not None and coding_progress.enabled else None,
+                    _estimated_context_tokens(request_messages),
+                    remaining_steps=(max(0, max_steps - step + 1) if max_steps is not None else None),
+                    remaining_seconds=(max(0.0, deadline_monotonic - time.monotonic()) if deadline_monotonic is not None else None),
+                )
+                if progress_notice is not None:
+                    current_messages.append({
+                        "role": "user", "content": progress_notice.text,
+                        "_coding_progress": True,
+                    })
+                    if context_manager is not None:
+                        context_manager.messages = list(current_messages)
+                    emit_event_safely(event_sink, "execution.progress_checkpoint", step=step, payload={
+                        "reasonCode": progress_notice.reason,
+                        "inspectionBatches": progress_notice.read_batches,
+                        "remainingTokens": progress_notice.remaining_tokens,
+                        "estimatedRequestsLeft": progress_notice.estimated_requests_left,
+                        "remainingSeconds": progress_notice.remaining_seconds,
+                    })
+                if implementation_phases is not None:
+                    def phase_input_estimate(messages):
+                        local = _estimated_context_tokens(messages)
+                        return (repair_input_calibration.estimate(local) if implementation_view_active()
+                                else max(local, phase_observed_input))
+
+                    request_messages = implementation_request_messages()
+                    priced_notices = []
+                    # Adding the phase notice can itself move admission from
+                    # two requests to one conditional response. Reach that
+                    # small monotonic fixed point before committing state, so
+                    # the tool view, sent instructions and price agree.
+                    for _notice_pass in range(3):
+                        planned = implementation_phases.preview(phase_snapshot,
+                            estimated_input=phase_input_estimate(request_messages), now=time.monotonic())
+                        if planned.message is None or planned.message in priced_notices:
+                            break
+                        notice = planned.message
+                        if priced_notices and notice.startswith(priced_notices[-1]):
+                            notice = notice[len(priced_notices[-1]):].lstrip()
+                        current_messages.append({"role": "user", "content": notice, "_implementation_phase": True})
+                        priced_notices.append(planned.message)
+                        request_messages = implementation_request_messages()
+                    # All phase/progress text is included in the price of the
+                    # exact view we send. Preview never consumes a closing slot.
+                    request_messages = implementation_request_messages()
+                    phase_request = implementation_phases.request(phase_snapshot,
+                        estimated_input=phase_input_estimate(request_messages), now=time.monotonic())
+                    if isinstance(implementation_feedback, ExecutorCheckCapability):
+                        implementation_feedback.reserve_handoff_time(implementation_phases.handoff_start)
+                    phase_tool_view = implementation_phases.tool_view(tools)
+                    if phase_request.message is not None:
+                        emit_event_safely(event_sink, "execution.phase_changed", step=step, payload={
+                            "phase": phase_request.phase.value,
+                            "investigationCallLimit": implementation_phases.investigation_calls,
+                            "localCallLimit": implementation_phases.call_limit,
+                            "handoffCallLimit": implementation_phases.final_call_limit,
+                            "deadlineMonotonic": phase_request.deadline,
+                            "conditionalHandoff": phase_request.conditional_handoff,
+                        })
+                    if context_manager is not None:
+                        context_manager.messages = list(current_messages)
+                    if implementation_view_active() and context_compactor is not None:
+                        context_compactor.read_dedup.reconcile(request_messages)
+                request_options = ({
+                        "tools_override": phase_tool_view,
+                        "max_output_tokens_override": phase_request.output_limit,
+                        "max_retries_override": 0,
+                        **({"disable_tools": True} if phase_request.handoff_only and not has_structured_handoff else {}),
+                        **_phase_reasoning_options(
+                            # A first edit does not finish implementation. Use
+                            # the actual authorized view for ongoing repairs,
+                            # including writes during FINALIZE.
+                            model, implementation=(
+                                phase_request.phase.value in {"implement", "finalize"}
+                                and not phase_request.handoff_only
+                                and any(tool.name in {"edit_file", "write_file", "executor_test"}
+                                        for tool in phase_tool_view.list())
+                            ),
+                        ),
+
+                    } if phase_request else {"tools_override": tools})
+                # The provider must see this invocation's executable registry,
+                # including nested reviewers which reuse the parent's adapter.
+                # Tool visibility does not depend on phase/budget scheduling.
+                sent_input_estimate = _estimated_context_tokens(request_messages)
+                admission_input_estimate = (repair_input_calibration.estimate(sent_input_estimate)
+                                            if implementation_view_active() else sent_input_estimate)
+                admission_input_estimate = estimate_budgeted_request_input(model, request_messages,
+                    agent_budget=agent_budget, estimated_input=admission_input_estimate,
+                    optional_kwargs=request_options, default_tools=tools)
+                # A structured verdict may be as large as a normal response.
+                # Native-only changes the tool surface, not provider capacity;
+                # only the actual finite balance below may reduce this cap.
+                native_closing_output = configured_output_limit()
+                if host_native_result_tool is not None and not native_handoff_only and agent_budget is not None:
+                    # Price one more working request and the same transcript's
+                    # conclusion, including this output and its later replay.
+                    # The parent-owned floor is added by the existing view.
+                    # Future tool-output growth is unknown; this calibrated
+                    # admission floor is not an unlimited-output guarantee.
+                    native_input = max(admission_input_estimate, completion_input_estimate())
+                    native_floor = (2 * configured_output_limit() + native_input
+                                    + estimate_message_tokens({"role": "user", "content": native_handoff_prompt})
+                                    + native_closing_output)
+                    try:
+                        model_budget_reservation = agent_budget.reserve_model_call(
+                            native_input, preserve_model_calls=1,
+                            preserve_total_tokens=native_floor,
+                        )
+                    except AgentBudgetExceeded:
+                        # Failed admission spends nothing. Convert this same
+                        # request to closure before an optional read can spend
+                        # its conclusion budget; never create a new session.
+                        native_handoff_only = True
+                if host_native_result_tool is not None and native_handoff_only:
+                    if not native_handoff_prompt_sent:
+                        current_messages.append({"role": "user", "content": native_handoff_prompt})
+                        native_handoff_prompt_sent = True
+                    request_messages = current_messages
+                    sent_input_estimate = _estimated_context_tokens(request_messages)
+                    # Preserve the existing phase-before-native precedence.
+                    if phase_request is None:
+                        request_options = {
+                            "tools_override": ToolRegistry([host_native_result_tool], skills=[], mcp_servers=[]),
+                            "max_output_tokens_override": native_closing_output,
+                            "max_retries_override": 0,
+                            **_phase_reasoning_options(model),
+                        }
+                    admission_input_estimate = estimate_budgeted_request_input(model, request_messages,
+                        agent_budget=agent_budget,
+                        estimated_input=max(sent_input_estimate, completion_input_estimate()),
+                        optional_kwargs=request_options, default_tools=tools)
+                    if agent_budget is not None:
+                        closing_snapshot = agent_budget.snapshot()
+                        if closing_snapshot.limit_total_tokens is not None:
+                            # The worker snapshot already excludes downstream
+                            # floors. Shrink only this response's output cap;
+                            # reserve_model_call still enforces the same floor
+                            # atomically if another consumer spends meanwhile.
+                            available_output = (closing_snapshot.limit_total_tokens
+                                - closing_snapshot.used_total_tokens
+                                - closing_snapshot.reserved_total_tokens
+                                - admission_input_estimate)
+                            native_closing_output = max(1, min(native_closing_output, available_output))
+                    if phase_request is None:
+                        request_options["max_output_tokens_override"] = native_closing_output
+                    if context_manager is not None:
+                        context_manager.messages = list(current_messages)
+                    emit_event_safely(event_sink, "execution.native_handoff", step=step, payload={
+                        "tool": host_native_result_tool.name,
+                        "retryAfterRejectedSubmission": native_handoff_rejected,
+                    })
+                if agent_budget is not None and model_budget_reservation is None:
+                    preserve_tokens = phase_request.preserve_tokens if phase_request else 0
+                    if host_native_result_tool is not None:
+                        preserve_tokens = max(preserve_tokens, native_closing_output)
+                    if completion_policy is not None:
+                        output_limit = phase_request.output_limit if phase_request else configured_output_limit()
+                        # A phase's tool-free handoff already is the final reply.
+                        # Other requests must leave one closing input/output plus
+                        # this output's cost and its replay in that closing input.
+                        completion_floor = output_limit
+                        if not (phase_request and phase_request.handoff_only):
+                            completion_floor += (output_limit + completion_input_estimate()
+                                + estimate_message_tokens({"role": "user", "content":
+                                    completion_policy.closing_prompt("turn_budget_exceeded: token budget exhausted")})
+                                + min(2048, configured_output_limit()))
+                        # Phase and completion protect the same eventual reply;
+                        # floors constrain admission and are never billed twice.
+                        preserve_tokens = max(preserve_tokens, completion_floor)
                     model_budget_reservation = agent_budget.reserve_model_call(
-                        _estimated_context_tokens(current_messages),
-                        **({"preserve_model_calls": 1} if completion_policy else {}),
+                        max(admission_input_estimate, completion_input_estimate()) if completion_policy is not None
+                        else admission_input_estimate,
+                        preserve_model_calls=int(completion_policy is not None) + (phase_request.preserve_calls if phase_request else 0),
+                        **({"preserve_total_tokens": preserve_tokens} if preserve_tokens else {}),
                     )
+                previous_model_input_estimate = sent_input_estimate
+                if host_native_result_tool is not None and native_handoff_only:
+                    native_handoff_attempted = True
+                    native_handoff_rejected = False
+                if implementation_phases is not None:
+                    implementation_phases.admitted()
+                if (isinstance(implementation_feedback, ExecutorCheckCapability)
+                        and (implementation_feedback.supports_conditional_submit
+                             or owned_implementation_feedback is not None)):
+                    # This admitted request delivers the prior response's real
+                    # failures. A rejected write is not a permanent poison for
+                    # the session; stale check evidence remains invalidated.
+                    implementation_feedback.begin_model_response(
+                        context=implementation_observation_context)
                 if event_sink is not None:
                     emit_event_safely(
                         event_sink,
@@ -3277,22 +4360,59 @@ def run_agent_turn(
                     )
                 next_step = _model_next(
                     model,
-                    current_messages,
-                    on_stream_chunk=on_assistant_stream_chunk,
+                    request_messages,
+                    # An unadmitted implementation final must not reach the
+                    # UI through streaming before its completion gate runs.
+                    on_stream_chunk=(None if owned_implementation_feedback is not None
+                                     else on_assistant_stream_chunk),
                     on_thinking_chunk=on_thinking_chunk,
                     store=store,
                     cancellation_token=cancellation_token,
-                    deadline_monotonic=deadline_monotonic,
+                    deadline_monotonic=phase_request.deadline if phase_request else deadline_monotonic,
+                    global_deadline_monotonic=deadline_monotonic,
+                    request_options=request_options,
                 )
                 raise_if_cancelled(cancellation_token)
                 raise_if_deadline_exceeded()
                 model_timeout_retry_pending = False
+                model_transport_retry_count = 0
+                step_usage = getattr(next_step, "usage", None)
+                observed_input = getattr(step_usage, "input_tokens", None)
+                if type(observed_input) is int and observed_input > 0:
+                    phase_observed_input = observed_input
+                if getattr(step_usage, "source", None) == "provider":
+                    repair_input_calibration.observe(observed_input, sent_input_estimate)
                 if abandoned_event is not None and abandoned_event.is_set():
                     turn_outcome = "failed"
                     tool_abandoned = True
                     raise ToolExecutionAbandoned(
                         "tool execution was abandoned after timeout"
                     )
+            except PhaseCallDeadlineExceeded:
+                _fail_agent_budget_reservation(agent_budget, model_budget_reservation, charge_estimate=True)
+                raise_if_cancelled(cancellation_token)
+                raise_if_deadline_exceeded()
+                if implementation_phases is None:
+                    # Native closing retains the owner deadline; it does not
+                    # introduce Executor phases or grant a timeout retry.
+                    emit_event_safely(event_sink, "model.failed", step=step, payload=_model_event_duration({
+                        "operationId": model_operation_id,
+                        "errorType": "timeout",
+                        "reasonCode": "native_result_request_timeout",
+                    }, _finish_model_observation_clock(model_started_at)))
+                    turn_outcome = "failed"
+                    current_messages.append({"role": "assistant", "_partial": True,
+                                             "content": "The native result request timed out without a verdict."})
+                    return current_messages
+                emit_event_safely(event_sink, "model.failed", step=step, payload=_model_event_duration({
+                    "operationId": model_operation_id,
+                    "errorType": "timeout",
+                    "reasonCode": "implementation_phase_request_timeout",
+                }, _finish_model_observation_clock(model_started_at)))
+                implementation_phases.timeout(now=time.monotonic())
+                emit_event_safely(event_sink, "execution.phase_call_timeout", step=step, payload={"nextPhase": implementation_phases.phase.value})
+                current_messages.append({"role": "user", "content": "The bounded phase request expired; its usage remains uncertain. Proceed using the remaining phase allowance and report any blocker."})
+                continue
             except AgentTurnDeadlineExceeded:
                 _fail_agent_budget_reservation(
                     agent_budget,
@@ -3305,6 +4425,21 @@ def run_agent_turn(
                     model_budget_reservation,
                 )
                 raise_if_cancelled(cancellation_token)
+                snapshot = agent_budget.snapshot() if agent_budget is not None else None
+                emit_event_safely(event_sink, "execution.request_admission_rejected", step=step, payload={
+                    "reason": error.reason,
+                    "estimatedInputTokens": admission_input_estimate,
+                    "preserveTotalTokens": preserve_tokens,
+                    "outputLimit": (phase_request.output_limit if phase_request else native_closing_output
+                                    if host_native_result_tool is not None and native_handoff_only
+                                    else configured_output_limit()),
+                    "preserveModelCalls": phase_request.preserve_calls if phase_request else 0,
+                    "usedTotalTokens": getattr(snapshot, "used_total_tokens", None),
+                    "limitTotalTokens": getattr(snapshot, "limit_total_tokens", None),
+                    "reservedTotalTokens": getattr(snapshot, "reserved_total_tokens", None),
+                    "usedModelCalls": getattr(snapshot, "used_model_calls", None),
+                    "limitModelCalls": getattr(snapshot, "limit_model_calls", None),
+                })
                 if budget_exhausted_policy == "raise":
                     turn_outcome = "failed"
                     raise
@@ -3361,44 +4496,15 @@ def run_agent_turn(
                         ),
                     )
                 raise
-            except ConnectionError as error:
+            except Exception as error:
+                retryable_transport = _is_transient_model_transport_error(error)
+                transport_cause = error.reason if isinstance(error, urllib.error.URLError) else error
+                transport_timeout = retryable_transport and isinstance(transport_cause, TimeoutError)
+                transport_kind = "timeout" if transport_timeout else "network"
                 _fail_agent_budget_reservation(
                     agent_budget,
                     model_budget_reservation,
-                )
-                raise_if_cancelled(cancellation_token)
-                model_duration_ms = (
-                    _finish_model_observation_clock(model_started_at)
-                    if event_sink is not None
-                    else None
-                )
-                if event_sink is not None:
-                    emit_event_safely(
-                        event_sink,
-                        "model.failed",
-                        step=step,
-                        payload=_model_event_duration(
-                            {
-                                "operationId": model_operation_id,
-                                "failureKind": "network",
-                            },
-                            model_duration_ms,
-                        ),
-                    )
-                turn_outcome = "failed"
-                fallback = f"Network error (connection failed or dropped): {error}"
-                logger.error("Model API connection error: %s", error)
-                if on_assistant_message:
-                    on_assistant_message(fallback)
-                current_messages.append({"role": "assistant", "content": fallback})
-                if metrics_collector:
-                    metrics_collector.end_turn(total_tokens=0)
-                return current_messages
-            except TimeoutError as error:
-                _fail_agent_budget_reservation(
-                    agent_budget,
-                    model_budget_reservation,
-                    charge_estimate=True,
+                    charge_estimate=retryable_transport,
                 )
                 model_duration_ms = (
                     _finish_model_observation_clock(model_started_at)
@@ -3413,14 +4519,18 @@ def run_agent_turn(
                         payload=_model_event_duration(
                             {
                                 "operationId": model_operation_id,
-                                "failureKind": "timeout",
+                                "failureKind": transport_kind if retryable_transport else "provider_error",
                             },
                             model_duration_ms,
                         ),
                     )
                 raise_if_cancelled(cancellation_token)
-                raise_if_deadline_exceeded()
-                if completion_policy is not None:
+                if transport_timeout:
+                    raise_if_deadline_exceeded()
+                # Explicit finite primary completion keeps its historical
+                # one-retry/host-summary policy. Continuous primary and all
+                # workers use the shared transport burst below instead.
+                if transport_timeout and completion_policy is not None:
                     model_timeout_retry_pending = True
                     if metrics_collector:
                         metrics_collector.end_turn(total_tokens=0)
@@ -3445,39 +4555,52 @@ def run_agent_turn(
                         allow_model_summary=False,
                     )
                     return current_messages
-                turn_outcome = "failed"
-                fallback = f"Model API timeout: {error}"
-                logger.error("Model API timeout: %s", error)
-                if on_assistant_message:
-                    on_assistant_message(fallback)
-                current_messages.append({"role": "assistant", "content": fallback})
-                if metrics_collector:
-                    metrics_collector.end_turn(total_tokens=0)
-                return current_messages
-            except Exception as error:
-                _fail_agent_budget_reservation(
-                    agent_budget,
-                    model_budget_reservation,
-                )
-                raise_if_cancelled(cancellation_token)
-                model_duration_ms = (
-                    _finish_model_observation_clock(model_started_at)
-                    if event_sink is not None
-                    else None
-                )
-                if event_sink is not None:
-                    emit_event_safely(
-                        event_sink,
-                        "model.failed",
-                        step=step,
-                        payload=_model_event_duration(
-                            {
-                                "operationId": model_operation_id,
-                                "failureKind": "provider_error",
-                            },
-                            model_duration_ms,
-                        ),
-                    )
+                if retryable_transport:
+                    # This exchange returned no AgentStep. Keep completed tool
+                    # calls/results and the same adapter/channel, but charge its
+                    # admitted call and conservative input estimate as unknown
+                    # usage. Retrying always re-enters ordinary atomic admission.
+                    model_timeout_retry_pending = True
+                    current_messages.append({
+                        "role": "system", "_model_transport_failure": True,
+                        "content": json.dumps({"event": "model_transport_failure",
+                            "operationId": model_operation_id,
+                            "errorType": type(error).__name__, "usage": "unknown"}),
+                    })
+                    if context_manager is not None:
+                        context_manager.messages = list(current_messages)
+                    if metrics_collector:
+                        metrics_collector.end_turn(total_tokens=0)
+                    raise_if_deadline_exceeded()
+                    if abandoned_event is not None and abandoned_event.is_set():
+                        tool_abandoned = True
+                        raise ToolExecutionAbandoned("tool execution was abandoned after timeout")
+                    if (model_transport_retry_count < MAX_RETRIES
+                            and (max_steps is None or step < max_steps)
+                            and recovery_guard.stop_decision() is None):
+                        delay = calculate_backoff(model_transport_retry_count,
+                            category=ErrorCategory.NETWORK_ERROR)
+                        model_transport_retry_count += 1
+                        emit_event_safely(event_sink, "model.retry_scheduled", step=step, payload={
+                            "operationId": model_operation_id, "failureKind": transport_kind,
+                            "attempt": model_transport_retry_count, "delaySeconds": delay,
+                            "usage": "unknown",
+                        })
+                        try:
+                            controlled_retry_sleep(delay, cancellation_token=cancellation_token,
+                                                   deadline_monotonic=deadline_monotonic)
+                        except ModelCallDeadlineExceeded as stopped:
+                            raise AgentTurnDeadlineExceeded(str(stopped)) from stopped
+                        # A failed native-only exchange supplied no declaration;
+                        # rearm its existing surface, never restore broader tools.
+                        native_handoff_attempted = False
+                        continue
+                    turn_outcome = "failed"
+                    fallback = "Model transport failed; retries exhausted or the original execution limit ended."
+                    current_messages.append({"role": "assistant", "content": fallback, "_partial": True})
+                    if on_assistant_message:
+                        on_assistant_message(fallback)
+                    return current_messages
                 # Catch-all for unexpected errors (rate limit, auth, server 5xx, etc.)
                 error_type = type(error).__name__
                 fallback = f"Model API error ({error_type}): {error}"
@@ -3657,6 +4780,7 @@ def run_agent_turn(
                 context_manager,
                 current_messages,
                 next_step,
+                request_messages=request_messages,
             )
             usage_observation = (
                 _model_usage_observation(next_step)
@@ -3690,7 +4814,7 @@ def run_agent_turn(
                     try:
                         context_compactor.record_usage_observation(
                             reported_input,
-                            _estimated_context_tokens(current_messages),
+                            sent_input_estimate,
                         )
                     except Exception:  # noqa: BLE001 - calibration is advisory
                         pass
@@ -3725,6 +4849,9 @@ def run_agent_turn(
                     )
 
             if next_step.type == "assistant":
+                if host_native_result_tool is not None and native_handoff_only:
+                    current_messages.append({"role": "assistant", "content": next_step.content})
+                    continue
                 is_empty = _is_empty_assistant_response(next_step.content)
                 if not is_empty and _should_treat_assistant_as_progress(
                     kind=getattr(next_step, 'kind', None),
@@ -3852,6 +4979,12 @@ def run_agent_turn(
                     turn_outcome = "failed"
                     return current_messages
 
+                implementation_decision = enforce_implementation_completion_before_final(next_step.content)
+                if implementation_decision == "retry":
+                    continue
+                if implementation_decision == "stop":
+                    turn_outcome = "unknown"
+                    return current_messages
                 raise_if_cancelled(cancellation_token)
                 if on_assistant_message:
                     on_assistant_message(next_step.content)
@@ -3904,6 +5037,14 @@ def run_agent_turn(
             ):
                 continue
 
+            if not next_step.calls and next_step.content and next_step.contentKind != "progress":
+                implementation_decision = enforce_implementation_completion_before_final(next_step.content)
+                if implementation_decision == "retry":
+                    continue
+                if implementation_decision == "stop":
+                    turn_outcome = "unknown"
+                    return current_messages
+
             if next_step.content:
                 role = "assistant_progress" if next_step.contentKind == "progress" else "assistant"
                 _append_trace_event(execution_trace, {
@@ -3950,11 +5091,34 @@ def run_agent_turn(
             # Classify calls into concurrent-safe (read-only) vs serial (writes/commands)
             calls = next_step.calls
             completion_before = {}
-            if completion_policy is not None:
+            mutation_epoch_before = mutation_observer.mutation_epoch if mutation_observer else 0
+            if mutation_observer is not None:
                 try:
-                    completion_before = completion_policy.capture_before(calls)
+                    observable_calls = calls
+                    from minicode.scheduler_permissions import (
+                        SchedulerExecutorPermissions, SchedulerWorkerReadPermissions,
+                    )
+                    from minicode.permissions import PermissionDeniedError
+
+                    if isinstance(permissions, (SchedulerExecutorPermissions, SchedulerWorkerReadPermissions)):
+                        # Observation is also a read. This deterministic check
+                        # never prompts or grants access to a denied Assignment
+                        # path before the actual write tool validates it.
+                        observable_calls = []
+                        for candidate in calls:
+                            inputs = candidate.get("input")
+                            target = inputs.get("path") if isinstance(inputs, dict) else None
+                            if candidate.get("toolName") not in {"edit_file", "write_file"}:
+                                continue
+                            try:
+                                permissions.ensure_path_access(target, "read")
+                            except PermissionDeniedError:
+                                continue
+                            observable_calls.append(candidate)
+                    completion_before = mutation_observer.capture_before(observable_calls)
                 except Exception:  # progress observation cannot own execution
-                    completion_policy.lower_limit(max_steps)
+                    if max_steps is not None:
+                        mutation_observer.lower_limit(max_steps)
                     logger.warning("Completion progress capture unavailable")
             assistant_tool_turn_id = f"tool-turn-{uuid.uuid4().hex}"
             _results: list[tuple[dict, ToolResult]] = []
@@ -3963,7 +5127,17 @@ def run_agent_turn(
             raise_if_cancelled(cancellation_token)
 
             executable_calls: list[dict] = []
+            phase_rejections = implementation_phases.admit_batch(calls, cwd=cwd, permissions=permissions) if implementation_phases is not None else {}
+            if host_native_result_tool is not None and native_handoff_only:
+                phase_rejections.update({
+                    call["id"]: "The reserved conclusion request permits only the bound review_submit capability."
+                    for call in calls if call.get("toolName") != host_native_result_tool.name
+                })
             for call in calls:
+                if call["id"] in phase_rejections:
+                    suppressed_call_ids.add(call["id"])
+                    _results.append((call, ToolResult(ok=False, output=phase_rejections[call["id"]])))
+                    continue
                 suppression = recovery_guard.suppression_for(call)
                 if suppression is None:
                     executable_calls.append(call)
@@ -4025,6 +5199,33 @@ def run_agent_turn(
                                 )
                             )
 
+            for rejected_call, rejected_result in _results:
+                observe_implementation_tool_result(rejected_call, rejected_result)
+
+            parent_handoff_preserve_tokens = _parent_handoff_token_floor(
+                current_messages, calls,
+                assistant_content=next_step.content or "",
+                reasoning_content=next_step.reasoningContent,
+                closing_prompt=(completion_policy.closing_prompt("turn_budget_exceeded: token budget exhausted")
+                                if completion_policy is not None else MAX_STEPS_SOFT_LANDING_PROMPT),
+            )
+
+            # Preserve read-first scheduling, but never join writes across an
+            # original non-write barrier. Only actual serial execution enters
+            # these host-owned groups; explicit checks/submission always flush.
+            write_groups = {}
+            if isinstance(implementation_feedback, ExecutorCheckCapability) and implementation_feedback.has_automatic_write_checks:
+                cohort = []
+                for candidate in [*calls, None]:
+                    if (candidate is not None and candidate in executable_calls
+                            and candidate.get("toolName") in {"edit_file", "write_file", "executor_test"}):
+                        cohort.append(candidate["id"])
+                        continue
+                    if len(cohort) > 1:
+                        group = tuple(cohort)
+                        write_groups.update((identity, group) for identity in group)
+                    cohort = []
+
             if len(executable_calls) == 1:
                 # Single call — no benefit from concurrency, run directly
                 call = executable_calls[0]
@@ -4052,8 +5253,13 @@ def run_agent_turn(
                     allow_user_interaction,
                     deadline_monotonic,
                     skill_load_policy,
+                    implementation_candidate_guard=implementation_candidate_guard,
+                    parent_handoff_preserve_tokens=parent_handoff_preserve_tokens,
+                    workflow_delivery=workflow_delivery,
+                    workflow_user_request=(current_user_message if agent_depth == 0 else None),
                 )
                 _results.append((call, result))
+                observe_implementation_tool_result(call, result)
                 if metrics_collector:
                     try:
                         metrics_collector.end_tool(
@@ -4141,28 +5347,34 @@ def run_agent_turn(
                             try:
                                 future = pool.submit(
                                     _execute_single_tool,
-                                    call,
-                                    tools,
-                                    cwd,
-                                    permissions,
-                                    runtime,
-                                    None,
-                                    step,
-                                    on_tool_start,
-                                    on_tool_result,
-                                    tool_scheduler,
-                                    event_sink,
-                                    skill_usage_tracker,
-                                    cancellation_token,
-                                    verification_tracker,
-                                    agent_depth,
-                                    presentation,
-                                    agent_budget,
-                                    subagent_mailbox,
-                                    subagent_lifecycle,
-                                    allow_user_interaction,
-                                    deadline_monotonic,
-                                    skill_load_policy,
+                                    call=call,
+                                    tools=tools,
+                                    cwd=cwd,
+                                    permissions=permissions,
+                                    runtime=runtime,
+                                    store=None,
+                                    step=step,
+                                    on_tool_start=on_tool_start,
+                                    on_tool_result=on_tool_result,
+                                    tool_scheduler=tool_scheduler,
+                                    event_sink=event_sink,
+                                    skill_usage_tracker=skill_usage_tracker,
+                                    cancellation_token=cancellation_token,
+                                    verification_tracker=verification_tracker,
+                                    agent_depth=agent_depth,
+                                    presentation=presentation,
+                                    agent_budget=agent_budget,
+                                    subagent_mailbox=subagent_mailbox,
+                                    subagent_lifecycle=subagent_lifecycle,
+                                    subagent_sessions=subagent_sessions,
+                                    todo_state=todo_state,
+                                    allow_user_interaction=allow_user_interaction,
+                                    deadline_monotonic=deadline_monotonic,
+                                    skill_load_policy=skill_load_policy,
+                                    implementation_candidate_guard=implementation_candidate_guard,
+                                    parent_handoff_preserve_tokens=parent_handoff_preserve_tokens,
+                                    workflow_delivery=workflow_delivery,
+                                    workflow_user_request=(current_user_message if agent_depth == 0 else None),
                                 )
                             except TurnCancellationRequested as exc:
                                 batch_cancellation = exc
@@ -4298,6 +5510,7 @@ def run_agent_turn(
                             for future, call in future_to_call.items():
                                 result = observed_results[future]
                                 _results.append((call, result))
+                                observe_implementation_tool_result(call, result)
                                 try:
                                     recovery_guard.observe(
                                         call,
@@ -4357,6 +5570,9 @@ def run_agent_turn(
                 # Phase 2: Run serial tools sequentially (in original order)
                 if serial_calls and not concurrent_authority_stop:
                     for serial_index, call in enumerate(serial_calls):
+                        group = write_groups.get(call["id"])
+                        if write_feedback_batch is not None and group != write_feedback_group:
+                            flush_write_feedback_batch()
                         late_suppression = recovery_guard.suppression_for(call)
                         if late_suppression is not None:
                             suppressed_call_ids.add(call["id"])
@@ -4369,6 +5585,7 @@ def run_agent_turn(
                                     ),
                                 )
                             )
+                            observe_implementation_tool_result(call, _results[-1][1])
                             continue
                         fire_hook_sync(
                             HookEvent.PRE_TOOL_USE,
@@ -4378,24 +5595,46 @@ def run_agent_turn(
                         )
                         if metrics_collector:
                             metrics_collector.start_tool(call["toolName"])
-                        result = _execute_single_tool(
-                            call, tools, cwd, permissions, runtime, store, step,
-                            on_tool_start, on_tool_result, tool_scheduler, event_sink,
-                            skill_usage_tracker,
-                            cancellation_token,
-                            verification_tracker,
-                            agent_depth,
-                            presentation,
-                            agent_budget,
-                            subagent_mailbox,
-                            subagent_lifecycle,
-                            subagent_sessions,
-                            todo_state,
-                            allow_user_interaction,
-                            deadline_monotonic,
-                            skill_load_policy,
-                        )
+                        if group is not None and write_feedback_batch is None:
+                            write_feedback_batch = implementation_feedback.begin_write_batch()
+                            write_feedback_group = group
+                        if write_feedback_batch is not None:
+                            write_feedback_batch.call_id = call["id"]
+                        try:
+                            result = _execute_single_tool(
+                                call, tools, cwd, permissions, runtime, store, step,
+                                on_tool_start, on_tool_result, tool_scheduler, event_sink,
+                                skill_usage_tracker,
+                                cancellation_token,
+                                verification_tracker,
+                                agent_depth,
+                                presentation,
+                                agent_budget,
+                                subagent_mailbox,
+                                subagent_lifecycle,
+                                subagent_sessions,
+                                todo_state,
+                                allow_user_interaction,
+                                deadline_monotonic,
+                                skill_load_policy,
+                                implementation_candidate_guard=implementation_candidate_guard,
+                                parent_handoff_preserve_tokens=_parent_handoff_token_floor(
+                                    current_messages, calls,
+                                    assistant_content=next_step.content or "",
+                                    reasoning_content=next_step.reasoningContent,
+                                    closing_prompt=(completion_policy.closing_prompt("turn_budget_exceeded: token budget exhausted")
+                                                    if completion_policy is not None else MAX_STEPS_SOFT_LANDING_PROMPT),
+                                    completed_results=_results,
+                                ),
+                                workflow_delivery=workflow_delivery,
+                                workflow_user_request=(current_user_message if agent_depth == 0 else None),
+                            )
+                        finally:
+                            if (write_feedback_batch is not None and
+                                    (sys.exception() is not None or call["id"] == write_feedback_group[-1])):
+                                flush_write_feedback_batch()
                         _results.append((call, result))
+                        observe_implementation_tool_result(call, result)
                         if metrics_collector:
                             try:
                                 metrics_collector.end_tool(
@@ -4426,8 +5665,11 @@ def run_agent_turn(
                         # delivered before any later serial call can run.  Seal
                         # skipped results for the remaining provider calls so
                         # the tool-call protocol stays balanced.
-                        if result.awaitUser or result._must_deliver:
-                            if result._must_deliver:
+                        submitted = result.ok and result._implementation_submitted and call["toolName"] in {"executor_submit", "review_submit", "completion_review_submit", "completion_probe_migration_submit", "completion_probe_adjudication_submit", "completion_coverage_audit_submit", "completion_coverage_inspection_submit", "subagent_note_write"}
+                        budget_terminal = workflow_delivery.is_budget_terminal(call, result)
+                        if result.awaitUser or result._must_deliver or submitted or budget_terminal:
+                            flush_write_feedback_batch()
+                            if result._must_deliver or submitted or budget_terminal:
                                 for pending_call in serial_calls[
                                     serial_index + 1 :
                                 ]:
@@ -4448,7 +5690,10 @@ def run_agent_turn(
                                     )
                             # Still need to process remaining results for messages
                             break
-            
+
+            # Late suppression or an early await-user return may leave the
+            # cohort's final write unexecuted. Check the actual partial bytes.
+            flush_write_feedback_batch()
             must_deliver_result = any(
                 result._must_deliver for _call, result in _results
             )
@@ -4456,22 +5701,58 @@ def run_agent_turn(
             # Process all results and build messages (preserve original call order)
             call_order = {call["id"]: idx for idx, call in enumerate(calls)}
             _results.sort(key=lambda pair: call_order.get(pair[0]["id"], 999))
-            if completion_policy is not None:
+            if mutation_observer is not None:
                 try:
-                    completion_policy.observe_results(
+                    mutation_observer.observe_results(
                         [pair for pair in _results if pair[0]["id"] not in suppressed_call_ids],
                         completion_before,
                         step=step,
                     )
                 except Exception:  # retain authoritative committed receipts below
-                    completion_policy.lower_limit(max_steps)
+                    if max_steps is not None:
+                        mutation_observer.lower_limit(max_steps)
                     logger.warning("Completion progress observation unavailable")
+            observed_change = bool(
+                mutation_observer and mutation_observer.mutation_epoch > mutation_epoch_before
+            )
+            if implementation_phases is not None:
+                implementation_phases.observe_change(observed_change)
+            for call, result in _results:
+                if (implementation_phases is not None and has_structured_handoff
+                        and isinstance(subagent_mailbox, ExecutorResultChannel)
+                        and call["id"] not in suppressed_call_ids
+                        and call.get("toolName") == "executor_submit" and not result.ok):
+                    # Only actual execution feedback from the bound capability
+                    # can reopen its remaining submit-only allowance. Model
+                    # prose and suppressed tool calls cannot reset this state.
+                    implementation_phases.observe_handoff_result(accepted=False)
+                if (implementation_phases is not None and call["id"] not in suppressed_call_ids
+                        and call.get("toolName") in {"edit_file", "write_file"}):
+                    implementation_phases.observe_edit(
+                        path=str(call.get("input", {}).get("path", "")),
+                        anchor_failed=result._edit_anchor_failed is True,
+                        changed=result._file_changed is True,
+                    )
+                if call["id"] not in suppressed_call_ids and type(result._implementation_checks_failed) is bool:
+                    # This flag comes from host-run public checks, never model
+                    # prose, and remains available when phase steering is off.
+                    if owned_implementation_feedback is not None:
+                        direct_implementation_checks_failed = result._implementation_checks_failed
+                        direct_implementation_batch_status = None
+                    if implementation_phases is not None:
+                        implementation_phases.observe_verification(failed=result._implementation_checks_failed)
+                if call["id"] in batch_feedback_by_call:
+                    observe_batch_feedback(batch_feedback_by_call.pop(call["id"]))
+            if observed_change or must_deliver_result:
+                # A committed child receipt must also retire earlier source
+                # anchors, without changing or projecting the receipt itself.
+                invalidated_read_ids.update(delivered_read_ids)
             executed_outcomes: list[bool] = []
             if must_deliver_result:
                 # A finalized state change takes a dedicated authority path.
                 # Only balance the provider tool protocol and project every
-                # result byte-for-byte; all mutable telemetry and control
-                # sidecars are deliberately bypassed.
+                # result byte-for-byte; mutable telemetry and control sidecars
+                # are bypassed until delivery is acknowledged below.
                 receipt_start = len(current_messages)
                 for result_index, (call, result) in enumerate(_results):
                     suppressed = call["id"] in suppressed_call_ids
@@ -4505,6 +5786,23 @@ def run_agent_turn(
                             "isError": not result.ok,
                         }
                     )
+                    if not suppressed:
+                        acknowledged = _acknowledge_tool_delivery(result)
+                    else:
+                        acknowledged = False
+                    observe_workflow_delivery(call, result, suppressed=suppressed, acknowledged=acknowledged)
+                deliver_batch_feedback()
+                if workflow_delivery.budget_terminal:
+                    finish_workflow_delivery("workflow_budget_exceeded")
+                    return current_messages
+                if coding_progress.enabled:
+                    try:
+                        coding_progress.authoritative_delivery(changed=observed_change)
+                    except Exception:
+                        # Optional in-memory steering cannot revoke delivered
+                        # authority or prevent parent continuation. Even a
+                        # logging callback must not join this outcome path.
+                        pass
                 saw_tool_result = True
                 turn_outcome = (
                     "success" if all(executed_outcomes) else "failed"
@@ -4586,6 +5884,12 @@ def run_agent_turn(
                     recovery_note = None
                     if not result.ok:
                         tool_error_count += 1
+                elif result._termination_reason is ToolTerminationReason.BUDGET_EXCEEDED:
+                    # Host budget terminals are not transient tool failures.
+                    # Keep their typed receipt without generic retry advice.
+                    tool_error_count += int(not result.ok)
+                    result_output = result.output
+                    recovery_note = None
                 elif not result.ok:
                     tool_error_count += 1
                     # Use ErrorClassifier for intelligent error handling
@@ -4713,18 +6017,85 @@ def run_agent_turn(
                         "toolName": call["toolName"],
                         "content": result_output,
                         "isError": not result.ok,
+                        **({"_implementation_checks_failed": result._implementation_checks_failed}
+                           if not suppressed and type(result._implementation_checks_failed) is bool else {}),
                     }
                 )
+                if not suppressed:
+                    acknowledged = _acknowledge_tool_delivery(result)
+                else:
+                    acknowledged = False
+                observe_workflow_delivery(call, result, suppressed=suppressed, acknowledged=acknowledged)
                 if result.awaitUser and await_user_output is None:
                     await_user_output = result_output
 
-            strategy_switch_nudge = recovery_guard.complete_step(executed_outcomes)
+            deliver_batch_feedback()
+            if workflow_delivery.budget_terminal:
+                finish_workflow_delivery("workflow_budget_exceeded")
+                return current_messages
+            recovery_outcomes = [
+                result.ok or submission_correction_progress(call, result)
+                for call, result in _results if call["id"] not in suppressed_call_ids
+            ]
+            strategy_switch_nudge = recovery_guard.complete_step(recovery_outcomes)
+            if any(result.ok and result._implementation_submitted and call["toolName"] in {"executor_submit", "review_submit", "completion_review_submit", "completion_probe_migration_submit", "completion_probe_adjudication_submit", "completion_coverage_audit_submit", "completion_coverage_inspection_submit", "subagent_note_write"} for call, result in _results):
+                turn_outcome = "success"
+                return current_messages
+            if host_native_result_tool is not None:
+                from minicode.reviewer_result_submission import (
+                    reviewer_submission_needs_evidence, reviewer_submission_rejected,
+                    reviewer_submission_same_channel,
+                )
+
+                submission_results = [
+                    (tool, result) for call, result in _results
+                    if call["id"] not in suppressed_call_ids
+                    for tool in tools.list() if tool.name == call["toolName"]
+                    and reviewer_submission_same_channel(tool, host_native_result_tool)
+                ]
+                needs_evidence = any(reviewer_submission_needs_evidence(tool, result)
+                                     for tool, result in submission_results)
+                if needs_evidence or any(reviewer_submission_rejected(tool, result)
+                                         for tool, result in submission_results):
+                    # Formatting feedback needs another submission. Missing
+                    # independently checked evidence needs the same Reviewer's
+                    # original inspection tools; genuine finite admission still
+                    # governs whether another working request can run.
+                    native_handoff_only = not needs_evidence
+                    native_handoff_attempted = False
+                    native_handoff_rejected = True
+                    if needs_evidence:
+                        native_handoff_prompt_sent = False
             step_tool_call_count = len(executed_outcomes)
             step_tool_error_count = sum(not outcome for outcome in executed_outcomes)
-            step_made_progress = any(executed_outcomes)
+            step_made_progress = observed_change
+            successful_reads = {
+                call["id"] for call, result in _results
+                if call["id"] not in suppressed_call_ids
+                and result.ok and call["toolName"] in source_read_names
+            }
+            delivered_read_ids.update(successful_reads)
+            for call, _result in _results:
+                if call["id"] in successful_reads and call["toolName"] == "read_file":
+                    source_path = call.get("input", {}).get("path")
+                    if isinstance(source_path, str):
+                        delivered_source_paths[call["id"]] = source_path
+            if observed_change:
+                # Conservatively retire every previously observed source
+                # anchor, including reads from this mixed write/read batch.
+                # Later successful reads can establish fresh anchors. This
+                # uses the existing byte-change observer, not extra I/O.
+                invalidated_read_ids.update(delivered_read_ids)
+            coding_progress.observe(
+                successful_read=bool(successful_reads), changed=observed_change,
+                verified=any(
+                    result.ok and normalize_tool_verification(call["toolName"], result.verification)
+                    for call, result in _results if call["id"] not in suppressed_call_ids
+                ),
+            )
             total_tool_call_count += step_tool_call_count
             if step_tool_call_count > 0:
-                if step_made_progress:
+                if any(executed_outcomes):
                     completed_tool_step_count += 1
                 else:
                     failed_tool_step_count += 1
@@ -4806,6 +6177,29 @@ def run_agent_turn(
                 turn_outcome = "unknown"
                 raise_if_cancelled(cancellation_token)
                 return current_messages
+
+            # Keep newly returned results intact for their first model view.
+            # Older successful inspection text has an aggregate budget even
+            # when the single-request context window is far from full.
+            if coding_progress.enabled and (successful_reads or observed_change):
+                try:
+                    reduced, saved = read_history_budget.compact_read_history(
+                        current_messages, eligible_ids=delivered_read_ids,
+                        protected_ids=successful_reads,
+                        source_paths=delivered_source_paths,
+                        invalidated_ids=invalidated_read_ids,
+                    )
+                    if saved:
+                        current_messages = reduced
+                        if context_compactor is not None:
+                            context_compactor.read_dedup.reconcile(current_messages)
+                        if context_manager is not None:
+                            context_manager.messages = list(current_messages)
+                        emit_event_safely(event_sink, "context.read_history_bounded", step=step, payload={
+                            "charactersSaved": saved, "protectedResultCount": len(successful_reads),
+                        })
+                except (OSError, ValueError):
+                    logger.warning("Read history projection unavailable", exc_info=True)
 
             # In-loop high-water check: one turn can run dozens of tool steps,
             # and pre-request compaction alone lets the context grow unbounded
@@ -5063,7 +6457,7 @@ def run_agent_turn(
                 allow_model_summary=not model_timeout_retry_pending,
             )
             return current_messages
-        if max_steps_soft_landing and max_steps is not None:
+        if max_steps_soft_landing and max_steps is not None and host_native_result_tool is None:
             if _attempt_max_steps_soft_landing():
                 turn_outcome = "success"
                 # A soft landing still ends through a normal assistant
@@ -5123,6 +6517,60 @@ def run_agent_turn(
         interrupted_parent_message(f"continuation failed ({type(error).__name__})")
         return current_messages
     finally:
+        cleanup_original_error = sys.exception()
+        try:
+            flush_write_feedback_batch()
+        except BaseException:
+            # Evidence cleanup cannot replace a tool/control-flow exception.
+            if cleanup_original_error is None:
+                raise
+            logger.warning("Interrupted implementation batch cleanup", exc_info=True)
+        deliver_batch_feedback()
+        if context_manager is not None:
+            # The working list can diverge from ContextManager after compaction
+            # or tool execution. Preserve terminal observations on cancellation
+            # and budget errors as well as on successful returns.
+            context_manager.messages = current_messages
+        if owned_implementation_feedback is not None:
+            owned_implementation_feedback.close()
+        if (owned_implementation_feedback is not None
+                and (direct_implementation_checks_failed or not direct_completion_accepted)
+                and not has_structured_handoff and not committed_child_batches):
+            # A model's final answer cannot turn failing host checks into a
+            # completed delivery. Keep its wording and actual tool receipts;
+            # this separate host receipt closes execution without another call.
+            if turn_outcome != "cancelled":
+                turn_outcome = "failed"
+            enable_work_chain = False
+            receipt = {
+                "implementationDeliveryVersion": 1,
+                "executionEnded": True,
+                "delivery": "partial",
+                "lastPublicChecks": direct_implementation_batch_status or "unavailable",
+                "requirementsAccepted": direct_completion_accepted,
+                "continuesAfterResponse": False,
+            }
+            content = (
+                "Host execution receipt: This turn has ended. Current public checks "
+                "and requirement coverage have not both been accepted; delivery remains incomplete. No further "
+                "edits run after this final response.\n"
+                "=== IMPLEMENTATION DELIVERY RECEIPT v1 ===\n"
+                + json.dumps(receipt, sort_keys=True, separators=(",", ":"))
+            )
+            current_messages.append({"role": "assistant", "content": content,
+                "_partial": True, "_host_implementation_receipt": True})
+            if on_assistant_message:
+                try:
+                    on_assistant_message(content)
+                except BaseException:  # presentation cannot mask original failure
+                    logger.warning("Failed to present implementation delivery receipt", exc_info=True)
+        if implementation_candidate_guard is not None and not committed_child_batches:
+            decision = implementation_candidate_guard.delivery_check()
+            if not decision.allowed:
+                turn_outcome = "failed"
+                enable_work_chain = False
+                current_messages.append({"role": "assistant", "_partial": True,
+                    "content": f"error[{decision.code}]: {decision.message}"})
         restore_committed_child_receipts()
         if committed_child_batches:
             # Once a child has committed, later observers cannot replace the
@@ -5133,6 +6581,7 @@ def run_agent_turn(
                 content = final_message.get("content")
                 if (
                     final_message.get("role") == "assistant"
+                    and not final_message.get("_workflow_delivery_receipt_summary")
                     and isinstance(content, str)
                     and not content.startswith("Earlier workflow changes are already committed;")
                 ):
@@ -5639,7 +7088,8 @@ def run_agent_turn(
                 )
             # Apply outer-loop ControlSignal to runtime parameters
             if control_signal.confidence > 0.6:
-                if control_signal.limit_max_steps and control_signal.limit_max_steps < max_steps:
+                if (max_steps is not None and control_signal.limit_max_steps
+                        and control_signal.limit_max_steps < max_steps):
                     logger.info(
                         "FeedbackController: limiting max_steps %d → %d",
                         max_steps, control_signal.limit_max_steps,
@@ -5803,3 +7253,28 @@ def run_agent_turn(
                 supervisor_report.risk_level.value,
                 "; ".join(supervisor_report.recommended_actions[:3]),
             )
+        if implementation_checkpoint_sink is not None and owned_implementation_feedback is not None:
+            from minicode.implementation_continuation import HostImplementationContinuation
+            from copy import deepcopy
+
+            try:
+                checkpoint_messages = deepcopy(current_messages)
+                if direct_migration_state is not None:
+                    from minicode.implementation_execution import implementation_candidate_digest
+                    actual_candidate = implementation_candidate_digest(implementation_spec,
+                        ToolContext(cwd=cwd, permissions=permissions))
+                    if direct_migration_state["state"]["candidateDigest"] != actual_candidate:
+                        emit_event_safely(event_sink, "implementation.migration_checkpoint_stale", step=step,
+                            payload={"executorId": direct_completion_owner, "reason": "candidate_changed"})
+                        direct_migration_state = None
+                checkpoint = HostImplementationContinuation.capture(spec=implementation_spec,
+                    context=ToolContext(cwd=cwd, permissions=permissions),
+                    messages=checkpoint_messages, executor_id=direct_completion_owner,
+                    attempt=direct_completion_attempt,
+                    review_state=(direct_completion_review.state if direct_completion_review else None),
+                    migration_state=direct_migration_state)
+                implementation_checkpoint_sink(checkpoint.document, checkpoint_messages)
+            except BaseException:
+                if cleanup_original_error is None:
+                    raise
+                logger.warning("Interrupted implementation checkpoint unavailable", exc_info=True)

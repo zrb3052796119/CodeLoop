@@ -36,6 +36,7 @@ from minicode.logging_config import get_logger
 from minicode.model_call_control import (
     ModelCallDeadlineExceeded,
     call_model_next,
+    estimate_budgeted_request_input,
     checkpoint_model_call,
 )
 from minicode.pricing import (
@@ -1308,8 +1309,13 @@ class MemoryCuratorAgent:
             self._cycle_checkpoint()
             if agent_budget is not None:
                 try:
+                    estimated_input = max(1, len(prompt) // 4)
+                    if not hasattr(self._model, "generate"):
+                        estimated_input = estimate_budgeted_request_input(self._model,
+                            [{"role": "user", "content": prompt}], agent_budget=agent_budget,
+                            estimated_input=estimated_input)
                     budget_reservation = agent_budget.reserve_model_call(
-                        max(1, len(prompt) // 4),
+                        estimated_input,
                         preserve_model_calls=1,
                     )
                 except AgentBudgetExceeded:

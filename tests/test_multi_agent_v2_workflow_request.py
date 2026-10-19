@@ -181,7 +181,8 @@ def test_assignment_budget_projects_the_enforced_shared_limits() -> None:
     )
     remaining_wall_time = (deadline - datetime.now(timezone.utc)).total_seconds()
     assert 27 <= remaining_wall_time <= 30
-    assert assignment.budget.max_model_calls == 3
+    # Two calls were used and one remains reserved for the parent's handoff.
+    assert assignment.budget.max_model_calls == 2
     assert assignment.budget.max_input_tokens == 700
     assert assignment.budget.max_output_tokens == 700
 

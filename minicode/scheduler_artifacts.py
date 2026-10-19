@@ -8,12 +8,17 @@ the workflow integration migrates to the Store.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
 import threading
 from dataclasses import dataclass
 
+from minicode.review_probe_source import (
+    REVIEW_PROBE_SOURCE_PREFIX, review_probe_source_artifact_id, validate_review_probe_source,
+)
+from minicode.review_probe_correction import REVIEW_PROBE_CORRECTION_PREFIX, correction_artifact_id
 from minicode.subagent_mailbox import (
     SubagentMailbox,
     SubagentMailboxError,
@@ -80,7 +85,27 @@ def _validate_json_value(value: object, *, depth: int = 0) -> None:
     raise SchedulerArtifactError("artifact must be JSON-safe")
 
 
-def _canonical_json(value: object) -> str:
+def _complete_frozen_diff(value: object) -> bool:
+    """Recognize host patch data without widening model result contracts."""
+    fields = {"diffVersion", "baseDigest", "patchDigest", "byteCount", "complete", "encoding", "diff"}
+    if (not isinstance(value, dict) or set(value) != fields
+            or type(value.get("diffVersion")) is not int or value["diffVersion"] != 1
+            or value.get("complete") is not True or value.get("encoding") != "utf-8"
+            or type(value.get("byteCount")) is not int or value["byteCount"] < 0
+            or not isinstance(value.get("diff"), str)
+            or not isinstance(value.get("baseDigest"), str)
+            or re.fullmatch(r"sha256:[0-9a-f]{64}", value["baseDigest"]) is None):
+        return False
+    try:
+        patch = value["diff"].encode("utf-8")
+    except UnicodeError:
+        return False
+    return (len(patch) == value["byteCount"]
+            and value.get("patchDigest") == "sha256:" + hashlib.sha256(patch).hexdigest())
+
+
+def _canonical_json(value: object, *, allow_frozen_diff: bool = False,
+                    allow_review_probe_source: bool = False) -> str:
     _validate_json_value(value)
     try:
         encoded = json.dumps(
@@ -92,8 +117,18 @@ def _canonical_json(value: object) -> str:
         )
     except (TypeError, ValueError) as exc:
         raise SchedulerArtifactError("artifact must be JSON-safe") from exc
-    if len(encoded.encode("utf-8")) > MAX_SCHEDULER_ARTIFACT_BYTES:
-        raise SchedulerArtifactError("artifact exceeds the 20,000-byte limit")
+    try:
+        byte_count = len(encoded.encode("utf-8"))
+    except UnicodeError as exc:
+        raise SchedulerArtifactError("artifact must be valid UTF-8") from exc
+    if byte_count > MAX_SCHEDULER_ARTIFACT_BYTES:
+        if not ((allow_frozen_diff and _complete_frozen_diff(value))
+                or (allow_review_probe_source and validate_review_probe_source(value))):
+            raise SchedulerArtifactError("artifact exceeds the 20,000-byte limit")
+        # Complete host patch/probe source is data, not a model-written control
+        # contract. It still consumes the unchanged shared storage allowance.
+        if byte_count > MAX_SCHEDULER_ARTIFACT_TOTAL_BYTES:
+            raise SchedulerArtifactError("workflow exceeds the 4 MiB artifact audit limit")
     return encoded
 
 
@@ -185,7 +220,21 @@ class SchedulerArtifactStore:
         if authority is not self._scheduler_authority:
             raise SchedulerArtifactError("scheduler publish authority is required")
         key = _artifact_id(artifact_id)
-        artifact = SchedulerArtifact(key, _canonical_json(value))
+        is_probe = isinstance(value, dict) and value.get("resultType") == "ReviewProbeSource.v1"
+        if is_probe or key.startswith(REVIEW_PROBE_SOURCE_PREFIX):
+            if (not validate_review_probe_source(value)
+                    or key != review_probe_source_artifact_id(value["probeId"])):
+                raise SchedulerArtifactError("host review probe source identity or namespace is invalid")
+        is_correction = isinstance(value, dict) and value.get("resultType") == "ReviewProbeCorrection.v1"
+        if is_correction or key.startswith(REVIEW_PROBE_CORRECTION_PREFIX):
+            try:
+                valid_correction = is_correction and key == correction_artifact_id(value)
+            except (KeyError, TypeError, ValueError, UnicodeError):
+                valid_correction = False
+            if not valid_correction:
+                raise SchedulerArtifactError("host review probe correction namespace is invalid")
+        artifact = SchedulerArtifact(key, _canonical_json(value, allow_frozen_diff=True,
+                                                         allow_review_probe_source=is_probe))
         with self._lock:
             if key in self._artifacts:
                 raise SchedulerArtifactError("artifact id is write-once")
@@ -316,6 +365,8 @@ class SchedulerArtifactStore:
             raise SchedulerArtifactError("readable_keys must be a unique tuple")
         readable = tuple(_artifact_id(key) for key in readable_keys)
         result_key = _artifact_id(write_key)
+        if result_key.startswith((REVIEW_PROBE_SOURCE_PREFIX, REVIEW_PROBE_CORRECTION_PREFIX)):
+            raise SchedulerArtifactError("review probe source namespace is host-owned")
         if result_key in readable:
             raise SchedulerArtifactError("write key cannot also be readable")
         with self._lock:
@@ -353,7 +404,11 @@ class SchedulerArtifactStore:
         with self._lock:
             if self._assignment_writes.get(authority) != key:
                 raise SchedulerArtifactError("assignment write authority is invalid")
-        artifact = SchedulerArtifact(key, _canonical_json(_parse_json_document(content)))
+        document = _parse_json_document(content)
+        if (key.startswith((REVIEW_PROBE_SOURCE_PREFIX, REVIEW_PROBE_CORRECTION_PREFIX))
+                or isinstance(document, dict) and document.get("resultType") in {"ReviewProbeSource.v1", "ReviewProbeCorrection.v1"}):
+            raise SchedulerArtifactError("review probe source is host-owned")
+        artifact = SchedulerArtifact(key, _canonical_json(document))
         with self._lock:
             if self._assignment_writes.get(authority) != key:
                 raise SchedulerArtifactError("assignment write capability is spent")
@@ -387,6 +442,8 @@ class AssignmentArtifactChannel:
             raise ValueError("readable_keys must be a unique tuple")
         if not isinstance(result_key, str) or not result_key:
             raise ValueError("result_key must be non-empty")
+        if result_key.startswith((REVIEW_PROBE_SOURCE_PREFIX, REVIEW_PROBE_CORRECTION_PREFIX)):
+            raise ValueError("review probe source namespace is host-owned")
         if result_key in readable_keys:
             raise ValueError("result_key cannot also be a readable input")
         if not isinstance(author, str) or not author:

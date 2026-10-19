@@ -57,6 +57,10 @@ def run(tmp_path, model, tools, **kwargs):
     options = {"enable_bounded_completion": True} if (
         "enable_bounded_completion" in inspect.signature(loop.run_agent_turn).parameters
     ) else {}
+    if "enable_implementation_phases" in inspect.signature(loop.run_agent_turn).parameters:
+        # This suite isolates legacy soft completion; phase interaction is
+        # exercised separately in test_implementation_phases.py.
+        options["enable_implementation_phases"] = False
     return loop.run_agent_turn(
         model=model, tools=tools, cwd=str(tmp_path),
         messages=[{"role": "user", "content": "Fix the bug and report the checks."}],

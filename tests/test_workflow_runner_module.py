@@ -301,14 +301,18 @@ def test_workflow_session_has_one_mutable_authority_state() -> None:
         "_run_subagent",
         "_ran",
         "_state",
+        "_executor_session",
+        "_continuation_used_calls",
+        "_continuation_candidates",
     }
     state_type = workflow_runner._WorkflowExecutionState
     assert state_type.__dataclass_params__.frozen is False
     assert "__dict__" not in state_type.__slots__
 
 
-def test_workflow_session_seal_revokes_every_execution_capability() -> None:
+def test_workflow_session_seal_revokes_every_execution_capability(tmp_path) -> None:
     from minicode import workflow_runner
+    from minicode.executor_session import ExecutorSession
 
     session = workflow_runner._WorkflowRunSession.__new__(
         workflow_runner._WorkflowRunSession
@@ -318,6 +322,8 @@ def test_workflow_session_seal_revokes_every_execution_capability() -> None:
     session._workflow_journal = object()
     session._transaction = object()
     session._run_subagent = object()
+    continuation = ExecutorSession(owner=session, workspace_root=str(tmp_path))
+    session._executor_session = continuation
 
     session._seal_execution_capabilities()
 
@@ -326,6 +332,9 @@ def test_workflow_session_seal_revokes_every_execution_capability() -> None:
     assert session._workflow_journal is None
     assert session._transaction is None
     assert session._run_subagent is None
+    assert session._executor_session is None
+    with pytest.raises(ValueError, match="closed"):
+        continuation.begin(owner=session, context=object())
     with pytest.raises(RuntimeError, match="authority is sealed"):
         session._execution_state()
 

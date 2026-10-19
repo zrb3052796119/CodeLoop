@@ -559,22 +559,20 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
     reflection_config = ReflectionLLMConfig.from_runtime(reflection_values)
 
     # Shared Agent Turn budget, inherited by every nested `task` sub-agent.
-    # Values are optional; a default model-call ceiling is applied by
-    # AgentTurnBudget.from_runtime even when token/cost limits are unset.
-    budget_settings = (
-        effective.get("agentTurnBudget", {})
-        if legacy_model_fallback_enabled
-        else {}
-    )
+    # Unset/None/zero means unlimited, with actual usage still accounted for.
+    # This non-model policy is independent of credential/model-env migration.
+    budget_settings = effective.get("agentTurnBudget", {})
     if not isinstance(budget_settings, dict):
         budget_settings = {}
+
+    def budget_value(env_name: str, field: str) -> object:
+        value = env.get(env_name)
+        return value if value not in (None, "") else budget_settings.get(field)
+
     agent_turn_budget = {
-        "maxTokens": env.get("MINI_CODE_TURN_BUDGET_TOKENS")
-        or budget_settings.get("maxTokens"),
-        "maxModelCalls": env.get("MINI_CODE_TURN_BUDGET_MODEL_CALLS")
-        or budget_settings.get("maxModelCalls"),
-        "maxCostUsd": env.get("MINI_CODE_TURN_BUDGET_COST_USD")
-        or budget_settings.get("maxCostUsd"),
+        "maxTokens": budget_value("MINI_CODE_TURN_BUDGET_TOKENS", "maxTokens"),
+        "maxModelCalls": budget_value("MINI_CODE_TURN_BUDGET_MODEL_CALLS", "maxModelCalls"),
+        "maxCostUsd": budget_value("MINI_CODE_TURN_BUDGET_COST_USD", "maxCostUsd"),
     }
 
     # Optional semantic fallback for unresolved intent. This is deliberately

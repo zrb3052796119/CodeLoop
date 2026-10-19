@@ -8,6 +8,7 @@ import unicodedata
 from pathlib import Path
 
 from minicode.tooling import ToolContext, ToolResult
+from minicode.task_deadline import raise_task_deadline
 
 
 _UNSAFE_DIFF_LABEL_MESSAGE = "File review target is not a safe workspace-local path."
@@ -109,7 +110,6 @@ def _atomic_write_text(target: Path, content: str) -> None:
     fd, temp_name = tempfile.mkstemp(
         dir=str(target.parent), prefix=f".{target.name}.", suffix=".tmp"
     )
-    temp_path = Path(temp_name)
     try:
         try:
             mode = stat_module.S_IMODE(target.stat().st_mode)
@@ -175,5 +175,13 @@ def apply_reviewed_file_change(
             ),
         )
 
+    candidate_guard = getattr(context, "_implementation_candidate_guard", None)
+    if candidate_guard is not None:
+        decision = candidate_guard.preflight_write(str(target), next_content)
+        if not decision.allowed:
+            return ToolResult(ok=False, output=f"error[{decision.code}]: {decision.message}")
+        if load_existing_file(target) != baseline:
+            return ToolResult(ok=False, output=f"error[edit_conflict]: {diff_label} changed during candidate protection.")
+    raise_task_deadline(context)
     _atomic_write_text(target, next_content)
-    return ToolResult(ok=True, output=f"Applied reviewed changes to {diff_label}")
+    return ToolResult(ok=True, output=f"Applied reviewed changes to {diff_label}", _file_changed=True)

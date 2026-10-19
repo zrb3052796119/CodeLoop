@@ -1119,7 +1119,7 @@ def test_parent_marks_semantic_observation_inactive_without_a_sidecar(
     )
 
 
-def test_unbounded_parent_issues_finite_defaults_and_exactly_settles_usage(
+def test_unbounded_parent_issues_null_limits_and_exactly_settles_usage(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1173,15 +1173,16 @@ def test_unbounded_parent_issues_finite_defaults_and_exactly_settles_usage(
     assert captured_lease["leaseId"] == 1
     assert isinstance(captured_lease["leaseNonce"], str)
     assert len(captured_lease["leaseNonce"]) == 64
-    assert captured_lease["maxTotalTokens"] == 3_000_000
-    assert captured_lease["maxModelCalls"] == 18
-    assert captured_lease["maxCostUsd"] == "5.00"
+    assert captured_lease["maxTotalTokens"] is None
+    assert captured_lease["maxModelCalls"] is None
+    assert captured_lease["maxCostUsd"] is None
     snapshot = budget.snapshot()
     assert snapshot.reserved_total_tokens == 0
     assert snapshot.used_model_calls == 2
     assert snapshot.used_input_tokens == 100
     assert snapshot.used_output_tokens == 20
     assert snapshot.used_cost_usd == "0.25"
+    assert not snapshot.usage_uncertain
 
 
 def test_completed_zero_usage_receipt_cannot_release_a_nonzero_lease(

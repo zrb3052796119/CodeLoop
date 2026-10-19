@@ -9,8 +9,11 @@ from __future__ import annotations
 
 import json
 import re
+import base64
+import binascii
+import hashlib
 from collections.abc import Iterator, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from enum import Enum
 from typing import TypeVar
@@ -20,6 +23,11 @@ from minicode.scheduler_path_policy import (
     normalized_path_has_windows_ambiguous_component,
     normalized_path_identity,
     normalized_path_within,
+)
+from minicode.review_probe_source import validate_review_probe_source
+from minicode.review_probe_correction import (
+    correction_artifact_id, validate_probe_correction_execution,
+    validate_probe_correction_sources, validate_pytest_case_report,
 )
 
 ASSIGNMENT_VERSION = 1
@@ -133,6 +141,8 @@ _REVIEW_FIELDS = frozenset(
         "confidence",
     }
 )
+REVIEW_COVERAGE_CONSTRAINT_ID = "c_scheduler_review_coverage_v1"
+REVIEW_COVERAGE_CONSTRAINT_TEXT = "Approval requires host-bound independent review coverage."
 _REVIEW_CRITERION_FIELDS = frozenset(
     {"criterionId", "status", "evidenceRefs"}
 )
@@ -473,10 +483,10 @@ class AcceptanceCriterion:
 
 @dataclass(frozen=True, slots=True)
 class AssignmentBudget:
-    deadline_at: str
-    max_model_calls: int
-    max_input_tokens: int
-    max_output_tokens: int
+    deadline_at: str | None
+    max_model_calls: int | None
+    max_input_tokens: int | None
+    max_output_tokens: int | None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -534,6 +544,12 @@ class WorkflowVerificationCheck:
     argv: tuple[str, ...]
     criterion_ids: tuple[str, ...]
 
+    def to_execution_check(self):
+        """Use the same host execution policy in live checks and audit replay."""
+        from minicode.deterministic_verifier import VerificationCheck
+
+        return VerificationCheck(self.check_id, self.kind, self.argv, timeout_seconds=120)
+
     def to_dict(self) -> dict[str, object]:
         return {
             "checkId": self.check_id,
@@ -558,12 +574,24 @@ class WorkflowRequest:
 
     @property
     def task_profile(self):
+        from minicode.central_scheduler import SCHEDULER_POLICY_VERSION
+
+        return self.task_profile_for_policy(SCHEDULER_POLICY_VERSION)
+
+    def task_profile_for_policy(self, policy_version: int):
+        """Reproduce the recorded policy's derived facts for sealed audit replay."""
         from minicode.central_scheduler import (
+            SUPPORTED_SCHEDULER_POLICY_VERSIONS,
             TaskKind,
             TaskProfile,
             TaskRisk,
         )
 
+        if (
+            type(policy_version) is not int
+            or policy_version not in SUPPORTED_SCHEDULER_POLICY_VERSIONS
+        ):
+            raise ValueError("scheduler policy version is unsupported")
         covered_criteria = {
             criterion_id
             for check in self.verification_checks
@@ -589,9 +617,9 @@ class WorkflowRequest:
                 criterion.kind == "safety" for criterion in self.criteria
             )
             # A narrow, non-sensitive scope with at most two executable
-            # checks is the canonical small fix (one source file, one test
-            # command).  Broader scopes or more checks keep the full
-            # analyst->executor->verifier->reviewer chain.
+            # checks has bounded authority even when implementation is
+            # complex. Broader scopes or more checks keep the full reviewed
+            # chain; complexity alone does not require extra role handoffs.
             narrow_scope = (
                 not broad_scope
                 and len(self.scope.write_paths) <= 2
@@ -606,9 +634,8 @@ class WorkflowRequest:
             if broad_scope or sensitive:
                 inferred_risk = "high"
             elif narrow_scope:
-                # The deterministic Verifier still runs every declared check
-                # before commit on the scoped route, so a bounded code scope
-                # does not need the Reviewer gate to stay safe.
+                # Bounded authority can skip preliminary analysis. Semantic
+                # completion review is a separate gate from risk assessment.
                 inferred_risk = "low"
             elif self.scope.write_paths:
                 inferred_risk = "medium"
@@ -620,7 +647,7 @@ class WorkflowRequest:
             (self.risk, inferred_risk),
             key=_RISK_ORDER.__getitem__,
         )
-        return TaskProfile(
+        profile = TaskProfile(
             task_id=self.task_id,
             kind=TaskKind(self.kind),
             risk=TaskRisk(effective_risk),
@@ -629,12 +656,10 @@ class WorkflowRequest:
             # Parent-only work is selected before invoking the task tool.
             parent_has_sufficient_context=False,
             scope_clear=scope_clear,
-            # WorkflowRequest is public model input.  Semantic check↔criterion
-            # equivalence cannot be certified from the request alone, so only
-            # a narrow, non-sensitive, fully covered, low-risk scope may skip
-            # the Reviewer: the Verifier gate, isolated workspace, digest
-            # binding, and fail-closed promotion all remain in force on the
-            # scoped route.
+            # This certifies executable associations only. Public model input
+            # cannot prove semantic check/criterion equivalence. Policy v4
+            # keeps a completion review even on the direct scoped route;
+            # historical policies replay their original routing below.
             acceptance_executable=(
                 declared_coverage_complete
                 and (
@@ -643,7 +668,10 @@ class WorkflowRequest:
                         narrow_scope
                         and effective_risk == "low"
                         and scope_clear
-                        and not (self.complex or inferred_complex)
+                        and (
+                            policy_version != 2
+                            or not (self.complex or inferred_complex)
+                        )
                     )
                 )
             ),
@@ -653,6 +681,9 @@ class WorkflowRequest:
                 and (self.kind == "change" or effective_risk == "critical")
             ),
         )
+        # Public criterion/check declarations never waive independent review.
+        # The runtime may narrow v5 routing using original host user evidence.
+        return profile
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -798,21 +829,25 @@ def _parse_criteria(value: object) -> tuple[AcceptanceCriterion, ...]:
 
 def _parse_budget(value: object) -> AssignmentBudget:
     raw = _closed_mapping(value, _BUDGET_FIELDS, label="budget")
-    deadline = _text(raw["deadlineAt"], label="budget.deadlineAt", maximum=80)
-    if _RFC3339_RE.fullmatch(deadline) is None:
-        raise ContractValidationError(
-            "budget.deadlineAt must use timezone-aware strict RFC3339 syntax"
-        )
-    try:
-        parsed_deadline = datetime.fromisoformat(deadline.replace("Z", "+00:00"))
-    except ValueError as exc:
-        raise ContractValidationError("budget.deadlineAt is invalid") from exc
-    if "T" not in deadline or parsed_deadline.tzinfo is None:
-        raise ContractValidationError("budget.deadlineAt must be timezone-aware")
-    counts: list[int] = []
+    # Null is explicit absence of a host limit, never a missing field or a
+    # sentinel numeric grant. Present limits keep the existing strict contract.
+    deadline = None
+    if raw["deadlineAt"] is not None:
+        deadline = _text(raw["deadlineAt"], label="budget.deadlineAt", maximum=80)
+        if _RFC3339_RE.fullmatch(deadline) is None:
+            raise ContractValidationError(
+                "budget.deadlineAt must use timezone-aware strict RFC3339 syntax"
+            )
+        try:
+            parsed_deadline = datetime.fromisoformat(deadline.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ContractValidationError("budget.deadlineAt is invalid") from exc
+        if "T" not in deadline or parsed_deadline.tzinfo is None:
+            raise ContractValidationError("budget.deadlineAt must be timezone-aware")
+    counts: list[int | None] = []
     for field in ("maxModelCalls", "maxInputTokens", "maxOutputTokens"):
         item = raw[field]
-        if isinstance(item, bool) or not isinstance(item, int) or item < 0:
+        if item is not None and (isinstance(item, bool) or not isinstance(item, int) or item < 0):
             raise ContractValidationError(f"budget.{field} must be non-negative")
         counts.append(item)
     return AssignmentBudget(deadline, *counts)
@@ -1445,12 +1480,15 @@ def _parse_analyst_result(
     }
 
 
-def _parse_execution_result(
+def validate_executor_declaration(
     assignment: Assignment,
     value: object,
     *,
-    implementation_order: ImplementationOrder | None,
+    implementation_order: ImplementationOrder,
 ) -> dict[str, object]:
+    """Validate worker-owned semantics without manufacturing observed bytes."""
+    if not isinstance(assignment, Assignment) or assignment.role is not WorkerRole.EXECUTOR:
+        raise ContractValidationError("ExecutorDeclaration requires an Executor Assignment")
     if not isinstance(implementation_order, ImplementationOrder):
         raise ContractValidationError(
             "ExecutionResult requires a locked ImplementationOrder"
@@ -1459,7 +1497,9 @@ def _parse_execution_result(
         raise ContractValidationError(
             "ImplementationOrder does not match Executor assignment"
         )
-    raw = _closed_mapping(value, _EXECUTION_FIELDS, label="ExecutionResult")
+    raw = _closed_mapping(
+        value, _EXECUTOR_DECLARATION_FIELDS, label="ExecutorDeclaration",
+    )
     if isinstance(raw["resultVersion"], bool) or raw["resultVersion"] != 1:
         raise ContractValidationError("ExecutionResult version is unsupported")
     if raw["assignmentId"] != assignment.assignment_id:
@@ -1467,9 +1507,136 @@ def _parse_execution_result(
     if raw["orderId"] != implementation_order.order_id:
         raise ContractValidationError("ExecutionResult orderId does not match")
     status = raw["status"]
-    if status not in {"completed", "blocked", "failed"}:
+    if not isinstance(status, str) or status not in {"completed", "blocked", "failed"}:
         raise ContractValidationError("ExecutionResult status is invalid")
 
+    known_step_ids = {step.step_id for step in implementation_order.steps}
+    step_results_raw = raw["stepResults"]
+    if not isinstance(step_results_raw, list) or len(step_results_raw) > 40:
+        raise ContractValidationError("ExecutionResult stepResults must be bounded")
+    step_results: list[dict[str, object]] = []
+    observed_steps: set[str] = set()
+    for index, item in enumerate(step_results_raw):
+        step_result = _closed_mapping(
+            item,
+            _STEP_RESULT_FIELDS,
+            label=f"ExecutionResult stepResult[{index}]",
+        )
+        step_id = _generic_id(
+            step_result["stepId"],
+            label="ExecutionResult stepResult.stepId",
+        )
+        step_status = step_result["status"]
+        if step_id not in known_step_ids or step_id in observed_steps:
+            raise ContractValidationError(
+                "ExecutionResult stepResult is unknown or duplicated"
+            )
+        if not isinstance(step_status, str) or step_status not in {"completed", "skipped", "failed"}:
+            raise ContractValidationError(
+                "ExecutionResult stepResult status is invalid"
+            )
+        artifact_refs = _string_list(
+            step_result["artifactRefs"],
+            label="ExecutionResult stepResult.artifactRefs",
+        )
+        if artifact_refs:
+            raise ContractValidationError(
+                "Executor step artifactRefs must be empty; Scheduler owns artifacts"
+            )
+        observed_steps.add(step_id)
+        step_results.append(
+            {
+                "stepId": step_id,
+                "status": step_status,
+                "artifactRefs": [],
+            }
+        )
+    if observed_steps != known_step_ids:
+        raise ContractValidationError(
+            "ExecutionResult must account for every implementation step"
+        )
+    if status == "completed" and any(
+        item["status"] != "completed" for item in step_results
+    ):
+        raise ContractValidationError(
+            "completed ExecutionResult requires every step to complete"
+        )
+
+    deviations_raw = raw["deviations"]
+    if not isinstance(deviations_raw, list) or len(deviations_raw) > 40:
+        raise ContractValidationError("ExecutionResult deviations must be bounded")
+    deviations: list[dict[str, str]] = []
+    deviated_steps: set[str] = set()
+    for index, item in enumerate(deviations_raw):
+        deviation = _closed_mapping(
+            item,
+            _DEVIATION_FIELDS,
+            label=f"ExecutionResult deviation[{index}]",
+        )
+        step_id = _generic_id(
+            deviation["stepId"],
+            label="ExecutionResult deviation.stepId",
+        )
+        impact = deviation["impact"]
+        if step_id not in known_step_ids or step_id in deviated_steps:
+            raise ContractValidationError(
+                "ExecutionResult deviation step is unknown or duplicated"
+            )
+        if not isinstance(impact, str) or impact not in {"low", "medium", "high"}:
+            raise ContractValidationError("ExecutionResult deviation impact is invalid")
+        deviated_steps.add(step_id)
+        deviations.append(
+            {
+                "stepId": step_id,
+                "reason": _text(
+                    deviation["reason"],
+                    label="ExecutionResult deviation.reason",
+                ),
+                "impact": str(impact),
+            }
+        )
+
+    self_checks_raw = raw["selfChecks"]
+    if not isinstance(self_checks_raw, list) or self_checks_raw:
+        raise ContractValidationError(
+            "Executor selfChecks must be empty; Verifier owns command evidence"
+        )
+    blockers = _string_list(raw["blockers"], label="ExecutionResult blockers")
+    if status == "completed" and (
+        blockers or any(item["impact"] == "high" for item in deviations)
+    ):
+        raise ContractValidationError(
+            "completed ExecutionResult has an unresolved deviation or blocker"
+        )
+    if status != "completed" and not blockers:
+        raise ContractValidationError(
+            "non-completed ExecutionResult requires a blocker"
+        )
+    return _bounded_contract_document({
+        "resultVersion": 1,
+        "assignmentId": assignment.assignment_id,
+        "orderId": implementation_order.order_id,
+        "status": status,
+        "stepResults": step_results,
+        "deviations": deviations,
+        "selfChecks": [],
+        "blockers": list(blockers),
+    }, label="ExecutorDeclaration")
+
+
+def _parse_execution_result(
+    assignment: Assignment,
+    value: object,
+    *,
+    implementation_order: ImplementationOrder | None,
+) -> dict[str, object]:
+    raw = _closed_mapping(value, _EXECUTION_FIELDS, label="ExecutionResult")
+    declaration = validate_executor_declaration(
+        assignment,
+        {key: raw[key] for key in _EXECUTOR_DECLARATION_FIELDS},
+        implementation_order=implementation_order,
+    )
+    status = declaration["status"]
     change_set: dict[str, object] | None = None
     change_set_raw = raw["changeSet"]
     if status == "completed":
@@ -1548,119 +1715,10 @@ def _parse_execution_result(
             "non-completed ExecutionResult cannot expose a promotable changeSet"
         )
 
-    known_step_ids = {step.step_id for step in implementation_order.steps}
-    step_results_raw = raw["stepResults"]
-    if not isinstance(step_results_raw, list) or len(step_results_raw) > 40:
-        raise ContractValidationError("ExecutionResult stepResults must be bounded")
-    step_results: list[dict[str, object]] = []
-    observed_steps: set[str] = set()
-    for index, item in enumerate(step_results_raw):
-        step_result = _closed_mapping(
-            item,
-            _STEP_RESULT_FIELDS,
-            label=f"ExecutionResult stepResult[{index}]",
-        )
-        step_id = _generic_id(
-            step_result["stepId"],
-            label="ExecutionResult stepResult.stepId",
-        )
-        step_status = step_result["status"]
-        if step_id not in known_step_ids or step_id in observed_steps:
-            raise ContractValidationError(
-                "ExecutionResult stepResult is unknown or duplicated"
-            )
-        if step_status not in {"completed", "skipped", "failed"}:
-            raise ContractValidationError(
-                "ExecutionResult stepResult status is invalid"
-            )
-        artifact_refs = _string_list(
-            step_result["artifactRefs"],
-            label="ExecutionResult stepResult.artifactRefs",
-        )
-        if artifact_refs:
-            raise ContractValidationError(
-                "Executor step artifactRefs must be empty; Scheduler owns artifacts"
-            )
-        observed_steps.add(step_id)
-        step_results.append(
-            {
-                "stepId": step_id,
-                "status": step_status,
-                "artifactRefs": [],
-            }
-        )
-    if observed_steps != known_step_ids:
-        raise ContractValidationError(
-            "ExecutionResult must account for every implementation step"
-        )
-    if status == "completed" and any(
-        item["status"] != "completed" for item in step_results
-    ):
-        raise ContractValidationError(
-            "completed ExecutionResult requires every step to complete"
-        )
-
-    deviations_raw = raw["deviations"]
-    if not isinstance(deviations_raw, list) or len(deviations_raw) > 40:
-        raise ContractValidationError("ExecutionResult deviations must be bounded")
-    deviations: list[dict[str, str]] = []
-    deviated_steps: set[str] = set()
-    for index, item in enumerate(deviations_raw):
-        deviation = _closed_mapping(
-            item,
-            _DEVIATION_FIELDS,
-            label=f"ExecutionResult deviation[{index}]",
-        )
-        step_id = _generic_id(
-            deviation["stepId"],
-            label="ExecutionResult deviation.stepId",
-        )
-        impact = deviation["impact"]
-        if step_id not in known_step_ids or step_id in deviated_steps:
-            raise ContractValidationError(
-                "ExecutionResult deviation step is unknown or duplicated"
-            )
-        if impact not in {"low", "medium", "high"}:
-            raise ContractValidationError("ExecutionResult deviation impact is invalid")
-        deviated_steps.add(step_id)
-        deviations.append(
-            {
-                "stepId": step_id,
-                "reason": _text(
-                    deviation["reason"],
-                    label="ExecutionResult deviation.reason",
-                ),
-                "impact": str(impact),
-            }
-        )
-
-    self_checks_raw = raw["selfChecks"]
-    if not isinstance(self_checks_raw, list) or self_checks_raw:
-        raise ContractValidationError(
-            "Executor selfChecks must be empty; Verifier owns command evidence"
-        )
-    blockers = _string_list(raw["blockers"], label="ExecutionResult blockers")
-    if status == "completed" and (
-        blockers or any(item["impact"] == "high" for item in deviations)
-    ):
-        raise ContractValidationError(
-            "completed ExecutionResult has an unresolved deviation or blocker"
-        )
-    if status != "completed" and not blockers:
-        raise ContractValidationError(
-            "non-completed ExecutionResult requires a blocker"
-        )
     return {
-        "resultVersion": 1,
+        **declaration,
         "resultType": "ExecutionResult.v1",
-        "assignmentId": assignment.assignment_id,
-        "orderId": implementation_order.order_id,
-        "status": status,
         "changeSet": change_set,
-        "stepResults": step_results,
-        "deviations": deviations,
-        "selfChecks": [],
-        "blockers": list(blockers),
     }
 
 
@@ -1704,6 +1762,135 @@ def parse_executor_declaration(
         result,
         label="ExecutionResult",
     )
+
+
+def implementation_receipt_ref(assignment_id: str, order_id: str, patch_digest: str, check_id: str) -> str:
+    """A host feedback namespace distinct from formal Verifier evidence."""
+    material = "\0".join((assignment_id, order_id, patch_digest, check_id))
+    return "artifact_implementation_" + hashlib.sha256(material.encode()).hexdigest()[:32]
+
+
+def _candidate_stream_is_valid(value: object) -> bool:
+    if not isinstance(value, dict) or set(value) != {
+        "byteCount", "digest", "preview", "previewBase64", "truncated",
+    }:
+        return False
+    count, preview, encoded = value["byteCount"], value["preview"], value["previewBase64"]
+    if (type(count) is not int or count < 0 or not isinstance(preview, str)
+            or not isinstance(encoded, str) or len(preview) > 5000 or len(encoded) > 8000
+            or type(value["truncated"]) is not bool or value["truncated"] != (count > 4000)
+            or _DIGEST_RE.fullmatch(str(value["digest"])) is None):
+        return False
+    try:
+        data = base64.b64decode(encoded, validate=True)
+    except (binascii.Error, ValueError):
+        return False
+    if preview != data.decode("utf-8", errors="replace"):
+        return False
+    return ("\n...<truncated>...\n" in preview if value["truncated"] else
+            len(data) == count and "sha256:" + hashlib.sha256(data).hexdigest() == value["digest"])
+
+
+def parse_execution_candidate(
+    assignment: Assignment,
+    value: object,
+    *,
+    implementation_order: ImplementationOrder,
+    required_checks,
+    receipt_documents: Mapping[str, object],
+) -> dict[str, object]:
+    """Validate a scheduler-only pending candidate, never worker semantics.
+
+    Deliberately separate from parse_role_result/ExecutorDeclaration: no model
+    can claim this status, and no step or criterion becomes completed here.
+    """
+    order = implementation_order
+    if (not isinstance(assignment, Assignment) or assignment.role is not WorkerRole.EXECUTOR
+            or not isinstance(order, ImplementationOrder) or order.assignment_id != assignment.assignment_id):
+        raise ContractValidationError("ExecutionCandidate requires its exact Executor order")
+    raw = _closed_mapping(value, frozenset({
+        "candidateVersion", "resultType", "assignmentId", "orderId", "status",
+        "handoffReason", "unassessedStepIds", "changeSet", "implementationReceiptRefs",
+    }), label="ExecutionCandidate")
+    if (type(raw["candidateVersion"]) is not int or raw["candidateVersion"] != 1
+            or raw["resultType"] != "ExecutionCandidate.v1"
+            or raw["status"] != "awaiting_verification"
+            or raw["handoffReason"] not in (
+                "executor_budget_exceeded", "executor_write_feedback_pending",
+                "executor_submission_feedback_pending",
+            )
+            or raw["assignmentId"] != assignment.assignment_id or raw["orderId"] != order.order_id
+            or raw["unassessedStepIds"] != [step.step_id for step in order.steps]):
+        raise ContractValidationError("ExecutionCandidate identity or pending semantics are invalid")
+    change = _closed_mapping(raw["changeSet"], _CHANGE_SET_FIELDS, label="ExecutionCandidate changeSet")
+    workspace = _text(change["workspaceRef"], label="ExecutionCandidate workspaceRef", maximum=500)
+    if not workspace.startswith("isolated://") or ".." in workspace.split("/"):
+        raise ContractValidationError("ExecutionCandidate workspace must be isolated")
+    if _digest(change["baseDigest"], label="ExecutionCandidate baseDigest") != order.base_digest:
+        raise ContractValidationError("ExecutionCandidate base does not match its order")
+    digest = _digest(change["patchDigest"], label="ExecutionCandidate patchDigest")
+    files_raw = change["files"]
+    if not isinstance(files_raw, list) or not 1 <= len(files_raw) <= 100:
+        raise ContractValidationError("ExecutionCandidate must contain actual changed files")
+    files, seen = [], set()
+    for item in files_raw:
+        file = _closed_mapping(item, _CHANGED_FILE_FIELDS, label="ExecutionCandidate changed file")
+        path = _normalized_path(file["path"], label="ExecutionCandidate changed path")
+        if (path in seen or not _path_within(path, order.allowed_paths)
+                or not _path_within(path, assignment.scope.write_paths)
+                or any(_paths_overlap(path, forbidden) for forbidden in assignment.scope.forbidden_paths)
+                or file["action"] not in {"created", "modified", "deleted"}):
+            raise ContractValidationError("ExecutionCandidate changed path or action is invalid")
+        seen.add(path)
+        files.append({"path": path, "action": file["action"]})
+    checks = tuple(required_checks)
+    refs = raw["implementationReceiptRefs"]
+    if (not checks or len(checks) > 40 or not isinstance(refs, list) or len(refs) != len(checks)
+            or len({check.check_id for check in checks}) != len(checks)
+            or tuple(" ".join(check.argv) for check in checks) != order.verification_requests):
+        raise ContractValidationError("ExecutionCandidate requires every approved implementation check")
+    for check, ref in zip(checks, refs, strict=True):
+        if (check.kind not in {"tests", "build", "lint", "typecheck"} or not isinstance(ref, str)
+                or ref != implementation_receipt_ref(assignment.assignment_id, order.order_id, digest, check.check_id)):
+            raise ContractValidationError("ExecutionCandidate implementation receipt reference is invalid")
+        document = _closed_mapping(receipt_documents.get(ref), frozenset({
+            "receiptVersion", "resultType", "workflowId", "taskId", "assignmentId", "orderId", "receipt",
+        }), label="ImplementationCheckReceipt")
+        if (type(document["receiptVersion"]) is not int or document["receiptVersion"] != 1
+                or document["resultType"] != "ImplementationCheckReceipt.v1"
+                or document["workflowId"] != assignment.workflow_id or document["taskId"] != assignment.task_id
+                or document["assignmentId"] != assignment.assignment_id or document["orderId"] != order.order_id):
+            raise ContractValidationError("ImplementationCheckReceipt owner is invalid")
+        receipt = _closed_mapping(document["receipt"], frozenset({
+            "checkId", "argv", "patchDigest", "status", "evidence", "verification", "writeback", "observationSequence",
+        }), label="ImplementationCheckReceipt receipt")
+        argv = list(check.argv)
+        if (receipt["checkId"] != check.check_id or receipt["argv"] != argv
+                or receipt["patchDigest"] != digest or receipt["status"] not in {"passed", "failed"}
+                or receipt["verification"] != "implementation_feedback" or receipt["writeback"] != "pending"
+                or type(receipt["observationSequence"]) is not int or receipt["observationSequence"] < 1):
+            raise ContractValidationError("ImplementationCheckReceipt is not a completed check on this candidate")
+        evidence = _closed_mapping(receipt["evidence"], frozenset({
+            "evidenceVersion", "checkId", "kind", "argv", "resolvedExecutable", "commandDigest",
+            "status", "exitCode", "durationMs", "failureReason", "stdout", "stderr",
+        }), label="ImplementationCheckReceipt evidence")
+        if (type(evidence["evidenceVersion"]) is not int or evidence["evidenceVersion"] != 1
+                or evidence["checkId"] != check.check_id or evidence["kind"] != check.kind
+                or evidence["argv"] != argv or evidence["status"] != receipt["status"]
+                or type(evidence["exitCode"]) is not int or evidence["exitCode"] < 0
+                or (evidence["exitCode"] == 0) != (evidence["status"] == "passed")
+                or type(evidence["durationMs"]) is not int or evidence["durationMs"] < 0
+                or evidence["failureReason"] is not None
+                or not isinstance(evidence["resolvedExecutable"], str)
+                or not (evidence["resolvedExecutable"].startswith(("/", "\\\\"))
+                        or re.match(r"^[A-Za-z]:[\\/]", evidence["resolvedExecutable"]))
+                or evidence["commandDigest"] != "sha256:" + hashlib.sha256("\0".join(argv).encode()).hexdigest()
+                or not _candidate_stream_is_valid(evidence["stdout"])
+                or not _candidate_stream_is_valid(evidence["stderr"])):
+            raise ContractValidationError("ImplementationCheckReceipt execution evidence is invalid")
+    return _bounded_contract_document({**raw, "changeSet": {
+        "workspaceRef": workspace, "baseDigest": order.base_digest, "patchDigest": digest, "files": files,
+    }}, label="ExecutionCandidate")
 
 
 def parse_verification_result(
@@ -1858,7 +2045,9 @@ def _parse_review_result(
     assignment: Assignment,
     value: object,
 ) -> dict[str, object]:
-    raw = _closed_mapping(value, _REVIEW_FIELDS, label="ReviewVerdict")
+    fields = (_REVIEW_FIELDS | {"coverageArtifactRef"}
+              if isinstance(value, Mapping) and "coverageArtifactRef" in value else _REVIEW_FIELDS)
+    raw = _closed_mapping(value, fields, label="ReviewVerdict")
     if isinstance(raw["resultVersion"], bool) or raw["resultVersion"] != 1:
         raise ContractValidationError("ReviewVerdict version is unsupported")
     if raw["assignmentId"] != assignment.assignment_id:
@@ -1870,6 +2059,14 @@ def _parse_review_result(
         raise ContractValidationError("ReviewVerdict verdict is invalid")
     if confidence not in _CONFIDENCE:
         raise ContractValidationError("ReviewVerdict confidence is invalid")
+    coverage_ref = None
+    if "coverageArtifactRef" in raw:
+        coverage_ref = _generic_id(raw["coverageArtifactRef"], label="ReviewVerdict coverage artifact")
+        if coverage_ref != f"artifact_review_coverage_{assignment.assignment_id}":
+            raise ContractValidationError("ReviewVerdict coverage artifact owner is invalid")
+    if (verdict == "approved" and coverage_ref is None
+            and any(item.constraint_id == REVIEW_COVERAGE_CONSTRAINT_ID for item in assignment.constraints)):
+        raise ContractValidationError("approved ReviewVerdict requires host coverage evidence")
     readable_artifacts = set(assignment.input_refs)
 
     criteria_raw = raw["criteria"]
@@ -2006,7 +2203,313 @@ def _parse_review_result(
         "warnings": warnings,
         "requestedChecks": list(requested_checks),
         "confidence": confidence,
+        **({"coverageArtifactRef": coverage_ref} if coverage_ref is not None else {}),
     }
+
+
+def parse_review_coverage_evidence(
+    assignment: Assignment,
+    value: object,
+    *,
+    review: Mapping[str, object],
+    artifact_documents: Mapping[str, object],
+) -> dict[str, object]:
+    """Validate durable host observations, never infer semantic test coverage.
+
+    The live host captures source line ranges and bytes when they are read.
+    Replay validates their owner/scope/digest bindings, not a mutable checkout.
+    Probe source and execution documents remain separate immutable artifacts.
+    """
+    if not isinstance(assignment, Assignment) or assignment.role is not WorkerRole.REVIEWER:
+        raise ContractValidationError("review coverage requires a Reviewer Assignment")
+    raw = _closed_mapping(value, frozenset({
+        "coverageVersion", "resultType", "workflowId", "taskId", "assignmentId",
+        "patchDigest", "criteria", "probes",
+    }), label="ReviewCoverageEvidence")
+    digest = _digest(raw["patchDigest"], label="review coverage patchDigest")
+    if (type(raw["coverageVersion"]) is not int or raw["coverageVersion"] != 1
+            or raw["resultType"] != "ReviewCoverageEvidence.v1"
+            or raw["workflowId"] != assignment.workflow_id or raw["taskId"] != assignment.task_id
+            or raw["assignmentId"] != assignment.assignment_id
+            or review.get("assignmentId") != assignment.assignment_id
+            or review.get("patchDigest") != digest
+            or review.get("verdict") not in {"approved", "changes_required", "inconclusive"}):
+        raise ContractValidationError("review coverage identity or patch is invalid")
+    expected = {criterion.criterion_id for criterion in assignment.acceptance_criteria}
+    decisions = {item["criterionId"]: item["status"] for item in review.get("criteria", [])
+                 if isinstance(item, Mapping) and "criterionId" in item and "status" in item}
+    if set(decisions) != expected:
+        raise ContractValidationError("review coverage requires the exact review criteria")
+    approved = review["verdict"] == "approved"
+    probes_raw = raw["probes"]
+    if not isinstance(probes_raw, list) or len(probes_raw) > _MAX_ITEMS or (approved and not probes_raw):
+        raise ContractValidationError("approved review coverage requires an independent probe")
+    probes, probe_criteria, receipt_refs = [], {}, set()
+    for entry in probes_raw:
+        probe = _closed_mapping(entry, frozenset({"probeId", "sourceRef", "receiptRef"}), label="review coverage probe")
+        probe_id = _generic_id(probe["probeId"], label="review probe id")
+        source_ref = _generic_id(probe["sourceRef"], label="review probe source ref")
+        receipt_ref = _generic_id(probe["receiptRef"], label="review probe receipt ref")
+        if source_ref != "artifact_review_probe_source_" + hashlib.sha256(probe_id.encode()).hexdigest()[:32]:
+            raise ContractValidationError("review probe source namespace is invalid")
+        if probe_id in probe_criteria or receipt_ref in receipt_refs:
+            raise ContractValidationError("review coverage probe is duplicated")
+        source = _closed_mapping(artifact_documents.get(source_ref), frozenset({
+            "probeVersion", "resultType", "probeId", "criterionIds", "scenario", "code", "sourceDigest",
+        }), label="ReviewProbeSource")
+        if not validate_review_probe_source(source):
+            raise ContractValidationError("review probe immutable source identity is invalid")
+        source_ids = _string_list(source["criterionIds"], label="review probe criterionIds")
+        code = source["code"]
+        if not isinstance(code, str) or not code.strip():
+            raise ContractValidationError("review probe source code is missing")
+        try:
+            source_digest = "sha256:" + hashlib.sha256(code.encode("utf-8")).hexdigest()
+        except UnicodeError as exc:
+            raise ContractValidationError("review probe source is not UTF-8") from exc
+        if (type(source["probeVersion"]) is not int or source["probeVersion"] != 1
+                or source["resultType"] != "ReviewProbeSource.v1" or source["probeId"] != probe_id
+                or not source_ids or not set(source_ids).issubset(expected)
+                or source["sourceDigest"] != source_digest):
+            raise ContractValidationError("review probe immutable source is invalid")
+        _text(source["scenario"], label="review probe scenario", maximum=1200)
+        execution_raw = artifact_documents.get(receipt_ref)
+        execution_fields = frozenset({
+            "probeVersion", "resultType", "workflowId", "taskId", "assignmentId", "patchDigest",
+            "probeId", "sourceRef", "sequence", "status", "reason", "testReport", "evidence",
+        })
+        if isinstance(execution_raw, Mapping) and "executionBinding" in execution_raw:
+            execution_fields |= {"executionBinding"}
+        execution = _closed_mapping(execution_raw, execution_fields, label="ReviewProbeExecution")
+        if (type(execution["probeVersion"]) is not int or execution["probeVersion"] != 1
+                or execution["resultType"] != "ReviewProbeExecution.v1"
+                or execution["workflowId"] != assignment.workflow_id or execution["taskId"] != assignment.task_id
+                or execution["assignmentId"] != assignment.assignment_id or execution["patchDigest"] != digest
+                or execution["probeId"] != probe_id or execution["sourceRef"] != source_ref
+                or type(execution["sequence"]) is not int or execution["sequence"] < 1
+                or execution["status"] not in {"passed", "failed", "inconclusive"}):
+            raise ContractValidationError("review probe execution owner or patch is invalid")
+        receipt_material = "\0".join((assignment.workflow_id, assignment.assignment_id, probe_id,
+                                      str(execution["sequence"])))
+        if receipt_ref != "artifact_review_probe_run_" + hashlib.sha256(receipt_material.encode()).hexdigest()[:32]:
+            raise ContractValidationError("review probe receipt namespace is invalid")
+        if "executionBinding" in execution:
+            from minicode.review_probe_execution import validate_review_probe_execution_binding
+
+            try:
+                validate_review_probe_execution_binding(dict(execution), probe_source_digest=source_digest)
+            except (TypeError, ValueError) as exc:
+                raise ContractValidationError("review probe execution binding is invalid") from exc
+        evidence = _closed_mapping(execution["evidence"], frozenset({
+            "evidenceVersion", "checkId", "kind", "argv", "resolvedExecutable", "commandDigest",
+            "status", "exitCode", "durationMs", "failureReason", "stdout", "stderr",
+        }), label="review probe execution evidence")
+        argv = evidence["argv"]
+        status, exit_code = evidence["status"], evidence["exitCode"]
+        conclusive = status in {"passed", "failed"}
+        if (type(evidence["evidenceVersion"]) is not int or evidence["evidenceVersion"] != 1
+                or not isinstance(argv, list) or not argv
+                or any(not isinstance(arg, str) or not arg or "\0" in arg for arg in argv)
+                or evidence["kind"] not in {"tests", "build", "lint", "typecheck"}
+                or not isinstance(evidence["checkId"], str) or not evidence["checkId"]
+                or status not in {"passed", "failed", "inconclusive"}
+                or type(evidence["durationMs"]) is not int or evidence["durationMs"] < 0
+                or evidence["commandDigest"] != "sha256:" + hashlib.sha256("\0".join(argv).encode()).hexdigest()
+                or not _candidate_stream_is_valid(evidence["stdout"])
+                or not _candidate_stream_is_valid(evidence["stderr"])):
+            raise ContractValidationError("review probe execution evidence is invalid")
+        executable = evidence["resolvedExecutable"]
+        absolute_executable = (isinstance(executable, str)
+                               and (executable.startswith(("/", "\\\\")) or re.match(r"^[A-Za-z]:[\\/]", executable)))
+        if (conclusive and (type(exit_code) is not int or exit_code < 0
+                            or (exit_code == 0) != (status == "passed")
+                            or evidence["failureReason"] is not None or not absolute_executable)):
+            raise ContractValidationError("review probe has no conclusive execution evidence")
+        if not conclusive and (exit_code is not None or not isinstance(evidence["failureReason"], str)
+                               or not evidence["failureReason"]):
+            raise ContractValidationError("inconclusive review probe failure is invalid")
+        report = execution["testReport"]
+        if report is not None:
+            report_fields = frozenset({
+                "collected", "passed", "failed", "errors", "skipped", "reportDigest",
+            })
+            if isinstance(report, Mapping) and "caseReport" in report:
+                report_fields |= {"caseReport"}
+                # Execution observations must retain their classified JUnit
+                # cases; validate_pytest_case_report checks both bindings below.
+                if "executionReport" in report:
+                    report_fields |= {"executionReport"}
+            report = _closed_mapping(report, report_fields, label="review probe test report")
+            if (any(type(report[key]) is not int or report[key] < 0
+                    for key in ("collected", "passed", "failed", "errors", "skipped"))
+                    or report["collected"] != sum(report[key] for key in ("passed", "failed", "errors", "skipped"))):
+                raise ContractValidationError("review probe test report counts are invalid")
+            _digest(report["reportDigest"], label="review probe test report digest")
+            if "caseReport" in report and not validate_pytest_case_report(report):
+                raise ContractValidationError("review probe case classification is invalid")
+        if execution["status"] == "inconclusive":
+            _text(execution["reason"], label="inconclusive review probe reason", maximum=1200)
+        elif (execution["reason"] is not None or status != execution["status"]
+              or exit_code != (0 if execution["status"] == "passed" else 1)
+              or report is None or report["errors"] or report["skipped"]
+              or (execution["status"] == "passed" and (report["passed"] < 1 or report["failed"]))
+              or (execution["status"] == "failed" and report["failed"] < 1)):
+            raise ContractValidationError("review probe host conclusion does not match its execution")
+        if approved and execution["status"] != "passed":
+            raise ContractValidationError("approved review coverage contains an unpassed probe")
+        probe_criteria[probe_id] = set(source_ids)
+        receipt_refs.add(receipt_ref)
+        probes.append(dict(probe))
+    criteria_raw = raw["criteria"]
+    if not isinstance(criteria_raw, list) or len(criteria_raw) != len(expected):
+        raise ContractValidationError("review coverage criteria are incomplete")
+    criteria, seen = [], set()
+    for entry in criteria_raw:
+        row = _closed_mapping(entry, frozenset({
+            "criterionId", "rationale", "probeIds", "sourceEvidence",
+        }), label="review coverage criterion")
+        criterion_id = row["criterionId"]
+        if not isinstance(criterion_id, str) or criterion_id not in expected or criterion_id in seen:
+            raise ContractValidationError("review coverage criterion is unknown or duplicated")
+        rationale = _text(row["rationale"], label="review coverage rationale", maximum=1200)
+        probe_ids = _string_list(row["probeIds"], label="review coverage probeIds")
+        if any(criterion_id not in probe_criteria.get(probe_id, set()) for probe_id in probe_ids):
+            raise ContractValidationError("review coverage probe does not cover this criterion")
+        source_rows = row["sourceEvidence"]
+        if not isinstance(source_rows, list) or len(source_rows) > _MAX_ITEMS:
+            raise ContractValidationError("review source anchors must be bounded")
+        anchors, seen_anchors = [], set()
+        for entry in source_rows:
+            anchor = _closed_mapping(entry, frozenset({
+                "path", "startLine", "endLine", "sourceDigest",
+            }), label="review source anchor")
+            path = _normalized_path(anchor["path"], label="review source path")
+            start, end = anchor["startLine"], anchor["endLine"]
+            source_digest = _digest(anchor["sourceDigest"], label="review source digest")
+            if (not _path_within(path, assignment.scope.read_roots)
+                    or any(_paths_overlap(path, forbidden) for forbidden in assignment.scope.forbidden_paths)
+                    or type(start) is not int or type(end) is not int or start < 1 or end < start):
+                raise ContractValidationError("review source anchor is outside the authorized scope or lines")
+            key = (path, start, end, source_digest)
+            if key in seen_anchors:
+                raise ContractValidationError("review source anchor is duplicated")
+            seen_anchors.add(key)
+            anchors.append({"path": path, "startLine": start, "endLine": end, "sourceDigest": source_digest})
+        if decisions[criterion_id] == "satisfied" and not (probe_ids or anchors):
+            raise ContractValidationError("satisfied review criterion requires observed coverage evidence")
+        seen.add(criterion_id)
+        criteria.append({"criterionId": criterion_id, "rationale": rationale,
+                         "probeIds": list(probe_ids), "sourceEvidence": anchors})
+    return _bounded_contract_document({**raw, "criteria": criteria, "probes": probes}, label="ReviewCoverageEvidence")
+
+
+def review_probe_correction_artifact_id(document: Mapping[str, object]) -> str:
+    """The immutable host namespace for one explicit correction decision."""
+    return correction_artifact_id(document)
+
+
+def parse_review_probe_correction(
+    assignment: Assignment,
+    value: object,
+    *,
+    artifact_documents: Mapping[str, object],
+    required_checks,
+) -> dict[str, object]:
+    """Validate an explicit retirement, preserving every historical attempt.
+
+    The host captures source anchors; replay verifies scope and immutable
+    bindings rather than rereading a later checkout. No model verdict is
+    synthesized by the inconclusive envelopes used to validate raw receipts.
+    """
+    if not isinstance(assignment, Assignment) or assignment.role is not WorkerRole.REVIEWER:
+        raise ContractValidationError("probe correction requires a Reviewer Assignment")
+    raw = _closed_mapping(value, frozenset({
+        "correctionVersion", "resultType", "workflowId", "taskId", "assignmentId", "patchDigest",
+        "oldProbeId", "newProbeId", "oldSourceRef", "newSourceRef", "oldReceiptRefs", "newReceiptRef",
+        "sourceEvidence", "reason",
+    }), label="ReviewProbeCorrection")
+    digest = _digest(raw["patchDigest"], label="probe correction patchDigest")
+    if (type(raw["correctionVersion"]) is not int or raw["correctionVersion"] != 1
+            or raw["resultType"] != "ReviewProbeCorrection.v1"
+            or raw["workflowId"] != assignment.workflow_id or raw["taskId"] != assignment.task_id
+            or raw["assignmentId"] != assignment.assignment_id):
+        raise ContractValidationError("probe correction owner is invalid")
+    for key in ("oldProbeId", "newProbeId", "oldSourceRef", "newSourceRef", "newReceiptRef"):
+        if _generic_id(raw[key], label=f"probe correction {key}") != raw[key]:
+            raise ContractValidationError("probe correction identity is not canonical")
+    old_refs = _string_list(raw["oldReceiptRefs"], label="probe correction oldReceiptRefs")
+    historical = {
+        ref: document for ref, document in artifact_documents.items()
+        if isinstance(document, Mapping) and document.get("resultType") == "ReviewProbeExecution.v1"
+        and document.get("workflowId") == assignment.workflow_id
+        and document.get("taskId") == assignment.task_id and document.get("probeId") == raw["oldProbeId"]
+    }
+    if not old_refs or set(old_refs) != set(historical):
+        raise ContractValidationError("probe correction must retain the complete old execution history")
+    new_receipt = artifact_documents.get(raw["newReceiptRef"])
+    if (not isinstance(new_receipt, Mapping) or new_receipt.get("assignmentId") != assignment.assignment_id
+            or new_receipt.get("patchDigest") != digest):
+        raise ContractValidationError("replacement probe execution is not owned by the current Reviewer")
+    anchors = raw["sourceEvidence"]
+    if not isinstance(anchors, list) or not anchors:
+        raise ContractValidationError("probe correction requires observed source anchors")
+    reason = _text(raw["reason"], label="probe correction reason", maximum=1200)
+    approved_commands = {(check.check_id, check.kind, tuple(check.argv)) for check in required_checks}
+    receipt_items = [(ref, historical[ref], raw["oldProbeId"], raw["oldSourceRef"]) for ref in old_refs]
+    receipt_items.append((raw["newReceiptRef"], new_receipt, raw["newProbeId"], raw["newSourceRef"]))
+    sequences = set()
+    for ref, receipt, probe_id, source_ref in receipt_items:
+        owner_id = receipt.get("assignmentId")
+        if owner_id != assignment.assignment_id:
+            owners = [document.get("assignment") for document in artifact_documents.values()
+                      if isinstance(document, Mapping) and document.get("resultType") == "AssignmentArtifact.v1"
+                      and isinstance(document.get("assignment"), Mapping)
+                      and document["assignment"].get("assignmentId") == owner_id]
+            if not owners:
+                raise ContractValidationError("probe correction historical owner is missing")
+            for owner_raw in owners:
+                owner = parse_assignment(owner_raw)
+                if (owner.workflow_id != assignment.workflow_id or owner.task_id != assignment.task_id
+                        or owner.role not in {WorkerRole.EXECUTOR, WorkerRole.REVIEWER}):
+                    raise ContractValidationError("probe correction historical owner is invalid")
+        # Borrow only the immutable owner identity to reuse the closed receipt
+        # validator; the current Reviewer remains the sole correction issuer.
+        envelope_owner = replace(assignment, assignment_id=owner_id)
+        rows = [{"criterionId": criterion.criterion_id, "rationale": reason,
+                 "probeIds": [], "sourceEvidence": anchors} for criterion in assignment.acceptance_criteria]
+        parse_review_coverage_evidence(envelope_owner, {
+            "coverageVersion": 1, "resultType": "ReviewCoverageEvidence.v1",
+            "workflowId": assignment.workflow_id, "taskId": assignment.task_id,
+            "assignmentId": owner_id, "patchDigest": receipt.get("patchDigest"),
+            "criteria": rows, "probes": [{"probeId": probe_id, "sourceRef": source_ref, "receiptRef": ref}],
+        }, review={"assignmentId": owner_id, "patchDigest": receipt.get("patchDigest"), "verdict": "inconclusive",
+                   "criteria": [{"criterionId": row["criterionId"], "status": "unknown"} for row in rows]},
+           artifact_documents=artifact_documents)
+        evidence = receipt["evidence"]
+        if "executionBinding" in receipt:
+            from minicode.review_probe_execution import validate_review_probe_execution_binding
+
+            try:
+                checks = tuple(check.to_execution_check() if isinstance(check, WorkflowVerificationCheck)
+                               else check for check in required_checks)
+                validate_review_probe_execution_binding(dict(receipt), checks,
+                    probe_source_digest=artifact_documents[source_ref]["sourceDigest"])
+            except (TypeError, ValueError) as exc:
+                raise ContractValidationError("probe correction command exceeds the approved checks") from exc
+        elif (evidence["checkId"], evidence["kind"], tuple(evidence["argv"])) not in approved_commands:
+            raise ContractValidationError("probe correction command exceeds the approved checks")
+        if receipt["sequence"] in sequences:
+            raise ContractValidationError("probe correction execution sequence is duplicated")
+        sequences.add(receipt["sequence"])
+    if any(document["sequence"] >= new_receipt["sequence"] for document in historical.values()):
+        raise ContractValidationError("replacement execution must follow every old attempt")
+    try:
+        validate_probe_correction_sources(artifact_documents[raw["oldSourceRef"]],
+                                          artifact_documents[raw["newSourceRef"]])
+        validate_probe_correction_execution(list(historical.values()), new_receipt, digest)
+    except (TypeError, ValueError, KeyError) as exc:
+        raise ContractValidationError(str(exc)) from exc
+    return _bounded_contract_document(dict(raw), label="ReviewProbeCorrection")
 
 
 def parse_conflict_package(
@@ -2424,15 +2927,23 @@ __all__ = [
     "MAX_ROLE_PAYLOAD_REPAIR_BYTES",
     "MAX_WORKFLOW_CRITERIA",
     "MAX_WORKFLOW_CRITERION_CHECK_LINKS",
+    "REVIEW_COVERAGE_CONSTRAINT_ID",
+    "REVIEW_COVERAGE_CONSTRAINT_TEXT",
     "WorkflowRequest",
     "WorkflowVerificationCheck",
     "WorkerRole",
     "analyst_report_requires_reclassification",
     "parse_assignment",
     "parse_executor_declaration",
+    "parse_execution_candidate",
+    "implementation_receipt_ref",
+    "validate_executor_declaration",
     "parse_conflict_package",
     "parse_implementation_order",
     "parse_role_result",
+    "parse_review_coverage_evidence",
+    "parse_review_probe_correction",
+    "review_probe_correction_artifact_id",
     "parse_verification_result",
     "parse_workflow_request",
     "repair_role_payload",

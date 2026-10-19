@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import http.client
+import math
 import ssl
 import urllib.request
 from functools import lru_cache
@@ -56,8 +58,60 @@ def create_verified_ssl_context() -> ssl.SSLContext:
     return context
 
 
+class _ConnectTimeout:
+    """Separate TCP/proxy CONNECT/TLS setup from connected response waiting."""
+
+    def __init__(self, *args, connect_timeout, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._connect_timeout = connect_timeout
+
+    def connect(self):
+        response_timeout = self.timeout
+        self.timeout = min(self._connect_timeout, response_timeout)
+        try:
+            # Standard HTTP(S) connection retains proxy tunnelling, SNI,
+            # hostname checks and certificate verification.
+            super().connect()
+        finally:
+            self.timeout = response_timeout
+        self.sock.settimeout(response_timeout)
+
+
+class _PhasedHTTPConnection(_ConnectTimeout, http.client.HTTPConnection):
+    pass
+
+
+class _PhasedHTTPSConnection(_ConnectTimeout, http.client.HTTPSConnection):
+    pass
+
+
+def _open_with_connect_timeout(request, *, timeout, connect_timeout):
+    if (isinstance(connect_timeout, bool) or not isinstance(connect_timeout, (int, float))
+            or not math.isfinite(connect_timeout) or connect_timeout <= 0):
+        raise ValueError("model connect timeout must be positive and finite")
+
+    class HTTPHandler(urllib.request.HTTPHandler):
+        def http_open(self, req):
+            return self.do_open(lambda host, **kwargs: _PhasedHTTPConnection(
+                host, connect_timeout=connect_timeout, **kwargs), req)
+
+    class HTTPSHandler(urllib.request.HTTPSHandler):
+        def https_open(self, req):
+            return self.do_open(lambda host, **kwargs: _PhasedHTTPSConnection(
+                host, connect_timeout=connect_timeout, **kwargs), req,
+                context=self._context)
+
+    # build_opener retains urllib's normal proxy, CONNECT, HTTP-error and
+    # redirect handlers. Every redirected connection uses the same policy.
+    opener = urllib.request.build_opener(HTTPHandler(), HTTPSHandler(context=create_verified_ssl_context()))
+    return opener.open(request, timeout=timeout)
+
+
 def open_verified_url(request: Any, *, timeout: float):
     """Open a URL with verified TLS while preserving simple test adapters."""
+    connect_timeout = getattr(request, "_minicode_connect_timeout_seconds", None)
+    if connect_timeout is not None:
+        return _open_with_connect_timeout(request, timeout=timeout, connect_timeout=connect_timeout)
     opener = urllib.request.urlopen
     try:
         return opener(

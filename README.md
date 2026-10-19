@@ -238,13 +238,14 @@ already delegated; every prompt must be self-contained. Read-only agents
 accept a caller-stated breadth (`medium` / `very thorough`) and adapt their
 sweep accordingly.
 
-The measured routing ladder (each tier benchmark-verified) escalates with
-risk, not habit: small low-risk edits go through the parent's fast-edit
+The routing rules escalate with task risk: small low-risk edits use the
+parent's fast-edit
 path (zero agents, bounded per-diff/per-turn budgets), scoped verified
-changes take a 2-agent Executor→Verifier route, and anything larger,
-riskier, or multi-step enters the full Analyst→Executor→Reviewer chain —
-with an Adjudicator on conflicting reviews and a 3-way parallel explore
-fan-out when breadth demands it. Escalation from the fast-edit path is
+changes take an Executor→Verifier route (Verifier is deterministic code),
+and larger or riskier changes enter Analyst→Executor→Verifier→Reviewer.
+An Adjudicator handles supported risk-classification conflicts; ordinary
+parallel exploration disagreements return to the parent for evidence checking.
+Read-only investigations may run concurrently. Escalation from the fast-edit path is
 automatic once its budgets are exceeded.
 
 | Entry point | Typical work | Lifecycle |
@@ -256,27 +257,44 @@ automatic once its budgets are exceeded.
 | `general` | Legacy embedder compatibility; the Executor's underlying model route | Direct delegation is rejected by the production Agent Loop. |
 
 Guardrails stay deterministic: role permissions bind to frozen evidence,
-promotion rechecks the parent snapshot under a cross-process lock, one
+promotion freshly hashes parent bytes under a cross-process lock, one
 implementation repair by default (host policy 0–2), and a read-only
 delegation circuit breaker stops further delegation after two consecutive
-failures in a turn. Every child shares the parent turn budget; write-capable
-`general` runs in a killable subprocess with budget leases.
+failures in a turn. Only unconditional continuation verdicts resume a
+blocked workflow. Children and visual-model calls share the
+parent turn budget. Workflow Executors run in restricted snapshot directories;
+the legacy `general` path uses killable subprocesses with budget leases.
+
+Delegated implementation goes directly to `workflow`; an external Plan is
+not a prerequisite, and the internal Analyst is selected by risk. Repeated
+inspection and approaching deadlines produce bounded progress feedback.
+Without an explicit role override, a structured Executor uses the remaining
+shared call allowance after reserving calls for mandatory review and the
+parent response. Working, retry and closing calls share that cap; token and
+time limits are unchanged. The Executor must submit its structured result
+while tools are available. A tool-free final summary cannot authorize promotion.
 
 Results come back as a typed `summary / files / risks / verification`
 envelope with a stable `subagentId`. Because live models sometimes finish
 without submitting the typed note, the tool enforces it: an imperative
 instruction up front, then one bounded closing reminder (≤2 steps) that
-recovers the note; the result header states verbatim whether the contract
+preserves the completed investigation while recovering the note; the result
+header states whether the contract
 was reported, recovered, or refused. Telemetry stays content-free —
 journal and completion events carry counts, ids, and closed enums only.
+Formal result slots belong to one child run and seal on return. Async
+completion is acknowledged after its result reaches the parent's transcript.
 
 **Continuation**: a finished read-only run can be resumed with
-`continue_subagent_id` instead of re-exploring. The deterministic
-benchmark measures the follow-up saving at **100% of tool calls and 75% of
-model turns** versus a fresh run; adoption is measurable from journals
+`continue_subagent_id` instead of re-exploring. The fixed scripted benchmark
+records a follow-up with **0 vs 3 tool calls** and **1 vs 4 model turns**
+compared with a scripted fresh search; these are not average live-task savings.
+Adoption is measurable from journals
 (content-free marker, `scripts/analyze_continuation_adoption.py`). See
 [sub-agent continuation](./docs/subagent-continuation.md) and
-[project agent profiles](./docs/subagent-profiles.md).
+[project agent profiles](./docs/subagent-profiles.md). Archived scenario
+acceptance and scripted savings do not establish an improvement over a
+single Agent; see [effectiveness evidence and comparison plan](./docs/multi-agent-effectiveness.md).
 
 The default explore turn ceiling (12) was kept after a live 8-vs-12 A/B:
 two frozen cases genuinely needed 9 turns, and most finish in 5–6 either

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 
 # The workflow orchestrator is the only path allowed to descend to depth two;
 # all other sub-agent tool sets remain unable to recurse.
@@ -61,15 +62,19 @@ AGENT_TYPES = {
     "plan": {
         "name": "Plan",
         "description": (
-            "Thorough agent for gathering context and understanding code. "
-            "Use it for deep analysis or design before making changes."
+            "Read-only agent for a bounded investigation or design decision. "
+            "Use workflow directly when delegating implementation."
         ),
         "system_prompt": (
-            "You are a planning agent. Your job is to thoroughly understand "
-            "the codebase and task before acting. Read multiple files, trace "
-            "code paths, and build a complete mental model. "
-            "You can only use read-only tools. "
-            "When done, provide a detailed analysis with actionable recommendations."
+            "You are a planning agent. Answer the assigned question using "
+            "read-only tools. Start with the named files and relevant callers "
+            "or tests; expand the search only to resolve a concrete uncertainty. "
+            "Stop exploring once the evidence is sufficient for the requested "
+            "decision. Return concise findings with repository paths and line "
+            "ranges, the smallest supported next steps, relevant checks, and "
+            "any unresolved blockers. Do not survey unrelated code, repeat "
+            "completed reads without a reason, or draft implementation patches. "
+            "A plan is advisory, not permission or workflow evidence."
         ),
         "allowed_tools": {
             "read_file",
@@ -110,8 +115,8 @@ AGENT_TYPES = {
         "name": "Workflow",
         "description": (
             "Central Scheduler workflow with immutable role contracts, "
-            "isolated execution, deterministic verification and review "
-            "gates. Use it when delegating work that creates or modifies files."
+            "isolated execution, final deterministic verification and "
+            "host-selected review. Use it when delegating work that creates or modifies files."
         ),
         "system_prompt": "",
         "allowed_tools": None,
@@ -129,9 +134,6 @@ _MAX_TURNS_ENV_NAMES = {
     "general": "MINI_CODE_SUBAGENT_GENERAL_MAX_TURNS",
 }
 
-# An override above this ceiling is treated as a typo, not a real budget.
-_MAX_TURNS_OVERRIDE_CEILING = 200
-
 # The closed universe of tools a project-defined read-only agent profile
 # may reference: the union of the built-in explore and plan tool sets, plus
 # the read-only vision tool (referenced by judge profiles, not part of the
@@ -148,7 +150,7 @@ def _read_max_turns_override(env_name: str) -> str | None:
 
     The private store (``~/.mini-code/.env``) is the same trusted source
     ``load_runtime_config`` uses for the other ``MINI_CODE_SUBAGENT_*`` knobs;
-    any read failure fails closed to "no override".
+    no configured value means no turn ceiling.
     """
     raw = os.environ.get(env_name)
     if raw is not None:
@@ -161,35 +163,34 @@ def _read_max_turns_override(env_name: str) -> str | None:
             MINI_CODE_ENV_PATH,
             allowed_keys=USER_MODEL_ENV_KEYS,
         )
-    except Exception:  # noqa: BLE001 - a broken env store means no override
-        return None
+    except Exception as error:  # noqa: BLE001 - do not reinterpret unreadable policy
+        raise ValueError("sub-agent turn limit configuration is unreadable") from error
     return values.get(env_name)
 
 
-def resolve_max_turns(agent_type: str) -> int:
+def resolve_max_turns(agent_type: str) -> int | None:
     """Effective model-turn limit for a sub-agent type.
 
-    Defaults to the calibrated ``AGENT_TYPES`` value. A host may override it
-    with ``MINI_CODE_SUBAGENT_<TYPE>_MAX_TURNS``; a missing, non-numeric, or
-    out-of-range value fails closed to the default rather than disabling or
-    unbounding the limit.
+    Missing or zero settings mean no cumulative turn limit. Positive settings
+    are honored exactly; malformed settings are rejected. The legacy numeric
+    AGENT_TYPES values remain available to explicitly bounded callers only.
     """
-    default = AGENT_TYPES[agent_type]["max_turns"]
-    if not isinstance(default, int) or isinstance(default, bool):
+    if agent_type not in _MAX_TURNS_ENV_NAMES:
         raise KeyError(f"{agent_type} has no model-turn limit")
+    return configured_max_turns(agent_type)
+
+
+def configured_max_turns(agent_type: str) -> int | None:
+    """Return a positive configured ceiling, or None for missing/zero."""
     env_name = _MAX_TURNS_ENV_NAMES.get(agent_type)
     if env_name is None:
-        return default
+        return None
     raw = _read_max_turns_override(env_name)
-    if raw is None or not raw.strip():
-        return default
-    try:
-        value = int(raw.strip(), 10)
-    except ValueError:
-        return default
-    if not 1 <= value <= _MAX_TURNS_OVERRIDE_CEILING:
-        return default
-    return value
+    if raw is None or (isinstance(raw, str) and not raw.strip()):
+        return None
+    if not isinstance(raw, str) or re.fullmatch(r"\+?[0-9]+", raw.strip()) is None:
+        raise ValueError(f"{env_name} must be a non-negative integer")
+    return int(raw.strip(), 10) or None
 
 
 __all__ = (
@@ -197,4 +198,5 @@ __all__ = (
     "MAX_AGENT_DEPTH",
     "READ_ONLY_TOOL_WHITELIST",
     "resolve_max_turns",
+    "configured_max_turns",
 )

@@ -122,10 +122,7 @@ class AsyncSubagentLifecycle:
             except BaseException:
                 self._jobs.pop(subagent_id, None)
                 raise
-            snapshot = self._snapshot_locked(job)
-            if snapshot["terminal"]:
-                job.terminal_observed = True
-            return snapshot
+            return self._snapshot_locked(job)
 
     def poll(
         self,
@@ -151,25 +148,16 @@ class AsyncSubagentLifecycle:
             concurrent.futures.wait([future], timeout=float(wait_seconds))
         with self._lock:
             job = self._job_locked(subagent_id)
-            snapshot = self._snapshot_locked(job)
-            if snapshot["terminal"]:
-                job.terminal_observed = True
-            return snapshot
+            return self._snapshot_locked(job)
 
     def cancel(self, subagent_id: str) -> dict[str, object]:
         """Request cooperative cancellation; repeated calls are idempotent."""
         with self._lock:
             job = self._job_locked(subagent_id)
             if job.terminal_status is not None:
-                snapshot = self._snapshot_locked(job)
-                if snapshot["terminal"]:
-                    job.terminal_observed = True
-                return snapshot
+                return self._snapshot_locked(job)
             if job.future is not None and job.future.done():
-                snapshot = self._snapshot_locked(job)
-                if snapshot["terminal"]:
-                    job.terminal_observed = True
-                return snapshot
+                return self._snapshot_locked(job)
             job.cancel_event.set()
             cancelled_before_start = bool(
                 job.future is not None and job.future.cancel()
@@ -177,10 +165,24 @@ class AsyncSubagentLifecycle:
             if cancelled_before_start:
                 job.terminal_status = "cancelled"
                 job.terminal_result = None
-            snapshot = self._snapshot_locked(job)
-            if snapshot["terminal"]:
+            return self._snapshot_locked(job)
+
+    def acknowledge_delivery(self, subagent_ids: tuple[str, ...]) -> None:
+        """Confirm terminal snapshots appended by the owning Agent Loop.
+
+        Polling can run in an abandoned timeout thread. Merely projecting a
+        terminal result must leave it available to the finalization barrier.
+        Validate the whole receipt before changing any job; repeated receipts
+        are harmless and foreign or unfinished jobs cannot be acknowledged.
+        """
+        if not isinstance(subagent_ids, tuple) or not subagent_ids:
+            raise SubagentLifecycleError("delivery receipt requires sub-agent IDs")
+        with self._lock:
+            jobs = [self._job_locked(subagent_id) for subagent_id in subagent_ids]
+            if any(not self._snapshot_locked(job)["terminal"] for job in jobs):
+                raise SubagentLifecycleError("delivery receipt requires terminal jobs")
+            for job in jobs:
                 job.terminal_observed = True
-            return snapshot
 
     def finalization_barrier(
         self,
@@ -189,11 +191,10 @@ class AsyncSubagentLifecycle:
     ) -> dict[str, object]:
         """Project unfinished and newly completed jobs before parent final.
 
-        A terminal result returned by ``poll``/``cancel`` is already visible
-        in the parent's transcript. A result that completes between model
-        turns is returned exactly once here, so the agent loop can inject it
-        before accepting a final answer. Non-terminal jobs keep the barrier
-        closed without blocking a model thread.
+        A terminal snapshot remains available until the owning loop confirms
+        it was appended to the transcript with ``acknowledge_delivery``.
+        Non-terminal jobs keep the barrier closed without blocking a model
+        thread. Failed or abandoned delivery therefore cannot consume results.
         """
         if (
             isinstance(wait_seconds, bool)
@@ -227,7 +228,6 @@ class AsyncSubagentLifecycle:
                     pending.append(snapshot)
                 elif not job.terminal_observed:
                     completed.append(snapshot)
-                    job.terminal_observed = True
             return {
                 "lifecycleVersion": LIFECYCLE_VERSION,
                 "ready": not pending and not completed,

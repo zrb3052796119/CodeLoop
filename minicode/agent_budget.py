@@ -19,38 +19,40 @@ from typing import Any
 
 _NANO_USD_PER_USD = Decimal(1_000_000_000)
 _LEASE_NONCE_RE = re.compile(r"^[0-9a-f]{64}$")
-# Live multi-agent runs calibrated these ceilings: one whole-repository
-# explore survey alone consumes roughly one million tokens, and a workflow
-# chain (parent + analyst/executor/reviewer workers) attributes 30-60 model
-# calls into the same shared budget.  The ceilings stay finite and low-cost;
-# hosts override them with MINI_CODE_TURN_BUDGET_* as before.
+# Legacy finite subprocess-lease defaults. These are not implicit cumulative
+# limits on a user Turn: from_runtime leaves unconfigured dimensions unlimited.
+# Keep them available to callers explicitly constructing a finite lease.
 DEFAULT_MAX_TOTAL_TOKENS = 3_000_000
 DEFAULT_MAX_MODEL_CALLS = 150
 DEFAULT_MAX_COST_USD = Decimal("5.00")
 
 
 def _optional_int(value: object, *, name: str) -> int | None:
-    if value in (None, ""):
+    if value is None or value == "":
         return None
-    try:
+    if isinstance(value, str) and re.fullmatch(r"\+?[0-9]+", value.strip()):
         parsed = int(value)
-    except (TypeError, ValueError):
-        return None
-    if parsed <= 0:
-        return None
-    return parsed
+    elif type(value) is int:
+        parsed = value
+    else:
+        raise ValueError(f"{name} must be a non-negative integer or None")
+    if parsed < 0:
+        raise ValueError(f"{name} must be a non-negative integer or None")
+    return parsed or None
 
 
 def _optional_decimal(value: object, *, name: str) -> Decimal | None:
-    if value in (None, ""):
+    if value is None or value == "":
         return None
+    if isinstance(value, bool):
+        raise ValueError(f"{name} must be a finite non-negative amount or None")
     try:
         parsed = Decimal(str(value))
-    except (DecimalException, TypeError, ValueError):
-        return None
-    if not parsed.is_finite() or parsed <= 0:
-        return None
-    return parsed
+    except (DecimalException, TypeError, ValueError) as error:
+        raise ValueError(f"{name} must be a finite non-negative amount or None") from error
+    if not parsed.is_finite() or parsed < 0:
+        raise ValueError(f"{name} must be a finite non-negative amount or None")
+    return parsed or None
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,6 +68,7 @@ class AgentBudgetSnapshot:
     used_cost_usd: str
     used_input_tokens: int = 0
     used_output_tokens: int = 0
+    usage_uncertain: bool = False
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -78,6 +81,7 @@ class AgentBudgetSnapshot:
             "usedCostUsd": self.used_cost_usd,
             "usedInputTokens": self.used_input_tokens,
             "usedOutputTokens": self.used_output_tokens,
+            "usageUncertain": self.usage_uncertain,
         }
 
 
@@ -144,13 +148,13 @@ def _strict_lease_nonce(value: object) -> str:
 
 @dataclass(frozen=True, slots=True)
 class SubprocessBudgetLease:
-    """Finite parent-owned allowance handed across a process boundary."""
+    """Parent-owned allowance; null dimensions have no cumulative ceiling."""
 
     lease_id: int
     lease_nonce: str
-    max_total_tokens: int
-    max_model_calls: int
-    max_cost_usd: Decimal
+    max_total_tokens: int | None
+    max_model_calls: int | None
+    max_cost_usd: Decimal | None
 
     VERSION = 2
     _FIELDS = frozenset(
@@ -171,17 +175,11 @@ class SubprocessBudgetLease:
             or _LEASE_NONCE_RE.fullmatch(self.lease_nonce) is None
         ):
             raise ValueError("lease_nonce is invalid")
-        _strict_protocol_int(
-            self.max_total_tokens,
-            name="max_total_tokens",
-            minimum=1,
-        )
-        _strict_protocol_int(
-            self.max_model_calls,
-            name="max_model_calls",
-            minimum=1,
-        )
-        if (
+        if self.max_total_tokens is not None:
+            _strict_protocol_int(self.max_total_tokens, name="max_total_tokens", minimum=1)
+        if self.max_model_calls is not None:
+            _strict_protocol_int(self.max_model_calls, name="max_model_calls", minimum=1)
+        if self.max_cost_usd is not None and (
             not isinstance(self.max_cost_usd, Decimal)
             or not self.max_cost_usd.is_finite()
             or self.max_cost_usd <= 0
@@ -195,7 +193,7 @@ class SubprocessBudgetLease:
             "leaseNonce": self.lease_nonce,
             "maxTotalTokens": self.max_total_tokens,
             "maxModelCalls": self.max_model_calls,
-            "maxCostUsd": format(self.max_cost_usd, "f"),
+            "maxCostUsd": format(self.max_cost_usd, "f") if self.max_cost_usd is not None else None,
         }
 
     @classmethod
@@ -214,17 +212,17 @@ class SubprocessBudgetLease:
                 value.get("leaseId"), name="leaseId", minimum=1
             ),
             lease_nonce=_strict_lease_nonce(value.get("leaseNonce")),
-            max_total_tokens=_strict_protocol_int(
+            max_total_tokens=None if value["maxTotalTokens"] is None else _strict_protocol_int(
                 value.get("maxTotalTokens"),
                 name="maxTotalTokens",
                 minimum=1,
             ),
-            max_model_calls=_strict_protocol_int(
+            max_model_calls=None if value["maxModelCalls"] is None else _strict_protocol_int(
                 value.get("maxModelCalls"),
                 name="maxModelCalls",
                 minimum=1,
             ),
-            max_cost_usd=_strict_protocol_decimal(
+            max_cost_usd=None if value["maxCostUsd"] is None else _strict_protocol_decimal(
                 value.get("maxCostUsd"),
                 name="maxCostUsd",
                 allow_zero=False,
@@ -237,13 +235,14 @@ class SubprocessBudgetLease:
             and usage.lease_id == self.lease_id
             and secrets.compare_digest(usage.lease_nonce, self.lease_nonce)
             and usage.used_model_calls >= 0
-            and usage.used_model_calls <= self.max_model_calls
+            and (self.max_model_calls is None or usage.used_model_calls <= self.max_model_calls)
             and usage.input_tokens >= 0
             and usage.output_tokens >= 0
-            and usage.input_tokens + usage.output_tokens <= self.max_total_tokens
+            and (self.max_total_tokens is None
+                 or usage.input_tokens + usage.output_tokens <= self.max_total_tokens)
             and usage.used_cost_usd.is_finite()
             and usage.used_cost_usd >= 0
-            and usage.used_cost_usd <= self.max_cost_usd
+            and (self.max_cost_usd is None or usage.used_cost_usd <= self.max_cost_usd)
         )
 
 
@@ -346,6 +345,8 @@ class SubprocessBudgetUsage:
     ) -> SubprocessBudgetUsage:
         if snapshot.reserved_total_tokens != 0:
             raise ValueError("subprocess budget still has an active reservation")
+        if snapshot.usage_uncertain:
+            raise ValueError("subprocess budget has uncertain provider usage")
         return cls(
             lease_id=lease.lease_id,
             lease_nonce=lease.lease_nonce,
@@ -357,7 +358,11 @@ class SubprocessBudgetUsage:
 
 
 class AgentTurnBudget:
-    """Thread-safe shared token/model-call/cost budget for one Agent Turn."""
+    """Shared usage ledger with optional token/model-call/cost ceilings.
+
+    Unset, None, or zero limits are unlimited; accounting and reservations
+    remain active. Only explicit positive limits restrict cumulative usage.
+    """
 
     def __init__(
         self,
@@ -397,27 +402,26 @@ class AgentTurnBudget:
         if not isinstance(settings, Mapping):
             settings = {}
         env = os.environ
+
+        def configured(env_name: str, flat_name: str, nested_name: str) -> object:
+            # Presence, not truthiness: explicit 0/None cancels a lower-priority
+            # setting. An empty environment variable retains the usual unset
+            # convention, while malformed non-empty values fail validation.
+            if env.get(env_name) not in (None, ""):
+                return env[env_name]
+            if flat_name in values:
+                return values[flat_name]
+            return settings.get(nested_name)
+
         return cls(
-            max_total_tokens=_optional_int(
-                env.get("MINI_CODE_TURN_BUDGET_TOKENS")
-                or values.get("agentTurnBudgetTokens")
-                or settings.get("maxTokens")
-                or DEFAULT_MAX_TOTAL_TOKENS,
-                name="max_total_tokens",
+            max_total_tokens=configured(
+                "MINI_CODE_TURN_BUDGET_TOKENS", "agentTurnBudgetTokens", "maxTokens",
             ),
-            max_model_calls=_optional_int(
-                env.get("MINI_CODE_TURN_BUDGET_MODEL_CALLS")
-                or values.get("agentTurnBudgetModelCalls")
-                or settings.get("maxModelCalls")
-                or DEFAULT_MAX_MODEL_CALLS,
-                name="max_model_calls",
+            max_model_calls=configured(
+                "MINI_CODE_TURN_BUDGET_MODEL_CALLS", "agentTurnBudgetModelCalls", "maxModelCalls",
             ),
-            max_cost_usd=_optional_decimal(
-                env.get("MINI_CODE_TURN_BUDGET_COST_USD")
-                or values.get("agentTurnBudgetCostUsd")
-                or settings.get("maxCostUsd")
-                or DEFAULT_MAX_COST_USD,
-                name="max_cost_usd",
+            max_cost_usd=configured(
+                "MINI_CODE_TURN_BUDGET_COST_USD", "agentTurnBudgetCostUsd", "maxCostUsd",
             ),
         )
 
@@ -448,6 +452,7 @@ class AgentTurnBudget:
                 used_cost_usd=format(self._used_cost_usd, "f"),
                 used_input_tokens=self._used_input_tokens,
                 used_output_tokens=self._used_output_tokens,
+                usage_uncertain=self._has_uncertain_model_usage,
             )
 
     def reserve_model_call(
@@ -455,6 +460,7 @@ class AgentTurnBudget:
         estimated_input_tokens: int = 0,
         *,
         preserve_model_calls: int = 0,
+        preserve_total_tokens: int = 0,
     ) -> AgentBudgetReservation:
         """Admit one model call against the shared budget, or raise.
 
@@ -463,8 +469,13 @@ class AgentTurnBudget:
         ``preserve_model_calls`` atomically leaves that many calls available
         for higher-priority work after this reservation, avoiding a check/use
         race between parallel advisory classifiers.
+        ``preserve_total_tokens`` keeps estimated space free at this admission
+        boundary for the response and later requests. It is not a separate
+        token grant or a guarantee about provider-reported usage.
         """
         estimate = max(0, int(estimated_input_tokens or 0))
+        if type(preserve_total_tokens) is not int or preserve_total_tokens < 0:
+            raise ValueError("preserve_total_tokens must be a non-negative integer")
         if (
             isinstance(preserve_model_calls, bool)
             or not isinstance(preserve_model_calls, int)
@@ -493,7 +504,7 @@ class AgentTurnBudget:
                 )
             if (
                 self.max_total_tokens is not None
-                and self._used_total_tokens + self._reserved_total_tokens + estimate
+                and self._used_total_tokens + self._reserved_total_tokens + estimate + preserve_total_tokens
                 > self.max_total_tokens
             ):
                 raise AgentBudgetExceeded(
@@ -512,23 +523,24 @@ class AgentTurnBudget:
     def reserve_subprocess_lease(
         self,
         *,
-        requested_total_tokens: int,
-        requested_model_calls: int,
-        requested_cost_usd: Decimal | str,
+        requested_total_tokens: int | None,
+        requested_model_calls: int | None,
+        requested_cost_usd: Decimal | str | None,
         preserve_model_calls: int = 1,
     ) -> SubprocessBudgetLease:
-        """Atomically reserve a finite child-process allowance.
+        """Atomically reserve a child allowance, bounded by finite parents.
 
         Independent processes cannot share this object's lock. The parent
-        therefore reserves a bounded allowance before spawning a worker and
-        keeps it unavailable to every other caller until settlement.
+        therefore reserves every finite dimension before spawning a worker.
+        A null request takes the finite parent's remaining allowance, or stays
+        null under an unlimited parent. It never creates a larger allowance.
         """
-        requested_tokens = _strict_protocol_int(
+        requested_tokens = None if requested_total_tokens is None else _strict_protocol_int(
             requested_total_tokens,
             name="requested_total_tokens",
             minimum=1,
         )
-        requested_calls = _strict_protocol_int(
+        requested_calls = None if requested_model_calls is None else _strict_protocol_int(
             requested_model_calls,
             name="requested_model_calls",
             minimum=1,
@@ -537,7 +549,7 @@ class AgentTurnBudget:
             requested_cost_usd,
             name="requested_cost_usd",
         )
-        if requested_cost is None:
+        if requested_cost is None and requested_cost_usd is not None:
             raise ValueError("requested_cost_usd is invalid")
         if (
             isinstance(preserve_model_calls, bool)
@@ -549,41 +561,35 @@ class AgentTurnBudget:
         with self._lock:
             available_calls = requested_calls
             if self.max_model_calls is not None:
-                available_calls = min(
-                    available_calls,
-                    self.max_model_calls
+                parent_calls = (self.max_model_calls
                     - self._used_model_calls
                     - self._reserved_model_calls
-                    - preserve_model_calls,
-                )
+                    - preserve_model_calls)
+                available_calls = parent_calls if available_calls is None else min(available_calls, parent_calls)
             available_tokens = requested_tokens
             if self.max_total_tokens is not None:
-                available_tokens = min(
-                    available_tokens,
-                    self.max_total_tokens
+                parent_tokens = (self.max_total_tokens
                     - self._used_total_tokens
-                    - self._reserved_total_tokens,
-                )
+                    - self._reserved_total_tokens)
+                available_tokens = parent_tokens if available_tokens is None else min(available_tokens, parent_tokens)
             available_cost = requested_cost
             if self.max_cost_usd is not None:
-                available_cost = min(
-                    available_cost,
-                    self.max_cost_usd
+                parent_cost = (self.max_cost_usd
                     - self._used_cost_usd
-                    - self._reserved_cost_usd,
-                )
+                    - self._reserved_cost_usd)
+                available_cost = parent_cost if available_cost is None else min(available_cost, parent_cost)
 
-            if available_calls < 1:
+            if available_calls is not None and available_calls < 1:
                 raise AgentBudgetExceeded(
                     "model call budget cannot admit a subprocess lease",
                     self._locked_snapshot(),
                 )
-            if available_tokens < 1:
+            if available_tokens is not None and available_tokens < 1:
                 raise AgentBudgetExceeded(
                     "token budget cannot admit a subprocess lease",
                     self._locked_snapshot(),
                 )
-            if available_cost <= 0:
+            if available_cost is not None and available_cost <= 0:
                 raise AgentBudgetExceeded(
                     "cost budget cannot admit a subprocess lease",
                     self._locked_snapshot(),
@@ -598,9 +604,9 @@ class AgentTurnBudget:
             )
             self._next_subprocess_lease_id += 1
             self._subprocess_leases[lease.lease_id] = lease
-            self._reserved_total_tokens += lease.max_total_tokens
-            self._reserved_model_calls += lease.max_model_calls
-            self._reserved_cost_usd += lease.max_cost_usd
+            self._reserved_total_tokens += lease.max_total_tokens or 0
+            self._reserved_model_calls += lease.max_model_calls or 0
+            self._reserved_cost_usd += lease.max_cost_usd or Decimal(0)
             return lease
 
     def settle_subprocess_lease(
@@ -608,11 +614,14 @@ class AgentTurnBudget:
         lease: SubprocessBudgetLease,
         usage: SubprocessBudgetUsage | None,
     ) -> SubprocessBudgetUsage | None:
-        """Settle one exact lease once, charging invalid/missing usage fully.
+        """Settle once; missing usage charges finite dimensions conservatively.
 
         Returning ``None`` means this exact lease was not active (normally an
         idempotent repeated settlement). A mismatched object can never settle
         another reservation merely by presenting its numeric lease ID.
+        Unlimited dimensions have no fictitious chargeable maximum. Missing
+        or invalid receipts mark the shared accounting explicitly uncertain;
+        zero in such a dimension is a known lower bound, never exact usage.
         """
         if not isinstance(lease, SubprocessBudgetLease):
             return None
@@ -623,24 +632,27 @@ class AgentTurnBudget:
             self._subprocess_leases.pop(lease.lease_id)
             self._reserved_total_tokens = max(
                 0,
-                self._reserved_total_tokens - lease.max_total_tokens,
+                self._reserved_total_tokens - (lease.max_total_tokens or 0),
             )
             self._reserved_model_calls = max(
                 0,
-                self._reserved_model_calls - lease.max_model_calls,
+                self._reserved_model_calls - (lease.max_model_calls or 0),
             )
             self._reserved_cost_usd = max(
                 Decimal("0.0"),
-                self._reserved_cost_usd - lease.max_cost_usd,
+                self._reserved_cost_usd - (lease.max_cost_usd or Decimal(0)),
             )
 
-            charged = usage if lease.accepts(usage) else SubprocessBudgetUsage(
+            accepted = lease.accepts(usage)
+            if not accepted:
+                self._has_uncertain_model_usage = True
+            charged = usage if accepted else SubprocessBudgetUsage(
                 lease_id=lease.lease_id,
                 lease_nonce=lease.lease_nonce,
-                used_model_calls=lease.max_model_calls,
-                input_tokens=lease.max_total_tokens,
+                used_model_calls=lease.max_model_calls or 0,
+                input_tokens=lease.max_total_tokens or 0,
                 output_tokens=0,
-                used_cost_usd=lease.max_cost_usd,
+                used_cost_usd=lease.max_cost_usd or Decimal(0),
             )
             self._used_model_calls += charged.used_model_calls
             self._used_input_tokens += charged.input_tokens
@@ -664,7 +676,7 @@ class AgentTurnBudget:
         if not isinstance(lease, SubprocessBudgetLease):
             raise TypeError("subprocess budget lease is invalid")
         with self._lock:
-            if self._reservations:
+            if self._reservations or self._subprocess_leases:
                 raise ValueError("subprocess budget has an active reservation")
             if self._has_uncertain_model_usage:
                 raise ValueError("subprocess budget has uncertain provider usage")
@@ -776,6 +788,7 @@ class AgentTurnBudget:
             used_cost_usd=format(self._used_cost_usd, "f"),
             used_input_tokens=self._used_input_tokens,
             used_output_tokens=self._used_output_tokens,
+            usage_uncertain=self._has_uncertain_model_usage,
         )
 
     def attribution_view(self, key: str) -> AttributedBudgetView:
@@ -837,18 +850,20 @@ class AttributedBudgetView:
         estimated_input_tokens: int = 0,
         *,
         preserve_model_calls: int = 0,
+        preserve_total_tokens: int = 0,
     ) -> AgentBudgetReservation:
         return self._budget.reserve_model_call(
             estimated_input_tokens,
             preserve_model_calls=preserve_model_calls,
+            **({"preserve_total_tokens": preserve_total_tokens} if preserve_total_tokens else {}),
         )
 
     def reserve_subprocess_lease(
         self,
         *,
-        requested_total_tokens: int,
-        requested_model_calls: int,
-        requested_cost_usd: Decimal | str,
+        requested_total_tokens: int | None,
+        requested_model_calls: int | None,
+        requested_cost_usd: Decimal | str | None,
         preserve_model_calls: int = 1,
     ) -> SubprocessBudgetLease:
         return self._budget.reserve_subprocess_lease(

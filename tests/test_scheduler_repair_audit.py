@@ -8,6 +8,7 @@ import pytest
 
 from minicode.scheduler_audit import SchedulerAuditValidationError, project_scheduler_audit
 import minicode.scheduler_audit as audit_module
+from minicode.scheduler_artifacts import MAX_SCHEDULER_ARTIFACT_TOTAL_BYTES
 from minicode.workflow_workspace import WorkflowIsolationError, WorkflowWorkspaceTransaction
 from test_workflow_implementation_repair import _repair_run
 
@@ -129,25 +130,26 @@ def test_commit_ready_binds_latest_repair_verification_and_matrix(tmp_path, monk
         audit_module._validate_commit_ready_against_audit(stale, audit)
 
 
-def test_truncated_failed_diff_stops_before_repair_and_retains_failed_audit(
+def test_truncated_failed_diff_can_be_repaired_and_retains_both_revisions(
     tmp_path, monkeypatch
 ):
     write_text = Path.write_text
 
     def large_first_candidate(path, data, *args, **kwargs):
         if path.name == "allowed.txt" and data == "almost":
-            data = "almost" + "x" * 20_000
+            data = "almost" + "x" * MAX_SCHEDULER_ARTIFACT_TOTAL_BYTES
         return write_text(path, data, *args, **kwargs)
 
     monkeypatch.setattr(Path, "write_text", large_first_candidate)
     result, roles, _inputs, audits = _repair_run(tmp_path, monkeypatch, rejection="verifier")
-    assert not result.ok
-    assert roles.count("executor") == 1
-    assert "reviewer" not in roles
-    assert (tmp_path / "allowed.txt").read_text(encoding="utf-8") == "before"
+    assert result.ok, result.output
+    assert roles.count("executor") == 2
+    assert roles.count("reviewer") == 1
+    assert (tmp_path / "allowed.txt").read_text(encoding="utf-8") == "after"
     assert len(audits) == 1
     audit = audits[0]
     diffs = [json.loads(item.content) for item in audit.artifacts if json.loads(item.content).get("diffVersion") == 1]
-    assert [item["complete"] for item in diffs] == [False]
-    assert not any(item["outcome"] == "repairing" for item in audit.trace["transitions"])
+    assert [item["complete"] for item in diffs] == [False, True]
+    assert sum(item["outcome"] == "repairing" for item in audit.trace["transitions"]) == 1
+    assert audit.trace["committed"] is True
     assert replay(audit) == audit

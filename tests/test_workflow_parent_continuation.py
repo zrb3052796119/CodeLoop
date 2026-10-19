@@ -5,6 +5,13 @@ import threading
 from pathlib import Path
 
 import pytest
+from test_workflow_analysis_convergence import _write_reviewer_result
+from test_workflow_v2_structured_routing import (
+    _request,
+    _run,
+    _verification_result,
+    _write_executor_declaration,
+)
 
 import minicode.tools.task as task_module
 from minicode.agent_loop import run_agent_turn
@@ -14,12 +21,6 @@ from minicode.subagent_lifecycle import AsyncSubagentLifecycle
 from minicode.tooling import ToolDefinition, ToolRegistry, ToolResult
 from minicode.turn_cancellation import TurnCancellationToken
 from minicode.types import AgentStep
-from test_workflow_v2_structured_routing import (
-    _request,
-    _run,
-    _verification_result,
-    _write_executor_declaration,
-)
 
 
 @pytest.fixture
@@ -27,15 +28,19 @@ def committed_result(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ToolRes
     (tmp_path / "allowed.txt").write_text("before\n")
 
     def executor(input_data, context):
-        Path(context.cwd, "allowed.txt").write_text("after\n")
-        _write_executor_declaration(input_data, context)
+        if context._logical_agent_role == "executor":
+            Path(context.cwd, "allowed.txt").write_text("after\n")
+            _write_executor_declaration(input_data, context)
+        else:
+            assert context._logical_agent_role == "reviewer"
+            _write_reviewer_result(input_data, context)
         return ToolResult(ok=True, output="implemented")
 
     monkeypatch.setattr(task_module, "_run", executor)
     monkeypatch.setattr(
         DeterministicVerifier, "run", lambda self, **request: _verification_result(request)
     )
-    result = _run(tmp_path, _request(complex=False), monkeypatch, commit_audit_waived=True)
+    result = _run(tmp_path, _request(risk="low", complex=False), monkeypatch, commit_audit_waived=True)
     assert result.ok and result._must_deliver
     assert (tmp_path / "allowed.txt").read_text() == "after\n"
     return result

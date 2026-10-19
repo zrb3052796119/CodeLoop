@@ -5,22 +5,204 @@ from __future__ import annotations
 import base64
 from dataclasses import dataclass
 import hashlib
+import json
 import os
 from pathlib import Path
 import signal
+import stat
 import subprocess
+import sys
 import tempfile
 import threading
 import time
+import uuid
 from typing import Callable, Mapping, Protocol
+import xml.etree.ElementTree as ET
 
 from minicode.multi_agent_contracts import parse_verification_result
+from minicode.review_probe_correction import MAX_PYTEST_REPORT_BYTES
 from minicode.verification_observation import project_command_verification
 from minicode.verification_policy import verification_argv_is_safe
+from minicode.verification_output import VerificationOutputStore
 
 
 class VerificationDeadlineExceeded(TimeoutError):
     """The scheduler's absolute workflow deadline stopped verification."""
+
+
+_MAX_PYTEST_REPORT_BYTES = MAX_PYTEST_REPORT_BYTES
+
+# Installed by the host outside the candidate and loaded explicitly. The
+# classification uses actual exception objects, never model-controlled output.
+_PYTEST_CASE_PLUGIN = '''import builtins, hashlib, json
+from pathlib import Path
+import pytest
+from _pytest.outcomes import Failed
+_cases = []
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_protocol(item, nextitem):
+    _execution.start(item.nodeid)
+    try:
+        yield
+    finally:
+        _execution.stop()
+def _kind(error):
+    if isinstance(error, (AssertionError, Failed)):
+        return "assertion"
+    if isinstance(error, getattr(builtins, "BaseExceptionGroup", ())):
+        kinds = [_kind(child) for child in error.exceptions]
+        return "assertion" if "assertion" in kinds else "unknown"
+    if isinstance(getattr(error, "exceptions", None), (tuple, list)):
+        return "unknown"
+    return "exception" if isinstance(error, Exception) else "unknown"
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    report = outcome.get_result()
+    if call.when == "call" and report.outcome in ("passed", "failed"):
+        kind = None if report.passed else (_kind(call.excinfo.value) if call.excinfo else "unknown")
+        _cases.append({"nodeId": item.nodeid, "outcome": report.outcome, "failureKind": kind})
+def pytest_unconfigure(config):
+    try:
+        junit = Path(_junit_path).read_bytes()
+        junit_digest = "sha256:" + hashlib.sha256(junit).hexdigest()
+        document = {"junitDigest": junit_digest, "cases": _cases}
+        try:
+            # Keep the classification/JUnit envelope bounded independently of
+            # complete execution originals. The host imports the exact private
+            # shards before this verifier home is removed.
+            write_execution_report(_execution.report(junit_digest), Path(_case_path))
+        except (OSError, ValueError, TypeError):
+            pass  # Storage failure grants no execution evidence, not a false case outcome.
+        encoded = json.dumps(document, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+        with open(_case_path, "xb") as stream:
+            stream.write(encoded)
+    except (OSError, ValueError, TypeError):
+        pass
+'''
+
+
+def _read_report_bytes(path: Path) -> bytes | None:
+    try:
+        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+                             | getattr(os, "O_NONBLOCK", 0))
+    except OSError:
+        return None
+    try:
+        before = os.fstat(descriptor)
+        if (not stat.S_ISREG(before.st_mode) or before.st_nlink != 1
+                or not 0 < before.st_size <= _MAX_PYTEST_REPORT_BYTES):
+            return None
+        with os.fdopen(descriptor, "rb", closefd=False) as stream:
+            data = stream.read(_MAX_PYTEST_REPORT_BYTES + 1)
+        after = os.fstat(descriptor)
+        if (len(data) != before.st_size or len(data) > _MAX_PYTEST_REPORT_BYTES
+                or (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns)):
+            return None
+        return data
+    except OSError:
+        return None
+    finally:
+        os.close(descriptor)
+
+
+def _attach_pytest_case_report(report: dict | None, path: Path) -> dict | None:
+    if report is None:
+        return None
+    data = _read_report_bytes(path)
+    if data is None:
+        return report
+    try:
+        document = json.loads(data)
+        if (not isinstance(document, dict) or set(document) not in (
+                {"junitDigest", "cases"}, {"junitDigest", "cases", "executionReport"})
+                or document["junitDigest"] != report["reportDigest"]
+                or json.dumps(document, ensure_ascii=False, sort_keys=True,
+                              separators=(",", ":"), allow_nan=False).encode("utf-8") != data):
+            return report
+        classification = json.dumps({"junitDigest": document["junitDigest"], "cases": document["cases"]},
+            ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+        extended = {**report, "caseReport": {
+            "digest": "sha256:" + hashlib.sha256(classification).hexdigest(), "cases": document["cases"]}}
+        from minicode.pytest_execution_evidence import read_execution_report, validate_execution_report
+        execution = document.get("executionReport")
+        if "executionReport" not in document:
+            manifest_bytes = _read_report_bytes(path.with_name(path.name + ".execution.json"))
+            if manifest_bytes is not None:
+                try:
+                    manifest = json.loads(manifest_bytes)
+                    if json.dumps(manifest, ensure_ascii=False, sort_keys=True,
+                                  separators=(",", ":"), allow_nan=False).encode("utf-8") == manifest_bytes:
+                        execution = read_execution_report(manifest, path)
+                except (ValueError, TypeError, UnicodeError):
+                    pass  # Invalid supplemental storage cannot erase valid classification.
+        if execution is not None:
+            traced = {**extended, "executionReport": execution}
+            if validate_execution_report(traced):
+                extended = traced
+        from minicode.review_probe_correction import validate_pytest_case_report
+        return extended if validate_pytest_case_report(extended) else report
+    except (ValueError, TypeError, UnicodeError):
+        return report
+
+
+def _pytest_command(argv: tuple[str, ...]) -> bool:
+    return argv[:1] == ("pytest",) or argv[:3] in (
+        ("python", "-m", "pytest"), ("python3", "-m", "pytest"),
+    )
+
+
+def _read_pytest_report(path: Path) -> dict[str, object] | None:
+    """Read one managed-process report; stdout can never substitute for it."""
+    try:
+        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+                             | getattr(os, "O_NONBLOCK", 0))
+    except OSError:
+        return None
+    try:
+        before = os.fstat(descriptor)
+        if (not stat.S_ISREG(before.st_mode) or before.st_nlink != 1
+                or not 0 < before.st_size <= _MAX_PYTEST_REPORT_BYTES):
+            return None
+        with os.fdopen(descriptor, "rb", closefd=False) as stream:
+            data = stream.read(_MAX_PYTEST_REPORT_BYTES + 1)
+        after = os.fstat(descriptor)
+        if (len(data) != before.st_size or len(data) > _MAX_PYTEST_REPORT_BYTES
+                or (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns)
+                or b"<!DOCTYPE" in data.upper() or b"<!ENTITY" in data.upper()):
+            return None
+        document = ET.fromstring(data)
+        if document.tag == "testsuite":
+            suites = [document]
+        elif document.tag == "testsuites":
+            suites = list(document)
+        else:
+            return None
+        totals = {"collected": 0, "passed": 0, "failed": 0, "errors": 0, "skipped": 0}
+        for suite in suites:
+            if suite.tag != "testsuite":
+                return None
+            cases = suite.findall("testcase")
+            counts = {"collected": len(cases), "passed": 0, "failed": 0, "errors": 0, "skipped": 0}
+            for case in cases:
+                outcomes = [child.tag for child in case if child.tag in {"failure", "error", "skipped"}]
+                if len(outcomes) > 1:
+                    return None
+                label = {"failure": "failed", "error": "errors", "skipped": "skipped"}.get(
+                    outcomes[0] if outcomes else "", "passed")
+                counts[label] += 1
+            for field, attribute in (("collected", "tests"), ("failed", "failures"),
+                                     ("errors", "errors"), ("skipped", "skipped")):
+                raw = suite.get(attribute)
+                if raw is None or not raw.isascii() or not raw.isdigit() or int(raw) != counts[field]:
+                    return None
+            for field in totals:
+                totals[field] += counts[field]
+        return {**totals, "reportDigest": "sha256:" + hashlib.sha256(data).hexdigest()}
+    except (OSError, ValueError, ET.ParseError):
+        return None
+    finally:
+        os.close(descriptor)
 
 
 class VerifierSandboxBackend(Protocol):
@@ -51,6 +233,8 @@ class _BoundedStreamCapture:
     _head: bytearray | None = None
     _tail: bytearray | None = None
     _digest: object | None = None
+    sink: Callable[[bytes], None] | None = None
+    stream_complete: bool = True
 
     def __post_init__(self) -> None:
         self._head = bytearray()
@@ -60,6 +244,8 @@ class _BoundedStreamCapture:
     def add(self, chunk: bytes) -> None:
         if not chunk:
             return
+        if self.sink is not None:
+            self.sink(chunk)
         self.byte_count += len(chunk)
         digest = self._digest
         if digest is not None:
@@ -229,6 +415,9 @@ class DeterministicVerifier:
         deadline_monotonic: float | None = None,
         cancellation_checkpoint: Callable[[], None] | None = None,
         evidence_sink: Callable[[str, dict[str, object]], None] | None = None,
+        pytest_report_sink: Callable[[dict[str, object] | None], None] | None = None,
+        output_store: VerificationOutputStore | None = None,
+        output_sink: Callable[[dict[str, object]], None] | None = None,
     ) -> dict[str, object]:
         if (
             not isinstance(checks, tuple)
@@ -265,6 +454,14 @@ class DeterministicVerifier:
             raise TypeError("cancellation_checkpoint must be callable or null")
         if evidence_sink is not None and not callable(evidence_sink):
             raise TypeError("evidence_sink must be callable or null")
+        if pytest_report_sink is not None and not callable(pytest_report_sink):
+            raise TypeError("pytest_report_sink must be callable or null")
+        if output_store is not None and not isinstance(output_store, VerificationOutputStore):
+            raise TypeError("output_store must be a VerificationOutputStore or null")
+        if output_sink is not None and not callable(output_sink):
+            raise TypeError("output_sink must be callable or null")
+        if output_sink is not None and output_store is None:
+            raise ValueError("output_sink requires an output_store")
 
         result_checks: list[dict[str, object]] = []
         statuses: list[str] = []
@@ -280,6 +477,24 @@ class DeterministicVerifier:
                 stderr: bytes | _BoundedStreamCapture = b""
                 failure_reason: str | None = None
                 resolved_executable: str | None = None
+                report_path = (
+                    Path(verifier_home) / ("pytest-" + uuid.uuid4().hex + ".xml")
+                    if pytest_report_sink is not None and self._managed_subprocess
+                    and check.kind == "tests" and _pytest_command(check.argv) else None
+                )
+                case_path = None
+                diagnostic_arguments = ()
+                check_environment = environment
+                if report_path is not None:
+                    from minicode.pytest_execution_evidence import execution_plugin_source
+                    case_path = report_path.with_suffix(".json")
+                    module_name = "_minicode_pytest_" + uuid.uuid4().hex
+                    (Path(verifier_home) / (module_name + ".py")).write_text(
+                        execution_plugin_source(cwd, check.argv)
+                        + "_junit_path = " + repr(str(report_path)) + "\n_case_path = "
+                        + repr(str(case_path)) + "\n" + _PYTEST_CASE_PLUGIN, encoding="utf-8")
+                    diagnostic_arguments = ("-p", module_name, "--junitxml=" + str(report_path))
+                    check_environment = dict(environment)
                 if cancellation_checkpoint is not None:
                     cancellation_checkpoint()
                 timeout_seconds: float = float(check.timeout_seconds)
@@ -293,6 +508,15 @@ class DeterministicVerifier:
                     if remaining < timeout_seconds:
                         timeout_seconds = max(0.001, remaining)
                         deadline_limited = True
+                output_capture = (output_store.begin(workflow_id=workflow_id,
+                    assignment_id=execution_assignment_id, check_id=check.check_id,
+                    patch_digest=patch_digest) if output_store is not None else None)
+                capture_options = {}
+                normal_completion = False
+                if output_capture is not None and self._managed_subprocess:
+                    stdout = _BoundedStreamCapture(sink=lambda data: output_capture.add("stdout", data))
+                    stderr = _BoundedStreamCapture(sink=lambda data: output_capture.add("stderr", data))
+                    capture_options = {"stdout_capture": stdout, "stderr_capture": stderr}
                 try:
                     prepared_argv = check.argv
                     if self._managed_subprocess:
@@ -301,7 +525,8 @@ class DeterministicVerifier:
                                 check=check,
                                 cwd=cwd,
                                 verifier_home=verifier_home,
-                                environment=environment,
+                                environment=check_environment,
+                                diagnostic_arguments=diagnostic_arguments,
                             )
                         )
                     if failure_reason is not None:
@@ -322,12 +547,20 @@ class DeterministicVerifier:
                             if callable(checkpoint):
                                 checkpoint()
                         if self._managed_subprocess:
+                            if report_path is not None:
+                                # Command preparation may sanitize interpreter
+                                # discovery variables. Bind this host-created
+                                # diagnostic capability afterwards; never merge
+                                # caller paths back into the cleaned environment.
+                                # The sandbox already grants this private home.
+                                check_environment["PYTHONPATH"] = verifier_home
                             completed = self._run_managed_command(
                                 prepared_argv,
                                 cwd=cwd,
                                 timeout_seconds=timeout_seconds,
-                                environment=environment,
+                                environment=check_environment,
                                 cancellation_checkpoint=cancellation_checkpoint,
+                                **capture_options,
                             )
                             stdout = completed.stdout
                             stderr = completed.stderr
@@ -346,6 +579,9 @@ class DeterministicVerifier:
                             stderr = self._output_bytes(
                                 getattr(completed, "stderr", b"")
                             )
+                            if output_capture is not None:
+                                output_capture.add("stdout", stdout)
+                                output_capture.add("stderr", stderr)
                         if cancellation_checkpoint is not None:
                             cancellation_checkpoint()
                         if (
@@ -385,6 +621,7 @@ class DeterministicVerifier:
                         else:
                             exit_code = raw_returncode if raw_returncode >= 0 else 1
                             status = "passed" if exit_code == 0 else "failed"
+                        normal_completion = True
                 except VerificationDeadlineExceeded:
                     raise
                 except (TimeoutError, subprocess.TimeoutExpired):
@@ -402,6 +639,22 @@ class DeterministicVerifier:
                     status = "inconclusive"
                     exit_code = None
                     failure_reason = "command_unavailable"
+                finally:
+                    if output_capture is not None:
+                        interrupted = sys.exc_info()[0] is not None
+                        try:
+                            manifest = output_capture.finish(
+                                stdout=self._stream_evidence(stdout), stderr=self._stream_evidence(stderr),
+                                complete=normal_completion and all(
+                                    not isinstance(value, _BoundedStreamCapture) or value.stream_complete
+                                    for value in (stdout, stderr)))
+                            if output_sink is not None:
+                                output_sink(manifest)
+                        except Exception:
+                            # Preserve an existing cancellation/deadline/permission
+                            # exception even if optional diagnostic publication fails.
+                            if not interrupted:
+                                raise
                 duration_ms = max(0, int((self._clock() - started) * 1000))
                 artifact_ref = self._evidence_artifact_id(
                     workflow_id=workflow_id,
@@ -426,6 +679,10 @@ class DeterministicVerifier:
                 }
                 if evidence_sink is not None:
                     evidence_sink(artifact_ref, evidence)
+                if pytest_report_sink is not None:
+                    report = _read_pytest_report(report_path) if report_path is not None else None
+                    pytest_report_sink(_attach_pytest_case_report(report, case_path)
+                                       if case_path is not None else report)
                 statuses.append(status)
                 result_checks.append(
                     {
@@ -477,6 +734,7 @@ class DeterministicVerifier:
         cwd: str,
         verifier_home: str,
         environment: dict[str, str],
+        diagnostic_arguments: tuple[str, ...] = (),
     ) -> tuple[tuple[str, ...], str | None, str | None]:
         internal_oracle = check.kind == "oracle" and check.argv == (
             "git",
@@ -496,7 +754,7 @@ class DeterministicVerifier:
         )
         if resolved is None:
             return check.argv, None, resolution_error or "command_unavailable"
-        prepared = (resolved, *check.argv[1:])
+        prepared = (resolved, *check.argv[1:], *diagnostic_arguments)
         if internal_oracle:
             return prepared, resolved, None
         backend = self._sandbox_backend
@@ -601,6 +859,8 @@ class DeterministicVerifier:
         timeout_seconds: float,
         environment: dict[str, str],
         cancellation_checkpoint: Callable[[], None] | None,
+        stdout_capture: _BoundedStreamCapture | None = None,
+        stderr_capture: _BoundedStreamCapture | None = None,
     ) -> _ManagedCompletedProcess:
         popen_options: dict[str, object] = {
             "cwd": cwd,
@@ -616,8 +876,9 @@ class DeterministicVerifier:
         else:
             popen_options["start_new_session"] = True
         process = subprocess.Popen(argv, **popen_options)
-        stdout_capture = _BoundedStreamCapture()
-        stderr_capture = _BoundedStreamCapture()
+        stdout_capture = stdout_capture or _BoundedStreamCapture()
+        stderr_capture = stderr_capture or _BoundedStreamCapture()
+        stdout_capture.stream_complete = stderr_capture.stream_complete = False
 
         def drain(stream: object, capture: _BoundedStreamCapture) -> None:
             reader = getattr(stream, "read", None)
@@ -626,6 +887,7 @@ class DeterministicVerifier:
             try:
                 while chunk := reader(64 * 1024):
                     capture.add(chunk)
+                capture.stream_complete = True
             except (OSError, ValueError):
                 pass
             finally:

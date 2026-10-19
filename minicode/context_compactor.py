@@ -37,6 +37,7 @@ from minicode.agent_budget import AgentBudgetExceeded, record_budgeted_model_cal
 from minicode.model_call_control import (
     ModelCallDeadlineExceeded,
     call_model_next,
+    estimate_budgeted_request_input,
 )
 from minicode.memory_pipeline import (
     MemoryPromptReceipt,
@@ -219,6 +220,15 @@ class AutoCompactConfig:
 # "../../escaped" can never turn a context-compaction write into a path
 # traversal outside the results directory.
 _TOOL_RESULT_FILENAME_RE = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}")
+_SOURCE_ANCHOR_SUFFIXES = frozenset({
+    ".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".rs", ".java", ".c",
+    ".cc", ".cpp", ".h", ".hpp", ".cs", ".rb", ".php", ".swift", ".kt",
+    ".kts", ".scala", ".sh", ".sql", ".lua", ".ex", ".exs", ".vue", ".svelte",
+})
+_NON_PRODUCTION_ANCHOR_PARTS = frozenset({
+    "test", "tests", "__tests__", "fixtures", "__fixtures__", "docs",
+    "node_modules", ".git", "vendor",
+})
 
 
 def _safe_tool_result_filename(tool_name: object) -> str:
@@ -353,6 +363,124 @@ class ToolResultBudgetManager:
         return msg.get("role") == "tool_result" and not (
             msg.get("toolName") == "load_skill" and not msg.get("isError")
         )
+
+    def compact_read_history(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        eligible_ids: set[str],
+        protected_ids: set[str],
+        keep_recent: int = 2,
+        history_budget: int = 16_000,
+        source_paths: dict[str, str] | None = None,
+        invalidated_ids: set[str] | None = None,
+        max_anchor_paths: int = 2,
+        max_anchor_chars: int = 8192,
+    ) -> tuple[list[dict[str, Any]], int]:
+        """Bound old inspection text after the model has seen it in full.
+
+        Eligibility comes from completed, successful host-classified reads in
+        this loop, never from model text. Preserve every call/result pair, all
+        non-read authority documents and the entire just-completed batch (even
+        if it contains more than ``keep_recent`` results). This is an in-memory
+        projection: no cache writes are authorized by a read-only tool, and
+        workflow workers cannot access the normal tool-results archive.
+
+        The two latest successful inspection results remain full, in addition
+        to every result in the current batch. A small complete read window
+        from each of at most two recent source
+        paths gets priority *inside* the ordinary history budget, not an
+        additional allowance. Paths come only from host-observed successful
+        read_file calls; neither their contents nor this retention policy
+        confer write authority. A later successful read replaces a path's
+        candidate even when it is too large to retain. Actual writes invalidate
+        prior read IDs; no disk reads or permission checks occur here.
+        As before, recent/current-batch results, small ordinary results and
+        per-call shortened previews are outside a hard total-context bound.
+        """
+        from minicode.coding_progress import SOURCE_READ_TOOLS
+
+        indices = [
+            i for i, msg in enumerate(messages)
+            if msg.get("role") == "tool_result"
+            and msg.get("toolUseId") in eligible_ids
+            and msg.get("toolName") in SOURCE_READ_TOOLS
+            and msg.get("isError") is False
+            and "_persisted_path" not in msg
+            and not msg.get("_read_history_compacted")
+        ]
+        recent = set(indices[-max(1, keep_recent):])
+        invalidated = invalidated_ids or set()
+        latest_source: dict[str, int] = {}
+        for i, msg in enumerate(messages):
+            identity = msg.get("toolUseId")
+            raw_path = (source_paths or {}).get(identity)
+            if (
+                msg.get("role") != "tool_result"
+                or msg.get("toolName") != "read_file"
+                or identity not in eligible_ids
+                or identity in invalidated
+                or msg.get("isError") is not False
+                or str(msg.get("content", "")).startswith("[Read deduplicated:")
+                or not isinstance(raw_path, str)
+                or not raw_path
+                or "\x00" in raw_path
+            ):
+                continue
+            # Lexical identity only: resolve()/stat() would add unauthorized
+            # filesystem observation and could follow a changed symlink.
+            path = Path(os.path.normcase(os.path.abspath(self._workspace / raw_path)))
+            relative_parts = Path(os.path.relpath(path, self._workspace)).parts
+            if path.suffix.lower() not in _SOURCE_ANCHOR_SUFFIXES or any(
+                part.lower() in _NON_PRODUCTION_ANCHOR_PARTS for part in relative_parts
+            ):
+                continue
+            latest_source[str(path)] = i
+        anchors: set[int] = set()
+        anchor_size = 0
+        for index in sorted(latest_source.values(), reverse=True):
+            msg = messages[index]
+            size = len(str(msg.get("content", "")))
+            if (
+                len(anchors) >= max(0, max_anchor_paths)
+                or index not in indices
+                or size > max_anchor_chars
+                or size == 0
+                or anchor_size + size > max(0, history_budget)
+            ):
+                continue
+            anchors.add(index)
+            anchor_size += size
+        candidates = [
+            i for i in indices if i not in recent
+            and messages[i].get("toolUseId") not in protected_ids
+        ]
+        total = sum(len(str(messages[i].get("content", ""))) for i in candidates)
+        if total <= history_budget:
+            return list(messages), 0
+        modified = list(messages)
+        saved = 0
+        for index in candidates:
+            if total <= history_budget:
+                break
+            if index in anchors:
+                continue
+            msg = modified[index]
+            content = str(msg.get("content", ""))
+            old_size = len(content)
+            if old_size <= 1000:
+                continue
+            preview = (
+                f"[Earlier inspection output shortened: {old_size} characters. "
+                "Original tool arguments are retained. If exact text is needed, "
+                "read the relevant authorized source again; current contents "
+                "may differ from this earlier observation.]\n"
+                + content[:450] + "\n... [historical body omitted] ...\n" + content[-150:]
+            )
+            modified[index] = {**msg, "content": preview, "_read_history_compacted": True}
+            saved += old_size - len(preview)
+            total -= old_size - len(preview)
+        return modified, saved
 
     def _enforce_run_budget(
         self,
@@ -1671,7 +1799,9 @@ class LLMSummaryGenerator:
         try:
             if agent_budget is not None:
                 budget_reservation = agent_budget.reserve_model_call(
-                    self._estimate_prompt_tokens(prompt_messages),
+                    estimate_budgeted_request_input(self._model, prompt_messages,
+                        agent_budget=agent_budget,
+                        estimated_input=self._estimate_prompt_tokens(prompt_messages)),
                     preserve_model_calls=1,
                 )
             step = call_model_next(

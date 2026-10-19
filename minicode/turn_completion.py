@@ -20,8 +20,51 @@ _MAX_FILE_BYTES = 2 * 1024 * 1024
 _MAX_EVIDENCE = 64
 _MAX_IDENTITIES = 512
 _MISSING = "missing"
-_WRITE_TOOLS = frozenset({"edit_file", "write_file"})
+_WRITE_TOOLS = frozenset({"edit_file", "write_file", "executor_test"})
 _SECRET_OPTION = re.compile(r"(?i)(?:token|password|passwd|secret|credential|authorization|api[-_]?key|auth[-_]?key)")
+
+
+def workflow_delivery_summary(receipts, *, remaining: list[str], reason: str) -> tuple[str, dict]:
+    """Render current host delivery facts without promoting the entire goal."""
+    from minicode.workflow_delivery import WorkflowFailureReceipt
+    failed = any(isinstance(receipt, WorkflowFailureReceipt) for receipt in receipts)
+    lines = [("Workflow delivery incomplete." if failed else "Committed workflow delivery"
+              + ("; additional work remains." if remaining else "."))]
+    workflows = []
+    for receipt in receipts:
+        files = [{"path": _one_line(path, 300), "action": action} for path, action in receipt.files]
+        if isinstance(receipt, WorkflowFailureReceipt):
+            checks = [{"checkId": identity, "command": _safe_command(list(argv)),
+                       "status": status, "exitCode": exit_code}
+                      for identity, argv, status, exit_code in receipt.checks]
+            workflows.append({"workflowId": receipt.workflow_id, "taskId": receipt.task_id,
+                              "patchDigest": receipt.patch_digest, "files": files,
+                              "verification": checks, "review": receipt.review, "commit": receipt.commit,
+                              "reason": _one_line(receipt.reason, 240), "candidateRef": receipt.candidate_ref})
+            commit_text = "changes were not committed" if receipt.commit == "not_applied" else "commit state is unconfirmed"
+            lines.append(f"Workflow {_one_line(receipt.workflow_id, 150)}: {commit_text}; {_one_line(receipt.reason, 240)}.")
+            lines.extend(f"- {_safe_command(list(argv))}: {_one_line(status, 40)}"
+                         for _, argv, status, _ in receipt.checks)
+            lines.append(f"- Review: {_one_line(receipt.review, 60)}.")
+            if receipt.candidate_ref:
+                lines.append(f"- Candidate retained for inspection: {_one_line(receipt.candidate_ref, 300)}; not approved for writeback.")
+            continue
+        checks = [{"checkId": identity, "command": _safe_command(list(argv)), "status": "passed"}
+                  for identity, argv in receipt.checks]
+        workflows.append({"workflowId": receipt.workflow_id, "taskId": receipt.task_id,
+                          "patchDigest": receipt.patch_digest, "files": files,
+                          "verification": checks, "review": "approved", "commit": "completed"})
+        lines.append(f"Workflow {_one_line(receipt.workflow_id, 150)}: committed; verification passed; review approved.")
+        lines.extend(f"- {_one_line(path, 300)} ({action})" for path, action in receipt.files)
+        lines.extend(f"- {_safe_command(list(argv))}: passed" for _, argv in receipt.checks)
+    if remaining:
+        lines.append("Remaining work:")
+        lines.extend("- " + _one_line(item, 300) for item in remaining)
+    document = {"deliveryVersion": 1, "delivery": "partial" if failed or remaining else "delivered",
+                "overallGoal": "not_assessed", "reason": _one_line(reason, 240),
+                "workflows": workflows, "remaining": [_one_line(item, 300) for item in remaining],
+                "continuesAfterResponse": False}
+    return "\n".join(lines), document
 
 
 def _one_line(value: object, limit: int) -> str:
@@ -284,6 +327,11 @@ class TurnCompletionPolicy:
     def lower_limit(self, new_limit: int) -> None:
         self.work_limit = min(self.work_limit, max(0, new_limit))
         self._extensions_disabled = True
+
+    @property
+    def observed_changed_paths(self) -> frozenset[str]:
+        """Paths whose bytes this observer confirmed changed; no new authority."""
+        return frozenset(self._changed_paths)
 
     def summary(self, reason: str) -> str:
         lines = [f"Partial progress; stopped because {_one_line(reason, 240)}."]

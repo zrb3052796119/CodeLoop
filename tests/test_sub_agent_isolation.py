@@ -329,6 +329,7 @@ def test_scheduler_executor_is_local_without_narrowing_direct_general(
         "edit_file",
         "file_line_count",
         "get_ast_info",
+        "grep_files",
         "list_files",
         "patch_file",
         "read_file",
@@ -787,16 +788,18 @@ def test_sub_agent_tool_progress_reaches_the_ui_but_not_the_run_journal(
         ),
     )
 
-    # Prefixed so concurrent read-only sub-agents stay distinguishable.
-    assert ui == [
-        ("start", "explore▸read_file"),
-        ("finish", "explore▸read_file", False),
-    ]
+    # The run identity distinguishes concurrent explorers of the same type.
+    import re
+
+    assert len(ui) == 2
+    label = ui[0][1]
+    assert re.fullmatch(r"explore:[0-9a-f]{8}▸read_file", label)
+    assert ui == [("start", label), ("finish", label, False)]
     # The Run stream still carries only the single bounded summary.
     assert journal == ["subagent.completed"]
 
 
-def test_sub_agent_without_a_presentation_channel_passes_no_callbacks(
+def test_sub_agent_without_a_presentation_channel_keeps_diagnostic_callbacks(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     captured = _capture_sub_turn(monkeypatch)
@@ -806,8 +809,10 @@ def test_sub_agent_without_a_presentation_channel_passes_no_callbacks(
         _context(tmp_path, _agent_depth=0),
     )
 
-    assert captured["on_tool_start"] is None
-    assert captured["on_tool_result"] is None
+    # Headless execution still needs durable private tool evidence. UI
+    # presentation remains optional and is tested separately above.
+    assert callable(captured["on_tool_start"])
+    assert callable(captured["on_tool_result"])
 
 
 def _task_call(agent_type: str, index: int = 0) -> dict:

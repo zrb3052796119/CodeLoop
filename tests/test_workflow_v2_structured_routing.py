@@ -26,6 +26,7 @@ from minicode.run_journal import (
 from minicode.run_lifecycle import observe_run
 from minicode.scheduler_artifacts import (
     MAX_SCHEDULER_ARTIFACTS_PER_WORKFLOW,
+    MAX_SCHEDULER_ARTIFACT_TOTAL_BYTES,
     SchedulerArtifact,
     SchedulerArtifactError,
     SchedulerArtifactStore,
@@ -52,9 +53,10 @@ from minicode.workflow_workspace import (
 def _request(
     *,
     kind: str = "change",
-    risk: str = "low",
-    # Default True keeps this fixture on the full reviewed chain; tests for
-    # the scoped EXECUTOR->VERIFIER route opt out with complex=False.
+    # Review tests request medium risk explicitly through this default;
+    # complexity alone must not add an Analyst or Reviewer. Scoped-route
+    # tests opt in with risk="low".
+    risk: str = "medium",
     complex: bool = True,
 ):
     return {
@@ -405,7 +407,7 @@ def _run(
     )
 
 
-def test_public_low_scoped_change_takes_executor_verifier_route(
+def test_public_low_scoped_change_takes_executor_verifier_reviewer_route(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -415,11 +417,15 @@ def test_public_low_scoped_change_takes_executor_verifier_route(
     def worker(input_data, context):
         role = _worker_role(input_data)
         roles.append(role)
-        assert role == "executor"
-        Path(context.cwd, "allowed.txt").write_text(
-            "after", encoding="utf-8"
-        )
-        _write_executor_declaration(input_data, context)
+        if role == "executor":
+            Path(context.cwd, "allowed.txt").write_text(
+                "after", encoding="utf-8"
+            )
+            _write_executor_declaration(input_data, context)
+        else:
+            assert role == "reviewer"
+            assert (tmp_path / "allowed.txt").read_text(encoding="utf-8") == "before"
+            _write_reviewer_result(input_data, context)
         return ToolResult(ok=True, output=f"{role} completed")
 
     def verifier(self, **request):
@@ -431,16 +437,15 @@ def test_public_low_scoped_change_takes_executor_verifier_route(
 
     result = _run(
         tmp_path,
-        _request(complex=False),
+        _request(risk="low", complex=False),
         monkeypatch,
         commit_audit_waived=True,
     )
 
-    # The narrow, fully covered, low-risk scope skips Analyst and Reviewer;
-    # the deterministic Verifier gate still runs and the change still
-    # commits through the frozen-promotion path.
+    # A narrow low-risk scope skips Analyst, but passing commands still need
+    # semantic review before the frozen candidate can be promoted.
     assert result.ok is True
-    assert roles == ["executor", "verifier"]
+    assert roles == ["executor", "verifier", "reviewer"]
     assert (tmp_path / "allowed.txt").read_text(encoding="utf-8") == "after"
     projected = extract_subagent_result(result.output)
     assert projected is not None
@@ -455,6 +460,10 @@ def test_public_low_scoped_change_takes_executor_verifier_route(
         transition["stage"]
         for transition in trace["transitions"]
     ].count("analyst") == 0
+    assert [
+        transition["outcome"] for transition in trace["transitions"]
+        if transition["stage"] == "reviewer"
+    ] == ["dispatched", "completed"]
 
 
 def test_executor_order_narrowing_write_scope_passes_sealed_audit(
@@ -2090,7 +2099,7 @@ def test_maximum_v2_evidence_and_retry_shape_stays_below_artifact_limit(
     assert target.read_text(encoding="utf-8") == "after\n"
     assert analyst_attempts == reviewer_attempts == 2
     assert len(audits) == 1
-    assert len(audits[0].artifacts) == (MAX_SCHEDULER_ARTIFACTS_PER_WORKFLOW - 3)
+    assert len(audits[0].artifacts) == (MAX_SCHEDULER_ARTIFACTS_PER_WORKFLOW - 2)
     assert audits[0].trace["committed"] is True
 
 
@@ -2490,7 +2499,7 @@ def test_failed_verifier_artifact_remains_replayable_and_tamper_evident(
     )
     with pytest.raises(
         SchedulerAuditValidationError,
-        match="effective routing",
+        match="review routing authority is missing",
     ):
         project_scheduler_audit(
             profile=audit.profile,
@@ -2567,11 +2576,15 @@ def test_malformed_executor_result_is_replaced_by_exact_failure_receipt(
         else:
             assert role == "executor"
             executor_result_key = input_data["_result_key"]
-            context._subagent_mailbox.write(
-                executor_result_key,
-                '{"fabricated":true}',
-                author="executor",
-            )
+            # Semantic preflight now rejects this at the note boundary. The
+            # returned worker still has no accepted declaration, so its final
+            # trace must retain a real Scheduler failure receipt.
+            with pytest.raises(SchedulerArtifactError, match="invalid Executor declaration"):
+                context._subagent_mailbox.write(
+                    executor_result_key,
+                    '{"fabricated":true}',
+                    author="executor",
+                )
         return ToolResult(ok=True, output=f"{role} complete")
 
     monkeypatch.setattr(task_module, "_run", worker)
@@ -2611,7 +2624,7 @@ def test_malformed_executor_result_is_replaced_by_exact_failure_receipt(
     forged_terminal["artifactId"] = executor_result_key
     with pytest.raises(
         SchedulerAuditValidationError,
-        match="terminal ExecutionResult",
+        match="unsealed artifact",
     ):
         project_scheduler_audit(
             profile=audit.profile,
@@ -3835,7 +3848,7 @@ def test_truncated_frozen_diff_cannot_be_presented_as_approved(
             _write_analyst_result(input_data, context, prepare_change=True)
         elif role == "executor":
             Path(context.cwd, "allowed.txt").write_text(
-                "x" * 13_000,
+                "x" * MAX_SCHEDULER_ARTIFACT_TOTAL_BYTES,
                 encoding="utf-8",
             )
             _write_executor_declaration(input_data, context)

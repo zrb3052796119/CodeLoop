@@ -180,79 +180,14 @@ def _current_date_section() -> str:
 
 
 def _engineering_governance_rules() -> str:
-    r"""Return engineering governance rules as system prompt section.
+    """Return repository-neutral defaults; explicit project rules stay in force."""
+    return """## Engineering practice
 
-    These rules are mandatory and apply to all code generation activities.
-    Based on: D:\Desktop\engineering-governance
-    """
-    return """## Engineering Governance Rules (MANDATORY)
-
-These rules apply to ALL code you write. No exceptions.
-
-### Iron Laws
-1. **Theory first**: Read theory before any engineering activity
-2. **Requirements first**: No code without design, no design without requirements
-3. **1:1 binding**: Requirements and knowledge always appear in pairs
-4. **Design-driven**: Code implements design, not independent creation
-5. **Audit loop**: Execute audit after each phase, fail → fix → re-audit
-6. **Single sink**: business/src/ must have exactly ONE sink file
-7. **One-way dependencies**: All dependency flow is unidirectional, zero cycles
-8. **No skipping**: Each phase's exit signals must be met before next phase
-
-### Package Structure (Six Areas)
-Every package must have:
-- `port/port_entry/` — Entry points (can import anything)
-- `wrap/src/` — External library adapters (import: port_entry, wrap/config, wrap/src)
-- `business/src/` — Business logic (import: wrap sinks, business/config, business/src)
-- `test/src/` — Tests (import: business/src, test/config, test/src)
-- `business/config/` — Business config (zero dependencies)
-- `wrap/config/` — Adapter config (zero dependencies)
-- `test/config/` — Test config (zero dependencies)
-
-### Dependency Direction Rules
-- `business/src/` → `wrap/src/` sinks → `port/port_entry/` → `vendor/`
-- `business/src/` CANNOT import vendor/, external libs directly
-- `wrap/src/` CANNOT import business/src/
-- Config imports always come LAST in import statements
-- Cross-package: port_exit → port_entry (same language to same language)
-
-### Sink Rule
-- `business/src/`: EXACTLY ONE sink (file not imported by other business/src/ files)
-- `wrap/src/`: Can have multiple sinks (each must be used by business/src/)
-- `test/src/`: Can have multiple sinks (all must be used by port_exit)
-- Multiple sinks in business/src/ = MUST split package
-
-### Documentation System
-- Requirements → Knowledge → Design → Code (strict one-way flow)
-- Each requirement scenario has exactly one matching knowledge file (1:1 path mirror)
-- Each design file cites: satisfied requirements, depended knowledge
-- Code file paths must be isomorphic to design file paths
-
-### Import Sorting Example
-```python
-# Non-config imports first
-from package.wrap/src/adapter import Adapter
-from package.business/src/service import Service
-
-# Config imports LAST
-from package.business/config import settings
-```
-
-### Audit Checklist (Execute After Code Changes)
-Audit 0: Knowledge ↔ Requirements 1:1
-Audit 1: Design ← Requirements + Knowledge coverage
-Audit 2: Code ← Design isomorphism + Dependency compliance
-Audit 3: business/src/ single sink + Package DAG
-
-### Boundary Packaging (Legacy Code)
-- When introducing legacy code: only through port_entry → wrap/src/ ([LEGACY] tag)
-- Each [LEGACY] file must have expected cleanup date
-- Legacy code can reference governance area via port_exit directly
-
-### Repository Rules
-- ZERO compositional dependencies between repositories
-- Cross-repository needs: copy to local vendor/
-- Vendor only imported by port_entry/"""
+- Follow explicit user and project instructions, the existing architecture, and local code/test conventions.
+- For a bug fix or small maintenance change, inspect the relevant behavior and tests, then make the smallest supported change once the cause and target are clear. Read more only to resolve a specific remaining uncertainty.
+- Use a brief design when the change introduces a new capability or materially changes architecture. Separate planning documents or a new directory layout are required only when the user or project calls for them.
+- Read-only investigations stay read-only. A request to change code does not grant access beyond the approved paths or bypass tool permissions.
+- Run focused verification for the affected behavior. Report actual changes, checks, and remaining failures; if evidence, scope, or permission blocks progress, state the concrete blocker without inventing a fix."""
 
 
 def build_system_prompt(
@@ -315,7 +250,9 @@ def build_system_prompt(
         f"Persistent {MEMORY_USE_POLICY}\n"
         f"{interaction_rule}\n"
         "Do not choose subjective preferences such as colors, visual style, copy tone, or naming unless the user explicitly told you to decide yourself.\n"
-        "When using read_file, pay attention to the header fields. If it says TRUNCATED: yes, continue reading with a larger offset before concluding that the file itself is cut off.\n"
+        "For read_file, TRUNCATED: yes means the returned window ends before EOF; it does not require reading the whole file. "
+        "Use grep_files to locate relevant definitions, callers, or tests, then read_file start_line/end_line to read only the needed windows. "
+        "Once the target and expected behavior are clear, make the smallest supported change.\n"
         "If the user names a skill or clearly asks for a workflow that matches a listed skill, call load_skill before following it.\n"
         "Skill authoring policy: when the user asks to create, add, install, generate, or write a NEW Skill or SKILL.md, call propose_skill first if that tool is available.\n"
         "Do not call write_file for a new Skill until propose_skill has returned a target_path/frontmatter proposal and the user has confirmed that proposal.\n"
@@ -324,15 +261,17 @@ def build_system_prompt(
         "## Sub-agent (task tool) usage guide\n"
         "You have access to the 'task' tool which can spawn sub-agents for complex work. Use it when:\n"
         "- You need to explore a large codebase without bloating the main context (agent_type='explore')\n"
-        "- You need thorough analysis of a codebase area before acting (agent_type='plan')\n"
-        "- Small low-risk edits (a few non-sensitive files, bounded diff): edit directly with edit_file/write_file and verify with run_command; the direct-edit budget escalates to the workflow route automatically once exceeded\n"
-        "- Larger, risky, sensitive, or multi-step state-changing work: use agent_type='workflow' with write_paths and verification_commands (the scheduler constructs WorkflowRequest.v1 for you) or an explicit workflow_request; the central scheduler owns routing, verification, review, and commit; narrow fully-verified scopes take the cheap Executor->Verifier route automatically\n"
+        "- You need an analysis-only answer or must resolve a specific design uncertainty (agent_type='plan'); give it a bounded question, not a request to understand the entire repository\n"
+        "- Small low-risk edits (a few non-sensitive files, bounded diff): edit directly with edit_file/write_file and verify with run_command; if a permission decision requires workflow, delegate the remaining work through that route\n"
+        "- For delegated changes, call agent_type='workflow' directly with write_paths and verification_commands (the scheduler constructs WorkflowRequest.v1 for you) or an explicit workflow_request. Do not routinely run Plan first: the scheduler selects Analyst when the scope and risk require it, and narrow fully-verified scopes use Executor->Verifier. Verification, approval, review, and commit gates remain scheduler-owned\n"
+        "- Keep the workflow prompt within 3800 characters: state the objective, observed failure, constraints, and acceptance outcome; put authorized paths and verification argv in their dedicated fields. Do not paste source files or exploration transcripts. Preserve essential requirements when shortening the handoff\n"
+        "- Once the relevant code and expected behavior are clear, make or delegate the smallest supported change. Read more only to resolve a concrete uncertainty; if scope, evidence, or permission blocks the change, report that blocker accurately\n"
         "- agent_type='general' is a deprecated legacy-embedder compatibility route and is rejected by the production Agent Loop\n"
         "- A committed workflow completes that child task; continue any remaining user-requested work, collect owned async results, and summarize without repeating committed changes\n"
         "Do NOT use the task tool for simple lookups — use read_file/grep_files directly.\n"
         "If you did delegate exploration to a sub-agent, do not repeat that search yourself in the main context — wait for its result and build on it.\n"
         "Do NOT use the task tool just to avoid work — use it when it genuinely improves efficiency.\n"
-        "Structured workflow roles do not negotiate or exchange free-form notes; they read only scheduler-assigned artifacts and write one exact result artifact. "
+        "Structured workflow roles do not negotiate or exchange free-form notes; they read Assignment-authorized source paths and scheduler-assigned artifacts, and write one exact result artifact. "
         "For structured roles the note tools transport only authorized artifacts; independent explore/plan agents may use them for bounded shared notes.\n"
         "\n"
         "Structured response protocol:\n"

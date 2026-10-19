@@ -38,12 +38,13 @@ class _RecordingSink:
         self.events.append((event_type, dict(payload or {})))
 
 
-def test_default_turn_budget_has_finite_token_call_and_cost_limits() -> None:
+def test_default_turn_budget_accounts_usage_without_implicit_cumulative_limits() -> None:
     budget = AgentTurnBudget.from_runtime({})
 
-    assert budget.max_total_tokens == 3_000_000
-    assert budget.max_model_calls == 150
-    assert str(budget.max_cost_usd) == "5.00"
+    assert budget.max_total_tokens is None
+    assert budget.max_model_calls is None
+    assert budget.max_cost_usd is None
+    assert not budget.has_limits
 
 
 def test_request_timeout_is_bounded_by_remaining_agent_deadline() -> None:
@@ -566,9 +567,9 @@ def test_safe_runtime_summary_never_projects_credentials() -> None:
         "subagentConfigured": True,
     }
     assert summary["effectiveTurnBudget"] == {
-        "maxTokens": 3_000_000,
-        "maxModelCalls": 150,
-        "maxCostUsd": "5.00",
+        "maxTokens": None,
+        "maxModelCalls": None,
+        "maxCostUsd": None,
     }
 
 

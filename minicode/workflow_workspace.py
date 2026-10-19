@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import base64
+import difflib
 import hashlib
 import json
+import math
 import os
 import shutil
 import stat
@@ -18,6 +20,11 @@ from pathlib import Path
 from typing import Iterator
 
 from minicode import advisory_lock
+from minicode.scheduler_artifacts import (
+    MAX_SCHEDULER_ARTIFACT_TOTAL_BYTES,
+    SchedulerArtifactError,
+    _canonical_json,
+)
 from minicode.task_deadline import (
     DEFAULT_TASK_TIMEOUT_SECONDS,
     TaskDeadlineExceeded,
@@ -172,13 +179,13 @@ class WorkflowWorkspaceTransaction:
         cwd: str,
         *,
         deadline_monotonic: float | None = None,
-        timeout_seconds: float = DEFAULT_TASK_TIMEOUT_SECONDS,
+        timeout_seconds: float | None = DEFAULT_TASK_TIMEOUT_SECONDS,
         operation_checkpoint: object | None = None,
         baseline_scope_paths: tuple[str, ...] | None = None,
         baseline_scope_relative_to_cwd: bool = False,
     ) -> None:
         self._deadline_monotonic: float | None = None
-        self._timeout_seconds: float = DEFAULT_TASK_TIMEOUT_SECONDS
+        self._timeout_seconds: float | None = DEFAULT_TASK_TIMEOUT_SECONDS
         self._operation_checkpoint: object | None = None
         self.set_operation_guard(
             deadline_monotonic=deadline_monotonic,
@@ -261,7 +268,7 @@ class WorkflowWorkspaceTransaction:
             self._snapshot_directory()
             self._validate_snapshot_symlinks()
             source_state_digest = self._filesystem_state_digest(
-                self.workspace_root
+                self.workspace_root, use_digest_cache=False
             )
             self.cwd = self.workspace_root / relative_cwd
             if not self.cwd.is_dir():
@@ -271,6 +278,17 @@ class WorkflowWorkspaceTransaction:
             self._initialize_isolated_repository()
             self._snapshot_trusted_git_metadata()
             self._source_state_digest = source_state_digest
+            # Private diagnostic images are read before workers can change
+            # the candidate. They confer no freeze/promotion authority.
+            from minicode.failure_evidence import capture_scoped_files
+
+            try:
+                self._diagnostic_baseline = (
+                    capture_scoped_files(self.workspace_root, self._baseline_scope_roots)
+                    if self._baseline_scope_roots is not None else None
+                )
+            except Exception:  # Diagnostics cannot alter transaction admission.
+                self._diagnostic_baseline = None
         except BaseException:
             self.close()
             raise
@@ -287,6 +305,62 @@ class WorkflowWorkspaceTransaction:
             self._temporary = None
             temporary.cleanup()
 
+    def capture_failure_candidate(
+        self,
+        allowed_paths: tuple[str, ...],
+        *,
+        paths_relative_to_cwd: bool = True,
+    ) -> dict[str, object]:
+        """Return bounded diagnostic images, never a frozen change capability.
+
+        The host calls this before close, including after budget/cancellation.
+        It cannot execute a command, mutate the candidate, or promote files.
+        """
+        from minicode.failure_evidence import capture_scoped_files
+
+        normalized = self._root_relative_scope(
+            allowed_paths, paths_relative_to_cwd=paths_relative_to_cwd,
+        )
+        if self._baseline_scope_roots is not None and any(
+            not self._path_is_allowed(path, self._baseline_scope_roots)
+            for path in normalized
+        ):
+            raise WorkflowIsolationError("diagnostic capture exceeds original write scope")
+        current = capture_scoped_files(self.workspace_root, normalized)
+        baseline = getattr(self, "_diagnostic_baseline", None)
+        original = baseline["files"] if isinstance(baseline, dict) else {}
+        files = []
+        captured = current["files"]
+        for relative in sorted(set(captured) | set(original)):
+            if not self._path_is_allowed(relative, normalized):
+                continue
+            before = original.get(relative)
+            after = captured.get(relative)
+            if before is not None and after is not None and before.get("sha256") and before.get("sha256") == after.get("sha256"):
+                continue
+            if after is None and not current["complete"]:
+                continue  # An incomplete scan is not evidence of deletion.
+            record = dict(after or {"path": relative, "action": "deleted"})
+            if before is not None and before.get("sha256"):
+                record["baselineSha256"] = before["sha256"]
+            if after is not None:
+                record["action"] = "modified" if before else "created" if baseline and baseline["complete"] else "captured"
+            if before and "content" in before and (after is None or "content" in after) and len(before["content"]) < 64000 and (after is None or len(after["content"]) < 64000):
+                diff = "".join(difflib.unified_diff(
+                    before["content"].splitlines(keepends=True),
+                    (after["content"] if after else "").splitlines(keepends=True),
+                    fromfile="a/" + relative, tofile="b/" + relative,
+                ))
+                record["diff"] = diff[:24000]
+                record["diffTruncated"] = len(diff) > 24000
+            files.append(record)
+        return {
+            "failureCandidateVersion": 1, "promotable": False,
+            "baseDigest": self.base_digest, "files": files,
+            "complete": current["complete"] and not any("omitted" in item for item in files),
+            "baselineComplete": bool(baseline and baseline["complete"]),
+        }
+
     @property
     def parent_promotion_completed(self) -> bool:
         """Whether the approved patch has finished applying to the parent."""
@@ -302,26 +376,28 @@ class WorkflowWorkspaceTransaction:
         self,
         *,
         deadline_monotonic: float | None,
-        timeout_seconds: float,
+        timeout_seconds: float | None,
         operation_checkpoint: object | None,
     ) -> None:
         if deadline_monotonic is not None and (
             isinstance(deadline_monotonic, bool)
             or not isinstance(deadline_monotonic, (int, float))
+            or not math.isfinite(deadline_monotonic)
         ):
             raise TypeError("workflow deadline must be numeric or null")
-        if (
+        if timeout_seconds is not None and (
             isinstance(timeout_seconds, bool)
             or not isinstance(timeout_seconds, (int, float))
+            or not math.isfinite(timeout_seconds)
             or not float(timeout_seconds) > 0
         ):
-            raise TypeError("workflow timeout must be positive")
+            raise TypeError("workflow timeout must be finite positive or null")
         if operation_checkpoint is not None and not callable(
             operation_checkpoint
         ):
             raise TypeError("workflow checkpoint must be callable or null")
         self._deadline_monotonic = deadline_monotonic
-        self._timeout_seconds = float(timeout_seconds)
+        self._timeout_seconds = float(timeout_seconds) if timeout_seconds is not None else None
         self._operation_checkpoint = operation_checkpoint
 
     def _commit_checkpoint(self) -> float | None:
@@ -603,6 +679,7 @@ class WorkflowWorkspaceTransaction:
         use_operation_guard: bool = True,
         ignored_names: frozenset[str] = _WORKSPACE_IGNORED_ENTRY_NAMES,
         ignored_root_entries: frozenset[str] = frozenset(),
+        use_digest_cache: bool = True,
     ) -> str:
         """Hash workspace bytes and entry types without following symlinks."""
         return self._workspace_state_digest(
@@ -611,6 +688,7 @@ class WorkflowWorkspaceTransaction:
             use_operation_guard=use_operation_guard,
             ignored_names=ignored_names,
             ignored_root_entries=ignored_root_entries,
+            use_digest_cache=use_digest_cache,
         )
 
     def _promotion_state_digest(
@@ -632,6 +710,7 @@ class WorkflowWorkspaceTransaction:
             use_operation_guard=use_operation_guard,
             ignored_names=_WORKSPACE_IGNORED_ENTRY_NAMES,
             ignored_root_entries=frozenset(),
+            use_digest_cache=False,
         )
 
     def _scoped_filesystem_state_digest(
@@ -659,6 +738,7 @@ class WorkflowWorkspaceTransaction:
             ignored_names=_WORKSPACE_IGNORED_ENTRY_NAMES,
             ignored_root_entries=frozenset(),
             guard_roots=guard_roots,
+            use_digest_cache=False,
         )
 
     def _git_control_state_digest(self, root: Path) -> str:
@@ -667,6 +747,7 @@ class WorkflowWorkspaceTransaction:
             root,
             ignored_names=frozenset(),
             ignored_root_entries=_MUTABLE_GIT_ROOT_ENTRIES,
+            use_digest_cache=False,
         )
 
     def _workspace_state_digest(
@@ -678,10 +759,10 @@ class WorkflowWorkspaceTransaction:
         ignored_names: frozenset[str],
         ignored_root_entries: frozenset[str],
         guard_roots: tuple[str, ...] | None = None,
+        use_digest_cache: bool = True,
     ) -> str:
         digest = hashlib.sha256()
-        shared_cache = shared_workspace_digest_cache()
-        digest_cache = shared_cache if shared_cache.enabled else None
+        digest_cache = shared_workspace_digest_cache()
 
         def checkpoint() -> None:
             if use_operation_guard:
@@ -757,26 +838,26 @@ class WorkflowWorkspaceTransaction:
                     stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
                 )
                 digest.update(b"X" if executable else b"-")
-                if digest_cache is not None:
-                    # Cached trees fold each file's content digest (b"H" plus
-                    # 32 bytes) instead of streaming raw bytes, so repeated
-                    # walks skip re-reading unchanged files.  The legacy
-                    # byte stream applies whenever the cache is disabled.
-                    digest.update(b"H")
-                    digest.update(
+                # Cache policy cannot alter byte identity or tree encoding.
+                # Authority gates always read each file afresh; diagnostic
+                # walks may reuse the same unchanged filesystem object.
+                digest.update(b"H")
+                try:
+                    content_digest = (
                         digest_cache.content_digest(
                             path,
                             relative_posix=relative_path.as_posix(),
                             size=metadata.st_size,
                             mtime_ns=metadata.st_mtime_ns,
                             checkpoint=checkpoint,
+                            use_cache=use_digest_cache,
                         )
                     )
-                else:
-                    with path.open("rb") as handle:
-                        while chunk := handle.read(1024 * 1024):
-                            checkpoint()
-                            digest.update(chunk)
+                except OSError as exc:
+                    raise WorkflowIsolationError(
+                        f"workflow state could not be read consistently: {path}"
+                    ) from exc
+                digest.update(content_digest)
 
         visit(root, Path())
         return "sha256:" + digest.hexdigest()
@@ -789,7 +870,9 @@ class WorkflowWorkspaceTransaction:
         not establish independent changes. Until read dependencies are proven,
         any parent drift invalidates the frozen verification result.
         """
-        current = self._filesystem_state_digest(self.source_root)
+        current = self._filesystem_state_digest(
+            self.source_root, use_digest_cache=False
+        )
         if current != self._source_state_digest:
             raise WorkflowIsolationError(
                 "parent workspace changed after workflow snapshot; "
@@ -877,6 +960,7 @@ class WorkflowWorkspaceTransaction:
         self._trusted_git_state_digest = self._filesystem_state_digest(
             self._trusted_git_root,
             ignored_names=frozenset(),
+            use_digest_cache=False,
         )
         self._trusted_git_control_digest = self._git_control_state_digest(
             self._trusted_git_root
@@ -892,6 +976,7 @@ class WorkflowWorkspaceTransaction:
                 self._filesystem_state_digest(
                     self._trusted_git_root,
                     ignored_names=frozenset(),
+                    use_digest_cache=False,
                 )
                 != self._trusted_git_state_digest
             ):
@@ -906,11 +991,13 @@ class WorkflowWorkspaceTransaction:
                 self._filesystem_state_digest(
                     self._trusted_git_root,
                     ignored_names=frozenset(),
+                    use_digest_cache=False,
                 )
                 != self._trusted_git_state_digest
                 or self._filesystem_state_digest(
                     destination_git,
                     ignored_names=frozenset(),
+                    use_digest_cache=False,
                 )
                 != self._trusted_git_state_digest
             ):
@@ -1217,7 +1304,9 @@ class WorkflowWorkspaceTransaction:
                 or self._parent_promotion_unknown
             ):
                 raise WorkflowIsolationError("workflow change cannot be reopened for repair")
-            if self._filesystem_state_digest(self.workspace_root) != frozen._frozen_state_digest:
+            if self._filesystem_state_digest(
+                self.workspace_root, use_digest_cache=False
+            ) != frozen._frozen_state_digest:
                 raise WorkflowIsolationError("workflow frozen workspace changed before repair")
             self._commit_checkpoint()
             self._frozen_change = None
@@ -1241,7 +1330,7 @@ class WorkflowWorkspaceTransaction:
                 paths_relative_to_cwd=paths_relative_to_cwd,
             )
             source_state_digest = self._filesystem_state_digest(
-                self.workspace_root
+                self.workspace_root, use_digest_cache=False
             )
             source_target_digest = self._promotion_state_digest(
                 self.workspace_root
@@ -1260,7 +1349,7 @@ class WorkflowWorkspaceTransaction:
                     frozen_workspace_root,
                 )
                 frozen_state_digest = self._filesystem_state_digest(
-                    frozen_workspace_root
+                    frozen_workspace_root, use_digest_cache=False
                 )
                 target_state_digest = self._promotion_state_digest(
                     frozen_workspace_root
@@ -1284,13 +1373,17 @@ class WorkflowWorkspaceTransaction:
                 patch = self._staged_patch(frozen_workspace_root)
                 changed = self._changed_files(frozen_workspace_root)
                 if (
-                    self._filesystem_state_digest(self.workspace_root)
+                    self._filesystem_state_digest(
+                        self.workspace_root, use_digest_cache=False
+                    )
                     != source_state_digest
                     or self._git_control_state_digest(
                         frozen_workspace_root / ".git"
                     )
                     != self._trusted_git_control_digest
-                    or self._filesystem_state_digest(frozen_workspace_root)
+                    or self._filesystem_state_digest(
+                        frozen_workspace_root, use_digest_cache=False
+                    )
                     != frozen_state_digest
                 ):
                     raise WorkflowIsolationError(
@@ -1363,7 +1456,30 @@ def _frozen_diff_document(
     base_digest: str,
     patch_digest: str,
 ) -> dict[str, object]:
-    """Project exact frozen patch bytes into bounded review evidence."""
+    """Keep complete patch data within the workflow's storage allowance."""
+    if len(patch) <= MAX_SCHEDULER_ARTIFACT_TOTAL_BYTES:
+        try:
+            full_diff = patch.decode("utf-8")
+        except UnicodeDecodeError:
+            pass
+        else:
+            document = {
+                "diffVersion": 1,
+                "baseDigest": base_digest,
+                "patchDigest": patch_digest,
+                "byteCount": len(patch),
+                "complete": True,
+                "encoding": "utf-8",
+                "diff": full_diff,
+            }
+            try:
+                # Use the host data path, not the model control-contract cap.
+                # JSON escaping and metadata still count toward total storage.
+                _canonical_json(document, allow_frozen_diff=True)
+            except SchedulerArtifactError:
+                pass
+            else:
+                return document
     limit = 12_000
     complete = len(patch) <= limit
     if complete:
@@ -1501,7 +1617,7 @@ class FrozenWorkflowChange:
 
     @property
     def diff_artifact_document(self) -> dict[str, object]:
-        """Return detached, bounded review evidence for the exact patch."""
+        """Return detached review evidence for the exact patch."""
         with self._owner_session():
             patch = self._patch
             base_digest = self._base_digest
@@ -1524,7 +1640,9 @@ class FrozenWorkflowChange:
         with self._owner_session() as owner:
             owner._validate_snapshot_symlinks(self._frozen_workspace_root)
             if (
-                owner._filesystem_state_digest(self._frozen_workspace_root)
+                owner._filesystem_state_digest(
+                    self._frozen_workspace_root, use_digest_cache=False
+                )
                 != self._frozen_state_digest
             ):
                 raise WorkflowIsolationError(
@@ -1546,14 +1664,18 @@ class FrozenWorkflowChange:
                     verification_root,
                 )
                 if (
-                    owner._filesystem_state_digest(verification_root)
+                    owner._filesystem_state_digest(
+                        verification_root, use_digest_cache=False
+                    )
                     != self._frozen_state_digest
                     or owner._staged_patch(verification_root) != self._patch
                     or owner._git_control_state_digest(
                         verification_root / ".git"
                     )
                     != owner._trusted_git_control_digest
-                    or owner._filesystem_state_digest(verification_root)
+                    or owner._filesystem_state_digest(
+                        verification_root, use_digest_cache=False
+                    )
                     != self._frozen_state_digest
                 ):
                     raise WorkflowIsolationError(
@@ -1587,7 +1709,9 @@ class FrozenWorkflowChange:
                     "workflow patch digest changed after verification"
                 )
             if (
-                owner._filesystem_state_digest(owner.workspace_root)
+                owner._filesystem_state_digest(
+                    owner.workspace_root, use_digest_cache=False
+                )
                 != self._frozen_state_digest
                 or owner._promotion_state_digest(owner.workspace_root)
                 != self._target_state_digest
@@ -1711,6 +1835,7 @@ class FrozenWorkflowChange:
                                 full_parent_state = owner._filesystem_state_digest(
                                     owner.source_root,
                                     use_operation_guard=False,
+                                    use_digest_cache=False,
                                 )
                                 if full_parent_state == owner._source_state_digest:
                                     owner._parent_promotion_unknown = False

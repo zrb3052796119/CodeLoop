@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import json
 import math
 import time
 from typing import Any, Mapping
@@ -86,6 +87,75 @@ def controlled_retry_sleep(
     )
 
 
+def _accepted_model_kwargs(model: Any, supplied: Mapping[str, Any]) -> dict[str, Any]:
+    """Use the same option projection for admission and the eventual call."""
+    accepted: dict[str, Any] = {}
+    try:
+        signature = inspect.signature(model.next)
+        parameters = signature.parameters
+        has_kwargs = any(
+            parameter.kind == inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters.values()
+        )
+        for name, value in supplied.items():
+            if has_kwargs or name in parameters:
+                accepted[name] = value
+    except (TypeError, ValueError):
+        for name, value in supplied.items():
+            if name not in {"cancellation_token", "deadline_monotonic"}:
+                accepted[name] = value
+    return accepted
+
+
+def estimate_budgeted_request_input(
+    model: Any,
+    messages: list[dict[str, Any]],
+    *,
+    agent_budget: Any,
+    estimated_input: int,
+    optional_kwargs: Mapping[str, Any] | None = None,
+    default_tools: Any = None,
+) -> int:
+    """Keep calibration, but never omit the selected request's tool schemas.
+
+    Only finite token admission needs this estimate. Provider usage is still
+    settled unchanged. Model-side schemas already present in calibration are
+    not added twice; host-only tool metadata is never serialized here.
+    """
+    if agent_budget is None or agent_budget.snapshot().limit_total_tokens is None:
+        return estimated_input
+    from minicode.context_manager import estimate_messages_tokens, estimate_tokens
+
+    accepted = _accepted_model_kwargs(model, optional_kwargs or {})
+    schema_tokens = 0
+    projection = getattr(model, "request_tool_schemas", None)
+    if callable(projection):
+        # Adapters own late runtime overrides and structured-output clearing.
+        schema_options = {name: accepted[name] for name in (
+            "tools_override", "disable_tools", "json_object_override", "response_schema_override"
+        ) if name in accepted}
+        schemas = projection(**schema_options)
+    elif accepted.get("disable_tools", False):
+        schemas = []
+    else:
+        override = accepted.get("tools_override")
+        selected = override if override is not None else getattr(model, "tools", default_tools)
+        if selected is None or not selected.list():
+            schemas = []
+        else:
+            serializer = getattr(model, "_get_serialized_tools", None)
+            if callable(serializer):
+                schemas = (serializer(tools_override=override) if override is not None
+                           else serializer())
+            else:
+                from minicode.openai_adapter import serialize_function_tools
+
+                schemas = serialize_function_tools(selected.list())
+    if schemas:
+        schema_tokens = estimate_tokens(json.dumps(schemas))
+    return max(estimated_input, estimate_messages_tokens(messages) + schema_tokens)
+
+
 def call_model_next(
     model: Any,
     messages: list[dict[str, Any]],
@@ -106,21 +176,7 @@ def call_model_next(
             "deadline_monotonic": deadline_monotonic,
         }
     )
-    accepted: dict[str, Any] = {}
-    try:
-        signature = inspect.signature(model.next)
-        parameters = signature.parameters
-        has_kwargs = any(
-            parameter.kind == inspect.Parameter.VAR_KEYWORD
-            for parameter in parameters.values()
-        )
-        for name, value in supplied.items():
-            if has_kwargs or name in parameters:
-                accepted[name] = value
-    except (TypeError, ValueError):
-        for name, value in supplied.items():
-            if name not in {"cancellation_token", "deadline_monotonic"}:
-                accepted[name] = value
+    accepted = _accepted_model_kwargs(model, supplied)
     result = model.next(messages, **accepted)
     checkpoint_model_call(
         cancellation_token=cancellation_token,
@@ -133,6 +189,7 @@ __all__ = [
     "ModelCallDeadlineExceeded",
     "bounded_request_timeout",
     "call_model_next",
+    "estimate_budgeted_request_input",
     "checkpoint_model_call",
     "controlled_retry_sleep",
 ]

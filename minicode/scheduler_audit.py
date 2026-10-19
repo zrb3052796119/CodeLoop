@@ -21,10 +21,11 @@ import re
 import stat
 import tempfile
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from minicode.central_scheduler import (
+    SUPPORTED_SCHEDULER_POLICY_VERSIONS,
     CentralScheduler,
     DispatchPlan,
     DispatchStage,
@@ -38,14 +39,23 @@ from minicode.scheduler_artifacts import (
     MAX_SCHEDULER_ARTIFACT_TOTAL_BYTES,
     SchedulerArtifact,
 )
+from minicode.review_probe_source import (
+    REVIEW_PROBE_SOURCE_PREFIX, review_probe_source_artifact_id, validate_review_probe_source,
+)
 from minicode.multi_agent_contracts import (
     Assignment,
     ContractValidationError,
     ImplementationOrder,
+    WorkflowVerificationCheck,
+    REVIEW_COVERAGE_CONSTRAINT_ID,
+    REVIEW_COVERAGE_CONSTRAINT_TEXT,
     analyst_report_requires_reclassification,
     parse_assignment,
     parse_implementation_order,
     parse_role_result,
+    parse_review_coverage_evidence,
+    parse_review_probe_correction,
+    review_probe_correction_artifact_id,
     parse_verification_result,
     parse_workflow_request,
 )
@@ -54,6 +64,8 @@ from minicode.scheduler_trace import (
     render_scheduler_trace,
 )
 from minicode.workflow_repair import (
+    CONTINUATION_TRANSITION_ERROR,
+    REPAIR_TRANSITION_ERROR,
     implementation_repair_input_refs,
     parse_implementation_repair_request,
     review_supports_implementation_repair,
@@ -109,6 +121,7 @@ _V2_TERMINAL_CAUSES: dict[tuple[str, str], frozenset[str | None]] = {
             "change_set_invalid",
             "execute_phase_failed",
             "execution_result_invalid",
+            "executor_budget_exceeded",
             "executor_declaration_invalid",
             "executor_failed",
             "implementation_order_invalid",
@@ -180,6 +193,7 @@ _V2_TERMINAL_CAUSES: dict[tuple[str, str], frozenset[str | None]] = {
     ("adjudicator", "rejected"): frozenset(
         {
             "adjudicated_reclassification_required",
+            "adjudication_conditions_unresolved",
             "adjudication_decision_invalid",
             "adjudication_decision_not_binding",
             "adjudication_human_required",
@@ -223,6 +237,7 @@ _V2_RECEIPT_CAUSES: dict[str, frozenset[str]] = {
             "change_set_invalid",
             "execute_phase_failed",
             "execution_result_invalid",
+            "executor_budget_exceeded",
             "executor_declaration_invalid",
             "implementation_order_invalid",
             "implementation_repair_unavailable",
@@ -697,11 +712,29 @@ def _canonical_artifact_content(artifact: SchedulerArtifact) -> bytes:
         raise SchedulerAuditValidationError("scheduler artifact id is invalid")
     if not isinstance(artifact.content, str):
         raise SchedulerAuditValidationError("scheduler artifact content is invalid")
-    encoded = artifact.content.encode("utf-8")
-    if not encoded or len(encoded) > MAX_SCHEDULER_ARTIFACT_BYTES:
+    try:
+        encoded = artifact.content.encode("utf-8")
+    except UnicodeError as exc:
+        raise SchedulerAuditValidationError("scheduler artifact encoding is invalid") from exc
+    if not encoded or len(encoded) > MAX_SCHEDULER_ARTIFACT_TOTAL_BYTES:
         raise SchedulerAuditValidationError("scheduler artifact size is invalid")
     parsed = _closed_json_document(artifact.content)
     _validate_json_value(parsed)
+    probe_source = (artifact.artifact_id.startswith(REVIEW_PROBE_SOURCE_PREFIX)
+                    or isinstance(parsed, dict) and parsed.get("resultType") == "ReviewProbeSource.v1")
+    if probe_source:
+        # Source is host data, never a model-owned role contract. Validate its
+        # complete identity independently before the shared total-byte bound.
+        if (not validate_review_probe_source(parsed)
+                or artifact.artifact_id != review_probe_source_artifact_id(parsed["probeId"])):
+            raise SchedulerAuditValidationError("scheduler review probe source identity is invalid")
+    elif len(encoded) > MAX_SCHEDULER_ARTIFACT_BYTES:
+        # Other large artifacts must independently prove a complete frozen
+        # patch; ordinary role contracts retain their original limit.
+        _validate_frozen_diff(parsed,
+                             base_digest=parsed.get("baseDigest") if isinstance(parsed, dict) else None,
+                             patch_digest=parsed.get("patchDigest") if isinstance(parsed, dict) else None,
+                             require_complete=True)
     canonical = json.dumps(
         parsed,
         ensure_ascii=False,
@@ -774,7 +807,7 @@ def _validate_v2_transition_causes(
         elif outcome == "repairing":
             if (
                 stage not in {"verifier", "reviewer"}
-                or error_code != "implementation_repair_requested"
+                or error_code not in {REPAIR_TRANSITION_ERROR, CONTINUATION_TRANSITION_ERROR}
                 or previous is None
                 or previous.get("outcome") not in {"failed", "inconclusive", "rejected"}
                 or artifact_id is None
@@ -997,7 +1030,8 @@ def _adjudicated_continuation_attempts(
     """Attempts resumed by a binding adjudication that selected continuation.
 
     An escalated blocked Worker attempt may legally reach ``completed`` when
-    the following ADJUDICATOR block's validated verdict chose ``select_b`` —
+    the following ADJUDICATOR block's validated verdict chose ``select_b``
+    with no outstanding conditions —
     the continuation claim ordered second in its frozen ConflictPackage.
     """
 
@@ -1068,6 +1102,7 @@ def _adjudicated_continuation_attempts(
                 if (
                     isinstance(parsed, dict)
                     and parsed.get("decision") == "select_b"
+                    and parsed.get("conditions") == []
                 ):
                     resumed.add(
                         (
@@ -1226,7 +1261,10 @@ def _validate_frozen_diff(
     if (
         not isinstance(document, dict)
         or set(document) != fields
+        or type(document.get("diffVersion")) is not int
         or document.get("diffVersion") != 1
+        or not isinstance(base_digest, str) or _DIGEST_RE.fullmatch(base_digest) is None
+        or not isinstance(patch_digest, str) or _DIGEST_RE.fullmatch(patch_digest) is None
         or document.get("baseDigest") != base_digest
         or document.get("patchDigest") != patch_digest
         or encoding not in {"utf-8", "base64"}
@@ -1234,7 +1272,7 @@ def _validate_frozen_diff(
         or byte_count < 0
         or type(complete) is not bool
         or not isinstance(diff, str)
-        or len(diff) > 36_100
+        or (complete is not True and len(diff) > 36_100)
     ):
         raise SchedulerAuditValidationError(
             "scheduler frozen diff is invalid"
@@ -1251,11 +1289,25 @@ def _validate_frozen_diff(
                 "scheduler frozen diff is invalid"
             )
     else:
-        encoded = diff.encode("utf-8")
+        try:
+            encoded = diff.encode("utf-8")
+        except UnicodeError as exc:
+            raise SchedulerAuditValidationError(
+                "scheduler frozen diff is invalid"
+            ) from exc
     if complete:
+        try:
+            # Full patch evidence uses the existing workflow storage budget.
+            # Independently encode it, then bind every byte to digest/count.
+            document_size = len(json.dumps(document, ensure_ascii=False, sort_keys=True,
+                                           separators=(",", ":"), allow_nan=False).encode("utf-8"))
+        except (TypeError, ValueError, UnicodeError) as exc:
+            raise SchedulerAuditValidationError(
+                "scheduler frozen diff is invalid"
+            ) from exc
         if (
             encoding != "utf-8"
-            or byte_count > _FROZEN_DIFF_LIMIT
+            or document_size > MAX_SCHEDULER_ARTIFACT_TOTAL_BYTES
             or len(encoded) != byte_count
             or "sha256:" + hashlib.sha256(encoded).hexdigest() != patch_digest
         ):
@@ -1291,11 +1343,92 @@ def _validate_frozen_diff(
         )
 
 
+def _has_pending_executor_feedback(document: object) -> bool:
+    return (
+        isinstance(document, Mapping)
+        and document.get("resultType") == "ExecutionCandidate.v1"
+        and document.get("status") == "awaiting_verification"
+        and document.get("handoffReason") in {
+            "executor_write_feedback_pending", "executor_submission_feedback_pending",
+        }
+    )
+
+
+def _validate_review_probe_command(receipt, *, documents, requested_checks) -> None:
+    """Authorize a fixed host derivation or an exact historical command."""
+    if "executionBinding" in receipt:
+        from minicode.review_probe_execution import validate_review_probe_execution_binding
+
+        try:
+            checks = tuple(check.to_execution_check() if isinstance(check, WorkflowVerificationCheck)
+                           else check for check in requested_checks)
+            validate_review_probe_execution_binding(dict(receipt), checks,
+                probe_source_digest=documents[receipt["sourceRef"]]["sourceDigest"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise SchedulerAuditValidationError("review probe command exceeds the approved checks") from exc
+        return
+    evidence = receipt["evidence"]
+    approved_commands = {(check.check_id, check.kind, tuple(check.argv)) for check in requested_checks}
+    if (evidence["checkId"], evidence["kind"], tuple(evidence["argv"])) not in approved_commands:
+        raise SchedulerAuditValidationError("review probe command exceeds the approved checks")
+
+
+def _review_probe_repair_refs(documents, *, assignment_id: str, patch_digest: str, requested_checks) -> tuple[str, ...]:
+    """Recover exact latest probe feedback, without granting review approval."""
+    latest = {}
+    for ref, document in documents.items():
+        if (not isinstance(document, Mapping) or document.get("resultType") != "ReviewProbeExecution.v1"
+                or document.get("assignmentId") != assignment_id or document.get("patchDigest") != patch_digest):
+            continue
+        probe_id, sequence = document.get("probeId"), document.get("sequence")
+        if not isinstance(probe_id, str) or type(sequence) is not int or sequence < 1:
+            raise SchedulerAuditValidationError("repair review probe history is invalid")
+        previous = latest.get(probe_id)
+        if previous is None or sequence > previous[1]["sequence"]:
+            latest[probe_id] = (ref, document)
+    if not latest:
+        return ()
+    owner = next((document.get("assignment") for document in documents.values()
+                  if isinstance(document, Mapping) and document.get("resultType") == "AssignmentArtifact.v1"
+                  and document.get("stage") == "reviewer" and isinstance(document.get("assignment"), Mapping)
+                  and document["assignment"].get("assignmentId") == assignment_id), None)
+    try:
+        assignment = parse_assignment(owner)
+        rows = [{"criterionId": criterion.criterion_id, "rationale": "Retained probe feedback, not an approval.",
+                 "probeIds": [], "sourceEvidence": []} for criterion in assignment.acceptance_criteria]
+        probes = [{"probeId": document["probeId"], "sourceRef": document.get("sourceRef"), "receiptRef": ref}
+                  for ref, document in sorted(latest.values(), key=lambda item: item[0])]
+        # This validation envelope is never published as a model verdict or
+        # coverage artifact. Unknown decisions confer no completion authority;
+        # it reuses the full source/receipt parser for the repair's input refs.
+        parse_review_coverage_evidence(assignment, {
+            "coverageVersion": 1, "resultType": "ReviewCoverageEvidence.v1",
+            "workflowId": assignment.workflow_id, "taskId": assignment.task_id,
+            "assignmentId": assignment_id, "patchDigest": patch_digest, "criteria": rows, "probes": probes,
+        }, review={"assignmentId": assignment_id, "patchDigest": patch_digest, "verdict": "inconclusive",
+                   "criteria": [{"criterionId": row["criterionId"], "status": "unknown"} for row in rows]},
+           artifact_documents=documents)
+    except (ContractValidationError, TypeError, ValueError) as exc:
+        raise SchedulerAuditValidationError("repair review probe evidence is invalid") from exc
+    for _ref, document in latest.values():
+        _validate_review_probe_command(document, documents=documents, requested_checks=requested_checks)
+    corrections = _validated_probe_corrections(
+        assignment=assignment, documents=documents, role_artifact_ids=set(),
+        prior_reviewer_ids={assignment_id}, requested_checks=requested_checks,
+    )
+    correction_refs = sorted(ref for ref, document in corrections.items()
+                             if document["assignmentId"] == assignment_id and document["patchDigest"] == patch_digest)
+    return tuple(dict.fromkeys([
+        *(ref for probe in probes for ref in (probe["sourceRef"], probe["receiptRef"])), *correction_refs,
+    ]))
+
+
 def _validated_repair_inputs(
     trace: Mapping[str, object],
     documents: Mapping[str, object],
     *,
     request_artifact_id: str,
+    requested_checks=(),
 ) -> dict[str, tuple[str, ...]]:
     """Rejoin each repair's new Assignment to its exact failed revision."""
     repair_documents = {
@@ -1307,6 +1440,7 @@ def _validated_repair_inputs(
     inputs: dict[str, tuple[str, ...]] = {}
     execution = verification = None
     repair_index = 0
+    previous_continuation: Mapping[str, object] | None = None
     transitions = trace["transitions"]
     for index, transition in enumerate(transitions):
         stage, outcome = transition["stage"], transition["outcome"]
@@ -1330,6 +1464,12 @@ def _validated_repair_inputs(
         if not isinstance(checks, list) or not isinstance(change_set, dict):
             raise SchedulerAuditValidationError("scheduler repair previous evidence is invalid")
         evidence_refs = [check.get("artifactRef") for check in checks if isinstance(check, dict)]
+        repair_evidence_refs = list(evidence_refs)
+        if stage == "reviewer":
+            repair_evidence_refs.extend(_review_probe_repair_refs(
+                documents, assignment_id=transition["assignmentId"], patch_digest=change_set.get("patchDigest"),
+                requested_checks=requested_checks,
+            ))
         expected = {
             "repairVersion": 1,
             "resultType": "ImplementationRepairRequest.v1",
@@ -1345,12 +1485,19 @@ def _validated_repair_inputs(
             "previousDiffArtifactRef": f"artifact_{execution['assignmentId']}_{execution['attemptId']}_frozen_diff",
             "previousPatchDigest": change_set.get("patchDigest"),
             "previousVerificationArtifactRef": verification["artifactId"],
-            "evidenceRefs": evidence_refs,
+            "evidenceRefs": list(dict.fromkeys(repair_evidence_refs)),
         }
         source = documents.get(str(transition["artifactId"]))
         supported = (
             verification_supports_implementation_repair(
-                source, [documents.get(str(ref)) for ref in evidence_refs]
+                source, [documents.get(str(ref)) for ref in evidence_refs],
+                pending_write_feedback=(
+                    _has_pending_executor_feedback(execution_document)
+                    and source is verification_document
+                    and source.get("resultType") == "VerificationResult.v1"
+                    and verification.get("outcome") == "inconclusive"
+                    and verification.get("errorCode") == "acceptance_evidence_incomplete"
+                ),
             )
             if stage == "verifier"
             else review_supports_implementation_repair(source)
@@ -1365,21 +1512,176 @@ def _validated_repair_inputs(
             and item["errorCode"] == "implementation_repair_unavailable"
             for item in transitions[index + 1:]
         )
+        continuation_requested = transition["errorCode"] == CONTINUATION_TRANSITION_ERROR
         if repair_id not in repair_documents and (
             following["outcome"] == "timed_out" or preparation_failed
         ):
+            # A failed preparation or pre-dispatch deadline never exercised
+            # continuation authority. Preserve its terminal failure audit;
+            # every revision that actually proceeds still needs its quote.
             continue
         try:
             repair = parse_implementation_repair_request(repair_documents.get(repair_id))
         except (TypeError, ValueError) as exc:
             raise SchedulerAuditValidationError("scheduler repair request is invalid") from exc
+        continuation = repair.get("continuation")
+        if continuation_requested != (continuation is not None):
+            raise SchedulerAuditValidationError("scheduler continuation authority does not match its transition")
+        if continuation is not None:
+            if previous_continuation is not None and (
+                continuation["sessionId"] != previous_continuation["sessionId"]
+                or any(previous_continuation[key] is not None and (
+                    continuation[key] is None or continuation[key] > previous_continuation[key]
+                ) for key in ("limitModelCalls", "limitTotalTokens", "deadlineMonotonic"))
+                or continuation["usedModelCalls"] <= previous_continuation["usedModelCalls"]
+                or continuation["usedTotalTokens"] < previous_continuation["usedTotalTokens"]
+            ):
+                raise SchedulerAuditValidationError("scheduler continuation resets its session or budget")
+            previous_continuation = continuation
+            expected["continuation"] = continuation
         if repair != expected:
             raise SchedulerAuditValidationError("scheduler repair is not bound to its failed revision")
+        # Only the new submission-feedback path permits an unchanged patch to
+        # advance after correcting its declaration. Validate the durable part
+        # of that exception here; the producer additionally requires a live
+        # same-owner session, a newly admitted model call and native acceptance.
+        if execution_document.get("handoffReason") == "executor_submission_feedback_pending":
+            successor = next((item for item in transitions[index + 1:]
+                              if item["stage"] == "executor" and item["outcome"] == "completed"
+                              and item["assignmentId"] == assignment_id
+                              and item["attemptId"] == following["attemptId"]), None)
+            successor_document = documents.get(str(successor["artifactId"])) if successor else None
+            if (isinstance(successor_document, Mapping)
+                    and isinstance(successor_document.get("changeSet"), Mapping)
+                    and successor_document["changeSet"].get("patchDigest") == change_set.get("patchDigest")
+                    and not (
+                        continuation is not None and stage == "verifier"
+                        and source is verification_document
+                        and verification_document.get("status") == "passed"
+                        and successor_document.get("resultType") == "ExecutionResult.v1"
+                        and successor_document.get("status") == "completed"
+                    )):
+                raise SchedulerAuditValidationError(
+                    "unchanged submission-feedback repair lacks a fresh accepted declaration"
+                )
         observed.add(repair_id)
         inputs[assignment_id] = implementation_repair_input_refs(repair_id, repair)
     if observed != set(repair_documents):
         raise SchedulerAuditValidationError("scheduler repair request has no authorized transition")
     return inputs
+
+
+def _validated_probe_corrections(*, assignment, documents, role_artifact_ids,
+                                 prior_reviewer_ids, requested_checks):
+    """Replay explicit host retirements; old receipts remain mandatory evidence."""
+    corrections, retired = {}, set()
+    for ref, document in documents.items():
+        if (not isinstance(document, Mapping) or document.get("resultType") != "ReviewProbeCorrection.v1"
+                or document.get("workflowId") != assignment.workflow_id):
+            continue
+        if document.get("assignmentId") not in prior_reviewer_ids:
+            continue
+        owner = assignment
+        if document["assignmentId"] != assignment.assignment_id:
+            raw_owner = next((entry.get("assignment") for entry in documents.values()
+                              if isinstance(entry, Mapping) and entry.get("resultType") == "AssignmentArtifact.v1"
+                              and entry.get("stage") == "reviewer" and isinstance(entry.get("assignment"), Mapping)
+                              and entry["assignment"].get("assignmentId") == document["assignmentId"]), None)
+            try:
+                owner = parse_assignment(raw_owner)
+            except (ContractValidationError, TypeError, ValueError) as exc:
+                raise SchedulerAuditValidationError("probe correction Reviewer owner is invalid") from exc
+        try:
+            parsed = parse_review_probe_correction(owner, document, artifact_documents=documents,
+                                                   required_checks=requested_checks)
+        except (ContractValidationError, TypeError, ValueError) as exc:
+            raise SchedulerAuditValidationError("scheduler probe correction evidence is invalid") from exc
+        if parsed != document or ref != review_probe_correction_artifact_id(parsed):
+            raise SchedulerAuditValidationError("scheduler probe correction identity is invalid")
+        refs = {ref, parsed["oldSourceRef"], parsed["newSourceRef"], parsed["newReceiptRef"], *parsed["oldReceiptRefs"]}
+        if refs & role_artifact_ids:
+            raise SchedulerAuditValidationError("probe correction cannot use a worker result artifact")
+        if parsed["oldProbeId"] in retired:
+            raise SchedulerAuditValidationError("review probe cannot be retired more than once")
+        retired.add(parsed["oldProbeId"])
+        corrections[ref] = parsed
+    # Cycles cannot erase all obligations, even with individually valid receipts.
+    edges = {doc["oldProbeId"]: doc["newProbeId"] for doc in corrections.values()}
+    for start in edges:
+        seen, current = set(), start
+        while current in edges:
+            if current in seen:
+                raise SchedulerAuditValidationError("review probe correction contains a cycle")
+            seen.add(current)
+            current = edges[current]
+    return corrections
+
+
+def validate_review_coverage(
+    *, review, assignment, documents, role_artifact_ids, prior_reviewer_ids, requested_checks,
+    patch_digest: str | None = None,
+) -> None:
+    """Validate coverage before handoff/commit and again during durable replay.
+
+    Inputs are the scheduler-owned Assignment, artifact snapshot and approved
+    checks. A model's correctly named reference is not publication authority.
+    The optional patch binds the live gate to the actual frozen candidate.
+    """
+    try:
+        review = parse_role_result(assignment, _role_payload(review))
+    except (ContractValidationError, TypeError, ValueError) as exc:
+        raise SchedulerAuditValidationError("scheduler review coverage contract is invalid") from exc
+    if patch_digest is not None and review["patchDigest"] != patch_digest:
+        raise SchedulerAuditValidationError("scheduler review coverage patch is not current")
+    ref = review.get("coverageArtifactRef")
+    if ref is None:
+        # Marked approvals were rejected by parse_role_result already. Negative
+        # feedback and historical unmarked verdicts remain readable.
+        return
+    document = documents.get(ref)
+    if ref in role_artifact_ids:
+        raise SchedulerAuditValidationError("review coverage cannot be a worker result artifact")
+    try:
+        parsed = parse_review_coverage_evidence(
+            assignment, document, review=review, artifact_documents=documents,
+        )
+    except (ContractValidationError, TypeError, ValueError) as exc:
+        raise SchedulerAuditValidationError("scheduler review coverage is invalid") from exc
+    if parsed != document:
+        raise SchedulerAuditValidationError("scheduler review coverage is not canonical")
+    selected = {probe["probeId"]: probe for probe in parsed["probes"]}
+    corrections = _validated_probe_corrections(
+        assignment=assignment, documents=documents, role_artifact_ids=role_artifact_ids,
+        prior_reviewer_ids=prior_reviewer_ids, requested_checks=requested_checks,
+    )
+    retired = {document["oldProbeId"] for document in corrections.values()}
+    if retired.intersection(selected):
+        raise SchedulerAuditValidationError("review coverage selected a retired probe")
+    active_probes = set()
+    latest_current = {}
+    for candidate in documents.values():
+        if not isinstance(candidate, Mapping) or candidate.get("resultType") != "ReviewProbeExecution.v1":
+            continue
+        if (candidate.get("workflowId") != assignment.workflow_id
+                or candidate.get("assignmentId") not in prior_reviewer_ids):
+            continue
+        probe_id, sequence = candidate.get("probeId"), candidate.get("sequence")
+        if not isinstance(probe_id, str) or type(sequence) is not int or sequence < 1:
+            raise SchedulerAuditValidationError("scheduler review probe history is invalid")
+        if candidate.get("status") in {"passed", "failed"}:
+            active_probes.add(probe_id)
+        if candidate.get("assignmentId") == assignment.assignment_id:
+            latest_current[probe_id] = max(sequence, latest_current.get(probe_id, 0))
+    active_probes.difference_update(retired)
+    if not active_probes.issubset(selected):
+        raise SchedulerAuditValidationError("scheduler review coverage omitted an active probe")
+    for probe in parsed["probes"]:
+        if probe["sourceRef"] in role_artifact_ids or probe["receiptRef"] in role_artifact_ids:
+            raise SchedulerAuditValidationError("review probe evidence cannot be a worker result artifact")
+        receipt = documents[probe["receiptRef"]]
+        _validate_review_probe_command(receipt, documents=documents, requested_checks=requested_checks)
+        if receipt["sequence"] < latest_current.get(probe["probeId"], 0):
+            raise SchedulerAuditValidationError("review coverage discarded a newer probe result")
 
 
 def project_scheduler_audit(
@@ -1404,10 +1706,11 @@ def project_scheduler_audit(
         or any(not isinstance(stage, DispatchStage) for stage in plan.stages)
         or not isinstance(plan.rule_id, str)
         or type(plan.policy_version) is not int
+        or plan.policy_version not in SUPPORTED_SCHEDULER_POLICY_VERSIONS
         or type(plan.requires_human) is not bool
     ):
         raise SchedulerAuditValidationError("dispatch plan is invalid")
-    if CentralScheduler().plan(profile) != plan:
+    if CentralScheduler().plan(profile, policy_version=plan.policy_version) != plan:
         raise SchedulerAuditValidationError(
             "dispatch plan does not match the effective profile"
         )
@@ -1444,6 +1747,7 @@ def project_scheduler_audit(
     workflow_requests: dict[str, object] = {}
     workflow_objective_digests: dict[str, str] = {}
     artifact_documents: dict[str, object] = {}
+    candidate_artifact_ids: set[str] = set()
     total_bytes = 0
     for artifact in artifacts:
         encoded = _canonical_artifact_content(artifact)
@@ -1455,6 +1759,16 @@ def project_scheduler_audit(
         total_bytes += len(encoded)
         document = _closed_json_document(artifact.content)
         artifact_documents[artifact.artifact_id] = document
+        if isinstance(document, dict) and document.get("resultType") == "ExecutionCandidate.v1":
+            # A host-observed candidate is only an input to independent final
+            # verification/review. Historical routes without that review may
+            # never gain promotion authority from this newer artifact type.
+            if (contract_mode != "v2" or plan.policy_version < 4
+                    or DispatchStage.REVIEWER not in plan.stages):
+                raise SchedulerAuditValidationError(
+                    "scheduler checked candidate requires mandatory Reviewer authority"
+                )
+            candidate_artifact_ids.add(artifact.artifact_id)
         if isinstance(document, dict) and document.get("resultType") == (
             "AssignmentArtifact.v1"
         ):
@@ -1787,10 +2101,35 @@ def project_scheduler_audit(
     if contract_mode == "v2":
         request_artifact_id, request = next(iter(workflow_requests.items()))
         repair_inputs = _validated_repair_inputs(
-            normalized_trace, artifact_documents, request_artifact_id=request_artifact_id
+            normalized_trace, artifact_documents, request_artifact_id=request_artifact_id,
+            requested_checks=request.verification_checks,
         )
         objective_digest = workflow_objective_digests[request_artifact_id]
-        expected_profile = request.task_profile
+        expected_profile = request.task_profile_for_policy(plan.policy_version)
+        if plan.policy_version >= 5:
+            from minicode.workflow_review_policy import (
+                review_routing_artifact_id, validate_review_routing_decision,
+            )
+
+            request_document = artifact_documents[request_artifact_id]
+            routing_id = review_routing_artifact_id(request_document["requestDigest"])
+            routing = artifact_documents.get(routing_id)
+            routing_documents = [document for document in artifact_documents.values()
+                                 if isinstance(document, dict)
+                                 and document.get("resultType") == "ReviewRoutingDecision.v1"]
+            if len(routing_documents) != 1 or not isinstance(routing, dict):
+                raise SchedulerAuditValidationError("scheduler review routing authority is missing")
+            try:
+                required = validate_review_routing_decision(
+                    routing, request=request, profile=expected_profile,
+                    workflow_id=workflow_id, request_digest=request_document["requestDigest"],
+                    objective_digest=objective_digest, base_digest=routing.get("baseDigest"),
+                )
+            except (TypeError, ValueError) as exc:
+                raise SchedulerAuditValidationError("scheduler review routing authority is invalid") from exc
+            expected_profile = replace(expected_profile, independent_review_required=required)
+            if profile.independent_review_required != required:
+                raise SchedulerAuditValidationError("scheduler review routing does not match effective profile")
         stable_profile_fields = (
             "task_id",
             "kind",
@@ -1831,6 +2170,14 @@ def project_scheduler_audit(
             role = assignment.role.value
             if role not in expected_modes:
                 continue
+            assignment_constraints = expected_constraint
+            if role == "reviewer" and any(
+                item.constraint_id == REVIEW_COVERAGE_CONSTRAINT_ID for item in assignment.constraints
+            ):
+                assignment_constraints = (*expected_constraint, {
+                    "id": REVIEW_COVERAGE_CONSTRAINT_ID, "kind": "policy",
+                    "text": REVIEW_COVERAGE_CONSTRAINT_TEXT,
+                })
             write_paths_are_valid = (
                 assignment.scope.write_paths == request.scope.write_paths
                 if role == "analyst"
@@ -1864,7 +2211,7 @@ def project_scheduler_audit(
                     constraint.to_dict()
                     for constraint in assignment.constraints
                 )
-                != expected_constraint
+                != assignment_constraints
                 or not input_refs_are_valid
             ):
                 raise SchedulerAuditValidationError(
@@ -1978,6 +2325,7 @@ def project_scheduler_audit(
         )
 
     completed_execution_document: dict[str, object] | None = None
+    observed_candidate_ids: set[str] = set()
     execution_records: list[tuple[Mapping[str, object], Assignment, dict[str, object]]] = []
     completed_review_results: list[dict[str, object]] = []
     completed_review_assignments: list[Assignment] = []
@@ -2164,11 +2512,41 @@ def project_scheduler_audit(
                         assignment,
                         order_document,
                     )
-                    parsed_execution = parse_role_result(
-                        assignment,
-                        _role_payload(document),
-                        implementation_order=order,
-                    )
+                    is_candidate = document.get("resultType") == "ExecutionCandidate.v1"
+                    if is_candidate:
+                        from minicode.multi_agent_contracts import parse_execution_candidate
+
+                        expected_id = (
+                            f"artifact_{transition['assignmentId']}_"
+                            f"{transition['attemptId']}_execution"
+                        )
+                        if (transition["artifactId"] != expected_id
+                                or transition["artifactId"] not in candidate_artifact_ids):
+                            raise ContractValidationError("checked candidate artifact authority is invalid")
+                        parsed_execution = parse_execution_candidate(
+                            assignment,
+                            document,
+                            implementation_order=order,
+                            required_checks=next(iter(workflow_requests.values())).verification_checks,
+                            receipt_documents=artifact_documents,
+                        )
+                        change = parsed_execution["changeSet"]
+                        _validate_frozen_diff(
+                            artifact_documents.get(
+                                f"artifact_{transition['assignmentId']}_"
+                                f"{transition['attemptId']}_frozen_diff"
+                            ),
+                            base_digest=str(change["baseDigest"]),
+                            patch_digest=str(change["patchDigest"]),
+                            require_complete=False,
+                        )
+                        observed_candidate_ids.add(str(transition["artifactId"]))
+                    else:
+                        parsed_execution = parse_role_result(
+                            assignment,
+                            _role_payload(document),
+                            implementation_order=order,
+                        )
                 except (ContractValidationError, TypeError, ValueError) as exc:
                     raise SchedulerAuditValidationError(
                         "scheduler ExecutionResult is invalid"
@@ -2177,7 +2555,9 @@ def project_scheduler_audit(
                     order.order_id != order_id
                     or not _order_scope_within_assignment(order, assignment)
                     or parsed_execution != document
-                    or parsed_execution.get("status") != "completed"
+                    or parsed_execution.get("status") != (
+                        "awaiting_verification" if is_candidate else "completed"
+                    )
                 ):
                     raise SchedulerAuditValidationError(
                         "scheduler ExecutionResult is not canonical"
@@ -2209,6 +2589,24 @@ def project_scheduler_audit(
                 (transition, parsed_review, assignment)
             )
 
+        role_artifact_ids = {
+            item["artifactId"] for item in normalized_trace["transitions"]
+            if item["stage"] in {"analyst", "executor", "reviewer", "adjudicator"}
+            and item["artifactId"] is not None
+        }
+        for transition, review, assignment in (*completed_review_records, *terminal_review_results):
+            prior_reviewer_ids = set()
+            for entry in normalized_trace["transitions"]:
+                if entry["stage"] == "reviewer":
+                    prior_reviewer_ids.add(entry["assignmentId"])
+                if entry is transition:
+                    break
+            validate_review_coverage(
+                review=review, assignment=assignment, documents=artifact_documents,
+                role_artifact_ids=role_artifact_ids, prior_reviewer_ids=prior_reviewer_ids,
+                requested_checks=next(iter(workflow_requests.values())).verification_checks,
+            )
+
         for _execution_transition, _execution_assignment, execution_document in execution_records:
             execution_base_digest = execution_document["changeSet"]["baseDigest"]
             if execution_base_digest != execution_records[0][2]["changeSet"]["baseDigest"]:
@@ -2228,6 +2626,19 @@ def project_scheduler_audit(
                     raise SchedulerAuditValidationError(
                         "scheduler Analyst evidence baseline is inconsistent"
                     )
+
+    if observed_candidate_ids != candidate_artifact_ids:
+        raise SchedulerAuditValidationError(
+            "scheduler checked candidate is not bound to its Executor transition"
+        )
+    if (normalized_trace.get("committed") is True
+            and _has_pending_executor_feedback(completed_execution_document)):
+        raise SchedulerAuditValidationError(
+            "pending Executor "
+            + ("submission" if completed_execution_document.get("handoffReason")
+               == "executor_submission_feedback_pending" else "write")
+            + " feedback cannot authorize commit"
+        )
 
     referenced_receipts: set[str] = set()
     for transition in normalized_trace["transitions"]:
@@ -2380,12 +2791,16 @@ def project_scheduler_audit(
             )
             frozen_diff = artifact_documents.get(expected_diff_id)
             if frozen_diff is not None:
+                # Retain bounded previews of superseded repair candidates;
+                # only the final revision earns commit authority. Every
+                # revision still has to match its own baseline/patch digest.
                 _validate_frozen_diff(
                     frozen_diff,
                     base_digest=str(execution_change_set["baseDigest"]),
                     patch_digest=str(execution_change_set["patchDigest"]),
                     require_complete=(
                         normalized_trace.get("committed") is True
+                        and execution_record == execution_records[-1]
                     ),
                 )
             criterion_evidence_incomplete = any(
@@ -2402,7 +2817,8 @@ def project_scheduler_audit(
                     "inconclusive",
                     "frozen_diff_evidence_missing",
                 )
-            elif criterion_evidence_incomplete:
+            elif (criterion_evidence_incomplete
+                  or _has_pending_executor_feedback(execution_record[2])):
                 expected_verifier_transition = (
                     "inconclusive",
                     "acceptance_evidence_incomplete",
@@ -2528,7 +2944,10 @@ def project_scheduler_audit(
             diff_document,
             base_digest=str(execution_change_set["baseDigest"]),
             patch_digest=str(execution_change_set["patchDigest"]),
-            require_complete=normalized_trace.get("committed") is True,
+            require_complete=(
+                normalized_trace.get("committed") is True
+                and matrix_execution_record == execution_records[-1]
+            ),
         )
         analyst_handoff_id = next(
             (
@@ -2542,24 +2961,24 @@ def project_scheduler_audit(
         )
         execution_artifact_id = str(matrix_execution_record[0]["artifactId"])
         if review_assignments_for_evidence:
-            # Reviewer topology only exists on the reviewed chain; the
-            # scoped route has no Reviewer assignment to bind.
+            # Policy v4 scoped work skips preliminary analysis, not final
+            # review. Require Analyst authority exactly when the sealed plan
+            # contains that role; never invent an optional handoff.
+            has_analyst = DispatchStage.ANALYST in plan.stages
             analyst_handoff = artifact_documents.get(str(analyst_handoff_id))
-            if (
+            if has_analyst and (
                 not isinstance(analyst_handoff, dict)
-                or not isinstance(
-                    analyst_handoff.get("evidenceSnapshotRefs"), list
-                )
-            ):
+                or not isinstance(analyst_handoff.get("evidenceSnapshotRefs"), list)
+            ) or not has_analyst and analyst_handoff_id is not None:
                 raise SchedulerAuditValidationError(
                     "scheduler Reviewer Analyst handoff is invalid"
                 )
             expected_reviewer_refs = (
-                str(analyst_handoff_id),
+                *((str(analyst_handoff_id),) if has_analyst else ()),
                 request_artifact_id,
                 *(
                     str(ref)
-                    for ref in analyst_handoff["evidenceSnapshotRefs"]
+                    for ref in (analyst_handoff["evidenceSnapshotRefs"] if has_analyst else ())
                 ),
                 str(matrix_execution_document["orderId"]),
                 execution_artifact_id,
@@ -2907,8 +3326,8 @@ def project_scheduler_audit(
     )
 
 
-def _profile_dict(profile: TaskProfile) -> dict[str, object]:
-    return {
+def _profile_dict(profile: TaskProfile, *, policy_version: int) -> dict[str, object]:
+    result = {
         "taskId": profile.task_id,
         "kind": profile.kind.value,
         "risk": profile.risk.value,
@@ -2920,6 +3339,9 @@ def _profile_dict(profile: TaskProfile) -> dict[str, object]:
         "humanConfirmationGranted": profile.human_confirmation_granted,
         "humanApprovalId": profile.human_approval_id,
     }
+    if policy_version >= 5:
+        result["independentReviewRequired"] = profile.independent_review_required
+    return result
 
 
 def _plan_dict(plan: DispatchPlan) -> dict[str, object]:
@@ -3088,6 +3510,37 @@ def _validate_commit_ready_against_audit(
         }
         for stage in ("verifier", "reviewer", "human")
     }
+    # The audit has already been re-projected against CentralScheduler.plan,
+    # including the request's effective risk/scope and execution evidence.
+    # Only its exact scoped route omits Reviewer. Its pre-commit seal uses
+    # the final Verifier artifact in both digest slots; it does not invent a
+    # review verdict. All other routes must retain the completed Reviewer
+    # binding, and both routes still bind the request, matrix, and frozen diff.
+    scoped_without_reviewer = (
+        audit.plan.rule_id in {"route.scoped_change", "route.verified_change"}
+        and audit.plan.stages == (DispatchStage.EXECUTOR, DispatchStage.VERIFIER)
+    )
+    if audit.plan.policy_version >= 5:
+        routing = [document for _artifact, document in documents
+                   if isinstance(document, dict) and document.get("resultType") == "ReviewRoutingDecision.v1"]
+        if (len(routing) != 1 or routing[0].get("baseDigest") != ready.base_digest
+                or routing[0].get("requestDigest") != ready.request_digest):
+            raise SchedulerAuditValidationError("scheduler commit-ready review routing binding is inconsistent")
+    if scoped_without_reviewer:
+        review_authority_valid = (
+            ready.review_digest == ready.verification_digest
+            and review_artifact is not None
+            and verification_artifact is not None
+            and review_artifact.artifact_id == verification_artifact.artifact_id
+        )
+    else:
+        review_authority_valid = (
+            isinstance(review, dict)
+            and review.get("verdict") == "approved"
+            and review.get("patchDigest") == ready.patch_digest
+            and review_artifact is not None
+            and review_artifact.artifact_id in completed_artifacts_by_stage["reviewer"]
+        )
     if (
         len(request_documents) != 1
         or request_documents[0].get("workflowId") != audit.workflow_id
@@ -3103,12 +3556,7 @@ def _validate_commit_ready_against_audit(
         or not isinstance(matrix, dict)
         or matrix.get("verificationArtifactRef")
         != verification_artifact.artifact_id
-        or not isinstance(review, dict)
-        or review.get("verdict") != "approved"
-        or review.get("patchDigest") != ready.patch_digest
-        or review_artifact is None
-        or review_artifact.artifact_id
-        not in completed_artifacts_by_stage["reviewer"]
+        or not review_authority_valid
         or not isinstance(diff, dict)
         or diff_artifact is None
         or matrix.get("frozenDiffRef") != diff_artifact.artifact_id
@@ -3160,7 +3608,7 @@ def _manifest(audit: SchedulerAudit) -> dict[str, object]:
         "contractMode": audit.contract_mode,
         "workflowId": audit.workflow_id,
         "taskId": audit.task_id,
-        "effectiveProfile": _profile_dict(audit.profile),
+        "effectiveProfile": _profile_dict(audit.profile, policy_version=audit.plan.policy_version),
         "dispatchPlan": _plan_dict(audit.plan),
         "schedulerTrace": audit.trace,
         "artifacts": _artifact_index(audit.artifacts),
@@ -3480,10 +3928,11 @@ class SchedulerAuditJournal:
                 raise SchedulerAuditValidationError(
                     "scheduler audit identity is inconsistent"
                 )
+            profile_fields = _PROFILE_FIELDS
+            if isinstance(manifest["effectiveProfile"], dict) and "independentReviewRequired" in manifest["effectiveProfile"]:
+                profile_fields = profile_fields | {"independentReviewRequired"}
             profile_raw = _closed_mapping(
-                manifest["effectiveProfile"],
-                _PROFILE_FIELDS,
-                label="effective profile",
+                manifest["effectiveProfile"], profile_fields, label="effective profile",
             )
             profile = TaskProfile(
                 task_id=str(profile_raw["taskId"]),
@@ -3502,6 +3951,7 @@ class SchedulerAuditJournal:
                     "humanConfirmationGranted"
                 ],
                 human_approval_id=profile_raw["humanApprovalId"],
+                independent_review_required=profile_raw.get("independentReviewRequired", True),
             )
             plan_raw = _closed_mapping(
                 manifest["dispatchPlan"],
@@ -3550,7 +4000,7 @@ class SchedulerAuditJournal:
                     or _DIGEST_RE.fullmatch(digest) is None
                     or isinstance(byte_count, bool)
                     or not isinstance(byte_count, int)
-                    or not 1 <= byte_count <= MAX_SCHEDULER_ARTIFACT_BYTES
+                    or not 1 <= byte_count <= MAX_SCHEDULER_ARTIFACT_TOTAL_BYTES - total_bytes
                 ):
                     raise SchedulerAuditValidationError(
                         "scheduler audit artifact index entry is invalid"
@@ -3558,7 +4008,7 @@ class SchedulerAuditJournal:
                 filename = f"{artifact_id}.json"
                 content_bytes = self._read_file(
                     artifacts_dir / filename,
-                    max_bytes=MAX_SCHEDULER_ARTIFACT_BYTES,
+                    max_bytes=byte_count,
                 )
                 actual_digest = "sha256:" + hashlib.sha256(content_bytes).hexdigest()
                 if len(content_bytes) != byte_count or actual_digest != digest:
@@ -3709,4 +4159,5 @@ __all__ = [
     "parse_scheduler_commit_ready",
     "project_scheduler_audit",
     "project_scheduler_commit_ready",
+    "validate_review_coverage",
 ]

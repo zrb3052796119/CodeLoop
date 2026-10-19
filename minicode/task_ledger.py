@@ -76,6 +76,10 @@ class TaskLedger:
                 str(message.get("content", "")).strip()
                 for message in reversed(messages)
                 if message.get("role") == "user"
+                and not any(message.get(flag) is True for flag in (
+                    "_implementation_completion_feedback", "_superseded_completion_feedback",
+                    "_implementation_context",
+                    "_model_transport_failure", "_migration_continuation"))
                 and str(message.get("content", "")).strip()
             ),
             "",

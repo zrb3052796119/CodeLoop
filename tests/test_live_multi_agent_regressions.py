@@ -387,17 +387,16 @@ def test_seatbelt_profile_grants_registered_toolchain_prefix_read(
 # --- Fix 4: defaults sized for real repositories ---
 
 
-def test_default_turn_budget_fits_real_multi_agent_work() -> None:
+def test_default_turn_budget_does_not_reimpose_cumulative_limits() -> None:
     budget = AgentTurnBudget.from_runtime({})
 
-    assert budget.max_total_tokens >= 3_000_000
-    assert budget.max_model_calls >= 150
+    assert budget.max_total_tokens is None
+    assert budget.max_model_calls is None
+    assert budget.max_cost_usd is None
 
 
-def test_default_task_deadline_allows_a_real_survey() -> None:
-    # A focused read-only survey legitimately runs 1-2 minutes of model
-    # turns; 120s killed one mid-flight in the live runs.
-    assert DEFAULT_TASK_TIMEOUT_SECONDS >= 300
+def test_default_task_does_not_invent_a_deadline() -> None:
+    assert DEFAULT_TASK_TIMEOUT_SECONDS is None
 
 
 # --- P3: parallel verification checks ---------------------------------------

@@ -30,7 +30,7 @@ from minicode.subagent_result import (
     extract_subagent_result,
     project_subagent_result,
 )
-from minicode.subagent_types import AGENT_TYPES, resolve_max_turns
+from minicode.subagent_types import resolve_max_turns
 from minicode.task_outcome import AgentOutcomeCapture, canonicalize_task_outcome
 from minicode.tooling import (
     ToolContext,
@@ -213,10 +213,10 @@ def test_soft_landing_falls_back_to_failed_when_the_closing_call_raises() -> Non
 # ---------------------------------------------------------------------------
 
 
-def test_resolve_max_turns_defaults_to_the_calibrated_values() -> None:
-    assert resolve_max_turns("explore") == 12
-    assert resolve_max_turns("plan") == 8
-    assert resolve_max_turns("general") == 15
+def test_resolve_max_turns_defaults_to_no_cumulative_limit() -> None:
+    assert resolve_max_turns("explore") is None
+    assert resolve_max_turns("plan") is None
+    assert resolve_max_turns("general") is None
 
 
 def test_resolve_max_turns_accepts_a_valid_host_override(
@@ -225,15 +225,22 @@ def test_resolve_max_turns_accepts_a_valid_host_override(
     monkeypatch.setenv("MINI_CODE_SUBAGENT_EXPLORE_MAX_TURNS", "25")
     assert resolve_max_turns("explore") == 25
     # Other types keep their defaults.
-    assert resolve_max_turns("plan") == 8
+    assert resolve_max_turns("plan") is None
 
 
-@pytest.mark.parametrize("raw", ["abc", "0", "-3", "1.5", "true", "201", "  "])
+@pytest.mark.parametrize("raw", ["abc", "-3", "1.5", "true"])
 def test_resolve_max_turns_fails_closed_on_invalid_overrides(
     monkeypatch: pytest.MonkeyPatch, raw: str
 ) -> None:
     monkeypatch.setenv("MINI_CODE_SUBAGENT_GENERAL_MAX_TURNS", raw)
-    assert resolve_max_turns("general") == 15
+    with pytest.raises(ValueError, match="MAX_TURNS"):
+        resolve_max_turns("general")
+
+
+@pytest.mark.parametrize("raw,expected", [("0", None), ("201", 201), ("  ", None)])
+def test_explicit_turn_override_is_not_clamped(monkeypatch, raw, expected):
+    monkeypatch.setenv("MINI_CODE_SUBAGENT_GENERAL_MAX_TURNS", raw)
+    assert resolve_max_turns("general") == expected
 
 
 def test_task_dispatch_applies_the_host_override(
@@ -261,7 +268,7 @@ def test_task_dispatch_applies_the_host_override(
     assert captured["max_steps_soft_landing"] is True
 
 
-def test_task_dispatch_ignores_an_invalid_host_override(
+def test_task_dispatch_rejects_an_invalid_host_override(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     captured: dict = {}
@@ -276,13 +283,12 @@ def test_task_dispatch_ignores_an_invalid_host_override(
     monkeypatch.setattr(task_module, "run_agent_turn", fake_run_agent_turn)
     monkeypatch.setenv("MINI_CODE_SUBAGENT_EXPLORE_MAX_TURNS", "not-a-number")
 
-    result = task_tool.run(
-        {"description": "explore", "prompt": "explore", "agent_type": "explore"},
-        ToolContext(cwd=str(tmp_path), _runtime={"model": "fake"}),
-    )
-
-    assert result.ok is True
-    assert captured["max_steps"] == AGENT_TYPES["explore"]["max_turns"]
+    with pytest.raises(ValueError, match="MAX_TURNS"):
+        task_tool.run(
+            {"description": "explore", "prompt": "explore", "agent_type": "explore"},
+            ToolContext(cwd=str(tmp_path), _runtime={"model": "fake"}),
+        )
+    assert not captured
 
 
 # ---------------------------------------------------------------------------
@@ -503,6 +509,8 @@ def test_general_subprocess_partial_reaches_the_parent_result(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from minicode.subagent_supervisor import SubagentProcessOutcome
+
+    monkeypatch.setenv("MINI_CODE_SUBAGENT_GENERAL_MAX_TURNS", "15")
 
     def fake_process(request, **_kwargs) -> SubagentProcessOutcome:
         return SubagentProcessOutcome(

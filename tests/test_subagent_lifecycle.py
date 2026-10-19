@@ -130,6 +130,7 @@ def test_finalization_barrier_requires_terminal_results_to_be_observed() -> None
         assert completed["ready"] is False
         assert completed["pending"] == []
         assert completed["completed"][0]["result"]["output"] == "bounded findings"
+        lifecycle.acknowledge_delivery((str(spawned["subagentId"]),))
         assert lifecycle.finalization_barrier() == {
             "lifecycleVersion": 1,
             "ready": True,
@@ -150,6 +151,7 @@ def test_polling_terminal_result_satisfies_finalization_barrier() -> None:
         )
         terminal = _wait_for_terminal(lifecycle, str(spawned["subagentId"]))
         assert terminal["terminal"] is True
+        lifecycle.acknowledge_delivery((str(spawned["subagentId"]),))
         assert lifecycle.finalization_barrier()["ready"] is True
     finally:
         lifecycle.shutdown()

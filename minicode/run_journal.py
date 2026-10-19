@@ -129,6 +129,7 @@ EVENT_TYPES = frozenset(
         "model.completed",
         "model.costed",
         "model.failed",
+        "model.retry_scheduled",
         "tool.started",
         "tool.finished",
         CONCURRENT_TOOL_TERMINAL_EVENT_TYPE,
@@ -137,6 +138,19 @@ EVENT_TYPES = frozenset(
         "execution.stopped",
         "execution.steps_extended",
         "execution.completion_limited",
+        "execution.progress_checkpoint",
+        "execution.phase_changed",
+        "execution.repair_context_projected",
+        "execution.implementation_context_projected",
+        "execution.native_handoff",
+        "execution.executor_session",
+        "execution.phase_call_timeout",
+        "implementation.completion_review_started",
+        "implementation.completion_decided",
+        "implementation.completion_review_activity",
+        "implementation.completion_migration_progress",
+        "implementation.completion_migration_checkpoint",
+        "implementation.migration_checkpoint_stale",
         VERIFICATION_EVENT_TYPE,
         "skill.routed",
         "skill.loaded",
@@ -147,6 +161,7 @@ EVENT_TYPES = frozenset(
         "working_memory.observed",
         "context.compacted",
         "context.compaction.failed",
+        "context.read_history_bounded",
         "recovery.started",
         "recovery.completed",
         "mcp.runtime.observed",
@@ -361,6 +376,20 @@ def _sanitize_payload(payload: Mapping[str, Any] | None) -> dict[str, Any]:
 
 
 def _sanitize_event_payload(event_type: str, payload: Mapping[str, Any] | None) -> dict[str, Any]:
+    if event_type in {"implementation.completion_migration_progress",
+                      "implementation.completion_migration_checkpoint",
+                      "implementation.migration_checkpoint_stale"}:
+        return _sanitize_payload(_completion_migration_projection(event_type, payload))
+    if event_type == "implementation.completion_review_activity":
+        return _sanitize_payload(_completion_review_activity_projection(payload))
+    if event_type in {
+        "implementation.completion_review_started", "implementation.completion_decided",
+    }:
+        # Completion decisions can contain code, probe bodies and full check
+        # diagnostics. Project only content-free identity/state before generic
+        # validation, so large private evidence neither leaks nor drops this
+        # small durable transition. Full evidence belongs to its scoped store.
+        return _sanitize_payload(_completion_event_projection(event_type, payload))
     sanitized = _sanitize_payload(payload)
     if event_type == CONCURRENT_TOOL_TERMINAL_EVENT_TYPE:
         normalized_terminal = normalize_concurrent_tool_terminal(sanitized)
@@ -401,6 +430,142 @@ def _sanitize_event_payload(event_type: str, payload: Mapping[str, Any] | None) 
             )
         return normalized_memory_failure
     return sanitized
+
+
+def _completion_migration_projection(event_type, payload):
+    if not isinstance(payload, dict):
+        raise RunJournalValidationError("Migration metadata must be an object.")
+    if event_type == "implementation.migration_checkpoint_stale":
+        owner = payload.get("executorId")
+        if (not isinstance(owner, str) or not re.fullmatch(r"implementation_[0-9a-f]{32}", owner)
+                or payload.get("reason") != "candidate_changed"):
+            raise RunJournalValidationError("Invalid migration invalidation identity.")
+        return {"executorId": owner, "reason": "candidate_changed"}
+    review, digest = payload.get("reviewId"), payload.get("candidateDigest")
+    if (not isinstance(review, str) or not re.fullmatch(r"completion_review_[0-9a-f]{24}", review)
+            or not isinstance(digest, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", digest)):
+        raise RunJournalValidationError("Invalid migration identity.")
+    result = {"reviewId": review, "candidateDigest": digest}
+    for count_name in ("completedCount", "totalCount", "remainingCount"):
+        value = payload.get(count_name)
+        if type(value) is not int or not 0 <= value <= 2 ** 53 - 1:
+            raise RunJournalValidationError("Invalid migration progress count.")
+        result[count_name] = value
+    if result["completedCount"] + result["remainingCount"] != result["totalCount"]:
+        raise RunJournalValidationError("Inconsistent migration progress counts.")
+    is_checkpoint = event_type == "implementation.completion_migration_checkpoint"
+    ref_key = "checkpointRef" if is_checkpoint else "evidenceRef"
+    reference = payload.get(ref_key)
+    if (not isinstance(reference, str) or not Path(reference).is_absolute()
+            or len(reference) > 4096 or any(ord(c) < 32 for c in reference)):
+        raise RunJournalValidationError("Invalid migration evidence reference.")
+    result[ref_key] = reference
+    if is_checkpoint:
+        count, checksum = payload.get("messageCount"), payload.get("checkpointDigest")
+        if (type(count) is not int or not 0 <= count <= 2 ** 53 - 1
+                or not isinstance(checksum, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", checksum)):
+            raise RunJournalValidationError("Invalid migration checkpoint metadata.")
+        result.update(messageCount=count, checkpointDigest=checksum)
+    return result
+
+
+def _completion_review_activity_projection(payload: Mapping[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        raise RunJournalValidationError("Completion review activity must be an object.")
+    review, role, event = (payload.get(name) for name in ("reviewId", "role", "eventType"))
+    prefix = {"completion_reviewer": "completion_review_", "coverage_auditor": "coverage_audit_"}.get(
+        role) if isinstance(role, str) else None
+    if (prefix is None or not isinstance(review, str) or not re.fullmatch(prefix + r"[0-9a-f]{24}", review)
+            or event not in {
+                "model.started", "model.completed", "model.failed", "model.costed",
+                "tool.started", "tool.completed", "tool.failed", "tool.finished",
+            }):
+        raise RunJournalValidationError("Completion review activity identity is invalid.")
+    result = {"reviewId": review, "role": role, "eventType": event}
+    operation = payload.get("operationId")
+    if isinstance(operation, str) and re.fullmatch(r"modelop_[0-9a-f]{32}", operation):
+        result["operationId"] = operation
+    tool = payload.get("toolName")
+    if isinstance(tool, str) and re.fullmatch(r"[A-Za-z_][A-Za-z_0-9]{0,127}", tool):
+        result["toolName"] = tool
+    for name in ("durationMs", "toolCallCount"):
+        value = payload.get(name)
+        if type(value) in (int, float) and math.isfinite(value) and 0 <= value <= (2 ** 53 - 1):
+            result[name] = value
+    if payload.get("resultType") in {"assistant", "tool_calls"}:
+        result["resultType"] = payload["resultType"]
+    if type(payload.get("isError")) is bool:
+        result["isError"] = payload["isError"]
+    usage = payload.get("usage")
+    if isinstance(usage, dict):
+        safe_usage = {}
+        if usage.get("source") in {"provider", "estimated", "unavailable"}:
+            safe_usage["source"] = usage["source"]
+        for name in ("inputTokens", "outputTokens", "cacheReadTokens", "cacheCreationTokens"):
+            value = usage.get(name)
+            if value is None or (type(value) is int and 0 <= value <= (2 ** 63 - 1)):
+                safe_usage[name] = value
+        result["usage"] = safe_usage
+    return result
+
+
+def _completion_event_projection(event_type: str, payload: Mapping[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        raise RunJournalValidationError("Completion event payload must be an object.")
+    owner, attempt, digest = (payload.get(name) for name in ("executorId", "attempt", "patchDigest"))
+    if (not isinstance(owner, str) or not re.fullmatch(r"implementation_[0-9a-f]{32}", owner)
+            or type(attempt) is not int or not 1 <= attempt <= (2 ** 63 - 1)
+            or (digest is not None and (not isinstance(digest, str)
+                or not re.fullmatch(r"sha256:[0-9a-f]{64}", digest)))):
+        raise RunJournalValidationError("Completion event identity is invalid.")
+    result = {"completionVersion": 1, "executorId": owner, "attempt": attempt, "patchDigest": digest}
+    if event_type == "implementation.completion_review_started":
+        if digest is None:
+            raise RunJournalValidationError("Completion review needs a candidate digest.")
+        return result
+    status, continuing = payload.get("status"), payload.get("continuesSameExecutor")
+    can_continue = payload.get("canContinue", True)
+    if (status not in {"approved", "changes_required", "inconclusive"}
+            or type(continuing) is not bool or type(can_continue) is not bool
+            or continuing != (status != "approved" and can_continue)
+            or (digest is None and (status == "approved" or can_continue))):
+        raise RunJournalValidationError("Completion event decision is invalid.")
+    result.update(status=status, continuesSameExecutor=continuing, canContinue=can_continue)
+    # IDs originate in the host's public-objective line partition. Arbitrary
+    # identifiers and all text/rationale/sourceEvidence fields stay out of the
+    # public Run journal, including otherwise harmless-looking secret strings.
+    raw_rows = payload.get("requirements", [])
+    if not isinstance(raw_rows, (list, tuple)):
+        raw_rows = []
+    rows = []
+    for row in raw_rows[:64]:
+        if not isinstance(row, dict):
+            continue
+        identity, state = row.get("id"), row.get("status")
+        if (isinstance(identity, str) and re.fullmatch(r"req_[0-9a-f]{20,64}", identity)
+                and state in {"covered", "missing", "unknown"}):
+            rows.append({"id": identity, "status": state})
+    # RunEvent.from_dict validates the already projected on-disk shape too.
+    # Preserve its bounded counts, rather than silently recounting a truncated
+    # list as complete when the journal is reloaded.
+    count, omitted = payload.get("requirementCount"), payload.get("requirementsOmitted")
+    projected = ("findings" not in payload and "findingCount" in payload
+                 and type(count) is int and type(omitted) is int
+                 and 0 <= omitted <= count <= (2 ** 63 - 1)
+                 and count == len(raw_rows) + omitted and len(rows) == len(raw_rows))
+    result.update(requirementCount=count if projected else len(raw_rows), requirements=rows,
+                  requirementsOmitted=omitted if projected else len(raw_rows) - len(rows))
+    findings = payload.get("findings", [])
+    finding_count = payload.get("findingCount")
+    result["findingCount"] = (finding_count if projected and type(finding_count) is int
+        and 0 <= finding_count <= (2 ** 63 - 1)
+        else len(findings) if isinstance(findings, (list, tuple)) else 0)
+    checks = payload.get("checks")
+    if isinstance(checks, dict) and checks.get("status") in {"passed", "failed", "inconclusive"}:
+        result["publicChecksStatus"] = checks["status"]
+    elif projected and payload.get("publicChecksStatus") in {"passed", "failed", "inconclusive"}:
+        result["publicChecksStatus"] = payload["publicChecksStatus"]
+    return result
 
 
 def _sanitize_metadata(metadata: Mapping[str, Any] | None) -> dict[str, str]:

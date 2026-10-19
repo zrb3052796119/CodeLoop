@@ -3,7 +3,8 @@
 The parent Run stream keeps a single ``subagent.completed`` summary so readers
 that require exactly one ``task.outcome`` per Run stay valid. The detailed
 nested-loop telemetry lives here, under the parent Run directory, and is
-deleted together with that Run by normal retention.
+deleted together with that Run by normal retention. Private tool diagnostics
+live in separate bounded files; they never enter this content-free event API.
 
 Records are append-only JSONL. Payload strings are bounded and only a fixed
 event whitelist is accepted; task text, findings, paths, prompts and tool
@@ -67,6 +68,7 @@ _ALLOWED_EVENT_TYPES = frozenset(
         "model.started",
         "model.completed",
         "model.failed",
+        "model.retry_scheduled",
         "model.costed",
         "tool.started",
         "tool.finished",
@@ -77,8 +79,17 @@ _ALLOWED_EVENT_TYPES = frozenset(
         "skill.attributed",
         "memory.retrieved",
         "memory.rendered",
+        "execution.progress_checkpoint",
+        "execution.phase_changed",
+        "execution.repair_context_projected",
+        "execution.implementation_context_projected",
+        "execution.native_handoff",
+        "execution.executor_session",
+        "execution.phase_call_timeout",
+        "execution.request_admission_rejected",
         "context.compacted",
         "context.compaction.failed",
+        "context.read_history_bounded",
         "recovery.started",
         "recovery.completed",
         "verification.completed",
@@ -185,7 +196,7 @@ class SubagentRunSummary:
     model_turns: int
     tool_calls: int
     duration_ms: int
-    max_turns: int
+    max_turns: int | None
     limit_kind: str
     result_truncated: bool
     budget_snapshot: dict[str, object]
@@ -240,6 +251,91 @@ class SubagentRunJournal:
     @property
     def parent_run_id(self) -> str:
         return self._run_dir.name
+
+    def append_tool_evidence(
+        self, subagent_id: str, *, invocation_id: str, tool_name: str,
+        phase: str, tool_input: object = None, output: str = "", is_error: bool = False,
+    ) -> None:
+        """Persist actual tool callbacks separately from content-free telemetry."""
+        from minicode.failure_evidence import (
+            encode_diagnostic_document, open_private_directory,
+            redact_diagnostic_text, sanitize_diagnostic_value,
+        )
+
+        self._path(subagent_id)  # Validate trusted child identity.
+        if phase not in {"started", "finished"} or not re.fullmatch(r"[A-Za-z0-9_.:-]{1,128}", invocation_id):
+            raise SubagentJournalError("invalid tool evidence identity")
+        record = {"evidenceVersion": 1, "subagentId": subagent_id,
+                  "invocationId": invocation_id, "type": "tool." + phase,
+                  "toolName": redact_diagnostic_text(tool_name, max_chars=120),
+                  "timestamp": self._clock()}
+        if phase == "started":
+            record["input"] = sanitize_diagnostic_value(tool_input)
+        else:
+            record["output"] = redact_diagnostic_text(output, max_chars=16000)
+            record["outputTruncated"] = len(output) > 16000
+            record["isError"] = bool(is_error)
+        encoded = encode_diagnostic_document(record)
+        if len(encoded) > 48000:
+            record["input"] = {"preview": redact_diagnostic_text(
+                json.dumps(record.get("input"), ensure_ascii=False), max_chars=16000), "truncated": True}
+            encoded = encode_diagnostic_document(record)
+        with self._write_lock:
+            directory = open_private_directory(self._run_dir, "subagent-runs", "tool-evidence")
+            try:
+                descriptor = os.open(subagent_id + ".tools.jsonl", os.O_WRONLY | os.O_APPEND | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0), 0o600, dir_fd=directory)
+                try:
+                    info = os.fstat(descriptor)
+                    if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                        raise SubagentJournalError("unsafe tool evidence file")
+                    if info.st_size + len(encoded) > 4 * 1024 * 1024:
+                        raise SubagentJournalError("tool evidence byte limit reached")
+                    if os.write(descriptor, encoded) != len(encoded):
+                        raise SubagentJournalError("short tool evidence write")
+                    os.fsync(descriptor)
+                finally:
+                    os.close(descriptor)
+            finally:
+                os.close(directory)
+
+    def persist_failure_candidate(
+        self, subagent_id: str, candidate: dict[str, object], *, workflow_id: str | None = None,
+        checkpoint_revision: int | None = None,
+    ) -> Path:
+        """Store an immutable diagnostic image, never an authority or patch.
+
+        Stage checkpoints have separate names so they cannot occupy the final
+        failure candidate's exclusive destination after a later repair.
+        """
+        from minicode.failure_evidence import encode_diagnostic_document, open_private_directory
+
+        self._path(subagent_id)
+        filename = "failure-candidate.json"
+        if checkpoint_revision is not None:
+            if type(checkpoint_revision) is not int or not 1 <= checkpoint_revision <= 999999:
+                raise SubagentJournalError("invalid candidate checkpoint revision")
+            filename = f"candidate-checkpoint-{checkpoint_revision}.json"
+        expected_workflow = "wf_" + subagent_id.removeprefix("sub_")
+        if workflow_id is not None and workflow_id != expected_workflow:
+            raise SubagentJournalError("failure candidate workflow identity mismatch")
+        if candidate.get("failureCandidateVersion") != 1 or candidate.get("promotable") is not False:
+            raise SubagentJournalError("invalid failure candidate")
+        encoded = encode_diagnostic_document(candidate)
+        if len(encoded) > 8 * 1024 * 1024:
+            raise SubagentJournalError("failure candidate exceeds byte limit")
+        with self._write_lock:
+            directory = open_private_directory(self._run_dir, "scheduler-workflows", expected_workflow)
+            try:
+                descriptor = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600, dir_fd=directory)
+                try:
+                    if os.write(descriptor, encoded) != len(encoded):
+                        raise SubagentJournalError("short failure candidate write")
+                    os.fsync(descriptor)
+                finally:
+                    os.close(descriptor)
+            finally:
+                os.close(directory)
+        return self._run_dir / "scheduler-workflows" / expected_workflow / filename
 
     def _ensure_root(self) -> None:
         if self._root.is_symlink():
@@ -410,7 +506,7 @@ class SubagentRunJournal:
         *,
         subagent_id: str,
         agent_type: str,
-        max_turns: int,
+        max_turns: int | None,
         budget: AgentBudgetSnapshot | None,
         continued_from: str | None = None,
     ) -> None:
@@ -426,7 +522,9 @@ class SubagentRunJournal:
             or AGENT_NAME_RE.fullmatch(agent_type) is not None
         ):
             raise SubagentJournalError("agent type is invalid")
-        if isinstance(max_turns, bool) or not isinstance(max_turns, int) or max_turns <= 0:
+        if max_turns is not None and (
+            isinstance(max_turns, bool) or not isinstance(max_turns, int) or max_turns <= 0
+        ):
             raise SubagentJournalError("max turns is invalid")
         if continued_from is not None and not re.fullmatch(
             r"sub_[0-9a-f]{32}", continued_from
@@ -499,7 +597,7 @@ class SubagentRunJournal:
         model_turns: int,
         tool_calls: int,
         duration_ms: int,
-        max_turns: int,
+        max_turns: int | None,
         result_truncated: bool,
         budget: AgentBudgetSnapshot | None,
         input_tokens: int | None = None,
@@ -524,10 +622,13 @@ class SubagentRunJournal:
             ("model_turns", model_turns),
             ("tool_calls", tool_calls),
             ("duration_ms", duration_ms),
-            ("max_turns", max_turns),
         ):
             if isinstance(value, bool) or not isinstance(value, int) or value < 0:
                 raise SubagentJournalError(f"{name} is invalid")
+        if max_turns is not None and (
+            isinstance(max_turns, bool) or not isinstance(max_turns, int) or max_turns < 0
+        ):
+            raise SubagentJournalError("max_turns is invalid")
         # Attributed token deltas are optional (older writers never recorded
         # them) but must arrive as a pair of non-negative ints when present.
         if (input_tokens is None) != (output_tokens is None):
@@ -702,9 +803,13 @@ class SubagentRunJournal:
             or not _SUBAGENT_ID_RE.fullmatch(subagent_id)
             or not isinstance(parent_run_id, str)
             or not _is_journal_agent_type(agent_type)
-            or isinstance(max_turns, bool)
-            or not isinstance(max_turns, int)
-            or max_turns <= 0
+            or "maxTurns" not in start
+            or "maxTurns" not in finish
+            or (max_turns is not None and (
+                isinstance(max_turns, bool)
+                or not isinstance(max_turns, int)
+                or max_turns <= 0
+            ))
             or limit_kind
             != ("phases" if agent_type == "workflow" else "model_turns")
         ):

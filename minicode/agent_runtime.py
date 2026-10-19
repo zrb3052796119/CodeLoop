@@ -57,6 +57,9 @@ class AgentTurnRuntime:
     deadline_monotonic: float | None = None
     parsed_intent: ParsedIntent | None = None
     trusted_user_evidence: tuple[TrustedUserEvidenceSeed, ...] = ()
+    implementation_spec: Any | None = None
+    implementation_continuation: Any | None = None
+    implementation_checkpoint_sink: Any | None = None
 
     def take_trusted_user_evidence_for_commit(
         self,
@@ -278,7 +281,7 @@ class AgentTurnRuntime:
         from minicode.skill_catalog_context import retire_stale_skill_context
 
         catalog_reader = getattr(self.tools, "get_skills", None)
-        if callable(catalog_reader):
+        if callable(catalog_reader) and self.implementation_continuation is None:
             # Routing already bound this snapshot; no second discovery scan.
             messages = retire_stale_skill_context(messages, catalog_reader())
 
@@ -317,6 +320,9 @@ class AgentTurnRuntime:
             skill_load_policy=skill_load_policy_for_routing(self.skill_routing),
             allow_user_interaction=self.allow_user_interaction,
             trusted_user_evidence=self.trusted_user_evidence,
+            implementation_spec=self.implementation_spec,
+            implementation_continuation=self.implementation_continuation,
+            implementation_checkpoint_sink=self.implementation_checkpoint_sink,
             defer_curator_maintenance=defer_curator_maintenance,
         )
 
@@ -384,6 +390,9 @@ def create_agent_turn_runtime(
     deadline_monotonic: float | None = None,
     intent_context: Any = None,
     trusted_user_evidence: tuple[TrustedUserEvidenceSeed, ...] = (),
+    implementation_spec: Any | None = None,
+    implementation_continuation: Any | None = None,
+    implementation_checkpoint_sink: Any | None = None,
 ) -> AgentTurnRuntime:
     """Construct the canonical local runtime used by Headless and Dashboard Chat."""
     from minicode.agent_budget import AgentTurnBudget
@@ -464,6 +473,17 @@ def create_agent_turn_runtime(
                 task_tool_definition=task_tool_definition,
             )
         permissions = PermissionManager(str(resolved), prompt=None)
+        if implementation_continuation is not None:
+            from minicode.implementation_continuation import HostImplementationContinuation
+            from minicode.tooling import ToolContext
+
+            if not isinstance(implementation_continuation, HostImplementationContinuation):
+                raise ValueError("continuation must be a host-bound capability")
+            implementation_continuation.validate_candidate(spec=implementation_spec,
+                context=ToolContext(cwd=str(resolved), permissions=permissions))
+            if agent_budget.has_limits:
+                raise ValueError("finite-budget continuation requires restoring its consumed budget")
+            implementation_continuation.restore_review(implementation_spec)
         memory_manager = MemoryManager(project_root=resolved)
         model = create_model_adapter(
             model=runtime.get("model", ""),
@@ -560,6 +580,9 @@ def create_agent_turn_runtime(
             deadline_monotonic=deadline_monotonic,
             parsed_intent=intent,
             trusted_user_evidence=effective_user_evidence,
+            implementation_spec=implementation_spec,
+            implementation_continuation=implementation_continuation,
+            implementation_checkpoint_sink=implementation_checkpoint_sink,
         )
     except BaseException:
         if tools is not None:

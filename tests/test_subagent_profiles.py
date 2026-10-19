@@ -111,8 +111,8 @@ def test_unknown_tool_is_rejected(tmp_path):
     assert loaded == {} and any("not_a_real_tool" in error for error in errors)
 
 
-def test_out_of_range_turns_fail_closed(tmp_path):
-    for value in ("0", "500", "eight", "3.5"):
+def test_invalid_turn_limits_fail_closed(tmp_path):
+    for value in ("-1", "", "eight", "3.5"):
         _write(
             tmp_path,
             f"turns-{value.replace('.', '_')}.md",

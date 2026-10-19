@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import sys
@@ -64,8 +65,8 @@ def _payload(status: str, **fields: object) -> dict[str, object]:
         "input_tokens": None,
         "output_tokens": None,
         # Strict, content-free settlement receipt for the parent-issued
-        # finite budget lease. Missing/invalid receipts are charged fully by
-        # the parent, so a killed or broken worker cannot bypass accounting.
+        # budget lease. The parent charges finite dimensions conservatively
+        # and marks missing/invalid usage uncertain, including null dimensions.
         "budget_usage": None,
         # Optional, closed telemetry bridge. The parent revalidates this
         # lifecycle and assigns journal sequence/timestamps itself.
@@ -179,13 +180,16 @@ def _validate_request(request: object) -> dict[str, object]:
         raise ValueError("subagent worker request parent_run_id is invalid")
     if not isinstance(result_key, str) or not result_key:
         raise ValueError("subagent worker request result_key is invalid")
-    if isinstance(max_turns, bool) or not isinstance(max_turns, int) or max_turns < 1:
+    if "max_turns" not in request or (max_turns is not None and (
+        isinstance(max_turns, bool) or not isinstance(max_turns, int) or max_turns < 1
+    )):
         raise ValueError("subagent worker request max_turns is invalid")
-    if (
+    if "timeout_seconds" not in request or (timeout_seconds is not None and (
         isinstance(timeout_seconds, bool)
         or not isinstance(timeout_seconds, (int, float))
+        or not math.isfinite(timeout_seconds)
         or not float(timeout_seconds) > 0
-    ):
+    )):
         raise ValueError("subagent worker request timeout_seconds is invalid")
     if runtime is not None and not isinstance(runtime, dict):
         raise ValueError("subagent worker request runtime is invalid")
@@ -206,7 +210,7 @@ def _validate_request(request: object) -> dict[str, object]:
         "result_key": result_key,
         "result_instruction": instruction if isinstance(instruction, str) else "",
         "max_turns": max_turns,
-        "timeout_seconds": float(timeout_seconds),
+        "timeout_seconds": float(timeout_seconds) if timeout_seconds is not None else None,
         "runtime": runtime,
         "inject_memory": request.get("inject_memory") is True,
         "semantic_observation_active": semantic_observation_active,
@@ -215,7 +219,7 @@ def _validate_request(request: object) -> dict[str, object]:
     }
 
 
-def _execute(request: dict[str, object]) -> dict[str, object]:
+def _execute(request: dict[str, object], *, tool_evidence_recorder=None) -> dict[str, object]:
     """Rebuild a non-interactive ``general`` runtime and run the nested turn."""
     from minicode.agent_budget import (
         AgentBudgetExceeded,
@@ -299,8 +303,11 @@ def _execute(request: dict[str, object]) -> dict[str, object]:
             ),
             capture_semantic_intent_events=semantic_observation_active,
             semantic_observation_active=semantic_observation_active,
+            tool_evidence_recorder=tool_evidence_recorder,
         )
-        deadline_monotonic = time.monotonic() + float(request["timeout_seconds"])
+        timeout_seconds = request["timeout_seconds"]
+        deadline_monotonic = (time.monotonic() + float(timeout_seconds)
+                              if timeout_seconds is not None else None)
         started_at = time.time()
 
         task_prompt = str(request["prompt"])
@@ -416,7 +423,7 @@ def _execute(request: dict[str, object]) -> dict[str, object]:
                 messages=messages,
                 cwd=cwd,
                 permissions=permissions,
-                max_steps=int(request["max_turns"]),
+                max_steps=request["max_turns"],
                 # Same soft-landing contract as the in-process path: on
                 # step-limit exhaustion, one tool-free closing turn produces
                 # a partial summary instead of a discarded hard failure.
@@ -541,7 +548,11 @@ def run_worker(request_path: str, result_path: str) -> int:
         )
         return 2
     try:
-        payload = _execute(request)
+        from minicode.subagent_tool_evidence import tool_evidence_writer
+        # This is only the supervisor's existing disposable transport directory;
+        # the child never receives a parent journal path or write capability.
+        with tool_evidence_writer(Path(result_path).parent) as recorder:
+            payload = _execute(request, tool_evidence_recorder=recorder)
     except Exception as exc:  # noqa: BLE001 - safety net above the agent loop
         payload = _payload(
             "error",

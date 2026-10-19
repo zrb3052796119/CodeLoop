@@ -795,8 +795,22 @@ class AnthropicModelAdapter:
         self._tools_cache_key: int = 0  # hash of tool list for invalidation
         self._thinking_blocks: list[dict[str, Any]] = []  # Preserve thinking blocks for round-trip
 
-    def _get_serialized_tools(self) -> list[dict[str, Any]]:
+    def request_tool_schemas(self, *, tools_override=None, disable_tools=False):
+        """Return request schemas without mutating the cached tool catalog."""
+        if disable_tools:
+            return []
+        schemas = (self._get_serialized_tools(tools_override) if tools_override is not None
+                   else self._get_serialized_tools())
+        body = {"tools": schemas}
+        if self._prompt_cache_enabled():
+            _apply_prompt_cache_markers(body)
+        return body["tools"]
+
+    def _get_serialized_tools(self, tools_override=None) -> list[dict[str, Any]]:
         """Get serialized tool list with caching."""
+        if tools_override is not None:
+            return [{"name": tool.name, "description": tool.description,
+                     "input_schema": tool.input_schema} for tool in tools_override.list()]
         if self.tools is None:
             return []
         current_tools = self.tools.list()
@@ -836,6 +850,7 @@ class AnthropicModelAdapter:
         cancellation_token: Any = None,
         deadline_monotonic: float | None = None,
         disable_tools: bool = False,
+        tools_override=None,
         max_output_tokens_override: int | None = None,
         max_response_bytes_override: int | None = None,
         temperature_override: float | None = None,
@@ -891,7 +906,8 @@ class AnthropicModelAdapter:
             "messages": converted_messages,
         }
         if not disable_tools:
-            serialized_tools = self._get_serialized_tools()
+            serialized_tools = self.request_tool_schemas(tools_override=tools_override,
+                disable_tools=disable_tools)
             if serialized_tools:
                 request_body["tools"] = serialized_tools
         # Disable extended thinking for non-Anthropic models that support it

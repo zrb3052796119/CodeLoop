@@ -109,7 +109,7 @@ def _normalize_report(content: object) -> dict[str, object] | None:
             return None
         path = _bounded_nonempty(item.get("path"), _MAX_PATH_CHARS)
         action = item.get("action")
-        if path is None or action not in _ACTIONS:
+        if path is None or not isinstance(action, str) or action not in _ACTIONS:
             return None
         normalized_files.append({"path": path, "action": str(action)})
 
@@ -123,7 +123,8 @@ def _normalize_report(content: object) -> dict[str, object] | None:
     status = verification.get("status")
     checks = verification.get("checks")
     if (
-        status not in _VERIFICATION_STATUSES
+        not isinstance(status, str)
+        or status not in _VERIFICATION_STATUSES
         or not isinstance(checks, list)
         or len(checks) > _MAX_CHECKS
     ):

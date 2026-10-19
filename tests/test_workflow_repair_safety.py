@@ -186,7 +186,10 @@ def test_failed_verification_cannot_reset_an_exhausted_shared_budget(
     )
 
     budget = AgentTurnBudget(
-        max_model_calls=1 if dimension == "model_calls" else 10,
+        # Two Executor calls plus the v4 semantic Reviewer's work/closing
+        # allowance and parent handoff reserve. Exhaust this same ledger
+        # during verification; the test must reach the intended repair gate.
+        max_model_calls=12,
         max_total_tokens=10000, max_cost_usd="1",
     )
     roles = []
@@ -213,12 +216,13 @@ def test_failed_verification_cannot_reset_an_exhausted_shared_budget(
             result["checks"][0].update(status="failed", exitCode=1)
             # An independently completed sibling can exhaust the shared budget
             # while this verifier runs; repair must use the same authority.
-            reservation = budget.reserve_model_call(0)
-            budget.record_model_call(
-                input_tokens=10000 if dimension == "tokens" else 0,
-                cost_usd="1" if dimension == "cost" else "0",
-                reservation=reservation,
-            )
+            for _ in range(budget.snapshot().limit_model_calls if dimension == "model_calls" else 1):
+                reservation = budget.reserve_model_call(0)
+                budget.record_model_call(
+                    input_tokens=10000 if dimension == "tokens" else 0,
+                    cost_usd="1" if dimension == "cost" else "0",
+                    reservation=reservation,
+                )
             return result
 
     monkeypatch.setattr(task_module, "_run", executor)
@@ -228,7 +232,7 @@ def test_failed_verification_cannot_reset_an_exhausted_shared_budget(
         task_module.task_tool.validator({
             "agent_type": "workflow", "description": "budget safety",
             "prompt": "Apply the scoped change.",
-            "workflow_request": _request(complex=False),
+            "workflow_request": _request(risk="low", complex=False),
         }),
         ToolContext(cwd=str(tmp_path), _runtime={"model": "fake"},
                     _agent_budget=budget, _workflow_commit_audit_waived=True),

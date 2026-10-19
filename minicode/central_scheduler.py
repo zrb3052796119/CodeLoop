@@ -20,13 +20,16 @@ from minicode.conflict_port_runner import BoundedConflictPortRunner
 from minicode.workflow_repair import (
     MAX_IMPLEMENTATION_REPAIRS,
     REPAIR_TRANSITION_ERROR,
+    CONTINUATION_TRANSITION_ERROR,
+    validate_continuation_admission,
 )
 
 if TYPE_CHECKING:
     from minicode.conflict_port_runner import ConflictPortRunner
 
 
-SCHEDULER_POLICY_VERSION = 2
+SCHEDULER_POLICY_VERSION = 5
+SUPPORTED_SCHEDULER_POLICY_VERSIONS = frozenset({2, 3, 4, SCHEDULER_POLICY_VERSION})
 _DEFAULT_CONFLICT_AUTHORITY_RUNNER = BoundedConflictPortRunner()
 _DEFAULT_CONFLICT_OBSERVER_RUNNER = BoundedConflictPortRunner()
 
@@ -76,6 +79,8 @@ class TaskProfile:
     human_confirmation_required: bool = False
     human_confirmation_granted: bool = False
     human_approval_id: str | None = None
+    # Host-selected risk policy; public declarations cannot set this flag.
+    independent_review_required: bool = True
 
     def __post_init__(self) -> None:
         if not isinstance(self.task_id, str) or not self.task_id.strip():
@@ -91,6 +96,7 @@ class TaskProfile:
             self.acceptance_executable,
             self.human_confirmation_required,
             self.human_confirmation_granted,
+            self.independent_review_required,
         )
         if any(type(value) is not bool for value in flags):
             raise ValueError("task profile routing flags must be booleans")
@@ -213,6 +219,7 @@ class StageAssignment:
     input_artifact_ids: tuple[str, ...] = ()
     repair_source_artifact_id: str | None = None
     repair_index: int = 0
+    continuation: Mapping[str, object] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -318,7 +325,15 @@ class CentralScheduler:
         self._conflict_port_runner = conflict_port_runner
         self._conflict_observer_runner = conflict_observer_runner
 
-    def plan(self, profile: TaskProfile) -> DispatchPlan:
+    def plan(
+        self, profile: TaskProfile, *, policy_version: int = SCHEDULER_POLICY_VERSION,
+    ) -> DispatchPlan:
+        """Plan new work with current policy; replay recorded policy explicitly."""
+        if (
+            type(policy_version) is not int
+            or policy_version not in SUPPORTED_SCHEDULER_POLICY_VERSIONS
+        ):
+            raise ValueError("scheduler policy version is unsupported")
         if (
             profile.kind is TaskKind.READ_ONLY
             and profile.risk is TaskRisk.LOW
@@ -329,6 +344,7 @@ class CentralScheduler:
                 task_id=profile.task_id,
                 stages=(DispatchStage.PARENT,),
                 rule_id="route.parent_only",
+                policy_version=policy_version,
             )
         if (
             profile.risk is TaskRisk.CRITICAL
@@ -338,6 +354,7 @@ class CentralScheduler:
                 task_id=profile.task_id,
                 stages=(DispatchStage.ANALYST, DispatchStage.HUMAN),
                 rule_id="route.critical_read_only_human_gate",
+                policy_version=policy_version,
                 requires_human=True,
             )
         if profile.risk is TaskRisk.CRITICAL:
@@ -351,6 +368,7 @@ class CentralScheduler:
                     DispatchStage.REVIEWER,
                 ),
                 rule_id="route.critical_human_gate",
+                policy_version=policy_version,
                 requires_human=True,
             )
         if (
@@ -368,6 +386,7 @@ class CentralScheduler:
                     DispatchStage.REVIEWER,
                 ),
                 rule_id="route.high_risk_human_gate",
+                policy_version=policy_version,
                 requires_human=True,
             )
         if profile.kind is TaskKind.READ_ONLY:
@@ -375,18 +394,32 @@ class CentralScheduler:
                 task_id=profile.task_id,
                 stages=(DispatchStage.ANALYST,),
                 rule_id="route.single_analyst",
+                policy_version=policy_version,
             )
         if (
             profile.kind is TaskKind.CHANGE
             and profile.risk is TaskRisk.LOW
-            and not profile.complex
+            and (policy_version != 2 or not profile.complex)
             and profile.scope_clear
             and profile.acceptance_executable
         ):
+            if policy_version >= 5 and not profile.independent_review_required and not profile.complex:
+                return DispatchPlan(
+                    task_id=profile.task_id,
+                    stages=(DispatchStage.EXECUTOR, DispatchStage.VERIFIER),
+                    rule_id="route.verified_change",
+                    policy_version=policy_version,
+                )
+            # Executable check associations are declarations, not proof that
+            # all requirements have assertions. Keep implementation direct,
+            # but review semantic coverage before promotion. Recorded v2/v3
+            # plans retain their original meaning during audit replay.
             return DispatchPlan(
                 task_id=profile.task_id,
-                stages=(DispatchStage.EXECUTOR, DispatchStage.VERIFIER),
+                stages=(DispatchStage.EXECUTOR, DispatchStage.VERIFIER)
+                + ((DispatchStage.REVIEWER,) if policy_version >= 4 else ()),
                 rule_id="route.scoped_change",
+                policy_version=policy_version,
             )
         if profile.kind is TaskKind.CHANGE:
             return DispatchPlan(
@@ -398,6 +431,7 @@ class CentralScheduler:
                     DispatchStage.REVIEWER,
                 ),
                 rule_id="route.reviewed_change",
+                policy_version=policy_version,
             )
         raise ValueError("task profile is not covered by scheduler policy")
 
@@ -413,6 +447,7 @@ class CentralScheduler:
         run_human: Callable[[StageAssignment], StageResult] | None = None,
         on_transition: Callable[[SchedulerTransition], None] | None = None,
         policy: SchedulerExecutionPolicy | None = None,
+        admit_implementation_repair: Callable[[StageAssignment, StageResult], Mapping[str, object] | bool | None] | None = None,
         deadline_monotonic: float | None = None,
         clock: Callable[[], float] = time.monotonic,
         abort_exceptions: tuple[type[BaseException], ...] = (),
@@ -431,6 +466,8 @@ class CentralScheduler:
             raise TypeError("run_human must be callable or null")
         if on_transition is not None and not callable(on_transition):
             raise TypeError("on_transition must be callable")
+        if admit_implementation_repair is not None and not callable(admit_implementation_repair):
+            raise TypeError("admit_implementation_repair must be callable")
         if policy is None:
             policy = SchedulerExecutionPolicy()
         if not isinstance(policy, SchedulerExecutionPolicy):
@@ -459,6 +496,7 @@ class CentralScheduler:
         pending_stages = list(plan.stages)
         repair_count = 0
         repair_source_artifact_id: str | None = None
+        continuation: Mapping[str, object] | None = None
         completed: list[DispatchStage] = []
         artifacts: list[str] = []
         patch_digest: str | None = None
@@ -500,6 +538,7 @@ class CentralScheduler:
                     if stage is DispatchStage.EXECUTOR else None
                 ),
                 repair_index=repair_count,
+                continuation=continuation if stage is DispatchStage.EXECUTOR else None,
             )
 
         def emit(
@@ -585,11 +624,11 @@ class CentralScheduler:
             def schedule_implementation_repair(
                 candidate: StageResult, failed_assignment: StageAssignment
             ) -> bool:
-                nonlocal repair_count, repair_source_artifact_id, patch_digest
+                nonlocal repair_count, repair_source_artifact_id, patch_digest, continuation
                 if (
                     not candidate.repairable
                     or stage not in {DispatchStage.VERIFIER, DispatchStage.REVIEWER}
-                    or plan.rule_id not in {"route.scoped_change", "route.reviewed_change"}
+                    or plan.rule_id not in {"route.scoped_change", "route.reviewed_change", "route.verified_change"}
                     or candidate.requires_human
                     or candidate.escalate_conflict is not None
                     or candidate.patch_digest != patch_digest
@@ -609,10 +648,26 @@ class CentralScheduler:
                             or candidate.error_code is not None
                         )
                     )
-                    or repair_count >= policy.implementation_max_repairs
                     or deadline_reached()
                 ):
                     return False
+                # A live workflow owner can continue its existing Executor on
+                # the shared ledger. None retains the legacy bounded policy;
+                # False is an explicit refusal and never falls back to it.
+                admission = None
+                if admit_implementation_repair is not None:
+                    admission = admit_implementation_repair(failed_assignment, candidate)
+                if admission is False:
+                    return False
+                if admission is None:
+                    if repair_count >= policy.implementation_max_repairs:
+                        return False
+                    continuation = None
+                else:
+                    try:
+                        continuation = validate_continuation_admission(admission)
+                    except (ValueError, TypeError):
+                        return False
                 repair_count += 1
                 repair_source_artifact_id = candidate.artifact_id
                 artifacts.append(candidate.artifact_id)
@@ -620,7 +675,8 @@ class CentralScheduler:
                     failed_assignment,
                     outcome="repairing",
                     artifact_id=candidate.artifact_id,
-                    error_code=REPAIR_TRANSITION_ERROR,
+                    error_code=(CONTINUATION_TRANSITION_ERROR if continuation is not None
+                                else REPAIR_TRANSITION_ERROR),
                 )
                 # Mutating only the unvisited tail preserves a unique ordinal
                 # (and therefore fresh identities) for every revised stage.
@@ -756,7 +812,7 @@ class CentralScheduler:
                     if candidate.escalate_conflict is not None:
                         # A frozen ConflictPackage converts a terminal-looking
                         # blocked stage into exactly one bounded adjudication.
-                        # The verdict is binding: only an explicit selection
+                        # The verdict is binding: only an unconditional selection
                         # of the continuation claim (ordered second in the
                         # package) resumes the plan; every other decision,
                         # including an inconclusive one, fails closed.
@@ -870,7 +926,11 @@ class CentralScheduler:
                             verdict_decision = str(
                                 adj_candidate.conflict_verdict.get("decision")
                             )
-                            if verdict_decision == "select_b":
+                            if (
+                                verdict_decision == "select_b"
+                                and adj_candidate.conflict_verdict.get("conditions")
+                                == []
+                            ):
                                 emit(
                                     adjudicator_assignment,
                                     outcome="completed",
@@ -889,6 +949,7 @@ class CentralScheduler:
                                 break
                             adjudication_reason = {
                                 "select_a": "adjudicated_reclassification_required",
+                                "select_b": "adjudication_conditions_unresolved",
                                 "synthesize": "adjudication_decision_not_binding",
                                 "insufficient": "adjudication_inconclusive",
                                 "human_required": "adjudication_human_required",
@@ -1150,6 +1211,7 @@ __all__ = [
     "DispatchStage",
     "CommitRequest",
     "SCHEDULER_POLICY_VERSION",
+    "SUPPORTED_SCHEDULER_POLICY_VERSIONS",
     "SchedulerExecutionPolicy",
     "SchedulerTransition",
     "StageAssignment",

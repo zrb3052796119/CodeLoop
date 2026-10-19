@@ -41,6 +41,78 @@ _NO_OP_OPTIONS = frozenset(
     }
 )
 _MAKE_DRY_RUN_OPTIONS = frozenset({"-n", "--just-print", "--recon"})
+_PYTEST_KEYWORD_TOKEN = re.compile(r"[ \t]+|[()]|[\w:+.\[\]\\/-]+")
+
+
+def _pytest_keyword_expression_is_safe(expression: str) -> bool:
+    """Recognize pytest -k's boolean grammar without importing or evaluating it.
+
+    Parentheses here group keyword matches; they cannot invoke a shell. The
+    marker-only kwargs/call grammar is deliberately excluded: pytest's keyword
+    matcher does not support it. Empty selectors remain outside our contract.
+    """
+    expected_operand = True
+    depth = 0
+    end = 0
+    for match in _PYTEST_KEYWORD_TOKEN.finditer(expression):
+        if match.start() != end:
+            return False
+        end = match.end()
+        token = match.group()
+        if token.isspace():
+            continue
+        if expected_operand:
+            if token == "not":
+                continue
+            if token == "(":
+                depth += 1
+            elif token in {"and", "or", ")"}:
+                return False
+            else:
+                expected_operand = False
+        elif token in {"and", "or"}:
+            expected_operand = True
+        elif token == ")" and depth:
+            depth -= 1
+        else:
+            return False
+    return end == len(expression) and not expected_operand and depth == 0
+
+
+def _without_pytest_keyword_selectors(argv: tuple[str, ...]) -> tuple[str, ...] | None:
+    """Validate selector values separately; retain every executable/path option."""
+    if argv[0].casefold() == "pytest":
+        start = 1
+    elif (
+        argv[0].casefold() in {"python", "python3"}
+        and len(argv) >= 3
+        and argv[1] == "-m"
+        and argv[2].casefold() == "pytest"
+    ):
+        start = 3
+    else:
+        return argv
+    retained = list(argv[:start])
+    index = start
+    while index < len(argv):
+        token = argv[index]
+        if token == "-k":
+            index += 1
+            if index == len(argv) or argv[index].startswith("-"):
+                return None
+            expression = argv[index]
+        elif token.startswith("-k"):
+            expression = token[2:]
+            if expression.startswith("="):
+                expression = expression[1:]
+        else:
+            retained.append(token)
+            index += 1
+            continue
+        if not _pytest_keyword_expression_is_safe(expression):
+            return None
+        index += 1
+    return tuple(retained)
 
 
 def _targets_with_closed_options(
@@ -175,12 +247,16 @@ def verification_argv_is_safe(argv: object) -> bool:
             not isinstance(token, str)
             or not token
             or "\x00" in token
-            or any(character in token for character in _SHELL_METACHARACTERS)
             for token in argv
         )
         or any(character.isspace() for character in argv[0])
         or "/" in argv[0]
         or "\\" in argv[0]
+    ):
+        return False
+    argv = _without_pytest_keyword_selectors(tuple(argv))
+    if argv is None or any(
+        character in token for token in argv for character in _SHELL_METACHARACTERS
     ):
         return False
     executable = argv[0].replace("\\", "/").rsplit("/", 1)[-1].casefold()

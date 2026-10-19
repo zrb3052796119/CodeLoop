@@ -1,0 +1,40 @@
+{
+  "provenance": {
+    "trial": "real-remediation-context-r1-explicit",
+    "version": "live-v17",
+    "source": "artifacts/implementation-progress-2026-10-15/execution-delivery/live-v17/private/real-remediation-context-r1-explicit/journal/dashboard/workspaces/ws_7ce8329b6f475a3a/runs/run_46360fd9bae8497191c7e999ec28b16b/subagent-runs/tool-evidence/sub_edea1986f222fcaa8d04c4be79baa8fc.tools.jsonl",
+    "sourceSha256": "6e99f2e5efd2fb4eb4456e8277e8f5e2593de28588a298822fe42b575a0070cb",
+    "use": "Recorded failure signature and submission shape only. Scripted local model is not a model-quality evaluation."
+  },
+  "failedCheck": {
+    "status": "failed",
+    "exitCode": 1,
+    "failureReason": null,
+    "error": "NameError: name 'TaskTool' is not defined",
+    "summary": "6 failed, 1 passed in 0.63s"
+  },
+  "submitInput": {
+    "blockers": [],
+    "deviations": [],
+    "status": "completed",
+    "steps": [
+      {
+        "status": "completed",
+        "step": 1
+      },
+      {
+        "status": "completed",
+        "step": 2
+      }
+    ]
+  },
+  "submitReceipt": {
+    "declarationReceived": true,
+    "verification": "pending",
+    "writeback": "pending"
+  },
+  "frozenDiff": {
+    "byteCount": 14175,
+    "complete": false
+  }
+}
