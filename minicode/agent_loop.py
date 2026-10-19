@@ -3681,15 +3681,20 @@ def run_agent_turn(
             direct_migration_state = None
         direct_implementation_batch_status = checks["status"]
         direct_implementation_checks_failed = checks["status"] != "passed"
+        behavior = bool(getattr(implementation_spec, "behavior_review", False))
         if checks["status"] != "passed":
             decision = {"status": "changes_required", "reason": "public_checks_not_current_and_passed",
                         "patchDigest": checks.get("patchDigest"), "checks": checks}
             if checks.get("reason") == "completion_checks_unavailable":
                 decision["canContinue"] = False
         else:
-            if direct_completion_review is None:
+            if behavior:
+                from minicode.behavior_review import BehaviorReview
+                if not isinstance(direct_completion_review, BehaviorReview):
+                    direct_completion_review = BehaviorReview(implementation_spec)
+            elif direct_completion_review is None:
                 direct_completion_review = ImplementationCompletionReview(implementation_spec)
-            if resuming_review and implementation_continuation is not None:
+            if resuming_review and implementation_continuation is not None and not behavior:
                 from minicode.completion_repair_decision import delivered_repair_matches
 
                 # A stored slot is not enough: checks, actual source anchors
@@ -3712,8 +3717,8 @@ def run_agent_turn(
                 payload={"executorId": direct_completion_owner, "attempt": direct_completion_attempt,
                          "patchDigest": checks.get("patchDigest")})
             decision = None
-            pending_migration = direct_completion_review.state.get("pendingLegacyResolution")
-            if (direct_completion_review.has_legacy_probes and not (
+            pending_migration = None if behavior else direct_completion_review.state.get("pendingLegacyResolution")
+            if (not behavior and direct_completion_review.has_legacy_probes and not (
                     isinstance(pending_migration, dict)
                     and pending_migration.get("candidateDigest") == checks.get("patchDigest"))):
                 from minicode.completion_probe_migration import CompletionProbeMigration
@@ -3739,10 +3744,16 @@ def run_agent_turn(
                         "patchDigest": checks.get("patchDigest"), "canContinue": False,
                         "migrationEvidence": migration}
             if decision is None:
+                note = None
+                if behavior and getattr(direct_completion_review, "repair_rounds", 0):
+                    stripped = content.strip() if isinstance(content, str) else ""
+                    if (stripped and "\n" not in stripped and len(stripped) <= 240
+                            and stripped[-1] in ".!?"):
+                        note = stripped
                 decision = direct_completion_review.assess(model=model, tools=tools, context=context,
                     agent_budget=agent_budget, event_sink=event_sink,
                     cancellation_token=cancellation_token, deadline_monotonic=deadline_monotonic,
-                    checks_receipt=checks)
+                    checks_receipt=checks, **({"executor_note": note} if behavior else {}))
             raise_if_cancelled(cancellation_token)
             raise_if_deadline_exceeded()
             current_digest = implementation_candidate_digest(implementation_spec, context)
@@ -3750,6 +3761,16 @@ def run_agent_turn(
                     or checks.get("patchDigest") != current_digest):
                 decision = {"status": "inconclusive", "reason": "completion_candidate_changed",
                             "patchDigest": current_digest}
+        if behavior:
+            if decision.get("status") == "inconclusive":
+                # Reviewer transport and format failures stay on this checkpoint.
+                # They are not a task failure and they do not drop the failing tests.
+                decision = {**decision, "canContinue": True,
+                            "repairProbes": list(decision.get("repairProbes")
+                                                 or getattr(direct_completion_review, "repair_probes", [])
+                                                 or [])}
+            elif decision.get("status") == "needs_human":
+                decision = {**decision, "canContinue": False}
         unresolved_probe_failure = decision.get("reason") == "failure_adjudication_inconclusive"
         pending_coverage_audit = decision.get("reason") == "coverage_audit_interrupted"
         if unresolved_probe_failure:
@@ -3788,9 +3809,36 @@ def run_agent_turn(
                                      "_rejected_completion": True})
         else:
             supersede_completion_feedback()
+        if behavior:
+            gaps = "\n".join("- " + item for item in decision.get("findings") or [])
+            probes = "\n\n".join(probe.get("code", "") for probe in decision.get("repairProbes") or []
+                                 if isinstance(probe, dict))
+            files = ", ".join(decision.get("files") or [])
+            if decision.get("status") == "needs_human":
+                lead = ("Repair cap reached (2 rounds). A human must continue this same "
+                        "implementation session. This is not a failed task verdict.")
+            elif decision.get("status") == "inconclusive":
+                lead = ("The review did not finish. Retry it from this checkpoint. "
+                        "Do not change the product because of this review failure.")
+            else:
+                lead = ("Delivery is not accepted. Continue in this same implementation session "
+                        "and repair only the gaps below.")
+            feedback_body = (lead + "\nGaps:\n" + (gaps or "- (none)")
+                             + "\nFiles: " + (files or "(none)")
+                             + "\nFailing tests:\n" + (probes or "(none)"))
+            evidence = {"status": decision.get("status"), "reason": decision.get("reason"),
+                        "findings": decision.get("findings"), "files": decision.get("files"),
+                        "repairProbes": decision.get("repairProbes"),
+                        "canContinue": decision.get("canContinue", True)}
+        else:
+            feedback_body = None
+            evidence = None
         implementation_completion_feedback = {
             "role": "user", "_implementation_completion_feedback": True,
-            "content": (("Host completion decision: the independent coverage audit is paused. "
+            "content": (feedback_body + "\nOriginal public request (unchanged):\n" + implementation_spec.objective
+                        + "\nCompletion evidence:\n" + json.dumps(evidence, ensure_ascii=False)
+                        if feedback_body is not None else
+                        ("Host completion decision: the independent coverage audit is paused. "
                 "Its original context, delivered evidence and unaccepted drafts are retained for the same owner. "
                 "Resume that audit before deciding completion; no product repair is inferred.\n" if pending_coverage_audit else
                 "Host completion decision: independent failure adjudication remains unresolved. "
@@ -3817,6 +3865,7 @@ def run_agent_turn(
 
     try:
         if (implementation_continuation is not None and direct_completion_review is not None
+                and not getattr(implementation_spec, "behavior_review", False)
                 and (implementation_continuation.requires_revalidation
                      or direct_completion_review.has_accepted_repair_decision(
                          implementation_continuation.document["candidateDigest"])

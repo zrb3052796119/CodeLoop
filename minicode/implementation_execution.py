@@ -85,6 +85,7 @@ class ImplementationSpec:
     write_paths: tuple[str, ...]
     checks: tuple[VerificationCheck, ...]
     objective: str
+    behavior_review: bool = False
 
     def __post_init__(self):
         if not self.write_paths or any(not isinstance(p, str) or not p or Path(p).is_absolute()

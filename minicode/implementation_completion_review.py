@@ -655,6 +655,35 @@ class ImplementationCompletionReview:
             for row in resolution["decisions"] for source in row["acceptanceProbes"])
         return [self._replacement_chain(pid, resolution["candidateDigest"]) for pid in originals]
 
+    def _refresh_classified_bindings(self, digest):
+        """Point a classified handoff at the successor once its correction exists.
+
+        The migration document is sealed before the coverage audit retires the
+        original probe. Restore checks the active successor and its product-gap
+        authority, not the superseded source.
+        """
+        for document in self._legacy_resolutions:
+            if document.get("status") != "classified" or document.get("candidateDigest") != digest:
+                continue
+            chains = self._replacement_chains(document["resolution"])
+            if not any(chain["correctionRefs"] for chain in chains):
+                continue
+            active = sorted({chain["activeProbeId"] for chain in chains})
+            document["replacementChains"] = chains
+            document["replacementProbeIds"] = active
+            document["replacementReceipts"] = [self._receipts[(digest, pid)]["receiptRef"] for pid in active]
+            gaps = []
+            for pid in active:
+                receipt = self._receipts[(digest, pid)]["receipt"]
+                if receipt["status"] == "passed":
+                    continue
+                authority = self._failure_authority(pid, digest)
+                if authority is None or authority.get("verdict") != "product_gap":
+                    raise ValueError("classified successor lacks product-gap authority")
+                gaps.append(authority["adjudicationRef"])
+            if gaps:
+                document["productGapAdjudicationRefs"] = gaps
+
     def _register_purpose(self, probe, purpose, *, legacy_resolution=None):
         existing = self._probe_purposes.get(probe.probe_id)
         if existing is not None:
@@ -735,6 +764,29 @@ class ImplementationCompletionReview:
             with path.open("x", encoding="utf-8") as handle:
                 handle.write(_json(document))
         return str(path)
+
+    def _classified_same_candidate_handoff(self, digest):
+        if self._pending_resolution is not None or self._pending_supersessions():
+            return None
+        if not any(record.get("status") == "classified" and record.get("candidateDigest") == digest
+                   for record in self._legacy_resolutions):
+            return None
+        probes = []
+        for pid, probe in self._probes.items():
+            if pid in self._retired or self._purpose(pid) != "acceptance":
+                continue
+            current = self._receipts.get((digest, pid), {}).get("receipt", {})
+            if current.get("status") == "passed":
+                continue
+            if (self._failure_authority(pid, digest) or {}).get("verdict") != "product_gap":
+                return None
+            probes.append(probe.to_dict())
+        if not probes:
+            return None
+        return self._result("changes_required", digest,
+            ["Classified independent acceptance obligations still require product repair."],
+            reason="legacy_acceptance_product_gap", repairProbes=probes,
+            probeReceipts=[row for row in self._attempts if row.get("candidateDigest") == digest])
 
     def _result(self, status, digest, findings, **extra):
         repair_ids = {probe["probeId"] for probe in extra.get("repairProbes", [])}
@@ -822,11 +874,20 @@ class ImplementationCompletionReview:
             # A negative decision grants no coverage. Restore it before reruns
             # refresh receipt references or unrelated attribution can block it.
             repair = self._accepted_repair_for_candidate(digest, host)
-            if repair is not None:
+            # A queued legacy migration is newer than a stored negative decision.
+            # Returning the old repair here drops the failing probe on the floor.
+            pending_migration = (isinstance(self._pending_resolution, dict)
+                                 and self._pending_resolution.get("candidateDigest") == digest)
+            if repair is not None and not pending_migration:
                 if implementation_candidate_digest(self.spec, host) != digest:
                     return self._result("inconclusive", digest,
                         ["Candidate changed while restoring the accepted repair decision."])
                 return repair
+            # Same candidate, already classified. Re-running the probes would
+            # mint a new receipt and hide the handoff behind a fresh adjudication.
+            classified_now = self._classified_same_candidate_handoff(digest)
+            if classified_now is not None:
+                return classified_now
             if digest in self._cached and not self.needs_failure_adjudication(digest):
                 cached = self._cached[digest]
                 if (cached.get("status") != "approved"
@@ -1064,7 +1125,12 @@ class ImplementationCompletionReview:
         # observations and may legitimately fail after the defect is repaired.
         # No repeated execution for an unchanged candidate or a repeated tool call.
         if pending_audit is None:
+            classified_superseded = set()
+            if any(record.get("status") == "classified" for record in self._legacy_resolutions):
+                classified_superseded = {row["oldProbeId"] for row in self._supersessions}
             for probe in tuple(self._probes.values()):
+                if probe.probe_id in classified_superseded:
+                    continue
                 if probe.probe_id not in self._retired and self._purpose(probe.probe_id) != "diagnostic":
                     execute(probe)
 
@@ -1542,6 +1608,16 @@ class ImplementationCompletionReview:
                     if new_receipt["receipt"]["status"] == "failed":
                         pending_ids.append(new.probe_id)
 
+            def successor_only_gap():
+                # The reviewer still has to audit a replacement whose own
+                # successor is the product gap. An unrelated confirmed gap
+                # returns to the owner immediately.
+                probes = confirmed_product_gaps()
+                successors = {row["newProbeId"] for row in self._pending_supersessions()}
+                if probes and successors and all(probe["probeId"] in successors for probe in probes):
+                    return None
+                return confirmed_product_gap_result()
+
             def adjudication_pending_result():
                 confirmed = confirmed_product_gap_result()
                 if confirmed is not None:
@@ -1578,9 +1654,31 @@ class ImplementationCompletionReview:
                         else:
                             run_probe({**source, "purpose": "acceptance"}, None)
                 replacement_ids = sorted(set(active.values()))
+                # Attribute failures before the migration document is sealed.
+                # Classifying first records replacement_failed and an empty repair
+                # package, then the product gap never reaches the same Executor.
+                adjudicate_failures()
+
+                def terminal_probe(pid):
+                    seen = set()
+                    current = pid
+                    while current not in seen:
+                        seen.add(current)
+                        link = next((row for row in self._supersessions
+                                     if row.get("oldProbeId") == current
+                                     and row.get("newProbeId") in self._probes), None)
+                        if link is None:
+                            return current
+                        current = link["newProbeId"]
+                    return current
+
+                terminal_ids = list(dict.fromkeys(terminal_probe(pid) for pid in replacement_ids))
+                for pid in terminal_ids:
+                    if (digest, pid) not in self._receipts:
+                        execute(self._probes[pid])
                 activated = all(self._receipts[(digest, pid)]["receipt"]["status"] == "passed"
                                 for pid in replacement_ids)
-                failed_ids = [pid for pid in replacement_ids
+                failed_ids = [pid for pid in terminal_ids
                               if self._receipts[(digest, pid)]["receipt"]["status"] != "passed"]
                 product_gaps = [self._failure_authority(pid, digest) for pid in failed_ids]
                 classified = bool(failed_ids) and all(
@@ -1601,12 +1699,21 @@ class ImplementationCompletionReview:
                     for row in resolution["decisions"]:
                         self._register_purpose(self._probes[row["probeId"]], row["purpose"], legacy_resolution=resolution)
                     self._pending_resolution = None
+                if classified and self.has_accepted_repair_decision(digest):
+                    # The pre-migration negative decision has no failing probe.
+                    # Keeping it would replay that empty repair instead of the
+                    # classified handoff on the same candidate.
+                    self._accepted_repair_decision = None
                 if not activated:
+                    gap_probes = ([self._probes[pid].to_dict() for pid in failed_ids]
+                                  if classified else repair_probes())
+                    if classified and not gap_probes:
+                        raise ValueError("product gap handoff requires the failing probe")
                     return self._result("changes_required", digest,
                         ["Independent acceptance obligations still require product repair." if classified else
                          "Independent acceptance replacements did not pass; legacy obligations remain active."],
                         reason="legacy_acceptance_product_gap" if classified else "legacy_replacement_failed", probeReceipts=current_receipts(),
-                        repairProbes=repair_probes(), diagnosticObservations=diagnostic_observations(),
+                        repairProbes=gap_probes, diagnosticObservations=diagnostic_observations(),
                         legacyMigration=document,
                         legacyObservations=[{"source": probe.to_dict(), "purpose": "legacy",
                             "receipts": [r for r in self._attempts if r["probeId"] == pid]}
@@ -1616,13 +1723,35 @@ class ImplementationCompletionReview:
             # failure attribution can execute replacement probes, so defer all
             # these transitions until its restored conversation has completed.
             migration_failure = resolve_pending_migration() if pending_audit is None else None
-            if pending_audit is None:
+            # A direct product gap is already the handoff. A pending supersession
+            # still needs the coverage audit to retire the old probe, so the
+            # reviewer has to run before that gap is returned.
+            if (isinstance(migration_failure, dict)
+                    and migration_failure.get("reason") == "legacy_acceptance_product_gap"
+                    and migration_failure.get("repairProbes")
+                    and not self._pending_supersessions()):
+                return migration_failure
+            same_candidate = self._classified_same_candidate_handoff(digest) if pending_audit is None else None
+            if same_candidate is not None:
+                return same_candidate
+            # resolve_pending_migration already attributed this candidate.
+            # A second call re-asks the model for the same inconclusive receipt.
+            if pending_audit is None and not isinstance(migration_failure, dict):
                 adjudicate_failures()
             # An unfinished read-only audit remains stored against its exact
             # candidate. It cannot veto a separately established product repair,
             # nor transfer its approval or delivery credit to an edited candidate.
-            unresolved = (adjudication_pending_result() if pending_audit is None
-                          else confirmed_product_gap_result())
+            if pending_audit is None:
+                # A replacement's own successor still goes to the reviewer.
+                # Any other pending attribution, including an inconclusive one,
+                # is returned before that reviewer starts.
+                unresolved = successor_only_gap()
+                if unresolved is None:
+                    pending_result = adjudication_pending_result()
+                    if pending_result is not None and pending_result.get("reason") != "confirmed_product_gap":
+                        unresolved = pending_result
+            else:
+                unresolved = confirmed_product_gap_result()
             if unresolved is not None:
                 return unresolved
             if pending_audit is None and self._pending_resolution is not None:
@@ -1743,8 +1872,26 @@ class ImplementationCompletionReview:
                     # same independent audit before changing its receipt refs.
                     decision = coverage_audit_authority(pending_audit)["proposal"]
                 checkpoint()
+
+                def classified_successor_unaudited():
+                    # A classified migration is sealed on the original probe.
+                    # The coverage audit is what turns the pending successor
+                    # into a correction the restore check can follow. Ordinary
+                    # product gaps have no classified document and still return
+                    # before that audit.
+                    if not self._pending_supersessions():
+                        return False
+                    for record in self._legacy_resolutions:
+                        if record.get("status") != "classified" or record.get("candidateDigest") != digest:
+                            continue
+                        chains = record.get("replacementChains") or []
+                        if not any(isinstance(chain, dict) and chain.get("correctionRefs") for chain in chains):
+                            return True
+                    return False
+
                 if decision is not None and (decision.get("status") == "approved"
-                        or (self._pending_supersessions() and not actionable_negative(decision))):
+                        or (self._pending_supersessions() and not actionable_negative(decision))
+                        or (actionable_negative(decision) and classified_successor_unaudited())):
                     from minicode.completion_coverage_audit import audit_completion_coverage
 
                     # An author can propose a mapping but cannot certify its own
@@ -1815,15 +1962,19 @@ class ImplementationCompletionReview:
                                 "rationale": "Independent semantic coverage remains pending."}
                                 for row in proposal["requirements"]],
                             probeReceipts=current_receipts(), repairProbes=[])
-                    if actionable_negative(audit):
-                        # Native negative was committed before the audit tool
-                        # returned. Unknown challenges confer no repair credit.
-                        return self._accepted_repair_for_candidate(digest, host)
                     if audit.get("status") == "inconclusive" and audit.get("inspectionPhase") == "inspection":
                         return self._result("inconclusive", digest, audit["findings"], canContinue=False,
                             coverageAudit=audit, coverageProposalRef=proposal_ref, requirements=proposal["requirements"],
                             probeReceipts=current_receipts(), repairProbes=repair_probes())
+                    # Retire an audited replacement before a negative finding
+                    # returns. Otherwise the superseded probe is executed again
+                    # on the repaired candidate.
                     accept_supersessions(audit)
+                    self._refresh_classified_bindings(digest)
+                    if actionable_negative(audit):
+                        # Native negative was committed before the audit tool
+                        # returned. Unknown challenges confer no repair credit.
+                        return self._accepted_repair_for_candidate(digest, host)
                     checkpoint()
                     if pending_audit is not None:
                         # Reusing a read-only conversation does not waive the
@@ -1853,7 +2004,9 @@ class ImplementationCompletionReview:
                             probeReceipts=current_receipts())
                     elif self._pending_resolution is not None:
                         resolve_pending_migration()
+                    superseded_ids = {row["oldProbeId"] for row in self._supersessions}
                     unpassed = [pid for pid in self._probes if pid not in self._retired
+                        and pid not in superseded_ids
                         and self._purpose(pid) == "acceptance"
                         and self._receipts.get((digest, pid), {}).get("receipt", {}).get("status") != "passed"]
                     if unresolved is not None:
