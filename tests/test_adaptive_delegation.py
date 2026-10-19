@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 
 from minicode.agent_loop import run_agent_turn
@@ -92,6 +94,36 @@ def test_multi_file_change_prefers_workflow_and_a_typo_stays_solo() -> None:
         MULTI, routing_enabled=True, implementation_owned=False, agent_depth=1,
     ).pending is False
 
+    readonly = decide_delegation(
+        "What do stock.py and test_public.py do?",
+        routing_enabled=True, implementation_owned=False,
+    )
+    assert readonly.mode == "solo" and readonly.reason == "read-only question"
+    hypothetical = decide_delegation(
+        "If I edit stock.py, do I also need to edit test_public.py?",
+        routing_enabled=True, implementation_owned=False,
+    )
+    assert hypothetical.mode == "solo"
+    redesign = decide_delegation(
+        "Redesign hold and release in stock.py: reserve then commit, "
+        "and keep the public invariants.",
+        routing_enabled=True, implementation_owned=False,
+    )
+    assert redesign.mode == "workflow" and redesign.reason == "single-file redesign"
+    assert redesign.write_paths == ("stock.py",)
+    assert decide_delegation(
+        "Rewrite hold() in stock.py.",
+        routing_enabled=True, implementation_owned=False,
+    ).mode == "solo"
+    assert decide_delegation(
+        "Rewrite the docstring in stock.py and test_public.py.",
+        routing_enabled=True, implementation_owned=False,
+    ).mode == "solo"
+    assert decide_delegation(
+        "How do I implement hold and release in stock.py and test_public.py?",
+        routing_enabled=True, implementation_owned=False,
+    ).mode == "workflow"
+
 
 def test_turn_note_names_the_decision_and_the_static_guide_stays_specific() -> None:
     note = delegation_prompt_note(MULTI, routing_enabled=True, implementation_owned=False)
@@ -108,6 +140,17 @@ def test_turn_note_names_the_decision_and_the_static_guide_stays_specific() -> N
     assert delegation_prompt_note(
         SINGLE, routing_enabled=True, implementation_owned=False,
     ).startswith("This request is a small local change")
+    assert "read-only question" in delegation_prompt_note(
+        "What do stock.py and test_public.py do?",
+        routing_enabled=True, implementation_owned=False,
+    )
+    assert "single-file redesign" in delegation_prompt_note(
+        "Redesign hold and release in stock.py: reserve then commit, "
+        "and keep the public invariants.",
+        routing_enabled=True, implementation_owned=False,
+    )
+    assert "single-file redesign" in task_tool.description
+    assert "read-only question" in plain
     owned = delegation_prompt_note(
         MULTI, routing_enabled=True, implementation_owned=True,
     )
@@ -210,6 +253,53 @@ def test_plan_or_explore_does_not_replace_the_workflow_handoff(tmp_path: Path) -
     blob = "\n".join(str(message.get("content")) for message in messages)
     assert blob.count("delegate it before editing") == 2
     assert not (tmp_path / "stock.py").exists()
+
+
+def test_a_read_only_question_naming_two_files_is_not_coached(tmp_path: Path) -> None:
+    messages = _turn(
+        tmp_path,
+        Script([_write("1", "x = 1\n"), _final()]),
+        messages=[{"role": "user", "content": "What do stock.py and test_public.py do?"}],
+    )
+    blob = "\n".join(str(message.get("content")) for message in messages)
+    assert "delegate it before editing" not in blob
+    assert (tmp_path / "stock.py").read_text() == "x = 1\n"
+
+
+def test_single_file_redesign_is_coached_toward_a_reviewer(tmp_path: Path) -> None:
+    messages = _turn(
+        tmp_path,
+        Script([_write("1", "x = 1\n"), _final()]),
+        messages=[{
+            "role": "user",
+            "content": (
+                "Redesign hold and release in stock.py: reserve then commit, "
+                "and keep the public invariants."
+            ),
+        }],
+    )
+    blob = "\n".join(str(message.get("content")) for message in messages)
+    assert "separate reviewer" in blob
+    assert "stock.py" in blob
+    assert not (tmp_path / "stock.py").exists()
+
+
+def test_offline_demo_script_prints_solo_and_workflow() -> None:
+    from scripts.demo_adaptive_delegation import evaluate
+
+    assert evaluate() == []
+    script = Path(__file__).resolve().parents[1] / "scripts" / "demo_adaptive_delegation.py"
+    completed = subprocess.run(
+        [sys.executable, str(script)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert "FAIL" not in completed.stdout
+    assert "\tsolo\t" in completed.stdout
+    assert "\tworkflow\t" in completed.stdout
+    assert "no model call" in completed.stdout
 
 
 def test_nested_worker_is_not_coached(tmp_path: Path) -> None:

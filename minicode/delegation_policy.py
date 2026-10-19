@@ -1,11 +1,14 @@
 """Decide when the parent should delegate a coding turn.
 
 A second agent earns its cost when the change spans more than one source
-file, or when the user asked for a separate implementer and reviewer. A
-single-file edit is faster and no worse when the parent does it. Routing
-that is off, and a host-owned implementation spec, stay with the parent:
-there is no separate child model to hand the work to, or the parent loop
-already owns the review.
+file, when one file is a multi-step redesign that a separate reviewer can
+check, or when the user asked for that split. A read-only question stays
+with the parent even if it names several files or mentions editing. A
+one-function fix stays with the parent too. Routing that is off, and a
+host-owned implementation spec, stay with the parent: there is no separate
+child model to hand the work to, or the parent loop already owns the review.
+
+The cues are lexical. They are not a parse of the task.
 """
 
 from __future__ import annotations
@@ -19,7 +22,46 @@ _CODE_PATH = re.compile(
     r"(?:py|ts|tsx|js|jsx|go|rs|java|rb|c|cc|cpp|h|hpp))\b"
 )
 _CHANGE = re.compile(
-    r"\b(implement|fix|add|change|update|modify|write|refactor|create|edit)\b",
+    r"\b(implement|fix|add|change|update|modify|write|refactor|create|edit|"
+    r"redesign|rewrite|overhaul|re-architect|rearchitect)\b",
+    re.IGNORECASE,
+)
+_REDESIGN = re.compile(
+    r"\b(redesign|rewrite|overhaul|re-architect|rearchitect)\b",
+    re.IGNORECASE,
+)
+# A second behavior, not the redesign verb alone. "Rewrite hold()" stays solo.
+_REDESIGN_SCOPE = re.compile(
+    r"\b(then|invariants?|edge cases?|state machine|multiple steps|several steps)\b",
+    re.IGNORECASE,
+)
+_HOW_TO_CHANGE = re.compile(
+    r"\bhow (?:do|can|should|would) (?:i|we)\s+"
+    r"(?:(?!implement\b|fix\b|add\b|change\b|update\b|modify\b|write\b|"
+    r"refactor\b|create\b|edit\b|redesign\b|rewrite\b|overhaul\b)\w+\s+){0,6}"
+    r"(implement|fix|add|change|update|modify|write|refactor|create|edit|"
+    r"redesign|rewrite|overhaul)\b",
+    re.IGNORECASE,
+)
+_LEADING_CHANGE = re.compile(
+    r"^\s*(?:please\s+)?(?:implement|fix|add|change|update|modify|write|"
+    r"refactor|create|edit|redesign|rewrite|overhaul)\b",
+    re.IGNORECASE,
+)
+_READONLY_CUE = re.compile(
+    r"("
+    r"\b(?:explain|describe|compare|summarize)\b"
+    r"|\bwhat (?:do|does|is|are)\b"
+    r"|\bhow does\b"
+    r"|\bwhy does\b"
+    r"|\btell me\b"
+    r"|don't\s+(?:edit|change|modify|write|touch|rewrite)"
+    r"|do not\s+(?:edit|change|modify|write|touch|rewrite)"
+    r"|without\s+(?:editing|changing|modifying)"
+    r"|read-?only"
+    r"|just\s+(?:explain|tell|show|read|answer)"
+    r"|no changes"
+    r")",
     re.IGNORECASE,
 )
 _BROAD_SURVEY = re.compile(
@@ -32,7 +74,7 @@ _EXPLICIT_COLLABORATION = re.compile(
     re.IGNORECASE,
 )
 _TRIVIAL = re.compile(
-    r"\b(typo|one function|single function|single file|one file)\b",
+    r"\b(typo|one function|single function|single file|one file|docstring)\b",
     re.IGNORECASE,
 )
 
@@ -56,6 +98,16 @@ def source_paths(task_text: str) -> tuple[str, ...]:
     return tuple(dict.fromkeys(_CODE_PATH.findall(task_text or "")))
 
 
+def _is_readonly(text: str) -> bool:
+    """A question or an explanation, including one that mentions editing."""
+
+    if _HOW_TO_CHANGE.search(text) or _LEADING_CHANGE.search(text):
+        return False
+    if text.rstrip().endswith("?"):
+        return True
+    return _READONLY_CUE.search(text) is not None
+
+
 def decide_delegation(
     task_text: str,
     *,
@@ -70,8 +122,14 @@ def decide_delegation(
         return DelegationDecision("solo", paths, "parent owns this turn")
     if _TRIVIAL.search(text):
         return DelegationDecision("solo", paths, "trivial edit")
+    if _is_readonly(text):
+        if _BROAD_SURVEY.search(text):
+            return DelegationDecision("explore", paths, "broad read-only survey")
+        return DelegationDecision("solo", paths, "read-only question")
     if _EXPLICIT_COLLABORATION.search(text) and _CHANGE.search(text):
         return DelegationDecision("workflow", paths, "explicit collaboration")
+    if paths and _REDESIGN.search(text) and _REDESIGN_SCOPE.search(text):
+        return DelegationDecision("workflow", paths, "single-file redesign")
     if len(paths) >= 2 and _CHANGE.search(text):
         return DelegationDecision("workflow", paths, "multiple source files")
     if _BROAD_SURVEY.search(text) and not _CHANGE.search(text):
@@ -99,6 +157,15 @@ def delegation_prompt_note(
         routing_enabled=routing_enabled,
         implementation_owned=False,
     )
+    if decision.mode == "workflow" and decision.reason == "single-file redesign":
+        shown = ", ".join(decision.write_paths) or "the file named in the request"
+        return (
+            "This request is a single-file redesign "
+            f"({shown}). Delegate it with task(agent_type='workflow', "
+            "write_paths=[...], verification_commands=[...]) so a separate "
+            "reviewer checks the behavior. Do not also call plan or explore "
+            "for the same change."
+        )
     if decision.mode == "workflow":
         shown = ", ".join(decision.write_paths) or "the files named in the request"
         return (
@@ -106,6 +173,11 @@ def delegation_prompt_note(
             f"({shown}). Delegate it with task(agent_type='workflow', "
             "write_paths=[...], verification_commands=[...]) before editing. "
             "Do not also call plan or explore for the same change."
+        )
+    if decision.reason == "read-only question":
+        return (
+            "This request is a read-only question. Answer it from the named "
+            "files. Do not start a workflow."
         )
     if decision.mode == "explore":
         return (
@@ -122,7 +194,10 @@ def delegation_prompt_note(
 
 def delegation_coach_message(decision: DelegationDecision) -> str:
     path_arg = json.dumps(list(decision.write_paths)) if decision.write_paths else "[...]"
-    if len(decision.write_paths) >= 2:
+    if decision.reason == "single-file redesign":
+        shown = ", ".join(decision.write_paths) or "the file in the request"
+        lead = f"This single-file redesign benefits from a separate reviewer ({shown}). "
+    elif len(decision.write_paths) >= 2:
         lead = (
             "This change covers multiple source files ("
             + ", ".join(decision.write_paths)
