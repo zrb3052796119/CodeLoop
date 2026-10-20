@@ -82,18 +82,35 @@ def test_missing_prompt_cannot_be_replaced_by_display_description(prompt):
     assert "prompt is required" in error
 
 
-@pytest.mark.parametrize(
-    ("prompt", "diagnostic"),
-    [
-        ("x" * 4001, "criterion 1 exceeds 4000 characters"),
-        ("\n".join(f"{index}. Requirement {index}." for index in range(1, 42)), "41 criteria exceed the limit of 40"),
-    ],
-)
-def test_oversized_requirements_are_rejected_without_truncation(prompt, diagnostic):
+def test_workers_are_shown_the_forwarded_user_request():
+    from types import SimpleNamespace
+
+    from minicode.workflow_runner import _model_task_text
+
+    context = SimpleNamespace(_workflow_user_request="full spec " * 20)
+    rendered = _model_task_text("short objective", context)
+    assert rendered.startswith("USER REQUEST")
+    assert "full spec" in rendered
+    assert "DELEGATION PROMPT:\nshort objective" in rendered
+    same = _model_task_text("same", SimpleNamespace(_workflow_user_request="same"))
+    assert same == "same"
+
+
+def test_one_long_clause_is_split_without_dropping_characters():
+    prompt = "x" * 4001
+    request, error = task_module._auto_construct_workflow_request(_payload(prompt))
+    assert error is None
+    texts = [item["text"] for item in request["criteria"]]
+    assert "".join(texts) == prompt
+    assert all(len(item) <= 4000 for item in texts)
+    assert len(texts) == 2
+
+
+def test_too_many_clauses_are_still_rejected():
+    prompt = "\n".join(f"{index}. Requirement {index}." for index in range(1, 42))
     request, error = task_module._auto_construct_workflow_request(_payload(prompt))
     assert request is None
-    assert "error[workflow_request_invalid]" in error
-    assert diagnostic in error
+    assert "41 criteria exceed the limit of 40" in error
 
 
 @pytest.mark.parametrize("clauses", [["x" * 4000], [f"{index}. Requirement {index}." for index in range(1, 41)]])

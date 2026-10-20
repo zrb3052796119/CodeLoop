@@ -6064,19 +6064,27 @@ def run_agent_turn(
                     recovery_note = None
                 elif not result.ok:
                     tool_error_count += 1
-                    # Use ErrorClassifier for intelligent error handling
-                    classified = ErrorClassifier.classify(result.output, tool_name=call["toolName"])
-                    prior_retries = max(
-                        0,
-                        recovery_guard.denial_count(call) - 1,
-                    )
-                    nudge = NudgeGenerator.generate(
-                        classified,
-                        retry_count=prior_retries,
-                    )
-                    # Append nudge to tool result content for model context
-                    result_output = result.output + "\n\n[System note: " + nudge + "]"
-                    recovery_note = nudge
+                    from minicode.scheduler_trace import output_has_solo_fallback
+
+                    if output_has_solo_fallback(result.output):
+                        # The solo handoff already tells the parent to finish
+                        # the edit. A generic retry note contradicts it.
+                        result_output = result.output
+                        recovery_note = None
+                    else:
+                        # Use ErrorClassifier for intelligent error handling
+                        classified = ErrorClassifier.classify(result.output, tool_name=call["toolName"])
+                        prior_retries = max(
+                            0,
+                            recovery_guard.denial_count(call) - 1,
+                        )
+                        nudge = NudgeGenerator.generate(
+                            classified,
+                            retry_count=prior_retries,
+                        )
+                        # Append nudge to tool result content for model context
+                        result_output = result.output + "\n\n[System note: " + nudge + "]"
+                        recovery_note = nudge
                 else:
                     result_output = result.output
                     recovery_note = None

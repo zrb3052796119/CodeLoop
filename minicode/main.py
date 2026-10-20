@@ -522,6 +522,7 @@ def main() -> None:
                             user_input,
                             routing_enabled=bool((runtime or {}).get("subagentRoutingEnabled")),
                             implementation_owned=False,
+                            write_gate=bool((runtime or {}).get("delegationWriteGate")),
                         )
                         if delegation_note:
                             prompt_extras["delegation_note"] = delegation_note

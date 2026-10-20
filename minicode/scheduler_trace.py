@@ -23,6 +23,12 @@ SCHEDULER_TRACE_MARKER = "=== SCHEDULER TRACE v1 ==="
 PARENT_WORKFLOW_HANDOFF_MARKER = "=== SCHEDULER HANDOFF v1 ==="
 _SOLO_FALLBACK_LEAD = "Workflow failed, so this handoff is closed."
 
+
+def output_has_solo_fallback(output: str) -> bool:
+    """True when the workflow result already tells the parent to finish solo."""
+
+    return _SOLO_FALLBACK_LEAD in (output or "")
+
 _ID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{1,127}$")
 _RULE_RE = re.compile(r"^route\.[a-z][a-z0-9_]{0,63}$")
 _REASON_RE = re.compile(r"^[a-z][a-z0-9_]{0,127}$")

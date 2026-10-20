@@ -566,6 +566,7 @@ def create_agent_turn_runtime(
             prompt,
             routing_enabled=bool((runtime or {}).get("subagentRoutingEnabled")),
             implementation_owned=implementation_spec is not None,
+            write_gate=bool((runtime or {}).get("delegationWriteGate")),
         )
         if delegation_note:
             prompt_extras["delegation_note"] = delegation_note

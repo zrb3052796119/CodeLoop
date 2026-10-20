@@ -286,11 +286,9 @@ _SCHEDULER_READ_ALLOWED_TOOLS = frozenset(
 
 _WORKFLOW_MAX_PHASES = AGENT_TYPES["workflow"]["max_phases"]
 
-# The delegation prompt becomes the scheduler assignment objective verbatim
-# (``_build_worker_assignment`` passes ``task_prompt`` through unchanged), so
-# the binding ceiling is the contract's ``_MAX_TEXT`` characters measured
-# after stripping. The entry gate below keeps a 200-character safety margin;
-# there is no structural wrapping overhead to account for.
+# Contract objectives still cannot exceed ``_MAX_TEXT``. A longer delegation
+# prompt is fitted to that ceiling and the full text is forwarded to workers;
+# this historical margin is what diagnostics compare against frozen archives.
 _WORKFLOW_PROMPT_MAX_CHARS = _MAX_TEXT - 200
 
 # ---------------------------------------------------------------------------
@@ -546,17 +544,8 @@ def _validate(input_data: dict) -> dict:
             "prompt is required: give the sub-agent a full, self-contained task "
             "description (it cannot see this conversation)"
         )
-    if agent_type == "workflow" and len(prompt) > _WORKFLOW_PROMPT_MAX_CHARS:
-        raise ValueError(
-            "error[workflow_prompt_oversized]: the workflow delegation prompt "
-            f"is {len(prompt)} characters; it becomes the scheduler assignment "
-            f"objective, whose contract allows at most {_MAX_TEXT} characters "
-            f"(entry limit {_WORKFLOW_PROMPT_MAX_CHARS}). Keep the delegation "
-            "brief: state the intent, the relevant paths, and the acceptance "
-            "expectation. Do not paste full patches or file contents — the "
-            "Executor produces the change itself from the Analyst's "
-            "investigation."
-        )
+    # Workflow length is not a hard reject. The contract objective is fitted
+    # later; the full prompt and the parent's user message reach the workers.
 
     parallel_explore = input_data.get("parallel_explore", False)
     if parallel_explore is None:
@@ -3321,7 +3310,9 @@ _PARENT_TASK_DESCRIPTION = (
     "agent_type='explore'.\n"
     "Don't use when: the edit is a single function or one local file (change "
     "it yourself), or the user asked a read-only question (answer it directly).\n"
-    "The prompt must stand alone. action defaults to run and waits for the result."
+    "Do not paste the user's spec into prompt; that request is forwarded to "
+    "the workers. State the objective and the acceptance outcome. "
+    "action defaults to run and waits for the result."
 )
 _PARENT_TASK_FIELDS = (
     "description",
@@ -3702,13 +3693,12 @@ task_tool = ToolDefinition(
             "prompt": {
                 "type": "string",
                 "description": (
-                    "Full, self-contained task description for the sub-agent. "
-                    "The sub-agent runs in a fresh context and cannot see this "
-                    "conversation, so include every file path, constraint, and "
-                    "piece of background it needs. For agent_type='workflow', "
-                    f"the prompt must be at most {_WORKFLOW_PROMPT_MAX_CHARS} "
-                    "characters after trimming whitespace; summarize findings "
-                    "and acceptance criteria instead of pasting source or patches."
+                    "Task for the sub-agent. explore/plan run in a fresh context "
+                    "and need a self-contained prompt. For agent_type='workflow', "
+                    "do not paste the user's spec; that request is forwarded to "
+                    "the workers. Keep the prompt to the objective, constraints, "
+                    "and acceptance outcome. A longer prompt is condensed into "
+                    "the contract objective instead of being rejected."
                 ),
             },
             "continue_subagent_id": {

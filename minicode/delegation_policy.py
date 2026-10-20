@@ -136,15 +136,49 @@ def source_paths(task_text: str) -> tuple[str, ...]:
     return tuple(dict.fromkeys(_CODE_PATH.findall(task_text or "")))
 
 
-def _is_readonly(text: str) -> bool:
-    """A question or an explanation, including one that mentions editing."""
+def _opening_lines(text: str) -> list[str]:
+    """First paragraph, at most three lines. Later constraints are not the ask."""
 
-    if _HOW_TO_CHANGE.search(text) or _LEADING_CHANGE.search(text):
+    lines: list[str] = []
+    for raw in (text or "").splitlines():
+        line = raw.strip()
+        if not line:
+            if lines:
+                break
+            continue
+        lines.append(line)
+        if len(lines) == 3:
+            break
+    if not lines and (text or "").strip():
+        lines.append((text or "").strip())
+    return lines
+
+
+def _opening_clause(text: str) -> str:
+    lines = _opening_lines(text)
+    if not lines:
+        return ""
+    split = re.split(r"(?<=[.!?。？])\s+", lines[0], maxsplit=1)
+    return split[0].strip()
+
+
+def _imperative_opening(text: str) -> bool:
+    return any(_LEADING_CHANGE.search(line) for line in _opening_lines(text))
+
+
+def _is_readonly(text: str) -> bool:
+    """A question or an explanation, including one that mentions editing.
+
+    Cues apply to the opening, not a later sentence. An imperative change in
+    the first paragraph stays a change even if a constraint says "what is".
+    """
+
+    if _HOW_TO_CHANGE.search(text) or _LEADING_CHANGE.search(text) or _imperative_opening(text):
         return False
-    stripped = text.rstrip()
-    if stripped.endswith(("?", "？", "吗")):
+    opening = _opening_clause(text)
+    if opening.rstrip().endswith(("?", "？", "吗")):
         return True
-    return _READONLY_CUE.search(text) is not None
+    return _READONLY_CUE.search(opening) is not None
 
 
 def decide_delegation(
@@ -178,13 +212,23 @@ def decide_delegation(
     return DelegationDecision("solo", paths, "local request")
 
 
+def _workflow_choice(write_gate: bool) -> str:
+    if write_gate:
+        return (
+            "Delegate it before editing. Writes stay blocked until that "
+            "workflow call returns."
+        )
+    return "You choose whether to delegate."
+
+
 def delegation_prompt_note(
     task_text: str,
     *,
     routing_enabled: bool,
     implementation_owned: bool,
+    write_gate: bool = False,
 ) -> str:
-    """A per-turn hint. The parent decides; this line does not block a tool."""
+    """A per-turn hint. The write gate, not this line, blocks a tool."""
 
     if implementation_owned:
         return (
@@ -202,7 +246,7 @@ def delegation_prompt_note(
             "Hint: this looks like a single-file redesign "
             f"({shown}). task(agent_type='workflow', write_paths=[...], "
             "verification_commands=[...]) lets a separate reviewer check it. "
-            "You choose whether to delegate."
+            + _workflow_choice(write_gate)
         )
     if decision.mode == "workflow":
         shown = ", ".join(decision.write_paths) or "the files named in the request"
@@ -210,7 +254,7 @@ def delegation_prompt_note(
             "Hint: this change spans several modules "
             f"({shown}). task(agent_type='workflow', write_paths=[...], "
             "verification_commands=[...]) is a good fit. "
-            "You choose whether to delegate."
+            + _workflow_choice(write_gate)
         )
     if decision.reason == "read-only question":
         return (

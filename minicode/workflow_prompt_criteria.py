@@ -71,15 +71,49 @@ def criteria_from_prompt(prompt: object) -> list[dict[str, str]]:
             f"{len(clauses)} criteria exceed the limit of {MAX_WORKFLOW_CRITERIA}; "
             "use a bounded delegation without dropping requirements"
         )
-    criteria = []
-    for index, clause in enumerate(clauses, start=1):
-        if len(clause) > _MAX_TEXT:
-            raise ValueError(
-                f"criterion {index} exceeds {_MAX_TEXT} characters; "
-                "split the original requirement into explicit paragraphs or list items"
-            )
-        criteria.append({"id": f"c{index}", "kind": "behavior", "text": clause})
-    return criteria
+    bounded: list[str] = []
+    for clause in clauses:
+        if len(clause) <= _MAX_TEXT:
+            bounded.append(clause)
+            continue
+        # One long paragraph is still the user's text. Slice it into contract
+        # fields without dropping characters, instead of refusing the delegation.
+        bounded.extend(
+            clause[start : start + _MAX_TEXT]
+            for start in range(0, len(clause), _MAX_TEXT)
+        )
+    if len(bounded) > MAX_WORKFLOW_CRITERIA:
+        raise ValueError(
+            f"{len(bounded)} criteria exceed the limit of {MAX_WORKFLOW_CRITERIA}; "
+            "use a bounded delegation without dropping requirements"
+        )
+    return [
+        {"id": f"c{index}", "kind": "behavior", "text": clause}
+        for index, clause in enumerate(bounded, start=1)
+    ]
 
 
-__all__ = ["criteria_from_prompt"]
+_CONTRACT_OMISSION = "\n\n[...]\n\n"
+
+
+def fit_contract_text(text: str, *, limit: int = _MAX_TEXT) -> str:
+    """Fit one contract string without discarding a short delegation.
+
+    Assignment objectives and order-step actions cannot exceed ``_MAX_TEXT``.
+    A longer parent prompt keeps its head and tail here. The worker still
+    sees the full prompt and the forwarded user request outside the contract.
+    """
+
+    normalized = text.strip()
+    if len(normalized) <= limit:
+        return normalized
+    marker = _CONTRACT_OMISSION
+    if limit <= len(marker) + 2:
+        return normalized[:limit]
+    body = limit - len(marker)
+    head = body // 2
+    tail = body - head
+    return normalized[:head] + marker + normalized[-tail:]
+
+
+__all__ = ["criteria_from_prompt", "fit_contract_text"]

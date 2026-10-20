@@ -264,7 +264,7 @@ def build_system_prompt(
         "- A single-function or local edit stays with you: use edit_file or write_file, then verify.\n"
         "- A read-only question is answered directly.\n"
         "- A broad survey of the repository goes to task(agent_type='explore').\n"
-        "Keep a workflow prompt short: the objective, the constraints, and the acceptance outcome. Put paths and verification commands in their fields.\n"
+        "Keep a workflow prompt short: the objective, the constraints, and the acceptance outcome. Do not paste the user's spec; that request is forwarded to the workers. Put paths and verification commands in their fields.\n"
         "Do NOT use the task tool for simple lookups — use read_file/grep_files directly.\n"
         "If you did delegate exploration to a sub-agent, do not repeat that search yourself in the main context — wait for its result and build on it.\n"
         "A committed workflow completes that child task; continue any remaining user-requested work, collect owned async results, and summarize without repeating committed changes.\n"

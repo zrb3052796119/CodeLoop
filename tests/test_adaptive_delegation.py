@@ -135,6 +135,12 @@ def test_turn_note_names_the_decision_and_the_static_guide_stays_specific() -> N
     guided = build_system_prompt("/tmp", [], {"delegation_note": note})
     assert "stock.py, test_public.py" in guided
     assert "You choose whether to delegate." in guided
+    gated_note = delegation_prompt_note(
+        MULTI, routing_enabled=True, implementation_owned=False, write_gate=True,
+    )
+    assert "You choose whether to delegate." not in gated_note
+    assert "Delegate it before editing." in gated_note
+    assert "Writes stay blocked" in gated_note
     assert "Hint:" in note
     plain = build_system_prompt("/tmp", [], {"skills": []})
     assert "This turn's delegation" not in plain
@@ -275,8 +281,29 @@ def test_failed_workflow_call_unlocks_a_solo_edit(tmp_path: Path) -> None:
     assert "Finish the change yourself" in blob
     assert "stock.py" in blob and "test_public.py" in blob
     assert "Do not call task(workflow) again" in blob
+    assert "Please retry" not in blob
+    assert "unexpected error" not in blob.lower()
     assert script.calls == 3
     assert (tmp_path / "stock.py").read_text() == "x = 1\n"
+
+
+def test_a_later_what_is_does_not_make_an_imperative_spec_read_only() -> None:
+    spec = (
+        "Inventory hold and release.\n"
+        "Implement both operations in stock.py and test_public.py.\n"
+        "The store must not change what is stored for an unknown sku.\n"
+    )
+    decision = decide_delegation(
+        spec, routing_enabled=True, implementation_owned=False,
+    )
+    assert decision.mode == "workflow"
+    assert decision.reason == "multiple source files"
+    assert decision.write_paths == ("stock.py", "test_public.py")
+    question = decide_delegation(
+        "What is stored in stock.py?",
+        routing_enabled=True, implementation_owned=False,
+    )
+    assert question.mode == "solo" and question.reason == "read-only question"
 
 
 def test_chinese_prompts_use_the_same_split() -> None:

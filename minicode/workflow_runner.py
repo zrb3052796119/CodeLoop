@@ -699,6 +699,35 @@ def _reviewer_deadline(parent_deadline: float, now: float, *, first_review: bool
     return now + work * (0.75 if first_review else 1.0)
 
 
+def _forwarded_task_suffix(task_prompt: str, context: object, objective: str) -> str:
+    rendered = _model_task_text(task_prompt, context)
+    if rendered.strip() == objective.strip():
+        return ""
+    return "\n\nFORWARDED TASK:\n" + rendered
+
+
+def _model_task_text(task_prompt: str, context: object) -> str:
+    """Worker-visible task: the delegation prompt plus the parent's user message.
+
+    The assignment objective stays inside the contract limit. This text does
+    not. The parent is told not to paste the spec because this forwards it.
+    """
+
+    user = getattr(context, "_workflow_user_request", None)
+    if not isinstance(user, str):
+        return task_prompt
+    forwarded = user.strip()
+    if not forwarded or forwarded == task_prompt.strip():
+        return task_prompt
+    return (
+        "USER REQUEST (forwarded from the parent; do not expect the parent "
+        "to paste this spec):\n"
+        + forwarded
+        + "\n\nDELEGATION PROMPT:\n"
+        + task_prompt
+    )
+
+
 def _build_worker_assignment(
     request: WorkflowRequest,
     stage_assignment: object,
@@ -759,6 +788,9 @@ def _build_worker_assignment(
         "reviewer": "ReviewVerdict.v1",
         "adjudicator": "AdjudicationVerdict.v1",
     }[role]
+    from minicode.workflow_prompt_criteria import fit_contract_text
+
+    objective = fit_contract_text(objective)
     raw = {
         "assignmentVersion": 1,
         "workflowId": getattr(stage_assignment, "workflow_id"),
@@ -2752,6 +2784,11 @@ class _WorkflowRunSession:
                                 ensure_ascii=False,
                                 sort_keys=True,
                             )
+                            + _forwarded_task_suffix(
+                                self._execution_state().task_prompt,
+                                self._execution_state().context,
+                                analyst_assignment.objective,
+                            )
                         ),
                         "_result_key": result_key,
                         "_result_instruction": _role_result_instruction(
@@ -2919,7 +2956,11 @@ class _WorkflowRunSession:
                         "plan to the shared mailbox with subagent_note_write "
                         "using key workflow_plan. End with <final> and a "
                         "numbered plan plus the files you expect to touch."
-                        f"{self._execution_state().research_notes}\n\nTASK:\n{self._execution_state().task_prompt}"
+                        f"{self._execution_state().research_notes}\n\nTASK:\n"
+                        + _model_task_text(
+                            self._execution_state().task_prompt,
+                            self._execution_state().context,
+                        )
                     ),
                 },
                 self._execution_state().child_context,
@@ -3792,10 +3833,12 @@ class _WorkflowRunSession:
                 self._execution_state().locked_write_paths = (
                     self._execution_state().workflow_request.scope.write_paths
                 )
+                from minicode.workflow_prompt_criteria import fit_contract_text
+
                 raw_steps = [
                     {
                         "id": f"s_path_{index}",
-                        "action": self._execution_state().task_prompt,
+                        "action": fit_contract_text(self._execution_state().task_prompt),
                         "allowedPaths": [path],
                         "criterionIds": [
                             item.criterion_id
@@ -3954,7 +3997,10 @@ class _WorkflowRunSession:
             from minicode.executor_input_projection import project_executor_input
 
             executor_input_view = project_executor_input(
-                self._execution_state().task_prompt,
+                _model_task_text(
+                    self._execution_state().task_prompt,
+                    self._execution_state().context,
+                ),
                 executor_assignment,
                 self._execution_state().implementation_order,
                 assignment_artifact_ref=_assignment_artifact_id(assignment),
@@ -3983,7 +4029,10 @@ class _WorkflowRunSession:
                     "End with <final> plus a concise summary.\n\n"
                     "ORIGINAL TASK:\n"
                     + (executor_input_view.original_task if executor_input_view is not None
-                       else self._execution_state().task_prompt)
+                       else _model_task_text(
+                           self._execution_state().task_prompt,
+                           self._execution_state().context,
+                       ))
                     + "\n\n"
                     f"PLAN:\n{plan_text}"
                     + (
@@ -4375,7 +4424,10 @@ class _WorkflowRunSession:
                 self._execution_state().change_diff_artifact,
             )
             review_input = project_executor_input(
-                self._execution_state().task_prompt, reviewer_assignment,
+                _model_task_text(
+                    self._execution_state().task_prompt,
+                    self._execution_state().context,
+                ), reviewer_assignment,
                 self._execution_state().implementation_order,
                 assignment_artifact_ref=assignment_artifact_id,
             )
@@ -4641,7 +4693,12 @@ class _WorkflowRunSession:
                     "Use approved only when there are no blocking findings; "
                     "a model verdict cannot override failed verification. "
                     "End with <final>.\n\n"
-                    f"ORIGINAL TASK:\n{self._execution_state().task_prompt}\n\n"
+                    "ORIGINAL TASK:\n"
+                    + _model_task_text(
+                        self._execution_state().task_prompt,
+                        self._execution_state().context,
+                    )
+                    + "\n\n"
                     "DETERMINISTIC VERIFICATION:\n"
                     f"{json.dumps(self._execution_state().verification_result, sort_keys=True)}\n\n"
                     "IMPLEMENTATION SUMMARY:\n"
