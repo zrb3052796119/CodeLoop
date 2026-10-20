@@ -115,23 +115,62 @@ def _shrink_latest_round(messages: list[dict[str, Any]], *, limit: int) -> list[
     return shrunk
 
 
+def _host_continuity(message: dict[str, Any]) -> bool:
+    """Keep host projections the same Executor must see on the next round."""
+
+    return (
+        message.get("_implementation_context") is True
+        or message.get("_implementation_batch_feedback") is True
+    )
+
+
+def _shrink_message(message: dict[str, Any]) -> dict[str, Any]:
+    content = message.get("content")
+    if _host_continuity(message) or not isinstance(content, str) or len(content) <= 2_000:
+        return message
+    copied = dict(message)
+    if message.get("role") == "tool_result":
+        highlights = _failure_lines(content)
+        replacement = "[Earlier tool result summarised]"
+        if highlights:
+            replacement += "\n" + "\n".join(highlights)
+        copied["content"] = replacement
+        return copied
+    copied["content"] = _clip(content.strip(), 500)
+    return copied
+
+
 def bound_executor_transcript(
     messages: list[dict[str, Any]],
     *,
     limit: int = EXECUTOR_PRIOR_CHAR_LIMIT,
 ) -> list[dict[str, Any]]:
-    """Replay the latest round and summarise every round before it."""
+    """Summarise bulky earlier text and keep host continuity plus the latest round."""
 
     copied = [dict(message) for message in messages]
     if _chars(copied) <= limit:
         return copied
     user_indexes = [index for index, message in enumerate(copied) if message.get("role") == "user"]
-    if not user_indexes:
-        return _shrink_latest_round(copied, limit=limit)
-    start = user_indexes[-1]
-    summary = _summarise_round(copied[:start])
-    latest = _shrink_latest_round(copied[start:], limit=max(0, limit - len(summary)))
-    return [{"role": "user", "content": summary}, *latest]
+    start = user_indexes[-1] if user_indexes else len(copied)
+    earlier = [_shrink_message(message) for message in copied[:start]]
+    if _chars(earlier) > limit // 2:
+        protected = [message for message in earlier if _host_continuity(message)]
+        summary = _summarise_round(
+            [message for message in copied[:start] if not _host_continuity(message)]
+        )
+        earlier = [{"role": "user", "content": summary}, *protected]
+    latest = _shrink_latest_round(copied[start:], limit=max(0, limit - _chars(earlier)))
+    bounded = [*earlier, *latest]
+    if _chars(bounded) <= limit:
+        return bounded
+    # Last resort: one findings summary, then the continuity messages and the
+    # latest user round. Small tool results inside that round stay intact.
+    summary = _summarise_round(
+        [message for message in copied[:start] if not _host_continuity(message)]
+    )
+    protected = [message for message in copied[:start] if _host_continuity(message)]
+    latest = _shrink_latest_round(copied[start:], limit=max(0, limit - len(summary) - _chars(protected)))
+    return [{"role": "user", "content": summary}, *protected, *latest]
 
 
 def bound_probe_feedback(raw: str, *, limit: int = PROBE_FEEDBACK_CHAR_LIMIT) -> str:

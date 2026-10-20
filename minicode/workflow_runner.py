@@ -3357,7 +3357,11 @@ class _WorkflowRunSession:
                 returned["reason"] = document.get("reason")
             elif "reason" in returned and "reason" not in document:
                 returned.pop("reason", None)
+            # The published receipt stays inside the artifact limit. The tool
+            # result still carries the output-store refs so the reviewer can
+            # read the complete pytest log.
             return {**returned, "sourceRef": source_ref, "receiptRef": receipt_ref,
+                    "verificationOutputs": output_manifests,
                     "assignmentId": assignment_id}
         finally:
             if owns_freeze:

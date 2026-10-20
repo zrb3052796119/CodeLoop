@@ -345,11 +345,18 @@ def test_unapproved_diff_is_marked_and_prefers_a_reviewed_candidate():
 
 def test_executor_transcript_summarises_earlier_rounds_and_keeps_the_latest():
     huge = "SOURCE " + ("x" * 120_000)
+    context = "FILE inventory.py\n1 | qty = 1\n"
     messages = [
-        {"role": "user", "content": "implement inventory"},
+        {"role": "user", "content": "implement inventory " + ("detail " * 20_000)},
         {"role": "assistant_tool_call", "toolName": "read_file", "input": {"path": "inventory.py"}},
-        {"role": "tool_result", "toolName": "read_file", "content": huge},
+        {"role": "tool_result", "toolName": "read_file", "toolUseId": "call-1", "content": huge},
         {"role": "assistant", "content": "Updated the quantity projection."},
+        {"role": "user", "content": context, "_implementation_context": True},
+        {
+            "role": "user",
+            "content": "Host batch check receipt retained.",
+            "_implementation_batch_feedback": True,
+        },
         {"role": "user", "content": "repair the failed assertion"},
         {
             "role": "tool_result",
@@ -357,10 +364,15 @@ def test_executor_transcript_summarises_earlier_rounds_and_keeps_the_latest():
         },
     ]
     bounded = bound_executor_transcript(messages)
-    rendered = "\n".join(message.get("content", "") for message in bounded if isinstance(message.get("content"), str))
+    rendered = "\n".join(
+        message.get("content", "") for message in bounded if isinstance(message.get("content"), str)
+    )
     assert "x" * 1000 not in rendered
-    assert "EARLIER ROUNDS SUMMARY" in rendered
-    assert "inventory.py" in rendered
+    assert "detail " * 100 not in rendered
+    assert "[Earlier tool result summarised]" in rendered or "EARLIER ROUNDS SUMMARY" in rendered
+    assert context in rendered
+    assert "Host batch check receipt retained." in rendered
+    assert any(message.get("toolUseId") == "call-1" for message in bounded)
     assert "repair the failed assertion" in rendered
     assert "tests/test_inventory.py::test_qty" in rendered
     assert sum(len(str(message.get("content", ""))) for message in bounded) <= 48_000
