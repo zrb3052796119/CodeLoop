@@ -22,6 +22,7 @@ from minicode.types import AgentStep
 
 MULTI = "Implement hold and release in stock.py and test_public.py."
 SINGLE = "Fix the off-by-one in hold() in stock.py."
+GATED = {"subagentRoutingEnabled": True, "delegationWriteGate": True}
 
 
 class Script:
@@ -128,20 +129,33 @@ def test_multi_file_change_prefers_workflow_and_a_typo_stays_solo() -> None:
 
 
 def test_turn_note_names_the_decision_and_the_static_guide_stays_specific() -> None:
+    from minicode.tools.task import build_task_tool_for_project
+
     note = delegation_prompt_note(MULTI, routing_enabled=True, implementation_owned=False)
     guided = build_system_prompt("/tmp", [], {"delegation_note": note})
     assert "stock.py, test_public.py" in guided
-    assert "Do not also call plan or explore" in guided
+    assert "You choose whether to delegate." in guided
+    assert "Hint:" in note
     plain = build_system_prompt("/tmp", [], {"skills": []})
     assert "This turn's delegation" not in plain
-    assert "single-file or single-function" in plain
-    assert "call agent_type='workflow' directly" in plain
-    assert "Do not routinely run Plan first" in plain
-    assert "before the parent edits those files" in task_tool.description
-    assert "creates or modifies files" in task_tool.description
+    assert "single-function or local edit" in plain
+    assert "task(agent_type='workflow', write_paths, verification_commands)" in plain
+    assert "read-only question is answered directly" in plain
+    assert "few non-sensitive" not in plain
+    assert "just to avoid work" not in plain
+    parent = build_task_tool_for_project("/tmp")
+    assert parent.description.startswith("Use when:")
+    assert "Don't use when:" in parent.description
+    assert "workflow_request" not in parent.input_schema["properties"]
+    assert "parallel_explore" not in parent.input_schema["properties"]
+    assert "general" not in parent.input_schema["properties"]["agent_type"]["enum"]
+    assert "workflow_request" in task_tool.input_schema["properties"]
+    assert "general" in task_tool.input_schema["properties"]["agent_type"]["enum"]
+    hidden = parent.validator({"action": "poll", "subagent_id": "child-1"})
+    assert hidden["action"] == "poll"
     assert delegation_prompt_note(
         SINGLE, routing_enabled=True, implementation_owned=False,
-    ).startswith("This request is a small local change")
+    ).startswith("Hint: this looks like a single-function or local edit")
     assert "read-only question" in delegation_prompt_note(
         "What do stock.py and test_public.py do?",
         routing_enabled=True, implementation_owned=False,
@@ -151,17 +165,26 @@ def test_turn_note_names_the_decision_and_the_static_guide_stays_specific() -> N
         "and keep the public invariants.",
         routing_enabled=True, implementation_owned=False,
     )
-    assert "single-file redesign" in task_tool.description
-    assert "read-only question" in plain
     owned = delegation_prompt_note(
         MULTI, routing_enabled=True, implementation_owned=True,
     )
     assert owned.startswith("This turn is a host-owned implementation")
     assert "Do not call task." in owned
+    open_gate = parent_delegation_gate(
+        MULTI, routing_enabled=True, implementation_owned=False, agent_depth=0,
+    )
+    assert open_gate.pending is False and open_gate.handoff is True
+    closed = parent_delegation_gate(
+        MULTI, routing_enabled=True, implementation_owned=False, agent_depth=0,
+        write_gate=True,
+    )
+    assert closed.pending is True and closed.handoff is True
 
 
 def test_routed_parent_is_coached_off_the_first_multi_file_edit(tmp_path: Path) -> None:
-    messages = _turn(tmp_path, Script([_write("1", "x = 1\n"), _final()]))
+    messages = _turn(
+        tmp_path, Script([_write("1", "x = 1\n"), _final()]), runtime=GATED,
+    )
     blob = "\n".join(str(message.get("content")) for message in messages)
     assert "delegate it before editing" in blob
     assert "stock.py" in blob and "test_public.py" in blob
@@ -174,7 +197,7 @@ def test_repeated_edits_stay_blocked_until_workflow_succeeds(tmp_path: Path) -> 
         _write("1", "x = 1\n"),
         _write("2", "x = 2\n"),
         _final(),
-    ]))
+    ]), runtime=GATED)
     blob = "\n".join(str(message.get("content")) for message in messages)
     assert blob.count("stay blocked until this workflow call returns") == 2
     assert not (tmp_path / "stock.py").exists()
@@ -205,9 +228,17 @@ def test_shell_write_cannot_bypass_the_handoff(tmp_path: Path) -> None:
             _final(),
         ]),
         tools=ToolRegistry([shell, write_file_tool]),
+        runtime=GATED,
     )
     blob = "\n".join(str(message.get("content")) for message in messages)
     assert "stay blocked until this workflow call returns" in blob
+    assert "unexpected error" not in blob.lower()
+    assert "Please retry" not in blob
+    denial = next(
+        message for message in messages
+        if message.get("role") == "tool_result" and message.get("toolName") == "run_command"
+    )
+    assert denial.get("isError") is False
     assert not (tmp_path / "stock.py").exists()
     assert handoff_blocks_tool(
         "run_command", {"command": "pytest", "args": ["-q"]},
@@ -299,6 +330,7 @@ def test_chinese_multi_file_request_blocks_the_first_edit(tmp_path: Path) -> Non
         tmp_path,
         Script([_write("1", "x = 1\n"), _final()]),
         messages=[{"role": "user", "content": "实现 hold，修改 stock.py 和 test_public.py。"}],
+        runtime=GATED,
     )
     blob = "\n".join(str(message.get("content")) for message in messages)
     assert "delegate it before editing" in blob
@@ -333,6 +365,7 @@ def test_workflow_call_keeps_every_named_file(tmp_path: Path) -> None:
         ]),
         tools=ToolRegistry([task, write_file_tool]),
         max_steps=5,
+        runtime=GATED,
     )
     blob = "\n".join(str(message.get("content")) for message in messages)
     assert "stay blocked until this workflow call returns" in blob
@@ -425,6 +458,7 @@ def test_plan_or_explore_does_not_replace_the_workflow_handoff(tmp_path: Path) -
             _final(),
         ]),
         tools=ToolRegistry([task, write_file_tool]),
+        runtime=GATED,
     )
     blob = "\n".join(str(message.get("content")) for message in messages)
     assert blob.count("delegate it before editing") == 2
@@ -446,6 +480,7 @@ def test_single_file_redesign_is_coached_toward_a_reviewer(tmp_path: Path) -> No
     messages = _turn(
         tmp_path,
         Script([_write("1", "x = 1\n"), _final()]),
+        runtime=GATED,
         messages=[{
             "role": "user",
             "content": (
@@ -657,3 +692,59 @@ def test_nested_worker_is_not_coached(tmp_path: Path) -> None:
         agent_depth=1,
     )
     assert (tmp_path / "stock.py").read_text() == "x = 1\n"
+
+
+def test_default_gate_lets_the_parent_write(tmp_path: Path) -> None:
+    messages = _turn(tmp_path, Script([_write("1", "x = 1\n"), _final()]))
+    blob = "\n".join(str(message.get("content")) for message in messages)
+    assert "delegate it before editing" not in blob
+    assert "stay blocked" not in blob
+    assert (tmp_path / "stock.py").read_text() == "x = 1\n"
+    note = delegation_prompt_note(
+        MULTI, routing_enabled=True, implementation_owned=False,
+    )
+    assert note.startswith("Hint:")
+    assert "stock.py, test_public.py" in note
+    assert "You choose whether to delegate." in note
+
+
+def test_default_gate_still_autofills_and_unlocks_after_failure(tmp_path: Path) -> None:
+    seen = []
+
+    def reject(input_data, _context):
+        seen.append(dict(input_data))
+        return ToolResult(ok=False, output="workflow rejected")
+
+    task = ToolDefinition(
+        name="task", description="workflow", input_schema={"type": "object"},
+        validator=lambda value: value, run=reject,
+    )
+    messages = _turn(
+        tmp_path,
+        Script([
+            _write("1", "before\n"),
+            AgentStep(type="tool_calls", calls=[{
+                "id": "2", "toolName": "task",
+                "input": {
+                    "agent_type": "workflow",
+                    "prompt": "implement hold and release",
+                    "write_paths": ["stock.py"],
+                },
+            }]),
+            _write("3", "after\n"),
+            _final(),
+        ]),
+        tools=ToolRegistry([task, write_file_tool]),
+        max_steps=5,
+    )
+    assert (tmp_path / "stock.py").read_text() == "after\n"
+    assert seen[0]["write_paths"] == ["stock.py", "test_public.py"]
+    assert "Finish the change yourself" in "\n".join(
+        str(message.get("content")) for message in messages
+    )
+
+
+def test_free_choice_bakeoff_protocol_is_offline() -> None:
+    from scripts.demo_free_choice_delegation import evaluate
+
+    assert evaluate() == []

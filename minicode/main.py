@@ -277,7 +277,13 @@ def main() -> None:
             raise SystemExit(2) from e
 
     prompt_handler = _make_cli_permission_prompt() if sys.stdin.isatty() else None
-    tools = create_default_tool_registry(cwd, runtime=runtime)
+    from minicode.tools.task import build_task_tool_for_project
+
+    tools = create_default_tool_registry(
+        cwd,
+        runtime=runtime,
+        task_tool_definition=build_task_tool_for_project(cwd),
+    )
     permissions = PermissionManager(cwd, prompt=prompt_handler)
 
     # Use unified model registry for adapter creation

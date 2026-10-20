@@ -10,6 +10,7 @@ from minicode.config import (
     inspect_memory_hybrid_config,
     load_runtime_config,
     merge_settings,
+    safe_runtime_summary,
     validate_provider_runtime,
 )
 from minicode.memory_hybrid import HybridActivation
@@ -102,6 +103,25 @@ def test_recovery_shadow_settings_load_from_private_user_env(tmp_path, monkeypat
     override = load_runtime_config(tmp_path / "workspace")
     assert override["recoveryLessonShadowEnabled"] is False
     assert override["recoveryLessonMaxCalls"] == 10
+
+
+def test_delegation_write_gate_defaults_off(tmp_path, monkeypatch) -> None:
+    mini_dir = _isolated_config_paths(tmp_path, monkeypatch)
+    monkeypatch.delenv("MINI_CODE_DELEGATION_WRITE_GATE", raising=False)
+    _write_private_env(
+        mini_dir / ".env",
+        "MINI_CODE_MODEL=claude-test\n"
+        "ANTHROPIC_API_KEY=test-only-not-a-real-key\n",
+    )
+
+    runtime = load_runtime_config(tmp_path / "workspace")
+
+    assert runtime["delegationWriteGate"] is False
+    assert safe_runtime_summary(runtime)["delegationWriteGate"] is False
+    monkeypatch.setenv("MINI_CODE_DELEGATION_WRITE_GATE", "1")
+    assert load_runtime_config(tmp_path / "workspace")["delegationWriteGate"] is True
+    monkeypatch.setenv("MINI_CODE_DELEGATION_WRITE_GATE", "false")
+    assert load_runtime_config(tmp_path / "workspace")["delegationWriteGate"] is False
 
 
 def test_global_env_is_complete_primary_model_source(tmp_path, monkeypatch) -> None:

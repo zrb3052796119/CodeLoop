@@ -947,7 +947,7 @@ def _execute_single_tool(
             and isinstance(tool_input, dict)
             and tool_input.get("agent_type") == "workflow"
             and delegation_coach
-            and delegation_coach.get("pending")
+            and delegation_coach.get("handoff")
         ):
             return
         if not executed.ok:
@@ -958,6 +958,7 @@ def _execute_single_tool(
             )
             executed.output = f"{executed.output}\n{note}" if executed.output else note
         delegation_coach["pending"] = False
+        delegation_coach["handoff"] = False
 
     try:
         raise_if_cancelled(cancellation_token)
@@ -1013,7 +1014,7 @@ def _execute_single_tool(
                 and isinstance(tool_input, dict)
                 and tool_input.get("agent_type") == "workflow"
             )
-            if workflow_call and coach.get("pending"):
+            if workflow_call and coach.get("handoff"):
                 complete_workflow_write_paths(
                     tool_input, tuple(coach.get("write_paths") or ()),
                 )
@@ -1025,11 +1026,14 @@ def _execute_single_tool(
             ):
                 # Keep the handoff pending. A survey agent does not implement
                 # the change and would only repeat work the workflow owns.
-                return ToolResult(ok=False, output=str(coach.get("message") or ""))
+                # ok stays true so the generic retry suffix is not attached.
+                return ToolResult(ok=True, output=str(coach.get("message") or ""))
             elif coach.get("pending") and handoff_blocks_tool(tool_name, tool_input):
                 # Stay pending. The live parent retried the write after one
                 # refusal and landed the file before any workflow call.
-                return ToolResult(ok=False, output=str(coach.get("message") or ""))
+                # The write did not run. ok is true so this guidance is not
+                # classified as an unexpected error the model should retry.
+                return ToolResult(ok=True, output=str(coach.get("message") or ""))
             verifier_backend, verifier_executables = (
                 resolve_verifier_host_capabilities(runtime)
             )
@@ -2268,7 +2272,12 @@ def run_agent_turn(
         or not any(tool is host_native_result_tool for tool in tools.list())
     ):
         raise ValueError("native result capability must be the bound Reviewer tool")
-    delegation_coach = {"pending": False, "message": "", "write_paths": []}
+    delegation_coach = {
+        "pending": False,
+        "message": "",
+        "write_paths": [],
+        "handoff": False,
+    }
     native_handoff_only = False
     native_handoff_attempted = False
     native_handoff_rejected = False
@@ -3302,10 +3311,12 @@ def run_agent_turn(
         routing_enabled=bool((runtime or {}).get("subagentRoutingEnabled")),
         implementation_owned=implementation_spec is not None,
         agent_depth=agent_depth,
+        write_gate=bool((runtime or {}).get("delegationWriteGate")),
     )
     delegation_coach["pending"] = gate.pending
     delegation_coach["message"] = gate.message
     delegation_coach["write_paths"] = list(gate.write_paths)
+    delegation_coach["handoff"] = gate.handoff
     from minicode.executor_verification import ExecutorCheckCapability
     from minicode.executor_result_submission import ExecutorResultChannel
 

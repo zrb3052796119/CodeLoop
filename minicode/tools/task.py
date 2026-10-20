@@ -3314,6 +3314,65 @@ def _run(input_data: dict, context) -> ToolResult:
 _SYNC_RUN = _run
 
 
+_PARENT_TASK_DESCRIPTION = (
+    "Use when: the change spans several source files or modules, or it needs "
+    "an independent review. Call task with agent_type='workflow', write_paths, "
+    "and verification_commands. A broad repository survey uses "
+    "agent_type='explore'.\n"
+    "Don't use when: the edit is a single function or one local file (change "
+    "it yourself), or the user asked a read-only question (answer it directly).\n"
+    "The prompt must stand alone. action defaults to run and waits for the result."
+)
+_PARENT_TASK_FIELDS = (
+    "description",
+    "prompt",
+    "agent_type",
+    "write_paths",
+    "verification_commands",
+)
+
+
+def project_parent_task_tool(tool: ToolDefinition) -> ToolDefinition:
+    """Schema and description the parent model sees.
+
+    Nested workers keep the module-level tool, whose validator still accepts
+    workflow_request, poll, cancel, and general. This copy only hides those
+    fields from the parent prompt.
+    """
+
+    schema = json.loads(json.dumps(tool.input_schema))
+    properties = schema.get("properties")
+    if not isinstance(properties, dict):
+        properties = {}
+    parent_properties = {
+        key: properties[key] for key in _PARENT_TASK_FIELDS if key in properties
+    }
+    agent = parent_properties.get("agent_type")
+    if isinstance(agent, dict):
+        enum = [
+            name for name in (agent.get("enum") or [])
+            if name != "general"
+        ]
+        agent = dict(agent)
+        agent["enum"] = enum
+        agent["description"] = (
+            "'workflow' for a multi-file change or an independent review, "
+            "'explore' for a broad read-only survey, "
+            "'plan' for one bounded design question."
+        )
+        parent_properties["agent_type"] = agent
+    return replace(
+        tool,
+        description=_PARENT_TASK_DESCRIPTION,
+        input_schema={
+            "type": "object",
+            "properties": parent_properties,
+            "required": ["description", "prompt"],
+            "additionalProperties": True,
+        },
+    )
+
+
 def build_task_tool_for_project(cwd: str) -> ToolDefinition:
     """Per-turn task tool carrying the project's agent-type menu.
 
@@ -3321,12 +3380,14 @@ def build_task_tool_for_project(cwd: str) -> ToolDefinition:
     from ``.mini-code/agents/*.md``. The module-level ``task_tool`` singleton
     is never mutated — each turn composes its own definition so registry
     snapshots stay immutable and parallel turns cannot cross-contaminate.
+    The returned tool is the parent-facing projection.
     """
     profiles, errors = load_agent_profiles(cwd)
+    projected = project_parent_task_tool(task_tool)
     if not profiles and not errors:
         # A caller that wraps .run must not replace the process-wide tool.
         # Evaluation harnesses do that on the registry's task definition.
-        return replace(task_tool)
+        return projected
     agent_types = resolve_agent_types(cwd)
     names = sorted(agent_types)
     lines = [
@@ -3342,11 +3403,18 @@ def build_task_tool_for_project(cwd: str) -> ToolDefinition:
             "Rejected profile files (fix before they become available): "
             + " | ".join(errors)
         )
-    schema = json.loads(json.dumps(task_tool.input_schema))
-    schema["properties"]["agent_type"]["enum"] = names
+    schema = json.loads(json.dumps(projected.input_schema))
+    enum = [
+        name for name in schema["properties"]["agent_type"]["enum"]
+        if name != "general"
+    ]
+    for name in names:
+        if name != "general" and name not in enum:
+            enum.append(name)
+    schema["properties"]["agent_type"]["enum"] = enum
     return replace(
-        task_tool,
-        description=task_tool.description + "\n" + "\n".join(lines),
+        projected,
+        description=projected.description + "\n" + "\n".join(lines),
         input_schema=schema,
     )
 

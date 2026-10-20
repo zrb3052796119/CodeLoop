@@ -1029,6 +1029,15 @@ def load_runtime_config(cwd: str | Path | None = None) -> dict[str, Any]:
         "skillCandidateReranker": skill_candidate_reranker,
         "skillSelection": skill_selection,
         "subagentRoutingEnabled": _as_bool(subagent_enabled_value),
+        # Off by default: lexical delegation is a prompt hint, and the parent
+        # may write. Set MINI_CODE_DELEGATION_WRITE_GATE=1 to block parent
+        # writes until task(workflow) returns.
+        "delegationWriteGate": _as_bool(
+            subagent_env_value("MINI_CODE_DELEGATION_WRITE_GATE")
+            if subagent_env_value("MINI_CODE_DELEGATION_WRITE_GATE")
+            not in (None, "")
+            else subagent_settings.get("writeGate", False)
+        ),
         "subagentProvider": str(
             subagent_env_value("MINI_CODE_SUBAGENT_PROVIDER")
             or subagent_settings.get("provider")
@@ -1138,6 +1147,7 @@ def safe_runtime_summary(runtime: Mapping[str, Any]) -> dict[str, Any]:
         "configSources": dict(values.get("configSources") or {}),
         "toolProfile": str(values.get("toolProfile") or "core")[:80],
         "subagentRoutingEnabled": bool(values.get("subagentRoutingEnabled")),
+        "delegationWriteGate": bool(values.get("delegationWriteGate")),
         "subagentProvider": str(values.get("subagentProvider") or "")[:80],
         "subagentModels": safe_models,
         "memoryHybridEnabled": bool(values.get("memoryHybridEnabled")),

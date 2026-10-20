@@ -8,7 +8,10 @@ one-function fix stays with the parent too. Routing that is off, and a
 host-owned implementation spec, stay with the parent: there is no separate
 child model to hand the work to, or the parent loop already owns the review.
 
-The cues are lexical, in English and Simplified Chinese. They are not a parse of the task.
+The cues are lexical, in English and Simplified Chinese. They are not a parse
+of the task. By default they are a hint in the parent prompt: the parent
+chooses whether to delegate. ``delegationWriteGate`` (default off) is what
+blocks parent writes until a workflow call returns.
 """
 
 from __future__ import annotations
@@ -102,11 +105,17 @@ class DelegationDecision:
 
 @dataclass(frozen=True)
 class ParentDelegationGate:
-    """Hold parent writes until a workflow call for this change succeeds."""
+    """Optional hold on parent writes until a workflow call returns.
+
+    ``handoff`` stays set when the hint is workflow, even if the write gate
+    is off, so path autofill and the failed-workflow solo note still run.
+    ``pending`` is the write block, and it is set only when the gate is on.
+    """
 
     pending: bool
     message: str
     write_paths: tuple[str, ...] = ()
+    handoff: bool = False
 
 
 _PARENT_WRITE_TOOLS = frozenset({
@@ -175,7 +184,7 @@ def delegation_prompt_note(
     routing_enabled: bool,
     implementation_owned: bool,
 ) -> str:
-    """A per-turn prompt line. Empty when the static guide is enough."""
+    """A per-turn hint. The parent decides; this line does not block a tool."""
 
     if implementation_owned:
         return (
@@ -190,34 +199,32 @@ def delegation_prompt_note(
     if decision.mode == "workflow" and decision.reason == "single-file redesign":
         shown = ", ".join(decision.write_paths) or "the file named in the request"
         return (
-            "This request is a single-file redesign "
-            f"({shown}). Delegate it with task(agent_type='workflow', "
-            "write_paths=[...], verification_commands=[...]) so a separate "
-            "reviewer checks the behavior. Do not also call plan or explore "
-            "for the same change."
+            "Hint: this looks like a single-file redesign "
+            f"({shown}). task(agent_type='workflow', write_paths=[...], "
+            "verification_commands=[...]) lets a separate reviewer check it. "
+            "You choose whether to delegate."
         )
     if decision.mode == "workflow":
         shown = ", ".join(decision.write_paths) or "the files named in the request"
         return (
-            "This request is collaborative work "
-            f"({shown}). Delegate it with task(agent_type='workflow', "
-            "write_paths=[...], verification_commands=[...]) before editing. "
-            "Do not also call plan or explore for the same change."
+            "Hint: this change spans several modules "
+            f"({shown}). task(agent_type='workflow', write_paths=[...], "
+            "verification_commands=[...]) is a good fit. "
+            "You choose whether to delegate."
         )
     if decision.reason == "read-only question":
         return (
-            "This request is a read-only question. Answer it from the named "
-            "files. Do not start a workflow."
+            "Hint: this is a read-only question. Answer it directly from the "
+            "named files."
         )
     if decision.mode == "explore":
         return (
-            "This request is a broad read-only survey. Use "
-            "task(agent_type='explore') and do not start an implementation workflow."
+            "Hint: this is a broad survey. task(agent_type='explore') fits."
         )
     if decision.reason == "local change":
         return (
-            "This request is a small local change. Implement and verify it "
-            "yourself. Do not start a workflow."
+            "Hint: this looks like a single-function or local edit. "
+            "Implement and verify it yourself."
         )
     return ""
 
@@ -350,8 +357,12 @@ def parent_delegation_gate(
     routing_enabled: bool,
     implementation_owned: bool,
     agent_depth: int,
+    write_gate: bool = False,
 ) -> ParentDelegationGate:
-    """Coach the parent once. Nested workers and owned specs are not coached."""
+    """Record a workflow hint. Block writes only when the gate is on.
+
+    Nested workers and host-owned specs are neither hinted nor blocked.
+    """
 
     if agent_depth != 0 or implementation_owned:
         return ParentDelegationGate(False, "")
@@ -362,8 +373,15 @@ def parent_delegation_gate(
     )
     if decision.mode != "workflow":
         return ParentDelegationGate(False, "")
+    if not write_gate:
+        return ParentDelegationGate(
+            False, "", decision.write_paths, handoff=True,
+        )
     return ParentDelegationGate(
-        True, delegation_coach_message(decision), decision.write_paths,
+        True,
+        delegation_coach_message(decision),
+        decision.write_paths,
+        handoff=True,
     )
 
 

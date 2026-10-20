@@ -435,7 +435,8 @@ def test_task_tool_description_lists_custom_type(tmp_path):
     baseline = task_module.build_task_tool_for_project("/tmp")
     assert "test-locator" not in baseline.description
     baseline_enum = baseline.input_schema["properties"]["agent_type"]["enum"]
-    assert baseline_enum == ["explore", "plan", "general", "workflow"]
+    assert baseline_enum == ["explore", "plan", "workflow"]
+    assert "general" in task_module.task_tool.input_schema["properties"]["agent_type"]["enum"]
 
 
 def test_registry_uses_dynamic_task_tool(tmp_path):
