@@ -582,6 +582,30 @@ def _run_with_pipes(
     return return_code, _truncate_large_output(output)
 
 
+def _drain_pty(master_fd: int, capture: _StreamCapture, *, timeout: float) -> None:
+    """Read PTY output that is already buffered, without waiting past ``timeout``."""
+    import select
+
+    deadline = time.monotonic() + timeout
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining < 0:
+            break
+        try:
+            readable, _, _ = select.select([master_fd], [], [], remaining)
+        except (OSError, ValueError):
+            break
+        if not readable:
+            break
+        try:
+            chunk = os.read(master_fd, 64 * 1024)
+        except OSError:
+            break
+        if not chunk:
+            break
+        capture.add(chunk)
+
+
 def _run_with_pty(
     argv: list[str],
     *,
@@ -630,6 +654,11 @@ def _run_with_pty(
                     capture.add(chunk)
                     continue
             if process.poll() is not None:
+                # A fast child can exit in the gap after select returns.
+                # Read what it already wrote before the master fd is closed.
+                _drain_pty(master_fd, capture, timeout=0)
+                if not capture.text():
+                    _drain_pty(master_fd, capture, timeout=0.05)
                 break
 
         return_code = process.returncode

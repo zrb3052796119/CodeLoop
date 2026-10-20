@@ -32,17 +32,18 @@ def _object(pairs):
 def _checkpoint_reference_is_safe(reference: str) -> bool:
     """Absolute host path, with no parent traversal.
 
-    POSIX references stay slash-separated. Windows paths use backslashes, so
-    the same check uses ``PureWindowsPath`` only on that host.
+    Synthetic refs such as ``/pending/repair-decision.json`` stay POSIX even
+    on Windows. A real Windows temp path uses backslashes and is checked with
+    ``PureWindowsPath`` only on that host.
     """
     if not isinstance(reference, str) or not reference or "\x00" in reference:
         return False
-    if os.name == "nt":
-        path = PureWindowsPath(reference)
-    else:
-        if "\\" in reference:
-            return False
+    if "\\" not in reference:
         path = PurePosixPath(reference)
+        return path.is_absolute() and ".." not in path.parts
+    if os.name != "nt":
+        return False
+    path = PureWindowsPath(reference)
     return path.is_absolute() and ".." not in path.parts
 
 
