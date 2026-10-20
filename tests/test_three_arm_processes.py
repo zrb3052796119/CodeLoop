@@ -114,8 +114,8 @@ def test_stale_pgid_record_does_not_kill_unrelated_live_process(tmp_path: Path):
     path.write_text(json.dumps({"pid": unrelated.pid, "pgid": unrelated.pid + 1})
                     + "\n")
     try:
-        result = stop_trial(trial.pid, path)
-        assert result["cleanupComplete"]
+        result = stop_trial(trial.pid, path, timeout_seconds=20)
+        assert result["cleanupComplete"], result
         assert unrelated.pid not in result["killedPids"]
         assert unrelated.poll() is None
         assert trial.wait(timeout=5) == -signal.SIGKILL

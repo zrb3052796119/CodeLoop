@@ -258,7 +258,7 @@ class SubagentRunJournal:
     ) -> None:
         """Persist actual tool callbacks separately from content-free telemetry."""
         from minicode.failure_evidence import (
-            encode_diagnostic_document, open_private_directory,
+            encode_diagnostic_document, open_private_file,
             redact_diagnostic_text, sanitize_diagnostic_value,
         )
 
@@ -281,22 +281,22 @@ class SubagentRunJournal:
                 json.dumps(record.get("input"), ensure_ascii=False), max_chars=16000), "truncated": True}
             encoded = encode_diagnostic_document(record)
         with self._write_lock:
-            directory = open_private_directory(self._run_dir, "subagent-runs", "tool-evidence")
+            descriptor = open_private_file(
+                self._run_dir, ("subagent-runs", "tool-evidence"),
+                subagent_id + ".tools.jsonl",
+                os.O_WRONLY | os.O_APPEND | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0),
+            )
             try:
-                descriptor = os.open(subagent_id + ".tools.jsonl", os.O_WRONLY | os.O_APPEND | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0), 0o600, dir_fd=directory)
-                try:
-                    info = os.fstat(descriptor)
-                    if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
-                        raise SubagentJournalError("unsafe tool evidence file")
-                    if info.st_size + len(encoded) > 4 * 1024 * 1024:
-                        raise SubagentJournalError("tool evidence byte limit reached")
-                    if os.write(descriptor, encoded) != len(encoded):
-                        raise SubagentJournalError("short tool evidence write")
-                    os.fsync(descriptor)
-                finally:
-                    os.close(descriptor)
+                info = os.fstat(descriptor)
+                if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                    raise SubagentJournalError("unsafe tool evidence file")
+                if info.st_size + len(encoded) > 4 * 1024 * 1024:
+                    raise SubagentJournalError("tool evidence byte limit reached")
+                if os.write(descriptor, encoded) != len(encoded):
+                    raise SubagentJournalError("short tool evidence write")
+                os.fsync(descriptor)
             finally:
-                os.close(directory)
+                os.close(descriptor)
 
     def persist_failure_candidate(
         self, subagent_id: str, candidate: dict[str, object], *, workflow_id: str | None = None,
@@ -307,7 +307,7 @@ class SubagentRunJournal:
         Stage checkpoints have separate names so they cannot occupy the final
         failure candidate's exclusive destination after a later repair.
         """
-        from minicode.failure_evidence import encode_diagnostic_document, open_private_directory
+        from minicode.failure_evidence import encode_diagnostic_document, open_private_file
 
         self._path(subagent_id)
         filename = "failure-candidate.json"
@@ -324,17 +324,16 @@ class SubagentRunJournal:
         if len(encoded) > 8 * 1024 * 1024:
             raise SubagentJournalError("failure candidate exceeds byte limit")
         with self._write_lock:
-            directory = open_private_directory(self._run_dir, "scheduler-workflows", expected_workflow)
+            descriptor = open_private_file(
+                self._run_dir, ("scheduler-workflows", expected_workflow), filename,
+                os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+            )
             try:
-                descriptor = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600, dir_fd=directory)
-                try:
-                    if os.write(descriptor, encoded) != len(encoded):
-                        raise SubagentJournalError("short failure candidate write")
-                    os.fsync(descriptor)
-                finally:
-                    os.close(descriptor)
+                if os.write(descriptor, encoded) != len(encoded):
+                    raise SubagentJournalError("short failure candidate write")
+                os.fsync(descriptor)
             finally:
-                os.close(directory)
+                os.close(descriptor)
         return self._run_dir / "scheduler-workflows" / expected_workflow / filename
 
     def _ensure_root(self) -> None:

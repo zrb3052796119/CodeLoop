@@ -5615,6 +5615,31 @@ def run_agent_turn(
                             ):
                                 break
                         if (
+                            batch_fatal is not None
+                            and batch_cancellation is None
+                            and pending_futures
+                        ):
+                            # A sibling can publish a must-deliver result in the
+                            # gap after another tool raises SystemExit. Harvest
+                            # that result before the fatal signal wins.
+                            extra_done, pending_futures = concurrent.futures.wait(
+                                pending_futures,
+                                timeout=1.0,
+                                return_when=concurrent.futures.ALL_COMPLETED,
+                            )
+                            for future in extra_done:
+                                try:
+                                    result = future.result()
+                                except TurnCancellationRequested as exc:
+                                    observed_errors[future] = exc
+                                    continue
+                                except Exception as exc:
+                                    result = _concurrent_exception_result(exc)
+                                except BaseException as exc:  # noqa: BLE001
+                                    observed_errors[future] = exc
+                                    continue
+                                observed_results[future] = result
+                        if (
                             batch_cancellation is not None
                             or batch_fatal is not None
                         ):

@@ -313,8 +313,26 @@ def _execution_chunk_name(case_path: Path, index: int) -> str:
     return case_path.name + '.execution-' + str(index) + '.jsonpart'
 
 
+def _reject_symlinks(path: Path) -> None:
+    """Windows has no ``O_NOFOLLOW``. Refuse a symlink anywhere on the path."""
+    for candidate in (path, *path.parents):
+        try:
+            info = candidate.lstat()
+        except FileNotFoundError:
+            continue
+        if stat.S_ISLNK(info.st_mode):
+            raise OSError("refusing to follow a symlink")
+
+
 def _write_execution_bytes(path: Path, data: bytes) -> None:
-    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    elif os.name == "nt":
+        _reject_symlinks(path)
+    else:
+        raise OSError("safe execution evidence I/O unavailable")
+    descriptor = os.open(path, flags, 0o600)
     try:
         view = memoryview(data)
         while view:
@@ -367,6 +385,56 @@ def write_execution_report(report: dict, case_path: Path) -> dict:
     return manifest
 
 
+def _read_execution_chunks_by_path(manifest: dict, case_path: Path) -> dict | None:
+    """Read execution shards without ``dir_fd``. Windows cannot open a directory."""
+    parent = case_path.parent
+    parent_info = parent.lstat()
+    if stat.S_ISLNK(parent_info.st_mode) or not stat.S_ISDIR(parent_info.st_mode):
+        return None
+    payload = bytearray()
+    for index in range(manifest['chunkCount']):
+        name = _execution_chunk_name(case_path, index)
+        if not name or name in {".", ".."} or "/" in name or "\\" in name:
+            return None
+        path = parent / name
+        expected_size = min(_EXECUTION_CHUNK_BYTES, manifest['byteCount'] - len(payload))
+        metadata = path.lstat()
+        if (stat.S_ISLNK(metadata.st_mode) or not stat.S_ISREG(metadata.st_mode)
+                or metadata.st_nlink != 1 or metadata.st_size != expected_size):
+            return None
+        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_BINARY", 0))
+        try:
+            before = os.fstat(descriptor)
+            if (not stat.S_ISREG(before.st_mode) or before.st_nlink != 1
+                    or before.st_size != expected_size
+                    or (before.st_dev, before.st_ino) != (metadata.st_dev, metadata.st_ino)):
+                return None
+            data = bytearray()
+            while len(data) <= expected_size:
+                block = os.read(descriptor, expected_size + 1 - len(data))
+                if not block:
+                    break
+                data.extend(block)
+            after = os.fstat(descriptor)
+            fields = ('st_dev', 'st_ino', 'st_size', 'st_mtime_ns', 'st_ctime_ns')
+            if (tuple(getattr(before, field) for field in fields)
+                    != tuple(getattr(after, field) for field in fields)
+                    or len(data) != expected_size):
+                return None
+            payload.extend(data)
+        finally:
+            os.close(descriptor)
+    if _digest(bytes(payload)) != manifest['digest']:
+        return None
+    report = json.loads(payload)
+    if (not isinstance(report, dict) or report.get('junitDigest') != manifest['junitDigest']
+            or report.get('digest') != manifest['executionDigest']
+            or json.dumps(report, ensure_ascii=False, sort_keys=True, separators=(',', ':'),
+                          allow_nan=False).encode('utf-8') != payload):
+        return None
+    return report
+
+
 def read_execution_report(manifest: object, case_path: Path) -> dict | None:
     """Read exact private shards before cleanup, restoring the unchanged v1 report.
 
@@ -387,6 +455,8 @@ def read_execution_report(manifest: object, case_path: Path) -> dict | None:
             return None
         if manifest['chunkCount'] != (manifest['byteCount'] + _EXECUTION_CHUNK_BYTES - 1) // _EXECUTION_CHUNK_BYTES:
             return None
+        if os.name == "nt":
+            return _read_execution_chunks_by_path(manifest, case_path)
         directory = os.open(case_path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
         payload = bytearray()
         try:

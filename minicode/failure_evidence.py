@@ -101,6 +101,48 @@ def sanitize_diagnostic_value(value: object, *, depth: int = 0) -> object:
     return "[UNSUPPORTED VALUE OMITTED]"
 
 
+def _real_directory(path: Path) -> None:
+    info = path.lstat()
+    if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
+        raise OSError("unsafe diagnostic directory")
+
+
+def open_private_file(root: Path, parts: tuple[str, ...], name: str, flags: int) -> int:
+    """Open one journal file.
+
+    POSIX keeps the dirfd walk. Windows cannot ``os.open`` a directory and has
+    no ``dir_fd``, so it creates the same relative children and rejects
+    symlinks with ``lstat`` before opening the file by path.
+    """
+    if os.name != "nt":
+        directory = open_private_directory(root, *parts)
+        try:
+            return os.open(name, flags, 0o600, dir_fd=directory)
+        finally:
+            os.close(directory)
+    if not name or name in {".", ".."} or "/" in name or "\\" in name or "\x00" in name:
+        raise ValueError("unsafe diagnostic file")
+    current = Path(root)
+    _real_directory(current)
+    for part in parts:
+        if not part or part in {".", ".."} or "/" in part or "\\" in part or "\x00" in part:
+            raise ValueError("unsafe diagnostic directory")
+        current = current / part
+        try:
+            _real_directory(current)
+        except FileNotFoundError:
+            current.mkdir(mode=0o700)
+            _real_directory(current)
+    target = current / name
+    try:
+        info = target.lstat()
+    except FileNotFoundError:
+        info = None
+    if info is not None and stat.S_ISLNK(info.st_mode):
+        raise OSError("unsafe diagnostic file")
+    return os.open(target, flags, 0o600)
+
+
 def open_private_directory(root: Path, *parts: str) -> int:
     """Open a trusted journal root and walk newly created children by dirfd."""
     flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
