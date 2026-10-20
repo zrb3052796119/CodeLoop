@@ -179,8 +179,10 @@ def run_isolated_review_probe(*, probe, frozen, check: VerificationCheck,
                 or not probe_target.resolve().is_relative_to(root)):
             raise ValueError("host-owned review probe target collides with candidate files")
         # Exclusive creation also rejects a collision appearing after inspection.
-        with probe_target.open("x", encoding="utf-8") as stream:
-            stream.write(probe.code)
+        # Binary UTF-8 keeps the digest of probe.code. Text mode on Windows
+        # would turn \n into \r\n and the execution trace would no longer match.
+        with probe_target.open("xb") as stream:
+            stream.write(probe.code.encode("utf-8"))
         before = _file_hashes(root)
         options = dict(run_kwargs)
         if options.get("permissions") is not None:
