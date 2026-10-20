@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from minicode.run_events import VerificationTracker
 from minicode.task_outcome import canonicalize_task_outcome
 from minicode.task_outcome_event import (
     normalize_task_outcome_payload,
@@ -40,6 +41,40 @@ def test_failed_verification_overrides_successful_completion() -> None:
     )
 
     assert outcome.completion_succeeded is True
+    assert outcome.verification_status == "failed"
+    assert outcome.goal_achieved is False
+    assert outcome.learning_success is False
+
+
+def test_latest_pass_after_a_failure_verifies_the_goal() -> None:
+    tracker = VerificationTracker()
+    tracker.record({"outcome": "failed"})
+    tracker.record({"outcome": "passed"})
+    passed, failed = tracker.snapshot()
+    outcome = canonicalize_task_outcome(
+        "success",
+        0,
+        verification_passed=passed,
+        verification_failed=failed,
+        verification_latest=tracker.latest(),
+    )
+
+    assert (passed, failed, tracker.latest()) == (1, 1, "passed")
+    assert outcome.verification_status == "verified"
+    assert outcome.verification_failed_count == 1
+    assert outcome.goal_achieved is True
+    assert outcome.learning_success is True
+
+
+def test_latest_failure_is_not_hidden_by_an_earlier_pass() -> None:
+    outcome = canonicalize_task_outcome(
+        "success",
+        0,
+        verification_passed=2,
+        verification_failed=1,
+        verification_latest="failed",
+    )
+
     assert outcome.verification_status == "failed"
     assert outcome.goal_achieved is False
     assert outcome.learning_success is False

@@ -24,6 +24,19 @@ _WRITE_TOOLS = frozenset({"edit_file", "write_file", "executor_test"})
 _SECRET_OPTION = re.compile(r"(?i)(?:token|password|passwd|secret|credential|authorization|api[-_]?key|auth[-_]?key)")
 
 
+def _windows_same_file(left: os.stat_result, right: os.stat_result) -> bool:
+    """Match a path ``lstat`` to an open ``fstat`` on Windows.
+
+    ``lstat`` often leaves ``st_ino`` at 0 while ``fstat`` reports the file
+    index. A zero inode does not by itself mean the file was replaced.
+    """
+    if left.st_dev != right.st_dev:
+        return False
+    if left.st_ino == 0 or right.st_ino == 0:
+        return True
+    return left.st_ino == right.st_ino
+
+
 def workflow_delivery_summary(receipts, *, remaining: list[str], reason: str) -> tuple[str, dict]:
     """Render current host delivery facts without promoting the entire goal."""
     from minicode.workflow_delivery import WorkflowFailureReceipt
@@ -184,9 +197,13 @@ class TurnCompletionPolicy:
         def regular_target() -> os.stat_result:
             relative = target.relative_to(self._root)
             current = self._root
-            for part in ("", *relative.parts):
+            # The workspace root may itself be a junction. That boundary is
+            # already resolved; only interior reparse points are unobservable.
+            for index, part in enumerate(("", *relative.parts)):
                 current = current / part
                 observed = current.lstat()
+                if index == 0:
+                    continue
                 # Windows junctions are reparse points even where is_symlink
                 # is false. Reject both, including directory components.
                 if stat.S_ISLNK(observed.st_mode) or (
@@ -206,11 +223,9 @@ class TurnCompletionPolicy:
             with os.fdopen(descriptor, "rb") as stream:
                 opened = os.fstat(stream.fileno())
                 confirmed = regular_target()
-                if not stat.S_ISREG(opened.st_mode) or (
-                    before.st_dev, before.st_ino
-                ) != (opened.st_dev, opened.st_ino) or (
-                    confirmed.st_dev, confirmed.st_ino
-                ) != (opened.st_dev, opened.st_ino):
+                if not stat.S_ISREG(opened.st_mode) or not _windows_same_file(
+                    before, opened
+                ) or not _windows_same_file(confirmed, opened):
                     return None
                 data = stream.read(_MAX_FILE_BYTES + 1)
                 after = os.fstat(stream.fileno())

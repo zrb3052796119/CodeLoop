@@ -9,6 +9,11 @@ import runpy
 import pytest
 
 WORK = Path(__file__).resolve().parents[1] / '.repair-work/skill-chain-completion-2026-09-08'
+if not (WORK / 'score_v2.py').is_file() or not (WORK / 'eval/runner.py').is_file():
+    pytest.skip(
+        "repair-work skill-chain scorer is not in this checkout",
+        allow_module_level=True,
+    )
 SCORER = runpy.run_path(str(WORK / 'score_v2.py'))
 ORIGINAL = runpy.run_path(str(WORK / 'eval/runner.py'))
 CASES = {case['id']: case['expected'] for case in ORIGINAL['load_cases']()}

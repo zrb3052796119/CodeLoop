@@ -9,6 +9,10 @@ jobs:
   test:
     name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    env:
+      # Windows defaults open() to cp1252. The suite and sources are UTF-8,
+      # which is already the POSIX default.
+      PYTHONUTF8: "1"
     strategy:
       fail-fast: false
       matrix:

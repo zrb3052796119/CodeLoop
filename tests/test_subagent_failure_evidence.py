@@ -83,9 +83,9 @@ def test_failed_candidate_survives_cleanup_without_promoting(tmp_path):
     child = new_subagent_id()
     with WorkflowWorkspaceTransaction(str(workspace), baseline_scope_paths=("app.py", "tests")) as transaction:
         isolated = transaction.workspace_root
-        (isolated / "app.py").write_text("value = 2\n")
+        (isolated / "app.py").write_text("value = 2\n", newline="\n")
         (isolated / "tests").mkdir()
-        (isolated / "tests/test_new.py").write_text("def test_value(): assert False\n")
+        (isolated / "tests/test_new.py").write_text("def test_value(): assert False\n", newline="\n")
         (isolated / "outside.py").write_text("UNAUTHORIZED_BYTES\n")
         # Diagnostics must still run after the operation deadline expires.
         transaction.set_operation_guard(deadline_monotonic=0, timeout_seconds=1, operation_checkpoint=None)

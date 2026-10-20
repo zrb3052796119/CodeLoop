@@ -467,16 +467,14 @@ def test_verification_checks_run_concurrently_and_keep_request_order(
     elapsed = _time.monotonic() - started
 
     assert result.ok is True
-    # Three 0.4s checks overlapped: below the 1.2s serial floor even with
-    # pool overhead on a loaded machine (the pairwise-overlap assertions
-    # below prove concurrency without wall-clock sensitivity).
-    assert elapsed < 1.15
-    # All three genuinely executed concurrently (pairwise overlapping).
+    # Pairwise overlap is the concurrency proof. The wall clock only rejects
+    # a hang; a loaded runner can sit a little above the 1.2s serial floor.
     assert len(execution_windows) == 3
     for (start_a, end_a), (start_b, end_b) in zip(
         execution_windows, execution_windows[1:]
     ):
         assert start_b < end_a
+    assert elapsed < 2.0
 
 
 # --- P3: structured workflows accept on-demand parallel exploration ---------

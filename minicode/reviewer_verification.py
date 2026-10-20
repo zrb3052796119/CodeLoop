@@ -557,9 +557,16 @@ class ReviewerCheckCapability:
             self._ledger._current.pop((self._patch_digest, probe.probe_id), None)
             receipt = self._run_probe(probe, context)
             self._active(context)
+            if isinstance(receipt, dict):
+                from minicode.review_probe_artifact import fit_review_probe_document
+
+                receipt = fit_review_probe_document(receipt)
             result = self._ledger.record(probe, self._patch_digest, receipt)
-        return ToolResult(ok=result["status"] == "passed", output=_json({**result,
-            "recovery": self._recovery(probe.probe_id)}))
+        from minicode.review_probe_artifact import bound_review_test_output
+
+        recovery = self._recovery(probe.probe_id)
+        return ToolResult(ok=result["status"] == "passed",
+                          output=bound_review_test_output(result, recovery))
 
     def _correct(self, request: ReviewerProbeCorrection, context) -> ToolResult:
         # Hold the ledger lock through the actual run and publication. No
@@ -587,6 +594,10 @@ class ReviewerCheckCapability:
                 return self._correction_error(error, request.corrects_probe_id)
             receipt = self._run_probe(replacement, context)
             self._active(context)
+            if isinstance(receipt, dict):
+                from minicode.review_probe_artifact import fit_review_probe_document
+
+                receipt = fit_review_probe_document(receipt)
             result = self._ledger.record(replacement, self._patch_digest, receipt)
             try:
                 validate_probe_correction_execution(prior, result, self._patch_digest)

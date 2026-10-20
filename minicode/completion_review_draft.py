@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from pathlib import PurePosixPath
+import os
+from pathlib import PurePosixPath, PureWindowsPath
 import re
 
 
@@ -41,9 +42,14 @@ def _record(item):
     if not isinstance(item, dict) or set(item) != {"ref", "sha256", "rawJson"}:
         raise ValueError("draft must retain exact native record bytes and reference")
     ref, raw = item["ref"], item["rawJson"]
-    if not isinstance(ref, str) or "\x00" in ref or "\\" in ref:
+    if not isinstance(ref, str) or "\x00" in ref:
         raise ValueError("invalid draft evidence reference")
-    path = PurePosixPath(ref)
+    if "\\" not in ref:
+        path = PurePosixPath(ref)
+    elif os.name != "nt":
+        raise ValueError("invalid draft evidence reference")
+    else:
+        path = PureWindowsPath(ref)
     match = _RECORD_NAME.fullmatch(path.name)
     if not path.is_absolute() or ".." in path.parts or str(path) != ref or match is None:
         raise ValueError("invalid draft evidence reference")

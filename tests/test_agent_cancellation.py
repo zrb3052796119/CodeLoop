@@ -812,12 +812,17 @@ def test_cancel_after_concurrent_batch_starts_stops_before_next_model_turn() -> 
     all_started = threading.Barrier(3)
     release = threading.Event()
     finished: list[str] = []
+    finished_lock = threading.Lock()
+    both_finished = threading.Event()
 
     def definition(name: str) -> ToolDefinition:
         def run(_input, _context):
             all_started.wait(5)
             assert release.wait(5)
-            finished.append(name)
+            with finished_lock:
+                finished.append(name)
+                if len(finished) == 2:
+                    both_finished.set()
             return ToolResult(ok=True, output=name)
 
         return ToolDefinition(
@@ -852,6 +857,9 @@ def test_cancel_after_concurrent_batch_starts_stops_before_next_model_turn() -> 
     token.request()
     release.set()
     worker.join(5)
+    # Cancellation detaches a still-running sibling. The tool itself still
+    # finishes after release; wait for that side effect before asserting.
+    assert both_finished.wait(5)
 
     assert sorted(finished) == ["list_files", "read_file"]
     assert model.calls == 1

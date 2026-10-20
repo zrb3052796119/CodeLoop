@@ -23,6 +23,7 @@ from minicode.workflow_repair import (
     CONTINUATION_TRANSITION_ERROR,
     validate_continuation_admission,
 )
+from minicode.workflow_round_budget import round_fits
 
 if TYPE_CHECKING:
     from minicode.conflict_port_runner import ConflictPortRunner
@@ -497,6 +498,10 @@ class CentralScheduler:
         repair_count = 0
         repair_source_artifact_id: str | None = None
         continuation: Mapping[str, object] | None = None
+        reviewer_durations: list[float] = []
+        repair_cycle_durations: list[float] = []
+        cycle_origin: float | None = None
+        round_budget_stop: DispatchStage | None = None
         completed: list[DispatchStage] = []
         artifacts: list[str] = []
         patch_digest: str | None = None
@@ -586,10 +591,16 @@ class CentralScheduler:
                 patch_digest=patch_digest,
             )
 
+        last_clock = 0.0
+
         def deadline_reached() -> bool:
+            # Callers that estimate a round reuse this reading. A second
+            # clock() here would shift tests that count every deadline check.
+            nonlocal last_clock
+            last_clock = float(clock())
             return (
                 deadline_monotonic is not None
-                and float(clock()) >= float(deadline_monotonic)
+                and last_clock >= float(deadline_monotonic)
             )
 
         if plan.stages == (DispatchStage.PARENT,):
@@ -625,6 +636,7 @@ class CentralScheduler:
                 candidate: StageResult, failed_assignment: StageAssignment
             ) -> bool:
                 nonlocal repair_count, repair_source_artifact_id, patch_digest, continuation
+                nonlocal round_budget_stop
                 if (
                     not candidate.repairable
                     or stage not in {DispatchStage.VERIFIER, DispatchStage.REVIEWER}
@@ -668,6 +680,22 @@ class CentralScheduler:
                         continuation = validate_continuation_admission(admission)
                     except (ValueError, TypeError):
                         return False
+                # A repair round is executor plus verifier plus reviewer. Do not
+                # start one when the slowest finished cycle cannot fit.
+                # deadline_reached() above already sampled the clock.
+                elapsed = None if cycle_origin is None else last_clock - cycle_origin
+                samples = list(repair_cycle_durations)
+                if elapsed is not None and elapsed > 0:
+                    samples.append(elapsed)
+                remaining = (
+                    None if deadline_monotonic is None
+                    else float(deadline_monotonic) - last_clock
+                )
+                if not round_fits(remaining_seconds=remaining, samples=samples):
+                    round_budget_stop = DispatchStage.EXECUTOR
+                    return False
+                if elapsed is not None and elapsed > 0:
+                    repair_cycle_durations.append(elapsed)
                 repair_count += 1
                 repair_source_artifact_id = candidate.artifact_id
                 artifacts.append(candidate.artifact_id)
@@ -687,6 +715,43 @@ class CentralScheduler:
                 }]
                 patch_digest = None
                 return True
+
+            def stop_before_unaffordable_repair(
+                failed_assignment: StageAssignment,
+                artifact_id: str | None,
+            ) -> WorkflowExecutionOutcome:
+                # A repair boundary reopens the implementation stages. The
+                # executor times out before dispatch, so the trace can name
+                # the refused round without claiming those stages finished.
+                completed[:] = [
+                    item for item in completed
+                    if item not in {
+                        DispatchStage.EXECUTOR,
+                        DispatchStage.VERIFIER,
+                        DispatchStage.REVIEWER,
+                    }
+                ]
+                emit(
+                    failed_assignment,
+                    outcome="repairing",
+                    artifact_id=artifact_id,
+                    error_code=REPAIR_TRANSITION_ERROR,
+                )
+                stopped = assignment_for(
+                    DispatchStage.EXECUTOR,
+                    ordinal=ordinal + 1,
+                    attempt=1,
+                )
+                emit(
+                    stopped,
+                    outcome="timed_out",
+                    error_code="round_budget_insufficient",
+                )
+                return terminal(
+                    "timed_out",
+                    DispatchStage.EXECUTOR,
+                    "round_budget_insufficient",
+                )
 
             assignment = assignment_for(stage, ordinal=ordinal, attempt=1)
             if deadline_reached():
@@ -734,6 +799,25 @@ class CentralScheduler:
                         stage,
                         "global_deadline_exceeded",
                     )
+                if stage is DispatchStage.REVIEWER:
+                    remaining = (
+                        None if deadline_monotonic is None
+                        else float(deadline_monotonic) - last_clock
+                    )
+                    if not round_fits(remaining_seconds=remaining, samples=reviewer_durations):
+                        emit(
+                            assignment,
+                            outcome="timed_out",
+                            error_code="round_budget_insufficient",
+                        )
+                        return terminal(
+                            "timed_out",
+                            DispatchStage.REVIEWER,
+                            "round_budget_insufficient",
+                        )
+                if stage is DispatchStage.EXECUTOR and attempt == 1:
+                    cycle_origin = last_clock
+                reviewer_attempt_started = last_clock if stage is DispatchStage.REVIEWER else None
                 emit(assignment, outcome="dispatched")
                 try:
                     if stage is DispatchStage.VERIFIER:
@@ -785,6 +869,10 @@ class CentralScheduler:
                         error_code="stage_result_invalid",
                     )
                     return terminal("failed", stage, "stage_result_invalid")
+                if reviewer_attempt_started is not None:
+                    elapsed_review = last_clock - reviewer_attempt_started
+                    if elapsed_review > 0:
+                        reviewer_durations.append(elapsed_review)
                 if candidate.status != "completed":
                     if candidate.requires_human:
                         emit(
@@ -1001,6 +1089,10 @@ class CentralScheduler:
                     if schedule_implementation_repair(candidate, assignment):
                         repair_scheduled = True
                         break
+                    if round_budget_stop is not None:
+                        return stop_before_unaffordable_repair(
+                            assignment, candidate.artifact_id,
+                        )
                     return terminal(
                         "failed",
                         stage,
@@ -1072,6 +1164,10 @@ class CentralScheduler:
                     )
                     if schedule_implementation_repair(result, assignment):
                         continue
+                    if round_budget_stop is not None:
+                        return stop_before_unaffordable_repair(
+                            assignment, result.artifact_id,
+                        )
                     return terminal("failed", stage, review_rejection)
 
             artifacts.append(result.artifact_id)

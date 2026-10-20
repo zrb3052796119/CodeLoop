@@ -231,6 +231,20 @@ _NON_PRODUCTION_ANCHOR_PARTS = frozenset({
 })
 
 
+def _workflow_handoff_excerpt(content: object) -> str:
+    """The compact scheduler handoff, plus the solo-fallback note beside it."""
+
+    from minicode.scheduler_trace import PARENT_WORKFLOW_HANDOFF_MARKER
+
+    if not isinstance(content, str) or not content.startswith(PARENT_WORKFLOW_HANDOFF_MARKER):
+        return ""
+    head, _separator, rest = content.partition("\n\n")
+    if rest.startswith("Workflow failed, so this handoff is closed."):
+        note, _separator, _tail = rest.partition("\n\n")
+        head = head + "\n\n" + note
+    return head
+
+
 def _safe_tool_result_filename(tool_name: object) -> str:
     if (
         isinstance(tool_name, str)
@@ -611,6 +625,14 @@ class ToolResultBudgetManager:
             parts.extend(tail_lines)
 
         preview = "\n".join(parts)
+        handoff = _workflow_handoff_excerpt(content)
+        if handoff:
+            # The ordinary preview keeps the disk path first and then cuts at
+            # 500 characters, which drops the rule id. The handoff stays whole
+            # at the front.
+            if not preview.startswith(handoff):
+                preview = handoff + "\n\n" + preview
+            return preview[: max(len(handoff), self.PREVIEW_MAX_CHARS)]
         return preview[:self.PREVIEW_MAX_CHARS]
 
     def get_persisted_count(self) -> int:

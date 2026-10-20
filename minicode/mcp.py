@@ -1233,8 +1233,7 @@ class HttpMcpClient(_McpClientMixin):
             raise RuntimeError(f"MCP {self.server_name}: malformed response.")
         return parsed
 
-    @staticmethod
-    def _response_from_sse(stream_text: str, expected_id: Any) -> dict[str, Any]:
+    def _response_from_sse(self, stream_text: str, expected_id: Any) -> dict[str, Any]:
         """Extract the response for ``expected_id`` from an SSE stream."""
         data_lines: list[str] = []
         for line in stream_text.split("\n"):

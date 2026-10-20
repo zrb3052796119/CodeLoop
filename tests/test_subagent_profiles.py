@@ -415,6 +415,15 @@ def test_custom_type_is_concurrency_safe_and_read_only():
 # ---------------------------------------------------------------------------
 
 
+def test_task_tool_without_profiles_is_not_the_shared_singleton(tmp_path):
+    _dispatch_imports()
+    menu = task_module.build_task_tool_for_project(str(tmp_path))
+    original = task_module.task_tool.run
+    assert menu is not task_module.task_tool
+    menu.run = lambda *_args, **_kwargs: None
+    assert task_module.task_tool.run is original
+
+
 def test_task_tool_description_lists_custom_type(tmp_path):
     _dispatch_imports()
     _write(tmp_path, "test-locator.md", _VALID_FRONTMATTER)
@@ -426,7 +435,8 @@ def test_task_tool_description_lists_custom_type(tmp_path):
     baseline = task_module.build_task_tool_for_project("/tmp")
     assert "test-locator" not in baseline.description
     baseline_enum = baseline.input_schema["properties"]["agent_type"]["enum"]
-    assert baseline_enum == ["explore", "plan", "general", "workflow"]
+    assert baseline_enum == ["explore", "plan", "workflow"]
+    assert "general" in task_module.task_tool.input_schema["properties"]["agent_type"]["enum"]
 
 
 def test_registry_uses_dynamic_task_tool(tmp_path):

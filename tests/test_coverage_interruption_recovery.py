@@ -503,9 +503,9 @@ def test_harness_prepares_and_restores_explicit_overlay_from_authenticated_archi
     assert recovered.pending_state["messagesRecord"] == case["late"]["messagesRecord"]
     assert recovered.pending_state["deliveryRecord"] == case["late"]["deliveryRecord"]
     assert record_document(recovered.receipt_record)["historyRewritten"] is False
-    assert list((output / "private").iterdir()) == [
-        output / "private/coverage-recovery-receipt.json",
-        output / "private/coverage-recovery.json",
+    assert sorted(path.name for path in (output / "private").iterdir()) == [
+        "coverage-recovery-receipt.json",
+        "coverage-recovery.json",
     ]
     # Changing either the derived receipt or an authenticated original is refused.
     saved = output / "private/coverage-recovery-receipt.json"

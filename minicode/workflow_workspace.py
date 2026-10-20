@@ -17,6 +17,7 @@ import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from collections.abc import Mapping
 from typing import Iterator
 
 from minicode import advisory_lock
@@ -34,6 +35,98 @@ from minicode.workspace_digest_cache import shared_workspace_digest_cache
 
 class WorkflowIsolationError(RuntimeError):
     """The workflow snapshot could not be created or committed safely."""
+
+
+def _host_is_windows() -> bool:
+    return os.name == "nt"
+
+
+def _dangling_relative_link_stays_inside(candidate: Path, canonical_root: Path) -> bool:
+    """True when a link that cannot be resolved still names this snapshot.
+
+    Windows ``Path.resolve`` raises for a dangling symlink. A relative target
+    with no parent escape stays inside the snapshot; an absolute target does not.
+    """
+    try:
+        raw = os.readlink(candidate)
+    except OSError:
+        return False
+    link = Path(raw)
+    if link.is_absolute():
+        return False
+    lexical = Path(os.path.normpath(candidate.parent / link))
+    try:
+        lexical.relative_to(canonical_root)
+    except ValueError:
+        return False
+    return True
+
+
+def _delete_workspace_entry(path: Path, *, directory: bool = False) -> None:
+    """Remove one file or empty directory from an isolated workspace.
+
+    Git writes object files read-only. Windows refuses ``unlink`` until that
+    bit is cleared; other hosts already remove them.
+    """
+
+    def remove() -> None:
+        if directory:
+            path.rmdir()
+        else:
+            path.unlink()
+
+    try:
+        remove()
+    except PermissionError:
+        if not _host_is_windows():
+            raise
+        os.chmod(path, stat.S_IWRITE)
+        remove()
+
+
+def trusted_git_search_directories(
+    *,
+    source_root: Path | None = None,
+    environ: Mapping[str, str] | None = None,
+    include_windows_program_files: bool | None = None,
+) -> list[str]:
+    """Directories allowed to supply the host Git binary.
+
+    ``os.defpath`` stays the trusted default so a workspace-poisoned ``PATH``
+    cannot choose Git. Windows images install Git under Program Files, which
+    is outside ``os.defpath``, so those host directories are included too.
+    Anything inside the workflow source root is dropped.
+    """
+
+    env = os.environ if environ is None else environ
+    if include_windows_program_files is None:
+        include_windows_program_files = os.name == "nt"
+    entries: list[str] = []
+    seen: set[str] = set()
+
+    def add(entry: str) -> None:
+        if not entry or entry in seen:
+            return
+        path = Path(entry)
+        if not path.is_absolute():
+            return
+        if source_root is not None:
+            try:
+                if path.resolve(strict=False).is_relative_to(source_root.resolve(strict=False)):
+                    return
+            except OSError:
+                return
+        seen.add(entry)
+        entries.append(entry)
+
+    for entry in os.defpath.split(os.pathsep):
+        add(entry)
+    if include_windows_program_files:
+        for key in ("ProgramW6432", "ProgramFiles", "ProgramFiles(x86)"):
+            root = env.get(key)
+            if root:
+                add(str(Path(root) / "Git" / "cmd"))
+    return entries
 
 
 def _workflow_parent_lock_key(source_root: Path) -> str:
@@ -526,9 +619,7 @@ class WorkflowWorkspaceTransaction:
             candidate = str(configured_path)
         else:
             trusted_path = os.pathsep.join(
-                entry
-                for entry in os.defpath.split(os.pathsep)
-                if entry and Path(entry).is_absolute()
+                trusted_git_search_directories(source_root=self.source_root)
             )
             candidate = shutil.which("git", path=trusted_path)
         if not candidate:
@@ -898,7 +989,9 @@ class WorkflowWorkspaceTransaction:
                     resolved = candidate.resolve(strict=False)
                     contained = resolved.is_relative_to(canonical_root)
                 except (OSError, RuntimeError, ValueError):
-                    contained = False
+                    contained = _dangling_relative_link_stays_inside(
+                        candidate, canonical_root
+                    )
                 if not contained:
                     raise WorkflowIsolationError(
                         f"snapshot contains an escaping symlink: "
@@ -1129,7 +1222,7 @@ class WorkflowWorkspaceTransaction:
                     continue
                 dirnames.remove(name)
                 if candidate.is_symlink():
-                    candidate.unlink()
+                    _delete_workspace_entry(candidate)
                 else:
                     self._remove_tree_with_checkpoints(candidate)
             for name in filenames:
@@ -1140,11 +1233,11 @@ class WorkflowWorkspaceTransaction:
                     relative,
                     directory=False,
                 ):
-                    candidate.unlink()
+                    _delete_workspace_entry(candidate)
 
     def _remove_tree_with_checkpoints(self, root: Path) -> None:
         if root.is_symlink():
-            root.unlink()
+            _delete_workspace_entry(root)
             return
         for directory, dirnames, filenames in os.walk(
             root,
@@ -1155,15 +1248,15 @@ class WorkflowWorkspaceTransaction:
             base = Path(directory)
             for name in filenames:
                 self._commit_checkpoint()
-                (base / name).unlink()
+                _delete_workspace_entry(base / name)
             for name in dirnames:
                 self._commit_checkpoint()
                 child = base / name
                 if child.is_symlink():
-                    child.unlink()
+                    _delete_workspace_entry(child)
                 else:
-                    child.rmdir()
-        root.rmdir()
+                    _delete_workspace_entry(child, directory=True)
+        _delete_workspace_entry(root, directory=True)
         self._commit_checkpoint()
 
     @staticmethod
@@ -1733,12 +1826,16 @@ class FrozenWorkflowChange:
                 _WORKFLOW_PARENT_COMMIT_LOCK.release()
             return
         apply_args = owner._git_args(
+            "-c",
+            "core.symlinks=true",
             "apply",
             "--binary",
             "--whitespace=nowarn",
             "-",
         )
         apply_check_args = owner._git_args(
+            "-c",
+            "core.symlinks=true",
             "apply",
             "--check",
             "--binary",

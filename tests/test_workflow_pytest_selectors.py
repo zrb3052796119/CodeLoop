@@ -110,11 +110,14 @@ def test_parsed_selector_reaches_real_pytest_without_broadening_execution(tmp_pa
     assert b"2 passed, 1 deselected" in completed[0].stdout
 
 
-def test_workflow_prompt_schema_advertises_the_existing_limit():
+def test_workflow_prompt_schema_forwards_the_user_request_instead_of_rejecting_length():
     description = task_tool.input_schema["properties"]["prompt"]["description"]
-    assert "workflow" in description
-    assert str(_WORKFLOW_PROMPT_MAX_CHARS) in description
-    assert "character" in description
-    with pytest.raises(ValueError, match="workflow_prompt_oversized"):
-        task_tool.validator({"description": "Repair task", "agent_type": "workflow",
-                            "prompt": "x" * (_WORKFLOW_PROMPT_MAX_CHARS + 1)})
+    assert "do not paste the user's spec" in description
+    assert "forwarded" in description
+    assert "rejected" in description
+    validated = task_tool.validator({
+        "description": "Repair task",
+        "agent_type": "workflow",
+        "prompt": "x" * (_WORKFLOW_PROMPT_MAX_CHARS + 1),
+    })
+    assert len(validated["prompt"]) == _WORKFLOW_PROMPT_MAX_CHARS + 1

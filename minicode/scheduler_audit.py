@@ -278,6 +278,7 @@ _V2_NULL_ARTIFACT_CAUSES = frozenset(
         "commit_failed",
         "commit_ready_persistence_failed",
         "global_deadline_exceeded",
+        "round_budget_insufficient",
         "stage_port_failed",
         "stage_result_invalid",
     }
@@ -798,7 +799,10 @@ def _validate_v2_transition_causes(
                 )
         elif outcome == "timed_out":
             if (
-                error_code != "global_deadline_exceeded"
+                error_code not in {
+                    "global_deadline_exceeded",
+                    "round_budget_insufficient",
+                }
                 or artifact_id is not None
             ):
                 raise SchedulerAuditValidationError(

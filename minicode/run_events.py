@@ -262,6 +262,7 @@ class VerificationTracker:
         self._max_observations = max(1, min(max_observations, _MAX_VERIFICATION_OBSERVATIONS))
         self._passed = 0
         self._failed = 0
+        self._latest: str | None = None
         self._lock = Lock()
 
     def record(self, verification: object) -> None:
@@ -277,10 +278,16 @@ class VerificationTracker:
                 self._passed += 1
             else:
                 self._failed += 1
+            self._latest = outcome
 
     def snapshot(self) -> tuple[int, int]:
         with self._lock:
             return self._passed, self._failed
+
+    def latest(self) -> str | None:
+        """Most recently accepted outcome, or None when nothing was recorded."""
+        with self._lock:
+            return self._latest
 
 
 def verification_corroboration(passed: int, failed: int) -> bool | None:

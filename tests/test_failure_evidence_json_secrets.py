@@ -114,14 +114,14 @@ def test_real_failed_candidate_redacts_current_and_baseline_diff_without_restore
     workspace.mkdir()
     before = 'CONFIG = {"password": "ordinary-baseline-private", "attempt": 1}\n'
     after = 'CONFIG = {"password": "ordinary-candidate-private", "attempt": 2}\n'
-    (workspace / "app.py").write_text(before)
+    (workspace / "app.py").write_text(before, newline="\n")
     run_dir = tmp_path / ("run_" + "a" * 32)
     run_dir.mkdir()
     journal = SubagentRunJournal(run_dir)
     child = new_subagent_id()
     with WorkflowWorkspaceTransaction(str(workspace), baseline_scope_paths=("app.py",)) as transaction:
         isolated = transaction.workspace_root
-        (isolated / "app.py").write_text(after)
+        (isolated / "app.py").write_text(after, newline="\n")
         candidate = transaction.capture_failure_candidate(("app.py",))
         path = journal.persist_failure_candidate(child, candidate)
     assert not isolated.exists()

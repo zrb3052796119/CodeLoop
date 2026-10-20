@@ -79,6 +79,26 @@ def _file_identity(value: os.stat_result) -> tuple[int, ...]:
     )
 
 
+def _same_inode(left: os.stat_result, right: os.stat_result) -> bool:
+    """True when both stats name one file.
+
+    Windows ``lstat`` often reports ``st_ino`` 0 while ``fstat`` reports the
+    file index. A zero inode is unknown, not a different file.
+    """
+    if left.st_dev != right.st_dev:
+        return False
+    if left.st_ino == 0 or right.st_ino == 0:
+        return True
+    return left.st_ino == right.st_ino
+
+
+def _reparse_point(value: os.stat_result) -> bool:
+    if stat.S_ISLNK(value.st_mode):
+        return True
+    attributes = getattr(value, "st_file_attributes", 0)
+    return bool(attributes & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
+
+
 def _calls_digest(calls: Sequence[dict[str, Any]]) -> str:
     data = json.dumps(calls, sort_keys=True, ensure_ascii=True, default=str)
     return hashlib.sha256(data.encode()).hexdigest()
@@ -178,8 +198,81 @@ class ImplementationCandidateGuard:
             ensure(target, "write")
             ensure(target, "read")
 
+    def _read_image_by_path(self, relative: str) -> _FileImage:
+        """Observe one file on Windows, where a directory cannot be opened.
+
+        Symlinks and other reparse points are rejected with ``lstat`` before
+        the file is read. The POSIX ``dir_fd`` path is unchanged.
+        """
+        parts = Path(relative).parts
+        current = self._root
+        file_fd: int | None = None
+        try:
+            root_stat = current.lstat()
+            if stat.S_ISLNK(root_stat.st_mode):
+                raise CandidateProtectionError("candidate workspace identity changed")
+            if root_stat.st_dev != self._root_identity[0] or (
+                root_stat.st_ino != 0
+                and self._root_identity[1] != 0
+                and root_stat.st_ino != self._root_identity[1]
+            ):
+                raise CandidateProtectionError("candidate workspace identity changed")
+            for part in parts[:-1]:
+                current = current / part
+                try:
+                    info = current.lstat()
+                except FileNotFoundError:
+                    return _FileImage(None, None)
+                if _reparse_point(info) or not stat.S_ISDIR(info.st_mode):
+                    raise CandidateProtectionError("candidate target is not safely observable")
+                if not current.resolve(strict=False).is_relative_to(self._root):
+                    raise CandidateProtectionError("candidate target is not safely observable")
+            target = current / parts[-1]
+            try:
+                metadata = target.lstat()
+            except FileNotFoundError:
+                return _FileImage(None, None)
+            if _reparse_point(metadata) or not stat.S_ISREG(metadata.st_mode):
+                raise CandidateProtectionError("candidate target is not a bounded regular file")
+            if metadata.st_size > self._max_file_bytes:
+                raise CandidateProtectionError("candidate target is not a bounded regular file")
+            if not target.resolve(strict=False).is_relative_to(self._root):
+                raise CandidateProtectionError("candidate target is not safely observable")
+            file_fd = os.open(target, os.O_RDONLY | getattr(os, "O_BINARY", 0))
+            before = os.fstat(file_fd)
+            if not stat.S_ISREG(before.st_mode) or before.st_size > self._max_file_bytes:
+                raise CandidateProtectionError("candidate target is not a bounded regular file")
+            data = bytearray()
+            while len(data) <= self._max_file_bytes:
+                chunk = os.read(file_fd, min(65536, self._max_file_bytes + 1 - len(data)))
+                if not chunk:
+                    break
+                data.extend(chunk)
+            after = os.fstat(file_fd)
+            if len(data) > self._max_file_bytes or _file_identity(before) != _file_identity(after):
+                raise CandidateProtectionError("candidate target changed during observation")
+            confirmed = target.lstat()
+            if (
+                _reparse_point(confirmed)
+                or not stat.S_ISREG(confirmed.st_mode)
+                or not _same_inode(confirmed, before)
+            ):
+                raise CandidateProtectionError("candidate lexical target changed during observation")
+            return _FileImage(bytes(data), _file_identity(after))
+        except FileNotFoundError:
+            return _FileImage(None, None)
+        except CandidateProtectionError:
+            raise
+        except (OSError, ValueError) as exc:
+            raise CandidateProtectionError("candidate target is not safely observable") from exc
+        finally:
+            if file_fd is not None:
+                os.close(file_fd)
+
     def _read_image(self, relative: str) -> _FileImage:
         self._authorize(relative)
+        if os.name == "nt":
+            return self._read_image_by_path(relative)
         if (
             not hasattr(os, "O_NOFOLLOW")
             or not hasattr(os, "O_DIRECTORY")

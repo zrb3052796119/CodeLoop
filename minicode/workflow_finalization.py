@@ -1261,7 +1261,7 @@ def _render_terminal_result(
                 execute_result or plan_result,
                 outcome="failed",
                 verification_status="inconclusive",
-                checks=["global_deadline_exceeded"],
+                checks=[outcome.terminal_reason or "global_deadline_exceeded"],
             )
             timeout_contract_status = "derived"
             timeout_suffix = "\n\n" + render_subagent_result(structured_result)

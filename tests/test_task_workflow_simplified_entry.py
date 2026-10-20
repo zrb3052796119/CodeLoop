@@ -274,22 +274,28 @@ def test_non_enforced_context_does_not_auto_construct(
     assert captured.get("workflow_request") is None
 
 
-def test_workflow_prompt_over_limit_is_coached() -> None:
-    oversized = "x" * (task_module._WORKFLOW_PROMPT_MAX_CHARS + 1)
-    with pytest.raises(ValueError, match="workflow_prompt_oversized") as excinfo:
-        _validated(
-            {
-                "description": "add tag filtering",
-                "prompt": oversized,
-                "agent_type": "workflow",
-                "write_paths": ["notes/store.py"],
-                "verification_commands": [["python3", "-m", "pytest", "-q"]],
-            }
-        )
-    message = str(excinfo.value)
-    assert str(len(oversized)) in message
-    assert "Do not paste full patches" in message
-    assert "Executor produces the change itself" in message
+def test_workflow_prompt_over_the_contract_limit_is_not_rejected() -> None:
+    from minicode.workflow_prompt_criteria import fit_contract_text
+
+    oversized = "Implement the store.\n" + ("x" * 4401)
+    validated = _validated(
+        {
+            "description": "add tag filtering",
+            "prompt": oversized,
+            "agent_type": "workflow",
+            "write_paths": ["notes/store.py"],
+            "verification_commands": [["python3", "-m", "pytest", "-q"]],
+        }
+    )
+    assert validated["prompt"] == oversized.strip()
+    fitted = fit_contract_text(validated["prompt"])
+    assert len(fitted) <= 4000
+    assert fitted.startswith("Implement the store.")
+    assert fitted.endswith("x")
+    assert "[...]" in fitted
+    request, error = task_module._auto_construct_workflow_request(validated)
+    assert error is None
+    assert "".join(item["text"] for item in request["criteria"]).count("x") == 4401
 
 
 def test_workflow_prompt_at_limit_passes() -> None:

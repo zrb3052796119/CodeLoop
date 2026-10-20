@@ -124,10 +124,11 @@ def test_parent_and_plan_guidance_do_not_make_plan_a_write_prerequisite(
     tmp_path: Path,
 ) -> None:
     guide = build_system_prompt(str(tmp_path))
-    assert "call agent_type='workflow' directly" in guide
-    assert "Do not routinely run Plan first" in guide
-    assert f"within {task_module._WORKFLOW_PROMPT_MAX_CHARS} characters" in guide
-    assert "authorized paths and verification argv in their dedicated fields" in guide
+    assert "task(agent_type='workflow', write_paths, verification_commands)" in guide
+    assert "The scheduler builds the request." in guide
+    assert "Do not routinely run Plan first" not in guide
+    assert "few non-sensitive" not in guide
+    assert "just to avoid work" not in guide
     assert "escalates to the workflow route automatically" not in guide
     plan = AGENT_TYPES["plan"]
     assert "bounded investigation" in plan["description"]

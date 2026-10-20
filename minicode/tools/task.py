@@ -286,11 +286,9 @@ _SCHEDULER_READ_ALLOWED_TOOLS = frozenset(
 
 _WORKFLOW_MAX_PHASES = AGENT_TYPES["workflow"]["max_phases"]
 
-# The delegation prompt becomes the scheduler assignment objective verbatim
-# (``_build_worker_assignment`` passes ``task_prompt`` through unchanged), so
-# the binding ceiling is the contract's ``_MAX_TEXT`` characters measured
-# after stripping. The entry gate below keeps a 200-character safety margin;
-# there is no structural wrapping overhead to account for.
+# Contract objectives still cannot exceed ``_MAX_TEXT``. A longer delegation
+# prompt is fitted to that ceiling and the full text is forwarded to workers;
+# this historical margin is what diagnostics compare against frozen archives.
 _WORKFLOW_PROMPT_MAX_CHARS = _MAX_TEXT - 200
 
 # ---------------------------------------------------------------------------
@@ -546,17 +544,8 @@ def _validate(input_data: dict) -> dict:
             "prompt is required: give the sub-agent a full, self-contained task "
             "description (it cannot see this conversation)"
         )
-    if agent_type == "workflow" and len(prompt) > _WORKFLOW_PROMPT_MAX_CHARS:
-        raise ValueError(
-            "error[workflow_prompt_oversized]: the workflow delegation prompt "
-            f"is {len(prompt)} characters; it becomes the scheduler assignment "
-            f"objective, whose contract allows at most {_MAX_TEXT} characters "
-            f"(entry limit {_WORKFLOW_PROMPT_MAX_CHARS}). Keep the delegation "
-            "brief: state the intent, the relevant paths, and the acceptance "
-            "expectation. Do not paste full patches or file contents — the "
-            "Executor produces the change itself from the Analyst's "
-            "investigation."
-        )
+    # Workflow length is not a hard reject. The contract objective is fitted
+    # later; the full prompt and the parent's user message reach the workers.
 
     parallel_explore = input_data.get("parallel_explore", False)
     if parallel_explore is None:
@@ -2698,6 +2687,10 @@ def _run(input_data: dict, context) -> ToolResult:
             prior_body = prior_messages
             if prior_body and prior_body[0].get("role") == "system":
                 prior_body = prior_body[1:]
+            if executor_session is not None:
+                from minicode.worker_context_bound import bound_executor_transcript
+
+                prior_body = bound_executor_transcript(prior_body)
             for msg in prior_body:
                 sub_messages.append(dict(msg))
         sub_messages.append({"role": "user", "content": fresh_user_prompt})
@@ -3314,6 +3307,67 @@ def _run(input_data: dict, context) -> ToolResult:
 _SYNC_RUN = _run
 
 
+_PARENT_TASK_DESCRIPTION = (
+    "Use when: the change spans several source files or modules, or it needs "
+    "an independent review. Call task with agent_type='workflow', write_paths, "
+    "and verification_commands. A broad repository survey uses "
+    "agent_type='explore'.\n"
+    "Don't use when: the edit is a single function or one local file (change "
+    "it yourself), or the user asked a read-only question (answer it directly).\n"
+    "Do not paste the user's spec into prompt; that request is forwarded to "
+    "the workers. State the objective and the acceptance outcome. "
+    "action defaults to run and waits for the result."
+)
+_PARENT_TASK_FIELDS = (
+    "description",
+    "prompt",
+    "agent_type",
+    "write_paths",
+    "verification_commands",
+)
+
+
+def project_parent_task_tool(tool: ToolDefinition) -> ToolDefinition:
+    """Schema and description the parent model sees.
+
+    Nested workers keep the module-level tool, whose validator still accepts
+    workflow_request, poll, cancel, and general. This copy only hides those
+    fields from the parent prompt.
+    """
+
+    schema = json.loads(json.dumps(tool.input_schema))
+    properties = schema.get("properties")
+    if not isinstance(properties, dict):
+        properties = {}
+    parent_properties = {
+        key: properties[key] for key in _PARENT_TASK_FIELDS if key in properties
+    }
+    agent = parent_properties.get("agent_type")
+    if isinstance(agent, dict):
+        enum = [
+            name for name in (agent.get("enum") or [])
+            if name != "general"
+        ]
+        agent = dict(agent)
+        agent["enum"] = enum
+        agent["description"] = (
+            "'workflow' for a multi-file change or an independent review, "
+            "'explore' for a broad read-only survey, "
+            "'plan' for one bounded design question."
+        )
+        parent_properties["agent_type"] = agent
+    return replace(
+        tool,
+        description=_PARENT_TASK_DESCRIPTION,
+        input_schema={
+            "type": "object",
+            "properties": parent_properties,
+            "required": ["description", "prompt"],
+            "additionalProperties": True,
+        },
+    )
+
+
 def build_task_tool_for_project(cwd: str) -> ToolDefinition:
     """Per-turn task tool carrying the project's agent-type menu.
 
@@ -3321,10 +3375,14 @@ def build_task_tool_for_project(cwd: str) -> ToolDefinition:
     from ``.mini-code/agents/*.md``. The module-level ``task_tool`` singleton
     is never mutated — each turn composes its own definition so registry
     snapshots stay immutable and parallel turns cannot cross-contaminate.
+    The returned tool is the parent-facing projection.
     """
     profiles, errors = load_agent_profiles(cwd)
+    projected = project_parent_task_tool(task_tool)
     if not profiles and not errors:
-        return task_tool
+        # A caller that wraps .run must not replace the process-wide tool.
+        # Evaluation harnesses do that on the registry's task definition.
+        return projected
     agent_types = resolve_agent_types(cwd)
     names = sorted(agent_types)
     lines = [
@@ -3340,11 +3398,18 @@ def build_task_tool_for_project(cwd: str) -> ToolDefinition:
             "Rejected profile files (fix before they become available): "
             + " | ".join(errors)
         )
-    schema = json.loads(json.dumps(task_tool.input_schema))
-    schema["properties"]["agent_type"]["enum"] = names
+    schema = json.loads(json.dumps(projected.input_schema))
+    enum = [
+        name for name in schema["properties"]["agent_type"]["enum"]
+        if name != "general"
+    ]
+    for name in names:
+        if name != "general" and name not in enum:
+            enum.append(name)
+    schema["properties"]["agent_type"]["enum"] = enum
     return replace(
-        task_tool,
-        description=task_tool.description + "\n" + "\n".join(lines),
+        projected,
+        description=projected.description + "\n" + "\n".join(lines),
         input_schema=schema,
     )
 
@@ -3553,7 +3618,15 @@ def _capability_for(call_input: Mapping[str, object]) -> CapabilityProfile:
 task_tool = ToolDefinition(
     name="task",
     description=(
-        "Run or manage a sub-agent for a complex task. Choose agent_type by "
+        "Run or manage a sub-agent for a complex task. When sub-agent routing "
+        "is enabled, two or more source files to change, or an explicit "
+        "request for a separate implementer and reviewer, uses 'workflow' "
+        "before the parent edits those files. A read-only question that names "
+        "the files stays with the parent. A single-file redesign that names "
+        "a later step, an invariant, or an edge case uses 'workflow'. A "
+        "single-file or single-function change stays with the parent. Do not "
+        "add 'plan' or 'explore' to a "
+        "change that is already specified. Choose agent_type by "
         "the work, not by habit: a task that creates or modifies files -> "
         "'workflow' (pass write_paths and verification_commands and the "
         "scheduler constructs WorkflowRequest.v1 for you, or provide an "
@@ -3624,13 +3697,12 @@ task_tool = ToolDefinition(
             "prompt": {
                 "type": "string",
                 "description": (
-                    "Full, self-contained task description for the sub-agent. "
-                    "The sub-agent runs in a fresh context and cannot see this "
-                    "conversation, so include every file path, constraint, and "
-                    "piece of background it needs. For agent_type='workflow', "
-                    f"the prompt must be at most {_WORKFLOW_PROMPT_MAX_CHARS} "
-                    "characters after trimming whitespace; summarize findings "
-                    "and acceptance criteria instead of pasting source or patches."
+                    "Task for the sub-agent. explore/plan run in a fresh context "
+                    "and need a self-contained prompt. For agent_type='workflow', "
+                    "do not paste the user's spec; that request is forwarded to "
+                    "the workers. Keep the prompt to the objective, constraints, "
+                    "and acceptance outcome. A longer prompt is condensed into "
+                    "the contract objective instead of being rejected."
                 ),
             },
             "continue_subagent_id": {

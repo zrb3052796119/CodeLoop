@@ -322,11 +322,10 @@ class NudgeGenerator:
         ErrorCategory.PERMISSION: {
             RecoveryStrategy.REQUEST_PERMISSION: (
                 "Permission denied. Do not retry the same action through a shell wrapper or "
-                "privilege escalation. Use a materially different action that is already "
-                "authorized; for commands, prefer an explicit executable and argument list "
-                "with an in-workspace working directory; for file writes, delegating the "
-                'change through task with agent_type="workflow" is an authorized route. '
-                "If no authorized alternative exists, stop and report the blocker."
+                "privilege escalation. Use a different action that is already authorized. "
+                "For commands, prefer an explicit executable and argument list with an "
+                "in-workspace working directory. If no authorized alternative exists, "
+                "stop and report the blocker."
             ),
             RecoveryStrategy.FALLBACK_ALTERNATIVE: (
                 "Access was denied. Try an alternative approach that works with current permissions."

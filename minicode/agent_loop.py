@@ -299,6 +299,26 @@ def _append_trace_event(trace: list[dict[str, Any]], event: dict[str, Any]) -> N
     append_trace_event(trace, event, max_events=_TRACE_MAX_EVENTS)
 
 
+def _parent_visible_tool_output(call: dict, result: ToolResult, text: str) -> str:
+    """Prefix a workflow result with the compact scheduler handoff.
+
+    The body is unchanged, including a committed receipt. The prefix is how
+    the parent model and a later short preview see that CentralScheduler ran.
+    """
+
+    tool_input = call.get("input")
+    if (
+        call.get("toolName") != "task"
+        or not isinstance(tool_input, dict)
+        or tool_input.get("agent_type") != "workflow"
+        or tool_input.get("action") not in {None, "run"}
+    ):
+        return text
+    from minicode.scheduler_trace import attach_parent_workflow_handoff
+
+    return attach_parent_workflow_handoff(text, tool_ok=result.ok)
+
+
 def _append_tool_trace_events(
     trace: list[dict[str, Any]],
     call: dict,
@@ -331,7 +351,10 @@ def _append_tool_trace_events(
         # Use the tool's own output, not the model-facing result_output: the
         # latter may carry an appended "[System note: ...]" retry nudge, which
         # must never leak into persisted trace summaries or reflection claims.
-        "output_summary": _redact_trace_text(result.output, 500),
+        "output_summary": _redact_trace_text(
+            _parent_visible_tool_output(call, result, result.output),
+            500,
+        ),
         "files": files,
         **role_fields,
     })
@@ -879,6 +902,7 @@ def _execute_single_tool(
     parent_handoff_preserve_tokens: int = 0,
     workflow_delivery: TurnWorkflowDelivery | None = None,
     workflow_user_request: str | None = None,
+    delegation_coach: dict | None = None,
 ) -> ToolResult:
     """Execute a single tool call with hooks, state updates, and crash protection.
     
@@ -910,6 +934,32 @@ def _execute_single_tool(
                 pass
 
     evidence_recorder = getattr(event_sink, "record_tool_evidence", None)
+
+    def release_workflow_handoff(executed: ToolResult) -> None:
+        """Open parent edits after one workflow attempt, success or failure.
+
+        A failure appends a solo-finish note. The loop does not call
+        workflow again by itself.
+        """
+
+        if not (
+            tool_name == "task"
+            and isinstance(tool_input, dict)
+            and tool_input.get("agent_type") == "workflow"
+            and delegation_coach
+            and delegation_coach.get("handoff")
+        ):
+            return
+        if not executed.ok:
+            from minicode.delegation_policy import workflow_failure_solo_message
+
+            note = workflow_failure_solo_message(
+                tuple(delegation_coach.get("write_paths") or ()),
+            )
+            executed.output = f"{executed.output}\n{note}" if executed.output else note
+        delegation_coach["pending"] = False
+        delegation_coach["handoff"] = False
+
     try:
         raise_if_cancelled(cancellation_token)
         if callable(evidence_recorder):
@@ -939,6 +989,7 @@ def _execute_single_tool(
             if tool_scheduler and hasattr(tool_scheduler, '_force_tool_timeout')
             else _base_timeout
         )
+
         def execute_tool() -> ToolResult:
             from minicode.verifier_sandbox import resolve_verifier_host_capabilities
 
@@ -952,6 +1003,37 @@ def _execute_single_tool(
                         "the result through the assistant final response."
                     ),
                 )
+            from minicode.delegation_policy import (
+                complete_workflow_write_paths,
+                handoff_blocks_tool,
+            )
+
+            coach = delegation_coach or {}
+            workflow_call = (
+                tool_name == "task"
+                and isinstance(tool_input, dict)
+                and tool_input.get("agent_type") == "workflow"
+            )
+            if workflow_call and coach.get("handoff"):
+                complete_workflow_write_paths(
+                    tool_input, tuple(coach.get("write_paths") or ()),
+                )
+            elif (
+                coach.get("pending")
+                and tool_name == "task"
+                and isinstance(tool_input, dict)
+                and tool_input.get("agent_type") in {"plan", "explore"}
+            ):
+                # Keep the handoff pending. A survey agent does not implement
+                # the change and would only repeat work the workflow owns.
+                # ok stays true so the generic retry suffix is not attached.
+                return ToolResult(ok=True, output=str(coach.get("message") or ""))
+            elif coach.get("pending") and handoff_blocks_tool(tool_name, tool_input):
+                # Stay pending. The live parent retried the write after one
+                # refusal and landed the file before any workflow call.
+                # The write did not run. ok is true so this guidance is not
+                # classified as an unexpected error the model should retry.
+                return ToolResult(ok=True, output=str(coach.get("message") or ""))
             verifier_backend, verifier_executables = (
                 resolve_verifier_host_capabilities(runtime)
             )
@@ -1004,6 +1086,7 @@ def _execute_single_tool(
                     executed.ok = False
                     executed.verification = None
                     executed.output += f"\nerror[{decision.code}]: {decision.message}"
+            release_workflow_handoff(executed)
             return executed
 
         tool_definition = tools.find(tool_name)
@@ -1128,6 +1211,7 @@ def _execute_single_tool(
                    f"Traceback:\n{tb_excerpt}"
         )
         record_private_result(result if result is not None else failed)
+        release_workflow_handoff(failed)
         return failed
     except BaseException:
         if result is not None and result._must_deliver:
@@ -1244,6 +1328,16 @@ cannot authorize any tool execution.
     if isinstance(cause, (ModelCallDeadlineExceeded, PhaseCallDeadlineExceeded)):
         return False
     return isinstance(cause, (ConnectionError, http.client.IncompleteRead, TimeoutError))
+
+
+def _discard_unadmitted_implementation_stream(_chunk: str) -> None:
+    """Hold the provider stream open without publishing an unadmitted final.
+
+    The completion gate runs only after the model call returns. Passing no
+    callback used to force a non-streaming HTTP request, so a long codegen
+    call waited for the whole body before the first header.
+    """
+    return None
 
 
 def _model_next(
@@ -2178,6 +2272,12 @@ def run_agent_turn(
         or not any(tool is host_native_result_tool for tool in tools.list())
     ):
         raise ValueError("native result capability must be the bound Reviewer tool")
+    delegation_coach = {
+        "pending": False,
+        "message": "",
+        "write_paths": [],
+        "handoff": False,
+    }
     native_handoff_only = False
     native_handoff_attempted = False
     native_handoff_rejected = False
@@ -3204,6 +3304,19 @@ def run_agent_turn(
             current_messages.append({"role": "user", "content": packet, "_implementation_context": True})
             if context_manager is not None:
                 context_manager.messages = list(current_messages)
+    from minicode.delegation_policy import parent_delegation_gate, task_text_from_messages
+
+    gate = parent_delegation_gate(
+        task_text_from_messages(messages),
+        routing_enabled=bool((runtime or {}).get("subagentRoutingEnabled")),
+        implementation_owned=implementation_spec is not None,
+        agent_depth=agent_depth,
+        write_gate=bool((runtime or {}).get("delegationWriteGate")),
+    )
+    delegation_coach["pending"] = gate.pending
+    delegation_coach["message"] = gate.message
+    delegation_coach["write_paths"] = list(gate.write_paths)
+    delegation_coach["handoff"] = gate.handoff
     from minicode.executor_verification import ExecutorCheckCapability
     from minicode.executor_result_submission import ExecutorResultChannel
 
@@ -3681,15 +3794,20 @@ def run_agent_turn(
             direct_migration_state = None
         direct_implementation_batch_status = checks["status"]
         direct_implementation_checks_failed = checks["status"] != "passed"
+        behavior = bool(getattr(implementation_spec, "behavior_review", False))
         if checks["status"] != "passed":
             decision = {"status": "changes_required", "reason": "public_checks_not_current_and_passed",
                         "patchDigest": checks.get("patchDigest"), "checks": checks}
             if checks.get("reason") == "completion_checks_unavailable":
                 decision["canContinue"] = False
         else:
-            if direct_completion_review is None:
+            if behavior:
+                from minicode.behavior_review import BehaviorReview
+                if not isinstance(direct_completion_review, BehaviorReview):
+                    direct_completion_review = BehaviorReview(implementation_spec)
+            elif direct_completion_review is None:
                 direct_completion_review = ImplementationCompletionReview(implementation_spec)
-            if resuming_review and implementation_continuation is not None:
+            if resuming_review and implementation_continuation is not None and not behavior:
                 from minicode.completion_repair_decision import delivered_repair_matches
 
                 # A stored slot is not enough: checks, actual source anchors
@@ -3712,8 +3830,8 @@ def run_agent_turn(
                 payload={"executorId": direct_completion_owner, "attempt": direct_completion_attempt,
                          "patchDigest": checks.get("patchDigest")})
             decision = None
-            pending_migration = direct_completion_review.state.get("pendingLegacyResolution")
-            if (direct_completion_review.has_legacy_probes and not (
+            pending_migration = None if behavior else direct_completion_review.state.get("pendingLegacyResolution")
+            if (not behavior and direct_completion_review.has_legacy_probes and not (
                     isinstance(pending_migration, dict)
                     and pending_migration.get("candidateDigest") == checks.get("patchDigest"))):
                 from minicode.completion_probe_migration import CompletionProbeMigration
@@ -3739,10 +3857,16 @@ def run_agent_turn(
                         "patchDigest": checks.get("patchDigest"), "canContinue": False,
                         "migrationEvidence": migration}
             if decision is None:
+                note = None
+                if behavior and getattr(direct_completion_review, "repair_rounds", 0):
+                    stripped = content.strip() if isinstance(content, str) else ""
+                    if (stripped and "\n" not in stripped and len(stripped) <= 240
+                            and stripped[-1] in ".!?"):
+                        note = stripped
                 decision = direct_completion_review.assess(model=model, tools=tools, context=context,
                     agent_budget=agent_budget, event_sink=event_sink,
                     cancellation_token=cancellation_token, deadline_monotonic=deadline_monotonic,
-                    checks_receipt=checks)
+                    checks_receipt=checks, **({"executor_note": note} if behavior else {}))
             raise_if_cancelled(cancellation_token)
             raise_if_deadline_exceeded()
             current_digest = implementation_candidate_digest(implementation_spec, context)
@@ -3750,6 +3874,16 @@ def run_agent_turn(
                     or checks.get("patchDigest") != current_digest):
                 decision = {"status": "inconclusive", "reason": "completion_candidate_changed",
                             "patchDigest": current_digest}
+        if behavior:
+            if decision.get("status") == "inconclusive":
+                # Reviewer transport and format failures stay on this checkpoint.
+                # They are not a task failure and they do not drop the failing tests.
+                decision = {**decision, "canContinue": True,
+                            "repairProbes": list(decision.get("repairProbes")
+                                                 or getattr(direct_completion_review, "repair_probes", [])
+                                                 or [])}
+            elif decision.get("status") == "needs_human":
+                decision = {**decision, "canContinue": False}
         unresolved_probe_failure = decision.get("reason") == "failure_adjudication_inconclusive"
         pending_coverage_audit = decision.get("reason") == "coverage_audit_interrupted"
         if unresolved_probe_failure:
@@ -3788,9 +3922,40 @@ def run_agent_turn(
                                      "_rejected_completion": True})
         else:
             supersede_completion_feedback()
+        if behavior:
+            gaps = "\n".join("- " + item for item in decision.get("findings") or [])
+            probes = "\n\n".join(probe.get("code", "") for probe in decision.get("repairProbes") or []
+                                 if isinstance(probe, dict))
+            files = ", ".join(decision.get("files") or [])
+            if decision.get("status") == "needs_human":
+                if decision.get("reason") == "review_call_budget":
+                    lead = ("The shared review call budget is exhausted. A human must continue "
+                            "this same implementation session. This is not a failed task verdict.")
+                else:
+                    lead = ("Repair cap reached (2 rounds). A human must continue this same "
+                            "implementation session. This is not a failed task verdict.")
+            elif decision.get("status") == "inconclusive":
+                lead = ("The review did not finish. Retry it from this checkpoint. "
+                        "Do not change the product because of this review failure.")
+            else:
+                lead = ("Delivery is not accepted. Continue in this same implementation session "
+                        "and repair only the gaps below.")
+            feedback_body = (lead + "\nGaps:\n" + (gaps or "- (none)")
+                             + "\nFiles: " + (files or "(none)")
+                             + "\nFailing tests:\n" + (probes or "(none)"))
+            evidence = {"status": decision.get("status"), "reason": decision.get("reason"),
+                        "findings": decision.get("findings"), "files": decision.get("files"),
+                        "repairProbes": decision.get("repairProbes"),
+                        "canContinue": decision.get("canContinue", True)}
+        else:
+            feedback_body = None
+            evidence = None
         implementation_completion_feedback = {
             "role": "user", "_implementation_completion_feedback": True,
-            "content": (("Host completion decision: the independent coverage audit is paused. "
+            "content": (feedback_body + "\nOriginal public request (unchanged):\n" + implementation_spec.objective
+                        + "\nCompletion evidence:\n" + json.dumps(evidence, ensure_ascii=False)
+                        if feedback_body is not None else
+                        ("Host completion decision: the independent coverage audit is paused. "
                 "Its original context, delivered evidence and unaccepted drafts are retained for the same owner. "
                 "Resume that audit before deciding completion; no product repair is inferred.\n" if pending_coverage_audit else
                 "Host completion decision: independent failure adjudication remains unresolved. "
@@ -3817,6 +3982,7 @@ def run_agent_turn(
 
     try:
         if (implementation_continuation is not None and direct_completion_review is not None
+                and not getattr(implementation_spec, "behavior_review", False)
                 and (implementation_continuation.requires_revalidation
                      or direct_completion_review.has_accepted_repair_decision(
                          implementation_continuation.document["candidateDigest"])
@@ -4361,9 +4527,11 @@ def run_agent_turn(
                 next_step = _model_next(
                     model,
                     request_messages,
-                    # An unadmitted implementation final must not reach the
-                    # UI through streaming before its completion gate runs.
-                    on_stream_chunk=(None if owned_implementation_feedback is not None
+                    # Stream the provider call so long codegen is not stuck
+                    # waiting for headers, but do not publish that text until
+                    # the completion gate admits the final.
+                    on_stream_chunk=(_discard_unadmitted_implementation_stream
+                                     if owned_implementation_feedback is not None
                                      else on_assistant_stream_chunk),
                     on_thinking_chunk=on_thinking_chunk,
                     store=store,
@@ -5257,6 +5425,7 @@ def run_agent_turn(
                     parent_handoff_preserve_tokens=parent_handoff_preserve_tokens,
                     workflow_delivery=workflow_delivery,
                     workflow_user_request=(current_user_message if agent_depth == 0 else None),
+                    delegation_coach=delegation_coach,
                 )
                 _results.append((call, result))
                 observe_implementation_tool_result(call, result)
@@ -5446,6 +5615,40 @@ def run_agent_turn(
                             ):
                                 break
                         if (
+                            batch_fatal is not None
+                            and batch_cancellation is None
+                            and pending_futures
+                        ):
+                            # A sibling can publish a must-deliver result in the
+                            # gap after another tool raises SystemExit. Only a
+                            # future that is already finished is harvested; a
+                            # still-running tool stays detached.
+                            deadline = time.monotonic() + 0.05
+                            extra_done: set[concurrent.futures.Future] = set()
+                            while time.monotonic() < deadline:
+                                ready = {
+                                    future
+                                    for future in pending_futures
+                                    if future.done()
+                                }
+                                if ready:
+                                    extra_done = ready
+                                    break
+                                time.sleep(0.001)
+                            pending_futures = pending_futures - extra_done
+                            for future in extra_done:
+                                try:
+                                    result = future.result()
+                                except TurnCancellationRequested as exc:
+                                    observed_errors[future] = exc
+                                    continue
+                                except Exception as exc:
+                                    result = _concurrent_exception_result(exc)
+                                except BaseException as exc:  # noqa: BLE001
+                                    observed_errors[future] = exc
+                                    continue
+                                observed_results[future] = result
+                        if (
                             batch_cancellation is not None
                             or batch_fatal is not None
                         ):
@@ -5628,6 +5831,7 @@ def run_agent_turn(
                                 ),
                                 workflow_delivery=workflow_delivery,
                                 workflow_user_request=(current_user_message if agent_depth == 0 else None),
+                                delegation_coach=delegation_coach,
                             )
                         finally:
                             if (write_feedback_batch is not None and
@@ -5782,7 +5986,9 @@ def run_agent_turn(
                             "role": "tool_result",
                             "toolUseId": call["id"],
                             "toolName": call["toolName"],
-                            "content": result.output,
+                            "content": _parent_visible_tool_output(
+                                call, result, result.output,
+                            ),
                             "isError": not result.ok,
                         }
                     )
@@ -5892,19 +6098,27 @@ def run_agent_turn(
                     recovery_note = None
                 elif not result.ok:
                     tool_error_count += 1
-                    # Use ErrorClassifier for intelligent error handling
-                    classified = ErrorClassifier.classify(result.output, tool_name=call["toolName"])
-                    prior_retries = max(
-                        0,
-                        recovery_guard.denial_count(call) - 1,
-                    )
-                    nudge = NudgeGenerator.generate(
-                        classified,
-                        retry_count=prior_retries,
-                    )
-                    # Append nudge to tool result content for model context
-                    result_output = result.output + "\n\n[System note: " + nudge + "]"
-                    recovery_note = nudge
+                    from minicode.scheduler_trace import output_has_solo_fallback
+
+                    if output_has_solo_fallback(result.output):
+                        # The solo handoff already tells the parent to finish
+                        # the edit. A generic retry note contradicts it.
+                        result_output = result.output
+                        recovery_note = None
+                    else:
+                        # Use ErrorClassifier for intelligent error handling
+                        classified = ErrorClassifier.classify(result.output, tool_name=call["toolName"])
+                        prior_retries = max(
+                            0,
+                            recovery_guard.denial_count(call) - 1,
+                        )
+                        nudge = NudgeGenerator.generate(
+                            classified,
+                            retry_count=prior_retries,
+                        )
+                        # Append nudge to tool result content for model context
+                        result_output = result.output + "\n\n[System note: " + nudge + "]"
+                        recovery_note = nudge
                 else:
                     result_output = result.output
                     recovery_note = None
@@ -6015,7 +6229,9 @@ def run_agent_turn(
                         "role": "tool_result",
                         "toolUseId": call["id"],
                         "toolName": call["toolName"],
-                        "content": result_output,
+                        "content": _parent_visible_tool_output(
+                            call, result, result_output,
+                        ),
                         "isError": not result.ok,
                         **({"_implementation_checks_failed": result._implementation_checks_failed}
                            if not suppressed and type(result._implementation_checks_failed) is bool else {}),
@@ -6604,11 +6820,13 @@ def run_agent_turn(
                 verification_passed_count, verification_failed_count = (
                     verification_tracker.snapshot()
                 )
+                verification_latest = verification_tracker.latest()
                 canonical_outcome = canonicalize_task_outcome(
                     turn_outcome,
                     tool_error_count,
                     verification_passed=verification_passed_count,
                     verification_failed=verification_failed_count,
+                    verification_latest=verification_latest,
                 )
             except BaseException:  # finalized authority wins
                 logger.warning(
@@ -6718,11 +6936,13 @@ def run_agent_turn(
         verification_passed_count, verification_failed_count = (
             verification_tracker.snapshot()
         )
+        verification_latest = verification_tracker.latest()
         canonical_outcome = canonicalize_task_outcome(
             turn_outcome,
             tool_error_count,
             verification_passed=verification_passed_count,
             verification_failed=verification_failed_count,
+            verification_latest=verification_latest,
         )
         if outcome_capture is not None:
             outcome_capture.record(canonical_outcome)

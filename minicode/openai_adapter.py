@@ -24,9 +24,11 @@ from typing import Any
 from minicode.api_retry import RETRYABLE_STATUS, calculate_backoff
 from minicode.cost_tracker import calculate_cost
 from minicode.model_call_control import (
+    ModelCallDeadlineExceeded,
     bounded_request_timeout,
     checkpoint_model_call,
     controlled_retry_sleep,
+    timeout_reaches_deadline,
 )
 from minicode.model_registry import _is_official_glm53_flash_route
 from minicode.state import (
@@ -41,6 +43,10 @@ from minicode.types import AgentStep, ModelUsage, StepDiagnostics
 
 DEFAULT_MAX_RETRIES = 4
 DEFAULT_MAX_RESPONSE_BYTES = 16 * 1024 * 1024
+# Time-to-headers for every OpenAI-compatible call, and the idle gap between
+# streamed chunks. Non-streaming reads use the same number as a cumulative
+# body deadline because those responses withhold headers until the body ends.
+DEFAULT_MODEL_TRANSPORT_TIMEOUT_SECONDS = 120.0
 _RESPONSE_READ_CHUNK_BYTES = 64 * 1024
 _RESPONSE_CONTROL_POLL_SECONDS = 0.01
 _MAX_BACKGROUND_IO_WORKERS = 4
@@ -349,6 +355,7 @@ def _read_response_bytes(
     deadline_monotonic: float | None = None,
     chunk_consumer: Callable[[bytes], bool | None] | None = None,
     retain_body: bool = True,
+    refresh_idle_timeout: bool = False,
 ) -> bytes:
     """Read a bounded body while keeping cancellation/deadlines interruptible."""
 
@@ -364,12 +371,13 @@ def _read_response_bytes(
             cancellation_token=cancellation_token,
             deadline_monotonic=deadline_monotonic,
         )
-        read_deadline = time.monotonic() + read_timeout_seconds
+        # A list so the reader thread observes idle refreshes from the owner.
+        read_deadline = [time.monotonic() + read_timeout_seconds]
         reader, accepts_amount = _response_reader(response)
         _acquire_io_worker_slot(
             cancellation_token=cancellation_token,
             deadline_monotonic=deadline_monotonic,
-            local_deadline_monotonic=read_deadline,
+            local_deadline_monotonic=read_deadline[0],
             timeout_message="model response read timed out",
         )
 
@@ -379,7 +387,7 @@ def _read_response_bytes(
                     requested = read_requests.get()
                     if requested is None or stop_reader.is_set():
                         return
-                    remaining = read_deadline - time.monotonic()
+                    remaining = read_deadline[0] - time.monotonic()
                     if remaining <= 0:
                         read_results.put((False, TimeoutError("response read timeout")))
                         return
@@ -418,7 +426,7 @@ def _read_response_bytes(
             _check_io_controls(
                 cancellation_token=cancellation_token,
                 deadline_monotonic=deadline_monotonic,
-                local_deadline_monotonic=read_deadline,
+                local_deadline_monotonic=read_deadline[0],
                 timeout_message="model response read timed out",
             )
             requested = min(_RESPONSE_READ_CHUNK_BYTES, maximum_bytes - total + 1)
@@ -427,10 +435,10 @@ def _read_response_bytes(
                 _check_io_controls(
                     cancellation_token=cancellation_token,
                     deadline_monotonic=deadline_monotonic,
-                    local_deadline_monotonic=read_deadline,
+                    local_deadline_monotonic=read_deadline[0],
                     timeout_message="model response read timed out",
                 )
-                remaining = max(0.0, read_deadline - time.monotonic())
+                remaining = max(0.0, read_deadline[0] - time.monotonic())
                 try:
                     succeeded, outcome = read_results.get(
                         timeout=min(_RESPONSE_CONTROL_POLL_SECONDS, remaining)
@@ -441,23 +449,30 @@ def _read_response_bytes(
             _check_io_controls(
                 cancellation_token=cancellation_token,
                 deadline_monotonic=deadline_monotonic,
-                local_deadline_monotonic=read_deadline,
+                local_deadline_monotonic=read_deadline[0],
                 timeout_message="model response read timed out",
             )
             if not succeeded:
                 if isinstance(outcome, BaseException):
+                    if (
+                        isinstance(outcome, TimeoutError)
+                        and timeout_reaches_deadline(deadline_monotonic)
+                    ):
+                        raise ModelCallDeadlineExceeded("model call deadline exceeded")
                     raise outcome.with_traceback(None)
                 raise RuntimeError("model response read failed")
             chunk = outcome
             if not isinstance(chunk, bytes):
                 raise TypeError("model response body must be bytes")
+            if refresh_idle_timeout:
+                read_deadline[0] = time.monotonic() + read_timeout_seconds
             if not chunk:
                 stop_reader.set()
                 _join_io_worker_controlled(
                     worker,
                     cancellation_token=cancellation_token,
                     deadline_monotonic=deadline_monotonic,
-                    local_deadline_monotonic=read_deadline,
+                    local_deadline_monotonic=read_deadline[0],
                 )
                 return b"".join(chunks)
             total += len(chunk)
@@ -478,7 +493,7 @@ def _read_response_bytes(
                     worker,
                     cancellation_token=cancellation_token,
                     deadline_monotonic=deadline_monotonic,
-                    local_deadline_monotonic=read_deadline,
+                    local_deadline_monotonic=read_deadline[0],
                 )
                 return b"".join(chunks)
             if not accepts_amount:
@@ -487,7 +502,7 @@ def _read_response_bytes(
                     worker,
                     cancellation_token=cancellation_token,
                     deadline_monotonic=deadline_monotonic,
-                    local_deadline_monotonic=read_deadline,
+                    local_deadline_monotonic=read_deadline[0],
                 )
                 return b"".join(chunks)
     except BaseException:
@@ -539,6 +554,7 @@ def _consume_response_lines(
         deadline_monotonic=deadline_monotonic,
         chunk_consumer=consume_chunk,
         retain_body=False,
+        refresh_idle_timeout=True,
     )
     if pending and not stopped:
         line_consumer(bytes(pending).rstrip(b"\r"))
@@ -552,6 +568,25 @@ def _get_openai_base_url(runtime: dict) -> str:
 def _get_openai_api_key(runtime: dict) -> str:
     """Get the credential from the frozen provider runtime."""
     return str(runtime.get("openaiApiKey") or "")
+
+
+def model_transport_timeout_seconds(runtime: dict | None) -> float:
+    """Resolve the OpenAI-compatible transport timeout.
+
+    Precedence is ``runtime["modelTimeoutSeconds"]``, then
+    ``MINICODE_MODEL_TIMEOUT``, then ``DEFAULT_MODEL_TRANSPORT_TIMEOUT_SECONDS``.
+    Streaming reads treat the result as the idle gap between chunks so a live
+    codegen stream is not cut off by its total duration. Non-streaming reads
+    treat it as the cumulative body deadline.
+    """
+    configured = None
+    if isinstance(runtime, dict):
+        configured = runtime.get("modelTimeoutSeconds")
+    if not configured:
+        configured = os.environ.get("MINICODE_MODEL_TIMEOUT")
+    if not configured:
+        configured = DEFAULT_MODEL_TRANSPORT_TIMEOUT_SECONDS
+    return float(configured)
 
 
 def _chat_completions_url(base_url: str) -> str:
@@ -985,10 +1020,7 @@ class OpenAIModelAdapter:
         for attempt in range(max_retries + 1):
             try:
                 timeout = bounded_request_timeout(
-                    float(
-                        self.runtime.get("modelTimeoutSeconds")
-                        or os.environ.get("MINICODE_MODEL_TIMEOUT", "120")
-                    ),
+                    model_transport_timeout_seconds(self.runtime),
                     cancellation_token=cancellation_token,
                     deadline_monotonic=deadline_monotonic,
                 )
