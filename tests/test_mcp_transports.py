@@ -183,6 +183,18 @@ def test_http_transport_discovers_and_calls_tools(http_server) -> None:
         bundle["dispose"]()
 
 
+def test_sse_stream_without_a_matching_response_names_the_server() -> None:
+    client = HttpMcpClient("sse-remote", _http_config("http://127.0.0.1:9/mcp"), ".")
+    try:
+        with pytest.raises(RuntimeError, match=r"MCP sse-remote: SSE stream ended"):
+            client._response_from_sse(
+                'data: {"jsonrpc":"2.0","id":1,"result":{}}\n\n',
+                99,
+            )
+    finally:
+        client.close()
+
+
 def test_http_transport_handles_sse_response_mode() -> None:
     server = _FakeHttpServer(respond_sse=True)
     try:

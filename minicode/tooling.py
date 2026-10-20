@@ -375,7 +375,8 @@ def skill_load_binding_from_value(value: object) -> SkillLoadBinding | None:
     if isinstance(value, Mapping):
         getter = value.get
     else:
-        getter = lambda name, default=None: getattr(value, name, default)
+        def getter(name, default=None):
+            return getattr(value, name, default)
     try:
         qualified_name = getter("qualified_name")
         if not qualified_name:
