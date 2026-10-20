@@ -1,6 +1,7 @@
 """The continuation printed by read_file must be a directly executable call."""
 
 import json
+import sys
 
 import pytest
 
@@ -22,6 +23,10 @@ def execute(registry, context, arguments):
     return result.output, result.output.split("\n", header_lines)[-1]
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Windows file names cannot contain a double quote, which this continuation fixture uses",
+)
 @pytest.mark.parametrize("newline", ["\n", "\r\n"])
 def test_follow_line_boundary_hints_reconstructs_only_requested_range(tmp_path, newline):
     path = 'quoted "源😀.py'

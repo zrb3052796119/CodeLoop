@@ -762,13 +762,27 @@ def test_provider_exception_does_not_mask_concurrent_cancellation(
 )
 def test_provider_exception_does_not_mask_elapsed_parent_deadline(
     provider_error: Exception,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    # The parent deadline is still in the future when the call starts, then
+    # elapses inside the provider before its exception is classified. A wall
+    # clock of a few milliseconds races setup on a slow host.
+    now = {"t": 1_000.0}
+
+    def clock() -> float:
+        return now["t"]
+
+    monkeypatch.setattr("minicode.model_call_control.time.monotonic", clock)
+    monkeypatch.setattr("minicode.intent_semantic_classifier.time.monotonic", clock)
     sink = _Sink()
     budget = AgentTurnBudget(max_model_calls=3, max_total_tokens=10_000)
-    model = _ControlRaceModel(
-        provider_error,
-        delay_seconds=0.02,
-    )
+    model = _ControlRaceModel(provider_error)
+
+    def expire_during_provider(messages, **kwargs):
+        now["t"] = 1_010.0
+        return _ControlRaceModel.next(model, messages, **kwargs)
+
+    monkeypatch.setattr(model, "next", expire_during_provider)
 
     with pytest.raises(ModelCallDeadlineExceeded):
         parse_intent(
@@ -777,7 +791,7 @@ def test_provider_exception_does_not_mask_elapsed_parent_deadline(
             call_context=_controls(
                 budget=budget,
                 sink=sink,
-                deadline_monotonic=time.monotonic() + 0.005,
+                deadline_monotonic=1_005.0,
             ),
         )
 

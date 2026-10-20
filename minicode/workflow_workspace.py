@@ -37,6 +37,32 @@ class WorkflowIsolationError(RuntimeError):
     """The workflow snapshot could not be created or committed safely."""
 
 
+def _host_is_windows() -> bool:
+    return os.name == "nt"
+
+
+def _delete_workspace_entry(path: Path, *, directory: bool = False) -> None:
+    """Remove one file or empty directory from an isolated workspace.
+
+    Git writes object files read-only. Windows refuses ``unlink`` until that
+    bit is cleared; other hosts already remove them.
+    """
+
+    def remove() -> None:
+        if directory:
+            path.rmdir()
+        else:
+            path.unlink()
+
+    try:
+        remove()
+    except PermissionError:
+        if not _host_is_windows():
+            raise
+        os.chmod(path, stat.S_IWRITE)
+        remove()
+
+
 def trusted_git_search_directories(
     *,
     source_root: Path | None = None,
@@ -1173,7 +1199,7 @@ class WorkflowWorkspaceTransaction:
                     continue
                 dirnames.remove(name)
                 if candidate.is_symlink():
-                    candidate.unlink()
+                    _delete_workspace_entry(candidate)
                 else:
                     self._remove_tree_with_checkpoints(candidate)
             for name in filenames:
@@ -1184,11 +1210,11 @@ class WorkflowWorkspaceTransaction:
                     relative,
                     directory=False,
                 ):
-                    candidate.unlink()
+                    _delete_workspace_entry(candidate)
 
     def _remove_tree_with_checkpoints(self, root: Path) -> None:
         if root.is_symlink():
-            root.unlink()
+            _delete_workspace_entry(root)
             return
         for directory, dirnames, filenames in os.walk(
             root,
@@ -1199,15 +1225,15 @@ class WorkflowWorkspaceTransaction:
             base = Path(directory)
             for name in filenames:
                 self._commit_checkpoint()
-                (base / name).unlink()
+                _delete_workspace_entry(base / name)
             for name in dirnames:
                 self._commit_checkpoint()
                 child = base / name
                 if child.is_symlink():
-                    child.unlink()
+                    _delete_workspace_entry(child)
                 else:
-                    child.rmdir()
-        root.rmdir()
+                    _delete_workspace_entry(child, directory=True)
+        _delete_workspace_entry(root, directory=True)
         self._commit_checkpoint()
 
     @staticmethod
