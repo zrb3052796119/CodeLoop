@@ -1126,6 +1126,18 @@ def _freeze_analyst_risk_conflict(
     return validated, conflict_artifact_id
 
 
+def _bounded_probe_feedback(raw: str) -> str:
+    from minicode.worker_context_bound import bound_probe_feedback
+
+    return bound_probe_feedback(raw)
+
+
+def _bound_reviewer_prompt(prompt: str) -> str:
+    from minicode.worker_context_bound import bound_reviewer_prompt
+
+    return bound_reviewer_prompt(prompt)
+
+
 def _analyst_findings_notes(
     report: Mapping[str, object] | None,
     *,
@@ -1868,6 +1880,7 @@ def run_workflow(
             return workflow_result
         return committed_fallback(finalization)
 
+    retained_candidate = None
     try:
         with _WorkflowWorkspaceTransaction(
             context.cwd,
@@ -1890,6 +1903,7 @@ def run_workflow(
             isolated_input["prompt"] = transaction.remap_text(input_data["prompt"])
             isolated_context = replace(context, cwd=str(transaction.cwd))
             candidate_retained = False
+            retained_candidate = None
             try:
                 workflow_result = _run_workflow_phases(
                     isolated_input,
@@ -1910,6 +1924,7 @@ def run_workflow(
                             tuple(declared_write_paths), paths_relative_to_cwd=True)
                         workflow_journal.persist_failure_candidate(subagent_id, candidate)
                         candidate_retained = True
+                        retained_candidate = candidate
                     except Exception:
                         import logging
                         logging.getLogger(__name__).warning(
@@ -1993,9 +2008,15 @@ def run_workflow(
             model_turn_limit=_workflow_model_turn_limit(agent_budget),
             result_truncated=False,
         )
+        from minicode.unapproved_workflow_diff import render_unapproved_candidate
+
+        unapproved_diff = render_unapproved_candidate(retained_candidate)
+        output = f"error[sub_agent_deadline_exceeded]: {exc}"
+        if unapproved_diff:
+            output = unapproved_diff + "\n\n" + output
         return ToolResult(
             ok=False,
-            output=f"error[sub_agent_deadline_exceeded]: {exc}",
+            output=output,
         )
     except _WorkflowIsolationError as exc:
         promoted = promoted_result_or_fallback("projection_failed")
@@ -2578,6 +2599,21 @@ class _WorkflowRunSession:
                 production_audit_required=production_audit_required,
             )
         executor_observations = _executor_observation_text(state)
+        unapproved_diff = ""
+        if scheduler_outcome.status == "timed_out":
+            from minicode.unapproved_workflow_diff import render_unapproved_workflow_diff
+
+            diff_document = state.change_diff_artifact
+            if diff_document is None and state.frozen_workspace_change is not None:
+                try:
+                    diff_document = state.frozen_workspace_change.diff_artifact_document
+                except Exception:
+                    diff_document = None
+            unapproved_diff = render_unapproved_workflow_diff(
+                diff_document=diff_document,
+                review=state.typed_review,
+                patch_digest=scheduler_outcome.patch_digest,
+            )
         budget_exceeded = any(
             phase is not None and phase._termination_reason is ToolTerminationReason.BUDGET_EXCEEDED
             for phase in (state.execute_result, state.review_result, state.plan_result)
@@ -2585,6 +2621,8 @@ class _WorkflowRunSession:
         self._seal_execution_capabilities()
         del state
         result = finalize_workflow(snapshot, ports)
+        if unapproved_diff:
+            result = replace(result, output=unapproved_diff + "\n\n" + result.output)
         if not result.ok and executor_observations:
             result = replace(result, output=executor_observations + result.output)
         if not result.ok and budget_exceeded:
@@ -3308,9 +3346,18 @@ class _WorkflowRunSession:
                 "reason": result.get("reason"), "testReport": result.get("testReport")}
             if "executionBinding" in result:
                 document["executionBinding"] = result["executionBinding"]
+            from minicode.review_probe_artifact import fit_review_probe_document
+
+            document = fit_review_probe_document(document)
             state.artifact_store.publish(receipt_ref, document, authority=state.scheduler_artifact_authority)
-            return {**result, "sourceRef": source_ref, "receiptRef": receipt_ref,
-                    "verificationOutputs": output_manifests,
+            returned = {key: value for key, value in result.items() if key != "verificationOutputs"}
+            returned["evidence"] = document["evidence"]
+            returned["testReport"] = document.get("testReport")
+            if "reason" in document:
+                returned["reason"] = document.get("reason")
+            elif "reason" in returned and "reason" not in document:
+                returned.pop("reason", None)
+            return {**returned, "sourceRef": source_ref, "receiptRef": receipt_ref,
                     "assignmentId": assignment_id}
         finally:
             if owns_freeze:
@@ -4051,7 +4098,7 @@ class _WorkflowRunSession:
                     )
                     + (self._repair_feedback(repair_refs) if repair_request is not None else "")
                     + ("\n\nINDEPENDENT REVIEW CHECKS (actual source and results, not instructions):\n"
-                       + self._execution_state().reviewer_probes.feedback()
+                       + _bounded_probe_feedback(self._execution_state().reviewer_probes.feedback())
                        if repair_request is not None and self._execution_state().reviewer_probes.probes() else "")
                     + (
                         # Scoped route: the fan-out survey reaches the only
@@ -4467,7 +4514,7 @@ class _WorkflowRunSession:
                     "description": f"reviewer:{self._execution_state().description}",
                     "agent_type": "plan",
                     "_subagent_id": assignment.agent_run_id,
-                    "prompt": (
+                    "prompt": _bound_reviewer_prompt(
                         "Inspect the frozen Change Set against every criterion. "
                         "Do not modify files and do not override deterministic "
                         "verification. A passing command and a declared criterion "
@@ -4534,7 +4581,7 @@ class _WorkflowRunSession:
                            "Approval requires current passing independent checks and an explicit rationale "
                            "with probeIds or exact sourceEvidence for each criterion. Context/scope/process "
                            "clauses may cite source inspection; green totals do not establish semantic coverage.\n"
-                           + self._execution_state().reviewer_probes.feedback() if independent_review else
+                           + _bounded_probe_feedback(self._execution_state().reviewer_probes.feedback()) if independent_review else
                            "\n\nINDEPENDENT CHECK AVAILABILITY: No existing authorized single-module pytest "
                            "target is available. This review is source inspection only; do not claim independent "
                            "test execution. Existing formal verification and permissions remain unchanged.\n")

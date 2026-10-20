@@ -2687,6 +2687,10 @@ def _run(input_data: dict, context) -> ToolResult:
             prior_body = prior_messages
             if prior_body and prior_body[0].get("role") == "system":
                 prior_body = prior_body[1:]
+            if executor_session is not None:
+                from minicode.worker_context_bound import bound_executor_transcript
+
+                prior_body = bound_executor_transcript(prior_body)
             for msg in prior_body:
                 sub_messages.append(dict(msg))
         sub_messages.append({"role": "user", "content": fresh_user_prompt})
