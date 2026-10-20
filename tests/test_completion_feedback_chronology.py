@@ -51,8 +51,8 @@ def _goal(messages):
 def inventory(tmp_path, monkeypatch):
     import minicode.workflow_runner as runner
 
-    (tmp_path / "stock.py").write_text(PARTIAL)
-    (tmp_path / "test_public.py").write_text(PUBLIC)
+    (tmp_path / "stock.py").write_text(PARTIAL, newline="\n")
+    (tmp_path / "test_public.py").write_text(PUBLIC, newline="\n")
     commands, checkpoints, events, violations = [], [], [], []
 
     class Sandbox:

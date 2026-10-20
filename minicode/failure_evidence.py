@@ -198,12 +198,12 @@ def _capture_scoped_files_by_path(root: Path, scopes: tuple[str, ...]) -> dict[s
             incomplete = True
             return
         try:
-            if not contained(path):
-                raise OSError("candidate escaped the workspace")
             metadata = path.lstat()
             if stat.S_ISLNK(metadata.st_mode):
                 files[relative] = {"path": relative, "omitted": "symlink"}
                 return
+            if not contained(path):
+                raise OSError("candidate escaped the workspace")
             if not (stat.S_ISREG(metadata.st_mode) or stat.S_ISDIR(metadata.st_mode)):
                 files[relative] = {"path": relative, "omitted": "non_regular"}
                 return

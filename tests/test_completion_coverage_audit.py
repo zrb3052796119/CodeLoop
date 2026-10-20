@@ -34,8 +34,8 @@ def _case(tmp_path, monkeypatch, *, code=PROBE, product=PRODUCT):
 
     root = tmp_path / "candidate"
     root.mkdir()
-    (root / "stock.py").write_text(product)
-    (root / "test_public.py").write_text("def test_public():\n    assert True\n")
+    (root / "stock.py").write_text(product, newline="\n")
+    (root / "test_public.py").write_text("def test_public():\n    assert True\n", newline="\n")
     check = VerificationCheck("public", "tests", ("python3", "-m", "pytest", "-q", "test_public.py"), 20)
     spec = ImplementationSpec(("stock.py", "test_public.py"), (check,), OBJECTIVE)
     units = list(requirement_units(OBJECTIVE))

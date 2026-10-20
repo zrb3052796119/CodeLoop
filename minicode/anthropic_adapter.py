@@ -23,6 +23,7 @@ from minicode.model_call_control import (
     bounded_request_timeout,
     checkpoint_model_call,
     controlled_retry_sleep,
+    timeout_reaches_deadline,
 )
 from minicode.state import (
     AppState,
@@ -469,8 +470,7 @@ def _read_response_bytes(
                 if isinstance(outcome, BaseException):
                     if (
                         isinstance(outcome, TimeoutError)
-                        and deadline_monotonic is not None
-                        and time.monotonic() >= float(deadline_monotonic)
+                        and timeout_reaches_deadline(deadline_monotonic)
                     ):
                         raise ModelCallDeadlineExceeded("model call deadline exceeded")
                     raise outcome.with_traceback(None)

@@ -13,6 +13,25 @@ class ModelCallDeadlineExceeded(TimeoutError):
     """The absolute Agent deadline elapsed before a provider call completed."""
 
 
+_DEADLINE_TIMEOUT_MARGIN_SECONDS = 0.05
+
+
+def timeout_reaches_deadline(deadline_monotonic: float | None) -> bool:
+    """True when a socket timeout landed on the caller deadline.
+
+    A read timeout clamped to the remaining deadline can fire a few
+    milliseconds early. That is still the caller deadline, not a separate
+    transport failure.
+    """
+    if not isinstance(deadline_monotonic, (int, float)) or not math.isfinite(
+        float(deadline_monotonic)
+    ):
+        return False
+    return time.monotonic() + _DEADLINE_TIMEOUT_MARGIN_SECONDS >= float(
+        deadline_monotonic
+    )
+
+
 def checkpoint_model_call(
     *,
     cancellation_token: Any = None,

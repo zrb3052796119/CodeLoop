@@ -41,6 +41,27 @@ def _host_is_windows() -> bool:
     return os.name == "nt"
 
 
+def _dangling_relative_link_stays_inside(candidate: Path, canonical_root: Path) -> bool:
+    """True when a link that cannot be resolved still names this snapshot.
+
+    Windows ``Path.resolve`` raises for a dangling symlink. A relative target
+    with no parent escape stays inside the snapshot; an absolute target does not.
+    """
+    try:
+        raw = os.readlink(candidate)
+    except OSError:
+        return False
+    link = Path(raw)
+    if link.is_absolute():
+        return False
+    lexical = Path(os.path.normpath(candidate.parent / link))
+    try:
+        lexical.relative_to(canonical_root)
+    except ValueError:
+        return False
+    return True
+
+
 def _delete_workspace_entry(path: Path, *, directory: bool = False) -> None:
     """Remove one file or empty directory from an isolated workspace.
 
@@ -968,7 +989,9 @@ class WorkflowWorkspaceTransaction:
                     resolved = candidate.resolve(strict=False)
                     contained = resolved.is_relative_to(canonical_root)
                 except (OSError, RuntimeError, ValueError):
-                    contained = False
+                    contained = _dangling_relative_link_stays_inside(
+                        candidate, canonical_root
+                    )
                 if not contained:
                     raise WorkflowIsolationError(
                         f"snapshot contains an escaping symlink: "
@@ -1803,12 +1826,16 @@ class FrozenWorkflowChange:
                 _WORKFLOW_PARENT_COMMIT_LOCK.release()
             return
         apply_args = owner._git_args(
+            "-c",
+            "core.symlinks=true",
             "apply",
             "--binary",
             "--whitespace=nowarn",
             "-",
         )
         apply_check_args = owner._git_args(
+            "-c",
+            "core.symlinks=true",
             "apply",
             "--check",
             "--binary",
