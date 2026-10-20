@@ -70,6 +70,7 @@ class ExecutionCollector:
     def __init__(self, root, test_paths):
         self.root = Path(root).resolve()
         self.test_paths = {str(Path(p.split('::')[0]).resolve()) for p in test_paths}
+        self._test_keys = {os.path.normcase(path) for path in self.test_paths}
         self.cases = []
         self.current = None
         self.files, self.codes, self.opcodes = {}, {}, {}
@@ -78,20 +79,52 @@ class ExecutionCollector:
         self._monitor = None
         self._monitored_codes = {}
 
+    def _covers(self, filename):
+        if filename in self.test_paths:
+            return True
+        if os.name != "nt":
+            return False
+        try:
+            key = os.path.normcase(str(Path(filename).resolve()))
+        except OSError:
+            return False
+        return key in self._test_keys
+
+    def _inside_root(self, path):
+        """Candidate source must stay inside the frozen root.
+
+        POSIX keeps the exact resolved string. Windows ``co_filename`` uses
+        backslashes, so a slash prefix never matches.
+        """
+        if os.name != "nt":
+            return (path.is_absolute() and str(path).startswith(str(self.root) + "/")
+                    and path.suffix == ".py" and not path.is_symlink()
+                    and path.resolve() == path)
+        if (not path.is_absolute() or path.suffix != ".py" or path.is_symlink()
+                or ".." in path.parts):
+            return False
+        try:
+            path.resolve().relative_to(self.root)
+        except (OSError, ValueError):
+            return False
+        return True
+
     def _file(self, filename):
         if filename in self.files:
             return self.files[filename]
         result = None
         path = Path(filename)
-        if (path.is_absolute() and str(path).startswith(str(self.root) + '/')
-                and path.suffix == '.py' and not path.is_symlink()
-                and path.resolve() == path):
-            relative = path.relative_to(self.root)
-            if not set(relative.parts) & {'.git', '.venv', 'venv', 'site-packages', '__pycache__'}:
+        if self._inside_root(path):
+            located = path.resolve() if os.name == "nt" else path
+            try:
+                relative = located.relative_to(self.root)
+            except ValueError:
+                relative = None
+            if relative is not None and not set(relative.parts) & {'.git', '.venv', 'venv', 'site-packages', '__pycache__'}:
                 try:
-                    raw = path.read_bytes()
+                    raw = located.read_bytes()
                     source = raw.decode('utf-8')
-                    tree = compile(source, str(path), 'exec', dont_inherit=True)
+                    tree = compile(source, str(located), 'exec', dont_inherit=True)
                     digests = set()
                     def walk(code):
                         digests.add(code_digest(code))
@@ -99,16 +132,16 @@ class ExecutionCollector:
                             if isinstance(item, types.CodeType):
                                 walk(item)
                     walk(tree)
-                    if str(path) in self.test_paths:
+                    if self._covers(str(located)):
                         # Pytest rewrites assertion code before executing it.
                         # Authenticate that transformation, not arbitrary code
                         # compiled with a spoofed filename/line number.
                         from _pytest.assertion.rewrite import rewrite_asserts
-                        rewritten = ast.parse(source, filename=str(path))
-                        rewrite_asserts(rewritten, raw, str(path))
-                        walk(compile(rewritten, str(path), 'exec', dont_inherit=True))
+                        rewritten = ast.parse(source, filename=str(located))
+                        rewrite_asserts(rewritten, raw, str(located))
+                        walk(compile(rewritten, str(located), 'exec', dont_inherit=True))
                     result = (relative.as_posix(), _digest(raw), digests,
-                        assertion_index(source, relative.as_posix()) if str(path) in self.test_paths else [])
+                        assertion_index(source, relative.as_posix()) if self._covers(str(located)) else [])
                 except (OSError, UnicodeError, SyntaxError, ValueError):
                     self._limitation('source_identity_unavailable')
         self.files[filename] = result
@@ -157,7 +190,7 @@ class ExecutionCollector:
             identity = self._identity(frame.f_code)
             if identity is None:
                 return
-            if (self._monitor is not None and frame.f_code.co_filename in self.test_paths
+            if (self._monitor is not None and self._covers(frame.f_code.co_filename)
                     and id(frame.f_code) not in self._monitored_codes):
                 sys.monitoring.set_local_events(self._monitor, frame.f_code, sys.monitoring.events.INSTRUCTION)
                 self._monitored_codes[id(frame.f_code)] = frame.f_code
@@ -210,7 +243,7 @@ class ExecutionCollector:
     def _trace(self, frame, event, arg):
         if self.current is None:
             return None
-        if frame.f_code.co_filename not in self.test_paths:
+        if not self._covers(frame.f_code.co_filename):
             return None
         if event == 'call':
             frame.f_trace_opcodes = True
@@ -220,7 +253,7 @@ class ExecutionCollector:
         return self._trace
 
     def _observe(self, code, offset, raised=False):
-        if self.current is None or code.co_filename not in self.test_paths:
+        if self.current is None or not self._covers(code.co_filename):
             return
         identity = self._identity(code)
         if identity is None or not identity['identityVerified']:

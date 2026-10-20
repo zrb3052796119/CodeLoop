@@ -206,6 +206,7 @@ def test_spawned_same_pending_decision_has_one_accepted_commit(
                 ready,
                 release,
                 result,
+                20.0,
             ),
         )
         for ready in (ready_a, ready_b)
@@ -220,7 +221,8 @@ def test_spawned_same_pending_decision_has_one_accepted_commit(
         assert process.exitcode == 0
     outcomes = [result.get(timeout=2), result.get(timeout=2)]
 
-    assert sorted(outcome[1] for outcome in outcomes) == [False, True]
+    accepted = [outcome[1] for outcome in outcomes]
+    assert accepted.count(True) == 1 and accepted.count(False) == 1, outcomes
     assert {outcome[0] for outcome in outcomes} == {"approved"}
     assert all(outcome[2] is None for outcome in outcomes)
 

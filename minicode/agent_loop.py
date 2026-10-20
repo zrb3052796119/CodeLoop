@@ -5620,13 +5620,22 @@ def run_agent_turn(
                             and pending_futures
                         ):
                             # A sibling can publish a must-deliver result in the
-                            # gap after another tool raises SystemExit. Harvest
-                            # that result before the fatal signal wins.
-                            extra_done, pending_futures = concurrent.futures.wait(
-                                pending_futures,
-                                timeout=1.0,
-                                return_when=concurrent.futures.ALL_COMPLETED,
-                            )
+                            # gap after another tool raises SystemExit. Only a
+                            # future that is already finished is harvested; a
+                            # still-running tool stays detached.
+                            deadline = time.monotonic() + 0.05
+                            extra_done: set[concurrent.futures.Future] = set()
+                            while time.monotonic() < deadline:
+                                ready = {
+                                    future
+                                    for future in pending_futures
+                                    if future.done()
+                                }
+                                if ready:
+                                    extra_done = ready
+                                    break
+                                time.sleep(0.001)
+                            pending_futures = pending_futures - extra_done
                             for future in extra_done:
                                 try:
                                     result = future.result()

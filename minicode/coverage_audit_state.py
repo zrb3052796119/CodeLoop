@@ -8,7 +8,8 @@ from __future__ import annotations
 from copy import deepcopy
 import hashlib
 import json
-from pathlib import PurePosixPath
+import os
+from pathlib import PurePosixPath, PureWindowsPath
 
 from minicode.review_evidence_documents import EvidenceDocuments, canonical, content_digest
 from minicode.coverage_audit_submission import CoverageDrafts
@@ -28,12 +29,28 @@ def _object(pairs):
     return value
 
 
+def _checkpoint_reference_is_safe(reference: str) -> bool:
+    """Absolute host path, with no parent traversal.
+
+    POSIX references stay slash-separated. Windows paths use backslashes, so
+    the same check uses ``PureWindowsPath`` only on that host.
+    """
+    if not isinstance(reference, str) or not reference or "\x00" in reference:
+        return False
+    if os.name == "nt":
+        path = PureWindowsPath(reference)
+    else:
+        if "\\" in reference:
+            return False
+        path = PurePosixPath(reference)
+    return path.is_absolute() and ".." not in path.parts
+
+
 def record_document(record):
     if not isinstance(record, dict) or set(record) != {"ref", "sha256", "rawJson"}:
         raise ValueError("coverage checkpoint requires exact host record bytes")
     reference, raw = record["ref"], record["rawJson"]
-    if (not isinstance(reference, str) or "\x00" in reference or "\\" in reference
-            or not PurePosixPath(reference).is_absolute() or ".." in PurePosixPath(reference).parts
+    if (not _checkpoint_reference_is_safe(reference)
             or not isinstance(raw, str) or record["sha256"] != content_digest(raw)):
         raise ValueError("coverage checkpoint reference or bytes changed")
     return json.loads(raw, object_pairs_hook=_object,

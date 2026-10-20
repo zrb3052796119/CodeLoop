@@ -132,15 +132,15 @@ def test_real_connect_timeout_is_not_replaced_by_header_idle(endpoint, tmp_path,
 
 def test_explicit_total_deadline_still_bounds_slow_headers(endpoint, tmp_path):
     runtime, observed = endpoint
-    observed['delay'] = .3
+    observed['delay'] = 1.5
     started = time.monotonic()
-    with transport(tmp_path, runtime, request_timeout_seconds=.09) as current:
+    with transport(tmp_path, runtime, request_timeout_seconds=.5) as current:
         with pytest.raises(ModelCallDeadlineExceeded):
             invoke(runtime)
         row = current.ledger.snapshot()['requests'][0]
-    # A 90ms deadline still has to beat the 300ms header delay. Windows
-    # scheduling can overshoot that deadline by a couple of hundred milliseconds.
-    assert observed['arrived'].is_set() and time.monotonic() - started < .45
+    # The deadline still has to beat the header delay. Windows scheduling can
+    # spend a few hundred milliseconds before the local request is accepted.
+    assert observed['arrived'].is_set() and time.monotonic() - started < 1.2
     assert row['requestDeadlineEpoch'] is not None
     assert row['usage']['source'] == 'unavailable'
 
