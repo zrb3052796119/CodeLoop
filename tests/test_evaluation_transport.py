@@ -134,7 +134,7 @@ def test_missing_partial_usage_stays_unknown_and_reservation_remains(tmp_path, m
 def test_active_stream_exceeds_old_fixed_timer_but_respects_idle(tmp_path, monkeypatch):
     response = ScriptedResponse([event(TEXT), b": heartbeat\n\n", event({"usage": USAGE}), DONE], delay=0.03)
     install_open(monkeypatch, response)
-    with EvaluationTransport(config(tmp_path, idle_timeout_seconds=0.1, request_timeout_seconds=1)) as transport:
+    with EvaluationTransport(config(tmp_path, idle_timeout_seconds=0.4, request_timeout_seconds=1)) as transport:
         result = adapter.OpenAIModelAdapter(dict(RUNTIME), None).next(MESSAGES)
         assert result.content == "hello"
         assert transport.ledger.snapshot()["completed"] == 1

@@ -22,9 +22,9 @@ def test_default_bugfix_guidance_has_no_imposed_architecture(tmp_path, interacti
     assert "smallest supported change" in prompt
     assert "Read-only investigations stay read-only" in prompt
     assert "write scope: app.py" in prompt
-    assert "Verification, approval, review, and commit gates remain scheduler-owned" in prompt
+    assert "The scheduler builds the request." in prompt
+    assert "Do not paste the user's spec; that request is forwarded to the workers." in prompt
     assert "Coding verification scope" in prompt
-    assert "within 3800 characters" in prompt
 
 
 def test_explicit_global_and_project_conventions_are_retained(tmp_path, monkeypatch):

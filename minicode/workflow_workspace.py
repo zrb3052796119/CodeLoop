@@ -17,6 +17,7 @@ import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from collections.abc import Mapping
 from typing import Iterator
 
 from minicode import advisory_lock
@@ -34,6 +35,51 @@ from minicode.workspace_digest_cache import shared_workspace_digest_cache
 
 class WorkflowIsolationError(RuntimeError):
     """The workflow snapshot could not be created or committed safely."""
+
+
+def trusted_git_search_directories(
+    *,
+    source_root: Path | None = None,
+    environ: Mapping[str, str] | None = None,
+    include_windows_program_files: bool | None = None,
+) -> list[str]:
+    """Directories allowed to supply the host Git binary.
+
+    ``os.defpath`` stays the trusted default so a workspace-poisoned ``PATH``
+    cannot choose Git. Windows images install Git under Program Files, which
+    is outside ``os.defpath``, so those host directories are included too.
+    Anything inside the workflow source root is dropped.
+    """
+
+    env = os.environ if environ is None else environ
+    if include_windows_program_files is None:
+        include_windows_program_files = os.name == "nt"
+    entries: list[str] = []
+    seen: set[str] = set()
+
+    def add(entry: str) -> None:
+        if not entry or entry in seen:
+            return
+        path = Path(entry)
+        if not path.is_absolute():
+            return
+        if source_root is not None:
+            try:
+                if path.resolve(strict=False).is_relative_to(source_root.resolve(strict=False)):
+                    return
+            except OSError:
+                return
+        seen.add(entry)
+        entries.append(entry)
+
+    for entry in os.defpath.split(os.pathsep):
+        add(entry)
+    if include_windows_program_files:
+        for key in ("ProgramW6432", "ProgramFiles", "ProgramFiles(x86)"):
+            root = env.get(key)
+            if root:
+                add(str(Path(root) / "Git" / "cmd"))
+    return entries
 
 
 def _workflow_parent_lock_key(source_root: Path) -> str:
@@ -526,9 +572,7 @@ class WorkflowWorkspaceTransaction:
             candidate = str(configured_path)
         else:
             trusted_path = os.pathsep.join(
-                entry
-                for entry in os.defpath.split(os.pathsep)
-                if entry and Path(entry).is_absolute()
+                trusted_git_search_directories(source_root=self.source_root)
             )
             candidate = shutil.which("git", path=trusted_path)
         if not candidate:

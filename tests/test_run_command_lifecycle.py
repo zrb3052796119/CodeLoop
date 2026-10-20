@@ -242,8 +242,9 @@ def test_fallback_uses_process_group_and_windows_safe_flags(
         observed.update(kwargs)
         return _Process()
 
+    host_os_name = os.name
     monkeypatch.setattr(run_command_module.sys, "platform", "win32")
-    monkeypatch.setattr(run_command_module.os, "name", "nt")
+    monkeypatch.setattr(run_command_module, "_host_is_windows", lambda: True)
     monkeypatch.setattr(run_command_module.subprocess, "CREATE_NEW_PROCESS_GROUP", 512, raising=False)
     monkeypatch.setattr(run_command_module.subprocess, "Popen", fake_popen)
 
@@ -255,6 +256,8 @@ def test_fallback_uses_process_group_and_windows_safe_flags(
     assert result.ok
     assert observed["creationflags"] == 512
     assert "start_new_session" not in observed
+    assert os.name == host_os_name
+    Path(str(tmp_path))
 
 
 def test_pty_popen_failure_closes_both_file_descriptors(

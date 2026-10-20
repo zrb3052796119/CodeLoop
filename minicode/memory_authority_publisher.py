@@ -52,6 +52,16 @@ _WINDOWS_REPLACE_ATTEMPTS = 5
 _WINDOWS_REPLACE_DELAY_SECONDS = 0.05
 
 
+def _host_is_windows() -> bool:
+    """Return whether publication should retry a Windows sharing violation.
+
+    Tests patch this helper. Patching ``os.name`` swaps ``pathlib.Path`` to
+    ``WindowsPath`` for the whole process and aborts pytest on Python 3.11.
+    """
+
+    return os.name == "nt"
+
+
 def _replace_published_file(source: str, target: str) -> None:
     """Atomically replace ``target``. Retry a Windows sharing violation.
 
@@ -60,7 +70,7 @@ def _replace_published_file(source: str, target: str) -> None:
     scanners can lock the name for a moment after that close.
     """
 
-    attempts = _WINDOWS_REPLACE_ATTEMPTS if os.name == "nt" else 1
+    attempts = _WINDOWS_REPLACE_ATTEMPTS if _host_is_windows() else 1
     delay = _WINDOWS_REPLACE_DELAY_SECONDS
     for attempt in range(attempts):
         try:

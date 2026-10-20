@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 
 from minicode.agent_loop import run_agent_turn
+from minicode.auto_mode import PermissionMode
+from minicode.permissions import PermissionManager
 from minicode.delegation_policy import (
     complete_workflow_write_paths,
     decide_delegation,
@@ -556,6 +558,9 @@ def test_host_owned_implementation_still_writes_when_routing_is_on(tmp_path: Pat
         tools=ToolRegistry([write_file_tool]),
         messages=[{"role": "user", "content": spec.objective}],
         cwd=str(tmp_path),
+        # Host-owned checks run python -m pytest. Bypass command approval so
+        # a non-interactive runner is not asked to open a TTY.
+        permissions=PermissionManager(str(tmp_path), auto_mode=PermissionMode.BYPASS),
         runtime={"subagentRoutingEnabled": True},
         implementation_task=True,
         implementation_spec=spec,
@@ -775,3 +780,13 @@ def test_free_choice_bakeoff_protocol_is_offline() -> None:
     from scripts.demo_free_choice_delegation import evaluate
 
     assert evaluate() == []
+
+
+def test_ci_quarantine_keeps_delegation_and_behavior_review_tests() -> None:
+    listed = Path(__file__).resolve().parents[1].joinpath("tests", "ci_known_failures.txt").read_text(encoding="utf-8")
+    for name in (
+        "test_adaptive_delegation.py",
+        "test_behavior_review_handoff.py",
+        "test_memory_portable_publish.py",
+    ):
+        assert name not in listed

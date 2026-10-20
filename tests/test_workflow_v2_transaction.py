@@ -28,6 +28,7 @@ from minicode.task_deadline import (
 from minicode.workflow_runner import _WorkflowCommitStateUnknown
 from minicode.workflow_workspace import (
     WorkflowIsolationError as _WorkflowIsolationError,
+    trusted_git_search_directories,
 )
 from minicode.workflow_workspace import (
     WorkflowWorkspaceTransaction as _WorkflowWorkspaceTransaction,
@@ -262,6 +263,36 @@ def test_scheduler_git_environment_does_not_inherit_host_secrets(
         assert environment["PATH"] == os.defpath
         for name in ("TMP", "TEMP", "TMPDIR"):
             assert Path(environment[name]).is_relative_to(transaction._temp_root)
+
+
+def test_windows_program_files_git_is_trusted_and_workspace_copies_are_not(
+    tmp_path: Path,
+) -> None:
+    program_files = tmp_path / "Program Files"
+    git_cmd = program_files / "Git" / "cmd"
+    git_cmd.mkdir(parents=True)
+    source = tmp_path / "repo"
+    planted = source / "Git" / "cmd"
+    planted.mkdir(parents=True)
+
+    entries = trusted_git_search_directories(
+        source_root=source,
+        environ={
+            "ProgramFiles": str(program_files),
+            "ProgramW6432": str(source),
+        },
+        include_windows_program_files=True,
+    )
+
+    assert str(git_cmd) in entries
+    assert str(planted) not in entries
+    assert all(not Path(entry).resolve().is_relative_to(source.resolve()) for entry in entries)
+    without_windows = trusted_git_search_directories(
+        source_root=source,
+        environ={"ProgramFiles": str(program_files)},
+        include_windows_program_files=False,
+    )
+    assert str(git_cmd) not in without_windows
 
 
 def test_verifier_side_effects_are_discarded_before_exact_patch_commit(

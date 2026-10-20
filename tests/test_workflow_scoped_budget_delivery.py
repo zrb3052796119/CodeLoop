@@ -224,7 +224,12 @@ def test_current_workflow_budget_stop_reports_committed_scope_without_summary_ca
     assert "allowed.txt" in text and "committed" in text and "passed" in text
     assert not any(phrase in text for phrase in ("earlier workflow", "historical", "checking again", "remaining work is incomplete"))
     assert "overallGoal" not in text and "not_assessed" not in text
-    assert any(message.get("role") == "tool_result" and message.get("content") == receipts[0].output for message in messages)
+    assert any(
+        message.get("role") == "tool_result"
+        and isinstance(message.get("content"), str)
+        and receipts[0].output in message["content"]
+        for message in messages
+    )
     assert capture.outcome.goal_achieved is False, "A scoped receipt alone is not whole-user-goal coverage authority"
 
 

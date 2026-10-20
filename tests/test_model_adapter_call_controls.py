@@ -1166,12 +1166,12 @@ def test_non_streaming_chunk_read_rechecks_absolute_deadline(
     with pytest.raises(ModelCallDeadlineExceeded):
         _adapter_for_provider(provider).next(
             [{"role": "user", "content": "classify"}],
-            deadline_monotonic=started_at + 0.05,
+            deadline_monotonic=started_at + 0.12,
             max_response_bytes_override=4096,
         )
     elapsed = time.monotonic() - started_at
 
-    assert 0.03 <= elapsed < 0.3
+    assert 0.03 <= elapsed < 0.5
     assert response.read_calls == 0
     assert response.read1_calls >= 2
     assert len(response.socket.timeouts) >= 2

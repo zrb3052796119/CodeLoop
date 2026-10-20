@@ -59,6 +59,7 @@ def test_windows_replace_retries_a_sharing_violation(
     source.write_text("published")
     target = tmp_path / "memory.json"
     calls = {"count": 0}
+    host_os_name = os.name
     real_replace = os.replace
 
     def locked_once(source_path, destination):
@@ -68,8 +69,8 @@ def test_windows_replace_retries_a_sharing_violation(
         return real_replace(source_path, destination)
 
     monkeypatch.setattr(
-        "minicode.memory_authority_publisher.os.name",
-        "nt",
+        "minicode.memory_authority_publisher._host_is_windows",
+        lambda: True,
     )
     monkeypatch.setattr(
         "minicode.memory_authority_publisher.os.replace",
@@ -84,6 +85,8 @@ def test_windows_replace_retries_a_sharing_violation(
 
     assert calls["count"] == 3
     assert target.read_text() == "published"
+    assert os.name == host_os_name
+    Path(str(tmp_path))
 
 
 def test_replace_does_not_retry_permission_error_off_windows(
@@ -99,8 +102,8 @@ def test_replace_does_not_retry_permission_error_off_windows(
         raise PermissionError(13, "Access is denied", source_path)
 
     monkeypatch.setattr(
-        "minicode.memory_authority_publisher.os.name",
-        "posix",
+        "minicode.memory_authority_publisher._host_is_windows",
+        lambda: False,
     )
     monkeypatch.setattr(
         "minicode.memory_authority_publisher.os.replace",

@@ -31,6 +31,18 @@ from minicode.workspace import INTERNAL_WORKSPACE_STORE_NAMES
 # 命令执行超时（秒）- 5 分钟
 COMMAND_TIMEOUT = 300
 
+
+def _host_is_windows() -> bool:
+    """Return whether command spawning should use Windows process flags.
+
+    Tests patch this helper. Assigning ``os.name = "nt"`` makes
+    ``pathlib.Path`` construct ``WindowsPath``, which Python 3.11 refuses
+    to instantiate on POSIX — including inside pytest's failure reporter.
+    """
+
+    return os.name == "nt"
+
+
 # 传给子进程前从环境中剔除的敏感变量标记（防止模型可控的命令外泄凭证，
 # 例如 `curl -d "$ANTHROPIC_API_KEY" ...`）。设置 MINICODE_PASS_SENSITIVE_ENV=1
 # 可显式恢复完整环境。
@@ -168,7 +180,7 @@ def split_command_line(command_line: str) -> list[str]:
     preserves backslashes, then try the native ``shlex.split`` as a
     last resort.
     """
-    if os.name == "nt":
+    if _host_is_windows():
         try:
             return shlex.split(command_line, posix=False)
         except ValueError:
@@ -178,12 +190,12 @@ def split_command_line(command_line: str) -> list[str]:
 
 
 def _is_allowed_command(command: str) -> bool:
-    cmd = command.lower() if os.name == "nt" else command
+    cmd = command.lower() if _host_is_windows() else command
     return cmd in READONLY_COMMANDS or cmd in DEVELOPMENT_COMMANDS
 
 
 def _is_read_only_command(command: str) -> bool:
-    cmd = command.lower() if os.name == "nt" else command
+    cmd = command.lower() if _host_is_windows() else command
     return cmd in READONLY_COMMANDS
 
 
@@ -342,7 +354,7 @@ def _normalize_command_input(input_data: dict) -> tuple[str, list[str]]:
 
 
 def _is_windows_shell_builtin(command: str) -> bool:
-    return os.name == "nt" and command.lower() in {
+    return _host_is_windows() and command.lower() in {
         "cd",
         "chdir",
         "cls",
@@ -377,7 +389,7 @@ def _build_execution_command(
 ) -> tuple[str, list[str]]:
     if use_shell:
         shell_command = _strip_trailing_background_operator(raw_command) if background_shell else raw_command
-        if os.name == "nt":
+        if _host_is_windows():
             return "cmd", ["/d", "/s", "/c", shell_command]
         # Use the user's preferred shell (macOS defaults to zsh since
         # Catalina).  Fall back to /bin/sh for maximum POSIX compatibility.
@@ -475,7 +487,7 @@ def _execution_checkpoint(context, *, deadline: float) -> None:
 
 
 def _popen_options() -> dict[str, object]:
-    if os.name == "nt":
+    if _host_is_windows():
         return {
             "creationflags": int(
                 getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
