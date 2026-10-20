@@ -23,6 +23,7 @@ from __future__ import annotations
 import os
 import stat
 import tempfile
+import time
 import uuid
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -45,6 +46,31 @@ _BOUND_PUBLICATION_ROOT: ContextVar[MemoryStoreRootBinding | None] = ContextVar(
 
 if TYPE_CHECKING:
     from minicode.memory_blob_store import MemoryBlobStore
+
+
+_WINDOWS_REPLACE_ATTEMPTS = 5
+_WINDOWS_REPLACE_DELAY_SECONDS = 0.05
+
+
+def _replace_published_file(source: str, target: str) -> None:
+    """Atomically replace ``target``. Retry a Windows sharing violation.
+
+    The caller must already have closed every handle it holds on ``source``.
+    ``os.replace`` of an open file raises ``PermissionError`` on Windows, and
+    scanners can lock the name for a moment after that close.
+    """
+
+    attempts = _WINDOWS_REPLACE_ATTEMPTS if os.name == "nt" else 1
+    delay = _WINDOWS_REPLACE_DELAY_SECONDS
+    for attempt in range(attempts):
+        try:
+            os.replace(source, target)
+            return
+        except PermissionError:
+            if attempt + 1 == attempts:
+                raise
+            time.sleep(delay)
+            delay = min(delay * 2, 0.4)
 
 
 def _same_inode(first: os.stat_result, second: os.stat_result) -> bool:
@@ -1181,7 +1207,11 @@ class MemoryAuthorityPublisher:
                     raise MemoryStoreUnsafePath(
                         "Memory publication target is unsafe"
                     )
-            os.replace(temporary_path, target)
+            # Windows refuses to rename a file that still has an open
+            # handle, and a just-closed file can stay locked briefly.
+            os.close(temporary_fd)
+            temporary_fd = None
+            _replace_published_file(temporary_path, os.fspath(target))
             temporary_path = None
             published_state = os.lstat(target)
             _require_regular_target(published_state)
