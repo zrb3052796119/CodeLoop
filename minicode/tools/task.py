@@ -3324,7 +3324,9 @@ def build_task_tool_for_project(cwd: str) -> ToolDefinition:
     """
     profiles, errors = load_agent_profiles(cwd)
     if not profiles and not errors:
-        return task_tool
+        # A caller that wraps .run must not replace the process-wide tool.
+        # Evaluation harnesses do that on the registry's task definition.
+        return replace(task_tool)
     agent_types = resolve_agent_types(cwd)
     names = sorted(agent_types)
     lines = [
