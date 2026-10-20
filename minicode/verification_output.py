@@ -45,10 +45,75 @@ class VerificationOutputStore:
     def __init__(self, root: str | Path):
         self.root = Path(root)
         self.root.mkdir(mode=0o700, parents=True, exist_ok=True)
+        # Windows has no dir_fd / O_NOFOLLOW. Keep the POSIX fail-closed path,
+        # and on Windows reject symlinks by lstat before any path open.
+        self._path_io = os.name == "nt"
+        if self._path_io:
+            try:
+                if self.root.is_symlink() or not self.root.is_dir():
+                    raise VerificationOutputError("verification output directory unavailable")
+            except VerificationOutputError:
+                raise
+            except OSError as error:
+                raise VerificationOutputError("verification output directory unavailable") from error
+            return
         if not hasattr(os, "O_NOFOLLOW") or not hasattr(os, "O_DIRECTORY"):
             raise VerificationOutputError("safe verification output I/O unavailable")
         fd = self._directory()
         os.close(fd)
+
+    def _read_flags(self) -> int:
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+        if not self._path_io:
+            flags |= os.O_NOFOLLOW
+        return flags
+
+    def _create_flags(self) -> int:
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
+        if not self._path_io:
+            flags |= os.O_NOFOLLOW
+        return flags
+
+    def _child_path(self, name: str) -> Path:
+        if (not isinstance(name, str) or not name or name in {".", ".."}
+                or "/" in name or "\\" in name or Path(name).is_absolute()):
+            raise VerificationOutputError("verification output unavailable or invalid")
+        path = self.root / name
+        try:
+            if path.is_symlink():
+                raise VerificationOutputError("verification output unavailable or invalid")
+        except VerificationOutputError:
+            raise
+        except OSError as error:
+            raise VerificationOutputError("verification output unavailable or invalid") from error
+        return path
+
+    def _open_named(self, directory: int | None, name: str, flags: int, mode: int | None = None) -> int:
+        if self._path_io:
+            path = self._child_path(name)
+            if mode is None:
+                return os.open(path, flags)
+            return os.open(path, flags, mode)
+        if mode is None:
+            return os.open(name, flags, dir_fd=directory)
+        return os.open(name, flags, mode, dir_fd=directory)
+
+    def _unlink_named(self, directory: int | None, name: str) -> None:
+        if self._path_io:
+            self._child_path(name).unlink()
+            return
+        os.unlink(name, dir_fd=directory)
+
+    def _rename_named(self, directory: int | None, source: str, destination: str) -> None:
+        if self._path_io:
+            os.replace(self._child_path(source), self._child_path(destination))
+            return
+        os.rename(source, destination, src_dir_fd=directory, dst_dir_fd=directory)
+
+    @staticmethod
+    def _fsync_directory(directory: int | None) -> None:
+        if directory is not None:
+            os.fsync(directory)
 
     def _directory(self):
         try:
@@ -71,10 +136,10 @@ class VerificationOutputStore:
             raise VerificationOutputError("verification output reference is not authorized")
         if type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= _MAX_READ_BYTES:
             raise VerificationOutputError("verification output byte window is invalid")
-        directory = self._directory()
+        directory = None if self._path_io else self._directory()
         descriptor = None
         try:
-            manifest_fd = os.open(match[1] + ".json", os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory)
+            manifest_fd = self._open_named(directory, match[1] + ".json", self._read_flags())
             try:
                 metadata = os.fstat(manifest_fd)
                 if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > _MAX_MANIFEST_BYTES:
@@ -90,7 +155,7 @@ class VerificationOutputStore:
                     or type(item.get("byteCount")) is not int or item["byteCount"] < 0
                     or not isinstance(item.get("digest"), str) or not _DIGEST.fullmatch(item["digest"])):
                 raise VerificationOutputError("verification output is not complete")
-            descriptor = os.open(output_ref + ".bin", os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory)
+            descriptor = self._open_named(directory, output_ref + ".bin", self._read_flags())
             before = os.fstat(descriptor)
             if (not stat.S_ISREG(before.st_mode) or before.st_nlink != 1
                     or before.st_size != item["byteCount"]):
@@ -123,27 +188,30 @@ class VerificationOutputStore:
         finally:
             if descriptor is not None:
                 os.close(descriptor)
-            os.close(directory)
+            if directory is not None:
+                os.close(directory)
 
 
 class _OutputCapture:
     def __init__(self, store, binding):
         self.store, self.binding = store, binding
-        self._directory = store._directory()
+        self._directory = None if store._path_io else store._directory()
         self._streams = {}
         self._lock = threading.Lock()
         self._finished = False
         try:
             for name in ("stdout", "stderr"):
                 ref = "verification_output_" + binding["invocationId"] + "_" + name
-                fd = os.open(ref + ".part", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
-                             0o600, dir_fd=self._directory)
+                fd = store._open_named(
+                    self._directory, ref + ".part", store._create_flags(), 0o600,
+                )
                 self._streams[name] = {"ref": ref, "fd": fd, "error": None}
         except BaseException:
             for item in self._streams.values():
                 os.close(item["fd"])
-                os.unlink(item["ref"] + ".part", dir_fd=self._directory)
-            os.close(self._directory)
+                store._unlink_named(self._directory, item["ref"] + ".part")
+            if self._directory is not None:
+                os.close(self._directory)
             raise
 
     def add(self, stream: str, data: bytes):
@@ -177,26 +245,31 @@ class _OutputCapture:
                         item["fd"] = None
                     valid = item["error"] is None and stored == evidence["byteCount"]
                     if valid:
-                        os.rename(item["ref"] + ".part", item["ref"] + ".bin",
-                                  src_dir_fd=self._directory, dst_dir_fd=self._directory)
+                        self.store._rename_named(
+                            self._directory, item["ref"] + ".part", item["ref"] + ".bin",
+                        )
                     streams[name] = {"outputRef": item["ref"], "byteCount": evidence["byteCount"],
                                      "digest": evidence["digest"], "storageComplete": valid}
                     if item["error"] is not None:
                         streams[name]["storageError"] = item["error"]
                 manifest = {**self.binding, "complete": bool(complete), "streams": streams}
-                fd = os.open(self.binding["invocationId"] + ".json",
-                             os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
-                             0o600, dir_fd=self._directory)
+                fd = self.store._open_named(
+                    self._directory,
+                    self.binding["invocationId"] + ".json",
+                    self.store._create_flags(),
+                    0o600,
+                )
                 try:
                     _write_all(fd, _json(manifest))
                     os.fsync(fd)
                 finally:
                     os.close(fd)
-                os.fsync(self._directory)
+                self.store._fsync_directory(self._directory)
                 return manifest
             finally:
                 for item in self._streams.values():
                     if item["fd"] is not None:
                         os.close(item["fd"])
                         item["fd"] = None
-                os.close(self._directory)
+                if self._directory is not None:
+                    os.close(self._directory)

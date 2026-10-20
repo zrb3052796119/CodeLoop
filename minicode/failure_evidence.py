@@ -122,12 +122,128 @@ def open_private_directory(root: Path, *parts: str) -> int:
         raise
 
 
+def _capture_scoped_files_by_path(root: Path, scopes: tuple[str, ...]) -> dict[str, object]:
+    """Windows capture. ``os.open`` cannot open a directory, and ``dir_fd`` is absent.
+
+    Symlinks are rejected with ``lstat`` before any file is read. The POSIX
+    ``dir_fd`` implementation stays unchanged.
+    """
+    root = Path(root)
+    canonical_root = root.resolve(strict=True)
+    files: dict[str, dict[str, object]] = {}
+    remaining = MAX_CAPTURE_BYTES
+    visited = 0
+    incomplete = False
+    deadline = time.monotonic() + 2.0
+
+    def contained(path: Path) -> bool:
+        try:
+            path.resolve(strict=False).relative_to(canonical_root)
+        except (OSError, ValueError):
+            return False
+        return True
+
+    def visit(path: Path, relative: str) -> None:
+        nonlocal remaining, visited, incomplete
+        if relative in files:
+            return
+        visited += 1
+        if visited > MAX_VISITED_ENTRIES or time.monotonic() >= deadline or len(files) >= MAX_CAPTURE_FILES:
+            incomplete = True
+            return
+        name = path.name
+        if name in _PRIVATE_PATHS or name.startswith(".env") or name.lower().endswith((".pem", ".key", ".p12", ".pfx")):
+            incomplete = True
+            return
+        try:
+            if not contained(path):
+                raise OSError("candidate escaped the workspace")
+            metadata = path.lstat()
+            if stat.S_ISLNK(metadata.st_mode):
+                files[relative] = {"path": relative, "omitted": "symlink"}
+                return
+            if not (stat.S_ISREG(metadata.st_mode) or stat.S_ISDIR(metadata.st_mode)):
+                files[relative] = {"path": relative, "omitted": "non_regular"}
+                return
+            if stat.S_ISDIR(metadata.st_mode):
+                with os.scandir(path) as entries:
+                    for entry in entries:
+                        if visited >= MAX_VISITED_ENTRIES or len(files) >= MAX_CAPTURE_FILES or time.monotonic() >= deadline:
+                            incomplete = True
+                            break
+                        visit(path / entry.name, f"{relative}/{entry.name}".removeprefix("./"))
+                return
+            if metadata.st_nlink != 1:
+                files[relative] = {"path": relative, "omitted": "hardlink"}
+                return
+            if metadata.st_size > MAX_FILE_BYTES or metadata.st_size > remaining:
+                files[relative] = {"path": relative, "omitted": "size_limit", "byteCount": metadata.st_size}
+                return
+            opened = os.open(path, os.O_RDONLY | getattr(os, "O_BINARY", 0))
+            try:
+                current = os.fstat(opened)
+                if (current.st_dev, current.st_ino) != (metadata.st_dev, metadata.st_ino):
+                    raise OSError("candidate changed while opening")
+                data = bytearray()
+                while len(data) <= current.st_size:
+                    chunk = os.read(opened, min(64 * 1024, current.st_size + 1 - len(data)))
+                    if not chunk:
+                        break
+                    data.extend(chunk)
+                after = os.fstat(opened)
+                if len(data) != current.st_size or (after.st_size, after.st_mtime_ns, after.st_ctime_ns) != (current.st_size, current.st_mtime_ns, current.st_ctime_ns):
+                    raise OSError("candidate changed while reading")
+                remaining -= len(data)
+                try:
+                    content = data.decode("utf-8")
+                    if "\x00" in content:
+                        raise UnicodeError("binary file")
+                except UnicodeError:
+                    files[relative] = {"path": relative, "omitted": "binary", "byteCount": len(data)}
+                    return
+                safe = redact_diagnostic_text(content, max_chars=MAX_FILE_BYTES)
+                files[relative] = {"path": relative, "content": safe, "redacted": safe != content,
+                                   "sha256": hashlib.sha256(data).hexdigest(), "byteCount": len(data)}
+            finally:
+                os.close(opened)
+        except FileNotFoundError:
+            return
+        except OSError:
+            files[relative] = {"path": relative, "omitted": "unavailable_or_changed"}
+            incomplete = True
+
+    for scope in scopes[:MAX_CAPTURE_FILES]:
+        components = Path(scope).parts
+        if Path(scope).is_absolute() or ".." in components:
+            raise ValueError("invalid diagnostic scope")
+        if any(part in _PRIVATE_PATHS or part.startswith(".env") for part in components):
+            incomplete = True
+            continue
+        current = root
+        try:
+            for part in components[:-1]:
+                current = current / part
+                info = current.lstat()
+                if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode) or not contained(current):
+                    raise OSError("unsafe ancestor")
+            leaf = components[-1] if components else "."
+            visit(current / leaf if components else current, scope)
+        except FileNotFoundError:
+            continue
+        except OSError:
+            files[scope] = {"path": scope, "omitted": "unsafe_ancestor"}
+            incomplete = True
+    return {"files": files, "complete": not incomplete and len(scopes) <= MAX_CAPTURE_FILES and not any("omitted" in item for item in files.values())}
+
+
 def capture_scoped_files(root: Path, scopes: tuple[str, ...]) -> dict[str, object]:
     """Capture only bounded regular UTF-8 files without following any symlink.
 
     No subprocess, provider, approval or operation-deadline checkpoint runs:
     this is also usable after the execution budget has already expired.
     """
+    if os.name == "nt":
+        return _capture_scoped_files_by_path(root, scopes)
     flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
     root_fd = os.open(root, flags | getattr(os, "O_DIRECTORY", 0))
     files: dict[str, dict[str, object]] = {}

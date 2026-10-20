@@ -24,6 +24,7 @@ from typing import Any
 from minicode.api_retry import RETRYABLE_STATUS, calculate_backoff
 from minicode.cost_tracker import calculate_cost
 from minicode.model_call_control import (
+    ModelCallDeadlineExceeded,
     bounded_request_timeout,
     checkpoint_model_call,
     controlled_retry_sleep,
@@ -452,6 +453,12 @@ def _read_response_bytes(
             )
             if not succeeded:
                 if isinstance(outcome, BaseException):
+                    if (
+                        isinstance(outcome, TimeoutError)
+                        and deadline_monotonic is not None
+                        and time.monotonic() >= float(deadline_monotonic)
+                    ):
+                        raise ModelCallDeadlineExceeded("model call deadline exceeded")
                     raise outcome.with_traceback(None)
                 raise RuntimeError("model response read failed")
             chunk = outcome
