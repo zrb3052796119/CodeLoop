@@ -491,12 +491,15 @@ class EmbeddingSemanticMatcher:
         skills: Sequence[tuple[str, str]],
         *,
         call_context: dict[str, Any] | None = None,
+        max_new_vectors: int | None = None,
     ) -> list[float]:
         """Cosine similarity of ``query`` against each ``(digest, text)``.
 
         Provider failures raise :class:`EmbeddingUnavailable` so the router's
         shared cooldown can prevent repeated document-batch retries. Invalid
         individual vectors still yield 0.0 for only that Skill.
+        ``max_new_vectors`` overrides the per-turn document warm-up cap for
+        callers whose vectors are few by construction (directory presel).
         """
         cache = self._load_cache()
         missing: list[tuple[str, str]] = []
@@ -506,7 +509,10 @@ class EmbeddingSemanticMatcher:
             if text.strip() and key not in cache and key not in seen:
                 seen.add(key)
                 missing.append((key, text))
-        pending = missing[:_MAX_NEW_VECTORS_PER_ROUTE]
+        cap = _MAX_NEW_VECTORS_PER_ROUTE if max_new_vectors is None else max(
+            1, int(max_new_vectors)
+        )
+        pending = missing[:cap]
         if pending:
             # Warm a bounded prefix on each turn. Large catalogs converge over
             # subsequent turns without allowing cold-cache routing to issue an

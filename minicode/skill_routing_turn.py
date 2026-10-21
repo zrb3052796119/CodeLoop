@@ -23,6 +23,10 @@ from minicode.intent_parser import (
 )
 from minicode.skill_candidate_reranker import SkillCandidateReranker
 from minicode.skill_description_page import DescriptionRow, render_description_page
+from minicode.skill_directory_presel import (
+    blend_directory_suggestions,
+    directory_presel_text,
+)
 from minicode.skill_router import (
     DEFAULT_SKILL_TOP_K,
     SkillRouter,
@@ -67,6 +71,9 @@ class SkillRoutingTurnAdapters:
     router: SkillRouter
     semantic_intent: IntentSemanticAdapter | None = None
     candidate_reranker: SkillCandidateReranker | None = None
+    # Advisory directory-level semantic preselection (hierarchical mode
+    # only). Never touches prompt_skills, policy, or authority.
+    directory_presel: Any = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -137,6 +144,9 @@ _MAX_HINT_ENTITIES = 6
 _MAX_HINT_CONSTRAINTS = 4
 _MAX_HINT_DIRECTORIES = 3
 _MAX_HINT_EVIDENCE_CHARS = 80
+# Only used when an injected presel object forgot to publish its calibrated
+# threshold; production matchers always carry the provider-calibrated value.
+_PRESSEL_FALLBACK_THRESHOLD = 0.60
 
 
 def _controls_char_budget(
@@ -188,6 +198,7 @@ def _build_intent_hints(
     *,
     prefetch: bool,
     page_chars: int,
+    presel: Any = None,
 ) -> dict[str, Any]:
     """Advisory hint payload derived from the already-parsed intent.
 
@@ -244,10 +255,17 @@ def _build_intent_hints(
         + [str(getattr(operation, "clause", "") or "") for operation in affirmed]
     )
     by_directory: dict[str, str] = {}
+    skill_names_by_directory: dict[str, list[str]] = {}
     for skill in prompt_skills:
         directory = _skill_field(skill, "directory")
-        if directory and directory not in by_directory:
+        if not directory:
+            continue
+        if directory not in by_directory:
             by_directory[directory] = _skill_field(skill, "directory_description")
+            skill_names_by_directory[directory] = []
+        skill_names_by_directory[directory].append(
+            _skill_field(skill, "qualified_name") or _skill_field(skill, "name")
+        )
     scored = sorted(
         (
             (
@@ -263,6 +281,40 @@ def _build_intent_hints(
         for coverage, directory in scored[:_MAX_HINT_DIRECTORIES]
         if coverage > 0.0
     ]
+    directory_sources: dict[str, str] = {}
+    if presel is not None:
+        # Semantic preselection is advisory and fail-closed: a transport
+        # failure leaves the lexical ranking untouched. Lexical-only names
+        # keep the original ordering; semantic candidates may join them when
+        # the lexical pass missed the directory's vocabulary entirely.
+        lexical_scores = {
+            directory: coverage for coverage, directory in scored if coverage > 0.0
+        }
+        try:
+            # The embedding text lists the directory's skill names: hidden
+            # qualified-name vocabulary is what lexical matching on the card
+            # alone cannot see.
+            presel_texts = {
+                directory: directory_presel_text(
+                    directory,
+                    by_directory[directory],
+                    skill_names_by_directory.get(directory, []),
+                )
+                for directory in by_directory
+            }
+            semantic_scores = presel.rank(query_text, presel_texts)
+            suggested, directory_sources = blend_directory_suggestions(
+                lexical_scores,
+                semantic_scores,
+                signal_threshold=getattr(
+                    presel, "signal_threshold", _PRESSEL_FALLBACK_THRESHOLD
+                ),
+                limit=_MAX_HINT_DIRECTORIES,
+            )
+        except Exception as error:  # pragma: no cover - defensive fail-closed
+            logger.warning(
+                "Directory presel failed (%s); lexical suggestions only", error
+            )
 
     hints: dict[str, Any] = {
         "hinted": True,
@@ -272,6 +324,8 @@ def _build_intent_hints(
         "suggested_directories": suggested,
         "confidence": float(getattr(intent, "confidence", 0.0) or 0.0),
     }
+    if directory_sources:
+        hints["suggested_directory_sources"] = directory_sources
 
     if prefetch and suggested:
         top = suggested[0]
@@ -331,6 +385,7 @@ def _model_first_decision(
     *,
     flat_catalog_chars: int = _DEFAULT_FLAT_CATALOG_CHARS,
     controls: Mapping[str, Any] | None = None,
+    directory_presel: Any = None,
 ) -> SkillRoutingTurnDecision:
     """Prepare the full authorized catalog without any relevance scoring.
 
@@ -433,6 +488,7 @@ def _model_first_decision(
                 page_chars=_controls_char_budget(
                     controls, "skill_page_chars", _DEFAULT_SKILL_PAGE_CHARS
                 ),
+                presel=directory_presel,
             )
         except (AttributeError, TypeError):
             pass
@@ -499,6 +555,11 @@ def route_skill_turn(
                 _DEFAULT_FLAT_CATALOG_CHARS,
             ),
             controls=base_controls,
+            directory_presel=(
+                adapters.directory_presel
+                if _controls_bool(base_controls, "skill_directory_presel")
+                else None
+            ),
         )
 
     routing_context: dict[str, Any] | None = None
