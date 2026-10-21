@@ -44,6 +44,26 @@ def _optional_string_list(input_data: dict, key: str) -> list[str]:
     return result
 
 
+def _presel_matcher(cwd: str):
+    """Semantic placement matcher, or ``None`` when off/unavailable.
+
+    Gated by the same ``skillSelection.directoryPresel`` switch as routing
+    preselection: placement and discovery should agree on the directory
+    semantics. Construction is fail-closed — without embedding settings the
+    proposal falls back to lexical scoring alone.
+    """
+    from minicode.config import load_runtime_config
+    from minicode.skill_directory_presel import DirectoryPreselMatcher
+
+    try:
+        skill_selection = load_runtime_config(cwd).get("skillSelection") or {}
+        if not skill_selection.get("directoryPresel"):
+            return None
+    except Exception:
+        return None
+    return DirectoryPreselMatcher.from_environment(cwd)
+
+
 def create_propose_skill_tool(
     cwd: str,
     *,
@@ -54,7 +74,12 @@ def create_propose_skill_tool(
 
     def _run(input_data: dict, _context) -> ToolResult:
         registry = capability_registry_provider()
-        proposal = propose_skill(cwd, input_data, registry)
+        proposal = propose_skill(
+            cwd,
+            input_data,
+            registry,
+            presel_matcher=_presel_matcher(cwd),
+        )
         return ToolResult(ok=True, output=format_skill_proposal(proposal))
 
     return ToolDefinition(

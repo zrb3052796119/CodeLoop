@@ -415,3 +415,158 @@ def test_registry_binding_failure_disposes_started_resources(
         create_default_tool_registry(str(tmp_path), runtime={"mcpServers": {}})
 
     assert disposed == [True]
+
+
+class _FakePreselMatcher:
+    """Scripted DirectoryPreselMatcher stand-in with fixed cosine scores."""
+
+    def __init__(self, scores, threshold=0.6):
+        self._scores = dict(scores)
+        self.signal_threshold = threshold
+        self.rank_queries = []
+        self.rank_directories = []
+
+    def rank(self, query, by_directory, *, call_context=None):
+        self.rank_queries.append(query)
+        self.rank_directories.append(list(by_directory))
+        return dict(self._scores)
+
+
+class _ExplodingMatcher:
+    signal_threshold = 0.6
+
+    def rank(self, query, by_directory, *, call_context=None):
+        raise RuntimeError("embedding transport exploded")
+
+
+def _disjoint_spec() -> dict:
+    # Vocabulary shares nothing with the seeded directories, so any existing-
+    # directory recommendation must come from the semantic signal.
+    return {
+        "name": "quantum-harmonics",
+        "description": "Calibrate flux capacitors for warp output.",
+    }
+
+
+def test_semantic_match_recommends_lexically_silent_directory(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _seed_skill_tree(tmp_path, monkeypatch)
+    matcher = _FakePreselMatcher({"testing": 0.62})
+    proposal = propose_skill(
+        tmp_path,
+        _disjoint_spec(),
+        _registry(),
+        presel_matcher=matcher,
+    )
+
+    # 0.62 * 3.0 = 1.86 clears the existing-directory bar alone.
+    assert proposal["recommended_directory"] == "testing"
+    assert proposal["recommendation_type"] == "existing_directory"
+    reasons = proposal["candidate_directories"][0]["reasons"]
+    assert any(reason.startswith("semantic:") for reason in reasons)
+
+
+def test_without_matcher_disjoint_spec_suggests_new_directory(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _seed_skill_tree(tmp_path, monkeypatch)
+    proposal = propose_skill(tmp_path, _disjoint_spec(), _registry())
+
+    assert proposal["recommendation_type"] == "new_directory"
+    assert proposal["recommended_directory"] != "testing"
+
+
+def test_subthreshold_semantic_stays_new_directory(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _seed_skill_tree(tmp_path, monkeypatch)
+    matcher = _FakePreselMatcher({"testing": 0.30})
+    proposal = propose_skill(
+        tmp_path,
+        _disjoint_spec(),
+        _registry(),
+        presel_matcher=matcher,
+    )
+
+    # 0.30 * 3.0 = 0.90 < 1.5: a weak cosine must not trigger placement.
+    assert proposal["recommendation_type"] == "new_directory"
+
+
+def test_matcher_failure_is_fail_closed(tmp_path: Path, monkeypatch) -> None:
+    _seed_skill_tree(tmp_path, monkeypatch)
+    proposal = propose_skill(
+        tmp_path,
+        _disjoint_spec(),
+        _registry(),
+        presel_matcher=_ExplodingMatcher(),
+    )
+
+    assert proposal["recommendation_type"] == "new_directory"
+
+
+def test_semantic_scores_cover_all_directories_before_topk(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _seed_skill_tree(tmp_path, monkeypatch)
+    matcher = _FakePreselMatcher({})
+    propose_skill(
+        tmp_path,
+        _disjoint_spec(),
+        _registry(),
+        presel_matcher=matcher,
+    )
+
+    # Blending happens over the whole catalog, so a semantic hit outside the
+    # lexical top-k can still win placement.
+    assert len(matcher.rank_directories[0]) == 3
+    assert set(matcher.rank_directories[0]) == {
+        "code-understanding",
+        "debugging",
+        "testing",
+    }
+
+
+def test_tool_skips_semantic_placement_when_switch_off(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _seed_skill_tree(tmp_path, monkeypatch)
+    monkeypatch.delenv("MINI_CODE_SKILL_DIRECTORY_PRESEL", raising=False)
+    called_with = {}
+    original = propose_skill
+
+    def spy(cwd, spec, registry, **kwargs):
+        called_with["presel_matcher"] = kwargs.get("presel_matcher")
+        return original(cwd, spec, registry, **kwargs)
+
+    monkeypatch.setattr("minicode.tools.propose_skill.propose_skill", spy)
+    tool = create_propose_skill_tool(str(tmp_path), capability_registry_provider=_registry)
+    result = tool.run(
+        _disjoint_spec(),
+        ToolContext(cwd=str(tmp_path)),
+    )
+
+    assert result.ok
+    assert called_with["presel_matcher"] is None
+
+
+def test_tool_fails_closed_without_embedding_settings(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _seed_skill_tree(tmp_path, monkeypatch)
+    monkeypatch.setenv("MINI_CODE_SKILL_DIRECTORY_PRESEL", "1")
+    tool = create_propose_skill_tool(str(tmp_path), capability_registry_provider=_registry)
+    result = tool.run(
+        _disjoint_spec(),
+        ToolContext(cwd=str(tmp_path)),
+    )
+
+    # Switch on but no embedding runtime configured: lexical-only placement.
+    assert result.ok
+    assert "recommendation_type: new_directory" in result.output

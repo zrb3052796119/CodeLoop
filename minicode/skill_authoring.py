@@ -1,14 +1,23 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from pathlib import Path
 from typing import Any
 
 from minicode.capability_registry import CapabilityRegistry
+from minicode.skill_directory_presel import directory_presel_text
 from minicode.skills import discover_skill_directories, discover_skills
 
+logger = logging.getLogger(__name__)
+
 _STRONG_DIRECTORY_SCORE = 1.5
+# Semantic placement shares the currency of the lexical "similar-skill"
+# signal: at the calibrated suggestion threshold (~0.60 cosine) the blended
+# score alone clears the existing-directory bar, so placement and routing
+# agree on what "belongs" in a directory.
+_SEMANTIC_PLACEMENT_WEIGHT = 3.0
 _STOP_WORDS = {
     "and", "or", "the", "for", "with", "from", "this", "that", "how", "why",
     "what", "when", "where", "skills", "skill", "workflow", "workflows",
@@ -20,6 +29,7 @@ def propose_skill(
     spec: dict[str, Any],
     registry: CapabilityRegistry,
     top_k: int = 3,
+    presel_matcher: Any = None,
 ) -> dict[str, Any]:
     if not isinstance(registry, CapabilityRegistry):
         raise TypeError("registry must be a CapabilityRegistry")
@@ -36,6 +46,18 @@ def propose_skill(
 
     directories = discover_skill_directories(cwd)
     skills = discover_skills(cwd)
+    semantic_scores = _semantic_directory_scores(
+        presel_matcher,
+        directories,
+        skills,
+        requested_name=requested_name,
+        description=description,
+        keywords=keywords,
+        domains=domains,
+        scopes=scopes,
+        examples=examples,
+        content_outline=content_outline,
+    )
     candidates = _score_directories(
         directories,
         skills,
@@ -47,6 +69,7 @@ def propose_skill(
         tools=tools,
         examples=examples,
         content_outline=content_outline,
+        semantic_scores=semantic_scores,
     )[:top_k]
 
     strongest = candidates[0] if candidates else None
@@ -176,6 +199,66 @@ def format_skill_proposal(proposal: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _semantic_directory_scores(
+    presel_matcher: Any,
+    directories,
+    skills,
+    *,
+    requested_name: str,
+    description: str,
+    keywords: list[str],
+    domains: list[str],
+    scopes: list[str],
+    examples: list[str],
+    content_outline: str,
+) -> dict[str, float]:
+    """Query→directory cosine map for placement, or ``{}`` when unavailable.
+
+    Uses the same directory-card embedding texts the routing presel builds,
+    so a skill placed by this signal lands in a directory that future
+    semantic queries can actually surface. Any matcher failure is
+    fail-closed: placement falls back to lexical scoring alone.
+    """
+    if presel_matcher is None:
+        return {}
+    query = " ".join(
+        part
+        for part in [
+            requested_name,
+            description,
+            *keywords,
+            *domains,
+            *scopes,
+            *examples,
+            content_outline,
+        ]
+        if part
+    )
+    skill_names_by_directory: dict[str, list[str]] = {}
+    for skill in skills:
+        if skill.directory:
+            skill_names_by_directory.setdefault(skill.directory, []).append(
+                skill.qualified_name or skill.name
+            )
+    texts_by_directory = {
+        directory.name: directory_presel_text(
+            directory.name,
+            directory.description,
+            skill_names_by_directory.get(directory.name, []),
+        )
+        for directory in directories
+    }
+    try:
+        return dict(presel_matcher.rank(query, texts_by_directory))
+    except Exception as error:  # pragma: no cover - rank is fail-closed already
+        logger.warning(
+            "Semantic placement unavailable; lexical directory scoring "
+            "only: %s",
+            error,
+        )
+        return {}
+
+
 def _score_directories(
     directories,
     skills,
@@ -188,6 +271,7 @@ def _score_directories(
     tools: list[str],
     examples: list[str],
     content_outline: str,
+    semantic_scores: dict[str, float] | None = None,
 ) -> list[dict[str, Any]]:
     proposed_text = " ".join([name, description, *keywords, *domains, *scopes, *tools, *examples, content_outline])
     proposed_tokens = _tokens(proposed_text)
@@ -243,6 +327,11 @@ def _score_directories(
         if similarity > 0:
             score += similarity * 3.0
             reasons.append(f"similar-skill:{similarity:.2f}")
+
+        semantic = float((semantic_scores or {}).get(directory.name, 0.0))
+        if semantic > 0.0:
+            score += semantic * _SEMANTIC_PLACEMENT_WEIGHT
+            reasons.append(f"semantic:{semantic:.2f}")
 
         candidates.append(
             {
